@@ -1,0 +1,4 @@
+tailwind.config.ts
+next.config.mjs
+postcss.config.mjs
+tsconfig.json
