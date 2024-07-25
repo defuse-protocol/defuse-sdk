@@ -1,5 +1,5 @@
 {
-  "name": "defuse-sdk",
+  "name": "@defuse-protocol/defuse-sdk",
   "version": "0.0.1",
   "author": "Defuse Protocol",
   "license": "MIT",
