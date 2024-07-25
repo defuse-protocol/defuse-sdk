@@ -29,6 +29,9 @@ jobs:
         with:
           node-version-file: package.json
 
+      - name: Setup NPM token
+          run: echo "//npm.pkg.github.com/:_authToken=${{ secrets.GH_TOKEN }}" >> .npmrc
+
       - name: Install
         run: yarn install --frozen-lockfile --non-interactive
 
