@@ -1,9 +1,9 @@
 name: Build packages - Release
 
 on:
-  pull_request:
+  push:
     branches:
-      - "main"
+      - main
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
