@@ -18,32 +18,23 @@ jobs:
       pull-requests: write
       packages: write
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
           persist-credentials: false
-
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version-file: package.json
-
+      - name: Setup NPM token
+        run: echo "//npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}" >> .npmrc
       - name: Install
         run: yarn install --frozen-lockfile --non-interactive
-
       - name: Build
         run: yarn run build
-
-      - name: Configure Git for GitHub Packages
-        run: |
-          echo "//npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}" > ~/.npmrc
-          echo "@OWNER:registry=https://npm.pkg.github.com" >> ~/.npmrc
-        env:
-          OWNER: ${{ github.repository_owner }}
-
       - name: Release
         run: npx semantic-release
         env:
-          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
-          NPM_TOKEN: ${{ secrets.GH_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GH_SEMANTIC_RELEASE_TOKEN }}
+          NPM_TOKEN: ${{ secrets.GITHUB_TOKEN }}
