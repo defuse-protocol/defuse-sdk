@@ -1,5 +1,4 @@
 {
-  "include": ["src/*"],
   "compilerOptions": {
     "baseUrl": ".",
     "outDir": "./dist",
@@ -8,7 +7,7 @@
     "strict": true,
     "esModuleInterop": true,
     "module": "esnext",
-    "moduleResolution": "bundler",
+    "moduleResolution": "node",
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "declarationMap": true,
@@ -19,12 +18,9 @@
     "strictPropertyInitialization": false,
     "noUncheckedIndexedAccess": true,
     "lib": ["dom", "dom.iterable", "esnext"],
-    "noEmit": true,
     "isolatedModules": true,
-    "jsx": "preserve",
-    "incremental": true,
-    "paths": {
-      "@src/*": ["./src/*"]
-    }
-  }
+    "jsx": "react",
+    "incremental": true
+  },
+  "include": ["src/**/*"]
 }
