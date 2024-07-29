@@ -1,4 +1,5 @@
-import React, { MagnifyingGlassIcon, Cross1Icon } from "@radix-ui/react-icons"
+import React from "react"
+import { MagnifyingGlassIcon, Cross1Icon } from "@radix-ui/react-icons"
 
 type Props = {
   query: string

@@ -1,1 +1,1 @@
-export { default as DefuseProvider } from "./RootProvider"
+export { default as DefuseProvider } from "./DefuseProvider"

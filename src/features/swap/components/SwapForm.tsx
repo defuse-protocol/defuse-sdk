@@ -1,3 +1,5 @@
+"use client"
+
 import React, { useCallback, useEffect, useRef, useState } from "react"
 import { FieldValues, useForm } from "react-hook-form"
 import { parseUnits } from "viem"
