@@ -21,3 +21,7 @@ coverage/
 
 # Vi
 *.swp
+
+# All env files, except .env.example
+.env*
+!.env.example
