@@ -1,19 +1,20 @@
 import React, { useState, useDeferredValue, useEffect } from "react"
 import { Text } from "@radix-ui/themes"
 
+import { BaseTokenInfo } from "src/types/base"
+
 import SearchBar from "../SearchBar"
 import AssetList from "../Asset/AssetList"
 import { useModalStore } from "../../providers/ModalStoreProvider"
 import { useTokensStore } from "../../providers/TokensStoreProvider"
 import { ModalType } from "../../stores/modalStore"
 import { NetworkTokenWithSwapRoute } from "../../types"
-import { NetworkTokenBase } from "../../types/base"
 
 import ModalDialog from "./ModalDialog"
 
 export type ModalSelectAssetsPayload = {
   modalType?: ModalType.MODAL_SELECT_ASSETS
-  token?: NetworkTokenBase
+  token?: BaseTokenInfo
   fieldName?: string
 }
 
@@ -35,7 +36,7 @@ const ModalSelectAssets = () => {
 
   const handleSearchClear = () => setSearchValue("")
 
-  const filterPattern = (asset: NetworkTokenBase) =>
+  const filterPattern = (asset: BaseTokenInfo) =>
     asset
       .name!.toLocaleUpperCase()
       .includes(deferredQuery.toLocaleUpperCase()) ||
@@ -43,7 +44,7 @@ const ModalSelectAssets = () => {
       .chainName!.toLocaleUpperCase()
       .includes(deferredQuery.toLocaleUpperCase())
 
-  const handleSelectToken = (token: NetworkTokenBase) => {
+  const handleSelectToken = (token: BaseTokenInfo) => {
     onCloseModal({
       ...(payload as { fieldName: string }),
       modalType,

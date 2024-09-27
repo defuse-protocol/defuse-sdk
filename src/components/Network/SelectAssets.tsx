@@ -3,7 +3,7 @@ import { CaretDownIcon } from "@radix-ui/react-icons"
 
 import { BaseTokenInfo } from "src/types/base"
 
-import AssetComboIcon from "./Asset/AssetComboIcon"
+import AssetComboIcon from "./AssetComboIcon"
 
 type Props = {
   selected?: BaseTokenInfo

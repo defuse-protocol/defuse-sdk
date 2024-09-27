@@ -26,12 +26,7 @@ const EmptyAssetList = ({ className }: Pick<Props, "className">) => {
       )}
     >
       <div className="flex justify-center items-center rounded-full bg-gray-950 p-6 mb-4">
-        <img
-          src="/static/icons/cross-1.svg"
-          alt="Close"
-          width={32}
-          height={32}
-        />
+        <img src="/static/icons/cross-1.svg" alt="Close" className="w-8 h-8" />
       </div>
       <Text size="4" weight="bold">
         Your token not found
@@ -85,7 +80,11 @@ const AssetList = ({
               "flex justify-between items-center gap-3 p-2.5 rounded-md hover:bg-gray-950 dark:hover:bg-black-950",
               isNotSelectable && "opacity-50 pointer-events-none"
             )}
-            onClick={() => handleSelectToken && handleSelectToken(assets[i]!)}
+            onClick={() =>
+              handleSelectToken &&
+              assets[i] &&
+              handleSelectToken(assets[i] as BaseTokenInfo)
+            }
           >
             <AssetComboIcon
               name={name as string}

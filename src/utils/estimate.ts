@@ -1,10 +1,12 @@
-import { getSettings, setSettings } from "../config/settings"
 import {
   DataEstimateRequest,
-  SolverEstimateProviderResponse,
-  SolverSettings,
-} from "../types"
-import { swapEstimateSolver0Provider } from "../providers/libs"
+  EstimateProvider,
+  Settings,
+  SwapEstimateProviderResponse,
+} from "src/types"
+
+import { getSettings, setSettings } from "./settings"
+import { swapEstimateSolver0Provider } from "./solver"
 
 const IS_DISABLE_QUOTING_FROM_SOLVER_0 =
   process?.env?.NEXT_PUBLIC_DISABLE_QUOTING_FROM_SOLVER_0 === "true"
@@ -14,7 +16,7 @@ const IS_DISABLE_QUOTING_FROM_SOLVER_0 =
 //          swapEstimateSolver1Provider,
 //          swapEstimateSolver2Provider,
 //          ...,
-export const estimateProviders: SolverSettings = {
+export const estimateProviders: Settings = {
   providerIds: [],
 }
 
@@ -31,8 +33,10 @@ setSettings(estimateProviders)
 
 export const concurrentEstimateSwap = async (
   data: DataEstimateRequest
-): Promise<SolverEstimateProviderResponse[]> => {
+): Promise<SwapEstimateProviderResponse[]> => {
   const { providerIds } = getSettings()
 
-  return Promise.all(providerIds.map(async (provider) => await provider(data)))
+  return Promise.all(
+    providerIds.map(async (provider: EstimateProvider) => await provider(data))
+  )
 }

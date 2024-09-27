@@ -1,4 +1,26 @@
-import { NetworkTokenBase } from "./base"
+import { BaseTokenInfo } from "./base"
+
+// TODO: Must be moved to @defuse/swap-facade
+export type SwapMessageParams = {
+  message: string
+  recipient: string
+  nonce: Buffer
+  callbackUrl?: string
+  state?: string
+}
+
+export type SwapEvent = {
+  type: string
+  data: unknown
+  error?: string
+}
+
+export type SwapWidgetProps = {
+  theme: "dark" | "light"
+  tokenList: BaseTokenInfo[]
+  event: SwapEvent
+  onSign: (params: SwapMessageParams) => Promise<{ signature: string }>
+}
 
 export enum QueueTransactionsEnum {
   "DEPOSIT" = "deposit",
@@ -8,7 +30,7 @@ export enum QueueTransactionsEnum {
   "CREATE_INTENT" = "createIntent",
 }
 
-export type SelectToken = NetworkTokenBase | undefined
+export type SelectToken = BaseTokenInfo | undefined
 
 export type EstimateSwap = {
   tokenIn: string
@@ -18,8 +40,8 @@ export type EstimateSwap = {
   selectTokenOut: SelectToken
 }
 
-export interface NetworkTokenWithSwapRoute extends NetworkTokenBase {
-  routes?: string[]
+export interface NetworkTokenWithSwapRoute extends BaseTokenInfo {
+  routes: string[]
 }
 
 export type EstimateQueueTransactions = {
@@ -40,12 +62,28 @@ export type NextEstimateQueueTransactionsResult = {
 export type CallRequestIntentProps = {
   tokenIn: string
   tokenOut: string
-  selectedTokenIn: NetworkTokenBase
-  selectedTokenOut: NetworkTokenBase
+  selectedTokenIn: BaseTokenInfo
+  selectedTokenOut: BaseTokenInfo
   estimateQueue: EstimateQueueTransactions
-  clientId?: string
+  intentId?: string
+  solverId?: string
 }
 
-type WithSwapDepositRequest = {
-  useNative?: boolean
+export enum EvaluateResultEnum {
+  BEST,
+  LOW,
+}
+
+type WithAccounts = {
+  accountFrom?: string
+  accountTo?: string
+}
+
+export interface ModalConfirmSwapPayload
+  extends CallRequestIntentProps,
+    WithAccounts {}
+
+export enum INDEXER {
+  INTENT_0,
+  INTENT_1,
 }

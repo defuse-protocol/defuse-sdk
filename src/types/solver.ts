@@ -1,18 +1,21 @@
-import { DataEstimateRequest } from "./quoting"
-
-export interface SolverQuoteData {
-  solverId: string
-  amountOut: string
+export interface TokenEntity {
+  defuse_asset_id: string
+  decimals: number
+  asset_name: string
+  metadata_link: string
+  routes_to: string[]
+}
+export interface Result<T> {
+  result: T
 }
 
-export interface SolverEstimateProviderResponse extends SolverQuoteData {
-  list?: SolverQuoteData[]
-}
+export type SupportedTokens = Result<{ tokens: TokenEntity[] }>
 
-export type SolverEstimateProvider = (
-  data: DataEstimateRequest
-) => Promise<SolverEstimateProviderResponse>
-
-export interface SolverSettings {
-  providerIds: SolverEstimateProvider[]
+export enum TransactionMethod {
+  NATIVE_ON_TRANSFER = "native_on_transfer",
+  FT_TRANSFER_CALL = "ft_transfer_call",
+  ROLLBACK_INTENT = "rollback_intent",
+  STORAGE_DEPOSIT = "storage_deposit",
+  NEAR_DEPOSIT = "near_deposit",
+  NEAR_WITHDRAW = "near_withdraw",
 }

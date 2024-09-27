@@ -1,1 +1,1 @@
-export { default as SwapForm } from "./components/SwapForm"
+export { default as SwapWidget } from "./components/SwapWidget"

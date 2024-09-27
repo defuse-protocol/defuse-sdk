@@ -1,45 +1,52 @@
+"use client"
+
 import React from "react"
-import { BigNumber } from "ethers"
 import { Checkbox, Text, Tooltip } from "@radix-ui/themes"
 import { CheckedState } from "@radix-ui/react-checkbox"
 import { InfoCircledIcon } from "@radix-ui/react-icons"
 import clsx from "clsx"
 
-import { smallBalanceToFormat } from "../../utils"
+import { smallBalanceToFormat } from "src/utils"
 
 export interface BlockMultiBalancesProps {
-  balance?: string | BigNumber
+  balance?: string | bigint
   withNativeSupport?: boolean
   nativeSupportChecked?: CheckedState
   handleIncludeNativeToSwap?: (checked: CheckedState) => void
+  handleClick?: () => void
 }
 const BlockMultiBalances = ({
   balance,
   withNativeSupport,
   nativeSupportChecked = false,
   handleIncludeNativeToSwap,
+  handleClick,
 }: BlockMultiBalancesProps) => {
   return (
     <div className="absolute bottom-4 right-5 flex justify-center items-center gap-2">
       {Number(balance) > 0 ? (
         <img
           src="/static/icons/wallet_active.svg"
-          alt={"Balance"}
-          className="w-[16px] h-[16px]"
+          alt="Balance"
+          width={16}
+          height={16}
         />
       ) : (
         <img
           src="/static/icons/wallet_no_active.svg"
           alt={"Balance"}
-          className="w-[16px] h-[16px]"
+          width={16}
+          height={16}
         />
       )}
       <span
+        onClick={handleClick}
         className={clsx(
           "text-xs px-2 py-0.5 rounded-full",
           Number(balance) > 0
             ? "bg-red-100 text-red-400 dark:bg-red-200 dark:text-primary-400"
-            : "bg-white-200 text-gray-600"
+            : "bg-white-200 text-gray-600",
+          handleClick && "cursor-pointer"
         )}
       >
         {smallBalanceToFormat(balance?.toString() ?? "", 7)}

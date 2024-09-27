@@ -1,11 +1,10 @@
-import { BigNumber } from "ethers"
 import { formatUnits } from "viem"
 
 export const smallBalanceToFormat = (balance: string, toFixed = 14): string => {
   if (!parseFloat(balance)) {
     return balance
   }
-  const isSmallBalance = !parseFloat(balance.substring(0, 7))
+  const isSmallBalance = parseFloat(balance) < 0.00001
   if (isSmallBalance) {
     return "~0.00001"
   }
@@ -16,18 +15,16 @@ export const tokenBalanceToFormatUnits = ({
   balance,
   decimals,
 }: {
-  balance: string | BigNumber | undefined
+  balance: string | undefined
   decimals: number
 }): string => {
-  const balanceToString =
-    balance !== undefined ? BigNumber.from(balance || "0").toString() : "0"
-  if (!parseFloat(balanceToString)) {
+  if (!parseFloat(balance?.toString() ?? "0")) {
     return "0"
   }
   const balanceToUnits = formatUnits(
-    BigInt(balanceToString),
+    BigInt(balance!.toString()),
     decimals
   ).toString()
 
-  return smallBalanceToFormat(balanceToUnits)
+  return smallBalanceToFormat(balanceToUnits, 7)
 }
