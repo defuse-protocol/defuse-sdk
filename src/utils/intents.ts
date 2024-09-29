@@ -8,14 +8,14 @@ import {
   CREATE_INTENT_ROLLBACK_DELAY,
   LIST_NATIVE_TOKENS,
   MAX_GAS_TRANSACTION,
-} from "src/constants"
+} from "../constants"
 import {
   ContractIdEnum,
   INDEXER,
   NearIntent1CreateCrossChain,
   NearIntent1CreateSingleChain,
   TransactionMethod,
-} from "src/types"
+} from "../types"
 
 import { MapCreateIntentProps } from "./maps"
 import { swapSchema } from "./schema"

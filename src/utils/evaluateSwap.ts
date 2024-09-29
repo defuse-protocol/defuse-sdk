@@ -1,8 +1,8 @@
 import { formatUnits } from "ethers"
 
-import { NEAR_TOKEN_META, W_NEAR_TOKEN_META } from "src/constants"
-import { swapEstimateRefFinanceProvider } from "src/features/quoting/utils/refFinanceProvider"
-import { BaseTokenInfo } from "src/types/base"
+import { NEAR_TOKEN_META, W_NEAR_TOKEN_META } from "../constants"
+import { swapEstimateRefFinanceProvider } from "../features/quoting/utils/refFinanceProvider"
+import { BaseTokenInfo } from "../types/base"
 
 import parseDefuseAsset from "./parseDefuseAsset"
 

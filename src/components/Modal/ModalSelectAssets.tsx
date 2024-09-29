@@ -1,8 +1,7 @@
 import React, { useState, useDeferredValue, useEffect } from "react"
 import { Text } from "@radix-ui/themes"
 
-import { BaseTokenInfo } from "src/types/base"
-
+import { BaseTokenInfo } from "../../types/base"
 import SearchBar from "../SearchBar"
 import AssetList from "../Asset/AssetList"
 import { useModalStore } from "../../providers/ModalStoreProvider"

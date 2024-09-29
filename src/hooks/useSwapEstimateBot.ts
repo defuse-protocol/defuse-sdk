@@ -6,9 +6,9 @@ import {
   DataEstimateRequest,
   SolverQuoteData,
   SwapEstimateProviderResponse,
-} from "src/types"
-import { concurrentEstimateSwap } from "src/utils"
-import sortBigIntDesc from "src/utils/sortBigIntAsc"
+} from "../types"
+import { concurrentEstimateSwap } from "../utils"
+import sortBigIntDesc from "../utils/sortBigIntAsc"
 
 const DEFAULT_ESTIMATES_VALUE = {
   allEstimates: null,

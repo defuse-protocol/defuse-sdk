@@ -1,4 +1,4 @@
-import { CONNECTOR_BTC_MAINNET, CONNECTOR_ETH_BASE } from "src/constants"
+import { CONNECTOR_BTC_MAINNET, CONNECTOR_ETH_BASE } from "../constants"
 
 import { MapsEnum } from "./maps"
 import parseDefuseAsset from "./parseDefuseAsset"

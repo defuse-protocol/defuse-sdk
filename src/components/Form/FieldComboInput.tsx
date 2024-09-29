@@ -8,8 +8,7 @@ import {
 } from "react-hook-form"
 import clsx from "clsx"
 
-import { BaseTokenInfo } from "src/types/base"
-
+import { BaseTokenInfo } from "../../types/base"
 import AssetsSelect from "../Network/SelectAssets"
 import BlockMultiBalances, {
   BlockMultiBalancesProps,

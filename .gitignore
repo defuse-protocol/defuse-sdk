@@ -25,3 +25,9 @@ coverage/
 # All env files, except .env.example
 .env*
 !.env.example
+
+# Tokens
+.npmrc
+
+# Local build
+*.tgz

@@ -1,7 +1,7 @@
 import { Button, Text } from "@radix-ui/themes"
 import React from "react"
 
-import useShortAccountId from "src/hooks/useShortAccountId"
+import useShortAccountId from "../../hooks/useShortAccountId"
 
 import NetworkIcon from "./NetworkIcon"
 

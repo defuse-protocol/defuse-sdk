@@ -6,7 +6,7 @@ import { CheckedState } from "@radix-ui/react-checkbox"
 import { InfoCircledIcon } from "@radix-ui/react-icons"
 import clsx from "clsx"
 
-import { smallBalanceToFormat } from "src/utils"
+import { smallBalanceToFormat } from "../../utils"
 
 export interface BlockMultiBalancesProps {
   balance?: string | bigint

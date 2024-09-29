@@ -66,5 +66,12 @@
   },
   "engines": {
     "node": ">=20.13.1"
+  },
+  "exports": {
+    ".": {
+      "import": "./dist/index.esm.js",
+      "require": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
   }
 }

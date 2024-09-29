@@ -1,4 +1,4 @@
-import { BaseTokenInfo } from "src/types/base"
+import { BaseTokenInfo } from "../types/base"
 
 export default function isSameToken(
   token: BaseTokenInfo,

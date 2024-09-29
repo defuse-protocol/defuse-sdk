@@ -3,7 +3,7 @@ import {
   EstimateProvider,
   Settings,
   SwapEstimateProviderResponse,
-} from "src/types"
+} from "../types"
 
 import { getSettings, setSettings } from "./settings"
 import { swapEstimateSolver0Provider } from "./solver"

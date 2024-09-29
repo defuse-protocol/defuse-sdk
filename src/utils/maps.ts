@@ -1,4 +1,4 @@
-import { CallRequestIntentProps, INDEXER } from "src/types"
+import { CallRequestIntentProps, INDEXER } from "../types"
 
 import parseDefuseAsset from "./parseDefuseAsset"
 import {

@@ -1,9 +1,11 @@
 # Defuse Protocol SDK
 
-This SDK is designed to assist developers when interacting with the main functions of the protocol. Main functions that can be defined as:
+The Defuse Protocol SDK is a powerful and flexible package designed to facilitate asset swap trading logic in React or Next.js applications. This SDK provides developers with the necessary tools and components to integrate advanced swap functionality into their decentralized applications (dApps).
 
-- Quotation
-- SwapForm
+## Main components that can be defined as:
+
+- DefuseProvider
+- SwapWidget
 
 ## Getting Started
 
@@ -19,82 +21,40 @@ or:
 npm install @defuse-protocol/defuse-sdk
 ```
 
-## Wrap App in Context Provider
-
-```javascript
-import { DefuseProvider } from "@defuse-protocol/defuse-sdk"
-
-function App() {
-  return <DefuseProvider>{/** ... */}</DefuseProvider>
-}
-```
-
 ## Use Defuse SDK
 
-Now that everything is set up, every component and function can use Defuse SDK React Hooks.
+Now that you’ve installed the SDK, you can use it in your application:
 
 ```javascript
-import {
-  useTokensStore,
-  useWalletSelector,
-  useSwap,
-} from "@defuse-protocol/defuse-sdk"
+import { DefuseProvider, SwapWidget } from "@defuse-protocol/defuse-sdk"
 
-export function SwapForm() {
-  const [formData, setFormData] = useState({
-    tokenIn,
-    tokenOut,
-    selectTokenIn,
-    selectTokenOut,
-  })
-  const { data } = useTokensStore((state) => state)
-  const { selector, accountId } = useWalletSelector()
-  const {
-    callRequestCreateIntent,
-    nextEstimateQueueTransactions,
-    getEstimateQueueTransactions,
-    isProcessing,
-    isError,
-  } = useSwap({
-    selector,
-    accountId,
-  })
-
-  const handleChange = (e) => {
-    const { name, value } = e.target
-    setFormData({
-      ...formData,
-      [name]: value,
-    })
-  }
-
-  const handleSubmit = (e) => {
-    e.preventDefault()
-    // Handle form submission logic here
-    console.log("SwapForm Data:", formData)
-  }
-
+export default function MyApp() {
   return (
-    <form onSubmit={handleSubmit}>
-      <div>
-        <label htmlFor="select1">Select 1:</label>
-        <select
-          name="select1"
-          id="select1"
-          value={formData.tokenIn}
-          onChange={handleChange}
-        >
-          <option value="">--Please choose a token--</option>
-          {data.map((token) => (
-            <option key={token.address} value={token.address}>
-              {token.name} ({token.symbol})
-            </option>
-          ))}
-        </select>
-      </div>
-      ...
-      <button type="submit">Submit</button>
-    </form>
+    <div>
+      <DefuseProvider>
+        <h1>Welcome to my app</h1>
+        <SwapWidget
+          theme="dark"
+          tokenList={tokenList}
+          event={eventListener}
+          onSign={signMessage}
+        />
+      </DefuseProvider>
+    </div>
   )
 }
 ```
+
+DefuseProvider is a wrapper that provides the SDK with the necessary context for the components to work. It must be defined at the root of the application.
+
+SwapWidget is the main component of the SDK. It handles the swap interface and logic, providing a complete solution for asset swapping in your application.
+
+The SDK handles complex swap logic, including:
+
+- Token selection and validation
+- Price estimation and evaluation
+- Swap execution
+- Multi-chain support
+- Error handling and user feedback
+
+By leveraging this SDK, developers can quickly implement robust swap functionality in their dApps without having to build the complex logic from scratch.

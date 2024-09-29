@@ -20,7 +20,8 @@
     "lib": ["dom", "dom.iterable", "esnext"],
     "isolatedModules": true,
     "jsx": "react",
-    "incremental": true
+    "incremental": true,
+    "types": ["node"]
   },
   "include": ["src/**/*"]
 }

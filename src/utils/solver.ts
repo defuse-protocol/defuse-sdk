@@ -2,7 +2,7 @@ import axios, { AxiosRequestConfig } from "axios"
 import { v4 } from "uuid"
 import { formatUnits } from "viem"
 
-import { DataEstimateRequest, SwapEstimateProviderResponse } from "src/types"
+import { DataEstimateRequest, SwapEstimateProviderResponse } from "../types"
 
 import { estimateProviders } from "./estimate"
 import { getSettings, setSettings } from "./settings"
