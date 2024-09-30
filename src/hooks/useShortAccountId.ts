@@ -1,8 +1,6 @@
-"use client"
-
 import { useEffect, useState } from "react"
 
-const useShortAccountId = (address: string) => {
+export const useShortAccountId = (address: string) => {
   const [shortAccountId, setShortAccountId] = useState(address)
 
   useEffect(() => {
@@ -19,5 +17,3 @@ const useShortAccountId = (address: string) => {
     shortAccountId,
   }
 }
-
-export default useShortAccountId

@@ -8,7 +8,7 @@ import React, {
 import { Dialog } from "@radix-ui/themes"
 
 import { useModalStore } from "../../providers/ModalStoreProvider"
-import useResize from "../../hooks/useResize"
+import { useResize } from "../../hooks/useResize"
 
 const ModalDialog = ({ children }: PropsWithChildren) => {
   const { onCloseModal } = useModalStore((state) => state)

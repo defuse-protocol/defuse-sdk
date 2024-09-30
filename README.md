@@ -4,7 +4,7 @@ The Defuse Protocol SDK is a powerful and flexible package designed to facilitat
 
 ## Main components that can be defined as:
 
-- DefuseProvider
+- WidgetContextProvider
 - SwapWidget
 
 ## Getting Started
@@ -26,12 +26,13 @@ npm install @defuse-protocol/defuse-sdk
 Now that you’ve installed the SDK, you can use it in your application:
 
 ```javascript
-import { DefuseProvider, SwapWidget } from "@defuse-protocol/defuse-sdk"
+"use client"
+import { SwapWidgetProvider, SwapWidget } from "@defuse-protocol/defuse-sdk"
 
 export default function MyApp() {
   return (
     <div>
-      <DefuseProvider>
+      <SwapWidgetProvider>
         <h1>Welcome to my app</h1>
         <SwapWidget
           theme="dark"
@@ -39,7 +40,7 @@ export default function MyApp() {
           event={eventListener}
           onSign={signMessage}
         />
-      </DefuseProvider>
+      </SwapWidgetProvider>
     </div>
   )
 }

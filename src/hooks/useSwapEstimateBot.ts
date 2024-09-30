@@ -1,5 +1,3 @@
-"use client"
-
 import { useState } from "react"
 
 import {
@@ -7,8 +5,7 @@ import {
   SolverQuoteData,
   SwapEstimateProviderResponse,
 } from "../types"
-import { concurrentEstimateSwap } from "../utils"
-import sortBigIntDesc from "../utils/sortBigIntAsc"
+import { concurrentEstimateSwap, sortBigIntDesc } from "../utils"
 
 const DEFAULT_ESTIMATES_VALUE = {
   allEstimates: null,
@@ -20,7 +17,7 @@ type PriceData = {
   bestEstimate: SolverQuoteData | null
 }
 
-const useSwapEstimateBot = () => {
+export const useSwapEstimateBot = () => {
   const [{ allEstimates, bestEstimate }, setPrices] = useState<{
     allEstimates: SwapEstimateProviderResponse[] | null
     bestEstimate: SolverQuoteData | null
@@ -62,5 +59,3 @@ const useSwapEstimateBot = () => {
     bestEstimate,
   }
 }
-
-export default useSwapEstimateBot

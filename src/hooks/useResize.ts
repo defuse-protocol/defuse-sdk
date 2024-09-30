@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback, MutableRefObject } from "react"
 
-const useResize = (ref: MutableRefObject<HTMLElement | null>) => {
+export const useResize = (ref: MutableRefObject<HTMLElement | null>) => {
   const getDimensions = useCallback(
     () => ({
       width: ref.current?.offsetWidth || 0,
@@ -29,5 +29,3 @@ const useResize = (ref: MutableRefObject<HTMLElement | null>) => {
 
   return dimensions
 }
-
-export default useResize

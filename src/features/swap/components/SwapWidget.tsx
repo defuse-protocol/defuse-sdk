@@ -1,13 +1,9 @@
-"use client"
-
 import React from "react"
+
+import { SwapWidgetProvider } from "src/providers"
 
 import { SwapWidgetProps } from "../../../types"
 
-const SwapWidget = (props: Partial<SwapWidgetProps>) => {
-  console.log("props.theme", props.theme)
-
-  return <div>Test SwapWidget component</div>
+export const SwapWidget = (props: Partial<SwapWidgetProps>) => {
+  return <SwapWidgetProvider>SwapWidget</SwapWidgetProvider>
 }
-
-export default SwapWidget

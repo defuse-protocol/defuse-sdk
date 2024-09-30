@@ -7,7 +7,7 @@ import { NearViewAccount } from "../types"
 const NEAR_NODE_URL =
   process?.env?.nearNodeUrl ?? "https://rpc.testnet.near.org"
 
-export async function storageBalance(contractId: string, accountId: string) {
+export const storageBalance = async (contractId: string, accountId: string) => {
   try {
     setNearProvider(new providers.JsonRpcProvider({ url: NEAR_NODE_URL }))
 
@@ -30,9 +30,9 @@ export async function storageBalance(contractId: string, accountId: string) {
   }
 }
 
-export async function nearAccount(
+export const nearAccount = async (
   accountId: string
-): Promise<NearViewAccount | null> {
+): Promise<NearViewAccount | null> => {
   try {
     setNearProvider(new providers.JsonRpcProvider({ url: NEAR_NODE_URL }))
 
@@ -50,10 +50,10 @@ export async function nearAccount(
   }
 }
 
-export async function nep141Balance(
+export const nep141Balance = async (
   accountId: string,
   contractId: string
-): Promise<string | null> {
+): Promise<string | null> => {
   try {
     setNearProvider(new providers.JsonRpcProvider({ url: NEAR_NODE_URL }))
     const nearProvider = getNearProvider()
@@ -76,10 +76,10 @@ export async function nep141Balance(
   }
 }
 
-export async function intentStatus(
+export const intentStatus = async (
   contractId: string,
   intentId: string
-): Promise<string | null> {
+): Promise<string | null> => {
   try {
     setNearProvider(new providers.JsonRpcProvider({ url: NEAR_NODE_URL }))
 
@@ -102,7 +102,7 @@ export async function intentStatus(
   }
 }
 
-export function isStorageDepositException(contractId: string): boolean {
+export const isStorageDepositException = (contractId: string): boolean => {
   const exceptionKeys = ["aurora"]
   return exceptionKeys.includes(contractId)
 }

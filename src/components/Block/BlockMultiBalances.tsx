@@ -1,5 +1,3 @@
-"use client"
-
 import React from "react"
 import { Checkbox, Text, Tooltip } from "@radix-ui/themes"
 import { CheckedState } from "@radix-ui/react-checkbox"
@@ -15,7 +13,8 @@ export interface BlockMultiBalancesProps {
   handleIncludeNativeToSwap?: (checked: CheckedState) => void
   handleClick?: () => void
 }
-const BlockMultiBalances = ({
+
+export const BlockMultiBalances = ({
   balance,
   withNativeSupport,
   nativeSupportChecked = false,
@@ -72,5 +71,3 @@ const BlockMultiBalances = ({
     </div>
   )
 }
-
-export default BlockMultiBalances

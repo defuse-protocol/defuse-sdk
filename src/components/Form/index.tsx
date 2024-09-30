@@ -1,5 +1,3 @@
-"use client"
-
 import React, {
   PropsWithChildren,
   Children,
@@ -27,7 +25,7 @@ interface Props<T extends FieldValues> extends PropsWithChildren {
   handleSubmit: UseFormHandleSubmit<T> | FormEventHandler<T> | undefined
 }
 
-const Form = <T extends FieldValues>({
+export const Form = <T extends FieldValues>({
   children,
   handleSubmit,
   register,
@@ -57,5 +55,3 @@ const Form = <T extends FieldValues>({
   /* eslint-disable  @typescript-eslint/no-explicit-any */
   return <form onSubmit={handleSubmit as any}>{childrenWithProps}</form>
 }
-
-export default Form

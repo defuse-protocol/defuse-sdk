@@ -10,7 +10,7 @@ import {
   init_env,
 } from "@ref-finance/ref-sdk"
 
-import { DataEstimateRequest } from "../../../types/quoting"
+import { DataEstimateRequest } from "../types/quoting"
 
 const environment =
   process?.env?.environment === "production" ? "mainnet" : "testnet"

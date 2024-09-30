@@ -19,7 +19,7 @@ import {
 
 import { MapCreateIntentProps } from "./maps"
 import { swapSchema } from "./schema"
-import parseDefuseAsset from "./parseDefuseAsset"
+import { parseDefuseAsset } from "./parseDefuseAsset"
 import {
   msgSchemaCreateIntent1CrossChain,
   msgSchemaCreateIntent1SingleChain,

@@ -5,8 +5,7 @@ import clsx from "clsx"
 import { BaseTokenInfo } from "../../types/base"
 import { balanceToCurrency, balanceToDecimal } from "../../utils/balanceTo"
 import { TokenListWithNotSelectableToken } from "../Modal/ModalSelectAssets"
-
-import AssetComboIcon from "./AssetComboIcon"
+import { AssetComboIcon } from "../Asset/AssetComboIcon"
 
 type Props = {
   title?: string

@@ -6,7 +6,7 @@ import { BaseTokenInfo } from "../../types/base"
 import { balanceToCurrency, balanceToDecimal } from "../../utils/balanceTo"
 import { TokenListWithNotSelectableToken } from "../Modal/ModalSelectAssets"
 
-import AssetComboIcon from "./AssetComboIcon"
+import { AssetComboIcon } from "./AssetComboIcon"
 
 type Props = {
   title?: string
@@ -42,7 +42,7 @@ const EmptyAssetList = ({ className }: Pick<Props, "className">) => {
   )
 }
 
-const AssetList = ({
+export const AssetList = ({
   title,
   assets,
   emptyState,
@@ -121,5 +121,3 @@ const AssetList = ({
     </div>
   )
 }
-
-export default AssetList

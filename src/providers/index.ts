@@ -1,1 +1,2 @@
-export { default as DefuseProvider } from "./DefuseProvider"
+export { SwapWidgetProvider } from "./SwapWidgetProvider"
+export { ModalStoreProvider } from "./ModalStoreProvider"

@@ -3,7 +3,7 @@ import { CaretDownIcon } from "@radix-ui/react-icons"
 
 import { BaseTokenInfo } from "../types/base"
 
-import AssetComboIcon from "./Asset/AssetComboIcon"
+import { AssetComboIcon } from "./Asset/AssetComboIcon"
 
 type Props = {
   selected?: BaseTokenInfo
@@ -16,7 +16,7 @@ const EmptyIcon = () => {
   )
 }
 
-const SelectAssets = ({ selected, handleSelect }: Props) => {
+export const SelectAssets = ({ selected, handleSelect }: Props) => {
   const handleAssetsSelect = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault()
     handleSelect && handleSelect()
@@ -43,5 +43,3 @@ const SelectAssets = ({ selected, handleSelect }: Props) => {
     </button>
   )
 }
-
-export default SelectAssets

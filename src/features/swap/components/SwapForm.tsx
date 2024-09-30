@@ -1,18 +1,18 @@
-"use client"
 import React, { useCallback, useEffect, useRef, useState } from "react"
 import { FieldValues, useForm } from "react-hook-form"
 import { parseUnits } from "ethers"
-import { v4 } from "uuid"
+
+import { ButtonCustom } from "src/components/Button/ButtonCustom"
 
 import { useCalculateTokenToUsd } from "../../../hooks/useCalculateTokenToUsd"
 import { BaseTokenInfo } from "../../../types/base"
 import { useTokensStore } from "../../../providers/TokensStoreProvider"
 import { useModalStore } from "../../../providers/ModalStoreProvider"
-import useSwapEstimateBot from "../../../hooks/useSwapEstimateBot"
+import { useSwapEstimateBot } from "../../../hooks/useSwapEstimateBot"
 import { EvaluateResultEnum, ModalConfirmSwapPayload } from "../../../types"
 import { useModalSearchParams } from "../../../hooks/useModalSearchParams"
-import isWalletConnected from "../../../utils/isWalletConnected"
-import isForeignChainSwap from "../../../utils/isForeignChainSwap"
+import { isWalletConnected } from "../../../utils/isWalletConnected"
+import { isForeignChainSwap } from "../../../utils/isForeignChainSwap"
 import { ModalType } from "../../../stores/modalStore"
 import { debouncePromise } from "../../../utils/debouncePromise"
 import {
@@ -26,13 +26,12 @@ import {
   TokenListWithNotSelectableToken,
 } from "../../../components/Modal/ModalSelectAssets"
 import { tieNativeToWrapToken } from "../../../utils/tokenList"
-import isSameToken from "../../../utils/isSameToken"
-import Form from "../../../components/Form"
-import FieldComboInput from "../../../components/Form/FieldComboInput"
-import ButtonSwitch from "../../../components/Button/ButtonSwitch"
-import BlockEvaluatePrice from "../../../components/Block/BlockEvaluatePrice"
-import WarnBox from "../../../components/WarnBox"
-import Button from "../../../components/Button/Button"
+import { isSameToken } from "../../../utils/isSameToken"
+import { Form } from "../../../components/Form"
+import { FieldComboInput } from "../../../components/Form/FieldComboInput"
+import { ButtonSwitch } from "../../../components/Button/ButtonSwitch"
+import { BlockEvaluatePrice } from "../../../components/Block/BlockEvaluatePrice"
+import { WarnBox } from "../../../components/WarnBox"
 
 type FormValues = {
   tokenIn: string
@@ -56,7 +55,7 @@ enum ErrorEnum {
 
 const ESTIMATE_BOT_AWAIT_MS = 500
 
-export default function SwapForm() {
+export const SwapForm = () => {
   const [selectTokenIn, setSelectTokenIn] = useState<SelectToken>()
   const [selectTokenOut, setSelectTokenOut] = useState<SelectToken>()
   const [errorSelectTokenIn, setErrorSelectTokenIn] = useState("")
@@ -493,7 +492,7 @@ export default function SwapForm() {
             }}
           />
         )}
-      <Button
+      <ButtonCustom
         type="submit"
         size="lg"
         fullWidth
@@ -501,7 +500,7 @@ export default function SwapForm() {
         disabled={Boolean(errorMsg)}
       >
         {isFetchingData ? "" : errorMsg ? errorMsg : "Swap"}
-      </Button>
+      </ButtonCustom>
     </Form>
   )
 }

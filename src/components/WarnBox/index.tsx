@@ -11,7 +11,7 @@ type WarnBoxProps = {
   setValue: (value: string) => void
 }
 
-const WarnBox = ({
+export const WarnBox = ({
   allowableNearAmount,
   balance,
   decimals,
@@ -54,5 +54,3 @@ const WarnBox = ({
     </div>
   )
 }
-
-export default WarnBox

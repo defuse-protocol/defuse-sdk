@@ -2,7 +2,7 @@ import { Text } from "@radix-ui/themes"
 import React from "react"
 import clsx from "clsx"
 
-import NetworkIcon from "./NetworkIcon"
+import { NetworkIcon } from "./NetworkIcon"
 
 type Props = {
   chainIcon: string
@@ -11,7 +11,8 @@ type Props = {
   onChange: (value: string) => void
   onBlur: (value: string) => void
 }
-const Network = ({
+
+export const Network = ({
   chainIcon,
   chainName,
   account,
@@ -45,5 +46,3 @@ const Network = ({
     </div>
   )
 }
-
-export default Network
