@@ -3,4 +3,4 @@ const config = {
   rules: { "body-max-line-length": [0] },
 }
 
-export default config
+module.exports = config

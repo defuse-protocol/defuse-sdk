@@ -1,4 +1,4 @@
-module.exports = {
+const config = {
   branches: ["main"],
   plugins: [
     "@semantic-release/commit-analyzer",
@@ -16,3 +16,5 @@ module.exports = {
     ],
   ],
 }
+
+module.exports = config
