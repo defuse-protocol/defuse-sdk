@@ -27,11 +27,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version-file: package.json
-      - name: Create .npmrc if not exists
-        run: |
-          if [ ! -f .npmrc ]; then
-            touch .npmrc
-          fi
       - name: Setup NPM token
         run: echo "//npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}" >> .npmrc
       - name: Install
