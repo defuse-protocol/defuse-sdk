@@ -26,8 +26,5 @@ coverage/
 .env*
 !.env.example
 
-# Tokens
-.npmrc
-
 # Local build
 *.tgz
