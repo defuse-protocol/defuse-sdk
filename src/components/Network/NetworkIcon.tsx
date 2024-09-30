@@ -1,7 +1,7 @@
 import React from "react"
 import clsx from "clsx"
 
-const NetworkIcon = ({
+export const NetworkIcon = ({
   chainIcon,
   chainName,
   isConnect,
@@ -38,5 +38,3 @@ const NetworkIcon = ({
     </div>
   )
 }
-
-export default NetworkIcon

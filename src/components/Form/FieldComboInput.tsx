@@ -8,12 +8,12 @@ import {
 } from "react-hook-form"
 import clsx from "clsx"
 
-import { BaseTokenInfo } from "src/types/base"
-
-import AssetsSelect from "../Network/SelectAssets"
-import BlockMultiBalances, {
+import { BaseTokenInfo } from "../../types/base"
+import {
+  BlockMultiBalances,
   BlockMultiBalancesProps,
 } from "../Block/BlockMultiBalances"
+import { SelectAssets } from "../SelectAssets"
 
 interface Props<T extends FieldValues> {
   fieldName: Path<T>
@@ -34,7 +34,7 @@ interface Props<T extends FieldValues> {
 
 export const FieldComboInputRegistryName = "FieldComboInput"
 
-const FieldComboInput = <T extends FieldValues>({
+export const FieldComboInput = <T extends FieldValues>({
   fieldName,
   register,
   required,
@@ -138,7 +138,7 @@ const FieldComboInput = <T extends FieldValues>({
         </span>
       ) : null}
       <div className="flex justify-end items-center">
-        <AssetsSelect selected={selected} handleSelect={handleSelect} />
+        <SelectAssets selected={selected} handleSelect={handleSelect} />
       </div>
       {Number(balance) > 0 && !errorSelect && (
         <BlockMultiBalances
@@ -161,5 +161,3 @@ const FieldComboInput = <T extends FieldValues>({
 }
 
 FieldComboInput.displayName = FieldComboInputRegistryName
-
-export default FieldComboInput

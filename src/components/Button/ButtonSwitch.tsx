@@ -2,14 +2,14 @@ import React from "react"
 import clsx from "clsx"
 import { ArrowDownIcon } from "@radix-ui/react-icons"
 
-import ButtonIcon from "./ButtonIcon"
+import { ButtonIcon } from "./ButtonIcon"
 
 type Props = {
   onClick?: (e: React.MouseEvent<HTMLButtonElement>) => void
   className?: string
 }
 
-const ButtonSwitch = ({ onClick, className = "" }: Props) => {
+export const ButtonSwitch = ({ onClick, className = "" }: Props) => {
   return (
     <div className="absolute top-[50%] left-[50%] -translate-x-2/4 -translate-y-2/4 z-10">
       <ButtonIcon
@@ -24,5 +24,3 @@ const ButtonSwitch = ({ onClick, className = "" }: Props) => {
     </div>
   )
 }
-
-export default ButtonSwitch

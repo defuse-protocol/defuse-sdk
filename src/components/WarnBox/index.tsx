@@ -1,8 +1,8 @@
 import React from "react"
 import { Text } from "@radix-ui/themes"
 
-import { smallBalanceToFormat } from "src/utils"
-import { balanceToDecimal } from "src/utils/balanceTo"
+import { smallBalanceToFormat } from "../../utils"
+import { balanceToDecimal } from "../../utils/balanceTo"
 
 type WarnBoxProps = {
   allowableNearAmount: string | null
@@ -11,7 +11,7 @@ type WarnBoxProps = {
   setValue: (value: string) => void
 }
 
-const WarnBox = ({
+export const WarnBox = ({
   allowableNearAmount,
   balance,
   decimals,
@@ -54,5 +54,3 @@ const WarnBox = ({
     </div>
   )
 }
-
-export default WarnBox

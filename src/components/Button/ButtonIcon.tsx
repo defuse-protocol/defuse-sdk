@@ -9,7 +9,7 @@ interface Props extends PropsWithChildren {
   iconHeight?: number
 }
 
-const ButtonIcon = ({
+export const ButtonIcon = ({
   onClick,
   icon,
   className = "",
@@ -38,5 +38,3 @@ const ButtonIcon = ({
     </button>
   )
 }
-
-export default ButtonIcon

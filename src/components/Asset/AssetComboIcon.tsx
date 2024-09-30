@@ -1,8 +1,8 @@
 import React from "react"
 
-import { BaseTokenInfo } from "src/types/base"
+import { BaseTokenInfo } from "../../types/base"
 
-const AssetComboIcon = ({
+export const AssetComboIcon = ({
   icon,
   name,
   chainIcon,
@@ -27,5 +27,3 @@ const AssetComboIcon = ({
     </div>
   )
 }
-
-export default AssetComboIcon

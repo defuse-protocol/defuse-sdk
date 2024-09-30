@@ -1,35 +1,37 @@
-"use client"
 import React, { useCallback, useEffect, useRef, useState } from "react"
 import { FieldValues, useForm } from "react-hook-form"
 import { parseUnits } from "ethers"
-import { v4 } from "uuid"
 
-import { BaseTokenInfo } from "src/types/base"
-import { useCalculateTokenToUsd } from "src/hooks/useCalculateTokenToUsd"
-import { useTokensStore } from "src/providers/TokensStoreProvider"
-import { useModalStore } from "src/providers/ModalStoreProvider"
-import useSwapEstimateBot from "src/hooks/useSwapEstimateBot"
-import { EvaluateResultEnum, ModalConfirmSwapPayload } from "src/types"
-import { useModalSearchParams } from "src/hooks/useModalSearchParams"
-import isWalletConnected from "src/utils/isWalletConnected"
-import isForeignChainSwap from "src/utils/isForeignChainSwap"
-import { ModalType } from "src/stores/modalStore"
-import { debouncePromise } from "src/utils/debouncePromise"
-import { balanceToBignumberString, balanceToDecimal } from "src/utils/balanceTo"
-import { getEvaluateSwapEstimate } from "src/utils/evaluateSwap"
-import { CONFIRM_SWAP_LOCAL_KEY, NEAR_TOKEN_META } from "src/constants"
+import { ButtonCustom } from "src/components/Button/ButtonCustom"
+
+import { useCalculateTokenToUsd } from "../../../hooks/useCalculateTokenToUsd"
+import { BaseTokenInfo } from "../../../types/base"
+import { useTokensStore } from "../../../providers/TokensStoreProvider"
+import { useModalStore } from "../../../providers/ModalStoreProvider"
+import { useSwapEstimateBot } from "../../../hooks/useSwapEstimateBot"
+import { EvaluateResultEnum, ModalConfirmSwapPayload } from "../../../types"
+import { useModalSearchParams } from "../../../hooks/useModalSearchParams"
+import { isWalletConnected } from "../../../utils/isWalletConnected"
+import { isForeignChainSwap } from "../../../utils/isForeignChainSwap"
+import { ModalType } from "../../../stores/modalStore"
+import { debouncePromise } from "../../../utils/debouncePromise"
+import {
+  balanceToBignumberString,
+  balanceToDecimal,
+} from "../../../utils/balanceTo"
+import { getEvaluateSwapEstimate } from "../../../utils/evaluateSwap"
+import { CONFIRM_SWAP_LOCAL_KEY, NEAR_TOKEN_META } from "../../../constants"
 import {
   ModalSelectAssetsPayload,
   TokenListWithNotSelectableToken,
-} from "src/components/Modal/ModalSelectAssets"
-import { tieNativeToWrapToken } from "src/utils/tokenList"
-import isSameToken from "src/utils/isSameToken"
-import Form from "src/components/Form"
-import FieldComboInput from "src/components/Form/FieldComboInput"
-import ButtonSwitch from "src/components/Button/ButtonSwitch"
-import BlockEvaluatePrice from "src/components/Block/BlockEvaluatePrice"
-import WarnBox from "src/components/WarnBox"
-import Button from "src/components/Button/Button"
+} from "../../../components/Modal/ModalSelectAssets"
+import { tieNativeToWrapToken } from "../../../utils/tokenList"
+import { isSameToken } from "../../../utils/isSameToken"
+import { Form } from "../../../components/Form"
+import { FieldComboInput } from "../../../components/Form/FieldComboInput"
+import { ButtonSwitch } from "../../../components/Button/ButtonSwitch"
+import { BlockEvaluatePrice } from "../../../components/Block/BlockEvaluatePrice"
+import { WarnBox } from "../../../components/WarnBox"
 
 type FormValues = {
   tokenIn: string
@@ -53,7 +55,7 @@ enum ErrorEnum {
 
 const ESTIMATE_BOT_AWAIT_MS = 500
 
-export default function SwapForm() {
+export const SwapForm = () => {
   const [selectTokenIn, setSelectTokenIn] = useState<SelectToken>()
   const [selectTokenOut, setSelectTokenOut] = useState<SelectToken>()
   const [errorSelectTokenIn, setErrorSelectTokenIn] = useState("")
@@ -490,7 +492,7 @@ export default function SwapForm() {
             }}
           />
         )}
-      <Button
+      <ButtonCustom
         type="submit"
         size="lg"
         fullWidth
@@ -498,7 +500,7 @@ export default function SwapForm() {
         disabled={Boolean(errorMsg)}
       >
         {isFetchingData ? "" : errorMsg ? errorMsg : "Swap"}
-      </Button>
+      </ButtonCustom>
     </Form>
   )
 }

@@ -1,18 +1,16 @@
-"use client"
-
 import React from "react"
 import { InfoCircledIcon } from "@radix-ui/react-icons"
 import { Tooltip } from "@radix-ui/themes"
 import clsx from "clsx"
 
-import { EvaluateResultEnum, SwapEstimateProviderResponse } from "src/types"
-import { BaseTokenInfo } from "src/types/base"
-import { tokenBalanceToFormatUnits } from "src/utils"
+import { EvaluateResultEnum, SwapEstimateProviderResponse } from "../../types"
+import { BaseTokenInfo } from "../../types/base"
+import { tokenBalanceToFormatUnits } from "../../utils"
 
 const BEST_PRICE = "best price"
 const LOW_PRICE = "low price"
 
-const BlockEvaluatePrice = ({
+export const BlockEvaluatePrice = ({
   priceEvaluation,
   priceResults,
   tokenOut,
@@ -61,5 +59,3 @@ const BlockEvaluatePrice = ({
     </span>
   )
 }
-
-export default BlockEvaluatePrice

@@ -1,9 +1,9 @@
-import { CONNECTOR_BTC_MAINNET, CONNECTOR_ETH_BASE } from "src/constants"
+import { CONNECTOR_BTC_MAINNET, CONNECTOR_ETH_BASE } from "../constants"
 
 import { MapsEnum } from "./maps"
-import parseDefuseAsset from "./parseDefuseAsset"
+import { parseDefuseAsset } from "./parseDefuseAsset"
 
-export default function isWalletConnected(id: string): string {
+export const isWalletConnected = (id: string): string => {
   const to = parseDefuseAsset(id)
   const toNetworkId = `${to?.blockchain}:${to?.network}` as MapsEnum
   const noAccountId = ""

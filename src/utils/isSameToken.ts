@@ -1,8 +1,8 @@
-import { BaseTokenInfo } from "src/types/base"
+import { BaseTokenInfo } from "../types/base"
 
-export default function isSameToken(
+export const isSameToken = (
   token: BaseTokenInfo,
   checkToken: BaseTokenInfo
-): boolean {
+): boolean => {
   return token.defuseAssetId === checkToken?.defuseAssetId
 }

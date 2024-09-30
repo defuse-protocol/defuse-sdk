@@ -1,12 +1,10 @@
-"use client"
-
 import React from "react"
 import { Checkbox, Text, Tooltip } from "@radix-ui/themes"
 import { CheckedState } from "@radix-ui/react-checkbox"
 import { InfoCircledIcon } from "@radix-ui/react-icons"
 import clsx from "clsx"
 
-import { smallBalanceToFormat } from "src/utils"
+import { smallBalanceToFormat } from "../../utils"
 
 export interface BlockMultiBalancesProps {
   balance?: string | bigint
@@ -15,7 +13,8 @@ export interface BlockMultiBalancesProps {
   handleIncludeNativeToSwap?: (checked: CheckedState) => void
   handleClick?: () => void
 }
-const BlockMultiBalances = ({
+
+export const BlockMultiBalances = ({
   balance,
   withNativeSupport,
   nativeSupportChecked = false,
@@ -72,5 +71,3 @@ const BlockMultiBalances = ({
     </div>
   )
 }
-
-export default BlockMultiBalances

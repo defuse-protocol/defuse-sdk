@@ -2,12 +2,10 @@ import React, { ReactNode } from "react"
 import { Text } from "@radix-ui/themes"
 import clsx from "clsx"
 
-import { BaseTokenInfo } from "src/types/base"
-import { balanceToCurrency, balanceToDecimal } from "src/utils/balanceTo"
-
+import { BaseTokenInfo } from "../../types/base"
+import { balanceToCurrency, balanceToDecimal } from "../../utils/balanceTo"
 import { TokenListWithNotSelectableToken } from "../Modal/ModalSelectAssets"
-
-import AssetComboIcon from "./AssetComboIcon"
+import { AssetComboIcon } from "../Asset/AssetComboIcon"
 
 type Props = {
   title?: string

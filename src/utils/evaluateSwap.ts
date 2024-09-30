@@ -1,10 +1,10 @@
 import { formatUnits } from "ethers"
 
-import { NEAR_TOKEN_META, W_NEAR_TOKEN_META } from "src/constants"
-import { swapEstimateRefFinanceProvider } from "src/features/quoting/utils/refFinanceProvider"
-import { BaseTokenInfo } from "src/types/base"
+import { NEAR_TOKEN_META, W_NEAR_TOKEN_META } from "../constants"
+import { BaseTokenInfo } from "../types/base"
 
-import parseDefuseAsset from "./parseDefuseAsset"
+import { swapEstimateRefFinanceProvider } from "./refFinanceProvider"
+import { parseDefuseAsset } from "./parseDefuseAsset"
 
 export enum EvaluateResultEnum {
   BEST,

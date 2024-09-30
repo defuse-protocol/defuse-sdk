@@ -1,4 +1,4 @@
-import { Settings } from "src/types"
+import { Settings } from "../types"
 
 let settings: Settings = {
   providerIds: [],

@@ -1,23 +1,9 @@
-"use client"
-
 import React from "react"
-import { useActor } from "@xstate/react"
-import { createActor } from "xstate"
 
-import { SwapMessageParams, SwapWidgetProps } from "src/types"
-import RootStoreProvider from "src/providers/DefuseProvider"
+import { SwapWidgetProvider } from "src/providers"
 
-import SwapForm from "./SwapForm"
+import { SwapWidgetProps } from "../../../types"
 
-const SwapWidget = ({ theme, tokenList, onSign, event }: SwapWidgetProps) => {
-  // TODO Coonect to swapm machine package
-  // const [state, send] = useActor(createActor(swapMachine))
-
-  return (
-    <RootStoreProvider>
-      <SwapForm />
-    </RootStoreProvider>
-  )
+export const SwapWidget = (props: Partial<SwapWidgetProps>) => {
+  return <SwapWidgetProvider>SwapWidget</SwapWidgetProvider>
 }
-
-export default SwapWidget

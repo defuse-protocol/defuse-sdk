@@ -6,9 +6,9 @@ import { useModalStore } from "../../providers/ModalStoreProvider"
 
 import { ModalType } from "../../stores/modalStore"
 
-import ModalSelectAssets from "./ModalSelectAssets"
+import { ModalSelectAssets } from "./ModalSelectAssets"
 
-const Modal = () => {
+export const Modal = () => {
   const { modalType } = useModalStore((state) => state)
 
   switch (modalType) {
@@ -20,5 +20,3 @@ const Modal = () => {
     //   return <ModalConfirmSwap />
   }
 }
-
-export default Modal

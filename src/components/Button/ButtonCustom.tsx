@@ -12,7 +12,7 @@ interface Props<T extends FieldValues>
   isLoading?: boolean
 }
 
-const CustomButton = <T extends FieldValues>({
+export const ButtonCustom = <T extends FieldValues>({
   children,
   variant = "primary",
   size = "base",
@@ -79,5 +79,3 @@ const CustomButton = <T extends FieldValues>({
     </Button>
   )
 }
-
-export default CustomButton

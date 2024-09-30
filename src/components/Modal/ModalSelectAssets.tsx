@@ -1,10 +1,9 @@
 import React, { useState, useDeferredValue, useEffect } from "react"
 import { Text } from "@radix-ui/themes"
 
-import { BaseTokenInfo } from "src/types/base"
-
-import SearchBar from "../SearchBar"
-import AssetList from "../Asset/AssetList"
+import { BaseTokenInfo } from "../../types/base"
+import { SearchBar } from "../SearchBar"
+import { AssetList } from "../Asset/AssetList"
 import { useModalStore } from "../../providers/ModalStoreProvider"
 import { useTokensStore } from "../../providers/TokensStoreProvider"
 import { ModalType } from "../../stores/modalStore"
@@ -23,7 +22,7 @@ export interface TokenListWithNotSelectableToken
   isNotSelectable?: boolean
 }
 
-const ModalSelectAssets = () => {
+export const ModalSelectAssets = () => {
   const [searchValue, setSearchValue] = useState("")
   const [assetList, setAssetList] = useState<NetworkTokenWithSwapRoute[]>([])
   const [assetListWithBalances, setAssetListWithBalances] = useState<
@@ -133,5 +132,3 @@ const ModalSelectAssets = () => {
     </ModalDialog>
   )
 }
-
-export default ModalSelectAssets

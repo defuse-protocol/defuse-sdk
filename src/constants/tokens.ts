@@ -1,5 +1,5 @@
-import { INDEXER } from "src/types"
-import { BaseTokenInfo } from "src/types/base"
+import { INDEXER } from "../types"
+import { BaseTokenInfo } from "../types/base"
 
 const environment = process.env.ENVIRONMENT || "production"
 

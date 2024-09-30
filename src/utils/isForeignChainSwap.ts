@@ -1,9 +1,9 @@
-import parseDefuseAsset from "./parseDefuseAsset"
+import { parseDefuseAsset } from "./parseDefuseAsset"
 
-export default function isForeignChainSwap(
+export const isForeignChainSwap = (
   defuseTokenIdIn: string,
   defuseTokenIdOut: string
-) {
+) => {
   return (
     parseDefuseAsset(defuseTokenIdIn)?.blockchain !== "near" ||
     parseDefuseAsset(defuseTokenIdOut)?.blockchain !== "near"

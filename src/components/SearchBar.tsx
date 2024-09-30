@@ -8,7 +8,7 @@ type Props = {
   handleOverrideCancel?: () => void
 }
 
-const SearchBar = ({
+export const SearchBar = ({
   query,
   setQuery,
   handleOverrideCancel,
@@ -33,5 +33,3 @@ const SearchBar = ({
     </div>
   )
 }
-
-export default SearchBar

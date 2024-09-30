@@ -4,9 +4,9 @@ export type ParseDefuseAssetResult = {
   contractId: string
 } | null
 
-export default function parseDefuseAsset(
+export const parseDefuseAsset = (
   defuseAssetId: string
-): ParseDefuseAssetResult {
+): ParseDefuseAssetResult => {
   try {
     const [blockchain, network, contractId] = defuseAssetId.split(":")
     return {

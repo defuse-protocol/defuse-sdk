@@ -1,9 +1,7 @@
-"use client"
-
 import { useEffect } from "react"
 
-import { useModalStore } from "src/providers/ModalStoreProvider"
-import { ModalType } from "src/stores/modalStore"
+import { useModalStore } from "../providers/ModalStoreProvider"
+import { ModalType } from "../stores/modalStore"
 
 export const useModalSearchParams = () => {
   const { setModalType } = useModalStore((state) => state)

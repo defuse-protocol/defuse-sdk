@@ -159,11 +159,6 @@ export interface NearIntentCreate {
   }
 }
 
-enum Status {
-  "Available",
-  "available",
-}
-
 export interface NearIntent1CreateCrossChain {
   type: "create"
   id: string

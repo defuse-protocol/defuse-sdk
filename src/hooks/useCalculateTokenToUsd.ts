@@ -1,6 +1,6 @@
 import { useState } from "react"
 
-import { BaseTokenInfo } from "src/types/base"
+import { BaseTokenInfo } from "../types/base"
 
 export const useCalculateTokenToUsd = () => {
   const [priceToUsd, setPriceToUsd] = useState("0")

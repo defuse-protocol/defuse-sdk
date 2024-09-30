@@ -1,4 +1,4 @@
-export default function sortBigIntDesc(a: string, b: string) {
+export const sortBigIntAsc = (a: string, b: string) => {
   const left = BigInt(a)
   const right = BigInt(b)
   if (left < right) {

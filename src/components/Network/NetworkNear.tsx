@@ -1,11 +1,11 @@
 import { Button, Text } from "@radix-ui/themes"
 import React from "react"
 
-import useShortAccountId from "src/hooks/useShortAccountId"
+import { useShortAccountId } from "../../hooks/useShortAccountId"
 
-import NetworkIcon from "./NetworkIcon"
+import { NetworkIcon } from "./NetworkIcon"
 
-const NetworkNear = ({
+export const NetworkNear = ({
   chainIcon,
   chainName,
   account,
@@ -75,5 +75,3 @@ const NetworkNear = ({
     </div>
   )
 }
-
-export default NetworkNear
