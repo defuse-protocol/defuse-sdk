@@ -4,15 +4,12 @@ import { dts } from "rollup-plugin-dts"
 import { babel } from "@rollup/plugin-babel"
 import commonjs from "@rollup/plugin-commonjs"
 import json from "@rollup/plugin-json"
+import inject from "@rollup/plugin-inject"
 
 const config = [
   {
     input: "src/index.ts",
     output: [
-      {
-        file: "dist/index.js",
-        format: "cjs",
-      },
       {
         file: "dist/index.esm.js",
         format: "es",
@@ -23,8 +20,12 @@ const config = [
         tsconfig: "./tsconfig.json",
         declaration: false,
         declarationMap: false,
+        outputToFilesystem: true,
       }),
-      nodeResolve(),
+      nodeResolve({
+        browser: true,
+        preferBuiltins: true,
+      }),
       commonjs(),
       babel({
         presets: ["@babel/preset-react"],
@@ -32,6 +33,9 @@ const config = [
         babelHelpers: "bundled",
       }),
       json(),
+      inject({
+        this: "window",
+      }),
     ],
     external: ["react", "react-dom", "react/jsx-runtime"],
   },

@@ -9,7 +9,9 @@ const NEAR_NODE_URL =
 
 export const storageBalance = async (contractId: string, accountId: string) => {
   try {
-    setNearProvider(new providers.JsonRpcProvider({ url: NEAR_NODE_URL }))
+    setNearProvider(
+      new providers.JsonRpcProvider({ url: NEAR_NODE_URL }) as any // eslint-disable-line
+    )
 
     const nearProvider = getNearProvider()
     const result = await nearProvider.query<CodeResult>({
@@ -34,7 +36,9 @@ export const nearAccount = async (
   accountId: string
 ): Promise<NearViewAccount | null> => {
   try {
-    setNearProvider(new providers.JsonRpcProvider({ url: NEAR_NODE_URL }))
+    setNearProvider(
+      new providers.JsonRpcProvider({ url: NEAR_NODE_URL }) as any // eslint-disable-line
+    )
 
     const nearProvider = getNearProvider()
     const result = await nearProvider.query({
@@ -55,7 +59,9 @@ export const nep141Balance = async (
   contractId: string
 ): Promise<string | null> => {
   try {
-    setNearProvider(new providers.JsonRpcProvider({ url: NEAR_NODE_URL }))
+    setNearProvider(
+      new providers.JsonRpcProvider({ url: NEAR_NODE_URL }) as any // eslint-disable-line
+    )
     const nearProvider = getNearProvider()
     const storageBalance = await nearProvider.query<CodeResult>({
       request_type: "call_function",
@@ -81,7 +87,9 @@ export const intentStatus = async (
   intentId: string
 ): Promise<string | null> => {
   try {
-    setNearProvider(new providers.JsonRpcProvider({ url: NEAR_NODE_URL }))
+    setNearProvider(
+      new providers.JsonRpcProvider({ url: NEAR_NODE_URL }) as any // eslint-disable-line
+    )
 
     const nearProvider = getNearProvider()
     const result = await nearProvider.query<CodeResult>({

@@ -5,7 +5,9 @@ import { Modal } from "../components/Modal"
 import { ModalStoreProvider } from "./ModalStoreProvider"
 import { TokensStoreProvider } from "./TokensStoreProvider"
 
-export const SwapWidgetProvider = ({ children }: PropsWithChildren) => {
+export const SwapWidgetProvider: React.FC<PropsWithChildren> = ({
+  children,
+}) => {
   return (
     <ModalStoreProvider>
       <TokensStoreProvider>

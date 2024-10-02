@@ -16,9 +16,9 @@ export type SwapEvent = {
 }
 
 export type SwapWidgetProps = {
-  theme: "dark" | "light"
+  theme?: "dark" | "light"
   tokenList: BaseTokenInfo[]
-  event: SwapEvent
+  onEmit?: (event: SwapEvent) => void
   onSign: (params: SwapMessageParams) => Promise<{ signature: string }>
 }
 
