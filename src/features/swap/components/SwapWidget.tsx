@@ -1,10 +1,9 @@
 import React from "react"
 
-import { SwapWidgetProvider } from "src/providers"
-import { useModalStore } from "src/providers/ModalStoreProvider"
-import { ModalType } from "src/stores/modalStore"
-import { BaseTokenInfo } from "src/types/base"
-
+import { SwapWidgetProvider } from "../../../providers"
+import { useModalStore } from "../../../providers/ModalStoreProvider"
+import { ModalType } from "../../../stores/modalStore"
+import { BaseTokenInfo } from "../../../types/base"
 import { SwapWidgetProps } from "../../../types"
 
 import { OnSubmitValues, SwapForm } from "./SwapForm"
