@@ -3,12 +3,12 @@ import { useForm } from "react-hook-form"
 import { quoteMachine } from "@defuse-protocol/swap-facade"
 import { createActor } from "xstate"
 
-import { ButtonCustom, ButtonSwitch } from "src/components/Button"
-import { Form } from "src/components/Form"
-import { FieldComboInput } from "src/components/Form/FieldComboInput"
-import { WarnBox } from "src/components/WarnBox"
-import { NEAR_TOKEN_META } from "src/constants"
-import { BaseTokenInfo } from "src/types/base"
+import { ButtonCustom, ButtonSwitch } from "../../../components/Button"
+import { Form } from "../../../components/Form"
+import { FieldComboInput } from "../../../components/Form/FieldComboInput"
+import { WarnBox } from "../../../components/WarnBox"
+import { NEAR_TOKEN_META } from "../../../constants"
+import { BaseTokenInfo } from "../../../types/base"
 
 type SwapFormValues = {
   amountIn: string // tokenIn

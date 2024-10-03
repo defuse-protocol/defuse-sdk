@@ -4,8 +4,11 @@ import { setNearProvider, getNearProvider } from "@near-eth/client"
 
 import { NearViewAccount } from "../types"
 
-const NEAR_NODE_URL =
-  process?.env?.nearNodeUrl ?? "https://rpc.testnet.near.org"
+// Accessing ENV in the browser is not recommended.
+// Instead, it is better to explicitly pass values to functions.
+// For now help bundler to tree-shake the constant.
+const NEAR_NODE_URL = /*@__PURE__*/ (() =>
+  process?.env?.nearNodeUrl ?? "https://rpc.testnet.near.org")()
 
 export const storageBalance = async (contractId: string, accountId: string) => {
   try {

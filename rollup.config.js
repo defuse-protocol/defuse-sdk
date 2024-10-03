@@ -1,10 +1,8 @@
 import typescript from "@rollup/plugin-typescript"
-import { nodeResolve } from "@rollup/plugin-node-resolve"
 import { dts } from "rollup-plugin-dts"
-import { babel } from "@rollup/plugin-babel"
-import commonjs from "@rollup/plugin-commonjs"
 import json from "@rollup/plugin-json"
-import inject from "@rollup/plugin-inject"
+
+import packageJson from "./package.json" assert { type: "json" }
 
 const config = [
   {
@@ -22,22 +20,14 @@ const config = [
         declarationMap: false,
         outputToFilesystem: true,
       }),
-      nodeResolve({
-        browser: true,
-        preferBuiltins: true,
-      }),
-      commonjs(),
-      babel({
-        presets: ["@babel/preset-react"],
-        plugins: ["@babel/plugin-transform-react-jsx"],
-        babelHelpers: "bundled",
-      }),
       json(),
-      inject({
-        this: "window",
-      }),
     ],
-    external: ["react", "react-dom", "react/jsx-runtime"],
+    external: [
+      ...Object.keys(packageJson.dependencies),
+      // Subfolders are not excluded by default
+      "zustand/vanilla",
+      "react/jsx-runtime", // Implicitly required by React JSX transform
+    ],
   },
   {
     input: "src/index.ts",
