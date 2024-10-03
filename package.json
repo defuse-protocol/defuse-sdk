@@ -4,9 +4,14 @@
   "author": "Defuse Protocol",
   "license": "MIT",
   "type": "module",
-  "main": "dist/index.esm.js",
-  "module": "dist/index.esm.js",
-  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.esm.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "module": "./dist/index.esm.js",
+  "types": "./dist/index.d.ts",
   "files": [
     "dist"
   ],
@@ -77,13 +82,6 @@
   },
   "engines": {
     "node": ">=20.13.1"
-  },
-  "exports": {
-    ".": {
-      "import": "./dist/index.esm.js",
-      "require": "./dist/index.js",
-      "types": "./dist/index.d.ts"
-    }
   },
   "resolutions": {
     "use-sync-external-store": "^1.2.0"
