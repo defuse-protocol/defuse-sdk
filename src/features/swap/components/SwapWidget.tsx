@@ -20,10 +20,15 @@ export const SwapWidget = ({ tokenList, onSign }: SwapWidgetProps) => {
   const handleSelect = (fieldName: string, selectToken: BaseTokenInfo) => {
     setModalType(ModalType.MODAL_SELECT_ASSETS, { fieldName, selectToken })
   }
+
+  assert(tokenList.length > 2, "Token list must have at least 2 tokens")
+
   return (
     <SwapWidgetProvider>
       <SwapForm
+        // biome-ignore lint/style/noNonNullAssertion: tokenList is asserted to have at least 2 tokens
         selectTokenIn={tokenList[0]!}
+        // biome-ignore lint/style/noNonNullAssertion: tokenList is asserted to have at least 2 tokens
         selectTokenOut={tokenList[1]!}
         onSubmit={handleSubmit}
         onSelect={handleSelect}
@@ -31,4 +36,10 @@ export const SwapWidget = ({ tokenList, onSign }: SwapWidgetProps) => {
       />
     </SwapWidgetProvider>
   )
+}
+
+function assert(condition: unknown, msg?: string): asserts condition {
+  if (!condition) {
+    throw new Error(msg)
+  }
 }

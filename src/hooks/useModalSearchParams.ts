@@ -16,5 +16,5 @@ export const useModalSearchParams = () => {
     ) {
       setModalType(modalType as ModalType)
     }
-  }, [])
+  }, [setModalType])
 }

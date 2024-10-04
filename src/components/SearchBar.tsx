@@ -24,6 +24,7 @@ export const SearchBar = ({
         onChange={(e) => setQuery(e.target.value)}
       />
       <button
+        type={"button"}
         onClick={() => {
           handleOverrideCancel ? handleOverrideCancel() : setQuery("")
         }}

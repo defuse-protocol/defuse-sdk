@@ -61,6 +61,7 @@ export const SwapForm = ({
     input: {},
   }).start()
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: `quoteActor.send` for some reason is not in the dependencies, need to investigate
   useEffect(() => {
     const subscription = watch((value, { name }) => {
       if (name === "amountIn") {

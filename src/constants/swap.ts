@@ -5,4 +5,4 @@ export const CONNECTOR_BTC_MAINNET = "__d_btc_mainnet_connector"
 
 export const CREATE_INTENT_EXPIRATION_BLOCK_BOOST = 350
 export const CREATE_INTENT_ROLLBACK_DELAY = 90
-export const MAX_GAS_TRANSACTION = "300" + "0".repeat(12)
+export const MAX_GAS_TRANSACTION = `300${"0".repeat(12)}`

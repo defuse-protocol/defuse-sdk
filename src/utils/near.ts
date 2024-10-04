@@ -13,7 +13,8 @@ const NEAR_NODE_URL = /*@__PURE__*/ (() =>
 export const storageBalance = async (contractId: string, accountId: string) => {
   try {
     setNearProvider(
-      new providers.JsonRpcProvider({ url: NEAR_NODE_URL }) as any // eslint-disable-line
+      // biome-ignore lint/suspicious/noExplicitAny: <reason>
+      new providers.JsonRpcProvider({ url: NEAR_NODE_URL }) as any
     )
 
     const nearProvider = getNearProvider()
@@ -40,7 +41,8 @@ export const nearAccount = async (
 ): Promise<NearViewAccount | null> => {
   try {
     setNearProvider(
-      new providers.JsonRpcProvider({ url: NEAR_NODE_URL }) as any // eslint-disable-line
+      // biome-ignore lint/suspicious/noExplicitAny: <reason>
+      new providers.JsonRpcProvider({ url: NEAR_NODE_URL }) as any
     )
 
     const nearProvider = getNearProvider()
@@ -63,7 +65,8 @@ export const nep141Balance = async (
 ): Promise<string | null> => {
   try {
     setNearProvider(
-      new providers.JsonRpcProvider({ url: NEAR_NODE_URL }) as any // eslint-disable-line
+      // biome-ignore lint/suspicious/noExplicitAny: <reason>
+      new providers.JsonRpcProvider({ url: NEAR_NODE_URL }) as any
     )
     const nearProvider = getNearProvider()
     const storageBalance = await nearProvider.query<CodeResult>({
@@ -91,7 +94,8 @@ export const intentStatus = async (
 ): Promise<string | null> => {
   try {
     setNearProvider(
-      new providers.JsonRpcProvider({ url: NEAR_NODE_URL }) as any // eslint-disable-line
+      // biome-ignore lint/suspicious/noExplicitAny: <reason>
+      new providers.JsonRpcProvider({ url: NEAR_NODE_URL }) as any
     )
 
     const nearProvider = getNearProvider()

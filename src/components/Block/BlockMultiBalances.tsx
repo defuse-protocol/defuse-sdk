@@ -38,6 +38,7 @@ export const BlockMultiBalances = ({
           height={16}
         />
       )}
+      {/* biome-ignore lint/a11y/useKeyWithClickEvents: sorry keyboard users */}
       <span
         onClick={handleClick}
         className={clsx(

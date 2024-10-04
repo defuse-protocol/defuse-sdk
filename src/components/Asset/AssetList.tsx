@@ -79,12 +79,14 @@ export const AssetList = ({
           i
         ) => (
           <button
-            key={i}
+            key={rest.defuseAssetId}
+            type={"button"}
             className={clsx(
               "flex justify-between items-center gap-3 p-2.5 rounded-md hover:bg-gray-950 dark:hover:bg-black-950",
               isNotSelectable && "opacity-50 pointer-events-none"
             )}
-            onClick={() => handleSelectToken && handleSelectToken(assets[i]!)}
+            // biome-ignore lint/style/noNonNullAssertion: i is always within bounds
+            onClick={() => handleSelectToken?.(assets[i]!)}
           >
             <AssetComboIcon
               name={name as string}

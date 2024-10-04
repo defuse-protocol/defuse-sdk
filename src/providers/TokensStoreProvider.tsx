@@ -32,7 +32,7 @@ export const useTokensStore = <T,>(selector: (store: TokensStore) => T): T => {
   const tokensStoreContext = useContext(TokensStoreContext)
 
   if (!tokensStoreContext) {
-    throw new Error(`useTokensStore must be use within TokensStoreProvider`)
+    throw new Error("useTokensStore must be use within TokensStoreProvider")
   }
 
   return useStore(tokensStoreContext, selector)

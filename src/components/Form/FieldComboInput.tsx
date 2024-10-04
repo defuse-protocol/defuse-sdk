@@ -126,7 +126,7 @@ export const FieldComboInput = <T extends FieldValues>({
           disabled && "text-black-200 pointer-events-none placeholder-black-200"
         )}
       />
-      {errors && errors[fieldName] ? (
+      {errors?.[fieldName] ? (
         <span className="absolute bottom-4 left-5 text-sm font-medium text-red-400">
           {(errors[fieldName] as FieldError).message}
         </span>

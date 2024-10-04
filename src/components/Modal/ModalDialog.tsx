@@ -27,8 +27,11 @@ const ModalDialog = ({ children }: PropsWithChildren) => {
     handleCloseModal()
   }, [handleCloseModal])
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: `divRef.current` will be fixed soon
   useEffect(() => {
-    setContainerWidth(divRef.current!.offsetWidth || 0)
+    if (divRef.current) {
+      setContainerWidth(divRef.current.offsetWidth || 0)
+    }
     return () => {
       setContainerWidth(0)
     }
