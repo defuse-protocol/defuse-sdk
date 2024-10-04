@@ -2,9 +2,9 @@ import React, { type ReactNode, createContext, useRef, useContext } from "react"
 import { type StoreApi, useStore } from "zustand"
 
 import {
+  type TokensStore,
   createTokensStore,
   initTokensStore,
-  TokensStore,
 } from "../stores/tokensStore"
 
 export const TokensStoreContext = createContext<StoreApi<TokensStore> | null>(

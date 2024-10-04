@@ -1,6 +1,6 @@
 import { createStore } from "zustand/vanilla"
 
-import { NetworkTokenWithSwapRoute } from "../types"
+import type { NetworkTokenWithSwapRoute } from "../types"
 
 export type TokensState = {
   data: Map<string, NetworkTokenWithSwapRoute>

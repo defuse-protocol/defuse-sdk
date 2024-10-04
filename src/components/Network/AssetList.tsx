@@ -1,11 +1,11 @@
-import React, { ReactNode } from "react"
 import { Text } from "@radix-ui/themes"
 import clsx from "clsx"
+import React, { type ReactNode } from "react"
 
-import { BaseTokenInfo } from "../../types/base"
+import type { BaseTokenInfo } from "../../types/base"
 import { balanceToCurrency, balanceToDecimal } from "../../utils/balanceTo"
-import { TokenListWithNotSelectableToken } from "../Modal/ModalSelectAssets"
 import { AssetComboIcon } from "../Asset/AssetComboIcon"
+import type { TokenListWithNotSelectableToken } from "../Modal/ModalSelectAssets"
 
 type Props = {
   title?: string

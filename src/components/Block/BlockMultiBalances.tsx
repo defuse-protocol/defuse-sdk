@@ -1,8 +1,8 @@
-import React from "react"
-import { Checkbox, Text, Tooltip } from "@radix-ui/themes"
-import { CheckedState } from "@radix-ui/react-checkbox"
+import type { CheckedState } from "@radix-ui/react-checkbox"
 import { InfoCircledIcon } from "@radix-ui/react-icons"
+import { Checkbox, Text, Tooltip } from "@radix-ui/themes"
 import clsx from "clsx"
+import React from "react"
 
 import { smallBalanceToFormat } from "../../utils"
 

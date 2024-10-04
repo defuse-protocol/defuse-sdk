@@ -1,5 +1,5 @@
-import React, { MouseEvent, PropsWithChildren } from "react"
 import clsx from "clsx"
+import React, { type MouseEvent, type PropsWithChildren } from "react"
 
 interface Props extends PropsWithChildren {
   onClick?: (e: MouseEvent<HTMLButtonElement>) => void

@@ -3,9 +3,9 @@ interface FunctionWithArguments {
   (...args: any): any
 }
 
-interface DebouncedFunction<F extends FunctionWithArguments> {
-  (...args: Parameters<F>): Promise<ReturnType<F>>
-}
+type DebouncedFunction<F extends FunctionWithArguments> = (
+  ...args: Parameters<F>
+) => Promise<ReturnType<F>>
 
 type DebounceReturn<F extends FunctionWithArguments> = (
   ...args: Parameters<F>

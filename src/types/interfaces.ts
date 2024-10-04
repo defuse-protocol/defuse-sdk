@@ -1,6 +1,6 @@
 import type { AccountView } from "near-api-js/lib/providers/provider"
 
-import { Result } from "./solver"
+import type { Result } from "./solver"
 
 export type DefuseBaseIds = {
   defuse_asset_id: string
@@ -38,11 +38,11 @@ export interface NetworkToken extends TokenInfo, DefuseBaseIds {
 }
 
 export enum QueueTransactions {
-  "DEPOSIT" = "deposit",
-  "WITHDRAW" = "withdraw",
-  "STORAGE_DEPOSIT_TOKEN_IN" = "storageDepositTokenIn",
-  "STORAGE_DEPOSIT_TOKEN_OUT" = "storageDepositTokenOut",
-  "CREATE_INTENT" = "createIntent",
+  DEPOSIT = "deposit",
+  WITHDRAW = "withdraw",
+  STORAGE_DEPOSIT_TOKEN_IN = "storageDepositTokenIn",
+  STORAGE_DEPOSIT_TOKEN_OUT = "storageDepositTokenOut",
+  CREATE_INTENT = "createIntent",
 }
 
 export interface NearTXTransaction {

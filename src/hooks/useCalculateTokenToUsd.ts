@@ -1,6 +1,6 @@
 import { useState } from "react"
 
-import { BaseTokenInfo } from "../types/base"
+import type { BaseTokenInfo } from "../types/base"
 
 export const useCalculateTokenToUsd = () => {
   const [priceToUsd, setPriceToUsd] = useState("0")
@@ -9,7 +9,7 @@ export const useCalculateTokenToUsd = () => {
     amount: string,
     selectToken: BaseTokenInfo | undefined
   ) => {
-    if (!selectToken || !parseFloat(amount)) {
+    if (!selectToken || !Number.parseFloat(amount)) {
       setPriceToUsd("0")
       return
     }

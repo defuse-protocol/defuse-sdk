@@ -1,5 +1,5 @@
-import React from "react"
 import { Text } from "@radix-ui/themes"
+import React from "react"
 
 import { smallBalanceToFormat } from "../../utils"
 import { balanceToDecimal } from "../../utils/balanceTo"

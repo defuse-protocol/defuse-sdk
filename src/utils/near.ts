@@ -1,8 +1,8 @@
+import { getNearProvider, setNearProvider } from "@near-eth/client"
 import { providers } from "near-api-js"
-import { CodeResult } from "near-api-js/lib/providers/provider"
-import { setNearProvider, getNearProvider } from "@near-eth/client"
+import type { CodeResult } from "near-api-js/lib/providers/provider"
 
-import { NearViewAccount } from "../types"
+import type { NearViewAccount } from "../types"
 
 // Accessing ENV in the browser is not recommended.
 // Instead, it is better to explicitly pass values to functions.

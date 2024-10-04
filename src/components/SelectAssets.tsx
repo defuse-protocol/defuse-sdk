@@ -1,7 +1,7 @@
-import React from "react"
 import { CaretDownIcon } from "@radix-ui/react-icons"
+import type React from "react"
 
-import { BaseTokenInfo } from "../types/base"
+import type { BaseTokenInfo } from "../types/base"
 
 import { AssetComboIcon } from "./Asset/AssetComboIcon"
 

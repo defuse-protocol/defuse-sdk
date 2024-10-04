@@ -1,4 +1,4 @@
-import { BaseTokenInfo } from "./base"
+import type { BaseTokenInfo } from "./base"
 
 // TODO: Must be moved to @defuse/swap-facade
 export type SwapMessageParams = {
@@ -23,11 +23,11 @@ export type SwapWidgetProps = {
 }
 
 export enum QueueTransactionsEnum {
-  "DEPOSIT" = "deposit",
-  "WITHDRAW" = "withdraw",
-  "STORAGE_DEPOSIT_TOKEN_IN" = "storageDepositTokenIn",
-  "STORAGE_DEPOSIT_TOKEN_OUT" = "storageDepositTokenOut",
-  "CREATE_INTENT" = "createIntent",
+  DEPOSIT = "deposit",
+  WITHDRAW = "withdraw",
+  STORAGE_DEPOSIT_TOKEN_IN = "storageDepositTokenIn",
+  STORAGE_DEPOSIT_TOKEN_OUT = "storageDepositTokenOut",
+  CREATE_INTENT = "createIntent",
 }
 
 export type SelectToken = BaseTokenInfo | undefined
@@ -70,8 +70,8 @@ export type CallRequestIntentProps = {
 }
 
 export enum EvaluateResultEnum {
-  BEST,
-  LOW,
+  BEST = 0,
+  LOW = 1,
 }
 
 type WithAccounts = {
@@ -84,6 +84,6 @@ export interface ModalConfirmSwapPayload
     WithAccounts {}
 
 export enum INDEXER {
-  INTENT_0,
-  INTENT_1,
+  INTENT_0 = 0,
+  INTENT_1 = 1,
 }

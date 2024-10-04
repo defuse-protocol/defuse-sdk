@@ -1,4 +1,4 @@
-import { BaseTokenInfo } from "../types/base"
+import type { BaseTokenInfo } from "../types/base"
 
 export const isSameToken = (
   token: BaseTokenInfo,

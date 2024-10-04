@@ -1,13 +1,13 @@
-import React, { useState, useDeferredValue, useEffect } from "react"
 import { Text } from "@radix-ui/themes"
+import React, { useState, useDeferredValue, useEffect } from "react"
 
-import { BaseTokenInfo } from "../../types/base"
-import { SearchBar } from "../SearchBar"
-import { AssetList } from "../Asset/AssetList"
 import { useModalStore } from "../../providers/ModalStoreProvider"
 import { useTokensStore } from "../../providers/TokensStoreProvider"
-import { ModalType } from "../../stores/modalStore"
-import { NetworkTokenWithSwapRoute } from "../../types"
+import type { ModalType } from "../../stores/modalStore"
+import type { NetworkTokenWithSwapRoute } from "../../types"
+import type { BaseTokenInfo } from "../../types/base"
+import { AssetList } from "../Asset/AssetList"
+import { SearchBar } from "../SearchBar"
 
 import ModalDialog from "./ModalDialog"
 

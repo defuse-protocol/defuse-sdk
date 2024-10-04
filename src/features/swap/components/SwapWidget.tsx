@@ -3,10 +3,10 @@ import React from "react"
 import { SwapWidgetProvider } from "../../../providers"
 import { useModalStore } from "../../../providers/ModalStoreProvider"
 import { ModalType } from "../../../stores/modalStore"
-import { BaseTokenInfo } from "../../../types/base"
-import { SwapWidgetProps } from "../../../types"
+import type { SwapWidgetProps } from "../../../types"
+import type { BaseTokenInfo } from "../../../types/base"
 
-import { OnSubmitValues, SwapForm } from "./SwapForm"
+import { type OnSubmitValues, SwapForm } from "./SwapForm"
 
 export const SwapWidget = ({ tokenList, onSign }: SwapWidgetProps) => {
   const { setModalType, payload, onCloseModal } = useModalStore(

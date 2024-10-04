@@ -1,17 +1,17 @@
-import React from "react"
-import {
-  Path,
-  FieldValues,
-  FieldErrors,
+import clsx from "clsx"
+import type React from "react"
+import type {
   FieldError,
+  FieldErrors,
+  FieldValues,
+  Path,
   UseFormRegister,
 } from "react-hook-form"
-import clsx from "clsx"
 
-import { BaseTokenInfo } from "../../types/base"
+import type { BaseTokenInfo } from "../../types/base"
 import {
   BlockMultiBalances,
-  BlockMultiBalancesProps,
+  type BlockMultiBalancesProps,
 } from "../Block/BlockMultiBalances"
 import { SelectAssets } from "../SelectAssets"
 
@@ -133,7 +133,7 @@ export const FieldComboInput = <T extends FieldValues>({
       ) : null}
       {price && price !== "0" && errors && !errors[fieldName] ? (
         <span className="absolute flex flex-nowrap items-center gap-2 bottom-4 left-5 text-sm font-medium text-secondary">
-          ~${parseFloat(price).toFixed(2)}
+          ~${Number.parseFloat(price).toFixed(2)}
           {label && label}
         </span>
       ) : null}

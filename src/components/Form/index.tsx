@@ -1,15 +1,15 @@
 import React, {
-  PropsWithChildren,
+  type PropsWithChildren,
   Children,
   cloneElement,
   isValidElement,
-  ReactElement,
-  FormEventHandler,
+  type ReactElement,
+  type FormEventHandler,
 } from "react"
-import {
-  UseFormRegister,
+import type {
   FieldValues,
   UseFormHandleSubmit,
+  UseFormRegister,
 } from "react-hook-form"
 
 import { FieldComboInputRegistryName } from "./FieldComboInput"

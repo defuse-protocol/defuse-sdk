@@ -1,6 +1,6 @@
-import React from "react"
-import clsx from "clsx"
 import { ArrowDownIcon } from "@radix-ui/react-icons"
+import clsx from "clsx"
+import type React from "react"
 
 import { ButtonIcon } from "./ButtonIcon"
 
