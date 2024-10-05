@@ -1,5 +1,5 @@
 import { NEAR_TOKEN_META, W_NEAR_TOKEN_META } from "../constants"
-import { BaseTokenInfo } from "../types/base"
+import type { BaseTokenInfo } from "../types/base"
 
 /**
  * Wrap Near has to be applied to Native Near and goes in conjunction on Swap.

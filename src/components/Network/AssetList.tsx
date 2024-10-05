@@ -1,11 +1,11 @@
-import React, { ReactNode } from "react"
 import { Text } from "@radix-ui/themes"
 import clsx from "clsx"
+import React, { type ReactNode } from "react"
 
-import { BaseTokenInfo } from "../../types/base"
+import type { BaseTokenInfo } from "../../types/base"
 import { balanceToCurrency, balanceToDecimal } from "../../utils/balanceTo"
-import { TokenListWithNotSelectableToken } from "../Modal/ModalSelectAssets"
 import { AssetComboIcon } from "../Asset/AssetComboIcon"
+import type { TokenListWithNotSelectableToken } from "../Modal/ModalSelectAssets"
 
 type Props = {
   title?: string
@@ -73,7 +73,8 @@ const AssetList = ({
           i
         ) => (
           <button
-            key={i}
+            key={rest.defuseAssetId}
+            type={"button"}
             className={clsx(
               "flex justify-between items-center gap-3 p-2.5 rounded-md hover:bg-gray-950 dark:hover:bg-black-950",
               isNotSelectable && "opacity-50 pointer-events-none"

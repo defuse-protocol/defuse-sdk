@@ -1,5 +1,5 @@
 import { INDEXER } from "../types"
-import { BaseTokenInfo } from "../types/base"
+import type { BaseTokenInfo } from "../types/base"
 
 export const LIST_NETWORKS_TOKENS: BaseTokenInfo[] = [
   {

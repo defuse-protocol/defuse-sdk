@@ -1,11 +1,9 @@
-interface FunctionWithArguments {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  (...args: any): any
-}
+// biome-ignore lint/suspicious/noExplicitAny: <reason>
+type FunctionWithArguments = (...args: any) => any
 
-interface DebouncedFunction<F extends FunctionWithArguments> {
-  (...args: Parameters<F>): Promise<ReturnType<F>>
-}
+type DebouncedFunction<F extends FunctionWithArguments> = (
+  ...args: Parameters<F>
+) => Promise<ReturnType<F>>
 
 type DebounceReturn<F extends FunctionWithArguments> = (
   ...args: Parameters<F>

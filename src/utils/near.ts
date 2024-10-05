@@ -1,8 +1,8 @@
+import { getNearProvider, setNearProvider } from "@near-eth/client"
 import { providers } from "near-api-js"
-import { CodeResult } from "near-api-js/lib/providers/provider"
-import { setNearProvider, getNearProvider } from "@near-eth/client"
+import type { CodeResult } from "near-api-js/lib/providers/provider"
 
-import { NearViewAccount } from "../types"
+import type { NearViewAccount } from "../types"
 
 // Accessing ENV in the browser is not recommended.
 // Instead, it is better to explicitly pass values to functions.
@@ -13,7 +13,8 @@ const NEAR_NODE_URL = /*@__PURE__*/ (() =>
 export const storageBalance = async (contractId: string, accountId: string) => {
   try {
     setNearProvider(
-      new providers.JsonRpcProvider({ url: NEAR_NODE_URL }) as any // eslint-disable-line
+      // biome-ignore lint/suspicious/noExplicitAny: <reason>
+      new providers.JsonRpcProvider({ url: NEAR_NODE_URL }) as any
     )
 
     const nearProvider = getNearProvider()
@@ -40,7 +41,8 @@ export const nearAccount = async (
 ): Promise<NearViewAccount | null> => {
   try {
     setNearProvider(
-      new providers.JsonRpcProvider({ url: NEAR_NODE_URL }) as any // eslint-disable-line
+      // biome-ignore lint/suspicious/noExplicitAny: <reason>
+      new providers.JsonRpcProvider({ url: NEAR_NODE_URL }) as any
     )
 
     const nearProvider = getNearProvider()
@@ -63,7 +65,8 @@ export const nep141Balance = async (
 ): Promise<string | null> => {
   try {
     setNearProvider(
-      new providers.JsonRpcProvider({ url: NEAR_NODE_URL }) as any // eslint-disable-line
+      // biome-ignore lint/suspicious/noExplicitAny: <reason>
+      new providers.JsonRpcProvider({ url: NEAR_NODE_URL }) as any
     )
     const nearProvider = getNearProvider()
     const storageBalance = await nearProvider.query<CodeResult>({
@@ -91,7 +94,8 @@ export const intentStatus = async (
 ): Promise<string | null> => {
   try {
     setNearProvider(
-      new providers.JsonRpcProvider({ url: NEAR_NODE_URL }) as any // eslint-disable-line
+      // biome-ignore lint/suspicious/noExplicitAny: <reason>
+      new providers.JsonRpcProvider({ url: NEAR_NODE_URL }) as any
     )
 
     const nearProvider = getNearProvider()

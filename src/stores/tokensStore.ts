@@ -1,6 +1,6 @@
 import { createStore } from "zustand/vanilla"
 
-import { NetworkTokenWithSwapRoute } from "../types"
+import type { NetworkTokenWithSwapRoute } from "../types"
 
 export type TokensState = {
   data: Map<string, NetworkTokenWithSwapRoute>
@@ -38,7 +38,9 @@ export const createTokensStore = (
     updateTokens: (data: NetworkTokenWithSwapRoute[]) =>
       set((state) => {
         const updatedData = new Map(state.data)
-        data.forEach((item) => updatedData.set(item.defuseAssetId, item))
+        for (const item of data) {
+          updatedData.set(item.defuseAssetId, item)
+        }
         return { data: updatedData, isFetched: true, isLoading: false }
       }),
   }))

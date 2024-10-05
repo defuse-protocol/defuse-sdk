@@ -1,13 +1,13 @@
-import React, { useState, useDeferredValue, useEffect } from "react"
 import { Text } from "@radix-ui/themes"
+import React, { useState, useDeferredValue, useEffect } from "react"
 
-import { BaseTokenInfo } from "../../types/base"
-import { SearchBar } from "../SearchBar"
-import { AssetList } from "../Asset/AssetList"
 import { useModalStore } from "../../providers/ModalStoreProvider"
 import { useTokensStore } from "../../providers/TokensStoreProvider"
-import { ModalType } from "../../stores/modalStore"
-import { NetworkTokenWithSwapRoute } from "../../types"
+import type { ModalType } from "../../stores/modalStore"
+import type { NetworkTokenWithSwapRoute } from "../../types"
+import type { BaseTokenInfo } from "../../types/base"
+import { AssetList } from "../Asset/AssetList"
+import { SearchBar } from "../SearchBar"
 
 import ModalDialog from "./ModalDialog"
 
@@ -36,11 +36,11 @@ export const ModalSelectAssets = () => {
   const handleSearchClear = () => setSearchValue("")
 
   const filterPattern = (asset: BaseTokenInfo) =>
-    asset
-      .name!.toLocaleUpperCase()
+    asset.name
+      .toLocaleUpperCase()
       .includes(deferredQuery.toLocaleUpperCase()) ||
-    asset
-      .chainName!.toLocaleUpperCase()
+    asset.chainName
+      .toLocaleUpperCase()
       .includes(deferredQuery.toLocaleUpperCase())
 
   const handleSelectToken = (token: BaseTokenInfo) => {
@@ -51,6 +51,7 @@ export const ModalSelectAssets = () => {
     })
   }
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: `payload` for some reason is not in the dependencies, need to investigate
   useEffect(() => {
     if (!data.size && !isLoading) {
       return
@@ -62,7 +63,7 @@ export const ModalSelectAssets = () => {
 
     const getAssetList: TokenListWithNotSelectableToken[] = []
     const getAssetListWithBalances: TokenListWithNotSelectableToken[] = []
-    data.forEach((value) => {
+    for (const value of data.values()) {
       let isNotSelectable = false
       // We do not filter "tokenIn" as give full access to tokens in first step
       // Filtration by routes should happen only at "tokenOut"
@@ -84,7 +85,7 @@ export const ModalSelectAssets = () => {
         })
       }
       getAssetList.push({ ...value, isNotSelectable })
-    })
+    }
     setAssetList(getAssetList)
     setAssetListWithBalances(getAssetListWithBalances)
   }, [data, isLoading])
@@ -118,6 +119,7 @@ export const ModalSelectAssets = () => {
           {deferredQuery && (
             <div className="flex justify-center items-center">
               <button
+                type={"button"}
                 onClick={handleSearchClear}
                 className="mb-2.5 px-3 py-1.5 bg-red-100 rounded-full"
               >

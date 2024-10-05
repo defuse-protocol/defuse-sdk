@@ -1,5 +1,5 @@
-import React from "react"
 import { Text } from "@radix-ui/themes"
+import React from "react"
 
 import { smallBalanceToFormat } from "../../utils"
 import { balanceToDecimal } from "../../utils/balanceTo"
@@ -38,6 +38,7 @@ export const WarnBox = ({
         {generateWarningBalanceMessage()}
       </Text>
       {allowableNearAmount !== "0" && (
+        /* biome-ignore lint/a11y/useKeyWithClickEvents: sorry keyboard users */
         <span
           onClick={() => {
             const value = balanceToDecimal(allowableNearAmount ?? "0", decimals)

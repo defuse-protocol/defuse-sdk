@@ -1,6 +1,6 @@
+import { quoteMachine } from "@defuse-protocol/swap-facade"
 import { useEffect, useRef, useState } from "react"
 import { useForm } from "react-hook-form"
-import { quoteMachine } from "@defuse-protocol/swap-facade"
 import { createActor } from "xstate"
 
 import { ButtonCustom, ButtonSwitch } from "../../../components/Button"
@@ -8,7 +8,7 @@ import { Form } from "../../../components/Form"
 import { FieldComboInput } from "../../../components/Form/FieldComboInput"
 import { WarnBox } from "../../../components/WarnBox"
 import { NEAR_TOKEN_META } from "../../../constants"
-import { BaseTokenInfo } from "../../../types/base"
+import type { BaseTokenInfo } from "../../../types/base"
 
 type SwapFormValues = {
   amountIn: string // tokenIn
@@ -61,6 +61,7 @@ export const SwapForm = ({
     input: {},
   }).start()
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: `quoteActor.send` for some reason is not in the dependencies, need to investigate
   useEffect(() => {
     const subscription = watch((value, { name }) => {
       if (name === "amountIn") {

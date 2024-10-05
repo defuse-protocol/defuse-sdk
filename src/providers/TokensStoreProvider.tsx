@@ -2,9 +2,9 @@ import React, { type ReactNode, createContext, useRef, useContext } from "react"
 import { type StoreApi, useStore } from "zustand"
 
 import {
+  type TokensStore,
   createTokensStore,
   initTokensStore,
-  TokensStore,
 } from "../stores/tokensStore"
 
 export const TokensStoreContext = createContext<StoreApi<TokensStore> | null>(
@@ -32,7 +32,7 @@ export const useTokensStore = <T,>(selector: (store: TokensStore) => T): T => {
   const tokensStoreContext = useContext(TokensStoreContext)
 
   if (!tokensStoreContext) {
-    throw new Error(`useTokensStore must be use within TokensStoreProvider`)
+    throw new Error("useTokensStore must be use within TokensStoreProvider")
   }
 
   return useStore(tokensStoreContext, selector)

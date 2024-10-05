@@ -1,8 +1,8 @@
-import React from "react"
-import { Checkbox, Text, Tooltip } from "@radix-ui/themes"
-import { CheckedState } from "@radix-ui/react-checkbox"
+import type { CheckedState } from "@radix-ui/react-checkbox"
 import { InfoCircledIcon } from "@radix-ui/react-icons"
+import { Checkbox, Text, Tooltip } from "@radix-ui/themes"
 import clsx from "clsx"
+import React from "react"
 
 import { smallBalanceToFormat } from "../../utils"
 
@@ -38,6 +38,7 @@ export const BlockMultiBalances = ({
           height={16}
         />
       )}
+      {/* biome-ignore lint/a11y/useKeyWithClickEvents: sorry keyboard users */}
       <span
         onClick={handleClick}
         className={clsx(

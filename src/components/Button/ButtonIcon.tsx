@@ -1,5 +1,5 @@
-import React, { MouseEvent, PropsWithChildren } from "react"
 import clsx from "clsx"
+import React, { type MouseEvent, type PropsWithChildren } from "react"
 
 interface Props extends PropsWithChildren {
   onClick?: (e: MouseEvent<HTMLButtonElement>) => void
@@ -19,6 +19,7 @@ export const ButtonIcon = ({
 }: Props) => {
   return (
     <button
+      type={"button"}
       className={clsx(
         "flex justify-center items-center w-[40px] h-[40px] rounded-md overflow-hidden bg-white dark:bg-black",
         className && className

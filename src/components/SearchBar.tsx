@@ -1,5 +1,5 @@
+import { Cross1Icon, MagnifyingGlassIcon } from "@radix-ui/react-icons"
 import React from "react"
-import { MagnifyingGlassIcon, Cross1Icon } from "@radix-ui/react-icons"
 
 type Props = {
   query: string
@@ -24,6 +24,7 @@ export const SearchBar = ({
         onChange={(e) => setQuery(e.target.value)}
       />
       <button
+        type={"button"}
         onClick={() => {
           handleOverrideCancel ? handleOverrideCancel() : setQuery("")
         }}

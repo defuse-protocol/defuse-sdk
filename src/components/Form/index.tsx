@@ -1,15 +1,15 @@
 import React, {
-  PropsWithChildren,
+  type PropsWithChildren,
   Children,
   cloneElement,
   isValidElement,
-  ReactElement,
-  FormEventHandler,
+  type ReactElement,
+  type FormEventHandler,
 } from "react"
-import {
-  UseFormRegister,
+import type {
   FieldValues,
   UseFormHandleSubmit,
+  UseFormRegister,
 } from "react-hook-form"
 
 import { FieldComboInputRegistryName } from "./FieldComboInput"
@@ -37,8 +37,7 @@ export const Form = <T extends FieldValues>({
 
   const childrenWithProps = Children.map(children, (child) => {
     if (isValidElement(child)) {
-      // Avoid an error TS2339
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // biome-ignore lint/suspicious/noExplicitAny: avoid an error TS2339
       const childType = child.type as any
       const childName =
         childType.displayName || childType.name || childType?.type?.name
@@ -52,6 +51,6 @@ export const Form = <T extends FieldValues>({
     return child
   })
 
-  /* eslint-disable  @typescript-eslint/no-explicit-any */
+  // biome-ignore lint/suspicious/noExplicitAny: <reason>
   return <form onSubmit={handleSubmit as any}>{childrenWithProps}</form>
 }

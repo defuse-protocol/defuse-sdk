@@ -1,10 +1,13 @@
-import React from "react"
 import { InfoCircledIcon } from "@radix-ui/react-icons"
 import { Tooltip } from "@radix-ui/themes"
 import clsx from "clsx"
+import React from "react"
 
-import { EvaluateResultEnum, SwapEstimateProviderResponse } from "../../types"
-import { BaseTokenInfo } from "../../types/base"
+import {
+  EvaluateResultEnum,
+  type SwapEstimateProviderResponse,
+} from "../../types"
+import type { BaseTokenInfo } from "../../types/base"
 import { tokenBalanceToFormatUnits } from "../../utils"
 
 const BEST_PRICE = "best price"
@@ -41,7 +44,7 @@ export const BlockEvaluatePrice = ({
                           Rate{" "}
                           {tokenBalanceToFormatUnits({
                             balance: result.amount_out,
-                            decimals: tokenOut.decimals!,
+                            decimals: tokenOut.decimals,
                           })}{" "}
                           from {result.solver_id}
                         </span>

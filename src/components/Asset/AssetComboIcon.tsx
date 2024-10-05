@@ -1,6 +1,6 @@
 import React from "react"
 
-import { BaseTokenInfo } from "../../types/base"
+import type { BaseTokenInfo } from "../../types/base"
 
 export const AssetComboIcon = ({
   icon,
