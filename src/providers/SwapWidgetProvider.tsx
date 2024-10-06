@@ -1,7 +1,7 @@
 import type React from "react"
 import type { PropsWithChildren } from "react"
 
-import { Modal } from "../components/Modal"
+import { ModalContainer } from "../components/Modal/ModalContainer"
 
 import { ModalStoreProvider } from "./ModalStoreProvider"
 import { TokensStoreProvider } from "./TokensStoreProvider"
@@ -13,7 +13,7 @@ export const SwapWidgetProvider: React.FC<PropsWithChildren> = ({
     <ModalStoreProvider>
       <TokensStoreProvider>
         {children}
-        <Modal />
+        <ModalContainer />
       </TokensStoreProvider>
     </ModalStoreProvider>
   )

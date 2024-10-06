@@ -9,7 +9,7 @@ import type { BaseTokenInfo } from "../../types/base"
 import { AssetList } from "../Asset/AssetList"
 import { SearchBar } from "../SearchBar"
 
-import ModalDialog from "./ModalDialog"
+import { ModalDialog } from "./ModalDialog"
 
 export type ModalSelectAssetsPayload = {
   modalType?: ModalType.MODAL_SELECT_ASSETS
@@ -51,7 +51,6 @@ export const ModalSelectAssets = () => {
     })
   }
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: `payload` for some reason is not in the dependencies, need to investigate
   useEffect(() => {
     if (!data.size && !isLoading) {
       return
@@ -88,7 +87,7 @@ export const ModalSelectAssets = () => {
     }
     setAssetList(getAssetList)
     setAssetListWithBalances(getAssetListWithBalances)
-  }, [data, isLoading])
+  }, [data, isLoading, payload])
 
   return (
     <ModalDialog>

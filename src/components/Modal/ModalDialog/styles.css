@@ -1,0 +1,99 @@
+@import "@radix-ui/colors/black-alpha.css";
+@import "@radix-ui/colors/green.css";
+@import "@radix-ui/colors/mauve.css";
+@import "@radix-ui/colors/violet.css";
+
+/* reset */
+button,
+fieldset,
+input {
+  all: unset;
+}
+
+.DialogOverlay {
+  background-color: var(--black-a9);
+  position: fixed;
+  inset: 0;
+  animation: overlayShow 150ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.DialogContent {
+  background-color: white;
+  border-radius: 6px;
+  box-shadow:
+    hsl(206 22% 7% / 35%) 0px 10px 38px -10px,
+    hsl(206 22% 7% / 20%) 0px 10px 20px -15px;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 90vw;
+  max-width: 512px;
+  max-height: 85vh;
+  padding: 25px;
+  animation: contentShow 150ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@media (max-width: 767px) {
+  .DialogContent {
+    bottom: 0;
+    left: 0;
+    right: 0;
+    top: auto;
+    max-width: 100%;
+    width: 100%;
+    max-height: 80vh;
+    transform: none;
+    border-radius: 16px 16px 0 0;
+    animation: mobileContentShow 300ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+}
+
+.DialogContent:focus {
+  outline: none;
+}
+
+.DialogTitle {
+  margin: 0;
+  font-weight: 500;
+  color: var(--mauve-12);
+  font-size: 17px;
+}
+
+.DialogDescription {
+  margin: 10px 0 20px;
+  color: var(--mauve-11);
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+@keyframes overlayShow {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes contentShow {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -48%) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+@keyframes mobileContentShow {
+  from {
+    opacity: 0;
+    transform: translateY(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
