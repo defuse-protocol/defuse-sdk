@@ -1,20 +1,30 @@
-import React from "react"
+import React, { useEffect } from "react"
 
 import { SwapWidgetProvider } from "../../../providers"
 import { useModalStore } from "../../../providers/ModalStoreProvider"
 import { ModalType } from "../../../stores/modalStore"
-import type { SwapWidgetProps } from "../../../types"
+import type { SwapMessageParams, SwapWidgetProps } from "../../../types"
 import type { BaseTokenInfo } from "../../../types/base"
 
+import { useTokensStore } from "../../../providers/TokensStoreProvider"
 import { type OnSubmitValues, SwapForm } from "./SwapForm"
 
 export const SwapWidget = ({ tokenList, onSign }: SwapWidgetProps) => {
+  const { updateTokens } = useTokensStore((state) => state)
+
   const { setModalType, payload, onCloseModal } = useModalStore(
     (state) => state
   )
 
-  const handleSubmit = (values: OnSubmitValues) => {
-    console.log(values)
+  const handleSubmit = async (values: OnSubmitValues) => {
+    // TODO Get message for sign from swapFacade
+    const message: SwapMessageParams = {
+      message: "",
+      recipient: "",
+      nonce: Buffer.from([]),
+    }
+    const signature = await onSign(message)
+    console.log(signature)
   }
 
   const handleSelect = (fieldName: string, selectToken: BaseTokenInfo) => {
@@ -22,6 +32,12 @@ export const SwapWidget = ({ tokenList, onSign }: SwapWidgetProps) => {
   }
 
   assert(tokenList.length > 2, "Token list must have at least 2 tokens")
+
+  useEffect(() => {
+    if (tokenList) {
+      updateTokens(tokenList)
+    }
+  }, [tokenList, updateTokens])
 
   return (
     <SwapWidgetProvider>

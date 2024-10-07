@@ -8,7 +8,7 @@ import { ModalType } from "../../stores/modalStore"
 
 import { ModalSelectAssets } from "./ModalSelectAssets"
 
-export const Modal = () => {
+export const ModalContainer = () => {
   const { modalType } = useModalStore((state) => state)
 
   switch (modalType) {

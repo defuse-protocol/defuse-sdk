@@ -1,4 +1,5 @@
-import { Dialog } from "@radix-ui/themes"
+import { Dialog, VisuallyHidden } from "@radix-ui/themes"
+import * as ReactDialog from "@radix-ui/react-dialog"
 import React, {
   type PropsWithChildren,
   useCallback,
@@ -7,10 +8,12 @@ import React, {
   useState,
 } from "react"
 
-import { useResize } from "../../hooks/useResize"
-import { useModalStore } from "../../providers/ModalStoreProvider"
+import { useResize } from "../../../hooks/useResize"
+import { useModalStore } from "../../../providers/ModalStoreProvider"
 
-const ModalDialog = ({ children }: PropsWithChildren) => {
+import "./styles.css"
+
+export const ModalDialog = ({ children }: PropsWithChildren) => {
   const { onCloseModal } = useModalStore((state) => state)
   const [open, setOpen] = useState(true)
   const [containerWidth, setContainerWidth] = useState<number>(0)
@@ -39,7 +42,9 @@ const ModalDialog = ({ children }: PropsWithChildren) => {
 
   return (
     <Dialog.Root open={open} onOpenChange={setOpen}>
+      <ReactDialog.Overlay className="DialogOverlay" />
       <Dialog.Content
+        className="DialogContent p-0 dark:bg-black-800"
         maxWidth={
           containerWidth
             ? containerWidth < 768
@@ -47,12 +52,12 @@ const ModalDialog = ({ children }: PropsWithChildren) => {
               : defaultMaxWidth
             : defaultMaxWidth
         }
-        className="p-0 dark:bg-black-800"
       >
+        <VisuallyHidden>
+          <Dialog.Title>null</Dialog.Title>
+        </VisuallyHidden>
         <div ref={divRef}>{children}</div>
       </Dialog.Content>
     </Dialog.Root>
   )
 }
-
-export default ModalDialog

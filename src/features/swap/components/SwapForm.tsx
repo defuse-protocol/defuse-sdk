@@ -1,7 +1,7 @@
 import { quoteMachine } from "@defuse-protocol/swap-facade"
 import { useEffect, useRef, useState } from "react"
 import { useForm } from "react-hook-form"
-import { createActor } from "xstate"
+import { useActor } from "@xstate/react"
 
 import { ButtonCustom, ButtonSwitch } from "../../../components/Button"
 import { Form } from "../../../components/Form"
@@ -57,15 +57,19 @@ export const SwapForm = ({
   const [errorSelectTokenOut, setErrorSelectTokenOut] = useState("")
   const [errorMsg, setErrorMsg] = useState<ErrorEnum>()
 
-  const quoteActor = createActor(quoteMachine, {
-    input: {},
-  }).start()
+  const [state, send] = useActor(quoteMachine, {
+    input: {
+      assetIn: selectTokenIn.defuseAssetId,
+      assetOut: selectTokenOut.defuseAssetId,
+    },
+  })
+  console.log("LOG: quoteMachine - state", state)
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: `quoteActor.send` for some reason is not in the dependencies, need to investigate
   useEffect(() => {
     const subscription = watch((value, { name }) => {
       if (name === "amountIn") {
-        quoteActor.send({
+        send({
           type: "SET_PARAMS",
           data: {
             assetIn: selectTokenIn.defuseAssetId,

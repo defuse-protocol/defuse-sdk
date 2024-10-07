@@ -1,6 +1,7 @@
 import typescript from "@rollup/plugin-typescript"
 import { dts } from "rollup-plugin-dts"
 import json from "@rollup/plugin-json"
+import postcss from "rollup-plugin-postcss"
 
 import packageJson from "./package.json" assert { type: "json" }
 
@@ -21,6 +22,9 @@ const config = [
         outputToFilesystem: true,
       }),
       json(),
+      postcss({
+        extensions: [".css"],
+      }),
     ],
     external: [
       ...Object.keys(packageJson.dependencies),
