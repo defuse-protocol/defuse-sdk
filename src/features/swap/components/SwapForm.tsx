@@ -1,5 +1,5 @@
 import { quoteMachine } from "@defuse-protocol/swap-facade"
-import { useActor } from "@xstate/react"
+import { useActor, useSelector } from "@xstate/react"
 import { useEffect, useRef, useState } from "react"
 import { useForm } from "react-hook-form"
 
@@ -33,6 +33,7 @@ export interface SwapFormProps {
   selectTokenOut: BaseTokenInfo
   onSubmit: (values: OnSubmitValues) => void
   onSelect: (fieldName: string, selectToken: BaseTokenInfo) => void
+  onSwitch: (e: React.MouseEvent<HTMLButtonElement>) => void
   isFetching: boolean
 }
 
@@ -41,6 +42,7 @@ export const SwapForm = ({
   selectTokenOut,
   onSubmit,
   onSelect,
+  onSwitch,
   isFetching,
 }: SwapFormProps) => {
   const {
@@ -57,7 +59,7 @@ export const SwapForm = ({
   const [errorSelectTokenOut, setErrorSelectTokenOut] = useState("")
   const [errorMsg, setErrorMsg] = useState<ErrorEnum>()
 
-  const [state, send] = useActor(quoteMachine, {
+  const [state, send, actorRef] = useActor(quoteMachine, {
     input: {
       assetIn: selectTokenIn.defuseAssetId,
       assetOut: selectTokenOut.defuseAssetId,
@@ -65,7 +67,13 @@ export const SwapForm = ({
   })
   console.log("LOG: quoteMachine - state", state)
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: `quoteActor.send` for some reason is not in the dependencies, need to investigate
+  const handleSwitch = async (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault()
+    onSwitch(e)
+    setValue("amountOut", "")
+    setValue("amountIn", "")
+  }
+
   useEffect(() => {
     const subscription = watch((value, { name }) => {
       if (name === "amountIn") {
@@ -80,7 +88,18 @@ export const SwapForm = ({
       }
     })
     return () => subscription.unsubscribe()
-  }, [watch, selectTokenIn, selectTokenOut])
+  }, [watch, selectTokenIn, selectTokenOut, send])
+
+  const quotes = useSelector(actorRef, (state) => state.context.quotes);
+
+  useEffect(() => {
+    if (quotes) {
+      // TODO: amountOut - Find the best quote with the highest estimatedOut value
+      if (quotes.length > 0 && quotes[0]) {
+        setValue('amountOut', (quotes[0] as any).amountOut);
+      }
+    }
+  }, [quotes, setValue]);
 
   return (
     <Form<SwapFormValues>
@@ -92,19 +111,19 @@ export const SwapForm = ({
       <FieldComboInput<SwapFormValues>
         fieldName="amountIn"
         selected={selectTokenIn}
-        handleSelect={() => onSelect("amountIn", selectTokenOut)}
+        handleSelect={() => onSelect("tokenIn", selectTokenOut)}
         className="border rounded-t-xl md:max-w-[472px]"
         required="This field is required"
         errors={errors}
         errorSelect={errorSelectTokenIn}
       />
       <div className="relative w-full">
-        <ButtonSwitch onClick={() => {}} />
+        <ButtonSwitch onClick={handleSwitch} />
       </div>
       <FieldComboInput<SwapFormValues>
         fieldName="amountOut"
         selected={selectTokenOut as BaseTokenInfo}
-        handleSelect={() => onSelect("amountOut", selectTokenIn)}
+        handleSelect={() => onSelect("tokenOut", selectTokenIn)}
         className="border rounded-b-xl mb-5 md:max-w-[472px]"
         required="This field is required"
         errors={errors}
