@@ -1,7 +1,7 @@
 import { quoteMachine } from "@defuse-protocol/swap-facade"
+import { useActor } from "@xstate/react"
 import { useEffect, useRef, useState } from "react"
 import { useForm } from "react-hook-form"
-import { useActor } from "@xstate/react"
 
 import { ButtonCustom, ButtonSwitch } from "../../../components/Button"
 import { Form } from "../../../components/Form"
