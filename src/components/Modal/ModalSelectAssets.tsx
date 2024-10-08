@@ -68,11 +68,7 @@ export const ModalSelectAssets = () => {
       // Filtration by routes should happen only at "tokenOut"
       const isAlreadySelected =
         selectToken && value.defuseAssetId === selectToken.defuseAssetId
-      const isTokenOutAndNotSelectable =
-        selectToken &&
-        fieldName === "tokenOut" &&
-        !selectToken?.routes?.includes(value.defuseAssetId)
-      if (isAlreadySelected || isTokenOutAndNotSelectable) {
+      if (isAlreadySelected) {
         isNotSelectable = true
       }
 
