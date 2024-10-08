@@ -15,8 +15,18 @@ jobs:
         with:
           node-version-file: package.json
 
-      # - name: Install dependencies
-      #   run: yarn install --frozen-lockfile
+      - name: Setup NPM token
+        run: |
+          echo "//npm.pkg.github.com/:_authToken=${{ secrets.GH_TOKEN }}" >> .npmrc
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile --non-interactive
+
+      - name: Lint check
+        run: yarn run check
+
+      - name: Types check
+        run: yarn run typecheck
 
       # TODO: Add integration UI tests
       # - name: Run integration UI tests

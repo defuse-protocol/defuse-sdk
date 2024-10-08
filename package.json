@@ -18,7 +18,7 @@
   "scripts": {
     "build": "rollup -c",
     "typecheck": "tsc --noEmit",
-    "check": "biome check --write",
+    "check": "biome check",
     "prepare": "husky"
   },
   "dependencies": {
