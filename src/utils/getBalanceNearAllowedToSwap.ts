@@ -1,5 +1,3 @@
-import { nearAccount } from "./near"
-
 // See source here - https://github.com/near/nearcore/blob/master/core/parameters/res/runtime_configs/parameters.yaml#L28
 const STORAGE_COST_PER_BYTE = "10000000000000000000" // Equal to 0.00001
 const MIN_RESERVE_NEAR = "100000000000000000000000" // Equal to 0.1 NEAR
@@ -15,10 +13,10 @@ export const minimumNearBalance = (storageUsed: number): bigint => {
 }
 
 export const getBalanceNearAllowedToSwap = async (
-  accountId: string
+  accountId: string,
+  viewAccount?: { amount: string; storage_usage: number }
 ): Promise<string> => {
   try {
-    const viewAccount = await nearAccount(accountId)
     if (!viewAccount) {
       return "0"
     }
