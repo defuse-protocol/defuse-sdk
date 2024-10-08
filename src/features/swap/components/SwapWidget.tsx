@@ -6,16 +6,19 @@ import { ModalType } from "../../../stores/modalStore"
 import type { SwapMessageParams, SwapWidgetProps } from "../../../types"
 import type { BaseTokenInfo } from "../../../types/base"
 
+import type { ModalSelectAssetsPayload } from "src/components/Modal/ModalSelectAssets"
 import { useTokensStore } from "../../../providers/TokensStoreProvider"
 import { type OnSubmitValues, SwapForm } from "./SwapForm"
-import { ModalSelectAssetsPayload } from "src/components/Modal/ModalSelectAssets"
 
 export const SwapWidget = ({ tokenList, onSign }: SwapWidgetProps) => {
-  const { updateTokens } = 
-  useTokensStore((state) => state)
+  const { updateTokens } = useTokensStore((state) => state)
 
-  const [selectTokenIn, setSelectTokenIn] = useState<BaseTokenInfo | undefined>(tokenList[0])
-  const [selectTokenOut, setSelectTokenOut] = useState<BaseTokenInfo | undefined>(tokenList[1])
+  const [selectTokenIn, setSelectTokenIn] = useState<BaseTokenInfo | undefined>(
+    tokenList[0]
+  )
+  const [selectTokenOut, setSelectTokenOut] = useState<
+    BaseTokenInfo | undefined
+  >(tokenList[1])
 
   const { setModalType, payload, onCloseModal } = useModalStore(
     (state) => state
@@ -32,7 +35,10 @@ export const SwapWidget = ({ tokenList, onSign }: SwapWidgetProps) => {
     console.log(signature)
   }
 
-  const handleSelect = (fieldName: string, selectToken: BaseTokenInfo) => {
+  const handleSelect = (
+    fieldName: string,
+    selectToken: BaseTokenInfo | undefined
+  ) => {
     setModalType(ModalType.MODAL_SELECT_ASSETS, { fieldName, selectToken })
   }
 
@@ -63,10 +69,9 @@ export const SwapWidget = ({ tokenList, onSign }: SwapWidgetProps) => {
       }
       onCloseModal(undefined)
     }
-  }, [payload, selectTokenIn, selectTokenOut])
+  }, [payload, onCloseModal])
 
-  const handleSwitch = async (e: React.MouseEvent<HTMLButtonElement>) => {
-    e.preventDefault()
+  const handleSwitch = async () => {
     const tempTokenInCopy = Object.assign({}, selectTokenIn)
     setSelectTokenIn(selectTokenOut)
     setSelectTokenOut(tempTokenInCopy)
@@ -75,8 +80,8 @@ export const SwapWidget = ({ tokenList, onSign }: SwapWidgetProps) => {
   return (
     <SwapWidgetProvider>
       <SwapForm
-        selectTokenIn={selectTokenIn!}
-        selectTokenOut={selectTokenOut!}
+        selectTokenIn={selectTokenIn ?? tokenList[0]}
+        selectTokenOut={selectTokenOut ?? tokenList[1]}
         onSwitch={handleSwitch}
         onSubmit={handleSubmit}
         onSelect={handleSelect}

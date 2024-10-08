@@ -29,8 +29,8 @@ enum ErrorEnum {
 }
 
 export interface SwapFormProps {
-  selectTokenIn: BaseTokenInfo
-  selectTokenOut: BaseTokenInfo
+  selectTokenIn?: BaseTokenInfo
+  selectTokenOut?: BaseTokenInfo
   onSubmit: (values: OnSubmitValues) => void
   onSelect: (fieldName: string, selectToken: BaseTokenInfo) => void
   onSwitch: (e: React.MouseEvent<HTMLButtonElement>) => void
@@ -61,8 +61,8 @@ export const SwapForm = ({
 
   const [state, send, actorRef] = useActor(quoteMachine, {
     input: {
-      assetIn: selectTokenIn.defuseAssetId,
-      assetOut: selectTokenOut.defuseAssetId,
+      assetIn: selectTokenIn?.defuseAssetId,
+      assetOut: selectTokenOut?.defuseAssetId,
     },
   })
   console.log("LOG: quoteMachine - state", state)
@@ -76,7 +76,7 @@ export const SwapForm = ({
 
   useEffect(() => {
     const subscription = watch((value, { name }) => {
-      if (name === "amountIn") {
+      if (name === "amountIn" && selectTokenIn && selectTokenOut) {
         send({
           type: "SET_PARAMS",
           data: {
@@ -90,67 +90,76 @@ export const SwapForm = ({
     return () => subscription.unsubscribe()
   }, [watch, selectTokenIn, selectTokenOut, send])
 
-  const quotes = useSelector(actorRef, (state) => state.context.quotes);
+  const quotes = useSelector(actorRef, (state) => state.context.quotes)
 
   useEffect(() => {
     if (quotes) {
       // TODO: amountOut - Find the best quote with the highest estimatedOut value
       if (quotes.length > 0 && quotes[0]) {
-        setValue('amountOut', (quotes[0] as any).amountOut);
+        setValue(
+          "amountOut",
+          (quotes[0] as unknown as { amountOut: string }).amountOut
+        )
       }
     }
-  }, [quotes, setValue]);
+  }, [quotes, setValue])
 
   return (
-    <Form<SwapFormValues>
-      handleSubmit={handleSubmit((values: SwapFormValues) =>
-        onSubmit(values as OnSubmitValues)
-      )}
-      register={register}
-    >
-      <FieldComboInput<SwapFormValues>
-        fieldName="amountIn"
-        selected={selectTokenIn}
-        handleSelect={() => onSelect("tokenIn", selectTokenOut)}
-        className="border rounded-t-xl md:max-w-[472px]"
-        required="This field is required"
-        errors={errors}
-        errorSelect={errorSelectTokenIn}
-      />
-      <div className="relative w-full">
-        <ButtonSwitch onClick={handleSwitch} />
-      </div>
-      <FieldComboInput<SwapFormValues>
-        fieldName="amountOut"
-        selected={selectTokenOut as BaseTokenInfo}
-        handleSelect={() => onSelect("tokenOut", selectTokenIn)}
-        className="border rounded-b-xl mb-5 md:max-w-[472px]"
-        required="This field is required"
-        errors={errors}
-        errorSelect={errorSelectTokenOut}
-        disabled={true}
-      />
-      {selectTokenIn?.defuseAssetId === NEAR_TOKEN_META.defuseAssetId &&
-        errorMsg !== ErrorEnum.INSUFFICIENT_BALANCE &&
-        errorMsg !== ErrorEnum.NO_QUOTES && (
-          <WarnBox
-            allowableNearAmount={allowableNearAmountRef.current}
-            balance={selectTokenIn?.balance ?? "0"}
-            decimals={selectTokenIn?.decimals ?? 0}
-            setValue={(value: string) => {
-              setValue("amountIn", value)
-            }}
-          />
+    <div className="md:max-w-[472px] rounded-[1rem] p-5 shadow-paper bg-white dark:shadow-paper-dark dark:bg-black-800">
+      <Form<SwapFormValues>
+        handleSubmit={handleSubmit((values: SwapFormValues) =>
+          onSubmit(values as OnSubmitValues)
         )}
-      <ButtonCustom
-        type="submit"
-        size="lg"
-        fullWidth
-        isLoading={isFetching}
-        disabled={Boolean(errorMsg)}
+        register={register}
       >
-        {isFetching ? "" : errorMsg ? errorMsg : "Swap"}
-      </ButtonCustom>
-    </Form>
+        <FieldComboInput<SwapFormValues>
+          fieldName="amountIn"
+          selected={selectTokenIn as BaseTokenInfo}
+          handleSelect={() =>
+            onSelect("tokenIn", selectTokenOut as BaseTokenInfo)
+          }
+          className="border rounded-t-xl"
+          required="This field is required"
+          errors={errors}
+          errorSelect={errorSelectTokenIn}
+        />
+        <div className="relative w-full">
+          <ButtonSwitch onClick={handleSwitch} />
+        </div>
+        <FieldComboInput<SwapFormValues>
+          fieldName="amountOut"
+          selected={selectTokenOut as BaseTokenInfo}
+          handleSelect={() =>
+            onSelect("tokenOut", selectTokenIn as BaseTokenInfo)
+          }
+          className="border rounded-b-xl mb-5"
+          required="This field is required"
+          errors={errors}
+          errorSelect={errorSelectTokenOut}
+          disabled={true}
+        />
+        {selectTokenIn?.defuseAssetId === NEAR_TOKEN_META.defuseAssetId &&
+          errorMsg !== ErrorEnum.INSUFFICIENT_BALANCE &&
+          errorMsg !== ErrorEnum.NO_QUOTES && (
+            <WarnBox
+              allowableNearAmount={allowableNearAmountRef.current}
+              balance={selectTokenIn?.balance ?? "0"}
+              decimals={selectTokenIn?.decimals ?? 0}
+              setValue={(value: string) => {
+                setValue("amountIn", value)
+              }}
+            />
+          )}
+        <ButtonCustom
+          type="submit"
+          size="lg"
+          fullWidth
+          isLoading={isFetching}
+          disabled={Boolean(errorMsg)}
+        >
+          {isFetching ? "" : errorMsg ? errorMsg : "Swap"}
+        </ButtonCustom>
+      </Form>
+    </div>
   )
 }
