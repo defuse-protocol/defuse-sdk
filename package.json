@@ -69,6 +69,11 @@
     "tsc-alias": "^1.8.10",
     "typescript": "~5.4.2"
   },
+  "lint-staged": {
+    "*.{ts,tsx,js}": [
+      "yarn biome check --write"
+    ]
+  },
   "engines": {
     "node": ">=20.13.1"
   },
