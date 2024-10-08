@@ -1,5 +1,3 @@
-import type { AccountView } from "near-api-js/lib/providers/provider"
-
 import type { Result } from "./solver"
 
 export type DefuseBaseIds = {
@@ -7,7 +5,9 @@ export type DefuseBaseIds = {
   blockchain: string
 }
 
-export type Account = AccountView & {
+export type Account = {
+  amount: string
+  storage_usage: number
   account_id: string
 }
 
