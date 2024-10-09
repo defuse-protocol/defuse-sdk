@@ -90,16 +90,17 @@ export const SwapForm = ({
     return () => subscription.unsubscribe()
   }, [watch, selectTokenIn, selectTokenOut, send])
 
-  const quotes = useSelector(actorRef, (state) => state.context.quotes);
+  const quotes = useSelector(actorRef, (state) => state.context.quotes)
 
   useEffect(() => {
     if (quotes) {
       // TODO: amountOut - Find the best quote with the highest estimatedOut value
       if (quotes.length > 0 && quotes[0]) {
-        setValue('amountOut', (quotes[0] as any).amountOut);
+        // biome-ignore lint/suspicious/noExplicitAny: incorrect types, it will be fixed when API is settled
+        setValue("amountOut", (quotes[0] as any).amountOut)
       }
     }
-  }, [quotes, setValue]);
+  }, [quotes, setValue])
 
   return (
     <Form<SwapFormValues>
