@@ -16,14 +16,12 @@ export const SwapWidget = ({ tokenList, onSign }: SwapWidgetProps) => {
 
   assert(tokenList.length > 2, "Token list must have at least 2 tokens")
 
-  const [selectTokenIn, setSelectTokenIn] = useState<BaseTokenInfo>(
-    // biome-ignore lint/style/noNonNullAssertion: tokenList is asserted to have at least 2 tokens
-    tokenList[0]!
+  const [selectTokenIn, setSelectTokenIn] = useState<BaseTokenInfo | undefined>(
+    tokenList[0]
   )
-  const [selectTokenOut, setSelectTokenOut] = useState<BaseTokenInfo>(
-    // biome-ignore lint/style/noNonNullAssertion: tokenList is asserted to have at least 2 tokens
-    tokenList[1]!
-  )
+  const [selectTokenOut, setSelectTokenOut] = useState<
+    BaseTokenInfo | undefined
+  >(tokenList[1])
 
   const { setModalType, payload, onCloseModal } = useModalStore(
     (state) => state
@@ -40,7 +38,10 @@ export const SwapWidget = ({ tokenList, onSign }: SwapWidgetProps) => {
     console.log(signature)
   }
 
-  const handleSelect = (fieldName: string, selectToken: BaseTokenInfo) => {
+  const handleSelect = (
+    fieldName: string,
+    selectToken: BaseTokenInfo | undefined
+  ) => {
     setModalType(ModalType.MODAL_SELECT_ASSETS, { fieldName, selectToken })
   }
 
@@ -71,8 +72,7 @@ export const SwapWidget = ({ tokenList, onSign }: SwapWidgetProps) => {
     }
   }, [payload, onCloseModal])
 
-  const handleSwitch = async (e: React.MouseEvent<HTMLButtonElement>) => {
-    e.preventDefault()
+  const handleSwitch = async () => {
     const tempTokenInCopy = Object.assign({}, selectTokenIn)
     setSelectTokenIn(selectTokenOut)
     setSelectTokenOut(tempTokenInCopy)
@@ -81,8 +81,8 @@ export const SwapWidget = ({ tokenList, onSign }: SwapWidgetProps) => {
   return (
     <SwapWidgetProvider>
       <SwapForm
-        selectTokenIn={selectTokenIn}
-        selectTokenOut={selectTokenOut}
+        selectTokenIn={selectTokenIn ?? tokenList[0]}
+        selectTokenOut={selectTokenOut ?? tokenList[1]}
         onSwitch={handleSwitch}
         onSubmit={handleSubmit}
         onSelect={handleSelect}

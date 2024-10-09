@@ -5,6 +5,7 @@ import { ModalContainer } from "../components/Modal/ModalContainer"
 
 import { ModalStoreProvider } from "./ModalStoreProvider"
 import { TokensStoreProvider } from "./TokensStoreProvider"
+import "../styles/main.css"
 
 export const SwapWidgetProvider: React.FC<PropsWithChildren> = ({
   children,
