@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from "react"
+import type React from "react"
+import { useEffect, useState } from "react"
 
 import { SwapWidgetProvider } from "../../../providers"
 import { useModalStore } from "../../../providers/ModalStoreProvider"
@@ -12,6 +13,8 @@ import { type OnSubmitValues, SwapForm } from "./SwapForm"
 
 export const SwapWidget = ({ tokenList, onSign }: SwapWidgetProps) => {
   const { updateTokens } = useTokensStore((state) => state)
+
+  assert(tokenList.length > 2, "Token list must have at least 2 tokens")
 
   const [selectTokenIn, setSelectTokenIn] = useState<BaseTokenInfo | undefined>(
     tokenList[0]
@@ -41,8 +44,6 @@ export const SwapWidget = ({ tokenList, onSign }: SwapWidgetProps) => {
   ) => {
     setModalType(ModalType.MODAL_SELECT_ASSETS, { fieldName, selectToken })
   }
-
-  assert(tokenList.length > 2, "Token list must have at least 2 tokens")
 
   useEffect(() => {
     if (tokenList) {
