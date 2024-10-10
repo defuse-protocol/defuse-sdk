@@ -10,7 +10,7 @@ type Context = {
 type Input = {}
 
 // biome-ignore lint/complexity/noBannedTypes: It is temporary type
-type Output = {
+export type Output = {
   // todo: Output is expected to include intent status, intent entity and other relevant data
 }
 

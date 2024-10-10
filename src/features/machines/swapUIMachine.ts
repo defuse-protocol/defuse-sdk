@@ -1,10 +1,8 @@
 import { assign, fromPromise, setup } from "xstate"
+import type { Output } from "./swapIntentMachine"
 
 // biome-ignore lint/complexity/noBannedTypes: It is temporary type, will be replaced with real quote interface
 export type QuoteTmp = {}
-
-// biome-ignore lint/complexity/noBannedTypes: It is temporary type
-export type OutcomeTmp = {}
 
 export const swapUIMachine = setup({
   types: {
@@ -14,14 +12,14 @@ export const swapUIMachine = setup({
     context: {} as {
       error: Error | null
       quote: QuoteTmp | null
-      outcome: OutcomeTmp | null
+      outcome: Output | null
     },
   },
   actors: {
     queryQuote: fromPromise(async (): Promise<QuoteTmp> => {
       throw new Error("not implemented")
     }),
-    swap: fromPromise(async (): Promise<OutcomeTmp> => {
+    swap: fromPromise(async (): Promise<Output> => {
       throw new Error("not implemented")
     }),
   },
@@ -113,7 +111,7 @@ export const swapUIMachine = setup({
         src: "swap",
         onDone: {
           target: "complete",
-          actions: assign({ quote: ({ event }) => event.output }),
+          actions: assign({ outcome: ({ event }) => event.output }),
         },
       },
     },
