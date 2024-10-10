@@ -28,6 +28,5 @@ jobs:
       - name: Types check
         run: yarn run typecheck
 
-      # TODO: Add integration UI tests
-      # - name: Run integration UI tests
-      #   run: yarn test:integration
+      - name: Unit tests
+        run: yarn test
