@@ -6,14 +6,15 @@ import {
   fromPromise,
   getNextSnapshot,
 } from "xstate"
-import { type OutcomeTmp, type QuoteTmp, swapUIMachine } from "./swapUIMachine"
+import type { Output } from "./swapIntentMachine"
+import { type QuoteTmp, swapUIMachine } from "./swapUIMachine"
 
 describe("swapUIMachine", () => {
   const defaultActorImpls = {
     queryQuote: vi.fn(async (): Promise<QuoteTmp> => {
       return {}
     }),
-    swap: async (): Promise<OutcomeTmp> => {
+    swap: async (): Promise<Output> => {
       return {}
     },
   }
