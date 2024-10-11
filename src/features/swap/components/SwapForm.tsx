@@ -9,6 +9,7 @@ import { FieldComboInput } from "../../../components/Form/FieldComboInput"
 import { WarnBox } from "../../../components/WarnBox"
 import { NEAR_TOKEN_META } from "../../../constants"
 import type { BaseTokenInfo } from "../../../types/base"
+import { SwapUIMachineContext } from "./SwapUIMachineProvider"
 
 export type SwapFormValues = {
   amountIn: string // tokenIn
@@ -53,6 +54,8 @@ export const SwapForm = ({
     formState: { errors },
   } = useFormContext<SwapFormValues>()
 
+  const swapUIActorRef = SwapUIMachineContext.useActorRef()
+
   const allowableNearAmountRef = useRef<null | string>(null)
 
   const [errorSelectTokenIn, setErrorSelectTokenIn] = useState("")
@@ -65,7 +68,6 @@ export const SwapForm = ({
       assetOut: selectTokenOut?.defuseAssetId,
     },
   })
-  console.log("LOG: quoteMachine - state", state)
 
   const handleSwitch = async (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault()
@@ -73,6 +75,12 @@ export const SwapForm = ({
     setValue("amountOut", "")
     setValue("amountIn", "")
   }
+
+  useEffect(() => {
+    swapUIActorRef.subscribe((state) => {
+      console.log(state.value, state.context)
+    })
+  }, [swapUIActorRef])
 
   useEffect(() => {
     const subscription = watch((value, { name }) => {

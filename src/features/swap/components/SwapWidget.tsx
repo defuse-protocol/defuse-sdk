@@ -10,6 +10,8 @@ import type { ModalSelectAssetsPayload } from "src/components/Modal/ModalSelectA
 import { useTokensStore } from "../../../providers/TokensStoreProvider"
 import { type OnSubmitValues, SwapForm } from "./SwapForm"
 import { SwapFormProvider } from "./SwapFormProvider"
+import { SwapUIMachineFormSyncProvider } from "./SwapUIMachineFormSyncProvider"
+import { SwapUIMachineProvider } from "./SwapUIMachineProvider"
 
 export const SwapWidget = ({ tokenList, onSign }: SwapWidgetProps) => {
   const { updateTokens } = useTokensStore((state) => state)
@@ -81,14 +83,18 @@ export const SwapWidget = ({ tokenList, onSign }: SwapWidgetProps) => {
   return (
     <SwapWidgetProvider>
       <SwapFormProvider>
-        <SwapForm
-          selectTokenIn={selectTokenIn ?? tokenList[0]}
-          selectTokenOut={selectTokenOut ?? tokenList[1]}
-          onSwitch={handleSwitch}
-          onSubmit={handleSubmit}
-          onSelect={handleSelect}
-          isFetching={false}
-        />
+        <SwapUIMachineProvider>
+          <SwapUIMachineFormSyncProvider>
+            <SwapForm
+              selectTokenIn={selectTokenIn ?? tokenList[0]}
+              selectTokenOut={selectTokenOut ?? tokenList[1]}
+              onSwitch={handleSwitch}
+              onSubmit={handleSubmit}
+              onSelect={handleSelect}
+              isFetching={false}
+            />
+          </SwapUIMachineFormSyncProvider>
+        </SwapUIMachineProvider>
       </SwapFormProvider>
     </SwapWidgetProvider>
   )
