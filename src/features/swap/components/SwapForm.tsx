@@ -1,7 +1,7 @@
 import { quoteMachine } from "@defuse-protocol/swap-facade"
 import { useActor, useSelector } from "@xstate/react"
 import { useEffect, useRef, useState } from "react"
-import { useForm } from "react-hook-form"
+import { useFormContext } from "react-hook-form"
 
 import { ButtonCustom, ButtonSwitch } from "../../../components/Button"
 import { Form } from "../../../components/Form"
@@ -10,7 +10,7 @@ import { WarnBox } from "../../../components/WarnBox"
 import { NEAR_TOKEN_META } from "../../../constants"
 import type { BaseTokenInfo } from "../../../types/base"
 
-type SwapFormValues = {
+export type SwapFormValues = {
   amountIn: string // tokenIn
   amountOut: string // tokenOut
 }
@@ -51,7 +51,7 @@ export const SwapForm = ({
     setValue,
     watch,
     formState: { errors },
-  } = useForm<SwapFormValues>({ reValidateMode: "onSubmit" })
+  } = useFormContext<SwapFormValues>()
 
   const allowableNearAmountRef = useRef<null | string>(null)
 

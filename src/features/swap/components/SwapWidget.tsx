@@ -1,4 +1,3 @@
-import type React from "react"
 import { useEffect, useState } from "react"
 
 import { SwapWidgetProvider } from "../../../providers"
@@ -10,6 +9,7 @@ import type { BaseTokenInfo } from "../../../types/base"
 import type { ModalSelectAssetsPayload } from "src/components/Modal/ModalSelectAssets"
 import { useTokensStore } from "../../../providers/TokensStoreProvider"
 import { type OnSubmitValues, SwapForm } from "./SwapForm"
+import { SwapFormProvider } from "./SwapFormProvider"
 
 export const SwapWidget = ({ tokenList, onSign }: SwapWidgetProps) => {
   const { updateTokens } = useTokensStore((state) => state)
@@ -80,14 +80,16 @@ export const SwapWidget = ({ tokenList, onSign }: SwapWidgetProps) => {
 
   return (
     <SwapWidgetProvider>
-      <SwapForm
-        selectTokenIn={selectTokenIn ?? tokenList[0]}
-        selectTokenOut={selectTokenOut ?? tokenList[1]}
-        onSwitch={handleSwitch}
-        onSubmit={handleSubmit}
-        onSelect={handleSelect}
-        isFetching={false}
-      />
+      <SwapFormProvider>
+        <SwapForm
+          selectTokenIn={selectTokenIn ?? tokenList[0]}
+          selectTokenOut={selectTokenOut ?? tokenList[1]}
+          onSwitch={handleSwitch}
+          onSubmit={handleSubmit}
+          onSelect={handleSelect}
+          isFetching={false}
+        />
+      </SwapFormProvider>
     </SwapWidgetProvider>
   )
 }
