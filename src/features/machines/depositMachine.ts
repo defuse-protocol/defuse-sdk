@@ -1,4 +1,4 @@
-import { assign, fromPromise, setup } from "xstate"
+import { assign, emit, fromPromise, setup } from "xstate"
 import { DepositProcessorService } from "../deposit"
 
 export enum BlockchainEnum {
@@ -43,32 +43,6 @@ export const depositMachine = setup({
     events: {} as Events,
     input: {} as Input,
   },
-  actions: {
-    updateBlockchain: assign({
-      blockchain: ({ event }) =>
-        event.type === "GENERATE_DEPOSIT_ADDREES"
-          ? (event.params.blockchain as BlockchainEnum)
-          : null,
-    }),
-    updateDepositParams: assign({
-      depositAddress: ({ event }) =>
-        event.type === "SET_DEPOSIT_PARAMS"
-          ? event.params.depositAddress
-          : null,
-      depositAsset: ({ event }) =>
-        event.type === "SET_DEPOSIT_PARAMS" ? event.params.depositAsset : null,
-      depositAmount: ({ event }) =>
-        event.type === "SET_DEPOSIT_PARAMS" ? event.params.depositAmount : null,
-    }),
-    emitSuccessfulDeposit: (context, event) => {
-      // Add your action code here
-      // ...
-    },
-    emitFailedDeposit: (context, event) => {
-      // Add your action code here
-      // ...
-    },
-  },
   guards: {
     isValidNearNetwork: () => {
       throw new Error("not implemented")
@@ -103,11 +77,21 @@ export const depositMachine = setup({
     Idle: {
       on: {
         GENERATE_DEPOSIT_ADDREES: {
-          actions: "updateBlockchain",
+          actions: assign({
+            blockchain: ({ event }) =>
+              event.type === "GENERATE_DEPOSIT_ADDREES"
+                ? (event.params.blockchain as BlockchainEnum)
+                : null,
+          }),
           target: "Generating",
         },
         DIRECT_DEPOSIT_VIA_NEAR: {
-          actions: "updateBlockchain",
+          actions: assign({
+            blockchain: ({ event }) =>
+              event.type === "DIRECT_DEPOSIT_VIA_NEAR"
+                ? (event.params.blockchain as BlockchainEnum)
+                : null,
+          }),
           target: "Configurating",
           guard: {
             type: "isValidNearNetwork",
@@ -134,6 +118,20 @@ export const depositMachine = setup({
             guard: {
               type: "isValidDepositParams",
             },
+            actions: assign({
+              depositAddress: ({ event }) =>
+                event.type === "SET_DEPOSIT_PARAMS"
+                  ? event.params.depositAddress
+                  : null,
+              depositAsset: ({ event }) =>
+                event.type === "SET_DEPOSIT_PARAMS"
+                  ? event.params.depositAsset
+                  : null,
+              depositAmount: ({ event }) =>
+                event.type === "SET_DEPOSIT_PARAMS"
+                  ? event.params.depositAmount
+                  : null,
+            }),
           },
           {
             target: "Configurating",
@@ -147,15 +145,23 @@ export const depositMachine = setup({
         input: {},
         onDone: {
           target: "Completed",
-          actions: {
-            type: "emitSuccessfulDeposit",
-          },
+          actions: emit(({ context }) => {
+            console.log("Emitting Successful Deposit event")
+            return {
+              type: "SUCCESSFUL_DEPOSIT",
+              data: context,
+            }
+          }),
         },
         onError: {
           target: "Failed",
-          actions: {
-            type: "emitFailedDeposit",
-          },
+          actions: emit(({ context }) => {
+            console.log("Emitting Failed Deposit event")
+            return {
+              type: "FAILED_DEPOSIT",
+              data: context,
+            }
+          }),
         },
         src: "deposit",
       },
