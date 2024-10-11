@@ -18,12 +18,14 @@ export const SwapWidget = ({ tokenList, onSign }: SwapWidgetProps) => {
 
   assert(tokenList.length > 2, "Token list must have at least 2 tokens")
 
-  const [selectTokenIn, setSelectTokenIn] = useState<BaseTokenInfo | undefined>(
-    tokenList[0]
+  const [selectTokenIn, setSelectTokenIn] = useState<BaseTokenInfo>(
+    // biome-ignore lint/style/noNonNullAssertion: tokenList[0] is guaranteed to be defined
+    tokenList[0]!
   )
-  const [selectTokenOut, setSelectTokenOut] = useState<
-    BaseTokenInfo | undefined
-  >(tokenList[1])
+  const [selectTokenOut, setSelectTokenOut] = useState<BaseTokenInfo>(
+    // biome-ignore lint/style/noNonNullAssertion: tokenList[1] is guaranteed to be defined
+    tokenList[1]!
+  )
 
   const { setModalType, payload, onCloseModal } = useModalStore(
     (state) => state
@@ -86,8 +88,8 @@ export const SwapWidget = ({ tokenList, onSign }: SwapWidgetProps) => {
         <SwapUIMachineProvider>
           <SwapUIMachineFormSyncProvider>
             <SwapForm
-              selectTokenIn={selectTokenIn ?? tokenList[0]}
-              selectTokenOut={selectTokenOut ?? tokenList[1]}
+              selectTokenIn={selectTokenIn}
+              selectTokenOut={selectTokenOut}
               onSwitch={handleSwitch}
               onSubmit={handleSubmit}
               onSelect={handleSelect}
