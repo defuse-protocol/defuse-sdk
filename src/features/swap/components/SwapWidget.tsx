@@ -85,7 +85,10 @@ export const SwapWidget = ({ tokenList, onSign }: SwapWidgetProps) => {
   return (
     <SwapWidgetProvider>
       <SwapFormProvider>
-        <SwapUIMachineProvider>
+        <SwapUIMachineProvider
+          assetIn={selectTokenIn}
+          assetOut={selectTokenOut}
+        >
           <SwapUIMachineFormSyncProvider>
             <SwapForm
               selectTokenIn={selectTokenIn}
