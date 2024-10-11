@@ -1,5 +1,3 @@
-import { quoteMachine } from "@defuse-protocol/swap-facade"
-import { useActor, useSelector } from "@xstate/react"
 import { useEffect, useRef, useState } from "react"
 import { useFormContext } from "react-hook-form"
 
@@ -50,7 +48,6 @@ export const SwapForm = ({
     handleSubmit,
     register,
     setValue,
-    watch,
     formState: { errors },
   } = useFormContext<SwapFormValues>()
 
@@ -61,13 +58,6 @@ export const SwapForm = ({
   const [errorSelectTokenIn, setErrorSelectTokenIn] = useState("")
   const [errorSelectTokenOut, setErrorSelectTokenOut] = useState("")
   const [errorMsg, setErrorMsg] = useState<ErrorEnum>()
-
-  const [state, send, actorRef] = useActor(quoteMachine, {
-    input: {
-      assetIn: selectTokenIn?.defuseAssetId,
-      assetOut: selectTokenOut?.defuseAssetId,
-    },
-  })
 
   const handleSwitch = async (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault()
@@ -81,36 +71,6 @@ export const SwapForm = ({
       console.log(state.value, state.context)
     })
   }, [swapUIActorRef])
-
-  useEffect(() => {
-    const subscription = watch((value, { name }) => {
-      if (name === "amountIn" && selectTokenIn && selectTokenOut) {
-        send({
-          type: "SET_PARAMS",
-          data: {
-            assetIn: selectTokenIn.defuseAssetId,
-            assetOut: selectTokenOut.defuseAssetId,
-            amountIn: String(value.amountIn),
-          },
-        })
-      }
-    })
-    return () => subscription.unsubscribe()
-  }, [watch, selectTokenIn, selectTokenOut, send])
-
-  const quotes = useSelector(actorRef, (state) => state.context.quotes)
-
-  useEffect(() => {
-    if (quotes) {
-      // TODO: amountOut - Find the best quote with the highest estimatedOut value
-      if (quotes.length > 0 && quotes[0]) {
-        setValue(
-          "amountOut",
-          (quotes[0] as unknown as { amountOut: string }).amountOut
-        )
-      }
-    }
-  }, [quotes, setValue])
 
   return (
     <div className="md:max-w-[472px] rounded-[1rem] p-5 shadow-paper bg-white dark:shadow-paper-dark dark:bg-black-800">
