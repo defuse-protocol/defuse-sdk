@@ -11,6 +11,9 @@ import { type QuoteTmp, swapUIMachine } from "./swapUIMachine"
 
 describe("swapUIMachine", () => {
   const defaultActorImpls = {
+    formValidation: vi.fn(async (): Promise<boolean> => {
+      return true
+    }),
     queryQuote: vi.fn(async (): Promise<QuoteTmp> => {
       return {}
     }),
@@ -20,6 +23,7 @@ describe("swapUIMachine", () => {
   }
 
   const defaultActors = {
+    formValidation: fromPromise(defaultActorImpls.formValidation),
     queryQuote: fromPromise(defaultActorImpls.queryQuote),
     swap: fromPromise(defaultActorImpls.swap),
   }
@@ -61,9 +65,8 @@ describe("swapUIMachine", () => {
   const F = () => false
 
   it.each`
-    initialState      | expectedState        | event      | guards                | context
-    ${"editing.idle"} | ${"editing.idle"}    | ${"input"} | ${{ isFormValid: F }} | ${null}
-    ${"editing.idle"} | ${"editing.quoting"} | ${"input"} | ${{ isFormValid: T }} | ${null}
+    initialState      | expectedState           | event      | guards  | context
+    ${"editing.idle"} | ${"editing.validating"} | ${"input"} | ${null} | ${null}
   `(
     'should reach "$expectedState" given "$initialState" when the "$event" event occurs',
     ({ initialState, expectedState, event, guards, context }) => {
@@ -91,7 +94,6 @@ describe("swapUIMachine", () => {
 
   it("should set and reset the quote querying error", async () => {
     // arrange
-    guards.isFormValid.mockReturnValueOnce(true)
     const err = new Error("Something went wrong")
     defaultActorImpls.queryQuote
       .mockRejectedValueOnce(err)

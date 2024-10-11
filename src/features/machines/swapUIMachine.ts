@@ -16,6 +16,9 @@ export const swapUIMachine = setup({
     },
   },
   actors: {
+    formValidation: fromPromise(async (): Promise<boolean> => {
+      throw new Error("not implemented")
+    }),
     queryQuote: fromPromise(async (): Promise<QuoteTmp> => {
       throw new Error("not implemented")
     }),
@@ -32,15 +35,12 @@ export const swapUIMachine = setup({
     quotePollingInterval: 500,
   },
   guards: {
-    isFormValid: () => {
-      throw new Error("not implemented")
-    },
     isQuoteRelevant: () => {
       throw new Error("not implemented")
     },
   },
 }).createMachine({
-  /** @xstate-layout N4IgpgJg5mDOIC5SwO4EMAOBaArgSwDpI8AXPAOygGJYcAjAW1IG0AGAXUVAwHtZS8PclxAAPRAEYJADgIB2AKwA2JdIkBmVqyUKFAJgA0IAJ6S9e+UoCcc6bfV7pe1noC+ro6ky5CxMpSoKDBwSNk4kEF5+MiERcQQsPQ0CVl1pKx1pFRdDE0REuQIdABY7BTslYpctNw8QL2x8IggBAKCQ5glw7j4BWIj4rAVtAgybCWsJPSUpOSNTBIUCCTkVCYU5c3T1HfdPdEbfFv8oAjwIABswKlFYEjQSMAI0ADNHgCcACgBHHB5HgAKPAuFwoUAAkuQPgA3NAXACUNAOPmarVO5yuYREUT6wgG+SULgI0gUO1Jq3SVisuQWE2Ky1UKyk0m0TiU6j29WRTT8YIIv3+YKoECETwo0J4AGsngLHgBFHBgd54JVYiI4mJ40CDdTJaTFKR6KwOBTFTSreaIPRyVgpazFcrFTZ6BRTJSchoo3mUfl-E5UJXvHjvAgYC4PF7Bhi+-5gBVKlXvNU9aKCLVifJTelVbZKRTFKypPOWhDW23aKwO-XO121fbeJq0Rikf0i8hi8gS6UET2N+hMEgnBDingAYweabCycivU1cUQuisRRUjipw1KMxLElYEgIpvKrAy6krxWKHu5hFHPAYYbAjxo93eJAA8tDVRxsbO0-OEKal7o5ELQC0isEkS3MQpWQPBQqQcHcJHcOpyB4CA4BEXs8E-VN+m1fInCWFRAMAlQqWKHQS0SIlNArdR1xJItzwbI40Sw3EfywOROOXIiMmsStyLyBIpHpGxOP1axtGmRxGMOVETjOS4wFYud8QSTYl0ImxeNIgTaSUCwyQLJ0Vk2TYzzqDC5L5WUwWU79VMSSo9y0Q8dnwyttC3J1LBkaRjxsHQMgUGSUSbAcTjsnCMwQdRFAIPQDSycxaKsfRihLY1ljI0opjkBxNA5CyLwIK8byuR5IvTeI5AkekZBUB0DQNPMaUkGR4tddQnHUUpSXtRDXCAA */
+  /** @xstate-layout N4IgpgJg5mDOIC5SwO4EMAOBaArgSwDpI8AXPAOygGJYcAjAW1IG0AGAXUVAwHtZS8PclxAAPRAEYJADgIB2AKwA2JdIkBmVqyUKFAJgA0IAJ6S9e+UoCcc6bfV7pe1noC+ro6ky5CxMpSoKDBwSNk4kEF5+MiERcQQsfSsCABZWdQUJOQl06WkU6SNTBIVZVgkFFIqUhXtWFPV3T3RsfCIIAUoCAEccHhJIKlFYEjQBgjQAMwGAJwAKXv6wAAUeABs1iigASXJZgDc0NYBKGhafds6oHr6BiDCRKIFYiPjEhVYCaSVylKsUv5ZIqSb4EVTlVhWZQ-CpKRoeEBeVq+Dr+a6LNFUCBCMAECj7HgAa1xGLAAEUcGAZngqQ8Ik8YsJXogsOoNF8qhI9FYHJVNHIlMCEHo5J9tP9Sik5OZMnolE1Eec2n4tjd+lsqFSZjwZgQMGsxpMdQw1QMKVSaTM6dw+M8maA3lyUqlWNIeUpFH9WMo5EKRWLrDV8tK9LKFUiLrRGKRMdjyLj8UTcRG2lGmCQ0QhEwBjMaCchha2RW2MuKIXTJFRKRxWKH1b4SIU5CQESqlSFw-4A8NKwjZngMfVgAY0UYzEgAeX2tI4jxL+bLCEqyV0cisrDXujd0gUfpFBG0O+k3trDnKEh73mVqNVh02EDzATjCfIBOJBBTKKuBDveAfmZzPMhELWd6XnF4HRZEUlAIcwrBUdJnGcDIhUUVJVHUJwnH0PJ8kvZFLjRH8jj-R9qGfPFXyTD9e0I28SP-LYsyo3NGULCRwhtaIF2ZEo1FbRw9E0PIXD0KRUIUdD8nqUN1ClTJ5QVcgeAgOARE-OduIgsQWWPT5nChGQjyUDRfRMKCHDBEy5WlN0t3SfCLhVShNLtRcsEUCwDMyPJShM9QzOKLAJBqAh1EwuTTPUQNzEc69vz-NYwFc0teI8+pYMhHzjNM1D1DBDJRRkKUpDUFI4q-IiMS2FKeMghI5WdD4tB5TDQ3+bQmylSwjPUWsBQUeCFAqj96HTNFau0+IAskvQqm+cwMihOahR5AgQqUAouTkBxNHhZorz7AchwGSb7R0hBsmdGQVBqKoqg9QxzIQUrYMyNq5J3aL-hG5zrl-RiXLArTzreITkhu+DHByOTrEKZ7EgsD07A0c8MjsaRfpvLpSQgM73MySSTKyeCrA0Bw7D9Jx1oChwJBsTa0mkeF3CAA */
   id: "swap-ui",
 
   context: {
@@ -56,40 +56,29 @@ export const swapUIMachine = setup({
           target: "submitting",
           guard: "isQuoteRelevant",
         },
-        input: [
-          {
-            target: ".quoting",
-            actions: ["clearQuote", "clearError"],
-            guard: "isFormValid",
-          },
-          {
-            target: ".idle",
-            actions: ["clearQuote", "clearError"],
-          },
-        ],
+        input: {
+          target: ".validating",
+          actions: ["clearQuote", "clearError"],
+        },
       },
 
       states: {
-        idle: {
-          after: {
-            quotePollingInterval: {
-              target: "quoting",
-              guard: "isFormValid",
-            },
-          },
-        },
+        idle: {},
+
         quoting: {
           invoke: {
             id: "quoteQuerier",
             src: "queryQuote",
 
             onDone: {
-              target: "idle",
+              target: "quoted",
               actions: assign({ quote: ({ event }) => event.output }),
+              reenter: true,
             },
 
             onError: {
-              target: "idle",
+              target: "quoted",
+
               actions: assign({
                 error: ({ event }) => {
                   if (event.error instanceof Error) {
@@ -98,6 +87,31 @@ export const swapUIMachine = setup({
                   return new Error("unknown error")
                 },
               }),
+
+              reenter: true,
+            },
+          },
+        },
+
+        validating: {
+          invoke: {
+            src: "formValidation",
+
+            onDone: [
+              {
+                target: "quoting",
+                guard: ({ event }) => event.output,
+              },
+              "idle",
+            ],
+          },
+        },
+
+        quoted: {
+          after: {
+            quotePollingInterval: {
+              target: "quoting",
+              reenter: true,
             },
           },
         },
