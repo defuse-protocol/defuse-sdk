@@ -14,8 +14,8 @@ describe("swapUIMachine", () => {
     formValidation: vi.fn(async (): Promise<boolean> => {
       return true
     }),
-    queryQuote: vi.fn(async (): Promise<QuoteTmp> => {
-      return {}
+    queryQuote: vi.fn(async (): Promise<QuoteTmp[]> => {
+      return []
     }),
     swap: async (): Promise<Output> => {
       return {}
@@ -28,10 +28,11 @@ describe("swapUIMachine", () => {
     swap: fromPromise(defaultActorImpls.swap),
   }
 
-  const defaultActions = {}
+  const defaultActions = {
+    updateUIAmountOut: vi.fn(),
+  }
 
   const defaultGuards = {
-    isFormValid: vi.fn(),
     isQuoteRelevant: vi.fn(),
   }
 
@@ -97,7 +98,7 @@ describe("swapUIMachine", () => {
     const err = new Error("Something went wrong")
     defaultActorImpls.queryQuote
       .mockRejectedValueOnce(err)
-      .mockResolvedValueOnce({})
+      .mockResolvedValueOnce([])
     const service = interpret().start()
 
     // act

@@ -2,7 +2,9 @@ import { assign, fromPromise, setup } from "xstate"
 import type { Output } from "./swapIntentMachine"
 
 // biome-ignore lint/complexity/noBannedTypes: It is temporary type, will be replaced with real quote interface
-export type QuoteTmp = {}
+export type QuoteTmp = {
+  amount_out: string
+}
 
 export const swapUIMachine = setup({
   types: {
@@ -11,7 +13,7 @@ export const swapUIMachine = setup({
     },
     context: {} as {
       error: Error | null
-      quote: QuoteTmp | null
+      quotes: QuoteTmp[] | null
       outcome: Output | null
     },
   },
@@ -19,7 +21,7 @@ export const swapUIMachine = setup({
     formValidation: fromPromise(async (): Promise<boolean> => {
       throw new Error("not implemented")
     }),
-    queryQuote: fromPromise(async (): Promise<QuoteTmp> => {
+    queryQuote: fromPromise(async (): Promise<QuoteTmp[]> => {
       throw new Error("not implemented")
     }),
     swap: fromPromise(async (): Promise<Output> => {
@@ -27,7 +29,10 @@ export const swapUIMachine = setup({
     }),
   },
   actions: {
-    clearQuote: assign({ quote: null }),
+    updateUIAmountOut: () => {
+      throw new Error("not implemented")
+    },
+    clearQuote: assign({ quotes: null }),
     clearError: assign({ error: null }),
     clearOutcome: assign({ outcome: null }),
   },
@@ -40,12 +45,12 @@ export const swapUIMachine = setup({
     },
   },
 }).createMachine({
-  /** @xstate-layout N4IgpgJg5mDOIC5SwO4EMAOBaArgSwDpI8AXPAOygGJYcAjAW1IG0AGAXUVAwHtZS8PclxAAPRAEYJADgIB2AKwA2JdIkBmVqyUKFAJgA0IAJ6S9e+UoCcc6bfV7pe1noC+ro6ky5CxMpSoKDBwSNk4kEF5+MiERcQQsfSsCABZWdQUJOQl06WkU6SNTBIVZVgkFFIqUhXtWFPV3T3RsfCIIAUoCAEccHhJIKlFYEjQBgjQAMwGAJwAKXv6wAAUeABs1iigASXJZgDc0NYBKGhafds6oHr6BiDCRKIFYiPjEhVYCaSVylKsUv5ZIqSb4EVTlVhWZQ-CpKRoeEBeVq+Dr+a6LNFUCBCMAECj7HgAa1xGLAAEUcGAZngqQ8Ik8YsJXogsOoNF8qhI9FYHJVNHIlMCEHo5J9tP9Sik5OZMnolE1Eec2n4tjd+lsqFSZjwZgQMGsxpMdQw1QMKVSaTM6dw+M8maA3lyUqlWNIeUpFH9WMo5EKRWLrDV8tK9LKFUiLrRGKRMdjyLj8UTcRG2lGmCQ0QhEwBjMaCchha2RW2MuKIXTJFRKRxWKH1b4SIU5CQESqlSFw-4A8NKwjZngMfVgAY0UYzEgAeX2tI4jxL+bLCEqyV0cisrDXujd0gUfpFBG0O+k3trDnKEh73mVqNVh02EDzATjCfIBOJBBTKKuBDveAfmZzPMhELWd6XnF4HRZEUlAIcwrBUdJnGcDIhUUVJVHUJwnH0PJ8kvZFLjRH8jj-R9qGfPFXyTD9e0I28SP-LYsyo3NGULCRwhtaIF2ZEo1FbRw9E0PIXD0KRUIUdD8nqUN1ClTJ5QVcgeAgOARE-OduIgsQWWPT5nChGQjyUDRfRMKCHDBEy5WlN0t3SfCLhVShNLtRcsEUCwDMyPJShM9QzOKLAJBqAh1EwuTTPUQNzEc69vz-NYwFc0teI8+pYMhHzjNM1D1DBDJRRkKUpDUFI4q-IiMS2FKeMghI5WdD4tB5TDQ3+bQmylSwjPUWsBQUeCFAqj96HTNFau0+IAskvQqm+cwMihOahR5AgQqUAouTkBxNHhZorz7AchwGSb7R0hBsmdGQVBqKoqg9QxzIQUrYMyNq5J3aL-hG5zrl-RiXLArTzreITkhu+DHByOTrEKZ7EgsD07A0c8MjsaRfpvLpSQgM73MySSTKyeCrA0Bw7D9Jx1oChwJBsTa0mkeF3CAA */
+  /** @xstate-layout N4IgpgJg5mDOIC5SwO4EMAOBaArgSwDpI8AXPAOygGJYcAjAW1IG0AGAXUVAwHtZS8PclxAAPRAEYJADgIB2AKwA2JdIkBmVqyUKFAJgA0IAJ6S9e+UoCcc6bfV7pe1noC+ro6ky5CxMpSoKDBwSNk4kEF5+MiERcQQsABZrAiV1CXt1dSUJBQlEo1ME6SsCLIyFbKsJJT0FVgl3T3RsfCIIAUoCAEccHn9qCCEwAgoANx4AaxHe-rAARRwwACc8FbCRKIFYiPisdPUCaUSpPSsHBUTNOSVCxD05VgJtK0SFY7lzPL0lJpAvVq+DoDHp9AZUFbLHjLAgYAA2aBIADNoQxQXNFis1ssNhEtjFhLtEFgJHpEgREqwStlFIkrKxlHI7ggHk8Xm8Pl9SX8AT52p0oAQxmg4XgIIiKINhqNyBNpgReW0-JKhSKxRLKAhxjwAMYSoRhXHcPjbQmgPYPJQEcxWFSsBwue0KZmKCmqdROJz6aQ+xI8lp85VdYWi8XgobkEba+WKoEC1WhjVQLWy3X68iGiThY3RQRmsTEpQNa0lY7SdS6Wr25n6eRXWzSepnCT0twef4BpXAlWzEiQKiiWAkREjNBIvvLAAUvbAAAUeHDRZQAJLkCchgCUNE7cZBM4gRsiJoJcWJuie0iL+VedIyzJkVtUDVYVmUV+U6n93jatEYpHD0rRiMsYKvQTAkAMKYTHqBKGhwmzHnmp4ILopQqLUJSvqwiSXhI97Fpc7wvmkN5+u2IE6jwDDwmAfY0MOywkAA8mM6zwXiiE7OaiCXKUuhyPSAm6KWzomPcDzPKoREKFY5zOFI7jtuQPAQHAIixghuZcQWxRaNaL55D67w5OoTJiQkPyHDYNzaBI2EtlSZHNN+u6SppprIVgigWM4r4yI2uGmcyJI3KklxKAJJQCawAmfuRO78iCYpwmA7knkSCSPOSvmGQFJlmUUciHGkCiPDIiRyFIahOR2LmJT2YJuRxWn5haSjkvUWjnB6dSvNo94VZY-nqLJNwyToX6AvVwZqmGTU5h5GVYHoI1lJ8zilZemE+sFchyEcAlybYK1qFkk2Bt2XT7mlSFLcosiOPo9KVDoL3Mj8+3hToDIVi+ijnT+YH-vNR4tchpkKNaJyXuYFavmSzLnAQ+TtWoDwOJocXOVNlHUSlfY3dp8SVeSD7tZc+Q1J894yNaeQ9eoOEva8imuEAA */
   id: "swap-ui",
 
   context: {
     error: null,
-    quote: null,
+    quotes: null,
     outcome: null,
   },
 
@@ -72,7 +77,7 @@ export const swapUIMachine = setup({
 
             onDone: {
               target: "quoted",
-              actions: assign({ quote: ({ event }) => event.output }),
+              actions: assign({ quotes: ({ event }) => event.output }),
               reenter: true,
             },
 
@@ -102,7 +107,10 @@ export const swapUIMachine = setup({
                 target: "quoting",
                 guard: ({ event }) => event.output,
               },
-              "idle",
+              {
+                target: "idle",
+                actions: "updateUIAmountOut",
+              },
             ],
           },
         },
@@ -114,6 +122,8 @@ export const swapUIMachine = setup({
               reenter: true,
             },
           },
+
+          entry: "updateUIAmountOut",
         },
       },
 
