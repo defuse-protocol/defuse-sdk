@@ -1,4 +1,3 @@
-import type React from "react"
 import { useEffect, useState } from "react"
 
 import { SwapWidgetProvider } from "../../../providers"
@@ -10,18 +9,23 @@ import type { BaseTokenInfo } from "../../../types/base"
 import type { ModalSelectAssetsPayload } from "src/components/Modal/ModalSelectAssets"
 import { useTokensStore } from "../../../providers/TokensStoreProvider"
 import { type OnSubmitValues, SwapForm } from "./SwapForm"
+import { SwapFormProvider } from "./SwapFormProvider"
+import { SwapUIMachineFormSyncProvider } from "./SwapUIMachineFormSyncProvider"
+import { SwapUIMachineProvider } from "./SwapUIMachineProvider"
 
 export const SwapWidget = ({ tokenList, onSign }: SwapWidgetProps) => {
   const { updateTokens } = useTokensStore((state) => state)
 
   assert(tokenList.length > 2, "Token list must have at least 2 tokens")
 
-  const [selectTokenIn, setSelectTokenIn] = useState<BaseTokenInfo | undefined>(
-    tokenList[0]
+  const [selectTokenIn, setSelectTokenIn] = useState<BaseTokenInfo>(
+    // biome-ignore lint/style/noNonNullAssertion: tokenList[0] is guaranteed to be defined
+    tokenList[0]!
   )
-  const [selectTokenOut, setSelectTokenOut] = useState<
-    BaseTokenInfo | undefined
-  >(tokenList[1])
+  const [selectTokenOut, setSelectTokenOut] = useState<BaseTokenInfo>(
+    // biome-ignore lint/style/noNonNullAssertion: tokenList[1] is guaranteed to be defined
+    tokenList[1]!
+  )
 
   const { setModalType, payload, onCloseModal } = useModalStore(
     (state) => state
@@ -80,14 +84,23 @@ export const SwapWidget = ({ tokenList, onSign }: SwapWidgetProps) => {
 
   return (
     <SwapWidgetProvider>
-      <SwapForm
-        selectTokenIn={selectTokenIn ?? tokenList[0]}
-        selectTokenOut={selectTokenOut ?? tokenList[1]}
-        onSwitch={handleSwitch}
-        onSubmit={handleSubmit}
-        onSelect={handleSelect}
-        isFetching={false}
-      />
+      <SwapFormProvider>
+        <SwapUIMachineProvider
+          assetIn={selectTokenIn}
+          assetOut={selectTokenOut}
+        >
+          <SwapUIMachineFormSyncProvider>
+            <SwapForm
+              selectTokenIn={selectTokenIn}
+              selectTokenOut={selectTokenOut}
+              onSwitch={handleSwitch}
+              onSubmit={handleSubmit}
+              onSelect={handleSelect}
+              isFetching={false}
+            />
+          </SwapUIMachineFormSyncProvider>
+        </SwapUIMachineProvider>
+      </SwapFormProvider>
     </SwapWidgetProvider>
   )
 }
