@@ -7,10 +7,12 @@ import * as RadixSelect from "@radix-ui/react-select"
 import { Flex } from "@radix-ui/themes"
 import clsx from "clsx"
 import type React from "react"
+import type { FieldValues, Path, UseFormRegister } from "react-hook-form"
 import styles from "./styles.module.css"
 
-type Props<T> = {
-  value: string
+type Props<T, TFieldValues extends FieldValues> = {
+  name: string
+  register: UseFormRegister<TFieldValues>
   options: {
     [key in T extends string ? T : never]: {
       label: string
@@ -19,20 +21,24 @@ type Props<T> = {
   }
   placeholder: { label: string; icon: React.ReactNode }
   label?: string
-  onChange: (value: string) => void
   fullWidth?: boolean
 }
 
-export const Select = <T extends string>({
-  value,
+export const Select = <T extends string, TFieldValues extends FieldValues>({
+  name,
+  register,
   options,
   placeholder,
-  onChange,
   label,
   fullWidth = false,
-}: Props<T>) => {
+}: Props<T, TFieldValues>) => {
+  const { onChange, ...rest } = register(name as Path<TFieldValues>)
+
   return (
-    <RadixSelect.Root value={value} onValueChange={onChange}>
+    <RadixSelect.Root
+      onValueChange={(value: string) => onChange({ target: { value } })}
+      {...rest}
+    >
       <RadixSelect.Trigger
         className={clsx(styles.selectTrigger, {
           [styles.selectTriggerFullWidth || ""]: fullWidth,
@@ -43,7 +49,7 @@ export const Select = <T extends string>({
           {placeholder?.icon && <Flex as="span">{placeholder.icon}</Flex>}
           <RadixSelect.Value placeholder={placeholder?.label} />
           <RadixSelect.Icon className={styles.selectIcon}>
-            {value ? <ChevronUpIcon /> : <ChevronDownIcon />}
+            <ChevronDownIcon />
           </RadixSelect.Icon>
         </Flex>
       </RadixSelect.Trigger>

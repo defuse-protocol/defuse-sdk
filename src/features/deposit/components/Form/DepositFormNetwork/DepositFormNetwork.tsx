@@ -26,19 +26,15 @@ export const DepositFormNetwork = ({
     <div className={styles.container}>
       <div className={styles.formWrapper}>
         <Form<DepositFormNetworkValues>
-          handleSubmit={handleSubmit((values: DepositFormNetworkValues) =>
-            onSubmit(values)
-          )}
+          handleSubmit={handleSubmit(onSubmit)}
           register={register}
         >
           <div className={styles.selectWrapper}>
-            <Select<BlockchainEnum>
+            <Select<BlockchainEnum, DepositFormNetworkValues>
+              name="blockchain"
+              register={register}
               options={blockchains}
-              value={watch("blockchain")}
               placeholder={{ label: "Select network", icon: null }}
-              onChange={(value: string) =>
-                setValue("blockchain", value as BlockchainEnum)
-              }
               fullWidth
             />
           </div>
