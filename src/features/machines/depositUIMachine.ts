@@ -36,7 +36,7 @@ export const depositUIMachine = setup({
     },
   },
 }).createMachine({
-  /** @xstate-layout N4IgpgJg5mDOIC5QTABwPawJYBcC0ArlgHSS5YB2UAxLAQEYC2uA4mBWAE4CGOYA2gAYAuolAZsOLOgpiQAD0QBOAKzElAdgBMANgDMARgMAWAByCtWgyoA0IAJ6IDq4oO1KdpnUY0aVGnQBfQLsUCVxCEjIpKmoAYxkAMywoAk4wABE0TFwANSxuADkwbk4hUSQQcKkZOUUEY2MNYhVBNoMdHS12pT07RwRnNTctDy8fPwDg0OzJSNIIcljKVAIccrlq6VlK+oM9QWINUyVVFVMmlV6NfsQ8C6OVAw1jLT1j3T1jJWmQMJz8ERiDAOOkYjQIDIwMRKAA3dAAa2h-zmQJBXDA4IQcPQcV423KG0qW1quycGgMxCauk8BjaeiUWhuDkQ3kpzzMphUKiapmsxl+KIiQISFGSqU4lBodCYuCy1XyRRKZREmwB2zqiEaSlcPiZpj5KiZelsLIaRmIumOBoMox0Tx+IT+s2FJASjFQABtMWBaDhSjgAPKwrhE8Tq0mgep4faHC5KQQGE6MwStLq3BA6QQ6nQvUx6E3eC56UyCl2Akgy5g4cGK4qlaiQjgwijwpHEIUV4hV3C1gr1zjY1u4-EyQmq4kRnZRxAqPQ6Kk6MyNA6NFS5jPaBdGr76VP7PS6YJOijoFDwSqdyJqyQaskIGPHYjxxPJ7pprQZvBaK6PZ5MrQuQ0NxBD0MtqnmaIpRvchIwUO4lGMS1PCXZwf0A7NTQGR8tEtJ4NC+fNnC5I8nSvIEoKoGEIG9GCamneCH2MBddC8Yw0KNcxEJ0DMnmIHRTlOT541GDRwIBeZ0TBaDJ1vOC9n8dR-FAilBHtSxBFMDNDD0KkrFTJc5wZY5xNRN0khSNIZPDOSGPqddcILIst3MYCsMQQxDmA15D1MXQlFtLxTNdYh3S9H06LvGcHyMXTGiZTxzmTPz3IQPxTCpE1s1A0wAiXMCyPLeYexrKU62VSL5NnSx1G+bpfG8HlRl4wDLWOYxD3SnyCuCIA */
+  /** @xstate-layout N4IgpgJg5mDOIC5QTABwPawJYBcC0ArlgHSS5YB2UAxLAQEYC2uA4mBWAE4CGOYA2gAYAuolAZsOLOgpiQAD0QAWAGwBOYoIDsAVgBMenSqVqtS-QBoQAT0QGAHMXtKtKlQGYAjDp3utatXcAXyCrFAlcQhIyKSpqAGMZADMsKAJOMAARNExcADUsbgA5MG5OIVEkEAipGTlFBHcdYm89QS81QR17QUC1HStbBAcnFzcvHz8AkLCcySjSCHI4ylQCHAq5GulZKobPd0FiLXsAn2ddQK1BxDxnY51PMz0-ez0PExmQcNz8ImIYBweLEaBAZGBiJQAG7oADWEJ+83+gK4vEoUAQ0PQ8TRMgqmyq2zqe0QOiUSmIOl0eiUnjagkEKmuNkQWncKmI-Xs+ns9k8Sm0wVC3zmkX+iQoKTSnHRtAYzBw2RqBWKpXKIi2vx29UQ7OI4zMPiZ7i8pxuCAFHPc9hUnjUnl5tMEelMX0RYpIiUYqAANmA+LQcGUcAB5KFcAniLXE0ANPAHI7OToOgJtHSMvTmlS9fVmewmowOpTWt2iv4kOhMXAglUlMrUMEcSEUGHw4ju8vESsKmuFOucTEt7G4ij4jWE6O7WOIOkUzyeFSOlxNBcqTMshCLvSaXqdd5qFT6NT2ELCijoFDwKodqKayTakkIeMnUbJ05qNMZ814QwaXRPfRGUEd9i1LGoFhidE73IGMFFuNQKXeG1aQ-HlegGDdn23QwnnJNp1B0e0wN+CClhBSEID9aDainOCn1UYgkOMO1DD0HoEJUc1Hn1AJUw8JMXS0YikRIFFgSgid71ghpfE8TRCMI3pyV480lF5Jx3EMbk9C0PR+RMIThRvcVklSdIJKjKTaP2MlOQCJkBS6XpBCUc1NLkhkMxeVwEJtYSPWIL1fX9MBqIfacn3ndxiDw1xuV5AI3gwoZdEcYt006a1XGMIVZnA-5u2rdFazVMLpJnTwjmzWd+RNBcmnXIY1McfN3n5A5KpctRTyCIA */
   context: {
     error: null,
     blockchain: null,
@@ -51,7 +51,7 @@ export const depositUIMachine = setup({
       initial: "idle",
       on: {
         submitGenerate: {
-          target: "genereting",
+          target: "generating",
           guard: {
             type: "isBlockchainValid",
           },
@@ -78,7 +78,7 @@ export const depositUIMachine = setup({
         idle: {},
       },
     },
-    genereting: {
+    generating: {
       invoke: {
         id: "swap-ui.submitting:invocation[0]",
         input: {},

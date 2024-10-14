@@ -1,13 +1,4 @@
-@import "@radix-ui/colors/black-alpha.css";
-@import "@radix-ui/colors/mauve.css";
-@import "@radix-ui/colors/violet.css";
-
-/* reset */
-button {
-	all: unset;
-}
-
-.SelectTrigger {
+.selectTrigger {
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
@@ -23,21 +14,24 @@ button {
 	max-width: 100%;
 	box-sizing: border-box;
 }
-.SelectTrigger:hover {
+
+.selectTrigger:hover {
 	background-color: var(--mauve-3);
 }
-.SelectTrigger:focus {
+
+.selectTrigger:focus {
 	box-shadow: 0 0 0 2px black;
 }
-.SelectTrigger[data-placeholder] {
+
+.selectTrigger[data-placeholder] {
 	color: var(--violet-9);
 }
 
-.SelectIcon {
-	color: Var(--violet-11);
+.selectIcon {
+	color: var(--violet-11);
 }
 
-.SelectContent {
+.selectContent {
 	overflow: hidden;
 	background-color: white;
 	border-radius: 6px;
@@ -51,11 +45,11 @@ button {
 	box-sizing: border-box;
 }
 
-.SelectViewport {
+.selectViewport {
 	padding: 5px;
 }
 
-.SelectItem {
+.selectItem {
 	font-size: 13px;
 	line-height: 1;
 	color: var(--violet-11);
@@ -67,30 +61,32 @@ button {
 	position: relative;
 	user-select: none;
 }
-.SelectItem[data-disabled] {
+
+.selectItem[data-disabled] {
 	color: var(--mauve-8);
 	pointer-events: none;
 }
-.SelectItem[data-highlighted] {
+
+.selectItem[data-highlighted] {
 	outline: none;
 	background-color: var(--violet-9);
 	color: var(--violet-1);
 }
 
-.SelectLabel {
+.selectLabel {
 	padding: 0 25px;
 	font-size: 12px;
 	line-height: 25px;
 	color: var(--mauve-11);
 }
 
-.SelectSeparator {
+.selectSeparator {
 	height: 1px;
 	background-color: var(--violet-6);
 	margin: 5px;
 }
 
-.SelectItemIndicator {
+.selectItemIndicator {
 	position: absolute;
 	left: 0;
 	width: 25px;
@@ -99,7 +95,7 @@ button {
 	justify-content: center;
 }
 
-.SelectScrollButton {
+.selectScrollButton {
 	display: flex;
 	align-items: center;
 	justify-content: center;
@@ -109,7 +105,7 @@ button {
 	cursor: default;
 }
 
-.SelectTrigger--fullWidth {
+.selectTriggerFullWidth {
 	display: flex;
 	width: 100%;
 }

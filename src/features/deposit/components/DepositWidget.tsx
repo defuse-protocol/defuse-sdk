@@ -1,5 +1,5 @@
 import { BlockchainEnum } from "../../../types/deposit"
-import { DepositFormNetwork } from "./DepositFormNetwork"
+import { DepositFormNetwork } from "./Form/DepositFormNetwork/DepositFormNetwork"
 
 const supportedBlockchains = {
   [BlockchainEnum.NEAR]: {

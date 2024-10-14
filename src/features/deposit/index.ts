@@ -1,2 +1,2 @@
 export { DepositWidget } from "./components/DepositWidget"
-export { DepositFormNetwork } from "./components/DepositFormNetwork"
+export { DepositFormNetwork } from "./components/Form/DepositFormNetwork/DepositFormNetwork"

@@ -1,15 +1,13 @@
-"use client"
-
 import {
   CheckIcon,
   ChevronDownIcon,
   ChevronUpIcon,
 } from "@radix-ui/react-icons"
 import * as RadixSelect from "@radix-ui/react-select"
+import { Flex } from "@radix-ui/themes"
 import clsx from "clsx"
 import type React from "react"
-import "./styles.css"
-import { Flex } from "@radix-ui/themes"
+import styles from "./styles.module.css"
 
 type Props<T> = {
   value: string
@@ -36,37 +34,37 @@ export const Select = <T extends string>({
   return (
     <RadixSelect.Root value={value} onValueChange={onChange}>
       <RadixSelect.Trigger
-        className={clsx("SelectTrigger", {
-          "SelectTrigger--fullWidth": fullWidth,
+        className={clsx(styles.selectTrigger, {
+          [styles.selectTriggerFullWidth || ""]: fullWidth,
         })}
         aria-label={label ?? "Not specified"}
       >
         <Flex as="span" align="center" gap="2">
           {placeholder?.icon && <Flex as="span">{placeholder.icon}</Flex>}
           <RadixSelect.Value placeholder={placeholder?.label} />
-          <RadixSelect.Icon className="SelectIcon">
+          <RadixSelect.Icon className={styles.selectIcon}>
             {value ? <ChevronUpIcon /> : <ChevronDownIcon />}
           </RadixSelect.Icon>
         </Flex>
       </RadixSelect.Trigger>
       <RadixSelect.Portal>
         <RadixSelect.Content
-          className="SelectContent"
+          className={styles.selectContent}
           position="popper"
           side="bottom"
           sideOffset={8}
         >
-          <RadixSelect.ScrollUpButton className="SelectScrollButton">
+          <RadixSelect.ScrollUpButton className={styles.selectScrollButton}>
             <ChevronUpIcon />
           </RadixSelect.ScrollUpButton>
-          <RadixSelect.Viewport className="SelectViewport">
+          <RadixSelect.Viewport className={styles.selectViewport}>
             {Object.keys(options).map((key: string) => (
               <SelectItem key={key} value={key}>
                 {options[key as keyof typeof options].label}
               </SelectItem>
             ))}
           </RadixSelect.Viewport>
-          <RadixSelect.ScrollDownButton className="SelectScrollButton">
+          <RadixSelect.ScrollDownButton className={styles.selectScrollButton}>
             <ChevronDownIcon />
           </RadixSelect.ScrollDownButton>
         </RadixSelect.Content>
@@ -82,9 +80,9 @@ interface SelectItemProps {
 
 const SelectItem: React.FC<SelectItemProps> = ({ value, children }) => {
   return (
-    <RadixSelect.Item className={clsx("SelectItem")} value={value}>
+    <RadixSelect.Item className={styles.selectItem} value={value}>
       <RadixSelect.ItemText>{children}</RadixSelect.ItemText>
-      <RadixSelect.ItemIndicator className="SelectItemIndicator">
+      <RadixSelect.ItemIndicator className={styles.selectItemIndicator}>
         <CheckIcon />
       </RadixSelect.ItemIndicator>
     </RadixSelect.Item>
