@@ -47,7 +47,7 @@
   dependencies:
     regenerator-runtime "^0.14.0"
 
-"@biomejs/biome@1.9.3":
+"@biomejs/biome@^1.9.3":
   version "1.9.3"
   resolved "https://registry.yarnpkg.com/@biomejs/biome/-/biome-1.9.3.tgz#5362fc390ac00c82e3698824490e3801d012c1b0"
   integrity sha512-POjAPz0APAmX33WOQFGQrwLvlu7WLV4CFJMlB12b6ZSg+2q6fYu9kZwLCOA+x83zXfcPd1RpuWOKJW0GbBwLIQ==
