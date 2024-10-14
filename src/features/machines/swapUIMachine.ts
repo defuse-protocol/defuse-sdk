@@ -1,7 +1,6 @@
 import { assign, fromPromise, setup } from "xstate"
 import type { Output } from "./swapIntentMachine"
 
-// biome-ignore lint/complexity/noBannedTypes: It is temporary type, will be replaced with real quote interface
 export type QuoteTmp = {
   amount_out: string
 }
