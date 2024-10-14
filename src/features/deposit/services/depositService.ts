@@ -1,4 +1,4 @@
-import type { BlockchainEnum } from "../machines/depositMachine"
+import type { BlockchainEnum } from "../../../types/deposit"
 
 export interface DepositFacade {
   generateDepositAddress: (blockchain: BlockchainEnum) => Promise<string>
@@ -9,7 +9,7 @@ export interface DepositFacade {
   ) => Promise<unknown>
 }
 
-export class DepositProcessorService implements DepositFacade {
+export class DepositService implements DepositFacade {
   async generateDepositAddress(blockchain: BlockchainEnum) {
     return "0x0"
   }
