@@ -41,7 +41,7 @@ export const DepositFormController = ({
                 onSelect(DepositFormType.DEPOSIT_PASSIVE)
                 break
               default:
-                return null
+                throw new Error("Invalid blockchain")
             }
           }}
         />
