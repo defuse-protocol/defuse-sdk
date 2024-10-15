@@ -2,7 +2,6 @@ import { assign, fromPromise, setup } from "xstate"
 import type { BlockchainEnum } from "../../types/deposit"
 
 export type Context = {
-  accountId: string | null
   amount: string | null
   asset: string | null
   error: Error | null
@@ -49,10 +48,10 @@ export const depositNearMachine = setup({
     },
   },
 }).createMachine({
+  /** @xstate-layout N4IgpgJg5mDOIC5QTABwPawJYBcC0AdmAIYBOAdFhADZgDEAkgHIAKAqgCoDaADALqJQGbDizoCgkAA9EARgBMAVnIAWAJwaAHAGYFazWr0AaEAE9EaleXnqNANgDsK7T1m7tAXw8mUw3IRIKbCgCLAIoOghxMEoCADd0AGsY30x-IjJyYNDwhDCEgGNiUXFePjLJPxKJJGlERXkHckVNRUNNFU1NWS67E3MEbtUNfTsVBx5xlUVZLx80NPwMoKwQsIiwUlJ0ClRqYoAzHYBbclSRAMzs9bz49CLqsoraqrEa0BkEBqaWtp7O7q9fpyBzKHgObrySyaHhjbSKRRzEDndKBchxTZYA6mdZ0Z5CRZvSSfSzaciyRR2eRUzR2HjUtTAhDyJTkbQOeTwtR2OyKBzaOz6JEopZojGkLE48J42QCF6E8TEizOcmU6nyWn0wVM-TkTQc7T6FoqenyYULC7LcgAI22xAgRVgomlUSIsQSyTOFtRmVt6HtjudUFuhWKbye-EqCvedQQshUGuaihUgtkYx6akUTPkrmaOg1fMsJrpKi83hABHQKHgtRFl1IUZERNqnzwfTMiDwyhGPd7Gk85brVqotEbuGbH0QCaZslkTQhakm1J4rXUGvNVXrWVWOSgY+qSuZ7OaEJXDTnPCN2h1Vg1i8UhtnrjU68H3tFmXFkvW+4nse6VhpjyybjA0jTXh2cY8GSD6LhyEwsmeagbosW4AILWjsOCQL+iotogDiWOQVLqJoOZtIRPIzpmeqOG4FIIjCLIoZaaJ+gGxBOj+8pNnhk5xvRqjTPCTgOD0YkqDOlJ6hyJpuJmHRQshb6blaTDoDgAAEABi6AAK4EBAmk7JpDDxMQ1BULhMafLOuhCQ+fLjOJ8Y6so+qcoY0FqBMMLKfMqlogAwugxx7GA2EQNZh5pg0er6NMmZOLIrgQQMLLyGyBrnvI8acgoZYeEAA */
   id: "deposit-near",
   initial: "idle",
   context: {
-    accountId: null,
     amount: null,
     asset: null,
     error: null,
@@ -66,7 +65,6 @@ export const depositNearMachine = setup({
           actions: assign({
             amount: ({ event }) => event.amount,
             asset: ({ event }) => event.asset,
-            accountId: ({ event }) => event.accountId,
           }),
         },
       },
@@ -77,7 +75,6 @@ export const depositNearMachine = setup({
         input: ({ context }) => ({
           amount: context.amount,
           asset: context.asset,
-          accountId: context.accountId,
         }),
         onDone: {
           target: "verifying",

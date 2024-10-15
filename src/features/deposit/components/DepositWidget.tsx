@@ -7,6 +7,7 @@ import {
 } from "src/features/machines/depositNearMachine"
 import { type NonReducibleUnknown, createActor, fromPromise } from "xstate"
 import { DepositWidgetProvider } from "../../../providers"
+import type { Transaction } from "../../../types/deposit"
 import { DepositService } from "../services/depositService"
 import { DepositFormController, DepositFormType } from "./DepositFormController"
 import {
@@ -16,7 +17,7 @@ import {
 
 type DepositWidgetProps = {
   accountId: string
-  signAndSendTransactionsNear: (calldata: unknown) => void
+  signAndSendTransactionsNear: (transactions: Transaction[]) => void
 }
 
 const depositNearService = new DepositService()
@@ -33,18 +34,17 @@ export const DepositWidget = ({
       actors: {
         signAndSendTransactions: fromPromise(
           async ({ input }: { input: NonReducibleUnknown }) => {
-            const { asset, amount, accountId } = input as {
+            const { asset, amount } = input as {
               asset: string
               amount: string
-              accountId: string
             }
-            const calldata = depositNearService.createDepositNearTransaction(
-              accountId,
-              asset,
-              amount
-            )
-            // TODO: create calldata payload
-            const txHash = (await signAndSendTransactionsNear(input)) as
+            const transactions =
+              depositNearService.createDepositNearTransaction(
+                "defuse.near", // TODO: Contract hasn't been deployed yet
+                asset,
+                amount
+              )
+            const txHash = (await signAndSendTransactionsNear(transactions)) as
               | string
               | undefined
             return txHash || "" // TODO: Ensure a TX hash is returned
@@ -54,13 +54,13 @@ export const DepositWidget = ({
     })
   )
 
+  // TODO: Remove
   depositNearActor.subscribe((state) => {
     console.log("Current state:", state.value)
     console.log("Context:", state.context)
   })
 
   const handleSubmitNear = async (values: DepositFormNearValues) => {
-    console.log("handleSubmitNear", values)
     depositNearActor.start()
     depositNearActor.send({
       type: "INPUT",
