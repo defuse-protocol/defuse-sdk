@@ -36,7 +36,17 @@ export const Select = <T extends string, TFieldValues extends FieldValues>({
 
   return (
     <RadixSelect.Root
-      onValueChange={(value: string) => onChange({ target: { value } })}
+      onValueChange={(value: string) => {
+        console.log("Select onValueChange", value)
+        // Create a synthetic event object
+        const event = {
+          target: {
+            name,
+            value,
+          },
+        }
+        onChange(event)
+      }}
       {...rest}
     >
       <RadixSelect.Trigger

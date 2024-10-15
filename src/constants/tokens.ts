@@ -1,7 +1,18 @@
-import { INDEXER } from "../types"
 import type { BaseTokenInfo } from "../types/base"
 
-export const LIST_NETWORKS_TOKENS: BaseTokenInfo[] = [
+export const WHITELIST_DEPOSIT_TOKENS: BaseTokenInfo[] = [
+  {
+    defuseAssetId: "near:mainnet:native",
+    chainName: "NEAR",
+    chainId: "1313161554",
+    address: "native",
+    name: "NEAR",
+    symbol: "NEAR",
+    chainIcon: "/static/icons/network/near.svg",
+    icon: "https://assets.coingecko.com/coins/images/10365/standard/near.jpg?1696510367",
+    decimals: 24,
+    routes: ["wrap.near", "near:mainnet:wrap.near"],
+  },
   {
     defuseAssetId: "near:mainnet:wrap.near",
     chainId: "mainnet",
@@ -78,21 +89,6 @@ export const LIST_NETWORKS_TOKENS: BaseTokenInfo[] = [
   },
 ]
 
-export const LIST_NATIVE_TOKENS: BaseTokenInfo[] = [
-  {
-    defuseAssetId: "near:mainnet:native",
-    chainName: "NEAR",
-    chainId: "1313161554",
-    address: "native",
-    name: "NEAR",
-    symbol: "NEAR",
-    chainIcon: "/static/icons/network/near.svg",
-    icon: "https://assets.coingecko.com/coins/images/10365/standard/near.jpg?1696510367",
-    decimals: 24,
-    routes: ["wrap.near", "near:mainnet:wrap.near"],
-  },
-]
-
 export const NEAR_TOKEN_META = {
   defuseAssetId: "near:mainnet:native",
   blockchain: "near",
@@ -133,9 +129,4 @@ export const W_BASE_TOKEN_META = {
   icon: "https://assets.coingecko.com/coins/images/279/standard/ethereum.png",
   decimals: 18,
   routes: [],
-}
-
-export const CONTRACTS_REGISTER = {
-  [INDEXER.INTENT_0]: "esufed.near",
-  [INDEXER.INTENT_1]: "swap-defuse.near",
 }
