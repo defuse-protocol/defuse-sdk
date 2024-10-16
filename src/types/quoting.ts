@@ -22,4 +22,6 @@ export type EstimateProvider = (
 
 export interface Settings {
   providerIds: EstimateProvider[]
+  defuseContractId: string
+  swapExpirySec: number
 }
