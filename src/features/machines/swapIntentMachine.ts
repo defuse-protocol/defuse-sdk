@@ -41,7 +41,9 @@ export const swapIntentMachine = setup({
   },
   actors: {
     signMessage: fromPromise(
-      async (_: { input: WalletMessage }): Promise<WalletSignatureResult> => {
+      async (_: {
+        input: WalletMessage
+      }): Promise<WalletSignatureResult | null> => {
         throw new Error("not implemented")
       }
     ),
@@ -65,7 +67,7 @@ export const swapIntentMachine = setup({
     isIntentRelevant: () => {
       throw new Error("not implemented")
     },
-    isSigned: (_, params: WalletSignatureResult) => params != null,
+    isSigned: (_, params: WalletSignatureResult | null) => params != null,
   },
 }).createMachine({
   /** @xstate-layout N4IgpgJg5mDOIC5SwO4EMAOBaAlgOwBcxCA6AZRyj3ygGIIB7PME-ANwYGsXZK8BZOLDQwA2gAYAuolAYGvAjiYyQAD0QBWAMwktARj0AOAGziNAFnMB2PQE5xhgDQgAnolv6SVrVavnjAExa5rZ2WgC+4c6omLiExATkfDS0YABOaQxpJBgANmgEAGZZALYkvFSCsMJiUipyCkp4KuoIWMHmJAHmhuJaQeZa4uLG-s5uCIZ6ViTGJhrdvUNWJpHR6Nj4RKQAQploEADGaLCKeFAABACS8YT0TCzsXDzEEFU1YBLSSCANOIrKH6tDxdabmCwBXwBQzeDTjRB6DokPTWcx6AKQrRzWwaNYgGKbW6JPYMA7HU40a5E1IZLI5fJFUrlV7vESfOo-P4A5pAxBYaaGLrGYxaDziIwBULmeEIRE4oUooxWYVWcQBPEEuLbRIANXSOEKLkpN21tC+9Xk-yaLXcehItm8DtsIWMGg0roCMr04m8JDM-T0gQW2I1Gy1CRIerSBqN5ypptEem+skt3JtCBCAS6GnEaP83RzxlsXvBgt8maCtmMK1sodiWwjAHEwAQzpcTQkLmQCAUAK6we7MVh4DjccphhukZut41Ers9gj9hBPY7cr7mzmp628hBaDRdZ3QlaGLSGZ1WCxewJZgLDHNWeyGKbmdVRfETokkadt+Od7t9gdGCHJ4x01SdEm-WdtXnADlxHBhVyadckwtRpAVAVosUFV0tFFCwX1MDEtCvDEujvH1H2fV91nrT9ILjDtCBgxcB3STJsjyApijSMowLolsf0YghmKXFcCiQqQNxTNCeQwvl5VdWxIUMAJAl8LFpVcBFtE6EJrG9GxBgfQw60JbUkioFIgMeeDQL4VkxBQzcZPTLBumMWYAg0FE8O8cVjBlDw7W8Xx3WmWxbCfWs8TwBgIDgFQ+O1VCrXQtQ+VFG8ej6AYhhGMYtIQDRDE6PdzGGJ9VNzUVTPDUgKEs84UrTHcsEsP0PG8FTphWYU9BlGxBULYIcW6Axplq8CSAAYSYQocB4yBmu3OTZVwkhtBxfRMQxSKvRMQVxuVHDA20CI3ySiMADkGGEgAxBhezwCALiyKk2DQXIcAgZa0taF9OimN0rG6JSHWmfbit0QJBki09yovSbPwAQQAIyyIgfuc1LZPStpoR0AJvWCItpkDXD9vsLplUzIZcIvYwkfMkkyROQSiV+3HWjapxCoMEISF6AwsVCYYeiZiMoxjKCEk59MDH3cQcSLEY7HPNUvWGLMUV6DQgpFPRtAl0grpbFAsk4C4AFFaTSOXWu9cRQW6DTXVdBw4T5s8nchUYlLpnx3WNiCBJlpj-xY+3Vr8EhwUsAjxV6CqSzsWPIpPVVJRPSJIiAA */
@@ -98,11 +100,13 @@ export const swapIntentMachine = setup({
         input: () => {
           // todo: This is a temporary implementation
           const message: WalletMessage = {
-            type: "NEP-141",
-            message: {
+            NEP141: {
               message: "Hey, I want to swap 100 NEAR to 100 USDC",
               recipient: "defuse.near",
               nonce: crypto.getRandomValues(new Uint8Array(32)),
+            },
+            EIP712: {
+              json: "{}",
             },
           }
 

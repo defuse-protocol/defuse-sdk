@@ -15,7 +15,7 @@ export const SwapUIMachineContext = createActorContext(swapUIMachine)
 interface SwapUIMachineProviderProps extends PropsWithChildren {
   assetIn: BaseTokenInfo
   assetOut: BaseTokenInfo
-  signMessage: (params: WalletMessage) => Promise<WalletSignatureResult>
+  signMessage: (params: WalletMessage) => Promise<WalletSignatureResult | null>
 }
 
 export function SwapUIMachineProvider({

@@ -2,28 +2,24 @@ import type { BaseTokenInfo } from "./base"
 
 // Message for EVM wallets
 export type EIP712Message = {
-  type: "EIP-712"
-  // biome-ignore lint/complexity/noBannedTypes: todo: populate with actual EIP-712 type
-  message: {}
+  // todo: update to real field, now it's just a placeholder
+  json: string
 }
 
 export type EIP712SignatureData = {
-  type: "EIP-712"
+  type: "EIP712"
   signatureData: string
 }
 
 // Message for NEAR wallets
 export type NEP141Message = {
-  type: "NEP-141"
-  message: {
-    message: string
-    recipient: string
-    nonce: Uint8Array
-  }
+  message: string
+  recipient: string
+  nonce: Uint8Array
 }
 
 export type NEP141SignatureData = {
-  type: "NEP-141"
+  type: "NEP141"
   signatureData: {
     accountId: string
     publicKey: string
@@ -31,11 +27,12 @@ export type NEP141SignatureData = {
   }
 }
 
-export type WalletMessage = EIP712Message | NEP141Message
-export type WalletSignatureResult =
-  | EIP712SignatureData
-  | NEP141SignatureData
-  | null // null is meant to represent a cancelled signature request
+export type WalletMessage = {
+  EIP712: EIP712Message
+  NEP141: NEP141Message
+}
+
+export type WalletSignatureResult = EIP712SignatureData | NEP141SignatureData
 
 export type SwapEvent = {
   type: string
@@ -47,7 +44,7 @@ export type SwapWidgetProps = {
   theme?: "dark" | "light"
   tokenList: BaseTokenInfo[]
   onEmit?: (event: SwapEvent) => void
-  signMessage: (params: WalletMessage) => Promise<WalletSignatureResult>
+  signMessage: (params: WalletMessage) => Promise<WalletSignatureResult | null>
 }
 
 export enum QueueTransactionsEnum {
