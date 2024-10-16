@@ -24,6 +24,7 @@ interface Props<T extends FieldValues> {
   price?: string
   balance?: string | bigint
   selected?: BaseTokenInfo
+  handleClick?: () => void
   handleSelect?: () => void
   handleSetMaxValue?: () => void
   className?: string
@@ -45,6 +46,7 @@ export const FieldComboInput = <T extends FieldValues>({
   selected,
   handleSelect,
   handleSetMaxValue,
+  handleClick,
   className,
   errors,
   withNativeSupport,
@@ -114,6 +116,8 @@ export const FieldComboInput = <T extends FieldValues>({
         !price && !balance && errors && !errors[fieldName] && "pb-5",
         className && className
       )}
+      onClick={handleClick}
+      onKeyUp={handleClick}
     >
       <input
         type={"text"}
