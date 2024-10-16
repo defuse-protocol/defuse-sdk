@@ -1,0 +1,38 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.title {
+  font-size: 1.25rem;
+  font-weight: bold;
+  margin-bottom: 1rem;
+}
+
+.instruction {
+  margin-bottom: 1rem;
+}
+
+.qrCodeWrapper {
+  margin-bottom: 1rem;
+}
+
+.address {
+  font-size: 0.875rem;
+  word-break: break-all;
+  margin-bottom: 1rem;
+}
+
+.backButton {
+  background-color: #3b82f6;
+  color: white;
+  font-weight: bold;
+  padding: 0.5rem 1rem;
+  border-radius: 0.25rem;
+  transition: background-color 0.2s;
+}
+
+.backButton:hover {
+  background-color: #2563eb;
+}

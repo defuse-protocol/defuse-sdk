@@ -54,7 +54,7 @@ export const DepositFormNear = ({
       setSelectToken(tokenAdapter)
     }
   }, [asset])
-  console.log("selectToken ??", selectToken)
+
   return (
     <div className={styles.container}>
       <div className={styles.formWrapper}>
@@ -70,7 +70,6 @@ export const DepositFormNear = ({
           <FieldComboInput<DepositFormNearValues>
             fieldName="amount"
             selected={selectToken}
-            handleSelect={() => {}}
             className="border rounded-t-xl"
             required="This field is required"
             handleClick={onBack}

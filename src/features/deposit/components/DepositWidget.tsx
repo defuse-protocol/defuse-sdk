@@ -1,8 +1,8 @@
-import { useActor } from "@xstate/react"
 import { useState } from "react"
 import { FormProvider, useForm } from "react-hook-form"
-import { depositNearMachine } from "src/features/machines/depositNearMachine"
 import { type NonReducibleUnknown, createActor, fromPromise } from "xstate"
+import { depositGenerateAddressMachine } from "../../../features/machines/depositGenerateAddressMachine"
+import { depositNearMachine } from "../../../features/machines/depositNearMachine"
 import { DepositWidgetProvider } from "../../../providers"
 import type {
   BaseAssetInfo,
@@ -15,6 +15,7 @@ import {
   type DepositFormOnSelectValues,
   DepositFormType,
 } from "./DepositFormController"
+import { DepositFormGenerateAddress } from "./Form/DepositFormGenerateAddress"
 import {
   DepositFormNear,
   type DepositFormNearValues,
@@ -34,6 +35,7 @@ export const DepositWidget = ({
   const [formType, setFormType] = useState<DepositFormType | null>(null)
   const [blockchain, setBlockchain] = useState<BlockchainEnum | null>(null)
   const [asset, setAsset] = useState<BaseAssetInfo | null>(null)
+  const [generateAddress, setGenerateAddress] = useState<string | null>(null)
   const depositFormNearMethods = useForm<DepositFormNearValues>()
 
   const depositNearActor = createActor(
@@ -60,11 +62,24 @@ export const DepositWidget = ({
       },
     })
   )
+  const generateAddressActor = createActor(
+    depositGenerateAddressMachine.provide({
+      actors: {
+        generateDepositAddress: fromPromise(
+          async ({ input }: { input: NonReducibleUnknown }) =>
+            depositNearService.generateDepositAddress(
+              blockchain as BlockchainEnum,
+              asset?.address as string
+            )
+        ),
+      },
+    })
+  )
 
-  // TODO: Remove
-  depositNearActor.subscribe((state) => {
-    console.log("Current state:", state.value)
-    console.log("Context:", state.context)
+  generateAddressActor.subscribe((state) => {
+    if (state.value === "Genereted") {
+      setGenerateAddress(state.context.depositAddress)
+    }
   })
 
   const handleSubmitNear = async (values: DepositFormNearValues) => {
@@ -90,13 +105,30 @@ export const DepositWidget = ({
             symbol: values.symbol,
           })
           setBlockchain(values.blockchain)
+          if (values.formType === DepositFormType.DEPOSIT_PASSIVE) {
+            generateAddressActor.start()
+            generateAddressActor.send({
+              type: "INPUT",
+              blockchain: values.blockchain,
+              assetAddress: values.address,
+            })
+          }
         }}
       >
-        {formType === DepositFormType.DEPOSIT_PASSIVE && <div>form 1</div>}
-        {formType === DepositFormType.DEPOSIT_NEAR && (
+        {formType === DepositFormType.DEPOSIT_PASSIVE &&
+          blockchain &&
+          asset?.address &&
+          generateAddress && (
+            <DepositFormGenerateAddress
+              blockchain={blockchain}
+              address={generateAddress}
+              onBack={() => setFormType(null)}
+            />
+          )}
+        {formType === DepositFormType.DEPOSIT_NEAR && asset && (
           <FormProvider {...depositFormNearMethods}>
             <DepositFormNear
-              asset={asset as BaseAssetInfo}
+              asset={asset}
               onSubmit={handleSubmitNear}
               onBack={() => setFormType(null)}
             />

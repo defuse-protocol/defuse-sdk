@@ -1,4 +1,3 @@
-import type { BaseAssetInfo } from "src/types/deposit"
 import { formatUnits } from "viem"
 
 export const smallBalanceToFormat = (balance: string, toFixed = 14): string => {

@@ -38,7 +38,6 @@ export const DepositFormController = ({
       {!formType && (
         <DepositFormRouter
           onSubmit={(values: DepositFormRouterValues) => {
-            console.log("values 1", values)
             switch (values.blockchain) {
               case BlockchainEnum.NEAR:
                 onSelect({
