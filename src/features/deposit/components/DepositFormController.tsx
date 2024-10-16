@@ -1,9 +1,9 @@
 import type { PropsWithChildren } from "react"
 import { BlockchainEnum } from "../../../types/deposit"
 import {
-  DepositFormNetwork,
-  type DepositFormNetworkValues,
-} from "./Form/DepositFormNetwork"
+  DepositFormRouter,
+  type DepositFormRouterValues,
+} from "./Form/DepositFormRouter"
 
 export enum DepositFormType {
   DEPOSIT_PASSIVE = "DepositPassiveFormType",
@@ -15,12 +15,6 @@ interface DepositFormControllerProps extends PropsWithChildren {
   formType: DepositFormType | null
 }
 
-const blockchains = {
-  near: { label: BlockchainEnum.NEAR, icon: null },
-  ethereum: { label: BlockchainEnum.ETHEREUM, icon: null },
-  base: { label: BlockchainEnum.BASE, icon: null },
-}
-
 export const DepositFormController = ({
   children,
   onSelect,
@@ -29,9 +23,8 @@ export const DepositFormController = ({
   return (
     <>
       {!formType && (
-        <DepositFormNetwork
-          options={blockchains}
-          onSubmit={(values: DepositFormNetworkValues) => {
+        <DepositFormRouter
+          onSubmit={(values: DepositFormRouterValues) => {
             switch (values.blockchain) {
               case BlockchainEnum.NEAR:
                 onSelect(DepositFormType.DEPOSIT_NEAR)

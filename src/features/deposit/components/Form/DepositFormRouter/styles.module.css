@@ -25,6 +25,11 @@
   margin-bottom: 1rem;
 }
 
+.buttonWrapper {
+  margin-bottom: 1rem;
+  width: 100%;
+}
+
 .buttonGroup {
   display: flex;
   flex-direction: column;
@@ -51,4 +56,12 @@
 
 .orangeButton:hover {
   background-color: darkorange;
+}
+
+.clickableDisabled {
+  cursor: pointer;
+}
+
+.clickableDisabled > * {
+  pointer-events: none;
 }
