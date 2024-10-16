@@ -9,7 +9,7 @@ export function makeSwapMessage({
   signerId,
   recipient,
   deadlineTimestamp,
-  nonce = randomBytes(32),
+  nonce = randomDefuseNonce(),
 }: {
   tokenDiff: [string, bigint][]
   signerId: string
@@ -44,6 +44,10 @@ export function makeSwapMessage({
       json: "{}",
     },
   }
+}
+
+function randomDefuseNonce(): Uint8Array {
+  return randomBytes(32)
 }
 
 function randomBytes(length: number): Uint8Array {
