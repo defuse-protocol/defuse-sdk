@@ -1,6 +1,6 @@
 import type { BaseTokenInfo } from "../types/base"
 
-export const WHITELIST_DEPOSIT_TOKENS: BaseTokenInfo[] = [
+export const NEAR_WHITELIST_DEPOSIT_TOKENS: BaseTokenInfo[] = [
   {
     defuseAssetId: "near:mainnet:native",
     chainName: "NEAR",
@@ -85,6 +85,45 @@ export const WHITELIST_DEPOSIT_TOKENS: BaseTokenInfo[] = [
     chainIcon: "/static/icons/network/near.svg",
     icon: "https://assets.coingecko.com/coins/images/279/standard/ethereum.png",
     decimals: 18,
+    routes: [],
+  },
+]
+
+export const EVM_WHITELIST_DEPOSIT_TOKENS: BaseTokenInfo[] = [
+  {
+    defuseAssetId: "eth:1:native",
+    chainName: "Ethereum",
+    chainId: "1",
+    address: "native",
+    name: "Ether",
+    symbol: "ETH",
+    chainIcon: "/static/icons/network/ethereum.svg",
+    icon: "https://assets.coingecko.com/coins/images/279/standard/ethereum.png",
+    decimals: 18,
+    routes: [],
+  },
+  {
+    defuseAssetId: "eth:1:0xdac17f958d2ee523a2206206994597c13d831ec7",
+    chainName: "Ethereum",
+    chainId: "1",
+    address: "0xdac17f958d2ee523a2206206994597c13d831ec7",
+    name: "Tether USD",
+    symbol: "USDT",
+    chainIcon: "/static/icons/network/ethereum.svg",
+    icon: "https://assets.coingecko.com/coins/images/325/standard/Tether.png",
+    decimals: 6,
+    routes: [],
+  },
+  {
+    defuseAssetId: "eth:1:0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+    chainName: "Ethereum",
+    chainId: "1",
+    address: "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+    name: "USD Coin",
+    symbol: "USDC",
+    chainIcon: "/static/icons/network/ethereum.svg",
+    icon: "https://assets.coingecko.com/coins/images/6319/standard/USD_Coin_icon.png",
+    decimals: 6,
     routes: [],
   },
 ]

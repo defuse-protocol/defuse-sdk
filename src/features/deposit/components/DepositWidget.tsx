@@ -1,15 +1,20 @@
 import { useActor } from "@xstate/react"
 import { useState } from "react"
 import { FormProvider, useForm } from "react-hook-form"
-import {
-  Context,
-  depositNearMachine,
-} from "src/features/machines/depositNearMachine"
+import { depositNearMachine } from "src/features/machines/depositNearMachine"
 import { type NonReducibleUnknown, createActor, fromPromise } from "xstate"
 import { DepositWidgetProvider } from "../../../providers"
-import type { Transaction } from "../../../types/deposit"
+import type {
+  BaseAssetInfo,
+  BlockchainEnum,
+  Transaction,
+} from "../../../types/deposit"
 import { DepositService } from "../services/depositService"
-import { DepositFormController, DepositFormType } from "./DepositFormController"
+import {
+  DepositFormController,
+  type DepositFormOnSelectValues,
+  DepositFormType,
+} from "./DepositFormController"
 import {
   DepositFormNear,
   type DepositFormNearValues,
@@ -27,6 +32,8 @@ export const DepositWidget = ({
   signAndSendTransactionsNear,
 }: DepositWidgetProps) => {
   const [formType, setFormType] = useState<DepositFormType | null>(null)
+  const [blockchain, setBlockchain] = useState<BlockchainEnum | null>(null)
+  const [asset, setAsset] = useState<BaseAssetInfo | null>(null)
   const depositFormNearMethods = useForm<DepositFormNearValues>()
 
   const depositNearActor = createActor(
@@ -74,12 +81,25 @@ export const DepositWidget = ({
     <DepositWidgetProvider>
       <DepositFormController
         formType={formType}
-        onSelect={(values: DepositFormType) => setFormType(values)}
+        onSelect={(values: DepositFormOnSelectValues) => {
+          setFormType(values.formType)
+          setAsset({
+            address: values.address,
+            decimals: values.decimals,
+            icon: values.icon,
+            symbol: values.symbol,
+          })
+          setBlockchain(values.blockchain)
+        }}
       >
         {formType === DepositFormType.DEPOSIT_PASSIVE && <div>form 1</div>}
         {formType === DepositFormType.DEPOSIT_NEAR && (
           <FormProvider {...depositFormNearMethods}>
-            <DepositFormNear onSubmit={handleSubmitNear} />
+            <DepositFormNear
+              asset={asset as BaseAssetInfo}
+              onSubmit={handleSubmitNear}
+              onBack={() => setFormType(null)}
+            />
           </FormProvider>
         )}
       </DepositFormController>

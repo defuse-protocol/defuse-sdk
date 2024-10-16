@@ -2,22 +2,20 @@ import { useForm } from "react-hook-form"
 
 import { Button, Spinner, Text } from "@radix-ui/themes"
 import { useEffect, useState } from "react"
-import { ModalType } from "src/stores/modalStore"
 import { Form } from "../../../../../components/Form"
 import { Select } from "../../../../../components/Select/Select"
 import { useModalController } from "../../../../../hooks"
+import { ModalType } from "../../../../../stores/modalStore"
 import type { BaseTokenInfo } from "../../../../../types/base"
-import { BlockchainEnum } from "../../../../../types/deposit"
+import {
+  type BaseAssetInfo,
+  BlockchainEnum,
+} from "../../../../../types/deposit"
 import styles from "./styles.module.css"
 
 export type DepositFormRouterValues = {
   blockchain: BlockchainEnum
-  asset: {
-    address: string
-    decimals: number
-    icon: string
-  }
-}
+} & BaseAssetInfo
 
 export interface DepositFormRouterProps {
   onSubmit: (values: DepositFormRouterValues) => void
@@ -43,7 +41,6 @@ export const DepositFormRouter = ({ onSubmit }: DepositFormRouterProps) => {
     token: BaseTokenInfo
   }>(ModalType.MODAL_DEPOSIT_SELECT_ASSETS, "token")
 
-  const [selectToken, setSelectToken] = useState<BaseTokenInfo>()
   const [assets, setAssets] = useState<{
     [key: string]: {
       label: string
@@ -53,15 +50,12 @@ export const DepositFormRouter = ({ onSubmit }: DepositFormRouterProps) => {
 
   const handleAssetChange = () => {
     setModalType(ModalType.MODAL_DEPOSIT_SELECT_ASSETS, {
-      fieldName: "asset",
-      selectToken,
+      blockchain: getValues("blockchain"),
     })
   }
 
   useEffect(() => {
     if (data?.token) {
-      console.log("data.token", data.token)
-      setSelectToken(data.token)
       setAssets((prevAssets) => ({
         ...prevAssets,
         [data.token.address]: {
@@ -69,11 +63,10 @@ export const DepositFormRouter = ({ onSubmit }: DepositFormRouterProps) => {
           icon: data.token.icon,
         },
       }))
-      setValue("asset", {
-        address: data.token.address,
-        decimals: data.token.decimals,
-        icon: data.token.icon,
-      })
+      setValue("address", data.token.address)
+      setValue("decimals", data.token.decimals)
+      setValue("icon", data.token.icon)
+      setValue("symbol", data.token.symbol)
     }
   }, [data, setValue])
 
@@ -106,8 +99,8 @@ export const DepositFormRouter = ({ onSubmit }: DepositFormRouterProps) => {
                 placeholder={{ label: "Select asset", icon: null }}
                 fullWidth
                 value={{
-                  label: getValues("asset")?.address,
-                  icon: getValues("asset")?.icon,
+                  label: getValues("address"),
+                  icon: getValues("icon"),
                 }}
               />
             </button>
