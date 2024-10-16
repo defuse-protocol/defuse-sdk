@@ -3,12 +3,12 @@ import { useEffect, useState } from "react"
 import { SwapWidgetProvider } from "../../../providers"
 import { useModalStore } from "../../../providers/ModalStoreProvider"
 import { ModalType } from "../../../stores/modalStore"
-import type { SwapWidgetProps, WalletMessage } from "../../../types"
+import type { SwapWidgetProps } from "../../../types"
 import type { BaseTokenInfo } from "../../../types/base"
 
 import type { ModalSelectAssetsPayload } from "src/components/Modal/ModalSelectAssets"
 import { useTokensStore } from "../../../providers/TokensStoreProvider"
-import { type OnSubmitValues, SwapForm } from "./SwapForm"
+import { SwapForm } from "./SwapForm"
 import { SwapFormProvider } from "./SwapFormProvider"
 import { SwapUIMachineFormSyncProvider } from "./SwapUIMachineFormSyncProvider"
 import { SwapUIMachineProvider } from "./SwapUIMachineProvider"
@@ -30,20 +30,6 @@ export const SwapWidget = ({ tokenList, signMessage }: SwapWidgetProps) => {
   const { setModalType, payload, onCloseModal } = useModalStore(
     (state) => state
   )
-
-  const handleSubmit = async (values: OnSubmitValues) => {
-    // TODO Get message for sign from swapFacade
-    const message: WalletMessage = {
-      type: "NEP-141",
-      message: {
-        message: "",
-        recipient: "",
-        nonce: Buffer.from([]),
-      },
-    }
-    const signature = await signMessage(message)
-    console.log(signature)
-  }
 
   const handleSelect = (
     fieldName: string,
@@ -91,13 +77,13 @@ export const SwapWidget = ({ tokenList, signMessage }: SwapWidgetProps) => {
         <SwapUIMachineProvider
           assetIn={selectTokenIn}
           assetOut={selectTokenOut}
+          signMessage={signMessage}
         >
           <SwapUIMachineFormSyncProvider>
             <SwapForm
               selectTokenIn={selectTokenIn}
               selectTokenOut={selectTokenOut}
               onSwitch={handleSwitch}
-              onSubmit={handleSubmit}
               onSelect={handleSelect}
               isFetching={false}
             />

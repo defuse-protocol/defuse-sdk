@@ -30,7 +30,6 @@ enum ErrorEnum {
 export interface SwapFormProps {
   selectTokenIn?: BaseTokenInfo
   selectTokenOut?: BaseTokenInfo
-  onSubmit: (values: OnSubmitValues) => void
   onSelect: (fieldName: string, selectToken: BaseTokenInfo) => void
   onSwitch: (e: React.MouseEvent<HTMLButtonElement>) => void
   isFetching: boolean
@@ -39,7 +38,6 @@ export interface SwapFormProps {
 export const SwapForm = ({
   selectTokenIn,
   selectTokenOut,
-  onSubmit,
   onSelect,
   onSwitch,
   isFetching,
@@ -75,9 +73,9 @@ export const SwapForm = ({
   return (
     <div className="md:max-w-[472px] rounded-[1rem] p-5 shadow-paper bg-white dark:shadow-paper-dark dark:bg-black-800">
       <Form<SwapFormValues>
-        handleSubmit={handleSubmit((values: SwapFormValues) =>
-          onSubmit(values as OnSubmitValues)
-        )}
+        handleSubmit={handleSubmit((values) => {
+          swapUIActorRef.send({ type: "SUBMIT", params: values })
+        })}
         register={register}
       >
         <FieldComboInput<SwapFormValues>

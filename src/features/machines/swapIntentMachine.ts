@@ -1,6 +1,7 @@
 import { quoteMachine } from "@defuse-protocol/swap-facade"
 import type { SolverQuote } from "@defuse-protocol/swap-facade/dist/interfaces/swap-machine.in.interface"
 import { type ActorRefFrom, assign, fromPromise, setup } from "xstate"
+import type { WalletMessage, WalletSignatureResult } from "../../types"
 
 type Context = {
   quoterRef: null | ActorRefFrom<typeof quoteMachine>
@@ -39,9 +40,11 @@ export const swapIntentMachine = setup({
     }),
   },
   actors: {
-    signMessage: fromPromise(async () => {
-      throw new Error("not implemented")
-    }),
+    signMessage: fromPromise(
+      async (_: { input: WalletMessage }): Promise<WalletSignatureResult> => {
+        throw new Error("not implemented")
+      }
+    ),
     broadcastMessage: fromPromise(async () => {
       throw new Error("not implemented")
     }),
@@ -90,6 +93,20 @@ export const swapIntentMachine = setup({
         },
 
         src: "signMessage",
+
+        input: () => {
+          // todo: This is a temporary implementation
+          const message: WalletMessage = {
+            type: "NEP-141",
+            message: {
+              message: "Hey, I want to swap 100 NEAR to 100 USDC",
+              recipient: "defuse.near",
+              nonce: crypto.getRandomValues(new Uint8Array(32)),
+            },
+          }
+
+          return message
+        },
         onDone: "Verifying Intent",
       },
       description:
