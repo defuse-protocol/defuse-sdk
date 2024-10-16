@@ -8,6 +8,7 @@ import type { ModalDepositSelectAssetsPayload } from "../../../../../components/
 import { useModalStore } from "../../../../../providers/ModalStoreProvider"
 import { ModalType } from "../../../../../stores/modalStore"
 import type { BaseTokenInfo } from "../../../../../types/base"
+import { balanceToBignumberString } from "../../../../../utils/balanceTo"
 import styles from "./styles.module.css"
 
 export type DepositFormNearValues = {
@@ -62,7 +63,13 @@ export const DepositFormNear = ({ onSubmit }: DepositFormNearProps) => {
       <div className={styles.formWrapper}>
         <Form<DepositFormNearValues>
           handleSubmit={handleSubmit((values: DepositFormNearValues) =>
-            onSubmit(values)
+            onSubmit({
+              ...values,
+              amount: balanceToBignumberString(
+                values.amount,
+                selectToken?.decimals || 0
+              ),
+            })
           )}
           register={register}
         >

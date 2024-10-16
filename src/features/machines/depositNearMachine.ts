@@ -1,19 +1,20 @@
 import { assign, fromPromise, setup } from "xstate"
 import type { BlockchainEnum } from "../../types/deposit"
 
-type Context = {
-  blockchain: BlockchainEnum | null
+export type Context = {
   amount: string | null
-  address: string | null
+  asset: string | null
   error: Error | null
   outcome: unknown | null
 }
 
 type Events = {
   type: "INPUT"
-  asset: string
   amount: string
+  asset: string
+  accountId: string
 }
+// Add other event types here if needed
 
 // biome-ignore lint/complexity/noBannedTypes: It is temporary type
 type Input = {}
@@ -24,11 +25,9 @@ export type Output = {
 }
 
 export const depositNearMachine = setup({
-  types: {
-    context: {} as Context,
-    events: {} as Events,
-    input: {} as Input,
-    output: {} as Output,
+  types: {} as {
+    context: Context
+    events: Events
   },
   actors: {
     signAndSendTransactions: fromPromise(async (): Promise<string> => {
@@ -49,33 +48,33 @@ export const depositNearMachine = setup({
     },
   },
 }).createMachine({
-  /** @xstate-layout N4IgpgJg5mDOIC5QTABwPawJYBcC0AdmAIYBOAxAJIByACgKoAqA2gAwC6ioG2OW6BLiAAeiAKwAWAOwA6AJwSxrVgA4VANnWsAjAGYATABoQAT0R59emawmt9m7et06pK3QF93xlD1yESpDLYUARYBFDkEAJgMmEAbugA1jE+mH5EZEFYIWFQCPHoAMbEfAJs7OVCvqWCSCKI9mIyunoqtq66Es66xmYIjk0q+vYK+qpyClKe3mhp+BmBwaHh5GCkpOiBqAA2JQBmmwC2Mqm8-plLufkECcU15ZV11fy1oKIIeNpDMkrqUrq6IYTBRyKS9RADGRDfRSGysMQKLSdaYgU7pAIyOJrLB7Ey5ciPbhzF5Cd4tCQyCSaXRSOQqRzjCQScEIXQImTqMRSbT-bR01h-TkotHzDFY0g4vErZjaThPYkCUkQiQqDkSfQSL6qdRU9UstlyDlcr7OFViAHIryo2ZnBYyABGG2IEGKsD4KyiRFiNySKRt6MyjvQztd7ryBTuLweHCqCte9VZdnkTiUdOkgPUKhZsO08n0nWhDikYk8VoI6BQ8DqIvOpFjvBJdXeFmcPwF-0B+mBElBLLwmsNkjsOppcmGKmF-tFF2yyyg9dwjbeEKk6hkGqk+f0CPNXf+fb0uc3XOLKb0cm0Ekn1VrmOxuNyC5qStZVOa5tYcgFfzEPLk6hZexWGaNlWCkRRPypFQpCmK0aztABBe1NhwSAnyXBNPm3DkhjNHUNBpYsWTUfR1y-fRoK-MC+Tka85lvIMQ2IN1H3lBtFSbBoxDXMYVDEMQ1DHaD6QA0xECpYDtz4-8DHUewrzgqdb2odAcAAAgAMXQABXAgIDUzY1MoG5iG2LAIHQjjlwQLkZD5Vc2WGfMd05Yjvi7OxKOUbkJjo20MQAYXQQ4djAVCLLYxcrITAxDW0AS2iGbQ7G0S8ejEhASLIzzaW8-RS3cIA */
+  /** @xstate-layout N4IgpgJg5mDOIC5QTABwPawJYBcC0AdmAIYBOAdFhADZgDEAkgHIAKAqgCoDaADALqJQGbDizoCgkAA9EARgBMAVnIAWAJwaAHAGYFazWr0AaEAE9EaleXnqNANgDsK7T1m7tAXw8mUw3IRIKbCgCLAIoOghxMEoCADd0AGsY30x-IjJyYNDwhDCEgGNiUXFePjLJPxKJJGlERXkHckVNRUNNFU1NWS67E3MEbtUNfTsVBx5xlUVZLx80NPwMoKwQsIiwUlJ0ClRqYoAzHYBbclSRAMzs9bz49CLqsoraqrEa0BkEBqaWtp7O7q9fpyBzKHgObrySyaHhjbSKRRzEDndKBchxTZYA6mdZ0Z5CRZvSSfSzaciyRR2eRUzR2HjUtTAhDyJTkbQOeTwtR2OyKBzaOz6JEopZojGkLE48J42QCF6E8TEizOcmU6nyWn0wVM-TkTQc7T6FoqenyYULC7LcgAI22xAgRVgomlUSIsQSyTOFtRmVt6HtjudUFuhWKbye-EqCvedQQshUGuaihUgtkYx6akUTPkrmaOg1fMsJrpKi83hABHQKHgtRFl1IUZERNqnzwfTMiDwyhGPd7Gk85brVqotEbuGbH0QCaZslkTQhakm1J4rXUGvNVXrWVWOSgY+qSuZ7OaEJXDTnPCN2h1Vg1i8UhtnrjU68H3tFmXFkvW+4nse6VhpjyybjA0jTXh2cY8GSD6LhyEwsmeagbosW4AILWjsOCQL+iotogDiWOQVLqJoOZtIRPIzpmeqOG4FIIjCLIoZaaJ+gGxBOj+8pNnhk5xvRqjTPCTgOD0YkqDOlJ6hyJpuJmHRQshb6blaTDoDgAAEABi6AAK4EBAmk7JpDDxMQ1BULhMafLOuhCQ+fLjOJ8Y6so+qcoY0FqBMMLKfMqlogAwugxx7GA2EQNZh5pg0er6NMmZOLIrgQQMLLyGyBrnvI8acgoZYeEAA */
+  id: "deposit-near",
+  initial: "idle",
   context: {
-    blockchain: null,
     amount: null,
-    address: null,
+    asset: null,
     error: null,
     outcome: null,
   },
-  id: "deposit-near",
-  initial: "signing",
-  on: {
-    INPUT: {
-      target: "#deposit-near.signing",
-      output: ({ event }: { event: Events }) => ({
-        ...event,
-      }),
-    },
-  },
-  description:
-    "Generating sign message, wait for the proof of sign (tx).\n\nResult:\n\n- Update \\[context\\] with payload for ft_transfer_call;\n- Callback event to user for signing the solver message by wallet;",
   states: {
+    idle: {
+      on: {
+        INPUT: {
+          target: "signing",
+          actions: assign({
+            amount: ({ event }) => event.amount,
+            asset: ({ event }) => event.asset,
+          }),
+        },
+      },
+    },
     signing: {
       invoke: {
         id: "deposit-near.signing:invocation[0]",
         input: ({ context }) => ({
           amount: context.amount,
-          address: context.address,
+          asset: context.asset,
         }),
         onDone: {
           target: "verifying",
