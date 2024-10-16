@@ -3,7 +3,7 @@ import { useEffect, useState } from "react"
 import { SwapWidgetProvider } from "../../../providers"
 import { useModalStore } from "../../../providers/ModalStoreProvider"
 import { ModalType } from "../../../stores/modalStore"
-import type { SwapMessageParams, SwapWidgetProps } from "../../../types"
+import type { SwapWidgetProps, WalletMessage } from "../../../types"
 import type { BaseTokenInfo } from "../../../types/base"
 
 import type { ModalSelectAssetsPayload } from "src/components/Modal/ModalSelectAssets"
@@ -13,7 +13,7 @@ import { SwapFormProvider } from "./SwapFormProvider"
 import { SwapUIMachineFormSyncProvider } from "./SwapUIMachineFormSyncProvider"
 import { SwapUIMachineProvider } from "./SwapUIMachineProvider"
 
-export const SwapWidget = ({ tokenList, onSign }: SwapWidgetProps) => {
+export const SwapWidget = ({ tokenList, signMessage }: SwapWidgetProps) => {
   const { updateTokens } = useTokensStore((state) => state)
 
   assert(tokenList.length > 2, "Token list must have at least 2 tokens")
@@ -33,12 +33,15 @@ export const SwapWidget = ({ tokenList, onSign }: SwapWidgetProps) => {
 
   const handleSubmit = async (values: OnSubmitValues) => {
     // TODO Get message for sign from swapFacade
-    const message: SwapMessageParams = {
-      message: "",
-      recipient: "",
-      nonce: Buffer.from([]),
+    const message: WalletMessage = {
+      type: "NEP-141",
+      message: {
+        message: "",
+        recipient: "",
+        nonce: Buffer.from([]),
+      },
     }
-    const signature = await onSign(message)
+    const signature = await signMessage(message)
     console.log(signature)
   }
 
