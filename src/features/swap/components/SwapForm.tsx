@@ -73,8 +73,8 @@ export const SwapForm = ({
   return (
     <div className="md:max-w-[472px] rounded-[1rem] p-5 shadow-paper bg-white dark:shadow-paper-dark dark:bg-black-800">
       <Form<SwapFormValues>
-        handleSubmit={handleSubmit((values) => {
-          swapUIActorRef.send({ type: "SUBMIT", params: values })
+        handleSubmit={handleSubmit(() => {
+          swapUIActorRef.send({ type: "submit" })
         })}
         register={register}
       >
