@@ -1,7 +1,9 @@
 import { quoteMachine } from "@defuse-protocol/swap-facade"
 import type { SolverQuote } from "@defuse-protocol/swap-facade/dist/interfaces/swap-machine.in.interface"
 import { type ActorRefFrom, assign, fromPromise, setup } from "xstate"
+import { settings } from "../../config/settings"
 import type { WalletMessage, WalletSignatureResult } from "../../types"
+import { makeSwapMessage } from "../../utils/messageFactory"
 
 type Context = {
   quoterRef: null | ActorRefFrom<typeof quoteMachine>
@@ -98,19 +100,16 @@ export const swapIntentMachine = setup({
         src: "signMessage",
 
         input: () => {
-          // todo: This is a temporary implementation
-          const message: WalletMessage = {
-            NEP141: {
-              message: "Hey, I want to swap 100 NEAR to 100 USDC",
-              recipient: "defuse.near",
-              nonce: crypto.getRandomValues(new Uint8Array(32)),
+          return makeSwapMessage({
+            tokenDiff: {
+              NEAR: "100",
+              USDC: "-100",
             },
-            EIP712: {
-              json: "{}",
-            },
-          }
-
-          return message
+            signerId: "signer.near",
+            recipient: settings.defuseContractId,
+            deadlineTimestamp:
+              Math.floor(Date.now() / 1000) + settings.swapExpirySec,
+          })
         },
         onDone: [
           {
