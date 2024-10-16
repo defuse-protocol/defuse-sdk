@@ -101,10 +101,10 @@ export const swapIntentMachine = setup({
 
         input: () => {
           return makeSwapMessage({
-            tokenDiff: {
-              NEAR: "100",
-              USDC: "-100",
-            },
+            tokenDiff: [
+              ["NEAR", 100n],
+              ["USDC", -100n],
+            ],
             signerId: "signer.near",
             recipient: settings.defuseContractId,
             deadlineTimestamp:

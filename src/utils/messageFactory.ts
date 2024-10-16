@@ -11,18 +11,23 @@ export function makeSwapMessage({
   deadlineTimestamp,
   nonce = randomBytes(32),
 }: {
-  tokenDiff: TokenAmountsForInt128
+  tokenDiff: [string, bigint][]
   signerId: string
   recipient: string
   deadlineTimestamp: number
   nonce?: Uint8Array
 }): WalletMessage {
+  const serializedTokenDiff = tokenDiff.reduce((acc, [tokenId, amount]) => {
+    acc[tokenId] = amount.toString()
+    return acc
+  }, {} as TokenAmountsForInt128)
+
   const nep141Message: DefuseMessageFor_DefuseIntents = {
     deadline: { timestamp: deadlineTimestamp },
     intents: [
       {
         intent: "token_diff",
-        diff: tokenDiff,
+        diff: serializedTokenDiff,
       },
     ],
     signer_id: signerId,
