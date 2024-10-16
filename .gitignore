@@ -29,3 +29,6 @@ coverage/
 
 # Local build
 *.tgz
+
+# Generated types
+src/types/defuse-contracts-types.d.ts

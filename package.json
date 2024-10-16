@@ -22,7 +22,7 @@
     "typecheck": "tsc --noEmit",
     "check": "biome check",
     "format": "biome format --write src/",
-    "prepare": "husky"
+    "prepare": "husky && ./scripts/gen-defuse-types.sh"
   },
   "dependencies": {
     "@defuse-protocol/swap-facade": "^1.0.3",
