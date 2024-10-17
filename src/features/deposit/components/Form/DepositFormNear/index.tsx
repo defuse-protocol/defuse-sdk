@@ -1,17 +1,17 @@
 import { Button, Spinner, Text } from "@radix-ui/themes"
 
+import { useActor } from "@xstate/react"
 import { useEffect, useState } from "react"
 import { useFormContext } from "react-hook-form"
+import { type NonReducibleUnknown, fromPromise } from "xstate"
 import { Form } from "../../../../../components/Form"
 import { FieldComboInput } from "../../../../../components/Form/FieldComboInput"
-import type { ModalDepositSelectAssetsPayload } from "../../../../../components/Modal/ModalDepositSelectAssets"
-import { useModalStore } from "../../../../../providers/ModalStoreProvider"
-import { ModalType } from "../../../../../stores/modalStore"
+import { DepositService } from "../../../../../features/deposit/services/depositService"
+import { depositNearMachine } from "../../../../../features/machines/depositNearMachine"
 import type { NetworkTokenWithSwapRoute } from "../../../../../types"
 import type { BaseTokenInfo } from "../../../../../types/base"
-import type { BaseAssetInfo } from "../../../../../types/deposit"
+import type { BaseAssetInfo, Transaction } from "../../../../../types/deposit"
 import { balanceToBignumberString } from "../../../../../utils/balanceTo"
-import type { DepositFormRouterValues } from "../DepositFormRouter"
 import styles from "./styles.module.css"
 
 export type DepositFormNearValues = {
@@ -21,14 +21,16 @@ export type DepositFormNearValues = {
 
 export interface DepositFormNearProps {
   asset: BaseAssetInfo
-  onSubmit: (values: DepositFormNearValues) => void
-  onBack: () => void
+  signAndSendTransactionsNear: (transactions: Transaction[]) => void
+  accountId: string
 }
+
+const depositNearService = new DepositService()
 
 export const DepositFormNear = ({
   asset,
-  onSubmit,
-  onBack,
+  signAndSendTransactionsNear,
+  accountId,
 }: DepositFormNearProps) => {
   const [selectToken, setSelectToken] = useState<NetworkTokenWithSwapRoute>()
   const {
@@ -36,6 +38,40 @@ export const DepositFormNear = ({
     register,
     formState: { errors },
   } = useFormContext<DepositFormNearValues>()
+
+  const [state, send] = useActor(
+    depositNearMachine.provide({
+      actors: {
+        signAndSendTransactions: fromPromise(
+          async ({ input }: { input: NonReducibleUnknown }) => {
+            const { asset, amount } = input as {
+              asset: string
+              amount: string
+            }
+            const transactions =
+              depositNearService.createDepositNearTransaction(
+                "defuse.near", // TODO: Contract hasn't been deployed yet
+                asset,
+                amount
+              )
+            const txHash = (await signAndSendTransactionsNear(transactions)) as
+              | string
+              | undefined
+            return txHash || "" // TODO: Ensure a TX hash is returned
+          }
+        ),
+      },
+    })
+  )
+
+  const onSubmit = async (values: DepositFormNearValues) => {
+    send({
+      type: "INPUT",
+      asset: values.asset,
+      amount: values.amount,
+      accountId,
+    })
+  }
 
   useEffect(() => {
     if (asset) {
@@ -72,7 +108,6 @@ export const DepositFormNear = ({
             selected={selectToken}
             className="border rounded-t-xl"
             required="This field is required"
-            handleClick={onBack}
           />
           <div className={styles.buttonGroup}>
             <Button className={`${styles.button} ${styles.orangeButton}`}>
