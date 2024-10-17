@@ -1,42 +1,40 @@
 .selectTrigger {
-  display: inline-flex;
+  display: flex;
   align-items: center;
   justify-content: center;
   border-radius: 4px;
-  padding: 0 15px;
-  font-size: 13px;
-  line-height: 1;
-  height: 35px;
-  gap: 5px;
-  background-color: white;
-  color: var(--violet-11);
-  box-shadow: 0 2px 10px var(--black-a7);
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 24px;
+  height: 56px;
+  padding: 0px 16px;
+  gap: 12px;
+  background-color: #F9F9F8;
+  color: #63635E;
   max-width: 100%;
   box-sizing: border-box;
+  flex-shrink: 0;
+  border-radius: 8px;
+  border: 1px solid #CFCECA;
+  opacity: 0.92;
 }
 
 .selectTrigger:hover {
   background-color: var(--mauve-3);
 }
 
-.selectTrigger:focus {
-  box-shadow: 0 0 0 2px black;
-}
+.selectTrigger:focus {}
 
 .selectTrigger[data-placeholder] {
-  color: var(--violet-9);
-}
-
-.selectIcon {
-  color: var(--violet-11);
+  color: #63635E;
 }
 
 .selectContent {
   overflow: hidden;
   background-color: white;
   border-radius: 6px;
-  box-shadow: 0px 10px 38px -10px rgba(22, 23, 24, 0.35), 0px 10px 20px -15px
-    rgba(22, 23, 24, 0.2);
+  box-shadow: 0px 12px 32px -16px var(--Colors-Neutral-Neutral-Alpha-5, rgba(31, 24, 0, 0.13)), 0px 12px 60px 0px var(--Overlays-Black-Alpha-3, rgba(0, 0, 0, 0.15));
+
   /* Use them to constrain the content dimensions. */
   width: var(--radix-select-trigger-width);
   max-height: var(--radix-select-content-available-height);
@@ -45,31 +43,69 @@
 }
 
 .selectViewport {
-  padding: 5px;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
 .selectItem {
+  display: flex;
+  padding: var(--Spacing-2, 8px);
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  align-self: stretch;
   font-size: 13px;
   line-height: 1;
-  color: var(--violet-11);
+  color: #63635E;
   border-radius: 3px;
-  display: flex;
-  align-items: center;
-  height: 25px;
-  padding: 0 35px 0 25px;
   position: relative;
   user-select: none;
+  width: 100%;
+}
+
+/* Style for the content inside each select item */
+.selectItem > span > span {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+/* Style for the left side (icon container) */
+.selectItem > span > span > span:first-child {
+  display: flex;
+  align-items: center;
+}
+
+/* Add gap between icon and text */
+.selectItem > span > span > span:first-child {
+  margin-right: 12px; /* Adjust this value to increase or decrease the space */
+}
+
+/* Style for the icon container */
+.selectItem .relative.inline-block {
+  flex-shrink: 0;
+}
+
+/* Style for the text */
+.selectItem > span > span > span:last-child {
+  flex-grow: 1;
+}
+
+/* Style for the highlighted/selected item */
+.selectItem[data-highlighted],
+.selectItem[data-state="checked"] {
+  outline: none;
+  background-color: #F1F0EF;
+  border-radius: var(--Radius-4, 8px);
+  color: #21201C;
 }
 
 .selectItem[data-disabled] {
   color: var(--mauve-8);
   pointer-events: none;
-}
-
-.selectItem[data-highlighted] {
-  outline: none;
-  background-color: var(--violet-9);
-  color: var(--violet-1);
 }
 
 .selectLabel {
@@ -89,7 +125,7 @@
   position: absolute;
   left: 0;
   width: 25px;
-  display: inline-flex;
+  display: flex;
   align-items: center;
   justify-content: center;
 }
@@ -100,11 +136,28 @@
   justify-content: center;
   height: 25px;
   background-color: white;
-  color: var(--violet-11);
+  color: #63635E;
   cursor: default;
 }
 
 .selectTriggerFullWidth {
   display: flex;
   width: 100%;
+}
+
+.selectPlaceholderIcon, .selectDownIcon  {
+  display: none;
+}
+
+.selectTrigger[data-placeholder] .selectPlaceholderIcon,
+.selectTrigger[data-placeholder] .selectDownIcon {
+  display: flex;
+}
+
+.selectTrigger[data-placeholder] .selectUpIcon {
+  display: none;
+}
+
+.selectUpIcon {
+  display: flex;
 }

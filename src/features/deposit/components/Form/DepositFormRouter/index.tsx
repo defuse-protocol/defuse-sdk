@@ -2,6 +2,8 @@ import { useForm } from "react-hook-form"
 
 import { Button, Spinner, Text } from "@radix-ui/themes"
 import { useEffect, useState } from "react"
+import { EmptyIcon } from "src/components/EmptyIcon"
+import { NetworkIcon } from "src/components/Network/NetworkIcon"
 import { Form } from "../../../../../components/Form"
 import { Select } from "../../../../../components/Select/Select"
 import { useModalController } from "../../../../../hooks"
@@ -22,9 +24,33 @@ export interface DepositFormRouterProps {
 }
 
 const blockchains = {
-  near: { label: BlockchainEnum.NEAR, icon: null },
-  ethereum: { label: BlockchainEnum.ETHEREUM, icon: null },
-  base: { label: BlockchainEnum.BASE, icon: null },
+  near: {
+    label: BlockchainEnum.NEAR,
+    icon: (
+      <NetworkIcon
+        chainIcon="/static/icons/network/near.svg"
+        chainName={BlockchainEnum.NEAR}
+      />
+    ),
+  },
+  ethereum: {
+    label: BlockchainEnum.ETHEREUM,
+    icon: (
+      <NetworkIcon
+        chainIcon="/static/icons/network/ethereum.svg"
+        chainName={BlockchainEnum.ETHEREUM}
+      />
+    ),
+  },
+  base: {
+    label: BlockchainEnum.BASE,
+    icon: (
+      <NetworkIcon
+        chainIcon="/static/icons/network/base.svg"
+        chainName={BlockchainEnum.BASE}
+      />
+    ),
+  },
 }
 
 export const DepositFormRouter = ({ onSubmit }: DepositFormRouterProps) => {
@@ -82,7 +108,10 @@ export const DepositFormRouter = ({ onSubmit }: DepositFormRouterProps) => {
               name="blockchain"
               register={register}
               options={blockchains}
-              placeholder={{ label: "Select blockchain", icon: null }}
+              placeholder={{
+                label: "Select network",
+                icon: <EmptyIcon />,
+              }}
               fullWidth
             />
           </div>
