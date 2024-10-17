@@ -59,15 +59,19 @@ export const swapIntentMachine = setup({
       }
     ),
     broadcastMessage: fromPromise(async () => {
-      throw new Error("not implemented")
+      // todo: Implement this actor
+      console.warn("broadcastMessage actor is not implemented")
     }),
     getIntentStatus: fromPromise(async () => {
-      throw new Error("not implemented")
+      // todo: Implement this actor
+      console.warn("getIntentStatus actor is not implemented")
     }),
   },
   guards: {
     isSettled: () => {
-      throw new Error("not implemented")
+      // todo: Implement this guard
+      console.warn("isSettled guard is not implemented")
+      return true
     },
     isPending: () => {
       throw new Error("not implemented")
@@ -76,7 +80,9 @@ export const swapIntentMachine = setup({
       throw new Error("not implemented")
     },
     isIntentRelevant: () => {
-      throw new Error("not implemented")
+      // todo: Implement this guard
+      console.warn("isIntentRelevant guard is not implemented")
+      return true
     },
     isSigned: (_, params: WalletSignatureResult | null) => params != null,
   },
