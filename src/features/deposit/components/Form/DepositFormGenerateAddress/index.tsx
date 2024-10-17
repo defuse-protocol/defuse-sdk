@@ -2,7 +2,7 @@ import { useActor } from "@xstate/react"
 import { QRCodeSVG } from "qrcode.react"
 import { useEffect, useState } from "react"
 import { assert } from "vitest"
-import { type NonReducibleUnknown, fromPromise } from "xstate"
+import { fromPromise } from "xstate"
 import { DepositService } from "../../../../../features/deposit/services/depositService"
 import { depositGenerateAddressMachine } from "../../../../../features/machines/depositGenerateAddressMachine"
 import type {
@@ -26,19 +26,16 @@ export const DepositFormGenerateAddress = ({
   const [state, send] = useActor(
     depositGenerateAddressMachine.provide({
       actors: {
-        generateDepositAddress: fromPromise(
-          async ({ input }: { input: NonReducibleUnknown }) => {
-            const { blockchain, assetAddress } = input as {
-              blockchain: BlockchainEnum
-              assetAddress: string
-            }
-            const address = await depositNearService.generateDepositAddress(
-              blockchain,
-              assetAddress
-            )
-            return address
-          }
-        ),
+        generateDepositAddress: fromPromise(async ({ input }) => {
+          const { blockchain, assetAddress } = input
+          assert(blockchain != null, "Blockchain is not selected")
+          assert(assetAddress != null, "Asset is not selected")
+          const address = await depositNearService.generateDepositAddress(
+            blockchain,
+            assetAddress
+          )
+          return address
+        }),
       },
     })
   )

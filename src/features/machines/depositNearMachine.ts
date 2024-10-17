@@ -16,8 +16,10 @@ type Events = {
 }
 // Add other event types here if needed
 
-// biome-ignore lint/complexity/noBannedTypes: It is temporary type
-type Input = {}
+type Input = {
+  amount: string
+  asset: string
+}
 
 // biome-ignore lint/complexity/noBannedTypes: It is temporary type
 export type Output = {
@@ -30,9 +32,11 @@ export const depositNearMachine = setup({
     events: Events
   },
   actors: {
-    signAndSendTransactions: fromPromise(async (): Promise<string> => {
-      throw new Error("not implemented")
-    }),
+    signAndSendTransactions: fromPromise(
+      async ({ input }: { input: Input }): Promise<string> => {
+        throw new Error("not implemented")
+      }
+    ),
     broadcastMessage: fromPromise(async (): Promise<string> => {
       throw new Error("not implemented")
     }),
@@ -73,8 +77,8 @@ export const depositNearMachine = setup({
       invoke: {
         id: "deposit-near.signing:invocation[0]",
         input: ({ context }) => ({
-          amount: context.amount,
-          asset: context.asset,
+          amount: context.amount || "",
+          asset: context.asset || "",
         }),
         onDone: {
           target: "verifying",

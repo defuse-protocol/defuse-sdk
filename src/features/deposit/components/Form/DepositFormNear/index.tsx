@@ -3,7 +3,8 @@ import { Button, Spinner, Text } from "@radix-ui/themes"
 import { useActor } from "@xstate/react"
 import { useEffect, useState } from "react"
 import { useFormContext } from "react-hook-form"
-import { type NonReducibleUnknown, fromPromise } from "xstate"
+import { assert } from "vitest"
+import { fromPromise } from "xstate"
 import { Form } from "../../../../../components/Form"
 import { FieldComboInput } from "../../../../../components/Form/FieldComboInput"
 import { DepositService } from "../../../../../features/deposit/services/depositService"
@@ -42,24 +43,20 @@ export const DepositFormNear = ({
   const [state, send] = useActor(
     depositNearMachine.provide({
       actors: {
-        signAndSendTransactions: fromPromise(
-          async ({ input }: { input: NonReducibleUnknown }) => {
-            const { asset, amount } = input as {
-              asset: string
-              amount: string
-            }
-            const transactions =
-              depositNearService.createDepositNearTransaction(
-                "defuse.near", // TODO: Contract hasn't been deployed yet
-                asset,
-                amount
-              )
-            const txHash = (await signAndSendTransactionsNear(transactions)) as
-              | string
-              | undefined
-            return txHash || "" // TODO: Ensure a TX hash is returned
-          }
-        ),
+        signAndSendTransactions: fromPromise(async ({ input }) => {
+          const { asset, amount } = input
+          assert(asset != null, "Asset is not selected")
+          assert(amount != null, "Amount is not selected")
+          const transactions = depositNearService.createDepositNearTransaction(
+            "defuse.near", // TODO: Contract hasn't been deployed yet
+            asset,
+            amount
+          )
+          const txHash = (await signAndSendTransactionsNear(transactions)) as
+            | string
+            | undefined
+          return txHash || "" // TODO: Ensure a TX hash is returned
+        }),
       },
     })
   )

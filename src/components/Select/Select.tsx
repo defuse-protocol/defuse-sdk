@@ -23,7 +23,6 @@ type Props<T, TFieldValues extends FieldValues> = {
   label?: string
   fullWidth?: boolean
   disabled?: boolean
-  value?: { label: string; icon: React.ReactNode }
 }
 
 export const Select = <T extends string, TFieldValues extends FieldValues>({
@@ -34,7 +33,6 @@ export const Select = <T extends string, TFieldValues extends FieldValues>({
   label,
   fullWidth = false,
   disabled = false,
-  value,
 }: Props<T, TFieldValues>) => {
   const { onChange, ...rest } = register(name as Path<TFieldValues>)
 
@@ -50,7 +48,6 @@ export const Select = <T extends string, TFieldValues extends FieldValues>({
         }
         onChange(event)
       }}
-      value={value?.label}
       {...rest}
     >
       <RadixSelect.Trigger

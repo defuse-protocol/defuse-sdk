@@ -59,9 +59,17 @@
 }
 
 .clickableDisabled {
-  cursor: pointer;
+  cursor: default;
 }
 
 .clickableDisabled > * {
   pointer-events: none;
+}
+
+.selectInput {
+  border: none;
+  outline: none;
+  background-color: transparent;
+  cursor: pointer;
+  width: 100%;
 }

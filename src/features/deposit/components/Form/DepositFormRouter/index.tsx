@@ -92,17 +92,13 @@ export const DepositFormRouter = ({ onSubmit }: DepositFormRouterProps) => {
               onClick={handleAssetChange}
               className={`${styles.buttonWrapper} ${styles.clickableDisabled}`}
             >
-              <Select<string, DepositFormRouterValues>
-                name="asset"
-                register={register}
-                options={assets}
-                placeholder={{ label: "Select asset", icon: null }}
-                fullWidth
-                value={{
-                  label: getValues("address"),
-                  icon: getValues("icon"),
-                }}
-              />
+              <div className={styles.selectWrapper}>
+                <input
+                  {...register("address")}
+                  placeholder="Select asset"
+                  className={styles.selectInput}
+                />
+              </div>
             </button>
           )}
           <div className={styles.buttonGroup}>

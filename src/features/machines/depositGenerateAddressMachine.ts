@@ -13,8 +13,10 @@ type Events = {
   assetAddress: string
 }
 
-// biome-ignore lint/complexity/noBannedTypes: It is temporary type
-type Input = {}
+type Input = {
+  blockchain: BlockchainEnum | null
+  assetAddress: string | null
+}
 
 // biome-ignore lint/complexity/noBannedTypes: It is temporary type
 export type Output = {
@@ -27,9 +29,11 @@ export const depositGenerateAddressMachine = setup({
     events: {} as Events,
   },
   actors: {
-    generateDepositAddress: fromPromise(async (): Promise<string> => {
-      throw new Error("not implemented")
-    }),
+    generateDepositAddress: fromPromise(
+      async ({ input }: { input: Input }): Promise<string> => {
+        throw new Error("not implemented")
+      }
+    ),
   },
 }).createMachine({
   /** @xstate-layout N4IgpgJg5mDOIC5QTABwPawJYBcC0MAdmAE4CGOYeZEEJcsAdFhADZgDEAkgHIAKAVQAqAbQAMAXUSgM2HFnSFpIAB6IAjGICsjdVrEBOdQCYAHMYAsAdi1arAGhABPRMfVXGY4wGYL6gGxa-qYG3qbWAL4RjiiyuARgxOSU1LT0sExEpBRYhFAcEIpgzIQAbugA1sWxmPFZyVQ0dAyM9Tl5CLnlAMY5iuISA8px8orKaghaoYzGBlb+BmLuWt52-o4uCOqmHlbq3vPegd5i3sb+3lExaLX4bSlN6ZmJ2fJ5HKQk6CSMqKwUADNvgBbRg1OQJJIURppFr3XJQTpldC9UaEAZDJAgEYKJRYiZTbyMAyBfzWUz+bbqdQWDauKweUx2CynMQU7zqIxaKLRECEdAoeBY8F1F4NVLNDLDW648aIPAWUx0hB4baMKwU4xacIcxbBAJXEAiu5i6ESp7MNhgaVyWX4xBiZWWMSG42Q14wyXPKFvKA23B20ATHymdVuQz6bWs0JOsRidX6JYhUwpiwWOyum4Q+6ei0AcTFYEoEH9aLlCAMFiJCxOWnOplWNIczlcYg8ldOJlOPgsWtMmZG7vFjxaADEyFh2CWsTixvaK-547MmZYGRTNN4nTZdG3eycLGSDEEeREgA */
