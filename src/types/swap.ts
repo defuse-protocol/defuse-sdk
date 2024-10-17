@@ -1,13 +1,38 @@
 import type { BaseTokenInfo } from "./base"
 
-// TODO: Must be moved to @defuse/swap-facade
-export type SwapMessageParams = {
+// Message for EVM wallets
+export type EIP712Message = {
+  // todo: update to real field, now it's just a placeholder
+  json: string
+}
+
+export type EIP712SignatureData = {
+  type: "EIP712"
+  signatureData: string
+}
+
+// Message for NEAR wallets
+export type NEP141Message = {
   message: string
   recipient: string
-  nonce: Buffer
-  callbackUrl?: string
-  state?: string
+  nonce: Uint8Array
 }
+
+export type NEP141SignatureData = {
+  type: "NEP141"
+  signatureData: {
+    accountId: string
+    publicKey: string
+    signature: string
+  }
+}
+
+export type WalletMessage = {
+  EIP712: EIP712Message
+  NEP141: NEP141Message
+}
+
+export type WalletSignatureResult = EIP712SignatureData | NEP141SignatureData
 
 export type SwapEvent = {
   type: string
@@ -19,7 +44,7 @@ export type SwapWidgetProps = {
   theme?: "dark" | "light"
   tokenList: BaseTokenInfo[]
   onEmit?: (event: SwapEvent) => void
-  onSign: (params: SwapMessageParams) => Promise<{ signature: string }>
+  signMessage: (params: WalletMessage) => Promise<WalletSignatureResult | null>
 }
 
 export enum QueueTransactionsEnum {

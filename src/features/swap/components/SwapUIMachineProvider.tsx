@@ -4,6 +4,7 @@ import type { PropsWithChildren } from "react"
 import { useFormContext } from "react-hook-form"
 import { formatUnits } from "viem"
 import { fromPromise } from "xstate"
+import type { WalletMessage, WalletSignatureResult } from "../../../types"
 import type { BaseTokenInfo } from "../../../types/base"
 import { swapIntentMachine } from "../../machines/swapIntentMachine"
 import { type QuoteTmp, swapUIMachine } from "../../machines/swapUIMachine"
@@ -14,12 +15,14 @@ export const SwapUIMachineContext = createActorContext(swapUIMachine)
 interface SwapUIMachineProviderProps extends PropsWithChildren {
   assetIn: BaseTokenInfo
   assetOut: BaseTokenInfo
+  signMessage: (params: WalletMessage) => Promise<WalletSignatureResult | null>
 }
 
 export function SwapUIMachineProvider({
   children,
   assetIn,
   assetOut,
+  signMessage,
 }: SwapUIMachineProviderProps) {
   const { trigger, getValues, setValue, resetField } =
     useFormContext<SwapFormValues>()
@@ -60,7 +63,11 @@ export function SwapUIMachineProvider({
             return [{ amount_out: ((amountInParsed * 3n) / 2n).toString() }]
           }),
           // @ts-expect-error For some reason `swapIntentMachine` does not satisfy `swap` actor type
-          swap: swapIntentMachine,
+          swap: swapIntentMachine.provide({
+            actors: {
+              signMessage: fromPromise(({ input }) => signMessage(input)),
+            },
+          }),
         },
       })}
     >

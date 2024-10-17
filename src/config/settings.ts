@@ -1,7 +1,9 @@
 import type { Settings } from "../types"
 
-let settings: Settings = {
+export let settings: Settings = {
   providerIds: [],
+  defuseContractId: "defuse.near",
+  swapExpirySec: 600, // 10 minutes
 }
 
 export const getSettings = (): Settings => settings

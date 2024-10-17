@@ -15,6 +15,10 @@ export const swapUIMachine = setup({
       quotes: QuoteTmp[] | null
       outcome: Output | null
     },
+    events: {} as
+      | { type: "input" }
+      | { type: "submit" }
+      | { type: "startOver" },
   },
   actors: {
     formValidation: fromPromise(async (): Promise<boolean> => {
