@@ -29,6 +29,12 @@ export function SwapUIMachineProvider({
 
   return (
     <SwapUIMachineContext.Provider
+      options={{
+        input: {
+          tokenIn: assetIn,
+          tokenOut: assetOut,
+        },
+      }}
       logic={swapUIMachine.provide({
         delays: {
           quotePollingInterval: 1000, // temporary increase to 5 sec during development in order to reduce polluting the logs

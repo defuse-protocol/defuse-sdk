@@ -52,6 +52,7 @@ describe("swapUIMachine", () => {
   }
 
   function interpret() {
+    // @ts-expect-error
     return createActor(populateMachine(), { clock: simulatedClock })
   }
 
@@ -102,6 +103,7 @@ describe("swapUIMachine", () => {
     const service = interpret().start()
 
     // act
+    // @ts-expect-error
     service.send({ type: "input" })
     simulatedClock.increment(10000)
     // give some time for machine to transition
@@ -110,7 +112,7 @@ describe("swapUIMachine", () => {
     // assert
     expect(service.getSnapshot().context.error).toBe(err)
 
-    service.send({ type: "input" })
+    service.send({ type: "input", params: {} })
     expect(service.getSnapshot().context.error).toBeNull()
   })
 })
