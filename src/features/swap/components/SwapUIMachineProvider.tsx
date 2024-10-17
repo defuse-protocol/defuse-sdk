@@ -31,7 +31,7 @@ export function SwapUIMachineProvider({
     <SwapUIMachineContext.Provider
       logic={swapUIMachine.provide({
         delays: {
-          quotePollingInterval: 5000, // temporary increase to 5 sec during development in order to reduce polluting the logs
+          quotePollingInterval: 1000, // temporary increase to 5 sec during development in order to reduce polluting the logs
         },
         actions: {
           updateUIAmountOut: ({ context }) => {
@@ -59,8 +59,23 @@ export function SwapUIMachineProvider({
             // todo: may throw if too many decimals, need to write safe parser
             const amountInParsed = parseUnits(amountIn, assetIn.decimals)
 
-            // todo: replace with real quote
-            return [{ amount_out: ((amountInParsed * 3n) / 2n).toString() }]
+            // todo: replace code below with real quote request
+
+            // Simulate quote with a random factor around 1.5x amountInParsed
+            const baseAmountOut = (amountInParsed * 3n) / 2n
+
+            const randomFactor = (min: number, max: number) =>
+              BigInt(Math.floor(Math.random() * (max - min + 1) + min))
+
+            // Apply random factor within ±3%
+            const minFactor = 97
+            const maxFactor = 103
+            const randomMultiplier = randomFactor(minFactor, maxFactor)
+
+            const amountOutRandomized =
+              (baseAmountOut * randomMultiplier) / 100n
+
+            return [{ amount_out: amountOutRandomized.toString() }]
           }),
           // @ts-expect-error For some reason `swapIntentMachine` does not satisfy `swap` actor type
           swap: swapIntentMachine.provide({
