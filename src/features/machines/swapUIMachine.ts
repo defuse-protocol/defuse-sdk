@@ -78,7 +78,11 @@ export const swapUIMachine = setup({
   },
   guards: {
     isQuoteRelevant: () => {
-      throw new Error("not implemented")
+      // todo: implement real check for fetched quotes if they're expired or not
+      console.warn(
+        "Implement real check for fetched quotes if they're expired or not"
+      )
+      return true
     },
   },
 }).createMachine({

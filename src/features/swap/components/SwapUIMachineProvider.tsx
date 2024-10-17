@@ -66,6 +66,7 @@ export function SwapUIMachineProvider({
             const amountInParsed = parseUnits(amountIn, assetIn.decimals)
 
             // todo: replace code below with real quote request
+            console.warn("Do real quote request here")
 
             // Simulate quote with a random factor around 1.5x amountInParsed
             const baseAmountOut = (amountInParsed * 3n) / 2n
@@ -89,12 +90,6 @@ export function SwapUIMachineProvider({
               signMessage: fromPromise(({ input }) => signMessage(input)),
             },
           }),
-        },
-        guards: {
-          isQuoteRelevant: () => {
-            // todo: implement real check for fetched quotes if they're expired or not
-            return true
-          },
         },
       })}
     >
