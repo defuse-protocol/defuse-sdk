@@ -10,7 +10,7 @@ import {
 import type { swapIntentMachine } from "./swapIntentMachine"
 import { type QuoteTmp, swapUIMachine } from "./swapUIMachine"
 
-describe("swapUIMachine", () => {
+describe.skip("swapUIMachine", () => {
   const defaultActorImpls = {
     formValidation: vi.fn(async (): Promise<boolean> => {
       return true

@@ -3,6 +3,7 @@ import {
   type InputFrom,
   type OutputFrom,
   assign,
+  emit,
   fromPromise,
   setup,
 } from "xstate"
@@ -44,8 +45,18 @@ export const swapUIMachine = setup({
             amountIn: string
           }>
         }
-      | { type: "submit" }
-      | { type: "startOver" },
+      | { type: "submit" },
+
+    emitted: {} as {
+      type: "swap_finished"
+      data: {
+        intentOutcome: OutputFrom<typeof swapIntentMachine>
+        tokenIn: BaseTokenInfo
+        tokenOut: BaseTokenInfo
+        amountIn: bigint
+        amountOut: bigint
+      }
+    },
   },
   actors: {
     formValidation: fromPromise(async (): Promise<boolean> => {
@@ -105,6 +116,18 @@ export const swapUIMachine = setup({
       outcome: (_, value: OutputFrom<typeof swapIntentMachine>) => value,
     }),
     clearOutcome: assign({ outcome: null }),
+    emitSwapFinish: emit(
+      ({ context }, intentOutcome: OutputFrom<typeof swapIntentMachine>) => ({
+        type: "swap_finished" as const,
+        data: {
+          intentOutcome,
+          tokenIn: context.formValues.tokenIn,
+          tokenOut: context.formValues.tokenOut,
+          amountIn: context.parsedFormValues.amountIn,
+          amountOut: BigInt(context.quotes?.[0]?.amount_out ?? "0"),
+        },
+      })
+    ),
   },
   delays: {
     quotePollingInterval: 500,
@@ -119,7 +142,7 @@ export const swapUIMachine = setup({
     },
   },
 }).createMachine({
-  /** @xstate-layout N4IgpgJg5mDOIC5SwO4EMAOBaArgSwDpI8AXPAOygGJYcAjAW1IG0AGAXUVAwHtZS8PclxAAPRAEYJADgIB2AKwA2JdIkBmVqyUKFAJgA0IAJ6S9e+UoCcc6bfV7pe1noC+ro6ky5CxMpSoKDBwSNk4kEF5+MiERcQQsABY5C1ZpRL0U9VtE9Wk7I1MEiQyCVjkKuQ1yiRUNd090bHwiCAFKAgBHHB5-agghMAIKADceAGsh7t6wAEUcMAAnPCWwkSiBWIj4rHUNAnSpPSsHBVzypULETNYy60SFdJS9BQk9JQaQL2bfNr6unp9KhLRY8RYEDAAGzQJAAZmCGACZvMlitFmsIhsYsJtogsG9EgREmkTkpFIkrKxlHIrggbncrA8nuZXm4PF8mj5Wu0oAQRmhIXgIDCKP1BsNyGNJgRvly-KK+QKhSLKAhRjwAMYioRhDHcPibHGgHaZJQEcxWFSsBwua0KWmKImqPKOF6OfKJT6ylryjr8wXCoEDchDdXS72-HmKgMqqBqyWa7XkXUScL66KCI1iPFKVgSc3SKzpaTqXRKZzqWn6eS5WzSBQuKwSSlsxreH1-BXTEiQKiiWAkGFDNCwnuLAAU3bAAAUeJDBZQAJLkMf+gCUNE5HajU4gesiBuxcTxulu0lzJUZFIkNJMknPBFUedYVmUF+U6i9W8ItEYpCD4phkMEYyvQTAkH08ZjFq2K6hw6yHpmx4ILoViPiojhWK+rCJOeEi0hIeYEGcjwvko6hXp67IgRqPAMFCYA9jQg6LCQADyIyrPBmKIVsxqIGcaG6HIlIibohb1rS5hyHc9bSFSWE2lI7jsuQPAQHAIgRghGZ8dmCTybczivjIclKBot5FLstTyHo6jlnm5YUYkHzUd+3J9DphrIVgigWMZrz5I85nZLSWAWkSWgpMScguM4JZfu2kb-EKkJgF5R64gksWEgFpnBRZDrqI+paxTIyRSGoVFtj8HldoCooZUhWXhUohINloJwugojLaARySWKZFE2DoloKIltW+ry-rKp5PG6VmJoUQQ2TmFStiqFh+RhRUBwiScmROHkGifm5SV1R0u5NXpOzKLIjj6JSCj2bo9lSWSxEuToVKli+igTVyv7gXN6beVl2QKOaiQyOWdk9foiS0icBAlG1aiZA4minTVXK0fRaU9tdi2IFUhIw21ZwlLUKQETI5qvC66i4c99wqa4QA */
+  /** @xstate-layout N4IgpgJg5mDOIC5SwO4EMAOBaArgSwDpI8AXPAOygGJYcAjAW1IG0AGAXUVAwHtZS8PclxAAPRAEYJADgIB2AKwA2JdIkBmVqyUKFAJgA0IAJ6S9e+UoCcc6bfV7pe1noC+ro6ky5CxMpSoKDBwSNk4kEF5+MiERcQQscwAWAiV1JIUrNUUbVgcjUwTHWVs9OVYJBSl1OQk3DxAvbHwiCAFKAgBHHB5-agghMAIKADceAGsh7t6wAEUcMAAnPCWwkSiBWIj4rHUNAmkkqT0rBwUkzTklAsQy1gJtKwzDuXMqvSV3T3Rm3za+ro9PpUJaLHiLAgYAA2aBIADNwQxATN5ksVos1hENjFhNtEFg6ikkqxpKclIoklZWMo5DcEHcHtZnklXnp3l9Gj8fK12lACCM0FC8BBYRR+oNhuQxpMCE1uX4xfzBcLRZQEKMeABjUVCMKY7h8Ta40A7MpKAjmKwqPLOZzqBR0xQEJKqdROJz6aRepIcuUtBUdAVCkXAgbkIYamV+v68pXB1VQdVSrU68h6iThA3RQTGsT4pQVC2kw7Se3KO10-TyC62aQKFxWCRU+rfbz+-6K6YkSBUUSwEiwoZoOHdxYACi7YAACjwoULKABJcijoMAShoXPbscnEH1kUNOLi+N092kBYklKSlIktJMkjPqWkFVYVmU5+U6l9m8ItEYpFDEqRkM0ayvQTAkH0SZjNqOJ6hw6wHjmIiFKcBAXkoSRqGUDiaOoRjxGkJRyOUMiYZk+ifhy5A8BAcAiNGCHZlsJr4k+9zOK+Mh1meGi3oUWAuuozqOPocjqNYVQVF+bYxn0jFGkeCSKBYHFVF6Cg8TUdK7FcaHUkoF5XqwRkqNJvw8gCwpQmA8mHniSnGRaL5qdxBlaXeCBiak9okS8UhqD6DQgQGfJdmKtlIfZiQYQQ9ZaKcbpsk82h0heciWFx6hWDYOhWgoZnyh2gbKiG4VYohzF5kUWUEDU5jUrYqjZV62nEQccjZQ4pRuholGtuZIXIt2EARZVOzKLIIknNS4m6OJdIfOl5wqPWCj2i+igFS0v7gXJ5VMbm8Q1AoFpHGe5j2q+ehJHSqHoZhdRiXouHuO4QA */
   id: "swap-ui",
 
   context: ({ input }) => ({
@@ -223,6 +246,7 @@ export const swapUIMachine = setup({
     submitting: {
       invoke: {
         src: "swap",
+
         input: ({ context }) => {
           const quote = context.quotes?.[0]
           if (!quote) {
@@ -236,23 +260,16 @@ export const swapUIMachine = setup({
             amountOut: BigInt(quote.amount_out),
           }
         },
-        onDone: {
-          target: "complete",
-          actions: [
-            {
-              type: "setOutcome",
-              params: ({ event }) => event.output,
-            },
-          ],
-        },
-      },
-    },
 
-    complete: {
-      on: {
-        startOver: {
-          target: "editing",
-          actions: "clearOutcome",
+        onDone: {
+          target: "editing.validating",
+
+          actions: [
+            { type: "setOutcome", params: ({ event }) => event.output },
+            { type: "emitSwapFinish", params: ({ event }) => event.output },
+          ],
+
+          reenter: true,
         },
       },
     },
