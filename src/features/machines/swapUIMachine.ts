@@ -1,6 +1,7 @@
-import { assign, fromPromise, setup } from "xstate"
+import { parseUnits } from "ethers"
+import { type InputFrom, assign, fromPromise, setup } from "xstate"
 import type { BaseTokenInfo } from "../../types/base"
-import type { Output } from "./swapIntentMachine"
+import type { Output, swapIntentMachine } from "./swapIntentMachine"
 
 export type QuoteTmp = {
   amount_out: string
@@ -24,6 +25,9 @@ export const swapUIMachine = setup({
         tokenOut: BaseTokenInfo
         amountIn: string
       }
+      parsedFormValues: {
+        amountIn: bigint
+      }
     },
     events: {} as
       | {
@@ -44,9 +48,13 @@ export const swapUIMachine = setup({
     queryQuote: fromPromise(async (): Promise<QuoteTmp[]> => {
       throw new Error("not implemented")
     }),
-    swap: fromPromise(async (): Promise<Output> => {
-      throw new Error("not implemented")
-    }),
+    swap: fromPromise(
+      async (_: {
+        input: InputFrom<typeof swapIntentMachine>
+      }): Promise<Output> => {
+        throw new Error("not implemented")
+      }
+    ),
   },
   actions: {
     setFormValues: assign({
@@ -65,6 +73,22 @@ export const swapUIMachine = setup({
         ...context.formValues,
         ...data,
       }),
+    }),
+    parseFormValues: assign({
+      parsedFormValues: ({ context }) => {
+        try {
+          return {
+            amountIn: parseUnits(
+              context.formValues.amountIn,
+              context.formValues.tokenIn.decimals
+            ),
+          }
+        } catch {
+          return {
+            amountIn: 0n,
+          }
+        }
+      },
     }),
     updateUIAmountOut: () => {
       throw new Error("not implemented")
@@ -98,6 +122,9 @@ export const swapUIMachine = setup({
       tokenOut: input.tokenOut,
       amountIn: "",
     },
+    parsedFormValues: {
+      amountIn: 0n,
+    },
   }),
 
   states: {
@@ -116,6 +143,7 @@ export const swapUIMachine = setup({
               type: "setFormValues",
               params: ({ event }) => ({ data: event.params }),
             },
+            "parseFormValues",
           ],
         },
       },
@@ -186,6 +214,19 @@ export const swapUIMachine = setup({
     submitting: {
       invoke: {
         src: "swap",
+        input: ({ context }) => {
+          const quote = context.quotes?.[0]
+          if (!quote) {
+            throw new Error("quote not available")
+          }
+
+          return {
+            tokenIn: context.formValues.tokenIn,
+            tokenOut: context.formValues.tokenOut,
+            amountIn: context.parsedFormValues.amountIn,
+            amountOut: BigInt(quote.amount_out),
+          }
+        },
         onDone: {
           target: "complete",
           actions: assign({ outcome: ({ event }) => event.output }),
