@@ -84,6 +84,12 @@ export function SwapUIMachineProvider({
             },
           }),
         },
+        guards: {
+          isQuoteRelevant: () => {
+            // todo: implement real check for fetched quotes if they're expired or not
+            return true
+          },
+        },
       })}
     >
       {children}
