@@ -1,24 +1,31 @@
 import type { PropsWithChildren } from "react"
 import { BlockchainEnum } from "../../../types/deposit"
 import {
-  DepositFormNetwork,
-  type DepositFormNetworkValues,
-} from "./Form/DepositFormNetwork"
+  DepositFormRouter,
+  type DepositFormRouterValues,
+} from "./Form/DepositFormRouter"
 
 export enum DepositFormType {
   DEPOSIT_PASSIVE = "DepositPassiveFormType",
   DEPOSIT_NEAR = "DepositNearFormType",
 }
 
-interface DepositFormControllerProps extends PropsWithChildren {
-  onSelect: (values: DepositFormType) => void
-  formType: DepositFormType | null
+export type DepositFormOnSelectValues = {
+  formType: DepositFormType
+  blockchain: BlockchainEnum
+  address: string
+  decimals: number
+  icon: string
+  symbol: string
 }
 
-const blockchains = {
-  near: { label: BlockchainEnum.NEAR, icon: null },
-  ethereum: { label: BlockchainEnum.ETHEREUM, icon: null },
-  base: { label: BlockchainEnum.BASE, icon: null },
+interface DepositFormControllerProps extends PropsWithChildren {
+  onSelect: (
+    values: {
+      formType: DepositFormType
+    } & DepositFormRouterValues
+  ) => void
+  formType: DepositFormType | null
 }
 
 export const DepositFormController = ({
@@ -29,16 +36,21 @@ export const DepositFormController = ({
   return (
     <>
       {!formType && (
-        <DepositFormNetwork
-          options={blockchains}
-          onSubmit={(values: DepositFormNetworkValues) => {
+        <DepositFormRouter
+          onSubmit={(values: DepositFormRouterValues) => {
             switch (values.blockchain) {
               case BlockchainEnum.NEAR:
-                onSelect(DepositFormType.DEPOSIT_NEAR)
+                onSelect({
+                  formType: DepositFormType.DEPOSIT_NEAR,
+                  ...values,
+                })
                 break
               case BlockchainEnum.ETHEREUM:
               case BlockchainEnum.BASE:
-                onSelect(DepositFormType.DEPOSIT_PASSIVE)
+                onSelect({
+                  formType: DepositFormType.DEPOSIT_PASSIVE,
+                  ...values,
+                })
                 break
               default:
                 throw new Error("Invalid blockchain")

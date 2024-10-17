@@ -25,6 +25,11 @@
   margin-bottom: 1rem;
 }
 
+.buttonWrapper {
+  margin-bottom: 1rem;
+  width: 100%;
+}
+
 .buttonGroup {
   display: flex;
   flex-direction: column;
@@ -51,4 +56,20 @@
 
 .orangeButton:hover {
   background-color: darkorange;
+}
+
+.clickableDisabled {
+  cursor: default;
+}
+
+.clickableDisabled > * {
+  pointer-events: none;
+}
+
+.selectInput {
+  border: none;
+  outline: none;
+  background-color: transparent;
+  cursor: pointer;
+  width: 100%;
 }

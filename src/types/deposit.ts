@@ -24,3 +24,10 @@ export interface Transaction {
 export enum TransactionMethod {
   FT_TRANSFER_CALL = "ft_transfer_call",
 }
+
+export interface BaseAssetInfo {
+  address: string
+  decimals: number
+  icon: string
+  symbol: string
+}

@@ -22,6 +22,7 @@ type Props<T, TFieldValues extends FieldValues> = {
   placeholder: { label: string; icon: React.ReactNode }
   label?: string
   fullWidth?: boolean
+  disabled?: boolean
 }
 
 export const Select = <T extends string, TFieldValues extends FieldValues>({
@@ -31,13 +32,13 @@ export const Select = <T extends string, TFieldValues extends FieldValues>({
   placeholder,
   label,
   fullWidth = false,
+  disabled = false,
 }: Props<T, TFieldValues>) => {
   const { onChange, ...rest } = register(name as Path<TFieldValues>)
 
   return (
     <RadixSelect.Root
       onValueChange={(value: string) => {
-        console.log("Select onValueChange", value)
         // Create a synthetic event object
         const event = {
           target: {
@@ -54,6 +55,7 @@ export const Select = <T extends string, TFieldValues extends FieldValues>({
           [styles.selectTriggerFullWidth || ""]: fullWidth,
         })}
         aria-label={label ?? "Not specified"}
+        disabled={disabled}
       >
         <Flex as="span" align="center" gap="2">
           {placeholder?.icon && <Flex as="span">{placeholder.icon}</Flex>}

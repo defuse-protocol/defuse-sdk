@@ -1,4 +1,8 @@
-import { type Transaction, TransactionMethod } from "../../../types/deposit"
+import {
+  type BlockchainEnum,
+  type Transaction,
+  TransactionMethod,
+} from "../../../types/deposit"
 
 export const FT_STORAGE_DEPOSIT_GAS = "30000000000000"
 export const FT_MINIMUM_STORAGE_BALANCE_LARGE = "12500000000000000000000"
@@ -55,5 +59,27 @@ export class DepositService implements DepositFacade {
         ],
       },
     ]
+  }
+
+  /**
+   * Generate a deposit address for the specified blockchain and asset through the POA bridge API call.
+   *
+   * @param blockchain - The blockchain for which to generate the address
+   * @param assetAddress - The address of the asset being deposited
+   * @returns A Promise that resolves to the generated deposit address
+   */
+  async generateDepositAddress(
+    blockchain: BlockchainEnum,
+    assetAddress: string
+  ): Promise<string> {
+    try {
+      // TODO: Replace with actual API call
+      return new Promise((resolve) => {
+        resolve("0x0")
+      })
+    } catch (error) {
+      console.error("Error generating deposit address:", error)
+      throw error
+    }
   }
 }
