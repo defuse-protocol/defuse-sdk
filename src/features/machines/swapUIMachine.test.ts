@@ -1,12 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 import {
+  type OutputFrom,
   SimulatedClock,
   type StateValue,
   createActor,
   fromPromise,
   getNextSnapshot,
 } from "xstate"
-import type { Output } from "./swapIntentMachine"
+import type { swapIntentMachine } from "./swapIntentMachine"
 import { type QuoteTmp, swapUIMachine } from "./swapUIMachine"
 
 describe("swapUIMachine", () => {
@@ -17,7 +18,8 @@ describe("swapUIMachine", () => {
     queryQuote: vi.fn(async (): Promise<QuoteTmp[]> => {
       return []
     }),
-    swap: async (): Promise<Output> => {
+    swap: async (): Promise<OutputFrom<typeof swapIntentMachine>> => {
+      // @ts-expect-error
       return {}
     },
   }
