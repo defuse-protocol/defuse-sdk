@@ -1,7 +1,13 @@
 import { parseUnits } from "ethers"
-import { type InputFrom, assign, fromPromise, setup } from "xstate"
+import {
+  type InputFrom,
+  type OutputFrom,
+  assign,
+  fromPromise,
+  setup,
+} from "xstate"
 import type { BaseTokenInfo } from "../../types/base"
-import type { Output, swapIntentMachine } from "./swapIntentMachine"
+import type { swapIntentMachine } from "./swapIntentMachine"
 
 export type QuoteTmp = {
   amount_out: string
@@ -19,7 +25,7 @@ export const swapUIMachine = setup({
     context: {} as {
       error: Error | null
       quotes: QuoteTmp[] | null
-      outcome: Output | null
+      outcome: OutputFrom<typeof swapIntentMachine> | null
       formValues: {
         tokenIn: BaseTokenInfo
         tokenOut: BaseTokenInfo
@@ -51,7 +57,7 @@ export const swapUIMachine = setup({
     swap: fromPromise(
       async (_: {
         input: InputFrom<typeof swapIntentMachine>
-      }): Promise<Output> => {
+      }): Promise<OutputFrom<typeof swapIntentMachine>> => {
         throw new Error("not implemented")
       }
     ),
@@ -95,6 +101,9 @@ export const swapUIMachine = setup({
     },
     clearQuote: assign({ quotes: null }),
     clearError: assign({ error: null }),
+    setOutcome: assign({
+      outcome: (_, value: OutputFrom<typeof swapIntentMachine>) => value,
+    }),
     clearOutcome: assign({ outcome: null }),
   },
   delays: {
@@ -110,7 +119,7 @@ export const swapUIMachine = setup({
     },
   },
 }).createMachine({
-  /** @xstate-layout N4IgpgJg5mDOIC5SwO4EMAOBaArgSwDpI8AXPAOygGJYcAjAW1IG0AGAXUVAwHtZS8PclxAAPRAEYJADgIB2AKwA2JdIkBmVqyUKFAJgA0IAJ6S9e+UoCcc6bfV7pe1noC+ro6ky5CxMpSoKDBwSNk4kEF5+MiERcQQsABZrAiV1CXt1dSUJBQlEo1ME6SsCLIyFbKsJJT0FVgl3T3RsfCIIAUoCAEccHn9qCCEwAgoANx4AaxHe-rAARRwwACc8FbCRKIFYiPisdPUCaUSpPSsHBUTNOSVCxD05VgJtK0SFY7lzPL0lJpAvVq+DoDHp9AZUFbLHjLAgYAA2aBIADNoQxQXNFis1ssNhEtjFhLtEFgJHpEgREqwStlFIkrKxlHI7ggHk8Xm8Pl9SX8AT52p0oAQxmg4XgIIiKINhqNyBNpgReW0-JKhSKxRLKAhxjwAMYSoRhXHcPjbQmgPYPJQEcxWFSsBwue0KZmKCmqdROJz6aQ+xI8lp85VdYWi8XgobkEba+WKoEC1WhjVQLWy3X68iGiThY3RQRmsTEpQNa0lY7SdS6Wr25n6eRXWzSepnCT0twef4BpXAlWzEiQKiiWAkREjNBIvvLAAUvbAAAUeHDRZQAJLkCchgCUNE7cZBM4gRsiJoJcWJuie0iL+VedIyzJkVtUDVYVmUV+U6n93jatEYpHD0rRiMsYKvQTAkAMKYTHqBKGhwmzHnmp4ILopQqLUJSvqwiSXhI97Fpc7wvmkN5+u2IE6jwDDwmAfY0MOywkAA8mM6zwXiiE7OaiCXKUuhyPSAm6KWzomPcDzPKoREKFY5zOFI7jtuQPAQHAIixghuZcQWxRaNaL55D67w5OoTJiQkPyHDYNzaBI2EtlSZHNN+u6SppprIVgigWM4r4yI2uGmcyJI3KklxKAJJQCawAmfuRO78iCYpwmA7knkSCSPOSvmGQFJlmUUciHGkCiPDIiRyFIahOR2LmJT2YJuRxWn5haSjkvUWjnB6dSvNo94VZY-nqLJNwyToX6AvVwZqmGTU5h5GVYHoI1lJ8zilZemE+sFchyEcAlybYK1qFkk2Bt2XT7mlSFLcosiOPo9KVDoL3Mj8+3hToDIVi+ijnT+YH-vNR4tchpkKNaJyXuYFavmSzLnAQ+TtWoDwOJocXOVNlHUSlfY3dp8SVeSD7tZc+Q1J894yNaeQ9eoOEva8imuEAA */
+  /** @xstate-layout N4IgpgJg5mDOIC5SwO4EMAOBaArgSwDpI8AXPAOygGJYcAjAW1IG0AGAXUVAwHtZS8PclxAAPRAEYJADgIB2AKwA2JdIkBmVqyUKFAJgA0IAJ6S9e+UoCcc6bfV7pe1noC+ro6ky5CxMpSoKDBwSNk4kEF5+MiERcQQsABY5C1ZpRL0U9VtE9Wk7I1MEiQyCVjkKuQ1yiRUNd090bHwiCAFKAgBHHB5-agghMAIKADceAGsh7t6wAEUcMAAnPCWwkSiBWIj4rHUNAnSpPSsHBVzypULETNYy60SFdJS9BQk9JQaQL2bfNr6unp9KhLRY8RYEDAAGzQJAAZmCGACZvMlitFmsIhsYsJtogsG9EgREmkTkpFIkrKxlHIrggbncrA8nuZXm4PF8mj5Wu0oAQRmhIXgIDCKP1BsNyGNJgRvly-KK+QKhSLKAhRjwAMYioRhDHcPibHGgHaZJQEcxWFSsBwua0KWmKImqPKOF6OfKJT6ylryjr8wXCoEDchDdXS72-HmKgMqqBqyWa7XkXUScL66KCI1iPFKVgSc3SKzpaTqXRKZzqWn6eS5WzSBQuKwSSlsxreH1-BXTEiQKiiWAkGFDNCwnuLAAU3bAAAUeJDBZQAJLkMf+gCUNE5HajU4gesiBuxcTxulu0lzJUZFIkNJMknPBFUedYVmUF+U6i9W8ItEYpCD4phkMEYyvQTAkH08ZjFq2K6hw6yHpmx4ILoViPiojhWK+rCJOeEi0hIeYEGcjwvko6hXp67IgRqPAMFCYA9jQg6LCQADyIyrPBmKIVsxqIGcaG6HIlIibohb1rS5hyHc9bSFSWE2lI7jsuQPAQHAIgRghGZ8dmCTybczivjIclKBot5FLstTyHo6jlnm5YUYkHzUd+3J9DphrIVgigWMZrz5I85nZLSWAWkSWgpMScguM4JZfu2kb-EKkJgF5R64gksWEgFpnBRZDrqI+paxTIyRSGoVFtj8HldoCooZUhWXhUohINloJwugojLaARySWKZFE2DoloKIltW+ry-rKp5PG6VmJoUQQ2TmFStiqFh+RhRUBwiScmROHkGifm5SV1R0u5NXpOzKLIjj6JSCj2bo9lSWSxEuToVKli+igTVyv7gXN6beVl2QKOaiQyOWdk9foiS0icBAlG1aiZA4minTVXK0fRaU9tdi2IFUhIw21ZwlLUKQETI5qvC66i4c99wqa4QA */
   id: "swap-ui",
 
   context: ({ input }) => ({
@@ -229,7 +238,12 @@ export const swapUIMachine = setup({
         },
         onDone: {
           target: "complete",
-          actions: assign({ outcome: ({ event }) => event.output }),
+          actions: [
+            {
+              type: "setOutcome",
+              params: ({ event }) => event.output,
+            },
+          ],
         },
       },
     },

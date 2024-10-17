@@ -48,6 +48,7 @@ describe("swapUIMachine", () => {
   let simulatedClock: SimulatedClock
 
   function populateMachine() {
+    // @ts-expect-error
     return swapUIMachine.provide({ actors, actions, guards })
   }
 
