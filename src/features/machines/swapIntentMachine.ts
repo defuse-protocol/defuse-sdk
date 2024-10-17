@@ -3,14 +3,23 @@ import type { SolverQuote } from "@defuse-protocol/swap-facade/dist/interfaces/s
 import { type ActorRefFrom, assign, fromPromise, setup } from "xstate"
 import { settings } from "../../config/settings"
 import type { WalletMessage, WalletSignatureResult } from "../../types"
+import type { BaseTokenInfo } from "../../types/base"
 import { makeSwapMessage } from "../../utils/messageFactory"
 
 type Context = {
   quoterRef: null | ActorRefFrom<typeof quoteMachine>
+  tokenIn: BaseTokenInfo
+  tokenOut: BaseTokenInfo
+  amountIn: bigint
+  amountOut: bigint
 }
 
-// biome-ignore lint/complexity/noBannedTypes: It is temporary type
-type Input = {}
+type Input = {
+  tokenIn: BaseTokenInfo
+  tokenOut: BaseTokenInfo
+  amountIn: bigint
+  amountOut: bigint
+}
 
 // biome-ignore lint/complexity/noBannedTypes: It is temporary type
 export type Output = {
@@ -73,9 +82,10 @@ export const swapIntentMachine = setup({
   },
 }).createMachine({
   /** @xstate-layout N4IgpgJg5mDOIC5SwO4EMAOBaAlgOwBcxCA6AZRyj3ygGIIB7PME-ANwYGsXZK8BZOLDQwA2gAYAuolAYGvAjiYyQAD0QBWAMwktARj0AOAGziNAFnMB2PQE5xhgDQgAnolv6SVrVavnjAExa5rZ2WgC+4c6omLiExATkfDS0YABOaQxpJBgANmgEAGZZALYkvFSCsMJiUipyCkp4KuoIWMHmJAHmhuJaQeZa4uLG-s5uCIZ6ViTGJhrdvUNWJpHR6Nj4RKQAQploEADGaLCKeFAABACS8YT0TCzsXDzEEFU1YBLSSCANOIrKH6tDxdabmCwBXwBQzeDTjRB6DokPTWcx6AKQrRzWwaNYgGKbW6JPYMA7HU40a5E1IZLI5fJFUrlV7vESfOo-P4A5pAxBYaaGLrGYxaDziIwBULmeEIRE4oUooxWYVWcQBPEEuLbRIANXSOEKLkpN21tC+9Xk-yaLXcehItm8DtsIWMGg0roCMr04m8JDM-T0gQW2I1Gy1CRIerSBqN5ypptEem+skt3JtCBCAS6GnEaP83RzxlsXvBgt8maCtmMK1sodiWwjAHEwAQzpcTQkLmQCAUAK6we7MVh4DjccphhukZut41Ers9gj9hBPY7cr7mzmp628hBaDRdZ3QlaGLSGZ1WCxewJZgLDHNWeyGKbmdVRfETokkadt+Od7t9gdGCHJ4x01SdEm-WdtXnADlxHBhVyadckwtRpAVAVosUFV0tFFCwX1MDEtCvDEujvH1H2fV91nrT9ILjDtCBgxcB3STJsjyApijSMowLolsf0YghmKXFcCiQqQNxTNCeQwvl5VdWxIUMAJAl8LFpVcBFtE6EJrG9GxBgfQw60JbUkioFIgMeeDQL4VkxBQzcZPTLBumMWYAg0FE8O8cVjBlDw7W8Xx3WmWxbCfWs8TwBgIDgFQ+O1VCrXQtQ+VFG8ej6AYhhGMYtIQDRDE6PdzGGJ9VNzUVTPDUgKEs84UrTHcsEsP0PG8FTphWYU9BlGxBULYIcW6Axplq8CSAAYSYQocB4yBmu3OTZVwkhtBxfRMQxSKvRMQVxuVHDA20CI3ySiMADkGGEgAxBhezwCALiyKk2DQXIcAgZa0taF9OimN0rG6JSHWmfbit0QJBki09yovSbPwAQQAIyyIgfuc1LZPStpoR0AJvWCItpkDXD9vsLplUzIZcIvYwkfMkkyROQSiV+3HWjapxCoMEISF6AwsVCYYeiZiMoxjKCEk59MDH3cQcSLEY7HPNUvWGLMUV6DQgpFPRtAl0grpbFAsk4C4AFFaTSOXWu9cRQW6DTXVdBw4T5s8nchUYlLpnx3WNiCBJlpj-xY+3Vr8EhwUsAjxV6CqSzsWPIpPVVJRPSJIiAA */
-  context: ({ input }: { input: Input }) => {
+  context: ({ input }) => {
     return {
       quoterRef: null,
+      ...input,
     }
   },
 
@@ -99,11 +109,11 @@ export const swapIntentMachine = setup({
 
         src: "signMessage",
 
-        input: () => {
+        input: ({ context }) => {
           return makeSwapMessage({
             tokenDiff: [
-              ["NEAR", 100n],
-              ["USDC", -100n],
+              [context.tokenIn.defuseAssetId, -context.amountIn],
+              [context.tokenOut.defuseAssetId, context.amountOut],
             ],
             signerId: "signer.near",
             recipient: settings.defuseContractId,
