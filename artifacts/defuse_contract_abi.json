@@ -5,9 +5,9 @@
     "version": "0.1.0",
     "build": {
       "compiler": "rustc 1.80.0",
-      "builder": "cargo-near cargo-near-build 0.1.1"
+      "builder": "cargo-near cargo-near-build 0.2.0"
     },
-    "wasm_hash": "D7bewhihuYy4puokTW8MrAnFAJ4C3Daz2kg7dbUYhTm9"
+    "wasm_hash": "3o2irokV1CGCHRQN72xGoD9ms4iWJ1XAVzyvwq5TbN2D"
   },
   "body": {
     "functions": [
@@ -556,7 +556,7 @@
             {
               "name": "public_key",
               "type_schema": {
-                "type": "string"
+                "$ref": "#/definitions/PublicKey"
               }
             }
           ]
@@ -821,7 +821,7 @@
             {
               "name": "public_key",
               "type_schema": {
-                "type": "string"
+                "$ref": "#/definitions/PublicKey"
               }
             }
           ]
@@ -844,7 +844,8 @@
               "type_schema": {
                 "type": "array",
                 "items": {
-                  "type": "string"
+                  "type": "string",
+                  "contentEncoding": "base64"
                 }
               }
             }
@@ -872,7 +873,8 @@
             {
               "name": "nonce",
               "type_schema": {
-                "type": "string"
+                "type": "string",
+                "contentEncoding": "base64"
               }
             }
           ]
@@ -1903,7 +1905,7 @@
           "type_schema": {
             "type": "array",
             "items": {
-              "type": "string"
+              "$ref": "#/definitions/PublicKey"
             },
             "uniqueItems": true
           }
@@ -1918,7 +1920,7 @@
             {
               "name": "public_key",
               "type_schema": {
-                "type": "string"
+                "$ref": "#/definitions/PublicKey"
               }
             }
           ]
@@ -2286,7 +2288,7 @@
                   ]
                 },
                 "public_key": {
-                  "type": "string"
+                  "$ref": "#/definitions/PublicKey"
                 }
               }
             },
@@ -2305,7 +2307,7 @@
                   ]
                 },
                 "public_key": {
-                  "type": "string"
+                  "$ref": "#/definitions/PublicKey"
                 }
               }
             },
@@ -2326,7 +2328,8 @@
                 "nonces": {
                   "type": "array",
                   "items": {
-                    "type": "string"
+                    "type": "string",
+                    "contentEncoding": "base64"
                   }
                 }
               }
@@ -2364,7 +2367,7 @@
                 "token_ids": {
                   "type": "array",
                   "items": {
-                    "type": "string"
+                    "$ref": "#/definitions/TokenId"
                   }
                 }
               }
@@ -2414,7 +2417,7 @@
                 "token_ids": {
                   "type": "array",
                   "items": {
-                    "type": "string"
+                    "$ref": "#/definitions/TokenId"
                   }
                 }
               }
@@ -2654,10 +2657,18 @@
         "PromiseOrValueString": {
           "type": "string"
         },
+        "PublicKey": {
+          "examples": [
+            "ed25519:5TagutioHgKLh7KZ1VEFBYfgRkPtqnKm9LoMnJMJugxm",
+            "secp256k1:5KN6ZfGZgH1puWwH1Nc1P8xyrFZSPHDw3WUP6iitsjCECJLrGBq"
+          ],
+          "type": "string"
+        },
         "SignedPayload_for_MultiStandardPayload": {
           "type": "object",
           "anyOf": [
             {
+              "description": "Ed25519",
               "type": "object",
               "required": [
                 "public_key",
@@ -2665,14 +2676,17 @@
               ],
               "properties": {
                 "public_key": {
-                  "type": "string"
+                  "type": "string",
+                  "contentEncoding": "base64"
                 },
                 "signature": {
-                  "type": "string"
+                  "type": "string",
+                  "contentEncoding": "base64"
                 }
               }
             },
             {
+              "description": "Secp256k1",
               "type": "object",
               "required": [
                 "signature"
@@ -2680,7 +2694,8 @@
               "properties": {
                 "signature": {
                   "description": "Concatenated `r`, `s` and `v`",
-                  "type": "string"
+                  "type": "string",
+                  "contentEncoding": "base64"
                 }
               }
             }
@@ -2705,7 +2720,11 @@
                   "type": "string"
                 },
                 "nonce": {
-                  "type": "string"
+                  "examples": [
+                    "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+                  ],
+                  "type": "string",
+                  "contentEncoding": "base64"
                 },
                 "recipient": {
                   "type": "string"
@@ -2746,6 +2765,14 @@
           "additionalProperties": {
             "type": "string"
           }
+        },
+        "TokenId": {
+          "examples": [
+            "nep141:ft.near",
+            "nep171:nft.near:token_id1",
+            "nep245:mt.near:token_id1"
+          ],
+          "type": "string"
         },
         "UpgradableDurationStatus": {
           "type": "object",
