@@ -1,7 +1,8 @@
 import { useForm } from "react-hook-form"
 
-import { Button, Spinner, Text } from "@radix-ui/themes"
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
+import { EmptyIcon } from "src/components/EmptyIcon"
+import { NetworkIcon } from "src/components/Network/NetworkIcon"
 import { Form } from "../../../../../components/Form"
 import { Select } from "../../../../../components/Select/Select"
 import { useModalController } from "../../../../../hooks"
@@ -11,7 +12,7 @@ import {
   type BaseAssetInfo,
   BlockchainEnum,
 } from "../../../../../types/deposit"
-import styles from "./styles.module.css"
+import depositFormRouterStyles from "./styles.module.css"
 
 export type DepositFormRouterValues = {
   blockchain: BlockchainEnum
@@ -22,9 +23,33 @@ export interface DepositFormRouterProps {
 }
 
 const blockchains = {
-  near: { label: BlockchainEnum.NEAR, icon: null },
-  ethereum: { label: BlockchainEnum.ETHEREUM, icon: null },
-  base: { label: BlockchainEnum.BASE, icon: null },
+  near: {
+    label: BlockchainEnum.NEAR,
+    icon: (
+      <NetworkIcon
+        chainIcon="/static/icons/network/near.svg"
+        chainName={BlockchainEnum.NEAR}
+      />
+    ),
+  },
+  ethereum: {
+    label: BlockchainEnum.ETHEREUM,
+    icon: (
+      <NetworkIcon
+        chainIcon="/static/icons/network/ethereum.svg"
+        chainName={BlockchainEnum.ETHEREUM}
+      />
+    ),
+  },
+  base: {
+    label: BlockchainEnum.BASE,
+    icon: (
+      <NetworkIcon
+        chainIcon="/static/icons/network/base.svg"
+        chainName={BlockchainEnum.BASE}
+      />
+    ),
+  },
 }
 
 export const DepositFormRouter = ({ onSubmit }: DepositFormRouterProps) => {
@@ -48,14 +73,17 @@ export const DepositFormRouter = ({ onSubmit }: DepositFormRouterProps) => {
     }
   }>({})
 
+  const assetChangeRef = useRef(false)
+
   const handleAssetChange = () => {
+    assetChangeRef.current = true
     setModalType(ModalType.MODAL_DEPOSIT_SELECT_ASSETS, {
       blockchain: getValues("blockchain"),
     })
   }
 
   useEffect(() => {
-    if (data?.token) {
+    if (data?.token && assetChangeRef.current) {
       setAssets((prevAssets) => ({
         ...prevAssets,
         [data.token.address]: {
@@ -67,70 +95,61 @@ export const DepositFormRouter = ({ onSubmit }: DepositFormRouterProps) => {
       setValue("decimals", data.token.decimals)
       setValue("icon", data.token.icon)
       setValue("symbol", data.token.symbol)
+      onSubmit({
+        ...getValues(),
+      })
+      assetChangeRef.current = false
     }
-  }, [data, setValue])
+  }, [data, setValue, onSubmit, getValues])
+
+  useEffect(() => {
+    const subscription = watch((value, { name }) => {
+      if (name === "blockchain") {
+        setValue("address", "")
+        setValue("decimals", 0)
+        setValue("icon", "")
+        setValue("symbol", "")
+      }
+      onSubmit({
+        ...getValues(),
+      })
+    })
+
+    return () => subscription.unsubscribe()
+  }, [watch, setValue, onSubmit, getValues])
 
   return (
-    <div className={styles.container}>
-      <div className={styles.formWrapper}>
-        <Form<DepositFormRouterValues>
-          handleSubmit={handleSubmit(onSubmit)}
+    <Form<DepositFormRouterValues>
+      handleSubmit={handleSubmit(onSubmit)}
+      register={register}
+    >
+      <div className={depositFormRouterStyles.selectWrapper}>
+        <Select<BlockchainEnum, DepositFormRouterValues>
+          name="blockchain"
           register={register}
+          options={blockchains}
+          placeholder={{
+            label: "Select network",
+            icon: <EmptyIcon />,
+          }}
+          fullWidth
+        />
+      </div>
+      {watch("blockchain") && (
+        <button
+          type="button"
+          onClick={handleAssetChange}
+          className={`${depositFormRouterStyles.buttonWrapper} ${depositFormRouterStyles.clickableDisabled}`}
         >
-          <div className={styles.selectWrapper}>
-            <Select<BlockchainEnum, DepositFormRouterValues>
-              name="blockchain"
-              register={register}
-              options={blockchains}
-              placeholder={{ label: "Select blockchain", icon: null }}
-              fullWidth
+          <div className={depositFormRouterStyles.selectWrapper}>
+            <input
+              {...register("address")}
+              placeholder="Select asset"
+              className={depositFormRouterStyles.selectInput}
             />
           </div>
-          {watch("blockchain") && (
-            <button
-              type="button"
-              onClick={handleAssetChange}
-              className={`${styles.buttonWrapper} ${styles.clickableDisabled}`}
-            >
-              <div className={styles.selectWrapper}>
-                <input
-                  {...register("address")}
-                  placeholder="Select asset"
-                  className={styles.selectInput}
-                />
-              </div>
-            </button>
-          )}
-          <div className={styles.buttonGroup}>
-            {watch("blockchain") !== BlockchainEnum.NEAR && (
-              <Button
-                variant="classic"
-                size="3"
-                radius="large"
-                className={`${styles.button} ${styles.orangeButton}`}
-              >
-                <div className={styles.buttonContent}>
-                  <Spinner loading={false} />
-                  <Text size="6">Generate deposit address</Text>
-                </div>
-              </Button>
-            )}
-            {watch("blockchain") === BlockchainEnum.NEAR && (
-              <Button
-                variant="classic"
-                size="3"
-                radius="large"
-                className={styles.button}
-              >
-                <div className={styles.buttonContent}>
-                  <Spinner loading={false} />
-                  <Text size="6">Deposit via Near</Text>
-                </div>
-              </Button>
-            )}
-          </div>
-        </Form>
-      </div>
-    </div>
+        </button>
+      )}
+    </Form>
   )
 }

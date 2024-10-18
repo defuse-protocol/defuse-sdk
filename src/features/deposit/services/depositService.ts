@@ -4,7 +4,7 @@ import {
   TransactionMethod,
 } from "../../../types/deposit"
 
-export const FT_STORAGE_DEPOSIT_GAS = "30000000000000"
+export const FT_STORAGE_DEPOSIT_GAS = `300${"0".repeat(12)}`
 export const FT_MINIMUM_STORAGE_BALANCE_LARGE = "12500000000000000000000"
 
 export interface DepositFacade {
@@ -49,11 +49,12 @@ export class DepositService implements DepositFacade {
             params: {
               methodName: TransactionMethod.FT_TRANSFER_CALL,
               args: {
-                reciver_id: receiverId,
+                receiver_id: receiverId,
                 amount,
+                msg: "",
               },
               gas: FT_STORAGE_DEPOSIT_GAS,
-              deposit: FT_MINIMUM_STORAGE_BALANCE_LARGE,
+              deposit: "1",
             },
           },
         ],

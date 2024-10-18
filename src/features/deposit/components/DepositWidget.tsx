@@ -48,18 +48,21 @@ export const DepositWidget = ({
       >
         {formType === DepositFormType.DEPOSIT_PASSIVE &&
           blockchain &&
-          asset && (
+          asset &&
+          asset.address && (
             <DepositFormGenerateAddress blockchain={blockchain} asset={asset} />
           )}
-        {formType === DepositFormType.DEPOSIT_NEAR && asset && (
-          <FormProvider {...depositFormNearMethods}>
-            <DepositFormNear
-              asset={asset}
-              accountId={accountId}
-              signAndSendTransactionsNear={signAndSendTransactionsNear}
-            />
-          </FormProvider>
-        )}
+        {formType === DepositFormType.DEPOSIT_NEAR &&
+          asset &&
+          asset.address && (
+            <FormProvider {...depositFormNearMethods}>
+              <DepositFormNear
+                asset={asset}
+                accountId={accountId}
+                signAndSendTransactionsNear={signAndSendTransactionsNear}
+              />
+            </FormProvider>
+          )}
       </DepositFormController>
     </DepositWidgetProvider>
   )

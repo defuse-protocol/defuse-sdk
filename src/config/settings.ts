@@ -2,7 +2,7 @@ import type { Settings } from "../types"
 
 export let settings: Settings = {
   providerIds: [],
-  defuseContractId: "defuse.near",
+  defuseContractId: "defuse-alpha.near",
   swapExpirySec: 600, // 10 minutes
 }
 

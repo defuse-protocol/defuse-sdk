@@ -12,7 +12,7 @@ import styles from "./styles.module.css"
 
 type Props<T, TFieldValues extends FieldValues> = {
   name: string
-  register: UseFormRegister<TFieldValues>
+  register?: UseFormRegister<TFieldValues>
   options: {
     [key in T extends string ? T : never]: {
       label: string
@@ -23,6 +23,8 @@ type Props<T, TFieldValues extends FieldValues> = {
   label?: string
   fullWidth?: boolean
   disabled?: boolean
+  value?: string
+  onChange?: (value: string) => void
 }
 
 export const Select = <T extends string, TFieldValues extends FieldValues>({
@@ -33,20 +35,37 @@ export const Select = <T extends string, TFieldValues extends FieldValues>({
   label,
   fullWidth = false,
   disabled = false,
+  value,
+  onChange,
 }: Props<T, TFieldValues>) => {
-  const { onChange, ...rest } = register(name as Path<TFieldValues>)
+  const registerProps = register ? register(name as Path<TFieldValues>) : {}
+  const { onChange: formOnChange, ...rest } = registerProps as {
+    onChange?: (event: React.ChangeEvent<HTMLSelectElement>) => void
+  }
 
   return (
     <RadixSelect.Root
-      onValueChange={(value: string) => {
-        // Create a synthetic event object
-        const event = {
-          target: {
-            name,
-            value,
-          },
+      value={value}
+      onValueChange={(newValue: string) => {
+        if (onChange) {
+          onChange(newValue)
         }
-        onChange(event)
+        if (formOnChange) {
+          // Create a synthetic event object for form integration
+          const syntheticEvent = {
+            target: {
+              name,
+              value: newValue,
+            },
+            currentTarget: {
+              name,
+              value: newValue,
+            },
+            preventDefault: () => {},
+            stopPropagation: () => {},
+          } as React.ChangeEvent<HTMLSelectElement>
+          formOnChange(syntheticEvent)
+        }
       }}
       {...rest}
     >
@@ -54,14 +73,23 @@ export const Select = <T extends string, TFieldValues extends FieldValues>({
         className={clsx(styles.selectTrigger, {
           [styles.selectTriggerFullWidth || ""]: fullWidth,
         })}
-        aria-label={label ?? "Not specified"}
+        aria-label={label ?? "custom-select"}
         disabled={disabled}
       >
-        <Flex as="span" align="center" gap="2">
-          {placeholder?.icon && <Flex as="span">{placeholder.icon}</Flex>}
-          <RadixSelect.Value placeholder={placeholder?.label} />
-          <RadixSelect.Icon className={styles.selectIcon}>
+        <Flex as="span" align="center" justify="between" gap="2" width="100%">
+          <Flex as="span" align="center" gap="2">
+            {placeholder?.icon && (
+              <Flex as="span" className={styles.selectPlaceholderIcon}>
+                {placeholder.icon}
+              </Flex>
+            )}
+            <RadixSelect.Value placeholder={placeholder?.label} />
+          </Flex>
+          <RadixSelect.Icon className={styles.selectDownIcon}>
             <ChevronDownIcon />
+          </RadixSelect.Icon>
+          <RadixSelect.Icon className={styles.selectUpIcon}>
+            <ChevronUpIcon />
           </RadixSelect.Icon>
         </Flex>
       </RadixSelect.Trigger>
@@ -72,19 +100,28 @@ export const Select = <T extends string, TFieldValues extends FieldValues>({
           side="bottom"
           sideOffset={8}
         >
-          <RadixSelect.ScrollUpButton className={styles.selectScrollButton}>
-            <ChevronUpIcon />
-          </RadixSelect.ScrollUpButton>
           <RadixSelect.Viewport className={styles.selectViewport}>
             {Object.keys(options).map((key: string) => (
               <SelectItem key={key} value={key}>
-                {options[key as keyof typeof options].label}
+                <Flex
+                  as="span"
+                  align="center"
+                  justify="between"
+                  gap="2"
+                  width="100%"
+                >
+                  {options[key as keyof typeof options]?.icon && (
+                    <Flex as="span" className={styles.selectItemIcon}>
+                      {options[key as keyof typeof options].icon}
+                    </Flex>
+                  )}
+                  <Flex as="span">
+                    {options[key as keyof typeof options].label}
+                  </Flex>
+                </Flex>
               </SelectItem>
             ))}
           </RadixSelect.Viewport>
-          <RadixSelect.ScrollDownButton className={styles.selectScrollButton}>
-            <ChevronDownIcon />
-          </RadixSelect.ScrollDownButton>
         </RadixSelect.Content>
       </RadixSelect.Portal>
     </RadixSelect.Root>
@@ -100,9 +137,6 @@ const SelectItem: React.FC<SelectItemProps> = ({ value, children }) => {
   return (
     <RadixSelect.Item className={styles.selectItem} value={value}>
       <RadixSelect.ItemText>{children}</RadixSelect.ItemText>
-      <RadixSelect.ItemIndicator className={styles.selectItemIndicator}>
-        <CheckIcon />
-      </RadixSelect.ItemIndicator>
     </RadixSelect.Item>
   )
 }
