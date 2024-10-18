@@ -45,6 +45,12 @@ export type SwapWidgetProps = {
   tokenList: BaseTokenInfo[]
   onEmit?: (event: SwapEvent) => void
   signMessage: (params: WalletMessage) => Promise<WalletSignatureResult | null>
+  onSuccessSwap: (params: {
+    amountIn: bigint
+    amountOut: bigint
+    tokenIn: BaseTokenInfo
+    tokenOut: BaseTokenInfo
+  }) => void
 }
 
 export enum QueueTransactionsEnum {

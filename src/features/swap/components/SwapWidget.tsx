@@ -13,7 +13,11 @@ import { SwapFormProvider } from "./SwapFormProvider"
 import { SwapUIMachineFormSyncProvider } from "./SwapUIMachineFormSyncProvider"
 import { SwapUIMachineProvider } from "./SwapUIMachineProvider"
 
-export const SwapWidget = ({ tokenList, signMessage }: SwapWidgetProps) => {
+export const SwapWidget = ({
+  tokenList,
+  signMessage,
+  onSuccessSwap,
+}: SwapWidgetProps) => {
   const { updateTokens } = useTokensStore((state) => state)
 
   assert(tokenList.length > 2, "Token list must have at least 2 tokens")
@@ -79,7 +83,7 @@ export const SwapWidget = ({ tokenList, signMessage }: SwapWidgetProps) => {
           assetOut={selectTokenOut}
           signMessage={signMessage}
         >
-          <SwapUIMachineFormSyncProvider>
+          <SwapUIMachineFormSyncProvider onSuccessSwap={onSuccessSwap}>
             <SwapForm
               selectTokenIn={selectTokenIn}
               selectTokenOut={selectTokenOut}

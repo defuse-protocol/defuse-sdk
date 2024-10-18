@@ -59,6 +59,15 @@ export const SwapForm = ({
 
   const handleSwitch = async (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault()
+
+    swapUIActorRef.send({
+      type: "input",
+      params: {
+        tokenIn: selectTokenOut,
+        tokenOut: selectTokenIn,
+      },
+    })
+
     onSwitch(e)
     setValue("amountOut", "")
     setValue("amountIn", "")
@@ -81,9 +90,13 @@ export const SwapForm = ({
         <FieldComboInput<SwapFormValues>
           fieldName="amountIn"
           selected={selectTokenIn as BaseTokenInfo}
-          handleSelect={() =>
+          handleSelect={() => {
             onSelect("tokenIn", selectTokenOut as BaseTokenInfo)
-          }
+            swapUIActorRef.send({
+              type: "input",
+              params: { tokenIn: selectTokenOut },
+            })
+          }}
           className="border rounded-t-xl"
           required="This field is required"
           errors={errors}
@@ -95,9 +108,13 @@ export const SwapForm = ({
         <FieldComboInput<SwapFormValues>
           fieldName="amountOut"
           selected={selectTokenOut as BaseTokenInfo}
-          handleSelect={() =>
+          handleSelect={() => {
             onSelect("tokenOut", selectTokenIn as BaseTokenInfo)
-          }
+            swapUIActorRef.send({
+              type: "input",
+              params: { tokenOut: selectTokenOut },
+            })
+          }}
           className="border rounded-b-xl mb-5"
           required="This field is required"
           errors={errors}
