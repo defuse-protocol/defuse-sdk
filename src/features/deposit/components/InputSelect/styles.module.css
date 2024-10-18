@@ -9,13 +9,13 @@
   height: 56px;
   padding: 0px 16px;
   gap: 12px;
-  background-color: #F9F9F8;
-  color: #63635E;
+  background-color: #f9f9f8;
+  color: #63635e;
   max-width: 100%;
   box-sizing: border-box;
   flex-shrink: 0;
   border-radius: 8px;
-  border: 1px solid #CFCECA;
+  border: 1px solid #cfceca;
   opacity: 0.92;
 }
 
@@ -23,17 +23,20 @@
   background-color: var(--mauve-3);
 }
 
-.selectTrigger:focus {}
+.selectTrigger:focus {
+}
 
 .selectTrigger[data-placeholder] {
-  color: #63635E;
+  color: #63635e;
 }
 
 .selectContent {
   overflow: hidden;
   background-color: white;
   border-radius: 6px;
-  box-shadow: 0px 12px 32px -16px var(--Colors-Neutral-Neutral-Alpha-5, rgba(31, 24, 0, 0.13)), 0px 12px 60px 0px var(--Overlays-Black-Alpha-3, rgba(0, 0, 0, 0.15));
+  box-shadow: 0px 12px 32px -16px
+    var(--Colors-Neutral-Neutral-Alpha-5, rgba(31, 24, 0, 0.13)), 0px 12px 60px
+    0px var(--Overlays-Black-Alpha-3, rgba(0, 0, 0, 0.15));
 
   /* Use them to constrain the content dimensions. */
   width: var(--radix-select-trigger-width);
@@ -58,7 +61,7 @@
   align-self: stretch;
   font-size: 13px;
   line-height: 1;
-  color: #63635E;
+  color: #63635e;
   border-radius: 3px;
   position: relative;
   user-select: none;
@@ -98,9 +101,9 @@
 .selectItem[data-highlighted],
 .selectItem[data-state="checked"] {
   outline: none;
-  background-color: #F1F0EF;
+  background-color: #f1f0ef;
   border-radius: var(--Radius-4, 8px);
-  color: #21201C;
+  color: #21201c;
 }
 
 .selectItem[data-disabled] {
@@ -136,7 +139,7 @@
   justify-content: center;
   height: 25px;
   background-color: white;
-  color: #63635E;
+  color: #63635e;
   cursor: default;
 }
 
@@ -145,7 +148,8 @@
   width: 100%;
 }
 
-.selectPlaceholderIcon, .selectDownIcon  {
+.selectPlaceholderIcon,
+.selectDownIcon {
   display: none;
 }
 
