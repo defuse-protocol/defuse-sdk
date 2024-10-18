@@ -23,9 +23,6 @@
   background-color: var(--mauve-3);
 }
 
-.selectTrigger:focus {
-}
-
 .selectTrigger[data-placeholder] {
   color: #63635e;
 }
