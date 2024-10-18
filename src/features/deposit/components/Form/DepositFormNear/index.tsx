@@ -3,8 +3,9 @@ import { Button, Spinner, Text } from "@radix-ui/themes"
 import { useActor } from "@xstate/react"
 import { useEffect, useState } from "react"
 import { useFormContext } from "react-hook-form"
+import { settings } from "src/config/settings"
 import { assert } from "vitest"
-import { fromPromise } from "xstate"
+import { fromPromise, log } from "xstate"
 import { Form } from "../../../../../components/Form"
 import { FieldComboInput } from "../../../../../components/Form/FieldComboInput"
 import { DepositService } from "../../../../../features/deposit/services/depositService"
@@ -50,7 +51,7 @@ export const DepositFormNear = ({
           assert(asset != null, "Asset is not selected")
           assert(amount != null, "Amount is not selected")
           const transactions = depositNearService.createDepositNearTransaction(
-            "defuse.near", // TODO: Contract hasn't been deployed yet
+            settings.defuseContractId,
             asset,
             amount
           )
@@ -62,11 +63,10 @@ export const DepositFormNear = ({
       },
     })
   )
-
   const onSubmit = async (values: DepositFormNearValues) => {
     send({
       type: "INPUT",
-      asset: values.asset,
+      asset: asset.address,
       amount: values.amount,
       accountId,
     })
