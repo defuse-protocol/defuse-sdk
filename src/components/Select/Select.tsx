@@ -12,7 +12,7 @@ import styles from "./styles.module.css"
 
 type Props<T, TFieldValues extends FieldValues> = {
   name: string
-  register: UseFormRegister<TFieldValues>
+  register?: UseFormRegister<TFieldValues>
   options: {
     [key in T extends string ? T : never]: {
       label: string
@@ -23,6 +23,8 @@ type Props<T, TFieldValues extends FieldValues> = {
   label?: string
   fullWidth?: boolean
   disabled?: boolean
+  value?: string
+  onChange?: (value: string) => void
 }
 
 export const Select = <T extends string, TFieldValues extends FieldValues>({
@@ -33,20 +35,37 @@ export const Select = <T extends string, TFieldValues extends FieldValues>({
   label,
   fullWidth = false,
   disabled = false,
+  value,
+  onChange,
 }: Props<T, TFieldValues>) => {
-  const { onChange, ...rest } = register(name as Path<TFieldValues>)
+  const registerProps = register ? register(name as Path<TFieldValues>) : {}
+  const { onChange: formOnChange, ...rest } = registerProps as {
+    onChange?: (event: React.ChangeEvent<HTMLSelectElement>) => void
+  }
 
   return (
     <RadixSelect.Root
-      onValueChange={(value: string) => {
-        // Create a synthetic event object
-        const event = {
-          target: {
-            name,
-            value,
-          },
+      value={value}
+      onValueChange={(newValue: string) => {
+        if (onChange) {
+          onChange(newValue)
         }
-        onChange(event)
+        if (formOnChange) {
+          // Create a synthetic event object for form integration
+          const syntheticEvent = {
+            target: {
+              name,
+              value: newValue,
+            },
+            currentTarget: {
+              name,
+              value: newValue,
+            },
+            preventDefault: () => {},
+            stopPropagation: () => {},
+          } as React.ChangeEvent<HTMLSelectElement>
+          formOnChange(syntheticEvent)
+        }
       }}
       {...rest}
     >

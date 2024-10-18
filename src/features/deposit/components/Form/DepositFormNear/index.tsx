@@ -37,6 +37,8 @@ export const DepositFormNear = ({
   const {
     handleSubmit,
     register,
+    getValues,
+    watch,
     formState: { errors },
   } = useFormContext<DepositFormNearValues>()
 
@@ -89,33 +91,35 @@ export const DepositFormNear = ({
   }, [asset])
 
   return (
-    <div className={styles.container}>
-      <div className={styles.formWrapper}>
-        <Form<DepositFormNearValues>
-          handleSubmit={handleSubmit((values: DepositFormNearValues) =>
-            onSubmit({
-              ...values,
-              amount: balanceToBignumberString(values.amount, asset.decimals),
-            })
-          )}
-          register={register}
+    <Form<DepositFormNearValues>
+      handleSubmit={handleSubmit((values: DepositFormNearValues) =>
+        onSubmit({
+          ...values,
+          amount: balanceToBignumberString(values.amount, asset.decimals),
+        })
+      )}
+      register={register}
+    >
+      <FieldComboInput<DepositFormNearValues>
+        fieldName="amount"
+        className="border rounded-xl"
+        required="This field is required"
+      />
+      <div className={styles.buttonGroup}>
+        <Button
+          variant="classic"
+          size="3"
+          radius="large"
+          className={`${styles.button}`}
+          color="orange"
+          disabled={!watch("amount")}
         >
-          <FieldComboInput<DepositFormNearValues>
-            fieldName="amount"
-            selected={selectToken}
-            className="border rounded-t-xl"
-            required="This field is required"
-          />
-          <div className={styles.buttonGroup}>
-            <Button className={`${styles.button} ${styles.orangeButton}`}>
-              <span className={styles.buttonContent}>
-                <Spinner loading={false} />
-                <Text size="6">Deposit</Text>
-              </span>
-            </Button>
-          </div>
-        </Form>
+          <span className={styles.buttonContent}>
+            <Spinner loading={false} />
+            <Text size="6">Deposit via Near</Text>
+          </span>
+        </Button>
       </div>
-    </div>
+    </Form>
   )
 }
