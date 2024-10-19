@@ -1,4 +1,5 @@
 import { formatUnits } from "viem"
+import type { BaseTokenInfo, UnifiedTokenInfo } from "../types/base"
 
 export const smallBalanceToFormat = (balance: string, toFixed = 14): string => {
   if (!Number.parseFloat(balance)) {
@@ -27,4 +28,16 @@ export const tokenBalanceToFormatUnits = ({
   ).toString()
 
   return smallBalanceToFormat(balanceToUnits, 7)
+}
+
+export function isBaseToken(
+  token: BaseTokenInfo | UnifiedTokenInfo
+): token is BaseTokenInfo {
+  return "defuseAssetId" in token
+}
+
+export function isUnifiedToken(
+  token: BaseTokenInfo | UnifiedTokenInfo
+): token is UnifiedTokenInfo {
+  return "unifiedAssetId" in token
 }

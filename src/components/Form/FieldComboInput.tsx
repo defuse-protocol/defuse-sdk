@@ -8,7 +8,7 @@ import type {
   UseFormRegister,
 } from "react-hook-form"
 
-import type { BaseTokenInfo } from "../../types/base"
+import type { BaseTokenInfo, UnifiedTokenInfo } from "../../types/base"
 import {
   BlockMultiBalances,
   type BlockMultiBalancesProps,
@@ -23,7 +23,7 @@ interface Props<T extends FieldValues> {
   label?: string | React.ReactNode
   price?: string
   balance?: string | bigint
-  selected?: BaseTokenInfo
+  selected?: BaseTokenInfo | UnifiedTokenInfo
   handleSelect?: () => void
   handleSetMaxValue?: () => void
   className?: string

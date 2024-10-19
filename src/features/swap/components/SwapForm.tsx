@@ -6,7 +6,7 @@ import { Form } from "../../../components/Form"
 import { FieldComboInput } from "../../../components/Form/FieldComboInput"
 import { WarnBox } from "../../../components/WarnBox"
 import { NEAR_TOKEN_META } from "../../../constants"
-import type { BaseTokenInfo } from "../../../types/base"
+import type { SwappableToken } from "../../../types"
 import { SwapUIMachineContext } from "./SwapUIMachineProvider"
 
 export type SwapFormValues = {
@@ -28,9 +28,9 @@ enum ErrorEnum {
 }
 
 export interface SwapFormProps {
-  selectTokenIn?: BaseTokenInfo
-  selectTokenOut?: BaseTokenInfo
-  onSelect: (fieldName: string, selectToken: BaseTokenInfo) => void
+  selectTokenIn?: SwappableToken
+  selectTokenOut?: SwappableToken
+  onSelect: (fieldName: string, selectToken: SwappableToken) => void
   onSwitch: (e: React.MouseEvent<HTMLButtonElement>) => void
   isFetching: boolean
 }
@@ -89,9 +89,10 @@ export const SwapForm = ({
       >
         <FieldComboInput<SwapFormValues>
           fieldName="amountIn"
-          selected={selectTokenIn as BaseTokenInfo}
+          selected={selectTokenIn}
           handleSelect={() => {
-            onSelect("tokenIn", selectTokenOut as BaseTokenInfo)
+            assert(selectTokenOut, "selectTokenOut is not defined")
+            onSelect("tokenIn", selectTokenOut)
             swapUIActorRef.send({
               type: "input",
               params: { tokenIn: selectTokenOut },
@@ -107,9 +108,10 @@ export const SwapForm = ({
         </div>
         <FieldComboInput<SwapFormValues>
           fieldName="amountOut"
-          selected={selectTokenOut as BaseTokenInfo}
+          selected={selectTokenOut}
           handleSelect={() => {
-            onSelect("tokenOut", selectTokenIn as BaseTokenInfo)
+            assert(selectTokenIn, "selectTokenOut is not defined")
+            onSelect("tokenOut", selectTokenIn)
             swapUIActorRef.send({
               type: "input",
               params: { tokenOut: selectTokenOut },
@@ -121,6 +123,7 @@ export const SwapForm = ({
           errorSelect={errorSelectTokenOut}
           disabled={true}
         />
+        {/*
         {selectTokenIn?.defuseAssetId === NEAR_TOKEN_META.defuseAssetId &&
           errorMsg !== ErrorEnum.INSUFFICIENT_BALANCE &&
           errorMsg !== ErrorEnum.NO_QUOTES && (
@@ -133,6 +136,7 @@ export const SwapForm = ({
               }}
             />
           )}
+        */}
         <ButtonCustom
           type="submit"
           size="lg"
@@ -145,4 +149,10 @@ export const SwapForm = ({
       </Form>
     </div>
   )
+}
+
+function assert(condition: unknown, msg?: string): asserts condition {
+  if (!condition) {
+    throw new Error(msg)
+  }
 }

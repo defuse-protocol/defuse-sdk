@@ -4,8 +4,11 @@ import type { PropsWithChildren } from "react"
 import { useFormContext } from "react-hook-form"
 import { formatUnits } from "viem"
 import { fromPromise } from "xstate"
-import type { WalletMessage, WalletSignatureResult } from "../../../types"
-import type { BaseTokenInfo } from "../../../types/base"
+import type {
+  SwappableToken,
+  WalletMessage,
+  WalletSignatureResult,
+} from "../../../types"
 import { swapIntentMachine } from "../../machines/swapIntentMachine"
 import { type QuoteTmp, swapUIMachine } from "../../machines/swapUIMachine"
 import type { SwapFormValues } from "./SwapForm"
@@ -13,8 +16,8 @@ import type { SwapFormValues } from "./SwapForm"
 export const SwapUIMachineContext = createActorContext(swapUIMachine)
 
 interface SwapUIMachineProviderProps extends PropsWithChildren {
-  assetIn: BaseTokenInfo
-  assetOut: BaseTokenInfo
+  assetIn: SwappableToken
+  assetOut: SwappableToken
   signMessage: (params: WalletMessage) => Promise<WalletSignatureResult | null>
 }
 

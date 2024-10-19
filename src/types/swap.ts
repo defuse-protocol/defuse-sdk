@@ -1,4 +1,4 @@
-import type { BaseTokenInfo } from "./base"
+import type { BaseTokenInfo, UnifiedTokenInfo } from "./base"
 
 // Message for EVM wallets
 export type EIP712Message = {
@@ -40,16 +40,18 @@ export type SwapEvent = {
   error?: string
 }
 
+export type SwappableToken = BaseTokenInfo | UnifiedTokenInfo
+
 export type SwapWidgetProps = {
   theme?: "dark" | "light"
-  tokenList: BaseTokenInfo[]
+  tokenList: SwappableToken[]
   onEmit?: (event: SwapEvent) => void
   signMessage: (params: WalletMessage) => Promise<WalletSignatureResult | null>
   onSuccessSwap: (params: {
     amountIn: bigint
     amountOut: bigint
-    tokenIn: BaseTokenInfo
-    tokenOut: BaseTokenInfo
+    tokenIn: SwappableToken
+    tokenOut: SwappableToken
   }) => void
 }
 

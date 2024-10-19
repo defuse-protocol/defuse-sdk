@@ -3,8 +3,7 @@ import { useEffect, useState } from "react"
 import { SwapWidgetProvider } from "../../../providers"
 import { useModalStore } from "../../../providers/ModalStoreProvider"
 import { ModalType } from "../../../stores/modalStore"
-import type { SwapWidgetProps } from "../../../types"
-import type { BaseTokenInfo } from "../../../types/base"
+import type { SwapWidgetProps, SwappableToken } from "../../../types"
 
 import type { ModalSelectAssetsPayload } from "src/components/Modal/ModalSelectAssets"
 import { useTokensStore } from "../../../providers/TokensStoreProvider"
@@ -22,11 +21,11 @@ export const SwapWidget = ({
 
   assert(tokenList.length > 2, "Token list must have at least 2 tokens")
 
-  const [selectTokenIn, setSelectTokenIn] = useState<BaseTokenInfo>(
+  const [selectTokenIn, setSelectTokenIn] = useState<SwappableToken>(
     // biome-ignore lint/style/noNonNullAssertion: tokenList[0] is guaranteed to be defined
     tokenList[0]!
   )
-  const [selectTokenOut, setSelectTokenOut] = useState<BaseTokenInfo>(
+  const [selectTokenOut, setSelectTokenOut] = useState<SwappableToken>(
     // biome-ignore lint/style/noNonNullAssertion: tokenList[1] is guaranteed to be defined
     tokenList[1]!
   )
@@ -37,7 +36,7 @@ export const SwapWidget = ({
 
   const handleSelect = (
     fieldName: string,
-    selectToken: BaseTokenInfo | undefined
+    selectToken: SwappableToken | undefined
   ) => {
     setModalType(ModalType.MODAL_SELECT_ASSETS, { fieldName, selectToken })
   }

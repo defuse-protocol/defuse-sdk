@@ -2,13 +2,18 @@ import { Text } from "@radix-ui/themes"
 import React, { useState, useDeferredValue, useEffect } from "react"
 import { useModalStore } from "../../providers/ModalStoreProvider"
 import { useTokensStore } from "../../providers/TokensStoreProvider"
-import type { ModalType } from "../../stores/modalStore"
-import type { BaseTokenBalance, BaseTokenInfo } from "../../types/base"
+import { ModalType } from "../../stores/modalStore"
+import type {
+  BaseTokenBalance,
+  BaseTokenInfo,
+  UnifiedTokenInfo,
+} from "../../types/base"
+import { isBaseToken } from "../../utils"
 import { AssetList } from "../Asset/AssetList"
 import { SearchBar } from "../SearchBar"
 import { ModalDialog } from "./ModalDialog"
 
-type Token = BaseTokenInfo
+type Token = BaseTokenInfo | UnifiedTokenInfo
 
 export type ModalSelectAssetsPayload = {
   modalType?: ModalType.MODAL_SELECT_ASSETS
@@ -40,17 +45,23 @@ export const ModalSelectAssets = () => {
     asset.token.name
       .toLocaleUpperCase()
       .includes(deferredQuery.toLocaleUpperCase()) ||
-    ("chainName" in asset.token &&
-      asset.token.chainName
-        .toLocaleUpperCase()
-        .includes(deferredQuery.toLocaleUpperCase()))
+    (isBaseToken(asset.token)
+      ? asset.token.chainName
+          .toLocaleUpperCase()
+          .includes(deferredQuery.toLocaleUpperCase())
+      : true)
 
   const handleSelectToken = (token: SelectItemToken) => {
-    onCloseModal({
-      ...(payload as { fieldName: string }),
-      modalType,
-      token,
-    })
+    if (modalType !== ModalType.MODAL_SELECT_ASSETS) {
+      throw new Error("Invalid modal type")
+    }
+
+    const newPayload: ModalSelectAssetsPayload = {
+      ...(payload as ModalSelectAssetsPayload),
+      modalType: ModalType.MODAL_SELECT_ASSETS,
+      token: token.token,
+    }
+    onCloseModal(newPayload)
   }
 
   useEffect(() => {
@@ -62,7 +73,11 @@ export const ModalSelectAssets = () => {
       fieldName: string
     }
 
-    const selectedTokenId = selectToken ? selectToken.defuseAssetId : undefined
+    const selectedTokenId = selectToken
+      ? isBaseToken(selectToken)
+        ? selectToken.defuseAssetId
+        : selectToken.unifiedAssetId
+      : undefined
 
     const getAssetList: SelectItemToken[] = []
     const getAssetListWithBalances: SelectItemToken[] = []
@@ -71,21 +86,35 @@ export const ModalSelectAssets = () => {
       // Filtration by routes should happen only at "tokenOut"
       const disabled = selectedTokenId != null && tokenId === selectedTokenId
 
-      if (
-        token.balance != null &&
-        token.balanceUsd != null &&
-        token.convertedLast != null
-      ) {
-        getAssetListWithBalances.push({
-          itemId: tokenId,
-          token,
-          disabled,
-          balance: {
-            balance: token.balance,
-            balanceUsd: token.balanceUsd,
-            convertedLast: token.convertedLast,
-          },
-        })
+      if (isBaseToken(token)) {
+        if (
+          token.balance != null &&
+          token.balanceUsd != null &&
+          token.convertedLast != null
+        ) {
+          getAssetListWithBalances.push({
+            itemId: tokenId,
+            token,
+            disabled,
+            balance: {
+              balance: token.balance,
+              balanceUsd: token.balanceUsd,
+              convertedLast: token.convertedLast,
+            },
+          })
+        }
+      } else {
+        const hasBalance = token.groupedTokens.some(
+          (innerToken) => innerToken.balance != null
+        )
+        if (hasBalance) {
+          getAssetListWithBalances.push({
+            itemId: tokenId,
+            token,
+            disabled,
+            balance: undefined,
+          })
+        }
       }
 
       getAssetList.push({ itemId: tokenId, token, disabled })

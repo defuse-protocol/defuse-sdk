@@ -2,10 +2,11 @@ import { Text } from "@radix-ui/themes"
 import clsx from "clsx"
 import React, { type ReactNode } from "react"
 
-import type { BaseTokenInfo } from "../../types/base"
+import type { BaseTokenInfo, UnifiedTokenInfo } from "../../types/base"
 import { balanceToCurrency, balanceToDecimal } from "../../utils/balanceTo"
 import type { SelectItemToken } from "../Modal/ModalSelectAssets"
 
+import { isBaseToken } from "../../utils"
 import { AssetComboIcon } from "./AssetComboIcon"
 
 type Props<T> = {
@@ -42,7 +43,7 @@ const EmptyAssetList = ({ className }: Pick<Props<unknown>, "className">) => {
   )
 }
 
-type Token = BaseTokenInfo
+type Token = BaseTokenInfo | UnifiedTokenInfo
 
 export const AssetList = <T extends Token>({
   title,
@@ -80,8 +81,8 @@ export const AssetList = <T extends Token>({
           <AssetComboIcon
             icon={token.icon}
             name={token.name}
-            chainIcon={token.chainIcon}
-            chainName={token.chainName}
+            chainIcon={isBaseToken(token) ? token.chainIcon : undefined}
+            chainName={isBaseToken(token) ? token.chainName : undefined}
           />
           <div className="grow flex flex-col">
             <div className="flex justify-between items-center">
@@ -104,8 +105,8 @@ export const AssetList = <T extends Token>({
                 {token.symbol}
               </Text>
               <Text as="span" size="2">
-                {token.balanceUsd
-                  ? `$${balanceToCurrency(Number(token.balanceUsd))}`
+                {balance
+                  ? `$${balanceToCurrency(Number(balance.balanceUsd))}`
                   : null}
               </Text>
             </div>
