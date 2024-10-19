@@ -71,10 +71,6 @@ export type EstimateSwap = {
   selectTokenOut: SelectToken
 }
 
-export interface NetworkTokenWithSwapRoute extends BaseTokenInfo {
-  routes: string[]
-}
-
 export type EstimateQueueTransactions = {
   queueTransactionsTrack: QueueTransactionsEnum[]
   queueInTrack: number

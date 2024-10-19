@@ -1,16 +1,15 @@
 import { createStore } from "zustand/vanilla"
-
-import type { NetworkTokenWithSwapRoute } from "../types"
+import type { BaseTokenInfo } from "../types/base"
 
 export type TokensState = {
-  data: Map<string, NetworkTokenWithSwapRoute>
+  data: Map<string, BaseTokenInfo>
   isLoading: boolean
   isFetched: boolean
 }
 
 export type TokensActions = {
   onLoad: () => void
-  updateTokens: (data: NetworkTokenWithSwapRoute[]) => void
+  updateTokens: (data: BaseTokenInfo[]) => void
 }
 
 export type TokensStore = TokensState & TokensActions
@@ -35,7 +34,7 @@ export const createTokensStore = (
   return createStore<TokensStore>()((set) => ({
     ...initState,
     onLoad: () => set({ isLoading: true }),
-    updateTokens: (data: NetworkTokenWithSwapRoute[]) =>
+    updateTokens: (data: BaseTokenInfo[]) =>
       set((state) => {
         const updatedData = new Map(state.data)
         for (const item of data) {

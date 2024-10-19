@@ -4,7 +4,6 @@ import React, { useState, useDeferredValue, useEffect } from "react"
 import { useModalStore } from "../../providers/ModalStoreProvider"
 import { useTokensStore } from "../../providers/TokensStoreProvider"
 import type { ModalType } from "../../stores/modalStore"
-import type { NetworkTokenWithSwapRoute } from "../../types"
 import type { BaseTokenInfo } from "../../types/base"
 import { AssetList } from "../Asset/AssetList"
 import { SearchBar } from "../SearchBar"
@@ -17,15 +16,15 @@ export type ModalSelectAssetsPayload = {
   fieldName?: string
 }
 
-export interface SelectableToken extends NetworkTokenWithSwapRoute {
+export interface SelectableToken extends BaseTokenInfo {
   disabled?: boolean
 }
 
 export const ModalSelectAssets = () => {
   const [searchValue, setSearchValue] = useState("")
-  const [assetList, setAssetList] = useState<NetworkTokenWithSwapRoute[]>([])
+  const [assetList, setAssetList] = useState<BaseTokenInfo[]>([])
   const [assetListWithBalances, setAssetListWithBalances] = useState<
-    NetworkTokenWithSwapRoute[]
+    BaseTokenInfo[]
   >([])
 
   const { onCloseModal, modalType, payload } = useModalStore((state) => state)
@@ -55,7 +54,7 @@ export const ModalSelectAssets = () => {
       return
     }
     const { selectToken, fieldName } = payload as {
-      selectToken: NetworkTokenWithSwapRoute | undefined
+      selectToken: BaseTokenInfo | undefined
       fieldName: string
     }
 

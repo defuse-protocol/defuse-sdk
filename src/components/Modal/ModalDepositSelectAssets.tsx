@@ -2,7 +2,6 @@ import { Text } from "@radix-ui/themes"
 import React, { useState, useDeferredValue, useEffect } from "react"
 
 import { useModalStore } from "../../providers/ModalStoreProvider"
-import type { NetworkTokenWithSwapRoute } from "../../types"
 import type { BaseTokenInfo } from "../../types/base"
 import { BlockchainEnum } from "../../types/deposit"
 import { AssetList } from "../Asset/AssetList"
@@ -23,7 +22,7 @@ export type ModalDepositSelectAssetsPayload = {
 
 export const ModalDepositSelectAssets = () => {
   const [searchValue, setSearchValue] = useState("")
-  const [assetList, setAssetList] = useState<NetworkTokenWithSwapRoute[]>([])
+  const [assetList, setAssetList] = useState<BaseTokenInfo[]>([])
 
   const { onCloseModal, modalType, payload } = useModalStore((state) => state)
   const deferredQuery = useDeferredValue(searchValue)
