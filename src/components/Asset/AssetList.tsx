@@ -8,15 +8,15 @@ import type { SelectableToken } from "../Modal/ModalSelectAssets"
 
 import { AssetComboIcon } from "./AssetComboIcon"
 
-type Props = {
+type Props<T> = {
   title?: string
-  assets: SelectableToken[]
+  assets: SelectableToken<T>[]
   emptyState?: ReactNode
   className?: string
-  handleSelectToken?: (token: BaseTokenInfo) => void
+  handleSelectToken?: (token: SelectableToken<T>) => void
 }
 
-const EmptyAssetList = ({ className }: Pick<Props, "className">) => {
+const EmptyAssetList = ({ className }: Pick<Props<unknown>, "className">) => {
   return (
     <div
       className={clsx(
@@ -42,13 +42,15 @@ const EmptyAssetList = ({ className }: Pick<Props, "className">) => {
   )
 }
 
-export const AssetList = ({
+type Token = BaseTokenInfo
+
+export const AssetList = <T extends Token>({
   title,
   assets,
   emptyState,
   className,
   handleSelectToken,
-}: Props) => {
+}: Props<T>) => {
   if (!assets.length) {
     return emptyState || <EmptyAssetList className={className ?? ""} />
   }
@@ -64,62 +66,52 @@ export const AssetList = ({
           {title}
         </Text>
       </div>
-      {assets.map(
-        (
-          {
-            name,
-            chainName,
-            symbol,
-            balance,
-            balanceUsd,
-            disabled,
-            decimals,
-            ...rest
-          },
-          i
-        ) => (
-          <button
-            key={rest.defuseAssetId}
-            type={"button"}
-            className={clsx(
-              "flex justify-between items-center gap-3 p-2.5 rounded-md hover:bg-gray-950 dark:hover:bg-black-950",
-              disabled && "opacity-50 pointer-events-none"
-            )}
-            // biome-ignore lint/style/noNonNullAssertion: i is always within bounds
-            onClick={() => handleSelectToken?.(assets[i]!)}
-          >
-            <AssetComboIcon
-              name={name as string}
-              chainName={chainName as string}
-              {...rest}
-            />
-            <div className="grow flex flex-col">
-              <div className="flex justify-between items-center">
-                <Text as="span" size="2" weight="medium">
-                  {name}
-                </Text>
-                <Text as="span" size="2" weight="medium">
-                  {balance
-                    ? Number(balanceToDecimal(balance, decimals)) < 0.00001
-                      ? "< 0.00001"
-                      : Number(balanceToDecimal(balance, decimals)).toFixed(7)
-                    : null}
-                </Text>
-              </div>
-              <div className="flex justify-between items-center text-gray-600 dark:text-gray-500">
-                <Text as="span" size="2">
-                  {symbol ? symbol : null}
-                </Text>
-                <Text as="span" size="2">
-                  {balanceUsd
-                    ? `$${balanceToCurrency(Number(balanceUsd))}`
-                    : null}
-                </Text>
-              </div>
+      {assets.map(({ token, disabled, balance }, i) => (
+        <button
+          key={token.defuseAssetId}
+          type={"button"}
+          className={clsx(
+            "flex justify-between items-center gap-3 p-2.5 rounded-md hover:bg-gray-950 dark:hover:bg-black-950",
+            disabled && "opacity-50 pointer-events-none"
+          )}
+          // biome-ignore lint/style/noNonNullAssertion: i is always within bounds
+          onClick={() => handleSelectToken?.(assets[i]!)}
+        >
+          <AssetComboIcon
+            icon={token.icon}
+            name={token.name}
+            chainIcon={token.chainIcon}
+            chainName={token.chainName}
+          />
+          <div className="grow flex flex-col">
+            <div className="flex justify-between items-center">
+              <Text as="span" size="2" weight="medium">
+                {token.name}
+              </Text>
+              <Text as="span" size="2" weight="medium">
+                {balance
+                  ? Number(balanceToDecimal(balance.balance, token.decimals)) <
+                    0.00001
+                    ? "< 0.00001"
+                    : Number(
+                        balanceToDecimal(balance.balance, token.decimals)
+                      ).toFixed(7)
+                  : null}
+              </Text>
             </div>
-          </button>
-        )
-      )}
+            <div className="flex justify-between items-center text-gray-600 dark:text-gray-500">
+              <Text as="span" size="2">
+                {token.symbol}
+              </Text>
+              <Text as="span" size="2">
+                {token.balanceUsd
+                  ? `$${balanceToCurrency(Number(token.balanceUsd))}`
+                  : null}
+              </Text>
+            </div>
+          </div>
+        </button>
+      ))}
     </div>
   )
 }

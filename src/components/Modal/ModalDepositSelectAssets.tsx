@@ -37,7 +37,7 @@ export const ModalDepositSelectAssets = () => {
       .toLocaleUpperCase()
       .includes(deferredQuery.toLocaleUpperCase())
 
-  const handleSelectToken = (token: BaseTokenInfo) => {
+  const handleSelectToken = ({ token }: { token: BaseTokenInfo }) => {
     onCloseModal({
       ...(payload as { fieldName: string }),
       modalType,
@@ -70,7 +70,13 @@ export const ModalDepositSelectAssets = () => {
         </div>
         <div className="flex-1 flex flex-col justify-between border-b border-gray-100 px-2.5 overflow-y-auto dark:border-black-950">
           <AssetList
-            assets={deferredQuery ? assetList.filter(filterPattern) : assetList}
+            assets={(deferredQuery
+              ? assetList.filter(filterPattern)
+              : assetList
+            ).map((token) => ({
+              token,
+              disabled: false,
+            }))}
             title={deferredQuery ? "Search results" : "Popular tokens"}
             className="h-full"
             handleSelectToken={handleSelectToken}

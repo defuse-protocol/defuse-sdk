@@ -1,3 +1,4 @@
+/*
 import { Text } from "@radix-ui/themes"
 import clsx from "clsx"
 import React, { type ReactNode } from "react"
@@ -122,3 +123,4 @@ const AssetList = ({
 }
 
 export default AssetList
+*/

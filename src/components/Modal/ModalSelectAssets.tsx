@@ -1,30 +1,32 @@
 import { Text } from "@radix-ui/themes"
 import React, { useState, useDeferredValue, useEffect } from "react"
-
 import { useModalStore } from "../../providers/ModalStoreProvider"
 import { useTokensStore } from "../../providers/TokensStoreProvider"
 import type { ModalType } from "../../stores/modalStore"
-import type { BaseTokenInfo } from "../../types/base"
+import type { BaseTokenBalance, BaseTokenInfo } from "../../types/base"
 import { AssetList } from "../Asset/AssetList"
 import { SearchBar } from "../SearchBar"
-
 import { ModalDialog } from "./ModalDialog"
+
+type Token = BaseTokenInfo
 
 export type ModalSelectAssetsPayload = {
   modalType?: ModalType.MODAL_SELECT_ASSETS
-  token?: BaseTokenInfo
+  token?: Token
   fieldName?: string
 }
 
-export interface SelectableToken extends BaseTokenInfo {
-  disabled?: boolean
+export type SelectableToken<T = Token> = {
+  token: T
+  disabled: boolean
+  balance?: BaseTokenBalance
 }
 
 export const ModalSelectAssets = () => {
   const [searchValue, setSearchValue] = useState("")
-  const [assetList, setAssetList] = useState<BaseTokenInfo[]>([])
+  const [assetList, setAssetList] = useState<SelectableToken[]>([])
   const [assetListWithBalances, setAssetListWithBalances] = useState<
-    BaseTokenInfo[]
+    SelectableToken[]
   >([])
 
   const { onCloseModal, modalType, payload } = useModalStore((state) => state)
@@ -33,15 +35,16 @@ export const ModalSelectAssets = () => {
 
   const handleSearchClear = () => setSearchValue("")
 
-  const filterPattern = (asset: BaseTokenInfo) =>
-    asset.name
+  const filterPattern = (asset: SelectableToken) =>
+    asset.token.name
       .toLocaleUpperCase()
       .includes(deferredQuery.toLocaleUpperCase()) ||
-    asset.chainName
-      .toLocaleUpperCase()
-      .includes(deferredQuery.toLocaleUpperCase())
+    ("chainName" in asset.token &&
+      asset.token.chainName
+        .toLocaleUpperCase()
+        .includes(deferredQuery.toLocaleUpperCase()))
 
-  const handleSelectToken = (token: BaseTokenInfo) => {
+  const handleSelectToken = (token: SelectableToken) => {
     onCloseModal({
       ...(payload as { fieldName: string }),
       modalType,
@@ -54,27 +57,36 @@ export const ModalSelectAssets = () => {
       return
     }
     const { selectToken, fieldName } = payload as {
-      selectToken: BaseTokenInfo | undefined
+      selectToken: Token | undefined
       fieldName: string
     }
 
+    const selectedTokenId = selectToken ? selectToken.defuseAssetId : undefined
+
     const getAssetList: SelectableToken[] = []
     const getAssetListWithBalances: SelectableToken[] = []
-    for (const value of data.values()) {
+    for (const [tokenId, token] of data) {
       // We do not filter "tokenIn" as give full access to tokens in first step
       // Filtration by routes should happen only at "tokenOut"
-      const disabled = selectToken
-        ? value.defuseAssetId === selectToken.defuseAssetId
-        : false
+      const disabled = selectedTokenId != null && tokenId === selectedTokenId
 
-      if (value?.balance) {
+      if (
+        token.balance != null &&
+        token.balanceUsd != null &&
+        token.convertedLast != null
+      ) {
         getAssetListWithBalances.push({
-          ...value,
-          balance: value?.balance,
+          token: token,
           disabled,
+          balance: {
+            balance: token.balance,
+            balanceUsd: token.balanceUsd,
+            convertedLast: token.convertedLast,
+          },
         })
       }
-      getAssetList.push({ ...value, disabled })
+
+      getAssetList.push({ token: token, disabled })
     }
     setAssetList(getAssetList)
     setAssetListWithBalances(getAssetListWithBalances)
