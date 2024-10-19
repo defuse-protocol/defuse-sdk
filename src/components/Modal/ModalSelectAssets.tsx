@@ -17,9 +17,8 @@ export type ModalSelectAssetsPayload = {
   fieldName?: string
 }
 
-export interface TokenListWithNotSelectableToken
-  extends NetworkTokenWithSwapRoute {
-  isNotSelectable?: boolean
+export interface SelectableToken extends NetworkTokenWithSwapRoute {
+  disabled?: boolean
 }
 
 export const ModalSelectAssets = () => {
@@ -60,26 +59,23 @@ export const ModalSelectAssets = () => {
       fieldName: string
     }
 
-    const getAssetList: TokenListWithNotSelectableToken[] = []
-    const getAssetListWithBalances: TokenListWithNotSelectableToken[] = []
+    const getAssetList: SelectableToken[] = []
+    const getAssetListWithBalances: SelectableToken[] = []
     for (const value of data.values()) {
-      let isNotSelectable = false
       // We do not filter "tokenIn" as give full access to tokens in first step
       // Filtration by routes should happen only at "tokenOut"
-      const isAlreadySelected =
-        selectToken && value.defuseAssetId === selectToken.defuseAssetId
-      if (isAlreadySelected) {
-        isNotSelectable = true
-      }
+      const disabled = selectToken
+        ? value.defuseAssetId === selectToken.defuseAssetId
+        : false
 
       if (value?.balance) {
         getAssetListWithBalances.push({
           ...value,
           balance: value?.balance,
-          isNotSelectable,
+          disabled,
         })
       }
-      getAssetList.push({ ...value, isNotSelectable })
+      getAssetList.push({ ...value, disabled })
     }
     setAssetList(getAssetList)
     setAssetListWithBalances(getAssetListWithBalances)
