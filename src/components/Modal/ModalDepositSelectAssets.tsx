@@ -74,6 +74,7 @@ export const ModalDepositSelectAssets = () => {
               ? assetList.filter(filterPattern)
               : assetList
             ).map((token) => ({
+              itemId: token.defuseAssetId,
               token,
               disabled: false,
             }))}

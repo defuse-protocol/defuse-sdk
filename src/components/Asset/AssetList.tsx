@@ -4,16 +4,16 @@ import React, { type ReactNode } from "react"
 
 import type { BaseTokenInfo } from "../../types/base"
 import { balanceToCurrency, balanceToDecimal } from "../../utils/balanceTo"
-import type { SelectableToken } from "../Modal/ModalSelectAssets"
+import type { SelectItemToken } from "../Modal/ModalSelectAssets"
 
 import { AssetComboIcon } from "./AssetComboIcon"
 
 type Props<T> = {
   title?: string
-  assets: SelectableToken<T>[]
+  assets: SelectItemToken<T>[]
   emptyState?: ReactNode
   className?: string
-  handleSelectToken?: (token: SelectableToken<T>) => void
+  handleSelectToken?: (token: SelectItemToken<T>) => void
 }
 
 const EmptyAssetList = ({ className }: Pick<Props<unknown>, "className">) => {
@@ -66,9 +66,9 @@ export const AssetList = <T extends Token>({
           {title}
         </Text>
       </div>
-      {assets.map(({ token, disabled, balance }, i) => (
+      {assets.map(({ itemId, token, disabled, balance }, i) => (
         <button
-          key={token.defuseAssetId}
+          key={itemId}
           type={"button"}
           className={clsx(
             "flex justify-between items-center gap-3 p-2.5 rounded-md hover:bg-gray-950 dark:hover:bg-black-950",

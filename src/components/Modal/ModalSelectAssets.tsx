@@ -16,7 +16,8 @@ export type ModalSelectAssetsPayload = {
   fieldName?: string
 }
 
-export type SelectableToken<T = Token> = {
+export type SelectItemToken<T = Token> = {
+  itemId: string
   token: T
   disabled: boolean
   balance?: BaseTokenBalance
@@ -24,9 +25,9 @@ export type SelectableToken<T = Token> = {
 
 export const ModalSelectAssets = () => {
   const [searchValue, setSearchValue] = useState("")
-  const [assetList, setAssetList] = useState<SelectableToken[]>([])
+  const [assetList, setAssetList] = useState<SelectItemToken[]>([])
   const [assetListWithBalances, setAssetListWithBalances] = useState<
-    SelectableToken[]
+    SelectItemToken[]
   >([])
 
   const { onCloseModal, modalType, payload } = useModalStore((state) => state)
@@ -35,7 +36,7 @@ export const ModalSelectAssets = () => {
 
   const handleSearchClear = () => setSearchValue("")
 
-  const filterPattern = (asset: SelectableToken) =>
+  const filterPattern = (asset: SelectItemToken) =>
     asset.token.name
       .toLocaleUpperCase()
       .includes(deferredQuery.toLocaleUpperCase()) ||
@@ -44,7 +45,7 @@ export const ModalSelectAssets = () => {
         .toLocaleUpperCase()
         .includes(deferredQuery.toLocaleUpperCase()))
 
-  const handleSelectToken = (token: SelectableToken) => {
+  const handleSelectToken = (token: SelectItemToken) => {
     onCloseModal({
       ...(payload as { fieldName: string }),
       modalType,
@@ -63,8 +64,8 @@ export const ModalSelectAssets = () => {
 
     const selectedTokenId = selectToken ? selectToken.defuseAssetId : undefined
 
-    const getAssetList: SelectableToken[] = []
-    const getAssetListWithBalances: SelectableToken[] = []
+    const getAssetList: SelectItemToken[] = []
+    const getAssetListWithBalances: SelectItemToken[] = []
     for (const [tokenId, token] of data) {
       // We do not filter "tokenIn" as give full access to tokens in first step
       // Filtration by routes should happen only at "tokenOut"
@@ -76,7 +77,8 @@ export const ModalSelectAssets = () => {
         token.convertedLast != null
       ) {
         getAssetListWithBalances.push({
-          token: token,
+          itemId: tokenId,
+          token,
           disabled,
           balance: {
             balance: token.balance,
@@ -86,7 +88,7 @@ export const ModalSelectAssets = () => {
         })
       }
 
-      getAssetList.push({ token: token, disabled })
+      getAssetList.push({ itemId: tokenId, token, disabled })
     }
     setAssetList(getAssetList)
     setAssetListWithBalances(getAssetListWithBalances)
