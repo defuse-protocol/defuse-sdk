@@ -23,7 +23,6 @@ type Props<T, TFieldValues extends FieldValues> = {
   label?: string
   fullWidth?: boolean
   disabled?: boolean
-  value?: string
   onChange?: (value: string) => void
 }
 
@@ -35,45 +34,19 @@ export const Select = <T extends string, TFieldValues extends FieldValues>({
   label,
   fullWidth = false,
   disabled = false,
-  value,
   onChange,
 }: Props<T, TFieldValues>) => {
   const registerProps = register ? register(name as Path<TFieldValues>) : {}
   const { onChange: formOnChange, ...rest } = registerProps as {
     onChange?: (event: React.ChangeEvent<HTMLSelectElement>) => void
   }
-
   return (
-    <RadixSelect.Root
-      value={value}
-      onValueChange={(newValue: string) => {
-        if (onChange) {
-          onChange(newValue)
-        }
-        if (formOnChange) {
-          // Create a synthetic event object for form integration
-          const syntheticEvent = {
-            target: {
-              name,
-              value: newValue,
-            },
-            currentTarget: {
-              name,
-              value: newValue,
-            },
-            preventDefault: () => {},
-            stopPropagation: () => {},
-          } as React.ChangeEvent<HTMLSelectElement>
-          formOnChange(syntheticEvent)
-        }
-      }}
-      {...rest}
-    >
+    <RadixSelect.Root onValueChange={onChange} {...rest}>
       <RadixSelect.Trigger
         className={clsx(styles.selectTrigger, {
           [styles.selectTriggerFullWidth || ""]: fullWidth,
         })}
-        aria-label={label ?? "custom-select"}
+        aria-label={label ?? "Not specified"}
         disabled={disabled}
       >
         <Flex as="span" align="center" justify="between" gap="2" width="100%">

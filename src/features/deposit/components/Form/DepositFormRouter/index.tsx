@@ -1,4 +1,4 @@
-import { useForm } from "react-hook-form"
+import { Controller, useForm } from "react-hook-form"
 
 import { useEffect, useRef, useState } from "react"
 import { EmptyIcon } from "src/components/EmptyIcon"
@@ -12,11 +12,12 @@ import {
   type BaseAssetInfo,
   BlockchainEnum,
 } from "../../../../../types/deposit"
-import depositFormRouterStyles from "./styles.module.css"
+import styles from "./styles.module.css"
 
 export type DepositFormRouterValues = {
   blockchain: BlockchainEnum
-} & BaseAssetInfo
+  asset: BaseAssetInfo
+}
 
 export interface DepositFormRouterProps {
   onSubmit: (values: DepositFormRouterValues) => void
@@ -60,6 +61,7 @@ export const DepositFormRouter = ({ onSubmit }: DepositFormRouterProps) => {
     setValue,
     getValues,
     formState: { errors },
+    control,
   } = useForm<DepositFormRouterValues>({ reValidateMode: "onSubmit" })
   const { setModalType, data } = useModalController<{
     modalType: ModalType
@@ -91,10 +93,12 @@ export const DepositFormRouter = ({ onSubmit }: DepositFormRouterProps) => {
           icon: data.token.icon,
         },
       }))
-      setValue("address", data.token.address)
-      setValue("decimals", data.token.decimals)
-      setValue("icon", data.token.icon)
-      setValue("symbol", data.token.symbol)
+      setValue("asset", {
+        address: data.token.address,
+        decimals: data.token.decimals,
+        icon: data.token.icon,
+        symbol: data.token.symbol,
+      })
       onSubmit({
         ...getValues(),
       })
@@ -105,10 +109,12 @@ export const DepositFormRouter = ({ onSubmit }: DepositFormRouterProps) => {
   useEffect(() => {
     const subscription = watch((value, { name }) => {
       if (name === "blockchain") {
-        setValue("address", "")
-        setValue("decimals", 0)
-        setValue("icon", "")
-        setValue("symbol", "")
+        setValue("asset", {
+          address: "",
+          decimals: 0,
+          icon: "",
+          symbol: "",
+        })
       }
       onSubmit({
         ...getValues(),
@@ -123,29 +129,34 @@ export const DepositFormRouter = ({ onSubmit }: DepositFormRouterProps) => {
       handleSubmit={handleSubmit(onSubmit)}
       register={register}
     >
-      <div className={depositFormRouterStyles.selectWrapper}>
-        <Select<BlockchainEnum, DepositFormRouterValues>
+      <div className={styles.selectWrapper}>
+        <Controller
           name="blockchain"
-          register={register}
-          options={blockchains}
-          placeholder={{
-            label: "Select network",
-            icon: <EmptyIcon />,
-          }}
-          fullWidth
+          control={control}
+          render={({ field }) => (
+            <Select<BlockchainEnum, DepositFormRouterValues>
+              options={blockchains}
+              placeholder={{
+                label: "Select network",
+                icon: <EmptyIcon />,
+              }}
+              fullWidth
+              {...field}
+            />
+          )}
         />
       </div>
       {watch("blockchain") && (
         <button
           type="button"
           onClick={handleAssetChange}
-          className={`${depositFormRouterStyles.buttonWrapper} ${depositFormRouterStyles.clickableDisabled}`}
+          className={`${styles.buttonWrapper} ${styles.clickableDisabled}`}
         >
-          <div className={depositFormRouterStyles.selectWrapper}>
+          <div className={styles.selectWrapper}>
             <input
-              {...register("address")}
+              {...register("asset.address")}
               placeholder="Select asset"
-              className={depositFormRouterStyles.selectInput}
+              className={styles.selectInput}
             />
           </div>
         </button>

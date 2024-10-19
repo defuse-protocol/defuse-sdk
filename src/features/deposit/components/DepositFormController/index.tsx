@@ -14,10 +14,12 @@ export enum DepositFormType {
 export type DepositFormOnSelectValues = {
   formType: DepositFormType
   blockchain: BlockchainEnum
-  address: string
-  decimals: number
-  icon: string
-  symbol: string
+  asset: {
+    address: string
+    decimals: number
+    icon: string
+    symbol: string
+  }
 }
 
 interface DepositFormControllerProps extends PropsWithChildren {

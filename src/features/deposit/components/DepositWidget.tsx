@@ -38,10 +38,10 @@ export const DepositWidget = ({
         onSelect={(values: DepositFormOnSelectValues) => {
           setFormType(values.formType)
           setAsset({
-            address: values.address,
-            decimals: values.decimals,
-            icon: values.icon,
-            symbol: values.symbol,
+            address: values.asset.address,
+            decimals: values.asset.decimals,
+            icon: values.asset.icon,
+            symbol: values.asset.symbol,
           })
           setBlockchain(values.blockchain)
         }}
