@@ -85,7 +85,7 @@ describe.skip("swapUIMachine", () => {
           value: parseDotNotation(initialState) as StateValue,
           context: context ?? defaultContext,
         }),
-        { type: event }
+        { type: event, params: {} }
       )
 
       expect(actualState.matches(expectedState)).toBeTruthy()

@@ -2,6 +2,7 @@ import { parseUnits } from "ethers"
 import {
   type InputFrom,
   type OutputFrom,
+  assertEvent,
   assign,
   emit,
   fromPromise,
@@ -45,7 +46,7 @@ export const swapUIMachine = setup({
             amountIn: string
           }>
         }
-      | { type: "submit" },
+      | { type: "submit"; params: { userAddress: string } },
 
     emitted: {} as {
       type: "swap_finished"
@@ -247,13 +248,16 @@ export const swapUIMachine = setup({
       invoke: {
         src: "swap",
 
-        input: ({ context }) => {
+        input: ({ context, event }) => {
+          assertEvent(event, "submit")
+
           const quote = context.quotes?.[0]
           if (!quote) {
             throw new Error("quote not available")
           }
 
           return {
+            userAddress: event.params.userAddress,
             tokenIn: context.formValues.tokenIn,
             tokenOut: context.formValues.tokenOut,
             amountIn: context.parsedFormValues.amountIn,
