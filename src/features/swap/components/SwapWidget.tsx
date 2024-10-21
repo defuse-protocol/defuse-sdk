@@ -14,6 +14,7 @@ import { SwapUIMachineProvider } from "./SwapUIMachineProvider"
 
 export const SwapWidget = ({
   tokenList,
+  userAddress,
   signMessage,
   onSuccessSwap,
 }: SwapWidgetProps) => {
@@ -84,6 +85,7 @@ export const SwapWidget = ({
         >
           <SwapUIMachineFormSyncProvider onSuccessSwap={onSuccessSwap}>
             <SwapForm
+              userAddress={userAddress}
               selectTokenIn={selectTokenIn}
               selectTokenOut={selectTokenOut}
               onSwitch={handleSwitch}

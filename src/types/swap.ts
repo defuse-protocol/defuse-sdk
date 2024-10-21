@@ -46,6 +46,13 @@ export type SwapWidgetProps = {
   theme?: "dark" | "light"
   tokenList: SwappableToken[]
   onEmit?: (event: SwapEvent) => void
+
+  /**
+   * The address (address for EVM, accountId for NEAR) of the user performing the swap.
+   * `null` if the user is not authenticated.
+   */
+  userAddress: string | null
+
   signMessage: (params: WalletMessage) => Promise<WalletSignatureResult | null>
   onSuccessSwap: (params: {
     amountIn: bigint

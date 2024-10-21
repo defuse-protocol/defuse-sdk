@@ -28,6 +28,7 @@ enum ErrorEnum {
 }
 
 export interface SwapFormProps {
+  userAddress: string | null
   selectTokenIn?: SwappableToken
   selectTokenOut?: SwappableToken
   onSelect: (fieldName: string, selectToken: SwappableToken) => void
@@ -36,6 +37,7 @@ export interface SwapFormProps {
 }
 
 export const SwapForm = ({
+  userAddress,
   selectTokenIn,
   selectTokenOut,
   onSelect,
@@ -83,7 +85,9 @@ export const SwapForm = ({
     <div className="md:max-w-[472px] rounded-[1rem] p-5 shadow-paper bg-white dark:shadow-paper-dark dark:bg-black-800">
       <Form<SwapFormValues>
         handleSubmit={handleSubmit(() => {
-          swapUIActorRef.send({ type: "submit" })
+          if (userAddress != null) {
+            swapUIActorRef.send({ type: "submit", params: { userAddress } })
+          }
         })}
         register={register}
       >
