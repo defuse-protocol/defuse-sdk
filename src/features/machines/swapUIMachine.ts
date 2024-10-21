@@ -7,7 +7,7 @@ import {
   fromPromise,
   setup,
 } from "xstate"
-import type { BaseTokenInfo } from "../../types/base"
+import type { SwappableToken } from "../../types"
 import type { swapIntentMachine } from "./swapIntentMachine"
 
 export type QuoteTmp = {
@@ -20,16 +20,16 @@ export const swapUIMachine = setup({
       quoteQuerier: "queryQuote"
     },
     input: {} as {
-      tokenIn: BaseTokenInfo
-      tokenOut: BaseTokenInfo
+      tokenIn: SwappableToken
+      tokenOut: SwappableToken
     },
     context: {} as {
       error: Error | null
       quotes: QuoteTmp[] | null
       outcome: OutputFrom<typeof swapIntentMachine> | null
       formValues: {
-        tokenIn: BaseTokenInfo
-        tokenOut: BaseTokenInfo
+        tokenIn: SwappableToken
+        tokenOut: SwappableToken
         amountIn: string
       }
       parsedFormValues: {
@@ -40,8 +40,8 @@ export const swapUIMachine = setup({
       | {
           type: "input"
           params: Partial<{
-            tokenIn: BaseTokenInfo
-            tokenOut: BaseTokenInfo
+            tokenIn: SwappableToken
+            tokenOut: SwappableToken
             amountIn: string
           }>
         }
@@ -51,8 +51,8 @@ export const swapUIMachine = setup({
       type: "swap_finished"
       data: {
         intentOutcome: OutputFrom<typeof swapIntentMachine>
-        tokenIn: BaseTokenInfo
-        tokenOut: BaseTokenInfo
+        tokenIn: SwappableToken
+        tokenOut: SwappableToken
         amountIn: bigint
         amountOut: bigint
       }
@@ -81,8 +81,8 @@ export const swapUIMachine = setup({
           data,
         }: {
           data: Partial<{
-            tokenIn: BaseTokenInfo
-            tokenOut: BaseTokenInfo
+            tokenIn: SwappableToken
+            tokenOut: SwappableToken
             amountIn: string
           }>
         }

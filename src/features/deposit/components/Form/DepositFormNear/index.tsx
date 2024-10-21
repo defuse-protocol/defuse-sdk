@@ -10,7 +10,6 @@ import { Form } from "../../../../../components/Form"
 import { FieldComboInput } from "../../../../../components/Form/FieldComboInput"
 import { DepositService } from "../../../../../features/deposit/services/depositService"
 import { depositNearMachine } from "../../../../../features/machines/depositNearMachine"
-import type { NetworkTokenWithSwapRoute } from "../../../../../types"
 import type { BaseTokenInfo } from "../../../../../types/base"
 import type { BaseAssetInfo, Transaction } from "../../../../../types/deposit"
 import { balanceToBignumberString } from "../../../../../utils/balanceTo"
@@ -34,7 +33,7 @@ export const DepositFormNear = ({
   signAndSendTransactionsNear,
   accountId,
 }: DepositFormNearProps) => {
-  const [selectToken, setSelectToken] = useState<NetworkTokenWithSwapRoute>()
+  const [selectToken, setSelectToken] = useState<BaseTokenInfo>()
   const {
     handleSubmit,
     register,

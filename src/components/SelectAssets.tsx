@@ -1,12 +1,12 @@
 import { CaretDownIcon } from "@radix-ui/react-icons"
 import type React from "react"
 
-import type { BaseTokenInfo } from "../types/base"
+import type { BaseTokenInfo, UnifiedTokenInfo } from "../types/base"
 
 import { AssetComboIcon } from "./Asset/AssetComboIcon"
 
 type Props = {
-  selected?: BaseTokenInfo
+  selected?: BaseTokenInfo | UnifiedTokenInfo
   handleSelect?: () => void
 }
 
@@ -29,10 +29,14 @@ export const SelectAssets = ({ selected, handleSelect }: Props) => {
     >
       {selected?.icon ? (
         <AssetComboIcon
-          icon={selected?.icon as string}
-          name={selected?.name as string}
-          chainIcon={selected?.chainIcon as string}
-          chainName={selected?.chainName as string}
+          icon={selected.icon as string}
+          name={selected.name as string}
+          chainIcon={
+            "defuseAssetId" in selected ? selected.chainIcon : undefined
+          }
+          chainName={
+            "defuseAssetId" in selected ? selected.chainName : undefined
+          }
         />
       ) : (
         <EmptyIcon />

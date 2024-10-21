@@ -2,7 +2,6 @@ import { Text } from "@radix-ui/themes"
 import React, { useState, useDeferredValue, useEffect } from "react"
 
 import { useModalStore } from "../../providers/ModalStoreProvider"
-import type { NetworkTokenWithSwapRoute } from "../../types"
 import type { BaseTokenInfo } from "../../types/base"
 import { BlockchainEnum } from "../../types/deposit"
 import { AssetList } from "../Asset/AssetList"
@@ -23,7 +22,7 @@ export type ModalDepositSelectAssetsPayload = {
 
 export const ModalDepositSelectAssets = () => {
   const [searchValue, setSearchValue] = useState("")
-  const [assetList, setAssetList] = useState<NetworkTokenWithSwapRoute[]>([])
+  const [assetList, setAssetList] = useState<BaseTokenInfo[]>([])
 
   const { onCloseModal, modalType, payload } = useModalStore((state) => state)
   const deferredQuery = useDeferredValue(searchValue)
@@ -38,7 +37,7 @@ export const ModalDepositSelectAssets = () => {
       .toLocaleUpperCase()
       .includes(deferredQuery.toLocaleUpperCase())
 
-  const handleSelectToken = (token: BaseTokenInfo) => {
+  const handleSelectToken = ({ token }: { token: BaseTokenInfo }) => {
     onCloseModal({
       ...(payload as { fieldName: string }),
       modalType,
@@ -71,7 +70,14 @@ export const ModalDepositSelectAssets = () => {
         </div>
         <div className="flex-1 flex flex-col justify-between border-b border-gray-100 px-2.5 overflow-y-auto dark:border-black-950">
           <AssetList
-            assets={deferredQuery ? assetList.filter(filterPattern) : assetList}
+            assets={(deferredQuery
+              ? assetList.filter(filterPattern)
+              : assetList
+            ).map((token) => ({
+              itemId: token.defuseAssetId,
+              token,
+              disabled: false,
+            }))}
             title={deferredQuery ? "Search results" : "Popular tokens"}
             className="h-full"
             handleSelectToken={handleSelectToken}

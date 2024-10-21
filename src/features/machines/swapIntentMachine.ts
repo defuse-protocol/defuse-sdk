@@ -2,21 +2,24 @@ import { quoteMachine } from "@defuse-protocol/swap-facade"
 import type { SolverQuote } from "@defuse-protocol/swap-facade/dist/interfaces/swap-machine.in.interface"
 import { type ActorRefFrom, assign, fromPromise, setup } from "xstate"
 import { settings } from "../../config/settings"
-import type { WalletMessage, WalletSignatureResult } from "../../types"
-import type { BaseTokenInfo } from "../../types/base"
+import type {
+  SwappableToken,
+  WalletMessage,
+  WalletSignatureResult,
+} from "../../types"
 import { makeSwapMessage } from "../../utils/messageFactory"
 
 type Context = {
   quoterRef: null | ActorRefFrom<typeof quoteMachine>
-  tokenIn: BaseTokenInfo
-  tokenOut: BaseTokenInfo
+  tokenIn: SwappableToken
+  tokenOut: SwappableToken
   amountIn: bigint
   amountOut: bigint
 }
 
 type Input = {
-  tokenIn: BaseTokenInfo
-  tokenOut: BaseTokenInfo
+  tokenIn: SwappableToken
+  tokenOut: SwappableToken
   amountIn: bigint
   amountOut: bigint
 }
@@ -118,6 +121,9 @@ export const swapIntentMachine = setup({
         src: "signMessage",
 
         input: ({ context }) => {
+          assert(!("groupedTokens" in context.tokenIn), "TokenIn is unified")
+          assert(!("groupedTokens" in context.tokenOut), "TokenOut is unified")
+
           return makeSwapMessage({
             tokenDiff: [
               [context.tokenIn.defuseAssetId, -context.amountIn],
@@ -238,3 +244,9 @@ export const swapIntentMachine = setup({
     },
   },
 })
+
+function assert(condition: unknown, msg?: string): asserts condition {
+  if (!condition) {
+    throw new Error(msg)
+  }
+}

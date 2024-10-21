@@ -1,3 +1,4 @@
+/*
 import { Text } from "@radix-ui/themes"
 import clsx from "clsx"
 import React, { type ReactNode } from "react"
@@ -5,11 +6,11 @@ import React, { type ReactNode } from "react"
 import type { BaseTokenInfo } from "../../types/base"
 import { balanceToCurrency, balanceToDecimal } from "../../utils/balanceTo"
 import { AssetComboIcon } from "../Asset/AssetComboIcon"
-import type { TokenListWithNotSelectableToken } from "../Modal/ModalSelectAssets"
+import type { SelectableToken } from "../Modal/ModalSelectAssets"
 
 type Props = {
   title?: string
-  assets: TokenListWithNotSelectableToken[]
+  assets: SelectableToken[]
   emptyState?: ReactNode
   className?: string
   handleSelectToken?: (token: BaseTokenInfo) => void
@@ -66,7 +67,7 @@ const AssetList = ({
             symbol,
             balance,
             balanceUsd,
-            isNotSelectable,
+            disabled,
             decimals,
             ...rest
           },
@@ -77,7 +78,7 @@ const AssetList = ({
             type={"button"}
             className={clsx(
               "flex justify-between items-center gap-3 p-2.5 rounded-md hover:bg-gray-950 dark:hover:bg-black-950",
-              isNotSelectable && "opacity-50 pointer-events-none"
+              disabled && "opacity-50 pointer-events-none"
             )}
             onClick={() =>
               handleSelectToken &&
@@ -122,3 +123,4 @@ const AssetList = ({
 }
 
 export default AssetList
+*/
