@@ -51,7 +51,7 @@ export const ModalSelectAssets = () => {
           .includes(deferredQuery.toLocaleUpperCase())
       : true)
 
-  const handleSelectToken = (token: SelectItemToken) => {
+  const handleSelectToken = (selectedItem: SelectItemToken) => {
     if (modalType !== ModalType.MODAL_SELECT_ASSETS) {
       throw new Error("Invalid modal type")
     }
@@ -59,7 +59,7 @@ export const ModalSelectAssets = () => {
     const newPayload: ModalSelectAssetsPayload = {
       ...(payload as ModalSelectAssetsPayload),
       modalType: ModalType.MODAL_SELECT_ASSETS,
-      token: token.token,
+      token: selectedItem.token,
     }
     onCloseModal(newPayload)
   }
