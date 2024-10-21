@@ -7,8 +7,13 @@ import type {
   WalletMessage,
   WalletSignatureResult,
 } from "../../types"
+import type { DefuseMessageFor_DefuseIntents } from "../../types/defuse-contracts-types"
 import { isBaseToken } from "../../utils"
-import { makeSwapMessage } from "../../utils/messageFactory"
+import {
+  makeInnerSwapMessage,
+  makeSwapMessage,
+} from "../../utils/messageFactory"
+import { prepareSwapSignedData } from "../../utils/prepareBroadcastRequest"
 
 type Context = {
   quoterRef: null | ActorRefFrom<typeof quoteMachine>
@@ -17,7 +22,10 @@ type Context = {
   tokenOut: SwappableToken
   amountIn: bigint
   amountOut: bigint
-  messageToSign: WalletMessage | null
+  messageToSign: null | {
+    walletMessage: WalletMessage
+    innerMessage: DefuseMessageFor_DefuseIntents
+  }
   signature: WalletSignatureResult | null
 }
 
@@ -49,16 +57,23 @@ export const swapIntentMachine = setup({
         assert(isBaseToken(context.tokenIn), "TokenIn is unified")
         assert(isBaseToken(context.tokenOut), "TokenOut is unified")
 
-        return makeSwapMessage({
+        const innerMessage = makeInnerSwapMessage({
           tokenDiff: [
             [context.tokenIn.defuseAssetId, -context.amountIn],
             [context.tokenOut.defuseAssetId, context.amountOut],
           ],
           signerId: context.userAddress,
-          recipient: settings.defuseContractId,
           deadlineTimestamp:
             Math.floor(Date.now() / 1000) + settings.swapExpirySec,
         })
+
+        return {
+          innerMessage,
+          walletMessage: makeSwapMessage({
+            innerMessage,
+            recipient: settings.defuseContractId,
+          }),
+        }
       },
     }),
     setSignature: assign({
@@ -86,9 +101,9 @@ export const swapIntentMachine = setup({
         throw new Error("not implemented")
       }
     ),
-    broadcastMessage: fromPromise(async () => {
+    broadcastMessage: fromPromise(async ({ input }) => {
       // todo: Implement this actor
-      console.warn("broadcastMessage actor is not implemented")
+      console.warn("broadcastMessage actor is not implemented", { input })
     }),
     getIntentStatus: fromPromise(async () => {
       // todo: Implement this actor
@@ -156,7 +171,7 @@ export const swapIntentMachine = setup({
 
         input: ({ context }) => {
           assert(context.messageToSign != null, "Sign message is not set")
-          return context.messageToSign
+          return context.messageToSign.walletMessage
         },
 
         onDone: [
@@ -206,9 +221,21 @@ export const swapIntentMachine = setup({
     "Broadcasting Intent": {
       invoke: {
         id: "sendMessage",
-        input: {
-          message:
-            "I received signature from user and ready to sign my part (left+right side of agreement)",
+        input: ({ context }) => {
+          assert(context.signature != null, "Signature is not set")
+          assert(context.messageToSign != null, "Sign message is not set")
+          assert(
+            context.messageToSign.walletMessage != null,
+            "Wallet message is not set"
+          )
+
+          return {
+            quoteHashes: [],
+            signedData: prepareSwapSignedData(
+              context.signature,
+              context.messageToSign.walletMessage
+            ),
+          }
         },
         src: "broadcastMessage",
         onError: {

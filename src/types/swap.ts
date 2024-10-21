@@ -22,7 +22,12 @@ export type NEP141SignatureData = {
   type: "NEP141"
   signatureData: {
     accountId: string
+    /**
+     * Base58-encoded signature with curve prefix. Example:
+     * ed25519:Gxa24TGbJu4mqdhW3GbvLXmf4bSEyxVicrtpChDWbgga
+     */
     publicKey: string
+    /** Base64-encoded signature */
     signature: string
   }
 }
