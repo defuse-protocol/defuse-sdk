@@ -4,8 +4,8 @@ export enum BaseTokenConvertEnum {
 
 export type BaseTokenBalance = {
   balance: string
-  balanceUsd: string
-  convertedLast: {
+  balanceUsd?: string
+  convertedLast?: {
     [key in BaseTokenConvertEnum]: string
   }
 }

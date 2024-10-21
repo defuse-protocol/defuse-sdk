@@ -87,11 +87,7 @@ export const ModalSelectAssets = () => {
       const disabled = selectedTokenId != null && tokenId === selectedTokenId
 
       if (isBaseToken(token)) {
-        if (
-          token.balance != null &&
-          token.balanceUsd != null &&
-          token.convertedLast != null
-        ) {
+        if (token.balance != null) {
           getAssetListWithBalances.push({
             itemId: tokenId,
             token,
