@@ -87,6 +87,8 @@ export const SwapForm = ({
         handleSubmit={handleSubmit(() => {
           if (userAddress != null) {
             swapUIActorRef.send({ type: "submit", params: { userAddress } })
+          } else {
+            console.warn("User address is not authenticated")
           }
         })}
         register={register}
