@@ -4,25 +4,21 @@ import type {
   TokenAmountsForInt128,
 } from "../types/defuse-contracts-types"
 
-export function makeSwapMessage({
+export function makeInnerSwapMessage({
   tokenDiff,
   signerId,
-  recipient,
   deadlineTimestamp,
-  nonce = randomDefuseNonce(),
 }: {
   tokenDiff: [string, bigint][]
   signerId: string
-  recipient: string
   deadlineTimestamp: number
-  nonce?: Uint8Array
-}): WalletMessage {
+}): DefuseMessageFor_DefuseIntents {
   const serializedTokenDiff = tokenDiff.reduce((acc, [tokenId, amount]) => {
     acc[tokenId] = amount.toString()
     return acc
   }, {} as TokenAmountsForInt128)
 
-  const nep141Message: DefuseMessageFor_DefuseIntents = {
+  return {
     deadline: { timestamp: deadlineTimestamp },
     intents: [
       {
@@ -32,10 +28,20 @@ export function makeSwapMessage({
     ],
     signer_id: signerId,
   }
+}
 
+export function makeSwapMessage({
+  innerMessage,
+  recipient,
+  nonce = randomDefuseNonce(),
+}: {
+  innerMessage: DefuseMessageFor_DefuseIntents
+  recipient: string
+  nonce?: Uint8Array
+}): WalletMessage {
   return {
     NEP141: {
-      message: JSON.stringify(nep141Message),
+      message: JSON.stringify(innerMessage),
       recipient,
       nonce,
     },
