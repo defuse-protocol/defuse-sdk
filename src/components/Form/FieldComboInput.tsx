@@ -140,7 +140,9 @@ export const FieldComboInput = <T extends FieldValues>({
         </span>
       ) : null}
       <div className="flex justify-end items-center">
-        <SelectAssets selected={selected} handleSelect={handleSelect} />
+        {selected && (
+          <SelectAssets selected={selected} handleSelect={handleSelect} />
+        )}
       </div>
       {Number(balance) > 0 && !errorSelect && (
         <BlockMultiBalances

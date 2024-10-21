@@ -1,9 +1,10 @@
 import type { PropsWithChildren } from "react"
-import { BlockchainEnum } from "../../../types/deposit"
+import { BlockchainEnum } from "../../../../types/deposit"
 import {
   DepositFormRouter,
   type DepositFormRouterValues,
-} from "./Form/DepositFormRouter"
+} from "../Form/DepositFormRouter"
+import styles from "./styles.module.css"
 
 export enum DepositFormType {
   DEPOSIT_PASSIVE = "DepositPassiveFormType",
@@ -13,10 +14,12 @@ export enum DepositFormType {
 export type DepositFormOnSelectValues = {
   formType: DepositFormType
   blockchain: BlockchainEnum
-  address: string
-  decimals: number
-  icon: string
-  symbol: string
+  asset: {
+    address: string
+    decimals: number
+    icon: string
+    symbol: string
+  }
 }
 
 interface DepositFormControllerProps extends PropsWithChildren {
@@ -34,8 +37,8 @@ export const DepositFormController = ({
   formType,
 }: DepositFormControllerProps) => {
   return (
-    <>
-      {!formType && (
+    <div className={styles.container}>
+      <div className={styles.formWrapper}>
         <DepositFormRouter
           onSubmit={(values: DepositFormRouterValues) => {
             switch (values.blockchain) {
@@ -57,8 +60,8 @@ export const DepositFormController = ({
             }
           }}
         />
-      )}
-      {children}
-    </>
+        {children}
+      </div>
+    </div>
   )
 }

@@ -38,28 +38,31 @@ export const DepositWidget = ({
         onSelect={(values: DepositFormOnSelectValues) => {
           setFormType(values.formType)
           setAsset({
-            address: values.address,
-            decimals: values.decimals,
-            icon: values.icon,
-            symbol: values.symbol,
+            address: values.asset.address,
+            decimals: values.asset.decimals,
+            icon: values.asset.icon,
+            symbol: values.asset.symbol,
           })
           setBlockchain(values.blockchain)
         }}
       >
         {formType === DepositFormType.DEPOSIT_PASSIVE &&
           blockchain &&
-          asset && (
+          asset &&
+          asset.address && (
             <DepositFormGenerateAddress blockchain={blockchain} asset={asset} />
           )}
-        {formType === DepositFormType.DEPOSIT_NEAR && asset && (
-          <FormProvider {...depositFormNearMethods}>
-            <DepositFormNear
-              asset={asset}
-              accountId={accountId}
-              signAndSendTransactionsNear={signAndSendTransactionsNear}
-            />
-          </FormProvider>
-        )}
+        {formType === DepositFormType.DEPOSIT_NEAR &&
+          asset &&
+          asset.address && (
+            <FormProvider {...depositFormNearMethods}>
+              <DepositFormNear
+                asset={asset}
+                accountId={accountId}
+                signAndSendTransactionsNear={signAndSendTransactionsNear}
+              />
+            </FormProvider>
+          )}
       </DepositFormController>
     </DepositWidgetProvider>
   )
