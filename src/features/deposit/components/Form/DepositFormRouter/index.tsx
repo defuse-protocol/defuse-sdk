@@ -1,11 +1,15 @@
-import { Controller, useForm } from "react-hook-form"
-
+import { CopyIcon, PlusIcon } from "@radix-ui/react-icons"
+import { Button, Flex, IconButton, Text, TextField } from "@radix-ui/themes"
 import { useEffect, useRef, useState } from "react"
+import CopyToClipboard from "react-copy-to-clipboard"
+import { Controller, useForm } from "react-hook-form"
 import { EmptyIcon } from "src/components/EmptyIcon"
 import { NetworkIcon } from "src/components/Network/NetworkIcon"
+import { AssetComboIcon } from "../../../../../components/Asset/AssetComboIcon"
 import { Form } from "../../../../../components/Form"
+import { Input } from "../../../../../components/Input"
 import { Select } from "../../../../../components/Select/Select"
-import { useModalController } from "../../../../../hooks"
+import { useModalController, useShortAccountId } from "../../../../../hooks"
 import { ModalType } from "../../../../../stores/modalStore"
 import type { BaseTokenInfo } from "../../../../../types/base"
 import {
@@ -68,12 +72,8 @@ export const DepositFormRouter = ({ onSubmit }: DepositFormRouterProps) => {
     token: BaseTokenInfo
   }>(ModalType.MODAL_DEPOSIT_SELECT_ASSETS, "token")
 
-  const [assets, setAssets] = useState<{
-    [key: string]: {
-      label: string
-      icon: string | null
-    }
-  }>({})
+  const [assetsAddress, setAssetsAddress] = useState<string>("")
+  const { shortAccountId } = useShortAccountId(assetsAddress)
 
   const assetChangeRef = useRef(false)
 
@@ -86,13 +86,7 @@ export const DepositFormRouter = ({ onSubmit }: DepositFormRouterProps) => {
 
   useEffect(() => {
     if (data?.token && assetChangeRef.current) {
-      setAssets((prevAssets) => ({
-        ...prevAssets,
-        [data.token.address]: {
-          label: data.token.symbol,
-          icon: data.token.icon,
-        },
-      }))
+      setAssetsAddress(data.token.address)
       setValue("asset", {
         address: data.token.address,
         decimals: data.token.decimals,
@@ -149,16 +143,33 @@ export const DepositFormRouter = ({ onSubmit }: DepositFormRouterProps) => {
       {watch("blockchain") && (
         <button
           type="button"
+          className={styles.assetWrapper}
           onClick={handleAssetChange}
-          className={`${styles.buttonWrapper} ${styles.clickableDisabled}`}
         >
-          <div className={styles.selectWrapper}>
-            <input
-              {...register("asset.address")}
-              placeholder="Select asset"
-              className={styles.selectInput}
-            />
-          </div>
+          <Flex gap="2" align="center" justify="between" width="100%">
+            <Flex gap="2" align="center">
+              {watch("asset.address") ? (
+                <AssetComboIcon icon={watch("asset.icon")} />
+              ) : (
+                <EmptyIcon />
+              )}
+              <Text>{shortAccountId ? shortAccountId : "Select asset"}</Text>
+            </Flex>
+            <Button
+              size="2"
+              onClick={(e) => {
+                e.stopPropagation()
+              }}
+              className={styles.copyButton}
+            >
+              <CopyToClipboard text={watch("asset.address")}>
+                <Flex gap="2" align="center">
+                  <Text color="orange">Copy</Text>
+                  <CopyIcon height="14" width="14" color="orange" />
+                </Flex>
+              </CopyToClipboard>
+            </Button>
+          </Flex>
         </button>
       )}
     </Form>
