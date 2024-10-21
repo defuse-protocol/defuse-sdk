@@ -90,7 +90,7 @@ export function SwapUIMachineProvider({
               totalAmountOut: amountOutRandomized,
               amountsOut: {
                 // biome-ignore lint/style/noNonNullAssertion: <reason>
-                [input.assetsOut[0]!]: amountOutRandomized,
+                [input.tokensOut[0]!]: amountOutRandomized,
               },
             }
           }),

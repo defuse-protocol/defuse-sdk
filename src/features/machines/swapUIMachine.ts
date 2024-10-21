@@ -192,12 +192,12 @@ export const swapUIMachine = setup({
             src: "queryQuote",
 
             input: ({ context }) => ({
-              assetsIn: isBaseToken(context.formValues.tokenIn)
+              tokensIn: isBaseToken(context.formValues.tokenIn)
                 ? [context.formValues.tokenIn.defuseAssetId]
                 : context.formValues.tokenIn.groupedTokens.map(
                     (token) => token.defuseAssetId
                   ),
-              assetsOut: isBaseToken(context.formValues.tokenOut)
+              tokensOut: isBaseToken(context.formValues.tokenOut)
                 ? [context.formValues.tokenOut.defuseAssetId]
                 : context.formValues.tokenOut.groupedTokens.map(
                     (token) => token.defuseAssetId

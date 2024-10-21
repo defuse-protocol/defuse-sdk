@@ -3,8 +3,8 @@ import { setup } from "xstate"
 export const queryQuoteMachine = setup({
   types: {
     input: {} as {
-      assetsIn: string[]
-      assetsOut: string[]
+      tokensIn: string[]
+      tokensOut: string[]
       amountIn: bigint
       balances: Record<string, bigint>
     },
