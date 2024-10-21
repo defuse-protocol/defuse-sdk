@@ -10,7 +10,7 @@ import type {
   WalletSignatureResult,
 } from "../../../types"
 import { swapIntentMachine } from "../../machines/swapIntentMachine"
-import { type QuoteTmp, swapUIMachine } from "../../machines/swapUIMachine"
+import { swapUIMachine } from "../../machines/swapUIMachine"
 import type { SwapFormValues } from "./SwapForm"
 
 export const SwapUIMachineContext = createActorContext(swapUIMachine)
@@ -44,11 +44,10 @@ export function SwapUIMachineProvider({
         },
         actions: {
           updateUIAmountOut: ({ context }) => {
-            const quote = context.quotes?.[0]
+            const quote = context.quote
             if (quote) {
-              const amountOut = quote.amount_out
               const amountOutFormatted = formatUnits(
-                BigInt(amountOut),
+                BigInt(quote.totalAmountOut),
                 assetOut.decimals
               )
               setValue("amountOut", amountOutFormatted)
@@ -62,7 +61,7 @@ export function SwapUIMachineProvider({
             // We validate only `amountIn` and not entire form, because currently `amountOut` is also part of the form
             return trigger("amountIn")
           }),
-          queryQuote: fromPromise(async (): Promise<QuoteTmp[]> => {
+          queryQuote: fromPromise(async ({ input }) => {
             const { amountIn } = getValues()
 
             // todo: may throw if too many decimals, need to write safe parser
@@ -85,7 +84,15 @@ export function SwapUIMachineProvider({
             const amountOutRandomized =
               (baseAmountOut * randomMultiplier) / 100n
 
-            return [{ amount_out: amountOutRandomized.toString() }]
+            return {
+              quoteHashes: ["quoteHash"],
+              expirationTime: Math.floor(Date.now() / 1000) + 10 * 60,
+              totalAmountOut: amountOutRandomized,
+              amountsOut: {
+                // biome-ignore lint/style/noNonNullAssertion: <reason>
+                [input.assetsOut[0]!]: amountOutRandomized,
+              },
+            }
           }),
           // @ts-expect-error For some reason `swapIntentMachine` does not satisfy `swap` actor type
           swap: swapIntentMachine.provide({
