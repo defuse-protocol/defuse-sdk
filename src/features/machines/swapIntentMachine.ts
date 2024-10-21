@@ -11,6 +11,7 @@ import { makeSwapMessage } from "../../utils/messageFactory"
 
 type Context = {
   quoterRef: null | ActorRefFrom<typeof quoteMachine>
+  userAddress: string
   tokenIn: SwappableToken
   tokenOut: SwappableToken
   amountIn: bigint
@@ -130,7 +131,7 @@ export const swapIntentMachine = setup({
               [context.tokenIn.defuseAssetId, -context.amountIn],
               [context.tokenOut.defuseAssetId, context.amountOut],
             ],
-            signerId: "signer.near",
+            signerId: context.userAddress,
             recipient: settings.defuseContractId,
             deadlineTimestamp:
               Math.floor(Date.now() / 1000) + settings.swapExpirySec,
