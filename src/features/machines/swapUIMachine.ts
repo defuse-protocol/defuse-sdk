@@ -9,11 +9,9 @@ import {
   setup,
 } from "xstate"
 import type { SwappableToken } from "../../types"
+import { isBaseToken } from "../../utils"
+import type { queryQuoteMachine } from "./queryQuoteMachine"
 import type { swapIntentMachine } from "./swapIntentMachine"
-
-export type QuoteTmp = {
-  amount_out: string
-}
 
 export const swapUIMachine = setup({
   types: {
@@ -26,7 +24,7 @@ export const swapUIMachine = setup({
     },
     context: {} as {
       error: Error | null
-      quotes: QuoteTmp[] | null
+      quote: OutputFrom<typeof queryQuoteMachine> | null
       outcome: OutputFrom<typeof swapIntentMachine> | null
       formValues: {
         tokenIn: SwappableToken
@@ -63,9 +61,13 @@ export const swapUIMachine = setup({
     formValidation: fromPromise(async (): Promise<boolean> => {
       throw new Error("not implemented")
     }),
-    queryQuote: fromPromise(async (): Promise<QuoteTmp[]> => {
-      throw new Error("not implemented")
-    }),
+    queryQuote: fromPromise(
+      async (_: {
+        input: InputFrom<typeof queryQuoteMachine>
+      }): Promise<OutputFrom<typeof queryQuoteMachine>> => {
+        throw new Error("not implemented")
+      }
+    ),
     swap: fromPromise(
       async (_: {
         input: InputFrom<typeof swapIntentMachine>
@@ -111,7 +113,7 @@ export const swapUIMachine = setup({
     updateUIAmountOut: () => {
       throw new Error("not implemented")
     },
-    clearQuote: assign({ quotes: null }),
+    clearQuote: assign({ quote: null }),
     clearError: assign({ error: null }),
     setOutcome: assign({
       outcome: (_, value: OutputFrom<typeof swapIntentMachine>) => value,
@@ -125,7 +127,7 @@ export const swapUIMachine = setup({
           tokenIn: context.formValues.tokenIn,
           tokenOut: context.formValues.tokenOut,
           amountIn: context.parsedFormValues.amountIn,
-          amountOut: BigInt(context.quotes?.[0]?.amount_out ?? "0"),
+          amountOut: BigInt(context.quote?.totalAmountOut ?? "0"),
         },
       })
     ),
@@ -148,7 +150,7 @@ export const swapUIMachine = setup({
 
   context: ({ input }) => ({
     error: null,
-    quotes: null,
+    quote: null,
     outcome: null,
     formValues: {
       tokenIn: input.tokenIn,
@@ -189,9 +191,24 @@ export const swapUIMachine = setup({
             id: "quoteQuerier",
             src: "queryQuote",
 
+            input: ({ context }) => ({
+              tokensIn: isBaseToken(context.formValues.tokenIn)
+                ? [context.formValues.tokenIn.defuseAssetId]
+                : context.formValues.tokenIn.groupedTokens.map(
+                    (token) => token.defuseAssetId
+                  ),
+              tokensOut: isBaseToken(context.formValues.tokenOut)
+                ? [context.formValues.tokenOut.defuseAssetId]
+                : context.formValues.tokenOut.groupedTokens.map(
+                    (token) => token.defuseAssetId
+                  ),
+              amountIn: context.parsedFormValues.amountIn,
+              balances: {}, // todo: pass through real balances
+            }),
+
             onDone: {
               target: "quoted",
-              actions: assign({ quotes: ({ event }) => event.output }),
+              actions: assign({ quote: ({ event }) => event.output }),
               reenter: true,
             },
 
@@ -251,7 +268,7 @@ export const swapUIMachine = setup({
         input: ({ context, event }) => {
           assertEvent(event, "submit")
 
-          const quote = context.quotes?.[0]
+          const quote = context.quote
           if (!quote) {
             throw new Error("quote not available")
           }
@@ -261,7 +278,7 @@ export const swapUIMachine = setup({
             tokenIn: context.formValues.tokenIn,
             tokenOut: context.formValues.tokenOut,
             amountIn: context.parsedFormValues.amountIn,
-            amountOut: BigInt(quote.amount_out),
+            amountOut: BigInt(quote.totalAmountOut),
           }
         },
 
