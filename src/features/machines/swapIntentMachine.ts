@@ -1,12 +1,13 @@
 import { quoteMachine } from "@defuse-protocol/swap-facade"
 import type { SolverQuote } from "@defuse-protocol/swap-facade/dist/interfaces/swap-machine.in.interface"
-import { type ActorRefFrom, assign, fromPromise, setup } from "xstate"
+import { type ActorRefFrom, and, assign, fromPromise, setup } from "xstate"
 import { settings } from "../../config/settings"
 import type {
   SwappableToken,
   WalletMessage,
   WalletSignatureResult,
 } from "../../types"
+import { isBaseToken } from "../../utils"
 import { makeSwapMessage } from "../../utils/messageFactory"
 
 type Context = {
@@ -16,6 +17,8 @@ type Context = {
   tokenOut: SwappableToken
   amountIn: bigint
   amountOut: bigint
+  messageToSign: WalletMessage | null
+  signature: WalletSignatureResult | null
 }
 
 type Input = {
@@ -41,6 +44,26 @@ export const swapIntentMachine = setup({
     setError: () => {
       throw new Error("not implemented")
     },
+    assembleSignMessages: assign({
+      messageToSign: ({ context }) => {
+        assert(isBaseToken(context.tokenIn), "TokenIn is unified")
+        assert(isBaseToken(context.tokenOut), "TokenOut is unified")
+
+        return makeSwapMessage({
+          tokenDiff: [
+            [context.tokenIn.defuseAssetId, -context.amountIn],
+            [context.tokenOut.defuseAssetId, context.amountOut],
+          ],
+          signerId: context.userAddress,
+          recipient: settings.defuseContractId,
+          deadlineTimestamp:
+            Math.floor(Date.now() / 1000) + settings.swapExpirySec,
+        })
+      },
+    }),
+    setSignature: assign({
+      signature: (_, signature: WalletSignatureResult | null) => signature,
+    }),
     startBackgroundQuoter: assign({
       // @ts-expect-error For some reason `spawn` creates object which type mismatch
       quoterRef: ({ spawn }) =>
@@ -84,6 +107,11 @@ export const swapIntentMachine = setup({
     isNotFoundOrInvalid: () => {
       throw new Error("not implemented")
     },
+    isSignatureValid: ({ context }) => {
+      // todo: Implement this guard
+      console.warn("isSignatureValid guard is not implemented")
+      return context.signature != null
+    },
     isIntentRelevant: () => {
       // todo: Implement this guard
       console.warn("isIntentRelevant guard is not implemented")
@@ -96,6 +124,8 @@ export const swapIntentMachine = setup({
   context: ({ input }) => {
     return {
       quoterRef: null,
+      messageToSign: null,
+      signature: null,
       ...input,
     }
   },
@@ -115,6 +145,8 @@ export const swapIntentMachine = setup({
 
   states: {
     Signing: {
+      entry: "assembleSignMessages",
+
       invoke: {
         id: "signMessage",
 
@@ -123,24 +155,18 @@ export const swapIntentMachine = setup({
         src: "signMessage",
 
         input: ({ context }) => {
-          assert(!("groupedTokens" in context.tokenIn), "TokenIn is unified")
-          assert(!("groupedTokens" in context.tokenOut), "TokenOut is unified")
-
-          return makeSwapMessage({
-            tokenDiff: [
-              [context.tokenIn.defuseAssetId, -context.amountIn],
-              [context.tokenOut.defuseAssetId, context.amountOut],
-            ],
-            signerId: context.userAddress,
-            recipient: settings.defuseContractId,
-            deadlineTimestamp:
-              Math.floor(Date.now() / 1000) + settings.swapExpirySec,
-          })
+          assert(context.messageToSign != null, "Sign message is not set")
+          return context.messageToSign
         },
+
         onDone: [
           {
             target: "Verifying Intent",
             guard: { type: "isSigned", params: ({ event }) => event.output },
+            actions: {
+              type: "setSignature",
+              params: ({ event }) => event.output,
+            },
           },
           {
             target: "Aborted",
@@ -205,7 +231,7 @@ export const swapIntentMachine = setup({
       always: [
         {
           target: "Broadcasting Intent",
-          guard: "isIntentRelevant",
+          guard: and(["isIntentRelevant", "isSignatureValid"]),
         },
         {
           target: "Not Found or Invalid",
