@@ -7,7 +7,7 @@
       "compiler": "rustc 1.80.0",
       "builder": "cargo-near cargo-near-build 0.2.0"
     },
-    "wasm_hash": "3o2irokV1CGCHRQN72xGoD9ms4iWJ1XAVzyvwq5TbN2D"
+    "wasm_hash": "E3qvMizA8EtGTCRDBAxz4i4j4fVWxrkkZNxPozRuYh7j"
   },
   "body": {
     "functions": [
@@ -550,6 +550,9 @@
       {
         "name": "add_public_key",
         "kind": "call",
+        "modifiers": [
+          "payable"
+        ],
         "params": {
           "serialization_type": "json",
           "args": [
@@ -836,6 +839,9 @@
       {
         "name": "invalidate_nonces",
         "kind": "call",
+        "modifiers": [
+          "payable"
+        ],
         "params": {
           "serialization_type": "json",
           "args": [
@@ -1914,6 +1920,9 @@
       {
         "name": "remove_public_key",
         "kind": "call",
+        "modifiers": [
+          "payable"
+        ],
         "params": {
           "serialization_type": "json",
           "args": [
@@ -2590,6 +2599,35 @@
             }
           ]
         },
+        "Nep413Payload": {
+          "type": "object",
+          "required": [
+            "message",
+            "nonce",
+            "recipient"
+          ],
+          "properties": {
+            "callbackUrl": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "message": {
+              "type": "string"
+            },
+            "nonce": {
+              "examples": [
+                "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+              ],
+              "type": "string",
+              "contentEncoding": "base64"
+            },
+            "recipient": {
+              "type": "string"
+            }
+          }
+        },
         "PermissionedAccounts": {
           "description": "Collects super admin accounts and accounts that have been granted permissions defined by `AccessControlRole`.\n\n# Data structure\n\nAssume `AccessControlRole` is derived for the following enum, which is then passed as `role` attribute to `AccessControllable`.\n\n```rust pub enum Role { PauseManager, UnpauseManager, } ```\n\nThen the returned data has the following structure:\n\n```ignore PermissionedAccounts { super_admins: vec![\"acc1.near\", \"acc2.near\"], roles: HashMap::from([ (\"PauseManager\", PermissionedAccountsPerRole { admins: vec![\"acc3.near\", \"acc4.near\"], grantees: vec![\"acc5.near\", \"acc6.near\"], }), (\"UnpauseManager\", PermissionedAccountsPerRole { admins: vec![\"acc7.near\", \"acc8.near\"], grantees: vec![\"acc9.near\", \"acc10.near\"], }), ]) } ```\n\n# Uniqueness and ordering\n\nAccount ids returned in vectors are unique but not ordered.",
           "type": "object",
@@ -2660,11 +2698,28 @@
         "PublicKey": {
           "examples": [
             "ed25519:5TagutioHgKLh7KZ1VEFBYfgRkPtqnKm9LoMnJMJugxm",
-            "secp256k1:5KN6ZfGZgH1puWwH1Nc1P8xyrFZSPHDw3WUP6iitsjCECJLrGBq"
+            "secp256k1:3aMVMxsoAnHUbweXMtdKaN1uJaNwsfKv7wnc97SDGjXhyK62VyJwhPUPLZefKVthcoUcuWK6cqkSU4M542ipNxS3"
           ],
-          "type": "string"
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^ed25519:",
+              "contentEncoding": "base58"
+            },
+            {
+              "type": "string",
+              "pattern": "^secp256k1:",
+              "contentEncoding": "base58"
+            }
+          ]
         },
         "SignedPayload_for_MultiStandardPayload": {
+          "examples": [
+            {
+              "public_key": "ed25519:5TagutioHgKLh7KZ1VEFBYfgRkPtqnKm9LoMnJMJugxm",
+              "signature": "ed25519:DNxoVu7L7sHr9pcHGWQoJtPsrwheB8akht1JxaGpc9hGrpehdycXBMLJg4ph1bQ9bXdfoxJCbbwxj3Bdrda52eF"
+            }
+          ],
           "type": "object",
           "anyOf": [
             {
@@ -2677,11 +2732,13 @@
               "properties": {
                 "public_key": {
                   "type": "string",
-                  "contentEncoding": "base64"
+                  "pattern": "^ed25519:",
+                  "contentEncoding": "base58"
                 },
                 "signature": {
                   "type": "string",
-                  "contentEncoding": "base64"
+                  "pattern": "^ed25519:",
+                  "contentEncoding": "base58"
                 }
               }
             },
@@ -2693,9 +2750,9 @@
               ],
               "properties": {
                 "signature": {
-                  "description": "Concatenated `r`, `s` and `v`",
                   "type": "string",
-                  "contentEncoding": "base64"
+                  "pattern": "^secp256k1:",
+                  "contentEncoding": "base58"
                 }
               }
             }
@@ -2704,30 +2761,12 @@
             {
               "type": "object",
               "required": [
-                "message",
-                "nonce",
-                "recipient",
+                "payload",
                 "standard"
               ],
               "properties": {
-                "callback_url": {
-                  "type": [
-                    "string",
-                    "null"
-                  ]
-                },
-                "message": {
-                  "type": "string"
-                },
-                "nonce": {
-                  "examples": [
-                    "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
-                  ],
-                  "type": "string",
-                  "contentEncoding": "base64"
-                },
-                "recipient": {
-                  "type": "string"
+                "payload": {
+                  "$ref": "#/definitions/Nep413Payload"
                 },
                 "standard": {
                   "type": "string",

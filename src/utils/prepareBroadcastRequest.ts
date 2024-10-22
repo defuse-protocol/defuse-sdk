@@ -13,10 +13,12 @@ export function prepareSwapSignedData(
     case "NEP413": {
       return {
         standard: "nep413",
-        message: signature.signedData.message,
-        nonce: base64.encode(signature.signedData.nonce),
-        recipient: signature.signedData.recipient,
-        callbackUrl: signature.signedData.callbackUrl,
+        payload: {
+          message: signature.signedData.message,
+          nonce: base64.encode(signature.signedData.nonce),
+          recipient: signature.signedData.recipient,
+          callbackUrl: signature.signedData.callbackUrl,
+        },
         public_key: signature.signatureData.publicKey, // publicKey is already in the correct format
         signature: transformNEP141Signature(signature.signatureData.signature),
       }
