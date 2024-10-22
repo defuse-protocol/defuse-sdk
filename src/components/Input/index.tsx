@@ -6,7 +6,6 @@ import styles from "./styles.module.css"
 
 type Props<T, TFieldValues extends FieldValues> = {
   name: string
-  register?: UseFormRegister<TFieldValues>
   placeholder?: string
   value: string
   fullWidth?: boolean
@@ -19,7 +18,6 @@ type Props<T, TFieldValues extends FieldValues> = {
 }
 export const Input = <T extends string, TFieldValues extends FieldValues>({
   name,
-  register,
   value,
   placeholder,
   fullWidth = false,
@@ -30,12 +28,9 @@ export const Input = <T extends string, TFieldValues extends FieldValues>({
   slotRight = null,
   type = "text",
 }: Props<T, TFieldValues>) => {
-  const registerProps = register ? register(name as Path<TFieldValues>) : {}
-  const { onChange: formOnChange, ...rest } = registerProps as {
-    onChange?: (event: React.ChangeEvent<HTMLSelectElement>) => void
-  }
   return (
     <TextField.Root
+      name={name}
       className={clsx(styles.inputTrigger, className, {
         [styles.inputTriggerFullWidth || ""]: fullWidth,
         [styles.inputTriggerDisabled || ""]: disabled,
@@ -45,7 +40,6 @@ export const Input = <T extends string, TFieldValues extends FieldValues>({
       onChange={(e) => onChange?.(e.target.value)}
       disabled={disabled}
       type={type}
-      {...rest}
     >
       <TextField.Slot>{slotLeft}</TextField.Slot>
       <TextField.Slot>{slotRight}</TextField.Slot>
