@@ -3,7 +3,8 @@ import { makeInnerSwapMessage, makeSwapMessage } from "./messageFactory"
 
 describe("makeSwapMessage()", () => {
   const innerMessage = makeInnerSwapMessage({
-    tokenDiff: [["foo.near", 100n]],
+    amountsIn: {},
+    amountsOut: { "foo.near": 100n },
     signerId: "user.near",
     deadlineTimestamp: 1000000,
   })

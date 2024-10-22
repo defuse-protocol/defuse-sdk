@@ -281,10 +281,10 @@ export const swapUIMachine = setup({
 
           return {
             userAddress: event.params.userAddress,
+            quote,
             tokenIn: context.formValues.tokenIn,
             tokenOut: context.formValues.tokenOut,
             amountIn: context.parsedFormValues.amountIn,
-            amountOut: BigInt(quote.totalAmountOut),
           }
         },
 
