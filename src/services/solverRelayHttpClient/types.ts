@@ -1,3 +1,9 @@
+import {
+  Nep413Payload,
+  type SignedPayloadFor_MultiStandardPayload,
+  type SignedPayloadFor_MultiStandardPayload1,
+} from "../../types/defuse-contracts-types"
+
 export type JSONRPCRequest<Method, Params> = {
   id: string
   jsonrpc: "2.0"
@@ -36,15 +42,8 @@ export type PublishIntentRequest = JSONRPCRequest<
   "publish_intent",
   {
     quote_hashes: string[]
-    signed_data: {
-      standard: string
-      message: string
-      callbackUrl?: string
-      signature: string
-      public_key: string
-      nonce: string
-      recipient: string
-    }
+    signed_data: SignedPayloadFor_MultiStandardPayload1 &
+      SignedPayloadFor_MultiStandardPayload
   }
 >
 
