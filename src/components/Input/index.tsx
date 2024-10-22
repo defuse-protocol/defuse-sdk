@@ -7,7 +7,7 @@ import styles from "./styles.module.css"
 type Props<T, TFieldValues extends FieldValues> = {
   name: string
   placeholder?: string
-  value: string
+  value?: string
   fullWidth?: boolean
   disabled?: boolean
   onChange?: (value: string) => void
@@ -18,7 +18,7 @@ type Props<T, TFieldValues extends FieldValues> = {
 }
 export const Input = <T extends string, TFieldValues extends FieldValues>({
   name,
-  value,
+  value = "",
   placeholder,
   fullWidth = false,
   disabled = false,
