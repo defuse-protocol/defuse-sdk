@@ -16,6 +16,7 @@ export type NEP141Message = {
   message: string
   recipient: string
   nonce: Uint8Array
+  callbackUrl?: string
 }
 
 export type NEP141SignatureData = {
@@ -30,6 +31,11 @@ export type NEP141SignatureData = {
     /** Base64-encoded signature */
     signature: string
   }
+  /**
+   * The exact data that was signed. Wallet connectors may modify this during the signing process,
+   * so this property contains the actual data that was signed by the wallet.
+   */
+  signedData: NEP141Message
 }
 
 export type WalletMessage = {
