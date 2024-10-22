@@ -49,3 +49,7 @@
 .orangeButton:hover {
   background-color: darkorange;
 }
+
+.maxButton {
+  background-color: #5577f6;
+}

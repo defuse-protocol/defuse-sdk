@@ -1,3 +1,11 @@
+import { InfoCircledIcon } from "@radix-ui/react-icons"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@radix-ui/react-tooltip"
+import { Flex, IconButton } from "@radix-ui/themes"
 import { useActor } from "@xstate/react"
 import { QRCodeSVG } from "qrcode.react"
 import { useEffect, useState } from "react"
@@ -56,12 +64,37 @@ export const DepositFormGenerateAddress = ({
 
   return (
     <div className={styles.container}>
-      <h2 className={styles.title}>Deposit {blockchain}</h2>
-      <p className={styles.instruction}>Send your funds to this address:</p>
+      <h2 className={styles.title}>Deposit to the address below</h2>
+      <p className={styles.instruction}>
+        Withdraw assets from an exchange to the Ethereum address above. Upon
+        confirmation, you will receive your assets on Defuse within minutes.
+      </p>
       <div className={styles.qrCodeWrapper}>
         {generateAddress && <QRCodeSVG value={generateAddress} />}
       </div>
-      <p className={styles.address}>{generateAddress}</p>
+      <Flex
+        direction="row"
+        gap="2"
+        align="center"
+        justify="center"
+        className={styles.hintWrapper}
+      >
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger>
+              <InfoCircledIcon />
+            </TooltipTrigger>
+            <TooltipContent>
+              <span className={styles.tooltipContent}>
+                Please make sure you connected to the right network
+              </span>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+        <p className={styles.hint}>
+          Make sure to select {blockchain} as the deposit network
+        </p>
+      </Flex>
     </div>
   )
 }

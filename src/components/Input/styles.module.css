@@ -1,0 +1,73 @@
+.inputTrigger {
+  position: relative;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-left: 1.25rem;
+  padding-right: 1.25rem;
+  padding-top: 2.375rem;
+  padding-bottom: 2.375rem;
+  width: 100%;
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 24px;
+  color: #63635e;
+  max-width: 100%;
+  box-sizing: border-box;
+  flex-shrink: 0;
+  border-radius: 8px;
+  opacity: 0.92;
+  background: rgba(249, 249, 248, 1);
+  border: 1px solid rgba(241, 241, 241, 1);
+  box-shadow: none;
+}
+
+[data-theme="dark"] .inputTrigger {
+  background-color: #111827;
+  border-color: #030712;
+  border-width: 5px;
+}
+
+.inputTrigger[data-placeholder] {
+  color: #63635e;
+}
+
+.inputTriggerFullWidth {
+  display: flex;
+  width: 100%;
+}
+
+.inputTrigger input {
+  flex: 1;
+  background-color: #f9fafb;
+  font-size: 1.875rem;
+  font-weight: 500;
+  color: #000000;
+  border-color: transparent;
+}
+
+.inputTrigger input:focus,
+.inputTrigger:focus-within {
+  border: 1px solid rgba(241, 241, 241, 1);
+  box-shadow: none;
+  outline: none;
+}
+
+.inputTrigger input:focus {
+  border: none;
+  outline: none;
+}
+
+.inputTrigger input::placeholder {
+  color: #63635e;
+}
+
+[data-theme="dark"] .inputTrigger input {
+  background-color: #111827;
+  color: #ffffff;
+}
+
+.inputTrigger input:disabled {
+  color: #e5e7eb;
+  pointer-events: none;
+}

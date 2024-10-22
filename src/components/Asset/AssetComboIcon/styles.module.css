@@ -1,0 +1,59 @@
+.container {
+  position: relative;
+  display: inline-block;
+}
+
+.iconWrapper {
+  position: relative;
+  overflow: hidden;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border: 1px solid var(--silver-100);
+  border-radius: 50%;
+}
+
+.icon {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.chainIconWrapper {
+  position: absolute;
+  bottom: 0;
+  right: -7px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 4px;
+  background-color: var(--black-300);
+  border-radius: 50%;
+  border: 2px solid var(--white);
+}
+
+.chainIcon {
+  width: 6px;
+  height: 6px;
+}
+
+[data-theme="dark"] .chainIconWrapper {
+  border-color: var(--black-950);
+}
+
+.emptyChainIcon {
+  width: 6px;
+  height: 6px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: var(--black-300);
+  border-radius: 50%;
+  border: 2px solid var(--white);
+}
+
+[data-theme="dark"] .emptyChainIcon {
+  border-color: var(--black-950);
+}
