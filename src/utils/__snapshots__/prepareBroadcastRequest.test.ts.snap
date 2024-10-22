@@ -2,11 +2,12 @@
 
 exports[`prepareSwapSignedData() > should return the correct signed data for a NEP141 signature 1`] = `
 {
+  "callbackUrl": undefined,
   "message": "{"foo":"bar"}",
   "nonce": "esXbbxyJNApGznX1v8kT5ojuat7jqUv84Ib+Q6hWdzI=",
   "public_key": "ed25519:Gxa24TGbJu4mqdhW3GbvLXmf4bSEyxVicrtpChDWbgga",
   "recipient": "defuse.near",
   "signature": "ed25519:D33GxHszz1ZpkXpnEWYAwkQxeYBU9YCkTMKZ5uwDS1B9",
-  "standard": "nep141",
+  "standard": "nep413",
 }
 `;

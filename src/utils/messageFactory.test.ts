@@ -16,7 +16,7 @@ describe("makeSwapMessage()", () => {
     })
 
     expect(message).toEqual({
-      NEP141: {
+      NEP413: {
         message: `{"deadline":{"timestamp":1000000},"intents":[{"intent":"token_diff","diff":{"foo.near":"100"}}],"signer_id":"user.near"}`,
         recipient: "recipient.near",
         nonce: new Uint8Array(32),
@@ -38,6 +38,6 @@ describe("makeSwapMessage()", () => {
       recipient: "recipient.near",
     })
 
-    expect(msg1.NEP141.nonce).not.toEqual(msg2.NEP141.nonce)
+    expect(msg1.NEP413.nonce).not.toEqual(msg2.NEP413.nonce)
   })
 })

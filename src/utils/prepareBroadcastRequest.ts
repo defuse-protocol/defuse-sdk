@@ -10,9 +10,9 @@ export function prepareSwapSignedData(
   _walletMessage: WalletMessage
 ): Params<PublishIntentRequest>["signed_data"] {
   switch (signature.type) {
-    case "NEP141": {
+    case "NEP413": {
       return {
-        standard: "nep141",
+        standard: "nep413",
         message: signature.signedData.message,
         nonce: base64.encode(signature.signedData.nonce),
         recipient: signature.signedData.recipient,

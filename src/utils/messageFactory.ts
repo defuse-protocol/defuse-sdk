@@ -40,7 +40,7 @@ export function makeSwapMessage({
   nonce?: Uint8Array
 }): WalletMessage {
   return {
-    NEP141: {
+    NEP413: {
       message: JSON.stringify(innerMessage),
       recipient,
       nonce,

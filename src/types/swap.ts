@@ -12,15 +12,15 @@ export type EIP712SignatureData = {
 }
 
 // Message for NEAR wallets
-export type NEP141Message = {
+export type NEP413Message = {
   message: string
   recipient: string
   nonce: Uint8Array
   callbackUrl?: string
 }
 
-export type NEP141SignatureData = {
-  type: "NEP141"
+export type NEP413SignatureData = {
+  type: "NEP413"
   signatureData: {
     accountId: string
     /**
@@ -35,15 +35,15 @@ export type NEP141SignatureData = {
    * The exact data that was signed. Wallet connectors may modify this during the signing process,
    * so this property contains the actual data that was signed by the wallet.
    */
-  signedData: NEP141Message
+  signedData: NEP413Message
 }
 
 export type WalletMessage = {
   EIP712: EIP712Message
-  NEP141: NEP141Message
+  NEP413: NEP413Message
 }
 
-export type WalletSignatureResult = EIP712SignatureData | NEP141SignatureData
+export type WalletSignatureResult = EIP712SignatureData | NEP413SignatureData
 
 export type SwapEvent = {
   type: string
