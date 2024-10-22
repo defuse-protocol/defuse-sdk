@@ -1,6 +1,7 @@
 import { Button, Spinner, Text } from "@radix-ui/themes"
 
 import { useActor } from "@xstate/react"
+
 import { useEffect, useState } from "react"
 import { useFormContext } from "react-hook-form"
 import { settings } from "src/config/settings"
@@ -8,6 +9,7 @@ import { assert } from "vitest"
 import { fromPromise, log } from "xstate"
 import { Form } from "../../../../../components/Form"
 import { FieldComboInput } from "../../../../../components/Form/FieldComboInput"
+import { Input } from "../../../../../components/Input"
 import { DepositService } from "../../../../../features/deposit/services/depositService"
 import { depositNearMachine } from "../../../../../features/machines/depositNearMachine"
 import type { BaseTokenInfo } from "../../../../../types/base"
@@ -37,7 +39,7 @@ export const DepositFormNear = ({
   const {
     handleSubmit,
     register,
-    getValues,
+    setValue,
     watch,
     formState: { errors },
   } = useFormContext<DepositFormNearValues>()
@@ -71,6 +73,12 @@ export const DepositFormNear = ({
     })
   }
 
+  const handleSetMaxValue = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.stopPropagation()
+    e.preventDefault()
+    setValue("amount", "10")
+  }
+
   useEffect(() => {
     if (asset) {
       const tokenAdapter: BaseTokenInfo = {
@@ -99,10 +107,20 @@ export const DepositFormNear = ({
       )}
       register={register}
     >
-      <FieldComboInput<DepositFormNearValues>
-        fieldName="amount"
-        className="border rounded-xl"
-        required="This field is required"
+      <Input
+        name="amount"
+        value={watch("amount")}
+        onChange={(value) => setValue("amount", value)}
+        type="number"
+        slotRight={
+          <Button
+            className={styles.maxButton}
+            size="2"
+            onClick={handleSetMaxValue}
+          >
+            Max
+          </Button>
+        }
       />
       <div className={styles.buttonGroup}>
         <Button
@@ -115,7 +133,7 @@ export const DepositFormNear = ({
         >
           <span className={styles.buttonContent}>
             <Spinner loading={false} />
-            <Text size="6">Deposit via Near</Text>
+            <Text size="6">Deposit</Text>
           </span>
         </Button>
       </div>

@@ -101,6 +101,7 @@
   border-radius: 8px;
   border: 1px solid #cfceca;
   opacity: 0.92;
+  margin-bottom: 1rem;
 }
 
 .assetWrapper:hover {

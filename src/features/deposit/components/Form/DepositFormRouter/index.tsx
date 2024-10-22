@@ -153,22 +153,28 @@ export const DepositFormRouter = ({ onSubmit }: DepositFormRouterProps) => {
               ) : (
                 <EmptyIcon />
               )}
-              <Text>{shortAccountId ? shortAccountId : "Select asset"}</Text>
+              <Text>
+                {watch("asset.address") && shortAccountId
+                  ? shortAccountId
+                  : "Select asset"}
+              </Text>
             </Flex>
-            <Button
-              size="2"
-              onClick={(e) => {
-                e.stopPropagation()
-              }}
-              className={styles.copyButton}
-            >
-              <CopyToClipboard text={watch("asset.address")}>
-                <Flex gap="2" align="center">
-                  <Text color="orange">Copy</Text>
-                  <CopyIcon height="14" width="14" color="orange" />
-                </Flex>
-              </CopyToClipboard>
-            </Button>
+            {watch("asset.address") && (
+              <Button
+                size="2"
+                onClick={(e) => {
+                  e.stopPropagation()
+                }}
+                className={styles.copyButton}
+              >
+                <CopyToClipboard text={watch("asset.address")}>
+                  <Flex gap="2" align="center">
+                    <Text color="orange">Copy</Text>
+                    <CopyIcon height="14" width="14" color="orange" />
+                  </Flex>
+                </CopyToClipboard>
+              </Button>
+            )}
           </Flex>
         </button>
       )}
