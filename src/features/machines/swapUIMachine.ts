@@ -113,6 +113,9 @@ export const swapUIMachine = setup({
     updateUIAmountOut: () => {
       throw new Error("not implemented")
     },
+    setQuote: assign({
+      quote: (_, value: OutputFrom<typeof queryQuoteMachine>) => value,
+    }),
     clearQuote: assign({ quote: null }),
     clearError: assign({ error: null }),
     setOutcome: assign({
@@ -191,7 +194,7 @@ export const swapUIMachine = setup({
             id: "quoteQuerier",
             src: "queryQuote",
 
-            input: ({ context }) => ({
+            input: ({ context }): InputFrom<typeof queryQuoteMachine> => ({
               tokensIn: isBaseToken(context.formValues.tokenIn)
                 ? [context.formValues.tokenIn.defuseAssetId]
                 : context.formValues.tokenIn.groupedTokens.map(
@@ -208,7 +211,10 @@ export const swapUIMachine = setup({
 
             onDone: {
               target: "quoted",
-              actions: assign({ quote: ({ event }) => event.output }),
+              actions: {
+                type: "setQuote",
+                params: ({ event }) => event.output,
+              },
               reenter: true,
             },
 
