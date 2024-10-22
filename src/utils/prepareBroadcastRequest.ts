@@ -1,17 +1,22 @@
 import { base58, base64 } from "@scure/base"
+import type {
+  Params,
+  PublishIntentRequest,
+} from "../services/solverRelayHttpClient/types"
 import type { WalletMessage, WalletSignatureResult } from "../types"
 
 export function prepareSwapSignedData(
   signature: WalletSignatureResult,
-  walletMessage: WalletMessage
-) /* todo: type should be inferred from API schema */ {
+  _walletMessage: WalletMessage
+): Params<PublishIntentRequest>["signed_data"] {
   switch (signature.type) {
-    case "NEP141": {
+    case "NEP413": {
       return {
-        standard: "nep141",
-        message: walletMessage.NEP141.message,
-        nonce: base64.encode(walletMessage.NEP141.nonce),
-        recipient: walletMessage.NEP141.recipient,
+        standard: "nep413",
+        message: signature.signedData.message,
+        nonce: base64.encode(signature.signedData.nonce),
+        recipient: signature.signedData.recipient,
+        callbackUrl: signature.signedData.callbackUrl,
         public_key: signature.signatureData.publicKey, // publicKey is already in the correct format
         signature: transformNEP141Signature(signature.signatureData.signature),
       }

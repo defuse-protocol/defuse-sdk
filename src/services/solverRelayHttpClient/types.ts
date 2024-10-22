@@ -1,5 +1,3 @@
-import type { DefuseMessageFor_DefuseIntents } from "../../types/defuse-contracts-types"
-
 export type JSONRPCRequest<Method, Params> = {
   id: string
   jsonrpc: "2.0"
@@ -23,6 +21,8 @@ export type QuoteRequest = JSONRPCRequest<
   }
 >
 
+export type Params<T extends JSONRPCRequest<unknown, unknown>> = T["params"][0]
+
 export type QuoteResponse = JSONRPCResponse<null | Array<{
   quote_hash: string
   defuse_asset_identifier_in: string
@@ -38,7 +38,8 @@ export type PublishIntentRequest = JSONRPCRequest<
     quote_hashes: string[]
     signed_data: {
       standard: string
-      message: DefuseMessageFor_DefuseIntents[]
+      message: string
+      callbackUrl?: string
       signature: string
       public_key: string
       nonce: string
