@@ -86,13 +86,13 @@ export const DepositFormGenerateAddress = ({
             </TooltipTrigger>
             <TooltipContent>
               <span className={styles.tooltipContent}>
-                Make sure to select Ethereum as the withdrawal network
+                Please make sure you connected to the right network
               </span>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
         <p className={styles.hint}>
-          Make sure to select {blockchain} as the withdrawal network
+          Make sure to select {blockchain} as the deposit network
         </p>
       </Flex>
     </div>
