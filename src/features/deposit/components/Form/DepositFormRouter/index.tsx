@@ -26,7 +26,7 @@ export interface DepositFormRouterProps {
   onSubmit: (values: DepositFormRouterValues) => void
 }
 
-const blockchains = {
+export const blockchains = {
   near: {
     label: BlockchainEnum.NEAR,
     icon: (
