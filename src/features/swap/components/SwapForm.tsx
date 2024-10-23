@@ -31,7 +31,7 @@ export interface SwapFormProps {
   userAddress: string | null
   selectTokenIn?: SwappableToken
   selectTokenOut?: SwappableToken
-  onSelect: (fieldName: string, selectToken: SwappableToken) => void
+  onSelect: (fieldName: string, selectToken: SwappableToken | undefined) => void
   onSwitch: (e: React.MouseEvent<HTMLButtonElement>) => void
   isFetching: boolean
 }
@@ -97,12 +97,7 @@ export const SwapForm = ({
           fieldName="amountIn"
           selected={selectTokenIn}
           handleSelect={() => {
-            assert(selectTokenOut, "selectTokenOut is not defined")
             onSelect("tokenIn", selectTokenOut)
-            swapUIActorRef.send({
-              type: "input",
-              params: { tokenIn: selectTokenOut },
-            })
           }}
           className="border rounded-t-xl"
           required="This field is required"
@@ -116,12 +111,7 @@ export const SwapForm = ({
           fieldName="amountOut"
           selected={selectTokenOut}
           handleSelect={() => {
-            assert(selectTokenIn, "selectTokenOut is not defined")
             onSelect("tokenOut", selectTokenIn)
-            swapUIActorRef.send({
-              type: "input",
-              params: { tokenOut: selectTokenOut },
-            })
           }}
           className="border rounded-b-xl mb-5"
           required="This field is required"
@@ -155,10 +145,4 @@ export const SwapForm = ({
       </Form>
     </div>
   )
-}
-
-function assert(condition: unknown, msg?: string): asserts condition {
-  if (!condition) {
-    throw new Error(msg)
-  }
 }
