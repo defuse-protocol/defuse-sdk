@@ -16,15 +16,15 @@ import type { SwapFormValues } from "./SwapForm"
 export const SwapUIMachineContext = createActorContext(swapUIMachine)
 
 interface SwapUIMachineProviderProps extends PropsWithChildren {
-  assetIn: SwappableToken
-  assetOut: SwappableToken
+  initialTokenIn: SwappableToken
+  initialTokenOut: SwappableToken
   signMessage: (params: WalletMessage) => Promise<WalletSignatureResult | null>
 }
 
 export function SwapUIMachineProvider({
   children,
-  assetIn,
-  assetOut,
+  initialTokenIn,
+  initialTokenOut,
   signMessage,
 }: SwapUIMachineProviderProps) {
   const { trigger, getValues, setValue, resetField } =
@@ -34,8 +34,8 @@ export function SwapUIMachineProvider({
     <SwapUIMachineContext.Provider
       options={{
         input: {
-          tokenIn: assetIn,
-          tokenOut: assetOut,
+          tokenIn: initialTokenIn,
+          tokenOut: initialTokenOut,
         },
       }}
       logic={swapUIMachine.provide({
@@ -47,7 +47,7 @@ export function SwapUIMachineProvider({
             const quote = context.quote
             if (quote) {
               const amountOutFormatted = formatUnits(
-                BigInt(quote.totalAmountOut),
+                quote.totalAmountOut,
                 context.formValues.tokenOut.decimals
               )
               setValue("amountOut", amountOutFormatted)

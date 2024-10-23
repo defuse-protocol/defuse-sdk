@@ -24,8 +24,8 @@ export const SwapWidget = ({
       <TokenListUpdater tokenList={tokenList} />
       <SwapFormProvider>
         <SwapUIMachineProvider
-          assetIn={initialTokenIn}
-          assetOut={initialTokenOut}
+          initialTokenIn={initialTokenIn}
+          initialTokenOut={initialTokenOut}
           signMessage={signMessage}
         >
           <SwapUIMachineFormSyncProvider onSuccessSwap={onSuccessSwap}>
