@@ -3,11 +3,10 @@ import type {
   Params,
   PublishIntentRequest,
 } from "../services/solverRelayHttpClient/types"
-import type { WalletMessage, WalletSignatureResult } from "../types"
+import type { WalletSignatureResult } from "../types"
 
 export function prepareSwapSignedData(
-  signature: WalletSignatureResult,
-  _walletMessage: WalletMessage
+  signature: WalletSignatureResult
 ): Params<PublishIntentRequest>["signed_data"] {
   switch (signature.type) {
     case "NEP413": {

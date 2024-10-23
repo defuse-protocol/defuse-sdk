@@ -9,6 +9,7 @@ import {
   setup,
 } from "xstate"
 import { settings } from "../../config/settings"
+import { publishIntent } from "../../services/solverRelayHttpClient"
 import type {
   SwappableToken,
   WalletMessage,
@@ -105,10 +106,21 @@ export const swapIntentMachine = setup({
         throw new Error("not implemented")
       }
     ),
-    broadcastMessage: fromPromise(async ({ input }) => {
-      // todo: Implement this actor
-      console.warn("broadcastMessage actor is not implemented", { input })
-    }),
+    broadcastMessage: fromPromise(
+      async ({
+        input,
+      }: {
+        input: {
+          signatureData: WalletSignatureResult
+          quoteHashes: string[]
+        }
+      }) => {
+        return publishIntent({
+          signed_data: prepareSwapSignedData(input.signatureData),
+          quote_hashes: input.quoteHashes,
+        })
+      }
+    ),
     getIntentStatus: fromPromise(async () => {
       // todo: Implement this actor
       console.warn("getIntentStatus actor is not implemented")
@@ -228,17 +240,10 @@ export const swapIntentMachine = setup({
         input: ({ context }) => {
           assert(context.signature != null, "Signature is not set")
           assert(context.messageToSign != null, "Sign message is not set")
-          assert(
-            context.messageToSign.walletMessage != null,
-            "Wallet message is not set"
-          )
 
           return {
-            quoteHashes: [],
-            signedData: prepareSwapSignedData(
-              context.signature,
-              context.messageToSign.walletMessage
-            ),
+            quoteHashes: context.quote.quoteHashes,
+            signatureData: context.signature,
           }
         },
         src: "broadcastMessage",
