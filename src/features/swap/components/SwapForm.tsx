@@ -27,17 +27,16 @@ export const SwapForm = ({ userAddress }: SwapFormProps) => {
 
   const swapUIActorRef = SwapUIMachineContext.useActorRef()
 
-  const { tokenIn: selectTokenIn, tokenOut: selectTokenOut } =
-    SwapUIMachineContext.useSelector((snapshot) => snapshot.context.formValues)
+  const { tokenIn, tokenOut } = SwapUIMachineContext.useSelector(
+    (snapshot) => snapshot.context.formValues
+  )
 
-  const handleSwitch = async (e: React.MouseEvent<HTMLButtonElement>) => {
-    e.preventDefault()
-
+  const switchTokens = () => {
     swapUIActorRef.send({
       type: "input",
       params: {
-        tokenIn: selectTokenOut,
-        tokenOut: selectTokenIn,
+        tokenIn: tokenOut,
+        tokenOut: tokenIn,
       },
     })
   }
@@ -46,7 +45,7 @@ export const SwapForm = ({ userAddress }: SwapFormProps) => {
     (state) => state
   )
 
-  const onSelect = (
+  const openModalSelectAssets = (
     fieldName: string,
     selectToken: SwappableToken | undefined
   ) => {
@@ -88,9 +87,9 @@ export const SwapForm = ({ userAddress }: SwapFormProps) => {
       >
         <FieldComboInput<SwapFormValues>
           fieldName="amountIn"
-          selected={selectTokenIn}
+          selected={tokenIn}
           handleSelect={() => {
-            onSelect("tokenIn", selectTokenOut)
+            openModalSelectAssets("tokenIn", tokenOut)
           }}
           className="border rounded-t-xl"
           required="This field is required"
@@ -98,14 +97,14 @@ export const SwapForm = ({ userAddress }: SwapFormProps) => {
         />
 
         <div className="relative w-full">
-          <ButtonSwitch onClick={handleSwitch} />
+          <ButtonSwitch onClick={switchTokens} />
         </div>
 
         <FieldComboInput<SwapFormValues>
           fieldName="amountOut"
-          selected={selectTokenOut}
+          selected={tokenOut}
           handleSelect={() => {
-            onSelect("tokenOut", selectTokenIn)
+            openModalSelectAssets("tokenOut", tokenIn)
           }}
           className="border rounded-b-xl mb-5"
           required="This field is required"
