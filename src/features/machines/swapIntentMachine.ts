@@ -1,6 +1,13 @@
 import { quoteMachine } from "@defuse-protocol/swap-facade"
 import type { SolverQuote } from "@defuse-protocol/swap-facade/dist/interfaces/swap-machine.in.interface"
-import { type ActorRefFrom, and, assign, fromPromise, setup } from "xstate"
+import {
+  type ActorRefFrom,
+  type OutputFrom,
+  and,
+  assign,
+  fromPromise,
+  setup,
+} from "xstate"
 import { settings } from "../../config/settings"
 import type {
   SwappableToken,
@@ -8,20 +15,20 @@ import type {
   WalletSignatureResult,
 } from "../../types"
 import type { DefuseMessageFor_DefuseIntents } from "../../types/defuse-contracts-types"
-import { isBaseToken } from "../../utils"
 import {
   makeInnerSwapMessage,
   makeSwapMessage,
 } from "../../utils/messageFactory"
 import { prepareSwapSignedData } from "../../utils/prepareBroadcastRequest"
+import type { queryQuoteMachine } from "./queryQuoteMachine"
 
 type Context = {
   quoterRef: null | ActorRefFrom<typeof quoteMachine>
   userAddress: string
+  quote: OutputFrom<typeof queryQuoteMachine>
   tokenIn: SwappableToken
   tokenOut: SwappableToken
   amountIn: bigint
-  amountOut: bigint
   messageToSign: null | {
     walletMessage: WalletMessage
     innerMessage: DefuseMessageFor_DefuseIntents
@@ -31,10 +38,10 @@ type Context = {
 
 type Input = {
   userAddress: string
+  quote: OutputFrom<typeof queryQuoteMachine>
   tokenIn: SwappableToken
   tokenOut: SwappableToken
   amountIn: bigint
-  amountOut: bigint
 }
 
 type Output = {
@@ -54,17 +61,14 @@ export const swapIntentMachine = setup({
     },
     assembleSignMessages: assign({
       messageToSign: ({ context }) => {
-        assert(isBaseToken(context.tokenIn), "TokenIn is unified")
-        assert(isBaseToken(context.tokenOut), "TokenOut is unified")
-
         const innerMessage = makeInnerSwapMessage({
-          tokenDiff: [
-            [context.tokenIn.defuseAssetId, -context.amountIn],
-            [context.tokenOut.defuseAssetId, context.amountOut],
-          ],
+          amountsIn: context.quote.amountsIn,
+          amountsOut: context.quote.amountsOut,
           signerId: context.userAddress,
-          deadlineTimestamp:
+          deadlineTimestamp: Math.min(
             Math.floor(Date.now() / 1000) + settings.swapExpirySec,
+            context.quote.expirationTime
+          ),
         })
 
         return {

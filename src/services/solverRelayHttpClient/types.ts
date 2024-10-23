@@ -1,4 +1,8 @@
-import type { DefuseMessageFor_DefuseIntents } from "../../types/defuse-contracts-types"
+import {
+  Nep413Payload,
+  type SignedPayloadFor_MultiStandardPayload,
+  type SignedPayloadFor_MultiStandardPayload1,
+} from "../../types/defuse-contracts-types"
 
 export type JSONRPCRequest<Method, Params> = {
   id: string
@@ -23,6 +27,8 @@ export type QuoteRequest = JSONRPCRequest<
   }
 >
 
+export type Params<T extends JSONRPCRequest<unknown, unknown>> = T["params"][0]
+
 export type QuoteResponse = JSONRPCResponse<null | Array<{
   quote_hash: string
   defuse_asset_identifier_in: string
@@ -36,14 +42,8 @@ export type PublishIntentRequest = JSONRPCRequest<
   "publish_intent",
   {
     quote_hashes: string[]
-    signed_data: {
-      standard: string
-      message: DefuseMessageFor_DefuseIntents[]
-      signature: string
-      public_key: string
-      nonce: string
-      recipient: string
-    }
+    signed_data: SignedPayloadFor_MultiStandardPayload1 &
+      SignedPayloadFor_MultiStandardPayload
   }
 >
 
