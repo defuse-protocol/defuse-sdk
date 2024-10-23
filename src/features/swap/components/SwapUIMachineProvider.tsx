@@ -27,8 +27,7 @@ export function SwapUIMachineProvider({
   initialTokenOut,
   signMessage,
 }: SwapUIMachineProviderProps) {
-  const { trigger, getValues, setValue, resetField } =
-    useFormContext<SwapFormValues>()
+  const { trigger, setValue } = useFormContext<SwapFormValues>()
 
   return (
     <SwapUIMachineContext.Provider
