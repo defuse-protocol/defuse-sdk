@@ -70,9 +70,8 @@ export const SwapWidget = ({
   }, [payload, onCloseModal])
 
   const handleSwitch = async () => {
-    const tempTokenInCopy = Object.assign({}, selectTokenIn)
     setSelectTokenIn(selectTokenOut)
-    setSelectTokenOut(tempTokenInCopy)
+    setSelectTokenOut(selectTokenIn)
   }
 
   return (
