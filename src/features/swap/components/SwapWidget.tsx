@@ -29,7 +29,7 @@ export const SwapWidget = ({
           signMessage={signMessage}
         >
           <SwapUIMachineFormSyncProvider onSuccessSwap={onSuccessSwap}>
-            <SwapForm userAddress={userAddress} isFetching={false} />
+            <SwapForm userAddress={userAddress} />
           </SwapUIMachineFormSyncProvider>
         </SwapUIMachineProvider>
       </SwapFormProvider>
