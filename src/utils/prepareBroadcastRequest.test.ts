@@ -28,6 +28,6 @@ describe("prepareSwapSignedData()", () => {
       signedData: walletMessage.NEP413,
     }
 
-    expect(prepareSwapSignedData(signature, walletMessage)).toMatchSnapshot()
+    expect(prepareSwapSignedData(signature)).toMatchSnapshot()
   })
 })
