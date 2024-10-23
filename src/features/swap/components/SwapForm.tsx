@@ -4,8 +4,11 @@ import { useFormContext } from "react-hook-form"
 import { ButtonCustom, ButtonSwitch } from "../../../components/Button"
 import { Form } from "../../../components/Form"
 import { FieldComboInput } from "../../../components/Form/FieldComboInput"
+import type { ModalSelectAssetsPayload } from "../../../components/Modal/ModalSelectAssets"
 import { WarnBox } from "../../../components/WarnBox"
 import { NEAR_TOKEN_META } from "../../../constants"
+import { useModalStore } from "../../../providers/ModalStoreProvider"
+import { ModalType } from "../../../stores/modalStore"
 import type { SwappableToken } from "../../../types"
 import { SwapUIMachineContext } from "./SwapUIMachineProvider"
 
@@ -29,21 +32,10 @@ enum ErrorEnum {
 
 export interface SwapFormProps {
   userAddress: string | null
-  selectTokenIn?: SwappableToken
-  selectTokenOut?: SwappableToken
-  onSelect: (fieldName: string, selectToken: SwappableToken | undefined) => void
-  onSwitch: (e: React.MouseEvent<HTMLButtonElement>) => void
   isFetching: boolean
 }
 
-export const SwapForm = ({
-  userAddress,
-  selectTokenIn,
-  selectTokenOut,
-  onSelect,
-  onSwitch,
-  isFetching,
-}: SwapFormProps) => {
+export const SwapForm = ({ userAddress, isFetching }: SwapFormProps) => {
   const {
     handleSubmit,
     register,
@@ -52,6 +44,9 @@ export const SwapForm = ({
   } = useFormContext<SwapFormValues>()
 
   const swapUIActorRef = SwapUIMachineContext.useActorRef()
+
+  const { tokenIn: selectTokenIn, tokenOut: selectTokenOut } =
+    SwapUIMachineContext.useSelector((snapshot) => snapshot.context.formValues)
 
   const allowableNearAmountRef = useRef<null | string>(null)
 
@@ -69,11 +64,39 @@ export const SwapForm = ({
         tokenOut: selectTokenIn,
       },
     })
-
-    onSwitch(e)
-    setValue("amountOut", "")
-    setValue("amountIn", "")
   }
+
+  const { setModalType, payload, onCloseModal } = useModalStore(
+    (state) => state
+  )
+
+  const onSelect = (
+    fieldName: string,
+    selectToken: SwappableToken | undefined
+  ) => {
+    setModalType(ModalType.MODAL_SELECT_ASSETS, { fieldName, selectToken })
+  }
+
+  useEffect(() => {
+    if (
+      (payload as ModalSelectAssetsPayload)?.modalType !==
+      ModalType.MODAL_SELECT_ASSETS
+    ) {
+      return
+    }
+    const { modalType, fieldName, token } = payload as ModalSelectAssetsPayload
+    if (modalType === ModalType.MODAL_SELECT_ASSETS && fieldName && token) {
+      switch (fieldName) {
+        case "tokenIn":
+          swapUIActorRef.send({ type: "input", params: { tokenIn: token } })
+          break
+        case "tokenOut":
+          swapUIActorRef.send({ type: "input", params: { tokenOut: token } })
+          break
+      }
+      onCloseModal(undefined)
+    }
+  }, [payload, onCloseModal, swapUIActorRef])
 
   useEffect(() => {
     swapUIActorRef.subscribe((state) => {

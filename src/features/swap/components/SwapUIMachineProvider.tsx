@@ -48,7 +48,7 @@ export function SwapUIMachineProvider({
             if (quote) {
               const amountOutFormatted = formatUnits(
                 BigInt(quote.totalAmountOut),
-                assetOut.decimals
+                context.formValues.tokenOut.decimals
               )
               setValue("amountOut", amountOutFormatted)
             } else {
