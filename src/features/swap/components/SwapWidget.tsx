@@ -4,12 +4,14 @@ import { useTokensStore } from "../../../providers/TokensStoreProvider"
 import type { SwapWidgetProps } from "../../../types"
 import { SwapForm } from "./SwapForm"
 import { SwapFormProvider } from "./SwapFormProvider"
+import { SwapSubmitterProvider } from "./SwapSubmitter"
 import { SwapUIMachineFormSyncProvider } from "./SwapUIMachineFormSyncProvider"
 import { SwapUIMachineProvider } from "./SwapUIMachineProvider"
 
 export const SwapWidget = ({
   tokenList,
   userAddress,
+  sendNearTransaction,
   signMessage,
   onSuccessSwap,
 }: SwapWidgetProps) => {
@@ -29,7 +31,12 @@ export const SwapWidget = ({
           signMessage={signMessage}
         >
           <SwapUIMachineFormSyncProvider onSuccessSwap={onSuccessSwap}>
-            <SwapForm userAddress={userAddress} />
+            <SwapSubmitterProvider
+              userAddress={userAddress}
+              sendNearTransaction={sendNearTransaction}
+            >
+              <SwapForm />
+            </SwapSubmitterProvider>
           </SwapUIMachineFormSyncProvider>
         </SwapUIMachineProvider>
       </SwapFormProvider>
