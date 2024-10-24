@@ -4,7 +4,6 @@ import type { providers } from "near-api-js"
 import {
   type ActorRefFrom,
   type OutputFrom,
-  and,
   assign,
   fromPromise,
   setup,
@@ -152,14 +151,17 @@ export const swapIntentMachine = setup({
     isNotFoundOrInvalid: () => {
       throw new Error("not implemented")
     },
-    isSignatureValid: ({ context }) => {
-      if (context.signature == null) return false
+    isSignatureValid: (
+      { context },
+      signature: WalletSignatureResult | null
+    ) => {
+      if (signature == null) return false
 
-      switch (context.signature.type) {
+      switch (signature.type) {
         case "NEP413":
           return (
             // For NEP-413, it's enough to ensure user didn't switch the account
-            context.signature.signatureData.accountId === context.userAddress
+            signature.signatureData.accountId === context.userAddress
           )
         case "EIP712":
           // For EIP-712, we need to derive the signer address from the signature
@@ -176,7 +178,7 @@ export const swapIntentMachine = setup({
     isTrue: (_, params: boolean) => params,
   },
 }).createMachine({
-  /** @xstate-layout N4IgpgJg5mDOIC5SwO4EMAOBaAlgOwBcxCA6HCAGzAGIBtABgF1FQMB7WHAnNvFkAB6IAjMIAcJACwBOAGwB2AKxiATJMnDpAZkmyANCACeiLVvkklK+iuk2tixfWmKAvi4OpMuQsQIkAyjhQePhQ1BC8YGR4AG5sANZRnMEAsnCwaDAMzEgg7JzcvPxCCFoS9FrS8irC9PSyZvJiugbGCLLNUmKOsrWSYvRicm4e6Nj4RKSBwaHhkdFxiSTJeGmwGVnCOawcXDx8uSVYKp31KgrWss7C8vTyrYhXkiRivZplMsKKKq7uIJ7jHxTIIhPBhMAAJwhbAhJAwFDQBAAZjCALbLEFrDZgbL8fJ7IqHRBYRz0EgOaxiKnVJTSZoPBAOZ6VE6WLRqW7CEb-MbeSZ+ABqkJwSMMoQABAAFACuACMKDgAMbigDSYEMUohcGIipoETwUXwiySvImvhIQohIrFYKlcoVyrVGslWtgOrACCNbEViP22VxuXxhQOoBKOhIWnoijkcjE8mkkm+wgZCeeVO0skkJzkKhO3IBfPNlutEpl8qVqvVmu1eF1cwNCwSJq8ZtIxdFpftFad1bdtY9Xp9wf9Wzxu2DxWJNkUJDUWdssmzYnEkhT6heQy0mezi5s+dNQMFwo7trLDsrztd7uokOhsPhiJREPRBdbR6tJ6gdvLjqrLpruqerE3q+rw-pMGOBT7JOCAkqIFhaJo4i1PQmjyMmRiIKowgvJI9AyJmUaZtI+4toeJAAELQmgEA+rA3C2gAkoe9aGsBSx9hAWKZDiEGBuO0FEgg2izjciZZvI1RxvYDLCDozzCJI8gaLm8hbkMvyjGR-KUdRtFoPRErMfyN5QjCcIIsiaLLMQXHpDxAY7FBhKhsSjgqC8CjSHIdzCOcsiKFosmaDOiiyL0uhWIpmZaKRgI6e2NpfsZvh0HxTkEiGggiOIs46HSAUXBoVyyXcWgkLGHTRmpSjKHFhZtseSXiilhB0KO-HOVlJQyB5Pz4dFag9NIsmJhIkm9SolQKEM9VviQADiYAEAxyWHuK-gEIi0qwKxjYcQeOlLStRnrZt22wEBcRDn6TCOXkAkudlpQzjYWZxlSZQJkoq6YQgwi7rOdSOPGgzLlmc3kcdq0tWdW0EDte1egd2nmtDp38ht8M7VdIHDndHUZROQnqSQAWmM46jnNYU2yYDVhRnc0hg4pKiQ0dy0w61BBYxdpl3hZj7Wa+UOcxjvi8wjl2DqBeDgdsD1dTBJJ3BYtymFmK72L9bSKeuymLvYKhNNISFuH8eBsBAcD8CL-KQZlysONICFIcudRoSosnhicA2DJI7JfK87PmuQVAO8Trn-TUEboXJiiiE07JDAy5wSAHxuKDIzSKTcmk8qjwIzGCEeCVHWAyBGAeiKbi53FYOuIFmshdLc04Bd5ZQh41H7NWe3Z-le-al09PXmJmyhfPYW4NCnf3Li7iGSd8ShXJUkjd34ADCvBIjgz6QCP3UiKY5KVIFflqbmdKya8EiiDc4UX+TsV-Hb5oAHJsDzABibDSngCA4oYSwxiGgBUEAj4wSzGmL4ihqi9SqDcW+ygIyLgDnSD4dx87v1IAAQVlDCIgkDOqOyEscKMFUtxhUTsuW42hb7M1nPICefk6SazEJvXSbAaJ0S5oeKB5D+jBUrgMUQW5TZ1H6FwxK4tCCCKjrUGc9dtA2DEPJAKYhSqKQjN5aw2C5KXC4ejJicMLoKOespKQWcqayFQgMOoWi-q5xdtndRbdMHGOIMKZUABRMyEILFHEcBIcKclXjG2NspJxushhkmNhPXMkZJIkXNkAA */
+  /** @xstate-layout N4IgpgJg5mDOIC5SwO4EMAOBaAlgOwBcxCA6HCAGzAGIBtABgF1FQMB7WHAnNvFkAB6IAjAGYAHCXoAmesIAsogKxLxSgOzCZAGhABPRKPnCS4uaOlqlw4dPUA2AL6PdqTLkLECJAMo4oePhQ1BC8YGR4AG5sANbhnAEAsnCwaDAMzEgg7JzcvPxCCML2JMLW9g5K9vKKoqL2ugYI9uLyJACc9KLqqrbS9kry0s6u6Nj4RKR+AUEhYRHRcSQJeMmwqenCmawcXDx8WYVYlm309v3qMvbt1pfqjYjXbeL2Nu0S8u1l0kojIG7jTxTfyBPDBMAAJwhbAhJAwFDQBAAZjCALbLEFrDZgDL8HJ7fKHRBYJT0egkFQycTU9R2JTtVoPBAqNqidqWHrSCzyS7CP4AjyTbwANUhOCReiCAAIAAoAVwARhQcABjKUAaTAellELgxBVNFCeHC+EW8TGgq8JFFEPFkrBssVyrVmu1Mt1sH1YAQprYKsR+wyuKy+LyB1AhSMJFE9Hp1xa6na8iU0mETKTz3E72qlna50s-ItEytNrt0vlStVGq1Or1eANc2NC1i5vcxdIpYl5adVddtc99e9vv9YaDWzxuzDBWJ0huJGkNVn-Vz4mEjP0iAzpiz9SGWfz7ULbaBIrFXYdFed1bdHq91Eh0Nh8MRKIh6IF7dPtvPUEdlZdNbunWBo+lEfoBrwQZMBOuT7NOCAkjYJDqKIwhfKuZJoZoTLiKmpjyPQnzVLG1SHi4-xFieJAAELQmgED+rA3AOgAkiejYmmBSwDhAWJpDi0EhpOcFEgg4jqB0LT0OIyg9EoEhGEyYg1KUPLGNIdj1FmvzkR+VG0Ww9GMcxv5sUK95QjCcIIsiaLLMQvEpPxwY7LBhIRsSpLSKYFTtHm9CaP0AyiEpaFKBS9ivPI5xyNFihHoCQrWme9qmexLnZMJ7mCIgLzIQuGioTyRh+e0SkBSUkWyNJSbsuoQwJZaHYpdKZleHQ45CW54Y5QgnzeT8hEKOcyZnGVG5FMmkjqPV7Jcnm6hZo1n4kAA4mABAmVKbWEFKPgEIicqwBxzbcZRSXrZtrUnntB0EEdoHRCOgZMBloYiR5CDKPOSYnHUaj5uISn5vOZKkom0mrg1unnVal1bTtBC3Ydx1GpxZrLLDpDw9dQrI-dsCPeBo6vZ1rkEj1kYtCQwVsoMQz2DIXLAxpoOxgFnTUgowww8eF0bQjN37SjFmPtZL52Xp-NXaxQt3Q9w4QXgUHbJl3XwSSAXIZcdRDGuiiDEpNRtPV5zKHYWZoXyfx4GwEBwPwUteDBFMayo7TIah6FaHI7S0kp30yfYCnUnYPKqMtVHkFQLtTqJCjklmNR+7O7JoRYTL9B7DLibJwgoTNPOjHzVrTKCUCxx9vVYJ80aKG8xSyLShFMgzJDyOJMg3AMfkSJHSWdqlf5Xn2QEDgalfZYUPI08mi2LaofurvcE2rh7qEzSmPTXGy8j91aBlGWgTG487XWu6JNdAxNNi12YNj1F8ZId-vzXfkPiOT5TIixlItLvLOGSNQBjXyaFoBQ0Y-IyACtYGM-RX7eBxrLPGwsCZf3gtcUGpIO4xnzgpFeYDjAe1JNYWMPJg7SQQSQAAwrwJEOA3yQHQaJKo7cGQtHQotAi5wlBKReJIGwa4fg3DZIzUQVCABybAkYADE2ByjwBAKUMJtpRDQMqCAzDPpDGeGUDQC52R+3znw1Q0YRpshkq0GBVCACCCoYREE0efOOn1ji-2zFUGwi1870HeHwzo84HDJlsAyPW4gqHrWNLaNUABRSyEItHV1JJISKYgXh2DsPVUBIgszkjsNUFMXIAqJmcM4IAA */
   context: ({ input }) => {
     return {
       quoterRef: null,
@@ -239,7 +241,10 @@ export const swapIntentMachine = setup({
         onDone: [
           {
             target: "Verifying Public Key Presence",
-            guard: { type: "isSigned", params: ({ event }) => event.output },
+            guard: {
+              type: "isSignatureValid",
+              params: ({ event }) => event.output,
+            },
 
             actions: {
               type: "setSignature",
@@ -349,7 +354,7 @@ export const swapIntentMachine = setup({
       always: [
         {
           target: "Broadcasting Intent",
-          guard: and(["isIntentRelevant", "isSignatureValid"]),
+          guard: "isIntentRelevant",
         },
         {
           target: "Not Found or Invalid",
