@@ -1,11 +1,11 @@
-import { ButtonIcon, Cross1Icon, PersonIcon } from "@radix-ui/react-icons"
+import { PersonIcon } from "@radix-ui/react-icons"
 import { Button, Flex, Spinner, Text } from "@radix-ui/themes"
 import { useEffect, useState } from "react"
 import { Controller, useForm } from "react-hook-form"
 import { EmptyIcon } from "src/components/EmptyIcon"
 import { Form } from "src/components/Form"
+import { NetworkIcon } from "src/components/Network/NetworkIcon"
 import { Select } from "src/components/Select/Select"
-import { blockchains } from "src/features/deposit/components/Form/DepositFormRouter"
 import { useModalController, useShortAccountId } from "src/hooks"
 import { useTokensStore } from "src/providers/TokensStoreProvider"
 import { ModalType } from "src/stores/modalStore"
@@ -84,7 +84,25 @@ export const WithdrawForm = ({
               control={control}
               render={({ field }) => (
                 <Select<BlockchainEnum, WithdrawFormNearValues>
-                  options={blockchains}
+                  options={{
+                    near: {
+                      label: "Near",
+                      icon: <NetworkIcon chainIcon="near" chainName="Near" />,
+                    },
+                    ethereum: {
+                      label: "Ethereum",
+                      icon: (
+                        <NetworkIcon
+                          chainIcon="ethereum"
+                          chainName="Ethereum"
+                        />
+                      ),
+                    },
+                    base: {
+                      label: "Base",
+                      icon: <NetworkIcon chainIcon="base" chainName="Base" />,
+                    },
+                  }}
                   placeholder={{
                     label: "Select network",
                     icon: <EmptyIcon />,

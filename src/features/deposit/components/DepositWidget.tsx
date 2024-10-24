@@ -4,8 +4,9 @@ import { DepositWidgetProvider } from "../../../providers"
 import type {
   BaseAssetInfo,
   BlockchainEnum,
-  Transaction,
+  DepositWidgetProps,
 } from "../../../types/deposit"
+import { assert } from "../../../utils/assert"
 import {
   DepositFormController,
   type DepositFormOnSelectValues,
@@ -17,23 +18,22 @@ import {
   type DepositFormNearValues,
 } from "./Form/DepositFormNear"
 
-type DepositWidgetProps = {
-  accountId: string
-  signAndSendTransactionsNear: (transactions: Transaction[]) => void
-}
-
 export const DepositWidget = ({
+  tokenList,
   accountId,
-  signAndSendTransactionsNear,
+  sendTransactionNear,
 }: DepositWidgetProps) => {
   const [formType, setFormType] = useState<DepositFormType | null>(null)
   const [blockchain, setBlockchain] = useState<BlockchainEnum | null>(null)
   const [asset, setAsset] = useState<BaseAssetInfo | null>(null)
   const depositFormNearMethods = useForm<DepositFormNearValues>()
 
+  assert(tokenList.length > 0, "Token list must have at least 1 token")
+
   return (
     <DepositWidgetProvider>
       <DepositFormController
+        tokenList={tokenList}
         formType={formType}
         onSelect={(values: DepositFormOnSelectValues) => {
           setFormType(values.formType)
@@ -59,7 +59,7 @@ export const DepositWidget = ({
               <DepositFormNear
                 asset={asset}
                 accountId={accountId}
-                signAndSendTransactionsNear={signAndSendTransactionsNear}
+                sendTransaction={sendTransactionNear}
               />
             </FormProvider>
           )}

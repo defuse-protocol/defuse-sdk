@@ -1,3 +1,11 @@
+import type { SwappableToken } from "../types"
+
+export type DepositWidgetProps = {
+  tokenList: SwappableToken[]
+  accountId: string
+  sendTransactionNear: (transactions: Transaction[]) => void
+}
+
 export enum BlockchainEnum {
   NEAR = "near",
   ETHEREUM = "ethereum",

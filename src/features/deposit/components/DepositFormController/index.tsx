@@ -1,4 +1,5 @@
 import type { PropsWithChildren } from "react"
+import type { SwappableToken } from "src/types"
 import { BlockchainEnum } from "../../../../types/deposit"
 import {
   DepositFormRouter,
@@ -23,6 +24,7 @@ export type DepositFormOnSelectValues = {
 }
 
 interface DepositFormControllerProps extends PropsWithChildren {
+  tokenList: SwappableToken[]
   onSelect: (
     values: {
       formType: DepositFormType
@@ -32,14 +34,15 @@ interface DepositFormControllerProps extends PropsWithChildren {
 }
 
 export const DepositFormController = ({
+  tokenList,
   children,
   onSelect,
-  formType,
 }: DepositFormControllerProps) => {
   return (
     <div className={styles.container}>
       <div className={styles.formWrapper}>
         <DepositFormRouter
+          tokenList={tokenList}
           onSubmit={(values: DepositFormRouterValues) => {
             switch (values.blockchain) {
               case BlockchainEnum.NEAR:

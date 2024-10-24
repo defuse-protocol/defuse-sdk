@@ -41,8 +41,8 @@ export const Input = <T extends string, TFieldValues extends FieldValues>({
       disabled={disabled}
       type={type}
     >
-      <TextField.Slot>{slotLeft}</TextField.Slot>
-      <TextField.Slot>{slotRight}</TextField.Slot>
+      <TextField.Slot className={styles.slot}>{slotLeft}</TextField.Slot>
+      <TextField.Slot className={styles.slot}>{slotRight}</TextField.Slot>
     </TextField.Root>
   )
 }

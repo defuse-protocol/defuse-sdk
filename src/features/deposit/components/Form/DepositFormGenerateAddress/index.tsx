@@ -5,7 +5,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@radix-ui/react-tooltip"
-import { Flex, IconButton } from "@radix-ui/themes"
+import { Flex } from "@radix-ui/themes"
 import { useActor } from "@xstate/react"
 import { QRCodeSVG } from "qrcode.react"
 import { useEffect, useState } from "react"
@@ -13,6 +13,7 @@ import { assert } from "vitest"
 import { fromPromise } from "xstate"
 import { DepositService } from "../../../../../features/deposit/services/depositService"
 import { depositGenerateAddressMachine } from "../../../../../features/machines/depositGenerateAddressMachine"
+
 import type {
   BaseAssetInfo,
   BlockchainEnum,

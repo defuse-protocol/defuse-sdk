@@ -71,3 +71,7 @@
   color: #e5e7eb;
   pointer-events: none;
 }
+
+.slot {
+  padding: 0;
+}

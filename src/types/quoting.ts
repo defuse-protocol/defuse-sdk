@@ -24,4 +24,10 @@ export interface Settings {
   providerIds: EstimateProvider[]
   defuseContractId: string
   swapExpirySec: number
+  blockchains: {
+    [key: string]: {
+      name: string
+      icon: string
+    }
+  }
 }
