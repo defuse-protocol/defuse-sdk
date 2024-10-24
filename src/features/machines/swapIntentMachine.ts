@@ -43,7 +43,13 @@ type Context = {
   }
   signature: WalletSignatureResult | null
   error: unknown
-  intentHash: string | null
+  intentStatus:
+    | Extract<
+        types.GetStatusResponse["result"],
+        { status: "SETTLED" | "NOT_FOUND_OR_NOT_VALID_ANYMORE" }
+      >
+    | { status: "UNKNOWN"; intent_hash: string }
+    | null
 }
 
 type Input = {
@@ -99,7 +105,13 @@ export const swapIntentMachine = setup({
       signature: (_, signature: WalletSignatureResult | null) => signature,
     }),
     setIntentHash: assign({
-      intentHash: (_, intentHash: string) => intentHash,
+      intentStatus: (_, intentHash: string) => ({
+        status: "UNKNOWN" as const,
+        intent_hash: intentHash,
+      }),
+    }),
+    setIntentStatus: assign({
+      intentStatus: (_, intentStatus: Context["intentStatus"]) => intentStatus,
     }),
     startBackgroundQuoter: assign({
       // @ts-expect-error For some reason `spawn` creates object which type mismatch
@@ -142,10 +154,13 @@ export const swapIntentMachine = setup({
         return result.intent_hash
       }
     ),
-    getIntentStatus: fromPromise(async () => {
-      // todo: Implement this actor
-      console.warn("getIntentStatus actor is not implemented")
-    }),
+    pollIntentStatus: fromPromise(
+      ({
+        input,
+        signal,
+      }: { input: { intentHash: string }; signal: AbortSignal }) =>
+        waitForIntentSettlement(signal, input.intentHash)
+    ),
   },
   guards: {
     isSettled: () => {
@@ -193,7 +208,7 @@ export const swapIntentMachine = setup({
       messageToSign: null,
       signature: null,
       error: null,
-      intentHash: null,
+      intentStatus: null,
       ...input,
     }
   },
@@ -382,20 +397,32 @@ export const swapIntentMachine = setup({
       ],
     },
 
-    "Getting Intent Status": {
+    "Polling Intent Status": {
       invoke: {
-        src: "getIntentStatus",
+        src: "pollIntentStatus",
+
+        input: ({ context, event }) => {
+          assert(context.intentStatus != null, "Intent Status is not set")
+          return { intentHash: context.intentStatus.intent_hash }
+        },
 
         onDone: [
           {
             target: "Confirmed",
             guard: "isSettled",
             reenter: true,
+            actions: {
+              type: "setIntentStatus",
+              params: ({ event }) => event.output,
+            },
           },
           {
             target: "Not Found or Invalid",
-            guard: "isNotFoundOrInvalid",
             reenter: true,
+            actions: {
+              type: "setIntentStatus",
+              params: ({ event }) => event.output,
+            },
           },
         ],
 
@@ -452,5 +479,37 @@ export const swapIntentMachine = setup({
 function assert(condition: unknown, msg?: string): asserts condition {
   if (!condition) {
     throw new Error(msg)
+  }
+}
+
+async function waitForIntentSettlement(
+  signal: AbortSignal,
+  intentHash: string
+) {
+  let attempts = 0
+  const MAX_INVALID_ATTEMPTS = 3 // ~1.5 seconds of waiting
+
+  while (true) {
+    signal.throwIfAborted()
+
+    // todo: add retry in case of network error
+    const res = await solverRelayClient.getStatus({
+      intent_hash: intentHash,
+    })
+
+    if (res.status === "SETTLED") {
+      return res
+    }
+
+    if (res.status === "NOT_FOUND_OR_NOT_VALID_ANYMORE") {
+      // If we keep getting NOT_VALID then we should abort
+      if (MAX_INVALID_ATTEMPTS <= attempts) {
+        return res
+      }
+      attempts++
+    }
+
+    // Wait a bit before polling again
+    await new Promise((resolve) => setTimeout(resolve, 500))
   }
 }
