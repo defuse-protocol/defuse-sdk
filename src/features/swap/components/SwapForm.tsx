@@ -1,4 +1,4 @@
-import { useEffect } from "react"
+import { useContext, useEffect } from "react"
 import { useFormContext } from "react-hook-form"
 import { ButtonCustom, ButtonSwitch } from "../../../components/Button"
 import { Form } from "../../../components/Form"
@@ -7,6 +7,7 @@ import type { ModalSelectAssetsPayload } from "../../../components/Modal/ModalSe
 import { useModalStore } from "../../../providers/ModalStoreProvider"
 import { ModalType } from "../../../stores/modalStore"
 import type { SwappableToken } from "../../../types"
+import { SwapSubmitterContext } from "./SwapSubmitter"
 import { SwapUIMachineContext } from "./SwapUIMachineProvider"
 
 export type SwapFormValues = {
@@ -14,11 +15,7 @@ export type SwapFormValues = {
   amountOut: string
 }
 
-export interface SwapFormProps {
-  userAddress: string | null
-}
-
-export const SwapForm = ({ userAddress }: SwapFormProps) => {
+export const SwapForm = () => {
   const {
     handleSubmit,
     register,
@@ -73,16 +70,12 @@ export const SwapForm = ({ userAddress }: SwapFormProps) => {
     }
   }, [payload, onCloseModal, swapUIActorRef])
 
+  const { onSubmit } = useContext(SwapSubmitterContext)
+
   return (
     <div className="md:max-w-[472px] rounded-[1rem] p-5 shadow-paper bg-white dark:shadow-paper-dark dark:bg-black-800">
       <Form<SwapFormValues>
-        handleSubmit={handleSubmit(() => {
-          if (userAddress != null) {
-            swapUIActorRef.send({ type: "submit", params: { userAddress } })
-          } else {
-            console.warn("User address is not authenticated")
-          }
-        })}
+        handleSubmit={handleSubmit(onSubmit)}
         register={register}
       >
         <FieldComboInput<SwapFormValues>

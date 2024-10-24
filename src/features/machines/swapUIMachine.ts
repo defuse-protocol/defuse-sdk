@@ -1,4 +1,5 @@
 import { parseUnits } from "ethers"
+import type { providers } from "near-api-js"
 import {
   type InputFrom,
   type OutputFrom,
@@ -9,6 +10,7 @@ import {
   setup,
 } from "xstate"
 import type { SwappableToken } from "../../types"
+import type { Transaction } from "../../types/deposit"
 import { isBaseToken } from "../../utils"
 import type { queryQuoteMachine } from "./queryQuoteMachine"
 import type { swapIntentMachine } from "./swapIntentMachine"
@@ -44,7 +46,16 @@ export const swapUIMachine = setup({
             amountIn: string
           }>
         }
-      | { type: "submit"; params: { userAddress: string } },
+      | {
+          type: "submit"
+          params: {
+            userAddress: string
+            nearClient: providers.Provider
+            sendNearTransaction: (
+              tx: Transaction
+            ) => Promise<{ txHash: string } | null>
+          }
+        },
 
     emitted: {} as {
       type: "swap_finished"
@@ -281,6 +292,8 @@ export const swapUIMachine = setup({
 
           return {
             userAddress: event.params.userAddress,
+            nearClient: event.params.nearClient,
+            sendNearTransaction: event.params.sendNearTransaction,
             quote,
             tokenIn: context.formValues.tokenIn,
             tokenOut: context.formValues.tokenOut,
