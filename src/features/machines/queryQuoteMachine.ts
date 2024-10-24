@@ -2,14 +2,14 @@ import { fromPromise } from "xstate"
 import { quote } from "../../services/solverRelayHttpClient"
 import type { QuoteResponse } from "../../services/solverRelayHttpClient/types"
 
-export interface Input {
+export interface AggregatedQuoteParams {
   tokensIn: string[] // set of close tokens, e.g. [USDC on Solana", USDC on Ethereum, USDC on Near]
   tokensOut: string[] // set of close tokens, e.g. [USDC on Solana", USDC on Ethereum, USDC on Near]
   amountIn: bigint // total amount in
   balances: Record<string, bigint> // how many tokens of each type are available
 }
 
-export interface Output {
+export interface AggregatedQuote {
   quoteHashes: string[]
   expirationTime: number // earliest expiration time
   totalAmountIn: bigint
@@ -25,10 +25,15 @@ type QuoteResults = QuoteResponse["result"]
  * It also acts as a simple router when natively multichain assets are involved.
  */
 export const queryQuoteMachine = fromPromise(
-  async ({ input }: { input: Input }): Promise<Output> => queryQuote(input)
+  async ({
+    input,
+  }: { input: AggregatedQuoteParams }): Promise<AggregatedQuote> =>
+    queryQuote(input)
 )
 
-export async function queryQuote(input: Input): Promise<Output> {
+export async function queryQuote(
+  input: AggregatedQuoteParams
+): Promise<AggregatedQuote> {
   // Sanity checks
   const tokenOut = input.tokensOut[0]
   assert(tokenOut != null, "tokensOut is empty")
@@ -104,7 +109,9 @@ export function calculateSplitAmounts(
   return amountsToQuote
 }
 
-export function aggregateQuotes(quotes: NonNullable<QuoteResults>[]): Output {
+export function aggregateQuotes(
+  quotes: NonNullable<QuoteResults>[]
+): AggregatedQuote {
   let totalAmountIn = 0n
   let totalAmountOut = 0n
   const amountsIn: Record<string, bigint> = {}
