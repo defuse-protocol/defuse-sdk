@@ -153,9 +153,20 @@ export const swapIntentMachine = setup({
       throw new Error("not implemented")
     },
     isSignatureValid: ({ context }) => {
-      // todo: Implement this guard
-      console.warn("isSignatureValid guard is not implemented")
-      return context.signature != null
+      if (context.signature == null) return false
+
+      switch (context.signature.type) {
+        case "NEP413":
+          return (
+            // For NEP-413, it's enough to ensure user didn't switch the account
+            context.signature.signatureData.accountId === context.userAddress
+          )
+        case "EIP712":
+          // For EIP-712, we need to derive the signer address from the signature
+          throw new Error("EIP712 signature is not supported")
+        default:
+          throw new Error("exhaustive check failed")
+      }
     },
     isIntentRelevant: ({ context }) => {
       // Naively assume that the quote is still relevant if the expiration time is in the future
