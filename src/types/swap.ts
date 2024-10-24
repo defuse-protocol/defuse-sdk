@@ -1,3 +1,4 @@
+import type { SendNearTransaction } from "../features/machines/publicKeyVerifierMachine"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "./base"
 
 // Message for EVM wallets
@@ -63,6 +64,8 @@ export type SwapWidgetProps = {
    * `null` if the user is not authenticated.
    */
   userAddress: string | null
+
+  sendNearTransaction: SendNearTransaction
 
   signMessage: (params: WalletMessage) => Promise<WalletSignatureResult | null>
   onSuccessSwap: (params: {

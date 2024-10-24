@@ -1,5 +1,6 @@
 import { quoteMachine } from "@defuse-protocol/swap-facade"
 import type { SolverQuote } from "@defuse-protocol/swap-facade/dist/interfaces/swap-machine.in.interface"
+import type { providers } from "near-api-js"
 import {
   type ActorRefFrom,
   type OutputFrom,
@@ -21,11 +22,17 @@ import {
   makeSwapMessage,
 } from "../../utils/messageFactory"
 import { prepareSwapSignedData } from "../../utils/prepareBroadcastRequest"
+import {
+  type SendNearTransaction,
+  publicKeyVerifierMachine,
+} from "./publicKeyVerifierMachine"
 import type { queryQuoteMachine } from "./queryQuoteMachine"
 
 type Context = {
   quoterRef: null | ActorRefFrom<typeof quoteMachine>
   userAddress: string
+  nearClient: providers.Provider
+  sendNearTransaction: SendNearTransaction
   quote: OutputFrom<typeof queryQuoteMachine>
   tokenIn: SwappableToken
   tokenOut: SwappableToken
@@ -39,6 +46,8 @@ type Context = {
 
 type Input = {
   userAddress: string
+  nearClient: providers.Provider
+  sendNearTransaction: SendNearTransaction
   quote: OutputFrom<typeof queryQuoteMachine>
   tokenIn: SwappableToken
   tokenOut: SwappableToken
@@ -59,6 +68,9 @@ export const swapIntentMachine = setup({
   actions: {
     setError: () => {
       throw new Error("not implemented")
+    },
+    logError: (_, err: unknown) => {
+      console.error(err)
     },
     assembleSignMessages: assign({
       messageToSign: ({ context }) => {
@@ -99,6 +111,7 @@ export const swapIntentMachine = setup({
     }),
   },
   actors: {
+    publicKeyVerifier: publicKeyVerifierMachine,
     signMessage: fromPromise(
       async (_: {
         input: WalletMessage
@@ -149,9 +162,10 @@ export const swapIntentMachine = setup({
       return true
     },
     isSigned: (_, params: WalletSignatureResult | null) => params != null,
+    isTrue: (_, params: boolean) => params,
   },
 }).createMachine({
-  /** @xstate-layout N4IgpgJg5mDOIC5SwO4EMAOBaAlgOwBcxCA6AZRyj3ygGIIB7PME-ANwYGsXZK8BZOLDQwA2gAYAuolAYGvAjiYyQAD0QBWAMwktARj0AOAGziNAFnMB2PQE5xhgDQgAnolv6SVrVavnjAExa5rZ2WgC+4c6omLiExATkfDT0TCzsXDx8grDCYnrSSCByCkp4KuoIWAH+JIEaeuZathre4nrGzm4IHnpePlYaxnpWtraGhraR0ejY+ESkFFQpYABOqwyrJBgANmgEAGabALYkvFQ5eWAShbLyOIrKRZVYweYkNYbiWkFN4uLGfxdRCGEZ1EwaT7fcRWEzTEAxObxUgAIQ2aAgAGM0LBFHgoAACACSyIIqWYrDwHG4Z2IEEuImuUhUJQeZQq7h0ARG5gsAV8AUM3g0wIQejeJEafj0AX5WmMkw08MRcQWiTRDAx2NxNGJpNoaw2W12+yOq1OsDpDLEzKKrMe5WeiCwI0MH2MxmaWnahgCoXMovFLXdjSMVg9VnEAWVs1VCRIADU1jgDi5dSS1bQbiz7g6OT0+rZvEXbCFjBohpDAzCdGYfh0ApCFVMogjY-N40nVim0-i9ZnRAUc6UnqBKiEAh8NOJzI1AryAbZA7y3b4J0FbMZYS2ZrEO6QAOJgAh4wkZhIEsgEfYAV1g5PSVMyZ3bpJIR5P6dJl+vBDvCAybEHRubM7VzdknQQLQNA+UtBVhQwtEmawLEDQJJwCf5p1GBxQXMaNWxVfdEg-U9+wvK9b3vRgKQyGkiLfUivzVH8qIAp8gLKEChzAkdHTHRB5TdcstGaCx8NMWUtDQ2UPiwmF7AmRoCN3JE1XfY8yPPQhWL-e9DU2bY9kOE4Xz3RjNOYijf3-QD9i4qRQLuPj8ywYNy1sflfUCXx5QDVxED0bR3hCaw9BhRofHGSJWzwBgIDgFQGLVYc2VHNRnWaDDzC+H5gm9AEgQChANEMd5oPMf5KssecrBjcz1KWah8VSvNIKwSwSHEDxvF9EZYQ9PRRRsN1p09EJIVnAw6sI191IAYSYA4cHNSBWoggSxVEkhtBafQ5VlcZAxMN0DBGD1tA6bQIlmhr4wAOQYAgCQAMQYG88AgAlNj1Ng0B2HAIHW9LxxqEhQQrKwak8osRmO0rdHnZpELKmElVutT4wAQQAI02Iggd4tL+IyqpBS5cLgmMUIbE9aTiqMewPnDCdvVEwZjHqzHUXRLEcS00lgZJl4csDRpbHB9pxWp8KZ0MLm41ILseyswghfzAwYO6oZ7GGMZrCjaso0lHKzF6T0gpu1TFcSe7jxQTZOAJABRdZNnV9rZY+GUmkBctywcEUGcmcRmcBTy2Z8IYFeIjTPz7bTnsovSPc2vwSF5SwJJ9f4HGXOwM-GRDIz9RCYvCIA */
+  /** @xstate-layout N4IgpgJg5mDOIC5SwO4EMAOBaAlgOwBcxCA6HCAGzAGIBtABgF1FQMB7WHAnNvFkAB6IAjMIAcJACwBOAGwB2AKxiATJMnDpAZkmyANCACeiLVvkklK+iuk2tixfWmKAvi4OpMuQsQIkAamAATjgAZob4UAAEAAoArgBGFDgAxlEA0mCGsUFwxCk0ELxgZHgAbmwA1iWe2PhEpIEh4ZGxiclpmdkxubD5YAj4FSlo3LwMjBP87JxjfEiCJpIkWvSKcnJi8tKSiirCBsYIO8tiYtqykirnsirXbh7odT6NwWEReNHxSakZWTl5PAFahFPAlIZVGpPbwNPxNd6tb4dP7dXr9QblNgjOYTWjCZgLGZcHjzUBCBBYDQSFSKLQ7WR7OTXbSHRAnEhnC5XG53aQPEC1GG+AJvFqfNo-Tr-HqA4HBIJsIIkDAUUahRUAWxIgvqwvhYq+7V+XQBfSBAwh2JJuKY0w4xN4-HJWC0snoJAU0nokjM1j2jn0RkQYnUJEUDOE9Hk6lU8jEsn5OpefgAyjgoHhIiDiqUKtVtem8ABZOCwNAwKaE+1zJ0mCT0Onyfb0eiyMxx3SshCyENSMQByOSMT0G6J6G60hpjNZ0HgzH5zgZkuwMsV-F22Yk2sUyRRkhRu6qUzCcP7LuyaTmeQN27yJSiOTyMdeCepwtZ+WK5WqgjqoJaxdi1LcswErVhqy3BZnR0aQpEvXcG0UeRZGEQMjgcFQSBPaQ5HoYQVF9HZn2eWESAAIQVNAIBGWBuHFABJZNszBXNIW1YgIGXVdQNtKtN0dKC2S0Eh9mjRQrjva55HsLthB0ZZhEkaN8JUaSe2cYihVICi2Comi6OiRjYWoT8lRVNVNXYvBOOAitePA-jSUWClhDjETZDbbQ8NUaRFNkulFHcxTxGQhRrE018RWaD5DKYsCQCJGtBIQURqRg+Nw2vDQL1kqNhM2Ht1mkpRlAi5MooRBi4vXPiHSc8kZEwmlvUU25dlbaRZN2CQ70agjH3OMrSIAcTAAgDKiIzfCiFMCFGOJYGYuc8yhF9ytG8bWimwgZrmggFoxYZRmtJh4sSyCyRMQKbG5OMxC0c4lPE2TbialtHG2EcxEUlQhuFDaJu2ghdvmxbZ1Yhdx3WsbAeTEH9tgQ6sWO8ZTpqhy6u3V0JAZUxnHUFQ3TuLQXruET3qjL0zh+v7SABra4dm0GTKCBUzJ-P8AKhkaYYZ2F4YOy0UbwG0CQxpLLopZwPXWVTVFvNTJFk2llhkJTI3kRSzGkMQ3HcEA8DYCA4H4JNYQ3THkspDyRNpelGVuc4SaDFKdBE4ddy0O4NA12m-HIKgLYl5z8OEFZNbkxRRDjL3zi7QmJB9VTxJ1jQNCUP2KoNCVkRNGUzQKIOLucpSPW6k97FdNs45d77YK0VzLCUC86UkTOp0zT4i4EyXKXrn0H1Qqwm29LsrlkPtrxscN1m0XX9bN4UAGFeFCHB-0gbv6pEUwwwChvVK9mwxFk+MJFEVyPNpVDaS0TOADk2GBgAxNg4msqJFUm8o0GSCAt+3FcU4J4kJqFsJeVyp9lArDanSe6IYoyuAXtzYUABBBIioiD-1qsHZ0Nh3Q6DjPhcMSkRwqFPl6ESyFdgN12D2W4mcdJ6TQLRPmvgAFWyHLJRSsFhyiFdL5FsQ5M76hit-c2ODi7kkjIFA82hj7yQZCfF2kZFIrBwtYRBclrAJmQWtUi98xooEVJUKIABRVmioOG90jO6fYahXS6BniORQFC7HUNsKsUwzdM70yqvzJmCNrHOWjFIcSBM3TiBbCOLqmg4JnF9AovWLggA */
   context: ({ input }) => {
     return {
       quoterRef: null,
@@ -163,7 +177,7 @@ export const swapIntentMachine = setup({
 
   id: "swap-intent",
 
-  initial: "Signing",
+  initial: "idle",
 
   entry: ["startBackgroundQuoter"],
 
@@ -175,6 +189,13 @@ export const swapIntentMachine = setup({
   },
 
   states: {
+    idle: {
+      always: {
+        target: "Signing",
+        reenter: true,
+      },
+    },
+
     Signing: {
       entry: "assembleSignMessages",
 
@@ -192,12 +213,15 @@ export const swapIntentMachine = setup({
 
         onDone: [
           {
-            target: "Verifying Intent",
+            target: "Verifying Public Key Presence",
             guard: { type: "isSigned", params: ({ event }) => event.output },
+
             actions: {
               type: "setSignature",
               params: ({ event }) => event.output,
             },
+
+            reenter: true,
           },
           {
             target: "Aborted",
@@ -208,6 +232,46 @@ export const swapIntentMachine = setup({
 
       description:
         "Generating sign message, wait for the proof of sign (signature).\n\nResult:\n\n- Update \\[context\\] with selected best quote;\n- Callback event to user for signing the solver message by wallet;",
+    },
+
+    "Verifying Public Key Presence": {
+      invoke: {
+        src: "publicKeyVerifier",
+        input: ({ context }) => {
+          assert(context.signature != null, "Signature is not set")
+
+          return {
+            nearAccount:
+              context.signature.type === "NEP413"
+                ? context.signature.signatureData
+                : null,
+            nearClient: context.nearClient,
+            sendNearTransaction: context.sendNearTransaction,
+          }
+        },
+        onDone: [
+          {
+            target: "Verifying Intent",
+            reenter: true,
+            guard: {
+              type: "isTrue",
+              params: ({ event }) => event.output,
+            },
+          },
+          {
+            target: "Aborted",
+            reenter: true,
+          },
+        ],
+        onError: {
+          target: "Aborted",
+          actions: {
+            type: "logError",
+            // @ts-expect-error Incorrect `event` type, `error` present in `event` for sure
+            params: ({ event }) => event.error,
+          },
+        },
+      },
     },
 
     Confirmed: {
