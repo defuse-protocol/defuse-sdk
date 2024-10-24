@@ -83,25 +83,7 @@ export const WithdrawForm = ({
               control={control}
               render={({ field }) => (
                 <Select<string, WithdrawFormNearValues>
-                  options={{
-                    near: {
-                      label: "Near",
-                      icon: <NetworkIcon chainIcon="near" chainName="Near" />,
-                    },
-                    ethereum: {
-                      label: "Ethereum",
-                      icon: (
-                        <NetworkIcon
-                          chainIcon="ethereum"
-                          chainName="Ethereum"
-                        />
-                      ),
-                    },
-                    base: {
-                      label: "Base",
-                      icon: <NetworkIcon chainIcon="base" chainName="Base" />,
-                    },
-                  }}
+                  options={getBlockchains()}
                   placeholder={{
                     label: "Select network",
                     icon: <EmptyIcon />,
@@ -181,4 +163,36 @@ export const WithdrawForm = ({
       </div>
     </div>
   )
+}
+
+function getBlockchains() {
+  return {
+    near: {
+      label: "Near",
+      icon: (
+        <NetworkIcon
+          chainIcon="/static/icons/network/near_dark.svg"
+          chainName="Near"
+        />
+      ),
+    },
+    ethereum: {
+      label: "Ethereum",
+      icon: (
+        <NetworkIcon
+          chainIcon="/static/icons/network/ethereum.svg"
+          chainName="Ethereum"
+        />
+      ),
+    },
+    base: {
+      label: "Base",
+      icon: (
+        <NetworkIcon
+          chainIcon="/static/icons/network/base.svg"
+          chainName="Base"
+        />
+      ),
+    },
+  }
 }

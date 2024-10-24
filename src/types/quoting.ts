@@ -24,4 +24,7 @@ export interface Settings {
   providerIds: EstimateProvider[]
   defuseContractId: string
   swapExpirySec: number
+  queries: {
+    staleTime: number
+  }
 }

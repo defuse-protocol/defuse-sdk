@@ -1,0 +1,49 @@
+export type JSONRPCRequest<Method, Params> = {
+  id: string
+  jsonrpc: "2.0"
+  method: Method
+  params: Params[]
+}
+
+export type JSONRPCResponse<Result> = {
+  id: string
+  jsonrpc: "2.0"
+  result: Result
+}
+
+export type GetNearBalanceRequest = JSONRPCRequest<
+  "query",
+  {
+    request_type: "view_account"
+    account_id: string
+    finality: "final"
+  }
+>
+
+export type GetNearBalanceResponse = JSONRPCResponse<{
+  amount: string
+  block_hash: string
+  block_height: number
+  code_hash: string
+  locked: string
+  storage_paid_at: number
+  storage_usage: number
+}>
+
+export type GetNearNep141BalanceAccountRequest = JSONRPCRequest<
+  "query",
+  {
+    request_type: "call_function"
+    account_id: string
+    method_name: "ft_balance_of"
+    args_base64: string
+    finality: "optimistic"
+  }
+>
+
+export type GetNearNep141BalanceAccountResponse = JSONRPCResponse<{
+  block_hash: string
+  block_height: number
+  logs: []
+  result: number[]
+}>
