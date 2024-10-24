@@ -42,6 +42,7 @@ type Context = {
     innerMessage: DefuseMessageFor_DefuseIntents
   }
   signature: WalletSignatureResult | null
+  error: unknown
 }
 
 type Input = {
@@ -56,7 +57,7 @@ type Input = {
 
 type Output = {
   // todo: Output is expected to include intent status, intent entity and other relevant data
-  status: "aborted" | "confirmed" | "not-found-or-invalid" | "network-error"
+  status: "aborted" | "confirmed" | "not-found-or-invalid" | "generic-error"
 }
 
 export const swapIntentMachine = setup({
@@ -66,11 +67,11 @@ export const swapIntentMachine = setup({
     output: {} as Output,
   },
   actions: {
-    setError: () => {
-      throw new Error("not implemented")
-    },
-    logError: (_, err: unknown) => {
-      console.error(err)
+    setError: assign({
+      error: (_, params: { error: unknown }) => params.error,
+    }),
+    logError: (_, params: { error: unknown }) => {
+      console.error(params.error)
     },
     assembleSignMessages: assign({
       messageToSign: ({ context }) => {
@@ -165,12 +166,13 @@ export const swapIntentMachine = setup({
     isTrue: (_, params: boolean) => params,
   },
 }).createMachine({
-  /** @xstate-layout N4IgpgJg5mDOIC5SwO4EMAOBaAlgOwBcxCA6HCAGzAGIBtABgF1FQMB7WHAnNvFkAB6IAjMIAcJACwBOAGwB2AKxiATJMnDpAZkmyANCACeiLVvkklK+iuk2tixfWmKAvi4OpMuQsQIkAamAATjgAZob4UAAEAAoArgBGFDgAxlEA0mCGsUFwxCk0ELxgZHgAbmwA1iWe2PhEpIEh4ZGxiclpmdkxubD5YAj4FSlo3LwMjBP87JxjfEiCJpIkWvSKcnJi8tKSiirCBsYIO8tiYtqykirnsirXbh7odT6NwWEReNHxSakZWTl5PAFahFPAlIZVGpPbwNPxNd6tb4dP7dXr9QblNgjOYTWjCZgLGZcHjzUBCBBYDQSFSKLQ7WR7OTXbSHRAnEhnC5XG53aQPEC1GG+AJvFqfNo-Tr-HqA4HBIJsIIkDAUUahRUAWxIgvqwvhYq+7V+XQBfSBAwh2JJuKY0w4xN4-HJWC0snoJAU0nokjM1j2jn0RkQYnUJEUDOE9Hk6lU8jEsn5OpefgAyjgoHhIiDiqUKtVtem8ABZOCwNAwKaE+1zJ0mCT0Onyfb0eiyMxx3SshCyENSMQByOSMT0G6J6G60hpjNZ0HgzH5zgZkuwMsV-F22Yk2sUyRRkhRu6qUzCcP7LuyaTmeQN27yJSiOTyMdeCepwtZ+WK5WqgjqoJaxdi1LcswErVhqy3BZnR0aQpEvXcG0UeRZGEQMjgcFQSBPaQ5HoYQVF9HZn2eWESAAIQVNAIBGWBuHFABJZNszBXNIW1YgIGXVdQNtKtN0dKC2S0Eh9mjRQrjva55HsLthB0ZZhEkaN8JUaSe2cYihVICi2Comi6OiRjYWoT8lRVNVNXYvBOOAitePA-jSUWClhDjETZDbbQ8NUaRFNkulFHcxTxGQhRrE018RWaD5DKYsCQCJGtBIQURqRg+Nw2vDQL1kqNhM2Ht1mkpRlAi5MooRBi4vXPiHSc8kZEwmlvUU25dlbaRZN2CQ70agjH3OMrSIAcTAAgDKiIzfCiFMCFGOJYGYuc8yhF9ytG8bWimwgZrmggFoxYZRmtJh4sSyCyRMQKbG5OMxC0c4lPE2TbialtHG2EcxEUlQhuFDaJu2ghdvmxbZ1Yhdx3WsbAeTEH9tgQ6sWO8ZTpqhy6u3V0JAZUxnHUFQ3TuLQXruET3qjL0zh+v7SABra4dm0GTKCBUzJ-P8AKhkaYYZ2F4YOy0UbwG0CQxpLLopZwPXWVTVFvNTJFk2llhkJTI3kRSzGkMQ3HcEA8DYCA4H4JNYQ3THkspDyRNpelGVuc4SaDFKdBE4ddy0O4NA12m-HIKgLYl5z8OEFZNbkxRRDjL3zi7QmJB9VTxJ1jQNCUP2KoNCVkRNGUzQKIOLucpSPW6k97FdNs45d77YK0VzLCUC86UkTOp0zT4i4EyXKXrn0H1Qqwm29LsrlkPtrxscN1m0XX9bN4UAGFeFCHB-0gbv6pEUwwwChvVK9mwxFk+MJFEVyPNpVDaS0TOADk2GBgAxNg4msqJFUm8o0GSCAt+3FcU4J4kJqFsJeVyp9lArDanSe6IYoyuAXtzYUABBBIioiD-1qsHZ0Nh3Q6DjPhcMSkRwqFPl6ESyFdgN12D2W4mcdJ6TQLRPmvgAFWyHLJRSsFhyiFdL5FsQ5M76hit-c2ODi7kkjIFA82hj7yQZCfF2kZFIrBwtYRBclrAJmQWtUi98xooEVJUKIABRVmioOG90jO6fYahXS6BniORQFC7HUNsKsUwzdM70yqvzJmCNrHOWjFIcSBM3TiBbCOLqmg4JnF9AovWLggA */
+  /** @xstate-layout N4IgpgJg5mDOIC5SwO4EMAOBaAlgOwBcxCA6HCAGzAGIBtABgF1FQMB7WHAnNvFkAB6IAjMIAcJACwBOAGwB2AKxiATJMnDpAZkmyANCACeiLVvkklK+iuk2tixfWmKAvi4OpMuQsQIkAyjhQePhQ1BC8YGR4AG5sANZRnMEAsnCwaDAMzEgg7JzcvPxCCFoS9FrS8irC9PSyZvJiugbGCLLNUmKOsrWSYvRicm4e6Nj4RKSBwaHhkdFxiSTJeGmwGVnCOawcXDx8uSVYKp31KgrWss7C8vTyrYhXkiRivZplMsKKKq7uIJ7jHxTIIhPBhMAAJwhbAhJAwFDQBAAZjCALbLEFrDZgbL8fJ7IqHRBYRz0EgOaxiKnVJTSZoPBAOZ6VE6WLRqW7CEb-MbeSZ+ABqkJwSMMoQABAAFACuACMKDgAMbigDSYEMUohcGIipoETwUXwiySvImvhIQohIrFYKlcoVyrVGslWtgOrACCNbEViP22VxuXxhQOoBKOhIWnoijkcjE8mkkm+wgZCeeVO0skkJzkKhO3IBfPNlutEpl8qVqvVmu1eF1cwNCwSJq8ZtIxdFpftFad1bdtY9Xp9wf9Wzxu2DxWJNkUJDUWdssmzYnEkhT6heQy0mezi5s+dNQMFwo7trLDsrztd7uokOhsPhiJREPRBdbR6tJ6gdvLjqrLpruqerE3q+rw-pMGOBT7JOCAkqIFhaJo4i1PQmjyMmRiIKowgvJI9AyJmUaZtI+4toeJAAELQmgEA+rA3C2gAkoe9aGsBSx9hAWKZDiEGBuO0FEgg2izjciZZvI1RxvYDLCDozzCJI8gaLm8hbkMvyjGR-KUdRtFoPRErMfyN5QjCcIIsiaLLMQXHpDxAY7FBhKhsSjgqC8CjSHIdzCOcsiKFosmaDOiiyL0uhWIpmZaKRgI6e2NpfsZvh0HxTkEiGggiOIs46HSAUXBoVyyXcWgkLGHTRmpSjKHFhZtseSXiilhB0KO-HOVlJQyB5Pz4dFag9NIsmJhIkm9SolQKEM9VviQADiYAEAxyWHuK-gEIi0qwKxjYcQeOlLStRnrZt22wEBcRDn6TCOXkAkudlpQzjYWZxlSZQJkoq6YQgwi7rOdSOPGgzLlmc3kcdq0tWdW0EDte1egd2nmtDp38ht8M7VdIHDndHUZROQnqSQAWmM46jnNYU2yYDVhRnc0hg4pKiQ0dy0w61BBYxdpl3hZj7Wa+UOcxjvi8wjl2DqBeDgdsD1dTBJJ3BYtymFmK72L9bSKeuymLvYKhNNISFuH8eBsBAcD8CL-KQZlysONICFIcudRoSosnhicA2DJI7JfK87PmuQVAO8Trn-TUEboXJiiiE07JDAy5wSAHxuKDIzSKTcmk8qjwIzGCEeCVHWAyBGAeiKbi53FYOuIFmshdLc04Bd5ZQh41H7NWe3Z-le-al09PXmJmyhfPYW4NCnf3Li7iGSd8ShXJUkjd34ADCvBIjgz6QCP3UiKY5KVIFflqbmdKya8EiiDc4UX+TsV-Hb5oAHJsDzABibDSngCA4oYSwxiGgBUEAj4wSzGmL4ihqi9SqDcW+ygIyLgDnSD4dx87v1IAAQVlDCIgkDOqOyEscKMFUtxhUTsuW42hb7M1nPICefk6SazEJvXSbAaJ0S5oeKB5D+jBUrgMUQW5TZ1H6FwxK4tCCCKjrUGc9dtA2DEPJAKYhSqKQjN5aw2C5KXC4ejJicMLoKOespKQWcqayFQgMOoWi-q5xdtndRbdMHGOIMKZUABRMyEILFHEcBIcKclXjG2NspJxushhkmNhPXMkZJIkXNkAA */
   context: ({ input }) => {
     return {
       quoterRef: null,
       messageToSign: null,
       signature: null,
+      error: null,
       ...input,
     }
   },
@@ -202,7 +204,20 @@ export const swapIntentMachine = setup({
       invoke: {
         id: "signMessage",
 
-        onError: "Aborted",
+        onError: {
+          target: "Generic Error",
+          reenter: true,
+          actions: [
+            {
+              type: "logError",
+              params: ({ event }) => event,
+            },
+            {
+              type: "setError",
+              params: ({ event }) => event,
+            },
+          ],
+        },
 
         src: "signMessage",
 
@@ -264,12 +279,105 @@ export const swapIntentMachine = setup({
           },
         ],
         onError: {
-          target: "Aborted",
-          actions: {
-            type: "logError",
-            // @ts-expect-error Incorrect `event` type, `error` present in `event` for sure
-            params: ({ event }) => event.error,
+          target: "Generic Error",
+
+          actions: [
+            {
+              type: "logError",
+              params: ({ event }) => event,
+            },
+            {
+              type: "setError",
+              params: ({ event }) => event,
+            },
+          ],
+
+          reenter: true,
+        },
+      },
+    },
+
+    "Broadcasting Intent": {
+      invoke: {
+        id: "sendMessage",
+        input: ({ context }) => {
+          assert(context.signature != null, "Signature is not set")
+          assert(context.messageToSign != null, "Sign message is not set")
+
+          return {
+            quoteHashes: context.quote.quoteHashes,
+            signatureData: context.signature,
+          }
+        },
+        src: "broadcastMessage",
+        onError: {
+          target: "Generic Error",
+
+          actions: [
+            {
+              type: "logError",
+              params: ({ event }) => event,
+            },
+            {
+              type: "setError",
+              params: ({ event }) => event,
+            },
+          ],
+
+          reenter: true,
+        },
+        onDone: {
+          target: "Getting Intent Status",
+          reenter: true,
+        },
+      },
+      description:
+        "Send user proof of sign (signature) to solver bus \\[relay responsibility\\].\n\nResult:\n\n- Update \\[context\\] with proof of broadcasting from solver;",
+    },
+
+    "Verifying Intent": {
+      always: [
+        {
+          target: "Broadcasting Intent",
+          guard: and(["isIntentRelevant", "isSignatureValid"]),
+        },
+        {
+          target: "Not Found or Invalid",
+          reenter: true,
+        },
+      ],
+    },
+
+    "Getting Intent Status": {
+      invoke: {
+        src: "getIntentStatus",
+
+        onDone: [
+          {
+            target: "Confirmed",
+            guard: "isSettled",
+            reenter: true,
           },
+          {
+            target: "Not Found or Invalid",
+            guard: "isNotFoundOrInvalid",
+            reenter: true,
+          },
+        ],
+
+        onError: {
+          target: "Generic Error",
+          reenter: true,
+          actions: [
+            {
+              type: "logError",
+              params: ({ event }) => event,
+            },
+            {
+              type: "setError",
+              params: ({ event }) => event,
+            },
+          ],
         },
       },
     },
@@ -298,76 +406,10 @@ export const swapIntentMachine = setup({
       },
     },
 
-    "Broadcasting Intent": {
-      invoke: {
-        id: "sendMessage",
-        input: ({ context }) => {
-          assert(context.signature != null, "Signature is not set")
-          assert(context.messageToSign != null, "Sign message is not set")
-
-          return {
-            quoteHashes: context.quote.quoteHashes,
-            signatureData: context.signature,
-          }
-        },
-        src: "broadcastMessage",
-        onError: {
-          target: "Network Error",
-
-          actions: "setError",
-
-          reenter: true,
-        },
-        onDone: {
-          target: "Getting Intent Status",
-          reenter: true,
-        },
-      },
-      description:
-        "Send user proof of sign (signature) to solver bus \\[relay responsibility\\].\n\nResult:\n\n- Update \\[context\\] with proof of broadcasting from solver;",
-    },
-
-    "Verifying Intent": {
-      always: [
-        {
-          target: "Broadcasting Intent",
-          guard: and(["isIntentRelevant", "isSignatureValid"]),
-        },
-        {
-          target: "Not Found or Invalid",
-          reenter: true,
-        },
-      ],
-    },
-
-    "Network Error": {
+    "Generic Error": {
       type: "final",
       output: {
-        status: "network-error",
-      },
-    },
-
-    "Getting Intent Status": {
-      invoke: {
-        src: "getIntentStatus",
-
-        onDone: [
-          {
-            target: "Confirmed",
-            guard: "isSettled",
-            reenter: true,
-          },
-          {
-            target: "Not Found or Invalid",
-            guard: "isNotFoundOrInvalid",
-            reenter: true,
-          },
-        ],
-
-        onError: {
-          target: "Network Error",
-          reenter: true,
-        },
+        status: "generic-error",
       },
     },
   },
