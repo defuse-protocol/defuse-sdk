@@ -9,7 +9,8 @@ import {
   setup,
 } from "xstate"
 import { settings } from "../../config/settings"
-import { publishIntent } from "../../services/solverRelayHttpClient"
+import * as solverRelayClient from "../../services/solverRelayHttpClient"
+import type * as types from "../../services/solverRelayHttpClient/types"
 import type {
   SwappableToken,
   WalletMessage,
@@ -42,6 +43,7 @@ type Context = {
   }
   signature: WalletSignatureResult | null
   error: unknown
+  intentHash: string | null
 }
 
 type Input = {
@@ -96,6 +98,9 @@ export const swapIntentMachine = setup({
     setSignature: assign({
       signature: (_, signature: WalletSignatureResult | null) => signature,
     }),
+    setIntentHash: assign({
+      intentHash: (_, intentHash: string) => intentHash,
+    }),
     startBackgroundQuoter: assign({
       // @ts-expect-error For some reason `spawn` creates object which type mismatch
       quoterRef: ({ spawn }) =>
@@ -128,10 +133,13 @@ export const swapIntentMachine = setup({
           quoteHashes: string[]
         }
       }) => {
-        return publishIntent({
+        // todo: retry on network error
+        const result = await solverRelayClient.publishIntent({
           signed_data: prepareSwapSignedData(input.signatureData),
           quote_hashes: input.quoteHashes,
         })
+        // todo: check status
+        return result.intent_hash
       }
     ),
     getIntentStatus: fromPromise(async () => {
@@ -185,6 +193,7 @@ export const swapIntentMachine = setup({
       messageToSign: null,
       signature: null,
       error: null,
+      intentHash: null,
       ...input,
     }
   },
@@ -314,7 +323,8 @@ export const swapIntentMachine = setup({
 
     "Broadcasting Intent": {
       invoke: {
-        id: "sendMessage",
+        src: "broadcastMessage",
+
         input: ({ context }) => {
           assert(context.signature != null, "Signature is not set")
           assert(context.messageToSign != null, "Sign message is not set")
@@ -324,7 +334,16 @@ export const swapIntentMachine = setup({
             signatureData: context.signature,
           }
         },
-        src: "broadcastMessage",
+
+        onDone: {
+          target: "Polling Intent Status",
+          reenter: true,
+          actions: {
+            type: "setIntentHash",
+            params: ({ event }) => event.output,
+          },
+        },
+
         onError: {
           target: "Generic Error",
 
