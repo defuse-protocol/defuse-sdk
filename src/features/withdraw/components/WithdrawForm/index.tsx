@@ -11,7 +11,6 @@ import { useTokensStore } from "src/providers/TokensStoreProvider"
 import { ModalType } from "src/stores/modalStore"
 import type { SwappableToken } from "src/types"
 import type { BaseTokenInfo } from "src/types/base"
-import type { BlockchainEnum } from "src/types/deposit"
 import type { WithdrawWidgetProps } from "src/types/withdraw"
 import { FieldComboInput } from "../../../../components/Form/FieldComboInput"
 import styles from "./styles.module.css"
@@ -21,7 +20,7 @@ export type WithdrawFormNearValues = {
   amountIn: string
   accountId: string
   recipient: string
-  blockchain: BlockchainEnum
+  blockchain: string
 }
 
 export const WithdrawForm = ({
@@ -83,7 +82,7 @@ export const WithdrawForm = ({
               name="blockchain"
               control={control}
               render={({ field }) => (
-                <Select<BlockchainEnum, WithdrawFormNearValues>
+                <Select<string, WithdrawFormNearValues>
                   options={{
                     near: {
                       label: "Near",

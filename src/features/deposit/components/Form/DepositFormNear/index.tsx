@@ -88,7 +88,6 @@ export const DepositFormNear = ({
         name: asset.address,
         decimals: asset.decimals,
         icon: asset.icon,
-        blockchain: "",
         chainId: "",
         chainIcon: "",
         chainName: "",

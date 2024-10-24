@@ -17,7 +17,6 @@ export interface BaseTokenInfo extends Partial<BaseTokenBalance> {
   name: string
   decimals: number
   icon: string
-  blockchain: string
   chainId: string
   chainIcon: string
   chainName: string
