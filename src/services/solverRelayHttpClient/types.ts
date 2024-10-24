@@ -64,12 +64,23 @@ export type GetStatusRequest = JSONRPCRequest<
   { intent_hash: string }
 >
 
-export type GetStatusResponse = JSONRPCResponse<{
-  intent_hash: string
-  status:
-    | "PENDING"
-    | "TX_BROADCASTED"
-    | "SETTLED"
-    | "NOT_FOUND_OR_NOT_VALID_ANYMORE"
-  data?: { hash: string }
-}>
+export type GetStatusResponse = JSONRPCResponse<
+  | {
+      status: "PENDING"
+      intent_hash: string
+    }
+  | {
+      status: "TX_BROADCASTED"
+      intent_hash: string
+      data: { hash: string }
+    }
+  | {
+      status: "SETTLED"
+      intent_hash: string
+      data: { hash: string }
+    }
+  | {
+      status: "NOT_FOUND_OR_NOT_VALID_ANYMORE"
+      intent_hash: string
+    }
+>
