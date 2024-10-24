@@ -8,6 +8,7 @@ import { NetworkIcon } from "src/components/Network/NetworkIcon"
 import { TokenListUpdater } from "src/components/TokenListUpdater"
 import { settings } from "src/config/settings"
 import type { SwappableToken } from "src/types"
+import { isBaseToken } from "src/utils"
 import { assert } from "vitest"
 import { AssetComboIcon } from "../../../../../components/Asset/AssetComboIcon"
 import { Form } from "../../../../../components/Form"
@@ -172,7 +173,7 @@ function filterGroupedTokens(
   blockchain: BlockchainEnum
 ) {
   if (!blockchain) return true
-  if ("address" in token) {
+  if (isBaseToken(token)) {
     return token.blockchain.toLowerCase() === blockchain.toLowerCase()
   }
   return token.groupedTokens.find(
