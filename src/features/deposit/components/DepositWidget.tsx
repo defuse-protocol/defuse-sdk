@@ -1,12 +1,12 @@
 import { useState } from "react"
 import { FormProvider, useForm } from "react-hook-form"
-import { assert } from "vitest"
 import { DepositWidgetProvider } from "../../../providers"
 import type {
   BaseAssetInfo,
   BlockchainEnum,
   DepositWidgetProps,
 } from "../../../types/deposit"
+import { assert } from "../../../utils/assert"
 import {
   DepositFormController,
   type DepositFormOnSelectValues,
@@ -21,7 +21,7 @@ import {
 export const DepositWidget = ({
   tokenList,
   accountId,
-  sendTransaction,
+  sendTransactionNear,
 }: DepositWidgetProps) => {
   const [formType, setFormType] = useState<DepositFormType | null>(null)
   const [blockchain, setBlockchain] = useState<BlockchainEnum | null>(null)
@@ -59,7 +59,7 @@ export const DepositWidget = ({
               <DepositFormNear
                 asset={asset}
                 accountId={accountId}
-                sendTransaction={sendTransaction}
+                sendTransaction={sendTransactionNear}
               />
             </FormProvider>
           )}

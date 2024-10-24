@@ -3,7 +3,7 @@ import type { SwappableToken } from "../types"
 export type DepositWidgetProps = {
   tokenList: SwappableToken[]
   accountId: string
-  sendTransaction: (transactions: Transaction[]) => void
+  sendTransactionNear: (transactions: Transaction[]) => void
 }
 
 export enum BlockchainEnum {
