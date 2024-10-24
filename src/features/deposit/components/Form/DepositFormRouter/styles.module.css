@@ -80,6 +80,7 @@
 .copyButton {
   padding: 0 12px;
   background-color: #ff9c0029;
+  cursor: pointer;
 }
 
 .assetWrapper {

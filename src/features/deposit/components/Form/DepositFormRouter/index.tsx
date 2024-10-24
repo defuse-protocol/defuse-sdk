@@ -1,18 +1,21 @@
-import { CopyIcon, PlusIcon } from "@radix-ui/react-icons"
-import { Button, Flex, IconButton, Text, TextField } from "@radix-ui/themes"
+import { CopyIcon } from "@radix-ui/react-icons"
+import { Button, Flex, Text } from "@radix-ui/themes"
 import { useEffect, useRef, useState } from "react"
 import CopyToClipboard from "react-copy-to-clipboard"
 import { Controller, useForm } from "react-hook-form"
 import { EmptyIcon } from "src/components/EmptyIcon"
 import { NetworkIcon } from "src/components/Network/NetworkIcon"
+import { TokenListUpdater } from "src/components/TokenListUpdater"
+import { settings } from "src/config/settings"
+import type { SwappableToken } from "src/types"
+import { assert } from "vitest"
 import { AssetComboIcon } from "../../../../../components/Asset/AssetComboIcon"
 import { Form } from "../../../../../components/Form"
 import { Select } from "../../../../../components/Select/Select"
-import { useModalController, useShortAccountId } from "../../../../../hooks"
+import { useModalController } from "../../../../../hooks"
 import { ModalType } from "../../../../../stores/modalStore"
-import type { BaseTokenInfo } from "../../../../../types/base"
-import {
-  type BaseAssetInfo,
+import type {
+  BaseAssetInfo,
   BlockchainEnum,
 } from "../../../../../types/deposit"
 import styles from "./styles.module.css"
@@ -23,40 +26,17 @@ export type DepositFormRouterValues = {
 }
 
 export interface DepositFormRouterProps {
+  tokenList: SwappableToken[]
   onSubmit: (values: DepositFormRouterValues) => void
 }
 
-export const blockchains = {
-  near: {
-    label: BlockchainEnum.NEAR,
-    icon: (
-      <NetworkIcon
-        chainIcon="/static/icons/network/near.svg"
-        chainName={BlockchainEnum.NEAR}
-      />
-    ),
-  },
-  ethereum: {
-    label: BlockchainEnum.ETHEREUM,
-    icon: (
-      <NetworkIcon
-        chainIcon="/static/icons/network/ethereum.svg"
-        chainName={BlockchainEnum.ETHEREUM}
-      />
-    ),
-  },
-  base: {
-    label: BlockchainEnum.BASE,
-    icon: (
-      <NetworkIcon
-        chainIcon="/static/icons/network/base.svg"
-        chainName={BlockchainEnum.BASE}
-      />
-    ),
-  },
-}
-
-export const DepositFormRouter = ({ onSubmit }: DepositFormRouterProps) => {
+export const DepositFormRouter = ({
+  tokenList,
+  onSubmit,
+}: DepositFormRouterProps) => {
+  const [tokenListFiltered, setTokenListFiltered] = useState<SwappableToken[]>(
+    []
+  )
   const {
     handleSubmit,
     register,
@@ -68,26 +48,26 @@ export const DepositFormRouter = ({ onSubmit }: DepositFormRouterProps) => {
   } = useForm<DepositFormRouterValues>({ reValidateMode: "onSubmit" })
   const { setModalType, data } = useModalController<{
     modalType: ModalType
-    token: BaseTokenInfo
-  }>(ModalType.MODAL_DEPOSIT_SELECT_ASSETS, "token")
+    token: SwappableToken
+  }>(ModalType.MODAL_SELECT_ASSETS, "token")
 
-  const [assetsAddress, setAssetsAddress] = useState<string>("")
-  const { shortAccountId } = useShortAccountId(assetsAddress)
+  const [assetsName, setNameAddress] = useState<string>("")
 
   const assetChangeRef = useRef(false)
 
-  const handleAssetChange = () => {
+  const openModalSelectAssets = () => {
     assetChangeRef.current = true
-    setModalType(ModalType.MODAL_DEPOSIT_SELECT_ASSETS, {
-      blockchain: getValues("blockchain"),
+    setModalType(ModalType.MODAL_SELECT_ASSETS, {
+      fieldName: "asset",
     })
   }
 
   useEffect(() => {
     if (data?.token && assetChangeRef.current) {
-      setAssetsAddress(data.token.address)
+      const address = getAssetAddress(data.token, getValues("blockchain"))
+      setNameAddress(data.token.name)
       setValue("asset", {
-        address: data.token.address,
+        address,
         decimals: data.token.decimals,
         icon: data.token.icon,
         symbol: data.token.symbol,
@@ -108,6 +88,11 @@ export const DepositFormRouter = ({ onSubmit }: DepositFormRouterProps) => {
           icon: "",
           symbol: "",
         })
+        setTokenListFiltered(
+          tokenList.filter((token) =>
+            filterGroupedTokens(token, getValues("blockchain"))
+          )
+        )
       }
       onSubmit({
         ...getValues(),
@@ -115,20 +100,21 @@ export const DepositFormRouter = ({ onSubmit }: DepositFormRouterProps) => {
     })
 
     return () => subscription.unsubscribe()
-  }, [watch, setValue, onSubmit, getValues])
+  }, [watch, setValue, onSubmit, getValues, tokenList])
 
   return (
     <Form<DepositFormRouterValues>
       handleSubmit={handleSubmit(onSubmit)}
       register={register}
     >
+      <TokenListUpdater tokenList={tokenListFiltered} />
       <div className={styles.selectWrapper}>
         <Controller
           name="blockchain"
           control={control}
           render={({ field }) => (
             <Select<BlockchainEnum, DepositFormRouterValues>
-              options={blockchains}
+              options={getBlockchainsOptions()}
               placeholder={{
                 label: "Select network",
                 icon: <EmptyIcon />,
@@ -143,7 +129,7 @@ export const DepositFormRouter = ({ onSubmit }: DepositFormRouterProps) => {
         <button
           type="button"
           className={styles.assetWrapper}
-          onClick={handleAssetChange}
+          onClick={openModalSelectAssets}
         >
           <Flex gap="2" align="center" justify="between" width="100%">
             <Flex gap="2" align="center">
@@ -153,8 +139,8 @@ export const DepositFormRouter = ({ onSubmit }: DepositFormRouterProps) => {
                 <EmptyIcon />
               )}
               <Text>
-                {watch("asset.address") && shortAccountId
-                  ? shortAccountId
+                {watch("asset.address") && assetsName
+                  ? assetsName
                   : "Select asset"}
               </Text>
             </Flex>
@@ -179,4 +165,41 @@ export const DepositFormRouter = ({ onSubmit }: DepositFormRouterProps) => {
       )}
     </Form>
   )
+}
+
+function filterGroupedTokens(
+  token: SwappableToken,
+  blockchain: BlockchainEnum
+) {
+  if (!blockchain) return true
+  if ("address" in token) {
+    return token.blockchain.toLowerCase() === blockchain.toLowerCase()
+  }
+  return token.groupedTokens.find(
+    (token) => token.blockchain.toLowerCase() === blockchain.toLowerCase()
+  )
+}
+
+function getAssetAddress(token: SwappableToken, blockchain: BlockchainEnum) {
+  assert(blockchain, "Blockchain is required")
+  const address =
+    "address" in token
+      ? token.address
+      : token.groupedTokens.find(
+          (token) => token.chainName.toLowerCase() === blockchain.toLowerCase()
+        )?.address
+  assert(address, "Asset address not found")
+  return address
+}
+
+function getBlockchainsOptions() {
+  return Object.fromEntries(
+    Object.entries(settings.blockchains).map(([key, value]) => [
+      key,
+      {
+        label: value.name,
+        icon: <NetworkIcon chainIcon={value.icon} chainName={value.name} />,
+      },
+    ])
+  ) as { [K in BlockchainEnum]: { label: string; icon: React.ReactNode } }
 }

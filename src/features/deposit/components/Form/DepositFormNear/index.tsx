@@ -5,10 +5,10 @@ import { useActor } from "@xstate/react"
 import { useEffect, useState } from "react"
 import { useFormContext } from "react-hook-form"
 import { settings } from "src/config/settings"
+import type { SwappableToken } from "src/types"
 import { assert } from "vitest"
-import { fromPromise, log } from "xstate"
+import { fromPromise } from "xstate"
 import { Form } from "../../../../../components/Form"
-import { FieldComboInput } from "../../../../../components/Form/FieldComboInput"
 import { Input } from "../../../../../components/Input"
 import { DepositService } from "../../../../../features/deposit/services/depositService"
 import { depositNearMachine } from "../../../../../features/machines/depositNearMachine"
@@ -24,7 +24,7 @@ export type DepositFormNearValues = {
 
 export interface DepositFormNearProps {
   asset: BaseAssetInfo
-  signAndSendTransactionsNear: (transactions: Transaction[]) => void
+  sendTransaction: (transactions: Transaction[]) => void
   accountId: string
 }
 
@@ -32,7 +32,7 @@ const depositNearService = new DepositService()
 
 export const DepositFormNear = ({
   asset,
-  signAndSendTransactionsNear,
+  sendTransaction,
   accountId,
 }: DepositFormNearProps) => {
   const [selectToken, setSelectToken] = useState<BaseTokenInfo>()
@@ -56,7 +56,7 @@ export const DepositFormNear = ({
             asset,
             amount
           )
-          const txHash = (await signAndSendTransactionsNear(transactions)) as
+          const txHash = (await sendTransaction(transactions)) as
             | string
             | undefined
           return txHash || "" // TODO: Ensure a TX hash is returned
@@ -81,13 +81,14 @@ export const DepositFormNear = ({
 
   useEffect(() => {
     if (asset) {
-      const tokenAdapter: BaseTokenInfo = {
+      const tokenAdapter: SwappableToken = {
         defuseAssetId: asset.address,
         address: asset.address,
         symbol: asset.address,
         name: asset.address,
         decimals: asset.decimals,
         icon: asset.icon,
+        blockchain: "",
         chainId: "",
         chainIcon: "",
         chainName: "",
@@ -118,7 +119,7 @@ export const DepositFormNear = ({
             size="2"
             onClick={handleSetMaxValue}
           >
-            Max
+            <Text color="orange">Max</Text>
           </Button>
         }
       />
