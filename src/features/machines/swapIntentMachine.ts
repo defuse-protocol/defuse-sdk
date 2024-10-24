@@ -157,10 +157,9 @@ export const swapIntentMachine = setup({
       console.warn("isSignatureValid guard is not implemented")
       return context.signature != null
     },
-    isIntentRelevant: () => {
-      // todo: Implement this guard
-      console.warn("isIntentRelevant guard is not implemented")
-      return true
+    isIntentRelevant: ({ context }) => {
+      // Naively assume that the quote is still relevant if the expiration time is in the future
+      return context.quote.expirationTime * 1000 > Date.now()
     },
     isSigned: (_, params: WalletSignatureResult | null) => params != null,
     isTrue: (_, params: boolean) => params,

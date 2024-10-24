@@ -11,7 +11,8 @@ export interface AggregatedQuoteParams {
 
 export interface AggregatedQuote {
   quoteHashes: string[]
-  expirationTime: number // earliest expiration time
+  /** Earliest expiration time in seconds */
+  expirationTime: number
   totalAmountIn: bigint
   totalAmountOut: bigint
   amountsIn: Record<string, bigint> // amount in for each token
