@@ -22,3 +22,10 @@ export async function getNearNep141BalanceAccount(
   )
   return json.result
 }
+
+export async function getTx(
+  params: types.GetNearTxRequest["params"][0]
+): Promise<types.GetNearTxResponse["result"]> {
+  const json = await jsonRPCRequest<types.GetNearTxRequest>("tx", params)
+  return json.result
+}

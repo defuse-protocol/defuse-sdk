@@ -61,6 +61,7 @@ export const DepositFormNear = ({
 
   const onSubmit = async (values: DepositFormNearValues) => {
     assert(accountId != null, "Account ID is not defined")
+
     send({
       type: "INPUT",
       asset: asset.address,
@@ -98,10 +99,10 @@ export const DepositFormNear = ({
           // We have to check if the amount is greater than the balance then
           // we have to create a batch transaction for the NEAR deposit first
           // and then the FT deposit
-          if (balanceData && Number(amount) > Number(balanceData)) {
+          if (Number(amount) > Number(balanceData || 0n)) {
             transactionNative =
               depositNearService.createNativeDepositNearTransaction(
-                (BigInt(amount) - BigInt(balanceData)).toString()
+                (BigInt(amount) - BigInt(balanceData || 0n)).toString()
               )
           }
           const transactionFungible =
@@ -114,6 +115,18 @@ export const DepositFormNear = ({
           transactions = [...transactionNative, ...transactionFungible]
           const txHash = await sendTransaction(transactions)
           return txHash
+        }),
+        validateTransaction: fromPromise(async ({ input }) => {
+          const { txHash, accountId, amount } = input
+          assert(txHash != null, "Tx hash is not defined")
+          assert(accountId != null, "Account ID is not defined")
+          assert(amount != null, "Amount is not defined")
+          const isValid = await depositNearService.checkNearTransactionValidity(
+            txHash,
+            accountId,
+            amount
+          )
+          return isValid
         }),
       },
       guards: {
@@ -147,6 +160,9 @@ export const DepositFormNear = ({
   useEffect(() => {
     setValue("amount", "")
   }, [asset, setValue])
+
+  // TODO: Remove this once we have the deposit fully working
+  console.log(state.value)
 
   return (
     <Form<DepositFormNearValues>

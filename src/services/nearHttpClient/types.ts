@@ -47,3 +47,16 @@ export type GetNearNep141BalanceAccountResponse = JSONRPCResponse<{
   logs: []
   result: number[]
 }>
+
+export type GetNearTxRequest = JSONRPCRequest<
+  "tx",
+  {
+    tx_hash: string
+    sender_account_id: string
+    wait_until: "EXECUTED"
+  }
+>
+
+export type GetNearTxResponse = JSONRPCResponse<{
+  status: { SuccessValue: string }
+}>

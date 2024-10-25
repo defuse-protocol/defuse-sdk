@@ -1,3 +1,4 @@
+import { getNearTxSuccessValue } from "src/features/machines/getTxMachine"
 import {
   type BlockchainEnum,
   type Transaction,
@@ -96,9 +97,27 @@ export class DepositService {
 
   async checkNearTransactionValidity(
     txHash: string,
-    accountId: string
+    accountId: string,
+    amount: string
   ): Promise<boolean> {
-    console.log("checkNearTransactionValidity", txHash, accountId)
-    return true
+    if (!txHash) {
+      throw new Error("Transaction hash is required")
+    }
+
+    const splitTxHashesToTxHash = txHash.includes(",")
+      ? txHash.split(",")[1]
+      : txHash
+
+    if (!splitTxHashesToTxHash) {
+      throw new Error("Invalid transaction hash format")
+    }
+
+    const successValue = await getNearTxSuccessValue({
+      txHash: splitTxHashesToTxHash,
+      senderAccountId: accountId,
+    })
+
+    // Check if input amount is equal to the success value
+    return successValue === BigInt(amount)
   }
 }
