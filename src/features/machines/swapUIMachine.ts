@@ -15,6 +15,20 @@ import { isBaseToken } from "../../utils"
 import type { queryQuoteMachine } from "./queryQuoteMachine"
 import type { swapIntentMachine } from "./swapIntentMachine"
 
+export type Context = {
+  error: Error | null
+  quote: OutputFrom<typeof queryQuoteMachine> | null
+  outcome: OutputFrom<typeof swapIntentMachine> | null
+  formValues: {
+    tokenIn: SwappableToken
+    tokenOut: SwappableToken
+    amountIn: string
+  }
+  parsedFormValues: {
+    amountIn: bigint
+  }
+}
+
 export const swapUIMachine = setup({
   types: {
     children: {} as {
@@ -24,19 +38,7 @@ export const swapUIMachine = setup({
       tokenIn: SwappableToken
       tokenOut: SwappableToken
     },
-    context: {} as {
-      error: Error | null
-      quote: OutputFrom<typeof queryQuoteMachine> | null
-      outcome: OutputFrom<typeof swapIntentMachine> | null
-      formValues: {
-        tokenIn: SwappableToken
-        tokenOut: SwappableToken
-        amountIn: string
-      }
-      parsedFormValues: {
-        amountIn: bigint
-      }
-    },
+    context: {} as Context,
     events: {} as
       | {
           type: "input"
@@ -182,6 +184,7 @@ export const swapUIMachine = setup({
         submit: {
           target: "submitting",
           guard: "isQuoteRelevant",
+          actions: "clearOutcome",
         },
         input: {
           target: ".validating",
