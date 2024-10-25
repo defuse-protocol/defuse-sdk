@@ -1,20 +1,20 @@
 import { assign, fromPromise, setup } from "xstate"
-import type { BlockchainEnum } from "../../types/deposit"
+import type { DepositBlockchainEnum } from "../../types/deposit"
 
 type Context = {
-  blockchain: BlockchainEnum | null
+  blockchain: DepositBlockchainEnum | null
   assetAddress: string | null
   depositAddress: string | null
 }
 
 type Events = {
   type: "INPUT"
-  blockchain: BlockchainEnum
+  blockchain: DepositBlockchainEnum
   assetAddress: string
 }
 
 type Input = {
-  blockchain: BlockchainEnum | null
+  blockchain: DepositBlockchainEnum | null
   assetAddress: string | null
 }
 

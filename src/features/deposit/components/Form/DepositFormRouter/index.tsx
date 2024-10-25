@@ -17,12 +17,12 @@ import { useModalController } from "../../../../../hooks"
 import { ModalType } from "../../../../../stores/modalStore"
 import {
   type BaseAssetInfo,
-  BlockchainEnum,
+  DepositBlockchainEnum,
 } from "../../../../../types/deposit"
 import styles from "./styles.module.css"
 
 export type DepositFormRouterValues = {
-  blockchain: BlockchainEnum
+  blockchain: DepositBlockchainEnum
   asset: BaseAssetInfo
 }
 
@@ -170,7 +170,7 @@ export const DepositFormRouter = ({
 
 function filterGroupedTokens(
   token: SwappableToken,
-  blockchain: BlockchainEnum
+  blockchain: DepositBlockchainEnum
 ) {
   if (isBaseToken(token)) {
     return token.chainName.toLowerCase() === blockchain.toLowerCase()
@@ -180,7 +180,10 @@ function filterGroupedTokens(
   )
 }
 
-function getAssetAddress(token: SwappableToken, blockchain: BlockchainEnum) {
+function getAssetAddress(
+  token: SwappableToken,
+  blockchain: DepositBlockchainEnum
+) {
   const address =
     "address" in token
       ? token.address
@@ -197,29 +200,29 @@ function getBlockchainsOptions(): Record<
 > {
   return {
     near: {
-      label: BlockchainEnum.NEAR,
+      label: DepositBlockchainEnum.NEAR,
       icon: (
         <NetworkIcon
           chainIcon="/static/icons/network/near.svg"
-          chainName={BlockchainEnum.NEAR}
+          chainName={DepositBlockchainEnum.NEAR}
         />
       ),
     },
     ethereum: {
-      label: BlockchainEnum.ETHEREUM,
+      label: DepositBlockchainEnum.ETHEREUM,
       icon: (
         <NetworkIcon
           chainIcon="/static/icons/network/ethereum.svg"
-          chainName={BlockchainEnum.ETHEREUM}
+          chainName={DepositBlockchainEnum.ETHEREUM}
         />
       ),
     },
     base: {
-      label: BlockchainEnum.BASE,
+      label: DepositBlockchainEnum.BASE,
       icon: (
         <NetworkIcon
           chainIcon="/static/icons/network/base.svg"
-          chainName={BlockchainEnum.BASE}
+          chainName={DepositBlockchainEnum.BASE}
         />
       ),
     },

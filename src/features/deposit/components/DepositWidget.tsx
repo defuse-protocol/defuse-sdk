@@ -4,7 +4,7 @@ import { useUser } from "src/providers/UserContext"
 import { DepositWidgetProvider } from "../../../providers"
 import type {
   BaseAssetInfo,
-  BlockchainEnum,
+  DepositBlockchainEnum,
   DepositWidgetProps,
 } from "../../../types/deposit"
 import { assert } from "../../../utils/assert"
@@ -23,9 +23,12 @@ export const DepositWidget = ({
   tokenList,
   accountId,
   sendTransactionNear,
+  onEmit,
 }: DepositWidgetProps) => {
   const [formType, setFormType] = useState<DepositFormType | null>(null)
-  const [blockchain, setBlockchain] = useState<BlockchainEnum | null>(null)
+  const [blockchain, setBlockchain] = useState<DepositBlockchainEnum | null>(
+    null
+  )
   const [asset, setAsset] = useState<BaseAssetInfo | null>(null)
   const depositFormNearMethods = useForm<DepositFormNearValues>()
 
@@ -62,6 +65,7 @@ export const DepositWidget = ({
                 asset={asset}
                 accountId={accountId}
                 sendTransaction={sendTransactionNear}
+                onEmit={onEmit}
               />
             </FormProvider>
           )}

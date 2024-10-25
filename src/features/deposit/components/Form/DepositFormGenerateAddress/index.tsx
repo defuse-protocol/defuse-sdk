@@ -16,12 +16,12 @@ import { depositGenerateAddressMachine } from "../../../../../features/machines/
 
 import type {
   BaseAssetInfo,
-  BlockchainEnum,
+  DepositBlockchainEnum,
 } from "../../../../../types/deposit"
 import styles from "./styles.module.css"
 
 type DepositFormGenerateAddressProps = {
-  blockchain: BlockchainEnum
+  blockchain: DepositBlockchainEnum
   asset: BaseAssetInfo
 }
 

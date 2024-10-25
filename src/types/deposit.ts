@@ -4,9 +4,16 @@ export type DepositWidgetProps = {
   tokenList: SwappableToken[]
   accountId: string | undefined
   sendTransactionNear: (transactions: Transaction[]) => Promise<string>
+  onEmit?: (event: DepositEvent) => void
 }
 
-export enum BlockchainEnum {
+export type DepositEvent = {
+  type: string
+  data: unknown
+  error?: string
+}
+
+export enum DepositBlockchainEnum {
   NEAR = "near",
   ETHEREUM = "ethereum",
   BASE = "base",
@@ -29,7 +36,7 @@ export interface Transaction {
   actions: Array<Action>
 }
 
-export enum TransactionMethod {
+export enum DepositTransactionMethod {
   FT_TRANSFER_CALL = "ft_transfer_call",
   NEAR_DEPOSIT = "near_deposit",
 }
