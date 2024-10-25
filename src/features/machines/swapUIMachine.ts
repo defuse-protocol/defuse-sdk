@@ -317,6 +317,7 @@ export const swapUIMachine = setup({
                 if (event.output.status !== "INTENT_PUBLISHED")
                   return context.intentRefs
 
+                // todo: take quote from result of `swap`
                 assert(context.quote != null, "quote is null")
 
                 const intentRef = spawn("intentStatus", {
@@ -330,7 +331,7 @@ export const swapUIMachine = setup({
                   },
                 })
 
-                return [...context.intentRefs, intentRef]
+                return [intentRef, ...context.intentRefs]
               },
             }),
             {
