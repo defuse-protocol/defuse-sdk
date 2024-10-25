@@ -1,6 +1,6 @@
 import { Button, Spinner, Text } from "@radix-ui/themes"
 
-import { useActor } from "@xstate/react"
+import { useActor, useSelector } from "@xstate/react"
 
 import { useEffect } from "react"
 import { useFormContext } from "react-hook-form"
@@ -15,7 +15,11 @@ import { Form } from "../../../../../components/Form"
 import { Input } from "../../../../../components/Input"
 import { DepositService } from "../../../../../features/deposit/services/depositService"
 import { depositNearMachine } from "../../../../../features/machines/depositNearMachine"
-import type { BaseAssetInfo, Transaction } from "../../../../../types/deposit"
+import type {
+  BaseAssetInfo,
+  DepositWidgetProps,
+  Transaction,
+} from "../../../../../types/deposit"
 import {
   balanceToBignumberString,
   balanceToDecimal,
@@ -27,7 +31,8 @@ export type DepositFormNearValues = {
   amount: string
 }
 
-export interface DepositFormNearProps {
+export interface DepositFormNearProps
+  extends Pick<DepositWidgetProps, "onEmit"> {
   asset: BaseAssetInfo
   sendTransaction: (transactions: Transaction[]) => Promise<string>
   accountId: string | undefined
@@ -39,6 +44,7 @@ export const DepositFormNear = ({
   asset,
   sendTransaction,
   accountId,
+  onEmit,
 }: DepositFormNearProps) => {
   const {
     handleSubmit,
@@ -162,7 +168,24 @@ export const DepositFormNear = ({
   }, [asset, setValue])
 
   // TODO: Remove this once we have the deposit fully working
-  console.log(state.value)
+  console.log(state.value, state)
+
+  // TODO: Subscribe to the SUCCESSFUL_DEPOSIT event
+  useEffect(() => {
+    if (state.matches("Completed")) {
+      onEmit?.({
+        type: "SUCCESSFUL_DEPOSIT",
+        data: state.context.txHash,
+      })
+    }
+    if (state.matches("Aborted")) {
+      onEmit?.({
+        type: "FAILED_DEPOSIT",
+        data: null,
+        error: state.context.error,
+      })
+    }
+  }, [state, onEmit])
 
   return (
     <Form<DepositFormNearValues>

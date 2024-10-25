@@ -1,6 +1,5 @@
-import { type PropsWithChildren, useEffect } from "react"
-import type { SwappableToken } from "src/types"
-import { BlockchainEnum } from "../../../../../types/deposit"
+import type { PropsWithChildren } from "react"
+import { DepositBlockchainEnum, type SwappableToken } from "src/types"
 import {
   DepositFormRouter,
   type DepositFormRouterValues,
@@ -14,7 +13,7 @@ export enum DepositFormType {
 
 export type DepositFormOnSelectValues = {
   formType: DepositFormType
-  blockchain: BlockchainEnum
+  blockchain: DepositBlockchainEnum
   asset: {
     address: string
     decimals: number
@@ -45,14 +44,14 @@ export const DepositFormController = ({
           tokenList={tokenList}
           onSubmit={(values: DepositFormRouterValues) => {
             switch (values.blockchain) {
-              case BlockchainEnum.NEAR:
+              case DepositBlockchainEnum.NEAR:
                 onSelect({
                   formType: DepositFormType.DEPOSIT_NEAR,
                   ...values,
                 })
                 break
-              case BlockchainEnum.ETHEREUM:
-              case BlockchainEnum.BASE:
+              case DepositBlockchainEnum.ETHEREUM:
+              case DepositBlockchainEnum.BASE:
                 onSelect({
                   formType: DepositFormType.DEPOSIT_PASSIVE,
                   ...values,
