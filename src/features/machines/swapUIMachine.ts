@@ -303,13 +303,17 @@ export const swapUIMachine = setup({
 
         onDone: {
           target: "editing.validating",
-
           actions: [
             { type: "setOutcome", params: ({ event }) => event.output },
             { type: "emitSwapFinish", params: ({ event }) => event.output },
           ],
+        },
 
-          reenter: true,
+        onError: {
+          target: "editing.validating",
+          actions: ({ event }) => {
+            console.error(event.error)
+          },
         },
       },
     },
