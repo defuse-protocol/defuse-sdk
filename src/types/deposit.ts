@@ -2,8 +2,8 @@ import type { SwappableToken } from "../types"
 
 export type DepositWidgetProps = {
   tokenList: SwappableToken[]
-  accountId: string
-  sendTransactionNear: (transactions: Transaction[]) => void
+  accountId: string | undefined
+  sendTransactionNear: (transactions: Transaction[]) => Promise<string>
 }
 
 export enum BlockchainEnum {
@@ -31,6 +31,7 @@ export interface Transaction {
 
 export enum TransactionMethod {
   FT_TRANSFER_CALL = "ft_transfer_call",
+  NEAR_DEPOSIT = "near_deposit",
 }
 
 export interface BaseAssetInfo {

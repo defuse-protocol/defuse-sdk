@@ -4,6 +4,8 @@ import type { BlockchainEnum } from "../../types/deposit"
 export type Context = {
   amount: string | null
   asset: string | null
+  accountId: string | null
+  txHash: string | null
   error: Error | null
   outcome: unknown | null
 }
@@ -14,16 +16,10 @@ type Events = {
   asset: string
   accountId: string
 }
-// Add other event types here if needed
 
 type Input = {
   amount: string
   asset: string
-}
-
-// biome-ignore lint/complexity/noBannedTypes: It is temporary type
-export type Output = {
-  // todo: Output is expected to include intent status, intent entity and other relevant data
 }
 
 export const depositNearMachine = setup({
@@ -58,6 +54,8 @@ export const depositNearMachine = setup({
   context: {
     amount: null,
     asset: null,
+    accountId: null,
+    txHash: null,
     error: null,
     outcome: null,
   },
@@ -69,6 +67,7 @@ export const depositNearMachine = setup({
           actions: assign({
             amount: ({ event }) => event.amount,
             asset: ({ event }) => event.asset,
+            accountId: ({ event }) => event.accountId,
           }),
         },
       },
@@ -79,13 +78,13 @@ export const depositNearMachine = setup({
         input: ({ context }) => ({
           amount: context.amount || "",
           asset: context.asset || "",
+          accountId: context.accountId || "",
         }),
         onDone: {
           target: "verifying",
-          actions: assign((context, event) => ({
-            ...context,
-            outcome: null,
-          })),
+          actions: assign({
+            txHash: ({ event }) => event.output,
+          }),
         },
         onError: {
           target: "Aborted",

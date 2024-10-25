@@ -29,8 +29,8 @@ export type DepositFormNearValues = {
 
 export interface DepositFormNearProps {
   asset: BaseAssetInfo
-  sendTransaction: (transactions: Transaction[]) => void
-  accountId: string
+  sendTransaction: (transactions: Transaction[]) => Promise<string>
+  accountId: string | undefined
 }
 
 const depositNearService = new DepositService()
@@ -60,6 +60,7 @@ export const DepositFormNear = ({
   } = useGetNearNativeBalance({ retry: true })
 
   const onSubmit = async (values: DepositFormNearValues) => {
+    assert(accountId != null, "Account ID is not defined")
     send({
       type: "INPUT",
       asset: asset.address,
@@ -90,21 +91,43 @@ export const DepositFormNear = ({
           const { asset, amount } = input
           assert(asset != null, "Asset is not selected")
           assert(amount != null, "Amount is not selected")
-          const transactions = depositNearService.createDepositNearTransaction(
-            settings.defuseContractId,
-            asset,
-            amount
-          )
-          const txHash = (await sendTransaction(transactions)) as
-            | string
-            | undefined
-          return txHash || "" // TODO: Ensure a TX hash is returned
+
+          let transactions: Transaction[] = []
+          let transactionNative: Transaction[] = []
+
+          // We have to check if the amount is greater than the balance then
+          // we have to create a batch transaction for the NEAR deposit first
+          // and then the FT deposit
+          if (balanceData && Number(amount) > Number(balanceData)) {
+            transactionNative =
+              depositNearService.createNativeDepositNearTransaction(
+                (BigInt(amount) - BigInt(balanceData)).toString()
+              )
+          }
+          const transactionFungible =
+            depositNearService.createDepositNearTransaction(
+              settings.defuseContractId,
+              asset,
+              amount
+            )
+
+          transactions = [...transactionNative, ...transactionFungible]
+          const txHash = await sendTransaction(transactions)
+          return txHash
         }),
+      },
+      guards: {
+        isDepositValid: ({ context }) => {
+          if (!context.txHash) return false
+          return true
+        },
       },
     })
   )
 
   useEffect(() => {
+    if (!accountId) return
+
     mutateNearNep141BalanceAccount({
       tokenAddress: asset.address,
       userAddress: accountId,
@@ -119,6 +142,11 @@ export const DepositFormNear = ({
     mutateNearNep141BalanceAccount,
     mutateNearNativeBalance,
   ])
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: We want to reset the amount when the asset changes
+  useEffect(() => {
+    setValue("amount", "")
+  }, [asset, setValue])
 
   return (
     <Form<DepositFormNearValues>
@@ -155,7 +183,7 @@ export const DepositFormNear = ({
           radius="large"
           className={`${styles.button}`}
           color="orange"
-          disabled={!watch("amount")}
+          disabled={!watch("amount") || !accountId}
         >
           <span className={styles.buttonContent}>
             <Spinner loading={false} />

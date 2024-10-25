@@ -33,7 +33,7 @@ export const DepositWidget = ({
 
   return (
     <DepositWidgetProvider>
-      <UserAddressUpdater accountId={accountId} />
+      {accountId && <UserAddressUpdater accountId={accountId} />}
       <DepositFormController
         tokenList={tokenList}
         formType={formType}
