@@ -80,7 +80,7 @@ export type GetStatusResponse = JSONRPCResponse<
       data: { hash: string }
     }
   | {
-      status: "NOT_FOUND_OR_NOT_VALID_ANYMORE"
+      status: "NOT_FOUND_OR_NOT_VALID"
       intent_hash: string
     }
 >
