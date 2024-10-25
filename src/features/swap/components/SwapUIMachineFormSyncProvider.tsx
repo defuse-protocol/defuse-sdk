@@ -41,13 +41,13 @@ export function SwapUIMachineFormSyncProvider({
     const sub = actorRef.on("swap_finished", (state) => {
       const intentStatus = state.data.intentOutcome.status
       switch (intentStatus) {
-        case "SETTLED": {
+        case "INTENT_PUBLISHED": {
           onSuccessSwapRef.current({
             amountIn: state.data.amountIn,
             amountOut: state.data.amountOut,
             tokenIn: state.data.tokenIn,
             tokenOut: state.data.tokenOut,
-            txHash: state.data.intentOutcome.txHash,
+            txHash: "",
             intentHash: state.data.intentOutcome.intentHash,
           })
           break

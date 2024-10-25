@@ -40,7 +40,7 @@ export const intentStatusMachine = setup({
       settlementResult.status === "SETTLED",
   },
 }).createMachine({
-  /** @xstate-layout N4IgpgJg5mDOIC5QEsB2AXMGDK6CG6ArrAHQAOWEaUAxAMIASAonQNIDaADALqKhkB7WMnTIBqPiAAeiAIwAWAGwlFAJlWdVAVk5aAzLMUB2AJyKANCACecziZJbZnI88WOjADhOrFAX1+WaJg4+ESkAMYAFmDhANbUNBDiYCRoAG4CsSlBWOi4BMQkUTHxqFAI6QLhBGKoXNz1koLCouKSMghaqh4kHlpa8npeWkayqvKyljYIHrIkeuomCsYeemaq-oEYuflhRdFxCUmo2agZWanbIQURB6XlldWtdTzssrxIIM0ite2IXXNVAZOLIloMXEYpnIzPMRgZTF0PN15BsAiActc9sVDmUaGAAE74gT48gAGwIADNiQBbS7BPKhQrY+4VM5VGrieqNT7fZ5-BCqJYkTjwkGyUYmEX6KECnwkIxKLp6LSKRRKRSyLSbdFXBk3EgEon4mgAJSYABUTQBNbn8IQ-NqfDryLQqeSSjyrVRGAz9LQyvTyHpGb0jXScThBtX+NGoAQQOCSDF6sJNe18p2IAC03RI3hFa09QyMqrcMqzPS63o8QeREccHm1yd2hQoqCoZTTLV+mYQoOFplVYo1QL0yplTlUJFUCiRgZdKxdTd1LduJWoXYdEl73uUOj0oz0nFWSLMMs8vQjYwUnEUZlMJmX9NXJFghHC4Tg8B56Z7oA6JizCQQbyM4JgHh4IIqhOEZ5ookE1t4EzKkGT47IypBxugAD6aR4KSyAQJuGb-ogJimMBKrhh4pgeG48gTuB05GJ4LETEikFaI2aLNhhBqEsSxF-tIiDKnoDi6KqKIzoKsiBgGQbzCY-QKIGhagjGvhAA */
+  /** @xstate-layout N4IgpgJg5mDOIC5QEsB2AXMGDK6CG6ArrAHQAOWEaUAxANoAMAuoqGQPazLrLuqsgAHogCMAFgBsJCQCYZDGQFYGigMwiJAdgCcEgDQgAnqIbaSikQ01WJFzQA5tMiQF8XBtJhz4ipAMYAFmB+ANbUNBB8YCRoAG7sIdGeWOi4BMQkgcFhqFAIcex+BLyojExlAhxcPHwCwgiKMvYk9oqKYqqOipoiMmIiBsYI9iIkqnLa4lr2qroybh4YKWm+mUGh4ZGoSajxiTFL3un+6zl5BUU1pcx0IixIIFXcJXWIjaMy6gwikx3WmoNRLoxt11DpGvYmmJ5u4QMkjqsshtcjQwAAnNHsNHkAA2BAAZliALYHLypHwZJFnfK7QrFPhlCoPJ5XV4IGSTEgMMHfEQ9bTctSA9nOEiaSSNVSKCQSSQSESKBZww7k44kdGYtE0ABKAFEACragCaTLYnGetQe9TEimkYgF9hmMk06jaimFqjEzU0zu6KgYDC9srcsNQ7AgcAE8NVvkq5tZVsQAFomiQnNzZo7OpoZbZhUnmo1nfYFPYOmIbfaldGVhkKKgqLk49UXomED8uToZbz5Z9VFLhZYZCQZOJIZ6bdMbdWVbWTtlqM2Lfw286pMpVD1VAwZpDdMKHC0A71xAwJLodNoZ2S5yRYIQ-H44PBmfHW6B6toRiQvWIrNpNxLBV9CMEwGDTCQSzLJx+ilL1r2WClSDDdAAH1YjwHFkAgJcEw-RBtB0H9pX9ewdHsWwxEHACR00Bw6P6SES0UewEIRDINSxXD3yERApVUcwVBlaFRw5ERPQ9L0xm0NpxE9TMfhDFwgA */
   id: "intentStatus",
   initial: "pending",
   context: ({ input }) => {
@@ -51,9 +51,7 @@ export const intentStatusMachine = setup({
   },
   states: {
     pending: {
-      on: {
-        CHECK: "checking",
-      },
+      always: "checking",
     },
     checking: {
       invoke: {

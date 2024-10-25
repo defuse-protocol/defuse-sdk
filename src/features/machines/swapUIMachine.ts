@@ -1,6 +1,7 @@
 import { parseUnits } from "ethers"
 import type { providers } from "near-api-js"
 import {
+  type ActorRefFrom,
   type InputFrom,
   type OutputFrom,
   assertEvent,
@@ -12,13 +13,13 @@ import {
 import type { SwappableToken } from "../../types"
 import type { Transaction } from "../../types/deposit"
 import { isBaseToken } from "../../utils"
+import { intentStatusMachine } from "./intentStatusMachine"
 import type { queryQuoteMachine } from "./queryQuoteMachine"
 import type { swapIntentMachine } from "./swapIntentMachine"
 
 export type Context = {
   error: Error | null
   quote: OutputFrom<typeof queryQuoteMachine> | null
-  outcome: OutputFrom<typeof swapIntentMachine> | null
   formValues: {
     tokenIn: SwappableToken
     tokenOut: SwappableToken
@@ -27,13 +28,12 @@ export type Context = {
   parsedFormValues: {
     amountIn: bigint
   }
+  intentCreationResult: OutputFrom<typeof swapIntentMachine> | null
+  intentRefs: ActorRefFrom<typeof intentStatusMachine>[]
 }
 
 export const swapUIMachine = setup({
   types: {
-    children: {} as {
-      quoteQuerier: "queryQuote"
-    },
     input: {} as {
       tokenIn: SwappableToken
       tokenOut: SwappableToken
@@ -131,10 +131,11 @@ export const swapUIMachine = setup({
     }),
     clearQuote: assign({ quote: null }),
     clearError: assign({ error: null }),
-    setOutcome: assign({
-      outcome: (_, value: OutputFrom<typeof swapIntentMachine>) => value,
+    setIntentCreationResult: assign({
+      intentCreationResult: (_, value: OutputFrom<typeof swapIntentMachine>) =>
+        value,
     }),
-    clearOutcome: assign({ outcome: null }),
+    clearIntentCreationResult: assign({ intentCreationResult: null }),
     emitSwapFinish: emit(
       ({ context }, intentOutcome: OutputFrom<typeof swapIntentMachine>) => ({
         type: "swap_finished" as const,
@@ -167,7 +168,6 @@ export const swapUIMachine = setup({
   context: ({ input }) => ({
     error: null,
     quote: null,
-    outcome: null,
     formValues: {
       tokenIn: input.tokenIn,
       tokenOut: input.tokenOut,
@@ -176,6 +176,8 @@ export const swapUIMachine = setup({
     parsedFormValues: {
       amountIn: 0n,
     },
+    intentCreationResult: null,
+    intentRefs: [],
   }),
 
   states: {
@@ -184,7 +186,7 @@ export const swapUIMachine = setup({
         submit: {
           target: "submitting",
           guard: "isQuoteRelevant",
-          actions: "clearOutcome",
+          actions: "clearIntentCreationResult",
         },
         input: {
           target: ".validating",
@@ -307,7 +309,24 @@ export const swapUIMachine = setup({
         onDone: {
           target: "editing.validating",
           actions: [
-            { type: "setOutcome", params: ({ event }) => event.output },
+            assign({
+              intentRefs: ({ context, spawn, event }) => {
+                if (event.output.status !== "INTENT_PUBLISHED")
+                  return context.intentRefs
+
+                // @ts-expect-error spawn yells at my machine for no reason
+                const intentRef = spawn(intentStatusMachine, {
+                  id: `intent-${event.output.intentHash}`,
+                  input: { intentHash: event.output.intentHash },
+                }) as ActorRefFrom<typeof intentStatusMachine>
+
+                return [...context.intentRefs, intentRef]
+              },
+            }),
+            {
+              type: "setIntentCreationResult",
+              params: ({ event }) => event.output,
+            },
             { type: "emitSwapFinish", params: ({ event }) => event.output },
           ],
         },
