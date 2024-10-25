@@ -1,16 +1,45 @@
-import { assign, fromPromise, setup } from "xstate"
+import {
+  type ActorRef,
+  type Snapshot,
+  assign,
+  fromPromise,
+  sendTo,
+  setup,
+} from "xstate"
 import {
   type IntentSettlementResult,
   waitForIntentSettlement,
 } from "../../services/intentService"
+import type { BaseTokenInfo, UnifiedTokenInfo } from "../../types/base"
+import type { AggregatedQuote } from "./queryQuoteMachine"
+
+type ChildEvent = {
+  type: "INTENT_SETTLED"
+  data: {
+    intentHash: string
+    txHash: string
+    tokenIn: BaseTokenInfo | UnifiedTokenInfo
+    tokenOut: BaseTokenInfo | UnifiedTokenInfo
+    quote: AggregatedQuote
+  }
+}
+type ParentActor = ActorRef<Snapshot<unknown>, ChildEvent>
 
 export const intentStatusMachine = setup({
   types: {
     input: {} as {
+      parentRef: ParentActor
       intentHash: string
+      tokenIn: BaseTokenInfo | UnifiedTokenInfo
+      tokenOut: BaseTokenInfo | UnifiedTokenInfo
+      quote: AggregatedQuote
     },
     context: {} as {
+      parentRef: ParentActor
       intentHash: string
+      tokenIn: BaseTokenInfo | UnifiedTokenInfo
+      tokenOut: BaseTokenInfo | UnifiedTokenInfo
+      quote: AggregatedQuote
       txHash: string | null
     },
   },
@@ -45,7 +74,11 @@ export const intentStatusMachine = setup({
   initial: "pending",
   context: ({ input }) => {
     return {
+      parentRef: input.parentRef,
       intentHash: input.intentHash,
+      tokenIn: input.tokenIn,
+      tokenOut: input.tokenOut,
+      quote: input.quote,
       txHash: null,
     }
   },
@@ -85,6 +118,23 @@ export const intentStatusMachine = setup({
     },
     success: {
       type: "final",
+
+      entry: sendTo(
+        ({ context }) => context.parentRef,
+        ({ context }) => {
+          assert(context.txHash != null, "txHash is null")
+          return {
+            type: "INTENT_SETTLED" as const,
+            data: {
+              intentHash: context.intentHash,
+              txHash: context.txHash,
+              tokenIn: context.tokenIn,
+              tokenOut: context.tokenOut,
+              quote: context.quote,
+            },
+          }
+        }
+      ),
     },
     not_valid: {
       type: "final",
@@ -96,3 +146,9 @@ export const intentStatusMachine = setup({
     },
   },
 })
+
+function assert(condition: unknown, msg?: string): asserts condition {
+  if (!condition) {
+    throw new Error(msg)
+  }
+}

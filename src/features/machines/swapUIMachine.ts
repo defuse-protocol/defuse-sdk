@@ -11,10 +11,11 @@ import {
   setup,
 } from "xstate"
 import type { SwappableToken } from "../../types"
+import type { BaseTokenInfo, UnifiedTokenInfo } from "../../types/base"
 import type { Transaction } from "../../types/deposit"
 import { isBaseToken } from "../../utils"
 import { intentStatusMachine } from "./intentStatusMachine"
-import type { queryQuoteMachine } from "./queryQuoteMachine"
+import type { AggregatedQuote, queryQuoteMachine } from "./queryQuoteMachine"
 import type { swapIntentMachine } from "./swapIntentMachine"
 
 export type Context = {
@@ -30,6 +31,17 @@ export type Context = {
   }
   intentCreationResult: OutputFrom<typeof swapIntentMachine> | null
   intentRefs: ActorRefFrom<typeof intentStatusMachine>[]
+}
+
+type PassthroughEvent = {
+  type: "INTENT_SETTLED"
+  data: {
+    intentHash: string
+    txHash: string
+    tokenIn: BaseTokenInfo | UnifiedTokenInfo
+    tokenOut: BaseTokenInfo | UnifiedTokenInfo
+    quote: AggregatedQuote
+  }
 }
 
 export const swapUIMachine = setup({
@@ -57,18 +69,10 @@ export const swapUIMachine = setup({
               tx: Transaction
             ) => Promise<{ txHash: string } | null>
           }
-        },
+        }
+      | PassthroughEvent,
 
-    emitted: {} as {
-      type: "swap_finished"
-      data: {
-        intentOutcome: OutputFrom<typeof swapIntentMachine>
-        tokenIn: SwappableToken
-        tokenOut: SwappableToken
-        amountIn: bigint
-        amountOut: bigint
-      }
-    },
+    emitted: {} as PassthroughEvent,
   },
   actors: {
     formValidation: fromPromise(async (): Promise<boolean> => {
@@ -88,6 +92,7 @@ export const swapUIMachine = setup({
         throw new Error("not implemented")
       }
     ),
+    intentStatus: intentStatusMachine,
   },
   actions: {
     setFormValues: assign({
@@ -136,18 +141,7 @@ export const swapUIMachine = setup({
         value,
     }),
     clearIntentCreationResult: assign({ intentCreationResult: null }),
-    emitSwapFinish: emit(
-      ({ context }, intentOutcome: OutputFrom<typeof swapIntentMachine>) => ({
-        type: "swap_finished" as const,
-        data: {
-          intentOutcome,
-          tokenIn: context.formValues.tokenIn,
-          tokenOut: context.formValues.tokenOut,
-          amountIn: context.parsedFormValues.amountIn,
-          amountOut: BigInt(context.quote?.totalAmountOut ?? "0"),
-        },
-      })
-    ),
+    passthroughEvent: emit((_, event: PassthroughEvent) => event),
   },
   delays: {
     quotePollingInterval: 500,
@@ -179,6 +173,15 @@ export const swapUIMachine = setup({
     intentCreationResult: null,
     intentRefs: [],
   }),
+
+  on: {
+    INTENT_SETTLED: {
+      actions: {
+        type: "passthroughEvent",
+        params: ({ event }) => event,
+      },
+    },
+  },
 
   states: {
     editing: {
@@ -310,15 +313,22 @@ export const swapUIMachine = setup({
           target: "editing.validating",
           actions: [
             assign({
-              intentRefs: ({ context, spawn, event }) => {
+              intentRefs: ({ context, spawn, event, self }) => {
                 if (event.output.status !== "INTENT_PUBLISHED")
                   return context.intentRefs
 
-                // @ts-expect-error spawn yells at my machine for no reason
-                const intentRef = spawn(intentStatusMachine, {
+                assert(context.quote != null, "quote is null")
+
+                const intentRef = spawn("intentStatus", {
                   id: `intent-${event.output.intentHash}`,
-                  input: { intentHash: event.output.intentHash },
-                }) as ActorRefFrom<typeof intentStatusMachine>
+                  input: {
+                    parentRef: self,
+                    intentHash: event.output.intentHash,
+                    tokenIn: context.formValues.tokenIn,
+                    tokenOut: context.formValues.tokenOut,
+                    quote: context.quote,
+                  },
+                })
 
                 return [...context.intentRefs, intentRef]
               },
@@ -327,7 +337,6 @@ export const swapUIMachine = setup({
               type: "setIntentCreationResult",
               params: ({ event }) => event.output,
             },
-            { type: "emitSwapFinish", params: ({ event }) => event.output },
           ],
         },
 
@@ -343,3 +352,9 @@ export const swapUIMachine = setup({
 
   initial: "editing",
 })
+
+function assert(condition: unknown, msg?: string): asserts condition {
+  if (!condition) {
+    throw new Error(msg)
+  }
+}
