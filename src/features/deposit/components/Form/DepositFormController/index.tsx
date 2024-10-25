@@ -1,10 +1,10 @@
-import type { PropsWithChildren } from "react"
+import { type PropsWithChildren, useEffect } from "react"
 import type { SwappableToken } from "src/types"
-import { BlockchainEnum } from "../../../../types/deposit"
+import { BlockchainEnum } from "../../../../../types/deposit"
 import {
   DepositFormRouter,
   type DepositFormRouterValues,
-} from "../Form/DepositFormRouter"
+} from "../DepositFormRouter"
 import styles from "./styles.module.css"
 
 export enum DepositFormType {

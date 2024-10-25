@@ -4,6 +4,8 @@ import type { BlockchainEnum } from "../../types/deposit"
 export type Context = {
   amount: string | null
   asset: string | null
+  accountId: string | null
+  txHash: string | null
   error: Error | null
   outcome: unknown | null
 }
@@ -14,16 +16,10 @@ type Events = {
   asset: string
   accountId: string
 }
-// Add other event types here if needed
 
 type Input = {
   amount: string
   asset: string
-}
-
-// biome-ignore lint/complexity/noBannedTypes: It is temporary type
-export type Output = {
-  // todo: Output is expected to include intent status, intent entity and other relevant data
 }
 
 export const depositNearMachine = setup({
@@ -34,6 +30,15 @@ export const depositNearMachine = setup({
   actors: {
     signAndSendTransactions: fromPromise(
       async ({ input }: { input: Input }): Promise<string> => {
+        throw new Error("not implemented")
+      }
+    ),
+    validateTransaction: fromPromise(
+      async ({
+        input,
+      }: {
+        input: { txHash: string; accountId: string; amount: string }
+      }): Promise<boolean> => {
         throw new Error("not implemented")
       }
     ),
@@ -52,12 +57,14 @@ export const depositNearMachine = setup({
     },
   },
 }).createMachine({
-  /** @xstate-layout N4IgpgJg5mDOIC5QTABwPawJYBcC0AdmAIYBOAdFhADZgDEAkgHIAKAqgCoDaADALqJQGbDizoCgkAA9EAVgDss8gGZ5AFgAcsjQCZ5ANgCcPAIyGANCACeiPDrWHya+TsMm1PfRv3LD6gL7+lijCuIQkFNhQBFgEUHQQ4mCUBABu6ADWySGYYURk5FExcQix6QDGxKLivHy1kqHVEkjSiPo6SvpePLLGvj6yljYIssrkhoZaGsoahqPTsrKBwWi5+PmRWNGx8WCkpOgUqNRVAGaHALbkOSLhBUU7pWnolU219S2NYs2gMgjKRnGPF8Jn0Lg0Wh0JkG1jkYwmUxmcxmykWyxANzyEXIqT2WFOVh2dA+QjW30kf0MyjU5B0qnsCgBphMyiGiChGlpVO8zjUdJ6Jnk6Mx62xuNI+MJcWJJgEnzJ4gpiEMan05BMeg08m1PB0uvkGjZ-xMJi5EJMPEMOm8GlVSyCGNWtw25AARgdiBBKrBRNLEkQUukstcnViCu70J7vb6oE8KlVvu9+A0FT9WggNdTyDw1KjlMoWRpQdSjSCVHMdD4LaC1KN9IEHQR0Ch4C0RXdSCmROSWn9lFCgSCwdbIdCjXh82q-K5QRrawD3MLQ6KClRaF3cD3fogZqaIR4jMoc6Y6fJx-ZTdpVYp9KYAVal40O4UtsUoBumkqEJodORtf2qS6Bxc30ccTUcaE9TMPQLWmBxHzWZ9xUlHYPy3dMjAg-tZghAttQNI0oTVHMZgZBxencDQEOdbEAEFXUOHBIDQxVe0QPk1XBE1bwtVV9BhYYoRpeRuQ8VR73sZRqLDCgIyjYgfVQ+Vu1Y7cMzMNULQmHQoRNKDWVhDMHC5GZZFvHgcNw6SVwoJh0BwAACAAxdAAFcCAgBzDgchg0mIagqBYtNKRMTkuiMRYDDBES1CNNQTXIdpQo6K0or0IUHXbF0AGF0AuY4wCYiAgq-DVb1pGYDFCsxtHkEwjVkTRyEWRqixE0Z1DUBt-CAA */
+  /** @xstate-layout N4IgpgJg5mDOIC5QTABwPawJYBcC0AdmAIYBOAdFhADZgDEAkgHIAKAqgCoDaADALqJQGbDizoCgkAA9EAVgDss8gGZ5AFgAcsjQCZ5ANgCcPAIyGANCACeiPDrWHya+TsMm1PfRv3LD6gL7+lijCuIQkFNhQBFgEUHQQ4mCUBABu6ADWySGYYURk5FExcQix6QDGxKLivHy1kqHVEkjSiPo6POSu3g728sbKapY2CDpKOh0aJhoaavam8gaBwWi5+PmRWNGx8WCkpOgUqNRVAGaHALbkOSLhBUU7pWnolU219S2NYs2gMgjKRnIAw0hg0Bjcnn0w0QYy6k2ms3mJkWyxANzyEXIqT2WFOVh2CSSKXSWWuq1uGyxOLxjzKLyq33e-Aaa2+kj+Jh49nIPl0hgBhjU+k00NG3h5GkGRimslMhlkqPR60x2NIuPxcToewORxOOHOpCuSruFFV6tpz1ejP4HyErPE7MQBn0XUGsjGWh4c2UGlFOnFXkGHXd02R+gVQTR5IxBQARgdiBBKrBRJrEkRiZlstHlXGE0niCmLRUGTUbczPvafq0EO4FED+fLBlpZGZRbLOuovPpOVyeMoAYFIwR0Ch4C1jRsWSI2S0-soePInDxDMLtPojP0htZbAOXX5XDofK5lCYN2pFTmTZQaGBp7hZ79EMpZEoPKu1OvN4LRXYfTy1F8IVwzUTkTAjFZGmvB44nvJpHQQTQdHIRZlBPc9BQBX8TDMchwI6Mw9E5SUHEvKDKTNGlYMrGcHTnRBJU6bx5WlV9BX7UUzzULohRBNR+JfMCL0jSdMQAQVjQ4cEgODHxrOYXRcKYz1ML0N1kP13BQ-lZn7eQBXsZQyLWa943QRNk1TKBZLop9azmTpPH7IxDH5AEdD9dQUO0LR+LcT8pmMilMSYdAcAAAgAMXQABXAgIHCw5woYNJiGoKgbOrP4DE6QZFklDQvQUVRRW9cgQ1kUE-FXHhJXkIKYwoABhdALmOMBpIgTKEPcWY8JBVxFDGBdw1FcNlHIJyJjGZx5RmId-CAA */
   id: "deposit-near",
   initial: "idle",
   context: {
     amount: null,
     asset: null,
+    accountId: null,
+    txHash: null,
     error: null,
     outcome: null,
   },
@@ -69,6 +76,7 @@ export const depositNearMachine = setup({
           actions: assign({
             amount: ({ event }) => event.amount,
             asset: ({ event }) => event.asset,
+            accountId: ({ event }) => event.accountId,
           }),
         },
       },
@@ -79,13 +87,13 @@ export const depositNearMachine = setup({
         input: ({ context }) => ({
           amount: context.amount || "",
           asset: context.asset || "",
+          accountId: context.accountId || "",
         }),
         onDone: {
           target: "verifying",
-          actions: assign((context, event) => ({
-            ...context,
-            outcome: null,
-          })),
+          actions: assign({
+            txHash: ({ event }) => event.output,
+          }),
         },
         onError: {
           target: "Aborted",
@@ -98,17 +106,24 @@ export const depositNearMachine = setup({
       },
     },
     verifying: {
-      always: [
-        {
+      invoke: {
+        id: "deposit-near.verifying:invocation[0]",
+        input: ({ context }) => ({
+          txHash: context.txHash || "",
+          accountId: context.accountId || "",
+          amount: context.amount || "",
+        }),
+        onDone: {
           target: "broadcasting",
           guard: {
             type: "isDepositValid",
           },
         },
-        {
+        onError: {
           target: "Not Found or Invalid",
         },
-      ],
+        src: "validateTransaction",
+      },
     },
     Aborted: {
       type: "final",

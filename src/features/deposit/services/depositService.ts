@@ -1,3 +1,4 @@
+import { getNearTxSuccessValue } from "src/features/machines/getTxMachine"
 import {
   type BlockchainEnum,
   type Transaction,
@@ -5,17 +6,9 @@ import {
 } from "../../../types/deposit"
 
 export const FT_MAX_GAS_TRANSACTION = `300${"0".repeat(12)}`
+export const FT_DEPOSIT_GAS = `50${"0".repeat(12)}`
 
-export interface DepositFacade {
-  createDepositNearTransaction: (
-    accountId: string,
-    receiverId: string,
-    assetId: string,
-    amount: string
-  ) => unknown
-}
-
-export class DepositService implements DepositFacade {
+export class DepositService {
   /**
    * Creates a deposit transaction for NEAR.
    *
@@ -61,16 +54,35 @@ export class DepositService implements DepositFacade {
     ]
   }
 
+  createNativeDepositNearTransaction(amount: string): Transaction[] {
+    return [
+      {
+        receiverId: "wrap.near",
+        actions: [
+          {
+            type: "FunctionCall",
+            params: {
+              methodName: TransactionMethod.NEAR_DEPOSIT,
+              args: {},
+              gas: FT_DEPOSIT_GAS,
+              deposit: amount,
+            },
+          },
+        ],
+      },
+    ]
+  }
+
   /**
    * Generate a deposit address for the specified blockchain and asset through the POA bridge API call.
    *
    * @param blockchain - The blockchain for which to generate the address
-   * @param assetAddress - The address of the asset being deposited
+   * @param accountId - The address of the asset being deposited
    * @returns A Promise that resolves to the generated deposit address
    */
   async generateDepositAddress(
     blockchain: BlockchainEnum,
-    assetAddress: string
+    accountId: string
   ): Promise<string> {
     try {
       // TODO: Replace with actual API call
@@ -81,5 +93,31 @@ export class DepositService implements DepositFacade {
       console.error("Error generating deposit address:", error)
       throw error
     }
+  }
+
+  async checkNearTransactionValidity(
+    txHash: string,
+    accountId: string,
+    amount: string
+  ): Promise<boolean> {
+    if (!txHash) {
+      throw new Error("Transaction hash is required")
+    }
+
+    const splitTxHashesToTxHash = txHash.includes(",")
+      ? txHash.split(",")[1]
+      : txHash
+
+    if (!splitTxHashesToTxHash) {
+      throw new Error("Invalid transaction hash format")
+    }
+
+    const successValue = await getNearTxSuccessValue({
+      txHash: splitTxHashesToTxHash,
+      senderAccountId: accountId,
+    })
+
+    // Check if input amount is equal to the success value
+    return successValue === BigInt(amount)
   }
 }

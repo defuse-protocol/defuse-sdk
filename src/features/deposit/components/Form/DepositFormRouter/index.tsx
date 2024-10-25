@@ -15,8 +15,8 @@ import { Form } from "../../../../../components/Form"
 import { Select } from "../../../../../components/Select/Select"
 import { useModalController } from "../../../../../hooks"
 import { ModalType } from "../../../../../stores/modalStore"
-import type {
-  BaseAssetInfo,
+import {
+  type BaseAssetInfo,
   BlockchainEnum,
 } from "../../../../../types/deposit"
 import styles from "./styles.module.css"
@@ -114,7 +114,7 @@ export const DepositFormRouter = ({
           name="blockchain"
           control={control}
           render={({ field }) => (
-            <Select<BlockchainEnum, DepositFormRouterValues>
+            <Select<string, DepositFormRouterValues>
               options={getBlockchainsOptions()}
               placeholder={{
                 label: "Select network",
@@ -172,17 +172,15 @@ function filterGroupedTokens(
   token: SwappableToken,
   blockchain: BlockchainEnum
 ) {
-  if (!blockchain) return true
   if (isBaseToken(token)) {
-    return token.blockchain.toLowerCase() === blockchain.toLowerCase()
+    return token.chainName.toLowerCase() === blockchain.toLowerCase()
   }
   return token.groupedTokens.find(
-    (token) => token.blockchain.toLowerCase() === blockchain.toLowerCase()
+    (token) => token.chainName.toLowerCase() === blockchain.toLowerCase()
   )
 }
 
 function getAssetAddress(token: SwappableToken, blockchain: BlockchainEnum) {
-  assert(blockchain, "Blockchain is required")
   const address =
     "address" in token
       ? token.address
@@ -193,14 +191,37 @@ function getAssetAddress(token: SwappableToken, blockchain: BlockchainEnum) {
   return address
 }
 
-function getBlockchainsOptions() {
-  return Object.fromEntries(
-    Object.entries(settings.blockchains).map(([key, value]) => [
-      key,
-      {
-        label: value.name,
-        icon: <NetworkIcon chainIcon={value.icon} chainName={value.name} />,
-      },
-    ])
-  ) as { [K in BlockchainEnum]: { label: string; icon: React.ReactNode } }
+function getBlockchainsOptions(): Record<
+  string,
+  { label: string; icon: React.ReactNode }
+> {
+  return {
+    near: {
+      label: BlockchainEnum.NEAR,
+      icon: (
+        <NetworkIcon
+          chainIcon="/static/icons/network/near.svg"
+          chainName={BlockchainEnum.NEAR}
+        />
+      ),
+    },
+    ethereum: {
+      label: BlockchainEnum.ETHEREUM,
+      icon: (
+        <NetworkIcon
+          chainIcon="/static/icons/network/ethereum.svg"
+          chainName={BlockchainEnum.ETHEREUM}
+        />
+      ),
+    },
+    base: {
+      label: BlockchainEnum.BASE,
+      icon: (
+        <NetworkIcon
+          chainIcon="/static/icons/network/base.svg"
+          chainName={BlockchainEnum.BASE}
+        />
+      ),
+    },
+  }
 }

@@ -1,5 +1,6 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { FormProvider, useForm } from "react-hook-form"
+import { useUser } from "src/providers/UserContext"
 import { DepositWidgetProvider } from "../../../providers"
 import type {
   BaseAssetInfo,
@@ -11,7 +12,7 @@ import {
   DepositFormController,
   type DepositFormOnSelectValues,
   DepositFormType,
-} from "./DepositFormController"
+} from "./Form/DepositFormController"
 import { DepositFormGenerateAddress } from "./Form/DepositFormGenerateAddress"
 import {
   DepositFormNear,
@@ -32,6 +33,7 @@ export const DepositWidget = ({
 
   return (
     <DepositWidgetProvider>
+      {accountId && <UserAddressUpdater accountId={accountId} />}
       <DepositFormController
         tokenList={tokenList}
         formType={formType}
@@ -66,4 +68,12 @@ export const DepositWidget = ({
       </DepositFormController>
     </DepositWidgetProvider>
   )
+}
+
+const UserAddressUpdater = ({ accountId }: { accountId: string }) => {
+  const { setUserAddress } = useUser()
+  useEffect(() => {
+    setUserAddress(accountId)
+  }, [accountId, setUserAddress])
+  return null
 }

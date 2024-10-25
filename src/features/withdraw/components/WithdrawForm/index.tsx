@@ -11,7 +11,6 @@ import { useTokensStore } from "src/providers/TokensStoreProvider"
 import { ModalType } from "src/stores/modalStore"
 import type { SwappableToken } from "src/types"
 import type { BaseTokenInfo } from "src/types/base"
-import type { BlockchainEnum } from "src/types/deposit"
 import type { WithdrawWidgetProps } from "src/types/withdraw"
 import { FieldComboInput } from "../../../../components/Form/FieldComboInput"
 import styles from "./styles.module.css"
@@ -21,7 +20,7 @@ export type WithdrawFormNearValues = {
   amountIn: string
   accountId: string
   recipient: string
-  blockchain: BlockchainEnum
+  blockchain: string
 }
 
 export const WithdrawForm = ({
@@ -83,26 +82,8 @@ export const WithdrawForm = ({
               name="blockchain"
               control={control}
               render={({ field }) => (
-                <Select<BlockchainEnum, WithdrawFormNearValues>
-                  options={{
-                    near: {
-                      label: "Near",
-                      icon: <NetworkIcon chainIcon="near" chainName="Near" />,
-                    },
-                    ethereum: {
-                      label: "Ethereum",
-                      icon: (
-                        <NetworkIcon
-                          chainIcon="ethereum"
-                          chainName="Ethereum"
-                        />
-                      ),
-                    },
-                    base: {
-                      label: "Base",
-                      icon: <NetworkIcon chainIcon="base" chainName="Base" />,
-                    },
-                  }}
+                <Select<string, WithdrawFormNearValues>
+                  options={getBlockchains()}
                   placeholder={{
                     label: "Select network",
                     icon: <EmptyIcon />,
@@ -182,4 +163,36 @@ export const WithdrawForm = ({
       </div>
     </div>
   )
+}
+
+function getBlockchains() {
+  return {
+    near: {
+      label: "Near",
+      icon: (
+        <NetworkIcon
+          chainIcon="/static/icons/network/near_dark.svg"
+          chainName="Near"
+        />
+      ),
+    },
+    ethereum: {
+      label: "Ethereum",
+      icon: (
+        <NetworkIcon
+          chainIcon="/static/icons/network/ethereum.svg"
+          chainName="Ethereum"
+        />
+      ),
+    },
+    base: {
+      label: "Base",
+      icon: (
+        <NetworkIcon
+          chainIcon="/static/icons/network/base.svg"
+          chainName="Base"
+        />
+      ),
+    },
+  }
 }

@@ -7,6 +7,7 @@ import { balanceToCurrency, balanceToDecimal } from "../../utils/balanceTo"
 import type { SelectItemToken } from "../Modal/ModalSelectAssets"
 
 import { isBaseToken } from "../../utils"
+import { AssetBalance } from "./AssetBalance"
 import { AssetComboIcon } from "./AssetComboIcon"
 
 type Props<T> = {
@@ -90,14 +91,7 @@ export const AssetList = <T extends Token>({
                 {token.name}
               </Text>
               <Text as="span" size="2" weight="medium">
-                {balance
-                  ? Number(balanceToDecimal(balance.balance, token.decimals)) <
-                    0.00001
-                    ? "< 0.00001"
-                    : Number(
-                        balanceToDecimal(balance.balance, token.decimals)
-                      ).toFixed(7)
-                  : null}
+                <AssetBalance asset={token} />
               </Text>
             </div>
             <div className="flex justify-between items-center text-gray-600 dark:text-gray-500">
