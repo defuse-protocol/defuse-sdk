@@ -1,6 +1,7 @@
 import { useSelector } from "@xstate/react"
-import { useContext, useEffect } from "react"
+import { Fragment, useContext, useEffect } from "react"
 import { useFormContext } from "react-hook-form"
+import { formatUnits } from "viem"
 import type { ActorRefFrom } from "xstate"
 import { ButtonCustom, ButtonSwitch } from "../../../components/Button"
 import { Form } from "../../../components/Form"
@@ -133,8 +134,13 @@ function Intents({
 }: { intentRefs: ActorRefFrom<typeof intentStatusMachine>[] }) {
   return (
     <div>
-      {intentRefs.map((intentRef) => {
-        return <Intent key={intentRef.id} intentRef={intentRef} />
+      {intentRefs.map((intentRef, i, list) => {
+        return (
+          <Fragment key={intentRef.id}>
+            <Intent intentRef={intentRef} />
+            {i < list.length - 1 && <hr />}
+          </Fragment>
+        )
       })}
     </div>
   )
@@ -145,26 +151,49 @@ function Intent({
 }: { intentRef: ActorRefFrom<typeof intentStatusMachine> }) {
   const snapshot = useSelector(intentRef, (state) => state)
 
+  const amountIn = formatUnits(
+    snapshot.context.quote.totalAmountIn,
+    snapshot.context.tokenIn.decimals
+  )
+  const amountOut = formatUnits(
+    snapshot.context.quote.totalAmountOut,
+    snapshot.context.tokenOut.decimals
+  )
+
+  const swapInfo = `${amountIn} ${snapshot.context.tokenIn.symbol} -> ${amountOut} ${snapshot.context.tokenOut.symbol}`
+
   const value = snapshot.value
   switch (value) {
     case "pending":
       return (
         <div>
+          {swapInfo} 💤
+          <br />
           Checking intent status... intentHash: {snapshot.context.intentHash}
         </div>
       )
     case "checking":
       return (
         <div>
+          {swapInfo} 💤
+          <br />
           Checking intent status... intentHash: {snapshot.context.intentHash}{" "}
           tx: {snapshot.context.txHash}
         </div>
       )
     case "success":
-      return <div>Intent settled! tx: {snapshot.context.txHash}</div>
+      return (
+        <div>
+          {swapInfo} ✅
+          <br />
+          Intent settled! tx: {snapshot.context.txHash}
+        </div>
+      )
     case "not_valid":
       return (
         <div>
+          {swapInfo} ❌
+          <br />
           Intent not valid! tx: {snapshot.context.txHash} intent:{" "}
           {snapshot.context.intentHash}
         </div>
@@ -172,6 +201,8 @@ function Intent({
     case "error":
       return (
         <div>
+          {swapInfo} 😓
+          <br />
           Error checking intent status! tx: {snapshot.context.txHash} intent:{" "}
           {snapshot.context.intentHash}
           <button
