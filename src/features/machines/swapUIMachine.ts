@@ -15,12 +15,15 @@ import type { BaseTokenInfo, UnifiedTokenInfo } from "../../types/base"
 import type { Transaction } from "../../types/deposit"
 import { isBaseToken } from "../../utils"
 import { intentStatusMachine } from "./intentStatusMachine"
-import type { AggregatedQuote, queryQuoteMachine } from "./queryQuoteMachine"
+import type {
+  AggregatedQuote,
+  AggregatedQuoteParams,
+} from "./queryQuoteMachine"
 import type { swapIntentMachine } from "./swapIntentMachine"
 
 export type Context = {
   error: Error | null
-  quote: OutputFrom<typeof queryQuoteMachine> | null
+  quote: AggregatedQuote | null
   formValues: {
     tokenIn: SwappableToken
     tokenOut: SwappableToken
@@ -79,9 +82,7 @@ export const swapUIMachine = setup({
       throw new Error("not implemented")
     }),
     queryQuote: fromPromise(
-      async (_: {
-        input: InputFrom<typeof queryQuoteMachine>
-      }): Promise<OutputFrom<typeof queryQuoteMachine>> => {
+      async (_: { input: AggregatedQuoteParams }): Promise<AggregatedQuote> => {
         throw new Error("not implemented")
       }
     ),
@@ -132,7 +133,7 @@ export const swapUIMachine = setup({
       throw new Error("not implemented")
     },
     setQuote: assign({
-      quote: (_, value: OutputFrom<typeof queryQuoteMachine>) => value,
+      quote: (_, value: AggregatedQuote) => value,
     }),
     clearQuote: assign({ quote: null }),
     clearError: assign({ error: null }),
@@ -213,7 +214,7 @@ export const swapUIMachine = setup({
             id: "quoteQuerier",
             src: "queryQuote",
 
-            input: ({ context }): InputFrom<typeof queryQuoteMachine> => ({
+            input: ({ context }): AggregatedQuoteParams => ({
               tokensIn: isBaseToken(context.formValues.tokenIn)
                 ? [context.formValues.tokenIn.defuseAssetId]
                 : context.formValues.tokenIn.groupedTokens.map(
