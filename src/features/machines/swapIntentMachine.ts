@@ -1,13 +1,5 @@
-import { quoteMachine } from "@defuse-protocol/swap-facade"
-import type { SolverQuote } from "@defuse-protocol/swap-facade/dist/interfaces/swap-machine.in.interface"
 import type { providers } from "near-api-js"
-import {
-  type ActorRefFrom,
-  type OutputFrom,
-  assign,
-  fromPromise,
-  setup,
-} from "xstate"
+import { type OutputFrom, assign, fromPromise, setup } from "xstate"
 import { settings } from "../../config/settings"
 import {
   doesSignatureMatchUserAddress,
@@ -31,7 +23,6 @@ import {
 import type { queryQuoteMachine } from "./queryQuoteMachine"
 
 type Context = {
-  quoterRef: null | ActorRefFrom<typeof quoteMachine>
   userAddress: string
   nearClient: providers.Provider
   sendNearTransaction: SendNearTransaction
@@ -141,19 +132,6 @@ export const swapIntentMachine = setup({
     setIntentHash: assign({
       intentHash: (_, intentHash: string) => intentHash,
     }),
-    startBackgroundQuoter: assign({
-      // @ts-expect-error For some reason `spawn` creates object which type mismatch
-      quoterRef: ({ spawn }) =>
-        // @ts-expect-error
-        spawn(
-          quoteMachine.provide({
-            actors: {
-              fetchQuotes: fromPromise(async (): Promise<SolverQuote[]> => []),
-            },
-          }),
-          { id: "quoter", input: {} }
-        ),
-    }),
   },
   actors: {
     publicKeyVerifier: publicKeyVerifierMachine,
@@ -206,7 +184,6 @@ export const swapIntentMachine = setup({
   /** @xstate-layout N4IgpgJg5mDOIC5SwO4EMAOBaAlgOwBcxCA6HCAGzAGIBtABgF1FQMB7WHAnNvFkAB6IAjAGYAHCXoAmesIAsAVmniAnADZxa+QBoQAT0SjVk9dPn1Ri6wHZ689eoC+Tvaky5CxAiQDKOKDx8KGoIXjAyPAA3NgBrCM5AgFk4WDQYBmYkEHZObl5+IQRhdRJhRRL5eVF5cRtRUXUbPUMEdSqym0V2usULRVEXN3RsfCJSf0Dg0PDImPiSRLwU2DSM4SzWDi4ePmyirFFhSQdhaUbVCWNL3QNEMxPpdQ16VRkbdVFpIZB3Ua8JgEgngQmAAE5gthgkgYChoAgAMyhAFtFkCVmswJl+LkdgV9ogsE96CQtJ9yephG9hMIWogqqoSIpVPJVBout0VGIfn9POMfAA1cE4BH6YIAAgACgBXABGFBwAGNxQBpMD6KVguDERU0MJ4CL4eYJEZ87wkIVgkVikFSuUK5VqjWSrWwHVgBBGtiK+G7TLY7K4-J7UBFGokUT0ZnPTQ2FnKWl3BAs+SktSNeQqDTSFQ801jc2W60SmXypWq9Wa7V4XUzA1zOImjwF0hF0Ul+3lp1Vt01j1en3B-0bHHbYOFQlfRntFTiax1GxU26tNk2EiU5lz1n1Kk2PPNgGC4Xt22lh0V52u93UcGQ6Gw+FIsGo3kto9Wk9QO1lx2Vl3V3VPWib1fV4f0mFHPJdgnBAiTeEhpDedpM1UbpVEQukEDjaQSBscQlBUYxrk+fd-n5EgACFITQCAfVgbhbQASUPG8IShGE4URFFFnzQ9KOo2i0HoiVmP5ICYkHP0mADLYoPxUNCS5Eg2Q0OoGnaVQPlETCaQ0UlHFZOR6HqTdSLNVtjxtL9RO8OgIMDMdoIJBBxFKGxzEUPCmjOeh6CaHThHoSQunEWQlA+aQPj3Vxfl48i2ys8UbMIOgRwcuSQ0EIxzCZVzPKsY53m0pNArsBD8LeD4WVQlkzLffi2BouiGOslj9UNYCFlfPiqMawThKYw9xJAodpPs2S8UyopF2U4x5DsdRjOkMQZB0xocJWioajOKxIpcGK8DYCA4H4br+UgyaYMOGw1xnLR5xupcdPQhDNEi8QGnscpapis7zXIKgLvHZyFBJbRt0Q9CqS+TCvlKTM-PMBwWXeuq+MmYEoCBpyFIQRCSHkQKxDUxcuhsapMNqHCGjqJQFBzRDzDR+LLI7H8Lx7d1sfkrKEHm9dwrqOc1Dw4RmiTcQqQjMWukitC5uZ81eqaoSWqSw9uamxBFEkYzabMFRqlqcQdOW4QmRpRaZEaSNmUViyP0S5KCE1mDAsUKR3MuRCPqqdQdZ0uRGV93y40UOQc2cX64vNABhNhkVhMAiAgV3nNQpljJZcRfNeAiTZK5RU2WuWnhCuNBmjg9yIAcWIYVlQAUTYsE09xol2kzudfO+6RmXF1pyhykvZaaHWK-2pwgA */
   context: ({ input }) => {
     return {
-      quoterRef: null,
       messageToSign: null,
       signature: null,
       error: null,
@@ -218,8 +195,6 @@ export const swapIntentMachine = setup({
   id: "swap-intent",
 
   initial: "idle",
-
-  entry: ["startBackgroundQuoter"],
 
   output: ({ context }): Output => {
     if (context.intentHash != null) {
