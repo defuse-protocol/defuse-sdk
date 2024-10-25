@@ -1,5 +1,5 @@
 import type { providers } from "near-api-js"
-import { type OutputFrom, assign, fromPromise, setup } from "xstate"
+import { assign, fromPromise, setup } from "xstate"
 import { settings } from "../../config/settings"
 import {
   doesSignatureMatchUserAddress,
@@ -20,13 +20,17 @@ import {
   type SendNearTransaction,
   publicKeyVerifierMachine,
 } from "./publicKeyVerifierMachine"
-import type { queryQuoteMachine } from "./queryQuoteMachine"
+import type {
+  AggregatedQuote,
+  AggregatedQuoteParams,
+} from "./queryQuoteMachine"
 
 type Context = {
   userAddress: string
   nearClient: providers.Provider
   sendNearTransaction: SendNearTransaction
-  quote: OutputFrom<typeof queryQuoteMachine>
+  lastSeenQuote: AggregatedQuote
+  quote: AggregatedQuote
   tokenIn: SwappableToken
   tokenOut: SwappableToken
   amountIn: bigint
@@ -62,7 +66,7 @@ type Input = {
   userAddress: string
   nearClient: providers.Provider
   sendNearTransaction: SendNearTransaction
-  quote: OutputFrom<typeof queryQuoteMachine>
+  quote: AggregatedQuote
   tokenIn: SwappableToken
   tokenOut: SwappableToken
   amountIn: bigint
@@ -92,11 +96,20 @@ type Output =
       intentHash: string
     }
 
+type Events = {
+  type: "UPDATE_QUOTE"
+  params: {
+    quoteParams: AggregatedQuoteParams
+    quote: AggregatedQuote
+  }
+}
+
 export const swapIntentMachine = setup({
   types: {
     context: {} as Context,
     input: {} as Input,
     output: {} as Output,
+    events: {} as Events,
   },
   actions: {
     setError: assign({
@@ -105,6 +118,9 @@ export const swapIntentMachine = setup({
     logError: (_, params: { error: unknown }) => {
       console.error(params.error)
     },
+    setLastSeenQuote: assign({
+      lastSeenQuote: (_, quote: AggregatedQuote) => quote,
+    }),
     assembleSignMessages: assign({
       messageToSign: ({ context }) => {
         const innerMessage = makeInnerSwapMessage({
@@ -181,13 +197,14 @@ export const swapIntentMachine = setup({
     isTrue: (_, params: boolean) => params,
   },
 }).createMachine({
-  /** @xstate-layout N4IgpgJg5mDOIC5SwO4EMAOBaAlgOwBcxCA6HCAGzAGIBtABgF1FQMB7WHAnNvFkAB6IAjAGYAHCXoAmesIAsAVmniAnADZxa+QBoQAT0SjVk9dPn1Ri6wHZ689eoC+Tvaky5CxAiQDKOKDx8KGoIXjAyPAA3NgBrCM5AgFk4WDQYBmYkEHZObl5+IQRhdRJhRRL5eVF5cRtRUXUbPUMEdSqym0V2usULRVEXN3RsfCJSf0Dg0PDImPiSRLwU2DSM4SzWDi4ePmyirFFhSQdhaUbVCWNL3QNEMxPpdQ16VRkbdVFpIZB3Ua8JgEgngQmAAE5gthgkgYChoAgAMyhAFtFkCVmswJl+LkdgV9ogsE96CQtJ9yephG9hMIWogqqoSIpVPJVBout0VGIfn9POMfAA1cE4BH6YIAAgACgBXABGFBwAGNxQBpMD6KVguDERU0MJ4CL4eYJEZ87wkIVgkVikFSuUK5VqjWSrWwHVgBBGtiK+G7TLY7K4-J7UBFGokUT0ZnPTQ2FnKWl3BAs+SktSNeQqDTSFQ801jc2W60SmXypWq9Wa7V4XUzA1zOImjwF0hF0Ul+3lp1Vt01j1en3B-0bHHbYOFQlfRntFTiax1GxU26tNk2EiU5lz1n1Kk2PPNgGC4Xt22lh0V52u93UcGQ6Gw+FIsGo3kto9Wk9QO1lx2Vl3V3VPWib1fV4f0mFHPJdgnBAiTeEhpDedpM1UbpVEQukEDjaQSBscQlBUYxrk+fd-n5EgACFITQCAfVgbhbQASUPG8IShGE4URFFFnzQ9KOo2i0HoiVmP5ICYkHP0mADLYoPxUNCS5Eg2Q0OoGnaVQPlETCaQ0UlHFZOR6HqTdSLNVtjxtL9RO8OgIMDMdoIJBBxFKGxzEUPCmjOeh6CaHThHoSQunEWQlA+aQPj3Vxfl48i2ys8UbMIOgRwcuSQ0EIxzCZVzPKsY53m0pNArsBD8LeD4WVQlkzLffi2BouiGOslj9UNYCFlfPiqMawThKYw9xJAodpPs2S8UyopF2U4x5DsdRjOkMQZB0xocJWioajOKxIpcGK8DYCA4H4br+UgyaYMOGw1xnLR5xupcdPQhDNEi8QGnscpapis7zXIKgLvHZyFBJbRt0Q9CqS+TCvlKTM-PMBwWXeuq+MmYEoCBpyFIQRCSHkQKxDUxcuhsapMNqHCGjqJQFBzRDzDR+LLI7H8Lx7d1sfkrKEHm9dwrqOc1Dw4RmiTcQqQjMWukitC5uZ81eqaoSWqSw9uamxBFEkYzabMFRqlqcQdOW4QmRpRaZEaSNmUViyP0S5KCE1mDAsUKR3MuRCPqqdQdZ0uRGV93y40UOQc2cX64vNABhNhkVhMAiAgV3nNQpljJZcRfNeAiTZK5RU2WuWnhCuNBmjg9yIAcWIYVlQAUTYsE09xol2kzudfO+6RmXF1pyhykvZaaHWK-2pwgA */
+  /** @xstate-layout N4IgpgJg5mDOIC5SwO4EMAOBaAlgOwBcxCBiAVQAUARAQQBUBRAfQEUyB5RgbQAYBdRKAwB7WDgI5heQSAAeiAOwBGAGwA6ABwblKngFYlAZj16FegDQgAnokMBOBWqUAmQ4Y0qThhQp6GAvv6WqJi4hMQEajgQADZgJLwCSCAiYhJSMvIIRhpqPM48SgAses4adipadkWWNgj2uSrORX4mpjxFKiqBwejY+ESEagDKOFB4+FAkEFJgUXgAbsIA1nNi4wCycLBoMIkyqeKS0slZqk4GKkVFhkXabioKtYhXRU5mV9p6LXoBQSAhfrhIajcaTaazeZLVZqdZ4LawHZ7JRJISiI4ZU6ILCGJS5TouQwqOzuewkmrWF5lNRFZzE3R2fIKFSGZw9AF9MKDSKgiZ4KZgABOguEgrUGBiaAIADNRQBbWFjeHbXZgfbJQ7pE6gLJYOk8TQeIlElRKRlKJTPBDXOxqPTVOwVMx6JoaIzswFciJqABqQpw0qskwABBQAK4AIxiOAAxsGANJgKyhwVwYgx+IzPBzfDQtacgbev2CgNB-mhyPRuOJ5MUVOwdNgBC54QxqXHRLqtFpY6ZWxvQz6CoVbTVUqWykIapvKpE2nlJplD0F4GRYulkPhqOxhNJlNpvAZiHZqErfOhQtDdeBzeVnc1-cNw9NlttrWdlEHdFavsIHHOW0rjKDQTG0ZRqitR1HFNe0QKKBxcQcZcL1XX1-RvcstyrXda3rRsSCFEUxQlKVZUFBVPUvNd0LLKAK23as9zrA8M2bRZW3bKRO34L8e0xHVsQAg0hNeACXTsACrQUCS1AUDQSjKewyRZZCgW5NQACERTQCA21gCRywASVXY8c3YmFKNQrThB0vSDLo4zuTYpY3w7fguxSb9eyxBBlDUElql8XQFGcIx8itIwmicQcDFuQlSgUVSvSGazbLQfSQ0ciICOFUVxUlGV5VhFd1NS3T0vs4MssIZyOPfdyeI1Lz+LkQS3X8x1KgUB54OZQwIrNdQPCuc0eG62CkqotCSwwhyTI8zVvIEhAPFk5pTA8ZQCh4R4Bp4XIzA0AoSmZZxmUS-5LPU69aKq+bPyavjtVa+pmjtDxTGMPEmX6yclDG4T5MZZkHXtIpAn+PBhAgOAZCuiJeIxZ7dW8aD5xAvQwLNCk6lcW0eAcXxMZCpRvhKSbUOiOJEZ-HzigNcobRCx1QpJZwrVZdRaR25pOmqM6NAp9TeUmGmlpegCaX+nJuuUMwFBuK07mcNQ3G0EpimcLWJPBy6SqLGjbwYnDH0bMWWqyIo0Y2uTMYcN0nknN1bVxHwEvE+xdd6FDSu08qMqM1dzeRxBMbyOSFcXeTbi0CLQqUO0LV0fJjSHIWDZm27qoIYPf3+vRw4A1k7A0W5OkxiLCltUuWjGuw9EKLXuj1n3vQAYWEOUJTAIgIFznz67tOu7h4UexzKCLSjeUKztKR5iZJdOhgAcWIf04wYXLBX75a9SuIeQNH0mJPtR26lJt6Z7MOlDukv5AiAA */
   context: ({ input }) => {
     return {
       messageToSign: null,
       signature: null,
       error: null,
       intentHash: null,
+      lastSeenQuote: input.quote,
       ...input,
     }
   },
@@ -209,6 +226,15 @@ export const swapIntentMachine = setup({
     }
 
     throw new Error("Unexpected output")
+  },
+
+  on: {
+    UPDATE_QUOTE: {
+      actions: {
+        type: "setLastSeenQuote",
+        params: ({ event }) => event.params.quote,
+      },
+    },
   },
 
   states: {
