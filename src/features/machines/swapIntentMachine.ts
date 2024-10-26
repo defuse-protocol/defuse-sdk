@@ -27,7 +27,6 @@ type Context = {
   userAddress: string
   nearClient: providers.Provider
   sendNearTransaction: SendNearTransaction
-  lastSeenQuote: AggregatedQuote
   quote: AggregatedQuote
   tokenIn: SwappableToken
   tokenOut: SwappableToken
@@ -110,8 +109,10 @@ export const swapIntentMachine = setup({
     logError: (_, params: { error: unknown }) => {
       console.error(params.error)
     },
-    setLastSeenQuote: assign({
-      lastSeenQuote: (_, quote: AggregatedQuote) => quote,
+    proposeQuote: assign({
+      quote: ({ context }, proposedQuote: AggregatedQuote) => {
+        return determineNewestValidQuote(context.quote, proposedQuote)
+      },
     }),
     assembleSignMessages: assign({
       messageToSign: ({ context }) => {
@@ -189,14 +190,13 @@ export const swapIntentMachine = setup({
     isTrue: (_, params: boolean) => params,
   },
 }).createMachine({
-  /** @xstate-layout N4IgpgJg5mDOIC5SwO4EMAOBaAlgOwBcxCBiAVQAUARAQQBUBRAfQEUyB5RgbQAYBdRKAwB7WDgI5heQSAAeiAOwBGAGwA6ABwblKngFYlAZj16FegDQgAnokMBOBWqUAmQ4Y0qThhQp6GAvv6WqJi4hMQEajgQADZgJLwCSCAiYhJSMvIIRhpqPM48SgAses4adipadkWWNgj2uSrORX4mpjxFKiqBwejY+ESEagDKOFB4+FAkEFJgUXgAbsIA1nNi4wCycLBoMIkyqeKS0slZqk4GKkVFhkXabioKtYhXRU5mV9p6LXoBQSAhfrhIajcaTaazeZLVZqdZ4LawHZ7JRJISiI4ZU6ILCGJS5TouQwqOzuewkmrWF5lNRFZzE3R2fIKFSGZw9AF9MKDSKgiZ4KZgABOguEgrUGBiaAIADNRQBbWFjeHbXZgfbJQ7pE6gLJYOk8TQeIlElRKRlKJTPBDXOxqPTVOwVMx6JoaIzswFciJqABqQpw0qskwABBQAK4AIxiOAAxsGANJgKyhwVwYgx+IzPBzfDQtacgbev2CgNB-mhyPRuOJ5MUVOwdNgBC54QxqXHRLqtFpY6ZWxvQz6CoVbTVUqWykIapvKpE2nlJplD0F4GRYulkPhqOxhNJlNpvAZiHZqErfOhQtDdeBzeVnc1-cNw9NlttrWdlEHdFavsIHHOW0rjKDQTG0ZRqitR1HFNe0QKKBxcQcZcL1XX1-RvcstyrXda3rRsSCFEUxQlKVZUFBVPUvNd0LLKAK23as9zrA8M2bRZW3bKRO34L8e0xHVsQAg0hNeACXTsACrQUCS1AUDQSjKewyRZZCgW5NQACERTQCA21gCRywASVXY8c3YmFKNQrThB0vSDLo4zuTYpY3w7fguxSb9eyxBBlDUElql8XQFGcIx8itIwmicQcDFuQlSgUVSvSGazbLQfSQ0ciICOFUVxUlGV5VhFd1NS3T0vs4MssIZyOPfdyeI1Lz+LkQS3X8x1KgUB54OZQwIrNdQPCuc0eG62CkqotCSwwhyTI8zVvIEhAPFk5pTA8ZQCh4R4Bp4XIzA0AoSmZZxmUS-5LPU69aKq+bPyavjtVa+pmjtDxTGMPEmX6yclDG4T5MZZkHXtIpAn+PBhAgOAZCuiJeIxZ7dW8aD5xAvQwLNCk6lcW0eAcXxMZCpRvhKSbUOiOJEZ-HzigNcobRCx1QpJZwrVZdRaR25pOmqM6NAp9TeUmGmlpegCaX+nJuuUMwFBuK07mcNQ3G0EpimcLWJPBy6SqLGjbwYnDH0bMWWqyIo0Y2uTMYcN0nknN1bVxHwEvE+xdd6FDSu08qMqM1dzeRxBMbyOSFcXeTbi0CLQqUO0LV0fJjSHIWDZm27qoIYPf3+vRw4A1k7A0W5OkxiLCltUuWjGuw9EKLXuj1n3vQAYWEOUJTAIgIFznz67tOu7h4UexzKCLSjeUKztKR5iZJdOhgAcWIf04wYXLBX75a9SuIeQNH0mJPtR26lJt6Z7MOlDukv5AiAA */
+  /** @xstate-layout N4IgpgJg5mDOIC5SwO4EMAOBaAlgOwBcxCBiAOQFEB1AfQEUBVAeQBUKBtABgF1FQMA9rBwEcAvHxAAPRACYAnAFYAdPIAcigGyKA7It0BGTcYDMAGhABPRAZOzlJxfJNqdmnTs7zOsgCwBffwtUTFxCYgJlHAgAGzASLl4kEEFhUXFJGQRbNWUfTgNfRVk1eU01Ut8LawQTdWVNP05HfU9fY0Dg9Gx8IkJlAGUcKDx8KBIIcTAovAA3AQBraeERgFk4WDQYRMlUkTEJZKyjZQNFI19fE19XExN3asRNS9O9Z9dFX05FE06QEJ64X6QxGYwmUxm8yWyhWeHWsE22wMSX4Qn2GSOiCwJgMuXaBlk92cajqziqVieJWUvlkmjKXh8bjsfwBYT6kRBozw4zAACdeQJecoMDE0AQAGaCgC2MOGcI2WzAO2Se3Sh1AWSwtM4ygqmnu900Bm8BgMjwQl3kyicvnkZT0WhKthZ3TZEWUADU+ThxZYxgACAAKAFcAEYxHAAY39AGkwJYg7y4MRI-FJnhpvgoctXb13V7eT6-dyg2GI9G4wnA0nYCmwAgswJI2KDollai0gdMohrg5vmUyq55EVZGaKQhh75daV7jTSo0Si7Qnn+gWiwGQ+Go7H44nk3hU+CM5DFjnl0DImvfRuy9vK3vawf643m2q28jdmi1d2ENiFA05w0RRXB0Y1yRqO0dAaM51E+eQdBxeCl0BdlPW9a8S03csdyrGs6xIPkBSFEUxUlXkZVZFdL3Q4soFLLcK13at91TBs5ibFtxDbHhP07DENSxBQdSE54aSUOkFHNHR5HsHQ1BHElnDtfVkLdfoACEBTQCBm1gUQSwASQvI9M3Y6FKIvZRNIEbTdP0uijPZNj5lfVseHbFIvy7TEEFA1Q6l8TxNE4HRRxMHxzVsRpTnC85rgJRxZB0VSqKsrSdLQPSA0ciICP5QVhVFCVpRhXNLOs2zMvs-0csIZyOLfdyeJVLz+OkQS1AMVRlNuWd4P1SLjU0XVjFtAoQscdQUssq9aJq4yPNVbyBIQNRhtCoo5PcAlOE4B5x1NThcj0NRZE4TbGjcZKgn+MrUNm7KFo-Fq+PVdraj8a01t0RxcUZcwDpC4T5O8NxhyUYdAhuvABAgOBJAs9lePRN7NRMDwAJKICQLA81CStLwPFkQlvicI7ptQ6I4mR78fMKHVKltUK7VHZxZHNOxhppPa-HaYckrUCn3U5MYaeW97-18AwChcBDQL0HQrnNG57DuVwikKYmFD8IXVxom8GJwh86zFtqskCgDdFcDRSjkgwdHNTqrRxDxijeJSAhuxH3QqjKssMi9TdRxBgLyOTFYXeTrgqSLRy684jF2wl9X7XXqMLDCHMDl6UZ-aWVBChQ7HUa52mAyKCitEkvhCpQCmJzQ0+UABhAQpRFMAiAgIOfyUa1a5uXavAUyLiinUckuKdxgOk34vbu90AHFiG9aMKHy3ke58rVnn7jRdpg2QnAdg6x+UCe9FpE7Z6h-wgA */
   context: ({ input }) => {
     return {
       messageToSign: null,
       signature: null,
       error: null,
       intentHash: null,
-      lastSeenQuote: input.quote,
       ...input,
     }
   },
@@ -224,16 +224,9 @@ export const swapIntentMachine = setup({
     NEW_QUOTE: {
       actions: [
         {
-          type: "setLastSeenQuote",
+          type: "proposeQuote",
           params: ({ event }) => event.params.quote,
         },
-        log(({ context }) => {
-          return {
-            message: "New quote received",
-            quote: context.quote,
-            lastSeenQuote: context.lastSeenQuote,
-          }
-        }),
       ],
     },
   },
@@ -453,4 +446,18 @@ function assert(condition: unknown, msg?: string): asserts condition {
 
 function toError(error: unknown): Error {
   return error instanceof Error ? error : new Error("unknown error")
+}
+
+function determineNewestValidQuote(
+  originalQuote: AggregatedQuote,
+  proposedQuote: AggregatedQuote
+): AggregatedQuote {
+  if (
+    originalQuote.totalAmountOut <= proposedQuote.totalAmountOut &&
+    originalQuote.expirationTime <= proposedQuote.expirationTime
+  ) {
+    return proposedQuote
+  }
+
+  return originalQuote
 }
