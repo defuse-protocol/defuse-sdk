@@ -17,6 +17,11 @@ import {
   type ChildEvent as BackgroundQuoterEvents,
   backgroundQuoterMachine,
 } from "./backgroundQuoterMachine"
+import {
+  type BalanceMapping,
+  type Events as DepositedBalanceEvents,
+  depositedBalanceMachine,
+} from "./depositedBalanceMachine"
 import { intentStatusMachine } from "./intentStatusMachine"
 import type { AggregatedQuote } from "./queryQuoteMachine"
 import {
@@ -76,13 +81,25 @@ export const swapUIMachine = setup({
             ) => Promise<{ txHash: string } | null>
           }
         }
+      | {
+          type: "BALANCE_CHANGED"
+          params: {
+            changedBalanceMapping: BalanceMapping
+          }
+        }
       | BackgroundQuoterEvents
+      | DepositedBalanceEvents
       | PassthroughEvent,
 
     emitted: {} as PassthroughEvent,
+
+    children: {} as {
+      depositedBalanceRef: "depositedBalanceActor"
+    },
   },
   actors: {
     backgroundQuoterActor: backgroundQuoterMachine,
+    depositedBalanceActor: depositedBalanceMachine,
     formValidationActor: fromPromise(async (): Promise<boolean> => {
       throw new Error("not implemented")
     }),
@@ -144,20 +161,42 @@ export const swapUIMachine = setup({
     // Warning: This cannot be properly typed, so you can send an incorrect event
     sendToBackgroundQuoterRefNewQuoteInput: sendTo(
       "backgroundQuoterRef",
-      ({ context }) => ({
-        type: "NEW_QUOTE_INPUT",
-        params: {
-          tokenIn: context.formValues.tokenIn,
-          tokenOut: context.formValues.tokenOut,
-          amountIn: context.parsedFormValues.amountIn,
-          balances: {}, // todo: pass real balances
-        },
-      })
+      ({ context, self }) => {
+        const snapshot = self.getSnapshot()
+
+        // However knows how to access the child's state, please update this
+        const depositedBalanceRef:
+          | ActorRefFrom<typeof depositedBalanceMachine>
+          | undefined = snapshot.children.depositedBalanceRef
+        const balances = depositedBalanceRef?.getSnapshot().context.balances
+
+        return {
+          type: "NEW_QUOTE_INPUT",
+          params: {
+            tokenIn: context.formValues.tokenIn,
+            tokenOut: context.formValues.tokenOut,
+            amountIn: context.parsedFormValues.amountIn,
+            balances: balances ?? {},
+          },
+        }
+      }
     ),
     // Warning: This cannot be properly typed, so you can send an incorrect event
     sendToBackgroundQuoterRefPause: sendTo("backgroundQuoterRef", {
       type: "PAUSE",
     }),
+
+    spawnDepositedBalanceRef: spawnChild("depositedBalanceActor", {
+      id: "depositedBalanceRef",
+      input: ({ self }) => ({ parentRef: self }),
+    }),
+    relayToDepositedBalanceRef: sendTo(
+      "depositedBalanceRef",
+      (_, event: DepositedBalanceEvents) => event
+    ),
+    sendToDepositedBalanceRefRefresh: sendTo("depositedBalanceRef", (_) => ({
+      type: "REQUEST_BALANCE_REFRESH",
+    })),
 
     // Warning: This cannot be properly typed, so you can send an incorrect event
     sendToSwapRefNewQuote: sendTo(
@@ -168,7 +207,7 @@ export const swapUIMachine = setup({
     spawnIntentStatusActor: assign({
       intentRefs: (
         { context, spawn, self },
-        output: OutputFrom<typeof swapIntentMachine>
+        output: SwapIntentMachineOutput
       ) => {
         if (output.status !== "INTENT_PUBLISHED") return context.intentRefs
 
@@ -218,17 +257,39 @@ export const swapUIMachine = setup({
     intentRefs: [],
   }),
 
-  entry: "spawnBackgroundQuoterRef",
+  entry: ["spawnBackgroundQuoterRef", "spawnDepositedBalanceRef"],
 
   on: {
     INTENT_SETTLED: {
+      actions: [
+        {
+          type: "passthroughEvent",
+          params: ({ event }) => event,
+        },
+        "sendToDepositedBalanceRefRefresh",
+      ],
+    },
+
+    BALANCE_CHANGED: {
+      actions: [
+        ({ event }) => {
+          console.log("Balance changed", event.params.changedBalanceMapping)
+        },
+        "sendToBackgroundQuoterRefNewQuoteInput",
+      ],
+    },
+
+    LOGIN: {
       actions: {
-        type: "passthroughEvent",
+        type: "relayToDepositedBalanceRef",
         params: ({ event }) => event,
       },
     },
-    BALANCE_UPDATED: {
-      actions: "sendToBackgroundQuoterRefNewQuoteInput",
+    LOGOUT: {
+      actions: {
+        type: "relayToDepositedBalanceRef",
+        params: ({ event }) => event,
+      },
     },
   },
 
