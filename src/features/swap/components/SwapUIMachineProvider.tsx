@@ -8,7 +8,6 @@ import type {
   WalletMessage,
   WalletSignatureResult,
 } from "../../../types"
-import { queryQuoteMachine } from "../../machines/queryQuoteMachine"
 import { swapIntentMachine } from "../../machines/swapIntentMachine"
 import { swapUIMachine } from "../../machines/swapUIMachine"
 import type { SwapFormValues } from "./SwapForm"
@@ -56,13 +55,11 @@ export function SwapUIMachineProvider({
           },
         },
         actors: {
-          formValidation: fromPromise(async () => {
+          formValidationActor: fromPromise(async () => {
             // We validate only `amountIn` and not entire form, because currently `amountOut` is also part of the form
             return trigger("amountIn")
           }),
-          queryQuote: queryQuoteMachine,
-          // @ts-expect-error For some reason `swapIntentMachine` does not satisfy `swap` actor type
-          swap: swapIntentMachine.provide({
+          swapActor: swapIntentMachine.provide({
             actors: {
               signMessage: fromPromise(({ input }) => signMessage(input)),
             },

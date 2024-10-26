@@ -1,5 +1,5 @@
 import type { providers } from "near-api-js"
-import { assign, fromPromise, setup } from "xstate"
+import { assign, fromPromise, log, setup } from "xstate"
 import { settings } from "../../config/settings"
 import {
   doesSignatureMatchUserAddress,
@@ -16,14 +16,12 @@ import {
   makeInnerSwapMessage,
   makeSwapMessage,
 } from "../../utils/messageFactory"
+import type { ChildEvent as BackgroundQuoterEvents } from "./backgroundQuoterMachine"
 import {
   type SendNearTransaction,
   publicKeyVerifierMachine,
 } from "./publicKeyVerifierMachine"
-import type {
-  AggregatedQuote,
-  AggregatedQuoteParams,
-} from "./queryQuoteMachine"
+import type { AggregatedQuote } from "./queryQuoteMachine"
 
 type Context = {
   userAddress: string
@@ -96,13 +94,7 @@ type Output =
       intentHash: string
     }
 
-type Events = {
-  type: "UPDATE_QUOTE"
-  params: {
-    quoteParams: AggregatedQuoteParams
-    quote: AggregatedQuote
-  }
-}
+type Events = BackgroundQuoterEvents
 
 export const swapIntentMachine = setup({
   types: {
@@ -229,11 +221,20 @@ export const swapIntentMachine = setup({
   },
 
   on: {
-    UPDATE_QUOTE: {
-      actions: {
-        type: "setLastSeenQuote",
-        params: ({ event }) => event.params.quote,
-      },
+    NEW_QUOTE: {
+      actions: [
+        {
+          type: "setLastSeenQuote",
+          params: ({ event }) => event.params.quote,
+        },
+        log(({ context }) => {
+          return {
+            message: "New quote received",
+            quote: context.quote,
+            lastSeenQuote: context.lastSeenQuote,
+          }
+        }),
+      ],
     },
   },
 

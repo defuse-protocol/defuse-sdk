@@ -2,24 +2,25 @@ import { parseUnits } from "ethers"
 import type { providers } from "near-api-js"
 import {
   type ActorRefFrom,
-  type InputFrom,
   type OutputFrom,
   assertEvent,
   assign,
   emit,
   fromPromise,
+  sendTo,
   setup,
+  spawnChild,
 } from "xstate"
 import type { SwappableToken } from "../../types"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../types/base"
 import type { Transaction } from "../../types/deposit"
-import { isBaseToken } from "../../utils"
+import {
+  type ChildEvent as BackgroundQuoterEvents,
+  backgroundQuoterMachine,
+} from "./backgroundQuoterMachine"
 import { intentStatusMachine } from "./intentStatusMachine"
-import type {
-  AggregatedQuote,
-  AggregatedQuoteParams,
-} from "./queryQuoteMachine"
-import type { swapIntentMachine } from "./swapIntentMachine"
+import type { AggregatedQuote } from "./queryQuoteMachine"
+import { swapIntentMachine } from "./swapIntentMachine"
 
 export type Context = {
   error: Error | null
@@ -73,27 +74,18 @@ export const swapUIMachine = setup({
             ) => Promise<{ txHash: string } | null>
           }
         }
+      | BackgroundQuoterEvents
       | PassthroughEvent,
 
     emitted: {} as PassthroughEvent,
   },
   actors: {
-    formValidation: fromPromise(async (): Promise<boolean> => {
+    backgroundQuoterActor: backgroundQuoterMachine,
+    formValidationActor: fromPromise(async (): Promise<boolean> => {
       throw new Error("not implemented")
     }),
-    queryQuote: fromPromise(
-      async (_: { input: AggregatedQuoteParams }): Promise<AggregatedQuote> => {
-        throw new Error("not implemented")
-      }
-    ),
-    swap: fromPromise(
-      async (_: {
-        input: InputFrom<typeof swapIntentMachine>
-      }): Promise<OutputFrom<typeof swapIntentMachine>> => {
-        throw new Error("not implemented")
-      }
-    ),
-    intentStatus: intentStatusMachine,
+    swapActor: swapIntentMachine,
+    intentStatusActor: intentStatusMachine,
   },
   actions: {
     setFormValues: assign({
@@ -143,21 +135,46 @@ export const swapUIMachine = setup({
     }),
     clearIntentCreationResult: assign({ intentCreationResult: null }),
     passthroughEvent: emit((_, event: PassthroughEvent) => event),
-  },
-  delays: {
-    quotePollingInterval: 500,
+
+    spawnBackgroundQuoterRef: spawnChild("backgroundQuoterActor", {
+      id: "backgroundQuoterRef",
+      input: ({ self }) => ({ parentRef: self, delayMs: 5000 }),
+    }),
+    // Warning: This cannot be properly typed, so you can send an incorrect event
+    sendToBackgroundQuoterRefNewQuoteInput: sendTo(
+      "backgroundQuoterRef",
+      ({ context }) => ({
+        type: "NEW_QUOTE_INPUT",
+        params: {
+          tokenIn: context.formValues.tokenIn,
+          tokenOut: context.formValues.tokenOut,
+          amountIn: context.parsedFormValues.amountIn,
+          balances: {}, // todo: pass real balances
+        },
+      })
+    ),
+    // Warning: This cannot be properly typed, so you can send an incorrect event
+    sendToBackgroundQuoterRefPause: sendTo("backgroundQuoterRef", {
+      type: "PAUSE",
+    }),
+
+    // Warning: This cannot be properly typed, so you can send an incorrect event
+    sendToSwapRefNewQuote: sendTo(
+      "swapRef",
+      (_, event: BackgroundQuoterEvents) => event
+    ),
   },
   guards: {
-    isQuoteRelevant: () => {
+    isQuoteRelevant: ({ context }) => {
       // todo: implement real check for fetched quotes if they're expired or not
       console.warn(
         "Implement real check for fetched quotes if they're expired or not"
       )
-      return true
+      return context.quote != null && context.quote.totalAmountOut > 0n
     },
   },
 }).createMachine({
-  /** @xstate-layout N4IgpgJg5mDOIC5SwO4EMAOBaArgSwDpI8AXPAOygGJYcAjAW1IG0AGAXUVAwHtZS8PclxAAPRAEYJADgIB2AKwA2JdIkBmVqyUKFAJgA0IAJ6S9e+UoCcc6bfV7pe1noC+ro6ky5CxMpSoKDBwSNk4kEF5+MiERcQQscwAWAiV1JIUrNUUbVgcjUwTHWVs9OVYJBSl1OQk3DxAvbHwiCAFKAgBHHB5-agghMAIKADceAGsh7t6wAEUcMAAnPCWwkSiBWIj4rHUNAmkkqT0rBwUkzTklAsQy1gJtKwzDuXMqvSV3T3Rm3za+ro9PpUJaLHiLAgYAA2aBIADNwQxATN5ksVos1hENjFhNtEFg6ikkqxpKclIoklZWMo5DcEHcHtZnklXnp3l9Gj8fK12lACCM0FC8BBYRR+oNhuQxpMCE1uX4xfzBcLRZQEKMeABjUVCMKY7h8Ta40A7MpKAjmKwqPLOZzqBR0xQEJKqdROJz6aRepIcuUtBUdAVCkXAgbkIYamV+v68pXB1VQdVSrU68h6iThA3RQTGsT4pQVC2kw7Se3KO10-TyC62aQKFxWCRU+rfbz+-6K6YkSBUUSwEiwoZoOHdxYACi7YAACjwoULKABJcijoMAShoXPbscnEH1kUNOLi+N092kBYklKSlIktJMkjPqWkFVYVmU5+U6l9m8ItEYpFDEqRkM0ayvQTAkH0SZjNqOJ6hw6wHjmIiFKcBAXkoSRqGUDiaOoRjxGkJRyOUMiYZk+ifhy5A8BAcAiNGCHZlsJr4k+9zOK+Mh1meGi3oUWAuuozqOPocjqNYVQVF+bYxn0jFGkeCSKBYHFVF6Cg8TUdK7FcaHUkoF5XqwRkqNJvw8gCwpQmA8mHniSnGRaL5qdxBlaXeCBiak9okS8UhqD6DQgQGfJdmKtlIfZiQYQQ9ZaKcbpsk82h0heciWFx6hWDYOhWgoZnyh2gbKiG4VYohzF5kUWUEDU5jUrYqjZV62nEQccjZQ4pRuholGtuZIXIt2EARZVOzKLIIknNS4m6OJdIfOl5wqPWCj2i+igFS0v7gXJ5VMbm8Q1AoFpHGe5j2q+ehJHSqHoZhdRiXouHuO4QA */
+  /** @xstate-layout N4IgpgJg5mDOIC5SwO4EMAOBaArgSwGIBJAOQBUBRcgfQGUKyyAZCgEQG0AGAXUVAwD2sPABc8AgHZ8QAD0QBGACwBmAHSLFAJnmdNnABybtigOwAaEAE9EWfSYCsqzff2d5J+c5P7lJgL5+FqiYuIQAQgCCTBEkAMIU1ACqAAqsEZQcPNKCwmKS0nIIWJquqgBs+ooGWgCcNR4mmmUW1kV2js6u7p723sr6AUHo2PiqkKJ4ElAEsDgARgC2oly8SCA5E-lrhfLuqiY1OprKivL69r32LTbKdeWaNWV1JZyPT4MgwSN4YxATUwRJhgcCIVtkhJspNsbE0Ort7Jx7PIyq8Sr5rkVfDVVEplG5lGVlPJbo8Pl9Qr9-tMSBQAOrUACKiQA8pQwWsNnkoaBClhTGo6sp7Lc7DVOFVlBisGVFI4emUZfZtPo7PIycMKeMxFNVAA3NAAGzwEDQ2umEEkYFUk11AgA1lbyaMtZMoHrDcbTa6EDaBABjL2SFbs-gQrkFGwuNQPeyKfQ6fQVLTNKw2ByqIUmV7yGpVC41HzqkLOv5m91Gk1mggWiRW30O1ROn4unX6iteqY+iS2gNc4PyVah3LibmySPnVScPEIpQq8Up1pYJSaSdnZTaJSKFFnMpF76N+ZLERVmt17v2x3DABKYAAZiH1mGRxGEKd5E4C5uNIn4+4pXiVy3SofxOAlTn8QJPg1UZZkWUQqzAAAnRCBEQ1QMANU1b1QhZG2vO8H05Z9oVfW4nHhIkyhcJ4VCuVMimRRR9lqWVlyaEwtD3ClYKPKsaXpJlWQoQiny2HlEFoydDl2F5wMRKVYxMDMygeAkfBolSAkgiQBAgOBpCbcFhzEscigqd8p0RNw41cLcpRMA4nG8fFtwVGpNC4ksqSMyEX2lZQ1EsmcbPnBTiQ-YUVI8XZ4wgoZi2bUtXWtCADTAHzwxIvlenUddzmOHNNAOcx6OKMVyJFZxThORQamUTzEqpctPTNDLiPEopjmxXwjERbwKjqFV7KU0U6qKwx+mJerIKbA84OPV02pMwp+kcU4URKDcygcErF1ORxdGcTxjjxYkty0vwgA */
   id: "swap-ui",
 
   context: ({ input }) => ({
@@ -175,12 +192,18 @@ export const swapUIMachine = setup({
     intentRefs: [],
   }),
 
+  entry: "spawnBackgroundQuoterRef",
+
   on: {
     INTENT_SETTLED: {
       actions: {
         type: "passthroughEvent",
         params: ({ event }) => event,
       },
+    },
+
+    BALANCE_UPDATED: {
+      actions: "sendToBackgroundQuoterRefNewQuoteInput",
     },
   },
 
@@ -192,10 +215,13 @@ export const swapUIMachine = setup({
           guard: "isQuoteRelevant",
           actions: "clearIntentCreationResult",
         },
+
         input: {
           target: ".validating",
           actions: [
             "clearQuote",
+            "updateUIAmountOut",
+            "sendToBackgroundQuoterRefPause",
             "clearError",
             {
               type: "setFormValues",
@@ -204,92 +230,45 @@ export const swapUIMachine = setup({
             "parseFormValues",
           ],
         },
+
+        NEW_QUOTE: {
+          actions: [
+            {
+              type: "setQuote",
+              params: ({ event }) => event.params.quote,
+            },
+            "updateUIAmountOut",
+          ],
+        },
       },
 
       states: {
         idle: {},
 
-        quoting: {
-          invoke: {
-            id: "quoteQuerier",
-            src: "queryQuote",
-
-            input: ({ context }): AggregatedQuoteParams => ({
-              tokensIn: isBaseToken(context.formValues.tokenIn)
-                ? [context.formValues.tokenIn.defuseAssetId]
-                : context.formValues.tokenIn.groupedTokens.map(
-                    (token) => token.defuseAssetId
-                  ),
-              tokensOut: isBaseToken(context.formValues.tokenOut)
-                ? [context.formValues.tokenOut.defuseAssetId]
-                : context.formValues.tokenOut.groupedTokens.map(
-                    (token) => token.defuseAssetId
-                  ),
-              amountIn: context.parsedFormValues.amountIn,
-              balances: {}, // todo: pass through real balances
-            }),
-
-            onDone: {
-              target: "quoted",
-              actions: {
-                type: "setQuote",
-                params: ({ event }) => event.output,
-              },
-              reenter: true,
-            },
-
-            onError: {
-              target: "quoted",
-
-              actions: assign({
-                error: ({ event }) => {
-                  if (event.error instanceof Error) {
-                    return event.error
-                  }
-                  return new Error("unknown error")
-                },
-              }),
-
-              reenter: true,
-            },
-          },
-        },
-
         validating: {
           invoke: {
-            src: "formValidation",
+            src: "formValidationActor",
 
             onDone: [
               {
-                target: "quoting",
-                guard: ({ event }) => event.output,
-              },
-              {
                 target: "idle",
-                actions: "updateUIAmountOut",
+                guard: ({ event }) => event.output,
+                actions: "sendToBackgroundQuoterRefNewQuoteInput",
               },
+              "idle",
             ],
           },
-        },
-
-        quoted: {
-          after: {
-            quotePollingInterval: {
-              target: "quoting",
-              reenter: true,
-            },
-          },
-
-          entry: "updateUIAmountOut",
         },
       },
 
       initial: "idle",
+      entry: "updateUIAmountOut",
     },
 
     submitting: {
       invoke: {
-        src: "swap",
+        id: "swapRef",
+        src: "swapActor",
 
         input: ({ context, event }) => {
           assertEvent(event, "submit")
@@ -311,7 +290,8 @@ export const swapUIMachine = setup({
         },
 
         onDone: {
-          target: "editing.validating",
+          target: "editing",
+
           actions: [
             assign({
               intentRefs: ({ context, spawn, event, self }) => {
@@ -321,7 +301,7 @@ export const swapUIMachine = setup({
                 // todo: take quote from result of `swap`
                 assert(context.quote != null, "quote is null")
 
-                const intentRef = spawn("intentStatus", {
+                const intentRef = spawn("intentStatusActor", {
                   id: `intent-${event.output.intentHash}`,
                   input: {
                     parentRef: self,
@@ -343,10 +323,26 @@ export const swapUIMachine = setup({
         },
 
         onError: {
-          target: "editing.validating",
+          target: "editing",
+
           actions: ({ event }) => {
             console.error(event.error)
           },
+        },
+      },
+
+      on: {
+        NEW_QUOTE: {
+          actions: [
+            {
+              type: "setQuote",
+              params: ({ event }) => event.params.quote,
+            },
+            {
+              type: "sendToSwapRefNewQuote",
+              params: ({ event }) => event,
+            },
+          ],
         },
       },
     },
