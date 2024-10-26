@@ -1,5 +1,6 @@
 import clsx from "clsx"
 import type React from "react"
+import { useRef } from "react"
 import type {
   FieldError,
   FieldErrors,
@@ -7,7 +8,8 @@ import type {
   Path,
   UseFormRegister,
 } from "react-hook-form"
-
+import { formatUnits } from "viem"
+import useMergedRef from "../../hooks/useMergedRef"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../types/base"
 import {
   BlockMultiBalances,
@@ -26,7 +28,6 @@ interface Props<T extends FieldValues>
   balance?: bigint
   selected?: BaseTokenInfo | UnifiedTokenInfo
   handleSelect?: () => void
-  handleSetMaxValue?: () => void
   className?: string
   errors?: FieldErrors
   errorSelect?: string
@@ -45,7 +46,6 @@ export const FieldComboInput = <T extends FieldValues>({
   balance,
   selected,
   handleSelect,
-  handleSetMaxValue,
   className,
   errors,
   withNativeSupport,
@@ -57,6 +57,8 @@ export const FieldComboInput = <T extends FieldValues>({
   if (!register) {
     return null
   }
+
+  const inputRef = useRef<HTMLInputElement>(null)
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
     const allowedKeys = [
@@ -97,6 +99,33 @@ export const FieldComboInput = <T extends FieldValues>({
     }
   }
 
+  const setInputValue = (
+    value: string | ((previousValue: string) => string)
+  ) => {
+    if (inputRef.current) {
+      const lastValue = inputRef.current.value
+
+      inputRef.current.value =
+        typeof value === "function" ? value(lastValue) : value
+
+      // @ts-expect-error React hack for emitting change event
+      const tracker = inputRef.current._valueTracker
+      console.log(tracker)
+      if (tracker) {
+        tracker.setValue(lastValue)
+      }
+
+      const event = new Event("change", { bubbles: true })
+      inputRef.current.dispatchEvent(event)
+    }
+  }
+
+  const handleSetMaxValue = () => {
+    if (!disabled && balance != null && selected && inputRef.current) {
+      setInputValue(formatUnits(balance, selected.decimals))
+    }
+  }
+
   const option = {
     pattern: {
       value: /^(?!0(\.0+)?$)(\d+(\.\d+)?|\.\d+)$/, // Valid result "100", "1.000", "0.000123", etc.
@@ -106,6 +135,11 @@ export const FieldComboInput = <T extends FieldValues>({
   if (required) {
     Object.assign(option, { required: "This field is required" })
   }
+
+  // react-hook-form specific props
+  const reactHookFormRegisterProps = register(fieldName, option)
+
+  const allInputRefs = useMergedRef(inputRef, reactHookFormRegisterProps.ref)
 
   return (
     <div
@@ -118,7 +152,8 @@ export const FieldComboInput = <T extends FieldValues>({
     >
       <input
         type={"text"}
-        {...register(fieldName, option)}
+        {...reactHookFormRegisterProps}
+        ref={allInputRefs}
         onKeyDown={handleKeyDown}
         onPaste={handlePaste}
         placeholder={placeholder}
@@ -154,7 +189,7 @@ export const FieldComboInput = <T extends FieldValues>({
             handleIncludeNativeToSwap ? handleIncludeNativeToSwap : () => {}
           }
           nativeSupportChecked={nativeSupportChecked ?? false}
-          handleClick={handleSetMaxValue || (() => {})}
+          handleClick={handleSetMaxValue}
         />
       )}
       {errorSelect && (
