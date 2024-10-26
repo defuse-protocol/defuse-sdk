@@ -15,14 +15,15 @@ import {
 } from "../Block/BlockMultiBalances"
 import { SelectAssets } from "../SelectAssets"
 
-interface Props<T extends FieldValues> {
+interface Props<T extends FieldValues>
+  extends Omit<BlockMultiBalancesProps, "decimals" | "balance"> {
   fieldName: Path<T>
   register?: UseFormRegister<T>
   required?: string
   placeholder?: string
   label?: string | React.ReactNode
   price?: string
-  balance?: string | bigint
+  balance?: bigint
   selected?: BaseTokenInfo | UnifiedTokenInfo
   handleSelect?: () => void
   handleSetMaxValue?: () => void
@@ -52,7 +53,7 @@ export const FieldComboInput = <T extends FieldValues>({
   nativeSupportChecked,
   errorSelect,
   disabled,
-}: Props<T> & BlockMultiBalancesProps) => {
+}: Props<T>) => {
   if (!register) {
     return null
   }
@@ -144,9 +145,10 @@ export const FieldComboInput = <T extends FieldValues>({
           <SelectAssets selected={selected} handleSelect={handleSelect} />
         )}
       </div>
-      {Number(balance) > 0 && !errorSelect && (
+      {balance != null && !errorSelect && (
         <BlockMultiBalances
           balance={balance}
+          decimals={selected?.decimals ?? 0}
           withNativeSupport={withNativeSupport ?? false}
           handleIncludeNativeToSwap={
             handleIncludeNativeToSwap ? handleIncludeNativeToSwap : () => {}
