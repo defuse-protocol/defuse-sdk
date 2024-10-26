@@ -2,7 +2,7 @@ import { useSelector } from "@xstate/react"
 import { Fragment, useContext, useEffect } from "react"
 import { useFormContext } from "react-hook-form"
 import { formatUnits } from "viem"
-import type { ActorRefFrom } from "xstate"
+import type { ActorRefFrom, SnapshotFrom } from "xstate"
 import { ButtonCustom, ButtonSwitch } from "../../../components/Button"
 import { Form } from "../../../components/Form"
 import { FieldComboInput } from "../../../components/Form/FieldComboInput"
@@ -10,6 +10,8 @@ import type { ModalSelectAssetsPayload } from "../../../components/Modal/ModalSe
 import { useModalStore } from "../../../providers/ModalStoreProvider"
 import { ModalType } from "../../../stores/modalStore"
 import type { SwappableToken } from "../../../types"
+import { isBaseToken } from "../../../utils"
+import type { depositedBalanceMachine } from "../../machines/depositedBalanceMachine"
 import type { intentStatusMachine } from "../../machines/intentStatusMachine"
 import type { Context } from "../../machines/swapUIMachine"
 import { SwapSubmitterContext } from "./SwapSubmitter"
@@ -79,6 +81,21 @@ export const SwapForm = () => {
 
   const { onSubmit } = useContext(SwapSubmitterContext)
 
+  const depositedBalanceRef = useSelector(
+    swapUIActorRef,
+    (state) => state.children.depositedBalanceRef
+  )
+
+  const tokenInBalance = useSelector(
+    depositedBalanceRef,
+    balanceSelector(tokenIn)
+  )
+
+  const tokenOutBalance = useSelector(
+    depositedBalanceRef,
+    balanceSelector(tokenOut)
+  )
+
   return (
     <div className="md:max-w-[472px] rounded-[1rem] p-5 shadow-paper bg-white dark:shadow-paper-dark dark:bg-black-800">
       <Form<SwapFormValues>
@@ -94,6 +111,7 @@ export const SwapForm = () => {
           className="border rounded-t-xl"
           required="This field is required"
           errors={errors}
+          balance={tokenInBalance}
         />
 
         <div className="relative w-full">
@@ -110,6 +128,7 @@ export const SwapForm = () => {
           required="This field is required"
           errors={errors}
           disabled={true}
+          balance={tokenOutBalance}
         />
 
         {renderIntentCreationResult(intentCreationResult)}
@@ -239,5 +258,24 @@ function renderIntentCreationResult(
 
     default:
       return <div className="text-red-500 text-sm">Swap failed! {status}</div>
+  }
+}
+
+function balanceSelector(token: SwappableToken) {
+  return (state: undefined | SnapshotFrom<typeof depositedBalanceMachine>) => {
+    if (!state) return
+
+    if (isBaseToken(token)) {
+      return state.context.balances[token.defuseAssetId]
+    }
+    let total: undefined | bigint
+    for (const innerToken of token.groupedTokens) {
+      const v = state.context.balances[innerToken.defuseAssetId]
+      if (v != null) {
+        total ??= 0n
+        total += v
+      }
+    }
+    return total
   }
 }

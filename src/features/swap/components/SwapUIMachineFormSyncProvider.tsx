@@ -5,11 +5,13 @@ import type { SwapFormValues } from "./SwapForm"
 import { SwapUIMachineContext } from "./SwapUIMachineProvider"
 
 type SwapUIMachineFormSyncProviderProps = PropsWithChildren<{
+  userAddress: string | null
   onSuccessSwap: SwapWidgetProps["onSuccessSwap"]
 }>
 
 export function SwapUIMachineFormSyncProvider({
   children,
+  userAddress,
   onSuccessSwap,
 }: SwapUIMachineFormSyncProviderProps) {
   const { watch } = useFormContext<SwapFormValues>()
@@ -36,6 +38,14 @@ export function SwapUIMachineFormSyncProvider({
       sub.unsubscribe()
     }
   }, [watch, actorRef])
+
+  useEffect(() => {
+    if (userAddress == null) {
+      actorRef.send({ type: "LOGOUT" })
+    } else {
+      actorRef.send({ type: "LOGIN", params: { accountId: userAddress } })
+    }
+  }, [actorRef, userAddress])
 
   useEffect(() => {
     const sub = actorRef.on("INTENT_SETTLED", ({ data }) => {
