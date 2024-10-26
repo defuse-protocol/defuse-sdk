@@ -2,7 +2,6 @@ import { parseUnits } from "ethers"
 import type { providers } from "near-api-js"
 import {
   type ActorRefFrom,
-  type OutputFrom,
   assertEvent,
   assign,
   emit,
@@ -20,7 +19,10 @@ import {
 } from "./backgroundQuoterMachine"
 import { intentStatusMachine } from "./intentStatusMachine"
 import type { AggregatedQuote } from "./queryQuoteMachine"
-import { swapIntentMachine } from "./swapIntentMachine"
+import {
+  type Output as SwapIntentMachineOutput,
+  swapIntentMachine,
+} from "./swapIntentMachine"
 
 export type Context = {
   error: Error | null
@@ -33,7 +35,7 @@ export type Context = {
   parsedFormValues: {
     amountIn: bigint
   }
-  intentCreationResult: OutputFrom<typeof swapIntentMachine> | null
+  intentCreationResult: SwapIntentMachineOutput | null
   intentRefs: ActorRefFrom<typeof intentStatusMachine>[]
 }
 
@@ -130,8 +132,7 @@ export const swapUIMachine = setup({
     clearQuote: assign({ quote: null }),
     clearError: assign({ error: null }),
     setIntentCreationResult: assign({
-      intentCreationResult: (_, value: OutputFrom<typeof swapIntentMachine>) =>
-        value,
+      intentCreationResult: (_, value: SwapIntentMachineOutput) => value,
     }),
     clearIntentCreationResult: assign({ intentCreationResult: null }),
     passthroughEvent: emit((_, event: PassthroughEvent) => event),
