@@ -36,11 +36,6 @@ export interface Transaction {
   actions: Array<Action>
 }
 
-export enum DepositTransactionMethod {
-  FT_TRANSFER_CALL = "ft_transfer_call",
-  NEAR_DEPOSIT = "near_deposit",
-}
-
 export interface BaseAssetInfo {
   address: string
   decimals: number

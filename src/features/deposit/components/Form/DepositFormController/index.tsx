@@ -30,11 +30,13 @@ interface DepositFormControllerProps extends PropsWithChildren {
     } & DepositFormRouterValues
   ) => void
   formType: DepositFormType | null
+  accountId: string | undefined
 }
 
 export const DepositFormController = ({
   tokenList,
   children,
+  accountId,
   onSelect,
 }: DepositFormControllerProps) => {
   return (
@@ -42,6 +44,7 @@ export const DepositFormController = ({
       <div className={styles.formWrapper}>
         <DepositFormRouter
           tokenList={tokenList}
+          accountId={accountId}
           onSubmit={(values: DepositFormRouterValues) => {
             switch (values.blockchain) {
               case DepositBlockchainEnum.NEAR:

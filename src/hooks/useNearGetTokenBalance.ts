@@ -1,8 +1,10 @@
-import { useMutation } from "@tanstack/react-query"
+import { useMutation, useQuery } from "@tanstack/react-query"
 import {
+  getNearBalances,
   getNearNativeBalance,
   getNearNep141Balance,
 } from "src/features/machines/getBalanceMachine"
+import type { BaseTokenInfo, UnifiedTokenInfo } from "../types/base"
 
 const queryKey = "get-balance"
 
@@ -29,4 +31,17 @@ export const useGetNearNep141BalanceAccount = (options = {}) =>
       userAddress: string
     }) => getNearNep141Balance(params),
     ...options,
+  })
+
+export const getNearBalancesKey = [queryKey, "get-near-balances"]
+
+export const useGetNearBalances = (options = {}) =>
+  useMutation({
+    mutationKey: getNearBalancesKey,
+    mutationFn: (params: {
+      tokenList: Array<BaseTokenInfo | UnifiedTokenInfo>
+      userAddress: string
+    }) => getNearBalances(params),
+    ...options,
+    retry: 2,
   })

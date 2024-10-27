@@ -6,19 +6,19 @@ import { ModalContainer } from "../components/Modal/ModalContainer"
 import { ModalStoreProvider } from "./ModalStoreProvider"
 import { TokensStoreProvider } from "./TokensStoreProvider"
 import "../styles/main.css"
-import { RootProvider } from "./RootProvider"
+import { QueryClientProvider } from "./QueryClientProvider"
 
 export const SwapWidgetProvider: React.FC<PropsWithChildren> = ({
   children,
 }) => {
   return (
-    <RootProvider>
+    <QueryClientProvider>
       <ModalStoreProvider>
         <TokensStoreProvider>
           {children}
           <ModalContainer />
         </TokensStoreProvider>
       </ModalStoreProvider>
-    </RootProvider>
+    </QueryClientProvider>
   )
 }

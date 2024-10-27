@@ -1,6 +1,5 @@
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { FormProvider, useForm } from "react-hook-form"
-import { useUser } from "src/providers/UserContext"
 import { DepositWidgetProvider } from "../../../providers"
 import type {
   BaseAssetInfo,
@@ -36,9 +35,9 @@ export const DepositWidget = ({
 
   return (
     <DepositWidgetProvider>
-      {accountId && <UserAddressUpdater accountId={accountId} />}
       <DepositFormController
         tokenList={tokenList}
+        accountId={accountId}
         formType={formType}
         onSelect={(values: DepositFormOnSelectValues) => {
           setFormType(values.formType)
@@ -55,7 +54,11 @@ export const DepositWidget = ({
           blockchain &&
           asset &&
           asset.address && (
-            <DepositFormGenerateAddress blockchain={blockchain} asset={asset} />
+            <DepositFormGenerateAddress
+              blockchain={blockchain}
+              asset={asset}
+              accountId={accountId}
+            />
           )}
         {formType === DepositFormType.DEPOSIT_NEAR &&
           asset &&
@@ -72,12 +75,4 @@ export const DepositWidget = ({
       </DepositFormController>
     </DepositWidgetProvider>
   )
-}
-
-const UserAddressUpdater = ({ accountId }: { accountId: string }) => {
-  const { setUserAddress } = useUser()
-  useEffect(() => {
-    setUserAddress(accountId)
-  }, [accountId, setUserAddress])
-  return null
 }

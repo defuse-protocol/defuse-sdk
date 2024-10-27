@@ -1,6 +1,6 @@
 import { Button, Spinner, Text } from "@radix-ui/themes"
 
-import { useActor, useSelector } from "@xstate/react"
+import { useActor } from "@xstate/react"
 
 import { useEffect } from "react"
 import { useFormContext } from "react-hook-form"
@@ -100,25 +100,25 @@ export const DepositFormNear = ({
           assert(amount != null, "Amount is not selected")
 
           let transactions: Transaction[] = []
-          let transactionNative: Transaction[] = []
 
           // We have to check if the amount is greater than the balance then
           // we have to create a batch transaction for the NEAR deposit first
           // and then the FT deposit
           if (Number(amount) > Number(balanceData || 0n)) {
-            transactionNative =
-              depositNearService.createNativeDepositNearTransaction(
-                (BigInt(amount) - BigInt(balanceData || 0n)).toString()
-              )
-          }
-          const transactionFungible =
-            depositNearService.createDepositNearTransaction(
+            transactions = depositNearService.createBatchDepositNearTransaction(
+              settings.defuseContractId,
+              asset,
+              amount,
+              (BigInt(amount) - BigInt(balanceData || 0n)).toString()
+            )
+          } else {
+            transactions = depositNearService.createDepositNearTransaction(
               settings.defuseContractId,
               asset,
               amount
             )
+          }
 
-          transactions = [...transactionNative, ...transactionFungible]
           const txHash = await sendTransaction(transactions)
           return txHash
         }),

@@ -8,7 +8,7 @@ import type {
   BaseTokenInfo,
   UnifiedTokenInfo,
 } from "../../types/base"
-import { isBaseToken } from "../../utils"
+import { isBaseToken, isUnifiedToken } from "../../utils"
 import { AssetList } from "../Asset/AssetList"
 import { SearchBar } from "../SearchBar"
 import { ModalDialog } from "./ModalDialog"
@@ -19,12 +19,14 @@ export type ModalSelectAssetsPayload = {
   modalType?: ModalType.MODAL_SELECT_ASSETS
   token?: Token
   fieldName?: string
+  accountId?: string
 }
 
 export type SelectItemToken<T = Token> = {
   itemId: string
   token: T
   disabled: boolean
+  defuseAssetId?: string
   balance?: BaseTokenBalance
 }
 
@@ -80,43 +82,30 @@ export const ModalSelectAssets = () => {
       : undefined
 
     const getAssetList: SelectItemToken[] = []
-    const getAssetListWithBalances: SelectItemToken[] = []
+
     for (const [tokenId, token] of data) {
-      // We do not filter "tokenIn" as give full access to tokens in first step
-      // Filtration by routes should happen only at "tokenOut"
       const disabled = selectedTokenId != null && tokenId === selectedTokenId
-
-      if (isBaseToken(token)) {
-        if (token.balance != null) {
-          getAssetListWithBalances.push({
-            itemId: tokenId,
-            token,
-            disabled,
-            balance: {
-              balance: token.balance,
-              balanceUsd: token.balanceUsd,
-              convertedLast: token.convertedLast,
-            },
-          })
-        }
-      } else {
-        const hasBalance = token.groupedTokens.some(
-          (innerToken) => innerToken.balance != null
+      if (isUnifiedToken(token)) {
+        const defuseAssetId = token.groupedTokens.reduce(
+          (acc, innerToken) =>
+            innerToken.defuseAssetId != null
+              ? [acc, innerToken.defuseAssetId].join(",")
+              : acc,
+          ""
         )
-        if (hasBalance) {
-          getAssetListWithBalances.push({
-            itemId: tokenId,
-            token,
-            disabled,
-            balance: undefined,
-          })
-        }
+        // We join defuseAssetId of all grouped tokens to get a single string
+        // to simplify search balances and not mutate token object
+        getAssetList.push({ itemId: tokenId, token, disabled, defuseAssetId })
+      } else if (isBaseToken(token)) {
+        getAssetList.push({
+          itemId: tokenId,
+          token,
+          disabled,
+          defuseAssetId: token.defuseAssetId,
+        })
       }
-
-      getAssetList.push({ itemId: tokenId, token, disabled })
     }
     setAssetList(getAssetList)
-    setAssetListWithBalances(getAssetListWithBalances)
   }, [data, isLoading, payload])
 
   return (
@@ -129,21 +118,13 @@ export const ModalSelectAssets = () => {
             handleOverrideCancel={onCloseModal}
           />
         </div>
-        {!deferredQuery.length && assetListWithBalances.length ? (
-          <div className="relative flex-1 border-b border-gray-100 px-2.5 min-h-[228px] h-full max-h-[228px] overflow-y-auto dark:border-black-950">
-            <AssetList
-              assets={assetListWithBalances}
-              title="Your tokens"
-              handleSelectToken={handleSelectToken}
-            />
-          </div>
-        ) : null}
         <div className="flex-1 flex flex-col justify-between border-b border-gray-100 px-2.5 overflow-y-auto dark:border-black-950">
           <AssetList
             assets={deferredQuery ? assetList.filter(filterPattern) : assetList}
             title={deferredQuery ? "Search results" : "Popular tokens"}
             className="h-full"
             handleSelectToken={handleSelectToken}
+            accountId={(payload as ModalSelectAssetsPayload)?.accountId}
           />
           {deferredQuery && (
             <div className="flex justify-center items-center">

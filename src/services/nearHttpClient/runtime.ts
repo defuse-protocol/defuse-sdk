@@ -26,7 +26,7 @@ async function request(url: string, body: unknown): Promise<Response> {
 export async function jsonRPCRequest<
   T extends types.JSONRPCRequest<unknown, unknown>,
 >(method: T["method"], params: T["params"][0]) {
-  const response = await request(`${BASE_URL}/rpc`, {
+  const response = await request(`${BASE_URL}`, {
     id: "dontcare",
     jsonrpc: "2.0",
     method,
