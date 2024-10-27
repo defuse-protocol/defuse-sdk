@@ -3,7 +3,7 @@ import { InfoCircledIcon } from "@radix-ui/react-icons"
 import { Checkbox, Text, Tooltip } from "@radix-ui/themes"
 import clsx from "clsx"
 import React from "react"
-import { formatUnits } from "viem"
+import { formatTokenValue } from "../../utils/format"
 
 export interface BlockMultiBalancesProps {
   balance: bigint
@@ -50,7 +50,10 @@ export const BlockMultiBalances = ({
           handleClick && "cursor-pointer"
         )}
       >
-        {formatUnits(balance, decimals)}
+        {formatTokenValue(balance, decimals, {
+          min: 0.0001,
+          fractionDigits: 4,
+        })}
       </span>
       {withNativeSupport && (
         <div className="absolute -top-[74px] right-0 flex justify-center items-center gap-1">
