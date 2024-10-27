@@ -163,6 +163,31 @@ export const swapUIMachine = setup({
       "swapRef",
       (_, event: BackgroundQuoterEvents) => event
     ),
+
+    spawnIntentStatusActor: assign({
+      intentRefs: (
+        { context, spawn, self },
+        output: OutputFrom<typeof swapIntentMachine>
+      ) => {
+        if (output.status !== "INTENT_PUBLISHED") return context.intentRefs
+
+        // todo: take quote from result of `swap`
+        assert(context.quote != null, "quote is null")
+
+        const intentRef = spawn("intentStatusActor", {
+          id: `intent-${output.intentHash}`,
+          input: {
+            parentRef: self,
+            intentHash: output.intentHash,
+            tokenIn: context.formValues.tokenIn,
+            tokenOut: context.formValues.tokenOut,
+            quote: context.quote,
+          },
+        })
+
+        return [intentRef, ...context.intentRefs]
+      },
+    }),
   },
   guards: {
     isQuoteRelevant: ({ context }) => {
@@ -201,7 +226,6 @@ export const swapUIMachine = setup({
         params: ({ event }) => event,
       },
     },
-
     BALANCE_UPDATED: {
       actions: "sendToBackgroundQuoterRefNewQuoteInput",
     },
@@ -293,28 +317,10 @@ export const swapUIMachine = setup({
           target: "editing",
 
           actions: [
-            assign({
-              intentRefs: ({ context, spawn, event, self }) => {
-                if (event.output.status !== "INTENT_PUBLISHED")
-                  return context.intentRefs
-
-                // todo: take quote from result of `swap`
-                assert(context.quote != null, "quote is null")
-
-                const intentRef = spawn("intentStatusActor", {
-                  id: `intent-${event.output.intentHash}`,
-                  input: {
-                    parentRef: self,
-                    intentHash: event.output.intentHash,
-                    tokenIn: context.formValues.tokenIn,
-                    tokenOut: context.formValues.tokenOut,
-                    quote: context.quote,
-                  },
-                })
-
-                return [intentRef, ...context.intentRefs]
-              },
-            }),
+            {
+              type: "spawnIntentStatusActor",
+              params: ({ event }) => event.output,
+            },
             {
               type: "setIntentCreationResult",
               params: ({ event }) => event.output,
