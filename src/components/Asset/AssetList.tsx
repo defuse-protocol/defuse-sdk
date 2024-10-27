@@ -90,23 +90,35 @@ export const AssetList = <T extends Token>({
               <Text as="span" size="2" weight="medium">
                 {token.name}
               </Text>
-              <Text as="span" size="2" weight="medium">
-                <AssetBalance asset={token} />
-              </Text>
+              {renderBalance(balance?.balance, token)}
             </div>
             <div className="flex justify-between items-center text-gray-600 dark:text-gray-500">
               <Text as="span" size="2">
                 {token.symbol}
-              </Text>
-              <Text as="span" size="2">
-                {balance
-                  ? `$${balanceToCurrency(Number(balance.balanceUsd))}`
-                  : null}
               </Text>
             </div>
           </div>
         </button>
       ))}
     </div>
+  )
+}
+
+function renderBalance(
+  balance: string | undefined,
+  token: BaseTokenInfo | UnifiedTokenInfo
+) {
+  return (
+    <Text as="span" size="2" weight="medium">
+      {balance != null ? (
+        Number(balanceToDecimal(balance, token.decimals)) < 0.00001 ? (
+          "< 0.00001"
+        ) : (
+          Number(balanceToDecimal(balance, token.decimals)).toFixed(7)
+        )
+      ) : (
+        <AssetBalance asset={token} />
+      )}
+    </Text>
   )
 }

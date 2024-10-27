@@ -1,5 +1,6 @@
 import { Text } from "@radix-ui/themes"
 import React, { useState, useDeferredValue, useEffect } from "react"
+import type { BalanceMapping } from "../../features/machines/depositedBalanceMachine"
 import { useModalStore } from "../../providers/ModalStoreProvider"
 import { useTokensStore } from "../../providers/TokensStoreProvider"
 import { ModalType } from "../../stores/modalStore"
@@ -19,6 +20,7 @@ export type ModalSelectAssetsPayload = {
   modalType?: ModalType.MODAL_SELECT_ASSETS
   token?: Token
   fieldName?: string
+  balances?: BalanceMapping
 }
 
 export type SelectItemToken<T = Token> = {
@@ -71,7 +73,11 @@ export const ModalSelectAssets = () => {
     const { selectToken, fieldName } = payload as {
       selectToken: Token | undefined
       fieldName: string
+      balances?: BalanceMapping
     }
+
+    // Warning: This is unsafe type casting, payload could be anything
+    const balances = (payload as ModalSelectAssetsPayload).balances ?? {}
 
     const selectedTokenId = selectToken
       ? isBaseToken(selectToken)
@@ -87,28 +93,41 @@ export const ModalSelectAssets = () => {
       const disabled = selectedTokenId != null && tokenId === selectedTokenId
 
       if (isBaseToken(token)) {
-        if (token.balance != null) {
+        const balance = balances[token.defuseAssetId]
+        if (balance != null && balance > 0n) {
           getAssetListWithBalances.push({
             itemId: tokenId,
             token,
             disabled,
             balance: {
-              balance: token.balance,
-              balanceUsd: token.balanceUsd,
-              convertedLast: token.convertedLast,
+              balance: balance.toString(),
+              balanceUsd: undefined,
+              convertedLast: undefined,
             },
           })
         }
       } else {
-        const hasBalance = token.groupedTokens.some(
-          (innerToken) => innerToken.balance != null
+        const totalBalance = token.groupedTokens.reduce<undefined | bigint>(
+          (acc, innerToken) => {
+            const balance = balances[innerToken.defuseAssetId]
+            if (balance != null) {
+              return (acc ?? 0n) + balance
+            }
+            return acc
+          },
+          undefined
         )
-        if (hasBalance) {
+
+        if (totalBalance != null && totalBalance > 0n) {
           getAssetListWithBalances.push({
             itemId: tokenId,
             token,
             disabled,
-            balance: undefined,
+            balance: {
+              balance: totalBalance.toString(),
+              balanceUsd: undefined,
+              convertedLast: undefined,
+            },
           })
         }
       }
