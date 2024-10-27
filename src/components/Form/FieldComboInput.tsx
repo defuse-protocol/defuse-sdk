@@ -146,7 +146,7 @@ export const FieldComboInput = <T extends FieldValues>({
       className={clsx(
         "relative flex justify-between items-center px-5 py-[2.375rem] w-full bg-gray-50 dark:bg-black-900 dark:border-black-950",
         !label && "pt-5",
-        !price && !balance && errors && !errors[fieldName] && "pb-5",
+        !price && balance == null && errors && !errors[fieldName] && "pb-5",
         className && className
       )}
     >
