@@ -42,7 +42,7 @@ export const SelectAssets = ({ selected, handleSelect }: Props) => {
         <EmptyIcon />
       )}
       <span className="text-sm uppercase truncate">
-        {selected?.name || "select token"}
+        {selected?.symbol || "select token"}
       </span>
       <CaretDownIcon width={25} height={25} />
     </button>
