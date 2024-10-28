@@ -16,6 +16,10 @@ export async function submitIntent(
   return result.intent_hash
 }
 
+export type IntentSettlementResult = Awaited<
+  ReturnType<typeof waitForIntentSettlement>
+>
+
 export async function waitForIntentSettlement(
   signal: AbortSignal,
   intentHash: string

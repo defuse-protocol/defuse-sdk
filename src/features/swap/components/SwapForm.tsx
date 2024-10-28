@@ -1,5 +1,8 @@
-import { useContext, useEffect } from "react"
+import { useSelector } from "@xstate/react"
+import { Fragment, useContext, useEffect } from "react"
 import { useFormContext } from "react-hook-form"
+import { formatUnits } from "viem"
+import type { ActorRefFrom } from "xstate"
 import { ButtonCustom, ButtonSwitch } from "../../../components/Button"
 import { Form } from "../../../components/Form"
 import { FieldComboInput } from "../../../components/Form/FieldComboInput"
@@ -7,6 +10,7 @@ import type { ModalSelectAssetsPayload } from "../../../components/Modal/ModalSe
 import { useModalStore } from "../../../providers/ModalStoreProvider"
 import { ModalType } from "../../../stores/modalStore"
 import type { SwappableToken } from "../../../types"
+import type { intentStatusMachine } from "../../machines/intentStatusMachine"
 import type { Context } from "../../machines/swapUIMachine"
 import { SwapSubmitterContext } from "./SwapSubmitter"
 import { SwapUIMachineContext } from "./SwapUIMachineProvider"
@@ -25,7 +29,7 @@ export const SwapForm = () => {
 
   const swapUIActorRef = SwapUIMachineContext.useActorRef()
   const snapshot = SwapUIMachineContext.useSelector((snapshot) => snapshot)
-  const intentOutcome = snapshot.context.outcome
+  const intentCreationResult = snapshot.context.intentCreationResult
 
   const { tokenIn, tokenOut } = SwapUIMachineContext.useSelector(
     (snapshot) => snapshot.context.formValues
@@ -108,7 +112,7 @@ export const SwapForm = () => {
           disabled={true}
         />
 
-        {renderIntentOutcome(intentOutcome)}
+        {renderIntentCreationResult(intentCreationResult)}
 
         <ButtonCustom
           type="submit"
@@ -119,46 +123,119 @@ export const SwapForm = () => {
           Swap
         </ButtonCustom>
       </Form>
+
+      <Intents intentRefs={snapshot.context.intentRefs} />
     </div>
   )
 }
 
-function renderIntentOutcome(intentOutcome: Context["outcome"]) {
-  if (!intentOutcome) {
+function Intents({
+  intentRefs,
+}: { intentRefs: ActorRefFrom<typeof intentStatusMachine>[] }) {
+  return (
+    <div>
+      {intentRefs.map((intentRef, i, list) => {
+        return (
+          <Fragment key={intentRef.id}>
+            <Intent intentRef={intentRef} />
+            {i < list.length - 1 && <hr />}
+          </Fragment>
+        )
+      })}
+    </div>
+  )
+}
+
+function Intent({
+  intentRef,
+}: { intentRef: ActorRefFrom<typeof intentStatusMachine> }) {
+  const snapshot = useSelector(intentRef, (state) => state)
+
+  const amountIn = formatUnits(
+    snapshot.context.quote.totalAmountIn,
+    snapshot.context.tokenIn.decimals
+  )
+  const amountOut = formatUnits(
+    snapshot.context.quote.totalAmountOut,
+    snapshot.context.tokenOut.decimals
+  )
+
+  const swapInfo = `${amountIn} ${snapshot.context.tokenIn.symbol} -> ${amountOut} ${snapshot.context.tokenOut.symbol}`
+
+  const value = snapshot.value
+  switch (value) {
+    case "pending":
+      return (
+        <div>
+          {swapInfo} 💤
+          <br />
+          Checking intent status... intentHash: {snapshot.context.intentHash}
+        </div>
+      )
+    case "checking":
+      return (
+        <div>
+          {swapInfo} 💤
+          <br />
+          Checking intent status... intentHash: {snapshot.context.intentHash}{" "}
+          tx: {snapshot.context.txHash}
+        </div>
+      )
+    case "success":
+      return (
+        <div>
+          {swapInfo} ✅
+          <br />
+          Intent settled! tx: {snapshot.context.txHash}
+        </div>
+      )
+    case "not_valid":
+      return (
+        <div>
+          {swapInfo} ❌
+          <br />
+          Intent not valid! tx: {snapshot.context.txHash} intent:{" "}
+          {snapshot.context.intentHash}
+        </div>
+      )
+    case "error":
+      return (
+        <div>
+          {swapInfo} 😓
+          <br />
+          Error checking intent status! tx: {snapshot.context.txHash} intent:{" "}
+          {snapshot.context.intentHash}
+          <button
+            type={"button"}
+            onClick={() => intentRef.send({ type: "RETRY" })}
+          >
+            retry
+          </button>
+        </div>
+      )
+    default:
+      value satisfies never
+      return null
+  }
+}
+
+function renderIntentCreationResult(
+  intentCreationResult: Context["intentCreationResult"]
+) {
+  if (!intentCreationResult) {
     return null
   }
 
-  const status = intentOutcome.status
+  const status = intentCreationResult.status
   switch (status) {
-    case "SETTLED":
+    case "INTENT_PUBLISHED":
       return null
 
-    case "NOT_FOUND_OR_NOT_VALID":
-      return (
-        <div className="text-red-500 text-sm">
-          Missed deadline or don't have enough funds!
-          {intentOutcome.txHash == null ? null : (
-            <>
-              <br />
-              Tx: {intentOutcome.txHash}
-            </>
-          )}
-          {intentOutcome.intentHash == null ? null : (
-            <>
-              <br />
-              Intent: {intentOutcome.intentHash}
-            </>
-          )}
-        </div>
-      )
+    case "ERR_QUOTE_EXPIRED_RETURN_IS_LOWER":
+      return <div className="text-red-500 text-sm">Missed deadline</div>
 
-    case "ERR_CANNOT_OBTAIN_INTENT_STATUS":
-      return (
-        <div className="text-red-500 text-sm">
-          Cannot confirm intent status! Tx: {intentOutcome.txHash} Intent:{" "}
-          {intentOutcome.intentHash}
-        </div>
-      )
+    case "ERR_CANNOT_PUBLISH_INTENT":
+      return <div className="text-red-500 text-sm">Cannot publish intent</div>
 
     default:
       return <div className="text-red-500 text-sm">Swap failed! {status}</div>

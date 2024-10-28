@@ -1,6 +1,7 @@
 import { parseUnits } from "ethers"
 import type { providers } from "near-api-js"
 import {
+  type ActorRefFrom,
   type InputFrom,
   type OutputFrom,
   assertEvent,
@@ -10,15 +11,16 @@ import {
   setup,
 } from "xstate"
 import type { SwappableToken } from "../../types"
+import type { BaseTokenInfo, UnifiedTokenInfo } from "../../types/base"
 import type { Transaction } from "../../types/deposit"
 import { isBaseToken } from "../../utils"
-import type { queryQuoteMachine } from "./queryQuoteMachine"
+import { intentStatusMachine } from "./intentStatusMachine"
+import type { AggregatedQuote, queryQuoteMachine } from "./queryQuoteMachine"
 import type { swapIntentMachine } from "./swapIntentMachine"
 
 export type Context = {
   error: Error | null
   quote: OutputFrom<typeof queryQuoteMachine> | null
-  outcome: OutputFrom<typeof swapIntentMachine> | null
   formValues: {
     tokenIn: SwappableToken
     tokenOut: SwappableToken
@@ -27,13 +29,23 @@ export type Context = {
   parsedFormValues: {
     amountIn: bigint
   }
+  intentCreationResult: OutputFrom<typeof swapIntentMachine> | null
+  intentRefs: ActorRefFrom<typeof intentStatusMachine>[]
+}
+
+type PassthroughEvent = {
+  type: "INTENT_SETTLED"
+  data: {
+    intentHash: string
+    txHash: string
+    tokenIn: BaseTokenInfo | UnifiedTokenInfo
+    tokenOut: BaseTokenInfo | UnifiedTokenInfo
+    quote: AggregatedQuote
+  }
 }
 
 export const swapUIMachine = setup({
   types: {
-    children: {} as {
-      quoteQuerier: "queryQuote"
-    },
     input: {} as {
       tokenIn: SwappableToken
       tokenOut: SwappableToken
@@ -57,18 +69,10 @@ export const swapUIMachine = setup({
               tx: Transaction
             ) => Promise<{ txHash: string } | null>
           }
-        },
+        }
+      | PassthroughEvent,
 
-    emitted: {} as {
-      type: "swap_finished"
-      data: {
-        intentOutcome: OutputFrom<typeof swapIntentMachine>
-        tokenIn: SwappableToken
-        tokenOut: SwappableToken
-        amountIn: bigint
-        amountOut: bigint
-      }
-    },
+    emitted: {} as PassthroughEvent,
   },
   actors: {
     formValidation: fromPromise(async (): Promise<boolean> => {
@@ -88,6 +92,7 @@ export const swapUIMachine = setup({
         throw new Error("not implemented")
       }
     ),
+    intentStatus: intentStatusMachine,
   },
   actions: {
     setFormValues: assign({
@@ -131,22 +136,12 @@ export const swapUIMachine = setup({
     }),
     clearQuote: assign({ quote: null }),
     clearError: assign({ error: null }),
-    setOutcome: assign({
-      outcome: (_, value: OutputFrom<typeof swapIntentMachine>) => value,
+    setIntentCreationResult: assign({
+      intentCreationResult: (_, value: OutputFrom<typeof swapIntentMachine>) =>
+        value,
     }),
-    clearOutcome: assign({ outcome: null }),
-    emitSwapFinish: emit(
-      ({ context }, intentOutcome: OutputFrom<typeof swapIntentMachine>) => ({
-        type: "swap_finished" as const,
-        data: {
-          intentOutcome,
-          tokenIn: context.formValues.tokenIn,
-          tokenOut: context.formValues.tokenOut,
-          amountIn: context.parsedFormValues.amountIn,
-          amountOut: BigInt(context.quote?.totalAmountOut ?? "0"),
-        },
-      })
-    ),
+    clearIntentCreationResult: assign({ intentCreationResult: null }),
+    passthroughEvent: emit((_, event: PassthroughEvent) => event),
   },
   delays: {
     quotePollingInterval: 500,
@@ -167,7 +162,6 @@ export const swapUIMachine = setup({
   context: ({ input }) => ({
     error: null,
     quote: null,
-    outcome: null,
     formValues: {
       tokenIn: input.tokenIn,
       tokenOut: input.tokenOut,
@@ -176,7 +170,18 @@ export const swapUIMachine = setup({
     parsedFormValues: {
       amountIn: 0n,
     },
+    intentCreationResult: null,
+    intentRefs: [],
   }),
+
+  on: {
+    INTENT_SETTLED: {
+      actions: {
+        type: "passthroughEvent",
+        params: ({ event }) => event,
+      },
+    },
+  },
 
   states: {
     editing: {
@@ -184,7 +189,7 @@ export const swapUIMachine = setup({
         submit: {
           target: "submitting",
           guard: "isQuoteRelevant",
-          actions: "clearOutcome",
+          actions: "clearIntentCreationResult",
         },
         input: {
           target: ".validating",
@@ -307,8 +312,32 @@ export const swapUIMachine = setup({
         onDone: {
           target: "editing.validating",
           actions: [
-            { type: "setOutcome", params: ({ event }) => event.output },
-            { type: "emitSwapFinish", params: ({ event }) => event.output },
+            assign({
+              intentRefs: ({ context, spawn, event, self }) => {
+                if (event.output.status !== "INTENT_PUBLISHED")
+                  return context.intentRefs
+
+                // todo: take quote from result of `swap`
+                assert(context.quote != null, "quote is null")
+
+                const intentRef = spawn("intentStatus", {
+                  id: `intent-${event.output.intentHash}`,
+                  input: {
+                    parentRef: self,
+                    intentHash: event.output.intentHash,
+                    tokenIn: context.formValues.tokenIn,
+                    tokenOut: context.formValues.tokenOut,
+                    quote: context.quote,
+                  },
+                })
+
+                return [intentRef, ...context.intentRefs]
+              },
+            }),
+            {
+              type: "setIntentCreationResult",
+              params: ({ event }) => event.output,
+            },
           ],
         },
 
@@ -324,3 +353,9 @@ export const swapUIMachine = setup({
 
   initial: "editing",
 })
+
+function assert(condition: unknown, msg?: string): asserts condition {
+  if (!condition) {
+    throw new Error(msg)
+  }
+}

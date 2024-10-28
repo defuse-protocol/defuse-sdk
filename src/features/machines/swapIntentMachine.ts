@@ -14,8 +14,6 @@ import {
   submitIntent,
   waitForIntentSettlement,
 } from "../../services/intentService"
-import * as solverRelayClient from "../../services/solverRelayHttpClient"
-import type * as types from "../../services/solverRelayHttpClient/types"
 import type {
   SwappableToken,
   WalletMessage,
@@ -26,7 +24,6 @@ import {
   makeInnerSwapMessage,
   makeSwapMessage,
 } from "../../utils/messageFactory"
-import { prepareSwapSignedData } from "../../utils/prepareBroadcastRequest"
 import {
   type SendNearTransaction,
   publicKeyVerifierMachine,
@@ -47,6 +44,7 @@ type Context = {
     innerMessage: DefuseMessageFor_DefuseIntents
   }
   signature: WalletSignatureResult | null
+  intentHash: string | null
   error:
     | null
     | {
@@ -58,29 +56,14 @@ type Context = {
       }
     | {
         status: "ERR_CANNOT_VERIFY_PUBLIC_KEY"
-        error: Error
-      }
-    | {
-        status: "ERR_CANNOT_ADD_PUBLIC_KEY"
+        error: Error | null
       }
     | {
         status: "ERR_CANNOT_PUBLISH_INTENT"
         error: Error
       }
     | {
-        status: "ERR_CANNOT_OBTAIN_INTENT_STATUS"
-        error: Error
-        txHash: string | null
-        intentHash: string
-      }
-  intentStatus:
-    | { status: "LIMB" }
-    | { status: "PENDING"; intentHash: string }
-    | { status: "SETTLED"; txHash: string; intentHash: string }
-    | {
-        status: "NOT_FOUND_OR_NOT_VALID"
-        txHash: string | null
-        intentHash: string | null
+        status: "ERR_QUOTE_EXPIRED_RETURN_IS_LOWER"
       }
 }
 
@@ -104,30 +87,18 @@ type Output =
     }
   | {
       status: "ERR_CANNOT_VERIFY_PUBLIC_KEY"
-      error: Error
-    }
-  | {
-      status: "ERR_CANNOT_ADD_PUBLIC_KEY"
+      error: Error | null
     }
   | {
       status: "ERR_CANNOT_PUBLISH_INTENT"
       error: Error
     }
   | {
-      status: "ERR_CANNOT_OBTAIN_INTENT_STATUS"
-      error: Error
-      txHash: string | null
-      intentHash: string
+      status: "ERR_QUOTE_EXPIRED_RETURN_IS_LOWER"
     }
   | {
-      status: "SETTLED"
-      txHash: string
+      status: "INTENT_PUBLISHED"
       intentHash: string
-    }
-  | {
-      status: "NOT_FOUND_OR_NOT_VALID"
-      txHash: string | null // txHash may present if the intent was broadcasted, but not settled
-      intentHash: string | null // intentHash may not present if the intent was invalidated before broadcasting
     }
 
 export const swapIntentMachine = setup({
@@ -167,21 +138,8 @@ export const swapIntentMachine = setup({
     setSignature: assign({
       signature: (_, signature: WalletSignatureResult | null) => signature,
     }),
-    setIntentStatus: assign({
-      intentStatus: (_, intentStatus: Context["intentStatus"]) => intentStatus,
-    }),
-    setPendingIntentStatus: assign({
-      intentStatus: (_, intentHash: string) => ({
-        status: "PENDING" as const,
-        intentHash: intentHash,
-      }),
-    }),
-    setNotValidIntentStatus: assign({
-      intentStatus: () => ({
-        status: "NOT_FOUND_OR_NOT_VALID" as const,
-        txHash: null,
-        intentHash: null,
-      }),
+    setIntentHash: assign({
+      intentHash: (_, intentHash: string) => intentHash,
     }),
     startBackgroundQuoter: assign({
       // @ts-expect-error For some reason `spawn` creates object which type mismatch
@@ -245,14 +203,14 @@ export const swapIntentMachine = setup({
     isTrue: (_, params: boolean) => params,
   },
 }).createMachine({
-  /** @xstate-layout N4IgpgJg5mDOIC5SwO4EMAOBaAlgOwBcxCA6HCAGzAGIBtABgF1FQMB7WHAnNvFkAB6IAjAGYAHCXoAmesIAsAVmniAnADZxa+QBoQAT0SjVk9dPn1Ri6wHZ689eoC+Tvaky5CxAiQDKOKDx8KGoIXjAyPAA3NgBrCM5AgFk4WDQYBmYkEHZObl5+IQRhdRJhRRL5eVF5cRtRUXUbPUMEdSqym0V2usULRVEXN3RsfCJSf0Dg0PDImPiSRLwU2DSM4SzWDi4ePmyirFFhSQdhaUbVCWNL3QNEMxPpdQ16VRkbdVFpIZB3Ua8JgEgngQmAAE5gthgkgYChoAgAMyhAFtFkCVmswJl+LkdgV9ogsE96CQtJ9yephG9hMIWogqqoSIpVPJVBout0VGIfn9POMfAA1cE4BH6YIAAgACgBXABGFBwAGNxQBpMD6KVguDERU0MJ4CL4eYJEZ87wkIVgkVikFSuUK5VqjWSrWwHVgBBGtiK+G7TLY7K4-J7UBFGokUT0ZnPTQ2FnKWl3BAs+SktSNeQqDTSFQ801jc2W60SmXypWq9Wa7V4XUzA1zOImjwF0hF0Ul+3lp1Vt01j1en3B-0bHHbYOFQlfRntFTiax1GxU26tNk2EiU5lz1n1Kk2PPNgGC4Xt22lh0V52u93UcGQ6Gw+FIsGo3kto9Wk9QO1lx2Vl3V3VPWib1fV4f0mFHPJdgnBAiTeEhpDedpM1UbpVEQukEDjaQSBscQlBUYxrk+fd-n5EgACFITQCAfVgbhbQASUPOtDWAhZX0PSjqNotB6IlZj+SAmJBz9JgAy2KD8VDRBFxIS4WTsdR6BsaQxBkTCxDMMpIwqGozisaQ91cX58y4qi2BouiGK-QTvBvCEoRhOFERRRYzPIiyrL4mzxTswhhJAodxIgwMx2gglYK5eS2VjBp2lUD5RE0qlSnERxWTkFSrBMUizVbY8bVsliJJycLpMERB0tw8xFDw+LjGsTTXlEKRXm6BxY0cPK3wtQqBJKkcwqkkNKoQI5GQaTNMspRNWmEFTShUj46vodLug+HquMlNgKAVJjD3FXwCHhaVYFYhsOI880dr2gb+SOk6CDOwLRLAkLNjKkaYPEHCviacRXgWkwo2aJMShzBD6CjFS3i0BRvhMzjyNu-bioe47TvO28nIfVzn3cg8Ud2tG-MOzHntgV7QLwcDPqDCKZNgyNU0uRQ6isRQZES8RNIIpk6jOLlFzw1QXBMvA2AgOB+GR7xILxUaDlEGw1xnLR51VpdNPQhDNEQrpMzWiR5C28jyCoBXx0ihQSW0bdEPQqkvkw-6SCNswqmeTM8LN81JmBKArcZsbEPdhaxA5kW6uqTDaj+iQbCUBGc3Q02keugqPyK79z27f9e11YOKqKeQ1aUPC8PZnnhDB1pxCpCNa66Iy0OMdPhiJ80vN4-iDv5YulcQdmpErhwc3wmotE0tThCZGllJkRpdLFjOu6z4t+-l4bFZghbFFHxCp3EGoHHZ5rG5PixYa5oXnDXsibpJ+7vEerHB5gzR3ccV451Q8e+h8zjGUWQFgJDHHoJSYyndH6kAAMJsGRLCMARAIAf0iolXC6FzByF+iUPC6hNJ4UeGIWQc5ZCyGgaZdePgADixBhTKgAKKOTBOgpmRJtI5iNnGPClhFyEPBsQ92akvhrWUDIFS4snBAA */
+  /** @xstate-layout N4IgpgJg5mDOIC5SwO4EMAOBaAlgOwBcxCA6HCAGzAGIBtABgF1FQMB7WHAnNvFkAB6IAjAGYAHCXoAmesIAsAVmniAnADZxa+QBoQAT0SjVk9dPn1Ri6wHZ689eoC+Tvaky5CxAiQDKOKDx8KGoIXjAyPAA3NgBrCM5AgFk4WDQYBmYkEHZObl5+IQRhdRJhRRL5eVF5cRtRUXUbPUMEdSqym0V2usULRVEXN3RsfCJSf0Dg0PDImPiSRLwU2DSM4SzWDi4ePmyirFFhSQdhaUbVCWNL3QNEMxPpdQ16VRkbdVFpIZB3Ua8JgEgngQmAAE5gthgkgYChoAgAMyhAFtFkCVmswJl+LkdgV9ogsE96CQtJ9yephG9hMIWogqqoSIpVPJVBout0VGIfn9POMfAA1cE4BH6YIAAgACgBXABGFBwAGNxQBpMD6KVguDERU0MJ4CL4eYJEZ87wkIVgkVikFSuUK5VqjWSrWwHVgBBGtiK+G7TLY7K4-J7UBFGokUT0ZnPTQ2FnKWl3BAs+SktSNeQqDTSFQ801jc2W60SmXypWq9Wa7V4XUzA1zOImjwF0hF0Ul+3lp1Vt01j1en3B-0bHHbYOFQlfRntFTiax1GxU26tNk2EiU5lz1n1Kk2PPNgGC4Xt22lh0V52u93UcGQ6Gw+FIsGo3kto9Wk9QO1lx2Vl3V3VPWib1fV4f0mFHPJdgnBAiTeEhpDedpM1UbpVEQukEDjaQSBscQlBUYxrk+fd-n5EgACFITQCAfVgbhbQASUPG8IShGE4URFFFnzQ9KOo2i0HoiVmP5ICYkHP0mADLYoPxUNCS5Eg2Q0OoGnaVQPlETCaQ0UlHFZOR6HqTdSLNVtjxtL9RO8OgIMDMdoIJBBxFKGxzEUPCmjOeh6CaHThHoSQunEWQlA+aQPj3Vxfl48i2ys8UbMIOgRwcuSQ0EIxzCZVzPKsY53m0pNArsBD8LeD4WVQlkzLffi2BouiGOslj9UNYCFlfPiqMawThKYw9xJAodpPs2S8UyopF2U4x5DsdRjOkMQZB0xocJWioajOKxIpcGK8DYCA4H4br+UgyaYMOGw1xnLR5xupcdPQhDNEi8QGnscpapis7zXIKgLvHZyFBJbRt0Q9CqS+TCvlKTM-PMBwWXeuq+MmYEoCBpyFIQRCSHkQKxDUxcuhsapMNqHCGjqJQFBzRDzDR+LLI7H8Lx7d1sfkrKEHm9dwrqOc1Dw4RmiTcQqQjMWukitC5uZ81eqaoSWqSw9uamxBFEkYzabMFRqlqcQdOW4QmRpRaZEaSNmUViyP0S5KCE1mDAsUKR3MuRCPqqdQdZ0uRGV93y40UOQc2cX64vNABhNhkVhMAiAgV3nNQpljJZcRfNeAiTZK5RU2WuWnhCuNBmjg9yIAcWIYVlQAUTYsE09xol2kzudfO+6RmXF1pyhykvZaaHWK-2pwgA */
   context: ({ input }) => {
     return {
       quoterRef: null,
       messageToSign: null,
       signature: null,
       error: null,
-      intentStatus: { status: "LIMB" },
+      intentHash: null,
       ...input,
     }
   },
@@ -264,34 +222,18 @@ export const swapIntentMachine = setup({
   entry: ["startBackgroundQuoter"],
 
   output: ({ context }): Output => {
+    if (context.intentHash != null) {
+      return {
+        status: "INTENT_PUBLISHED",
+        intentHash: context.intentHash,
+      }
+    }
+
     if (context.error != null) {
       return context.error
     }
 
-    const status = context.intentStatus.status
-    switch (status) {
-      case "SETTLED":
-        return {
-          status: "SETTLED",
-          txHash: context.intentStatus.txHash,
-          intentHash: context.intentStatus.intentHash,
-        }
-      case "NOT_FOUND_OR_NOT_VALID":
-        return {
-          status: "NOT_FOUND_OR_NOT_VALID",
-          txHash: context.intentStatus.txHash,
-          intentHash: context.intentStatus.intentHash,
-        }
-      case "LIMB":
-      case "PENDING":
-        throw new Error(
-          'Intent status is "LIMB" or "PENDING", but should not be'
-        )
-      default: {
-        status satisfies never
-        throw new Error("exhaustive check failed")
-      }
-    }
+    throw new Error("Unexpected output")
   },
 
   states: {
@@ -391,12 +333,13 @@ export const swapIntentMachine = setup({
           },
           {
             target: "Generic Error",
-            description: "CANNOT_ADD_PUBLIC_KEY",
+            description: "CANNOT_VERIFY_PUBLIC_KEY",
             reenter: true,
             actions: {
               type: "setError",
               params: {
-                status: "ERR_CANNOT_ADD_PUBLIC_KEY",
+                status: "ERR_CANNOT_VERIFY_PUBLIC_KEY",
+                error: null,
               },
             },
           },
@@ -437,15 +380,6 @@ export const swapIntentMachine = setup({
           }
         },
 
-        onDone: {
-          target: "Polling Intent Status",
-          reenter: true,
-          actions: {
-            type: "setPendingIntentStatus",
-            params: ({ event }) => event.output,
-          },
-        },
-
         onError: {
           target: "Generic Error",
           description: "CANNOT_PUBLISH_INTENT",
@@ -465,6 +399,15 @@ export const swapIntentMachine = setup({
             },
           ],
         },
+
+        onDone: {
+          target: "Completed",
+          reenter: true,
+          actions: {
+            type: "setIntentHash",
+            params: ({ event }) => event.output,
+          },
+        },
       },
     },
 
@@ -476,68 +419,18 @@ export const swapIntentMachine = setup({
         },
         {
           target: "Completed",
+          description: "QUOTE_EXPIRED_RETURN_IS_LOWER",
           reenter: true,
-          actions: "setNotValidIntentStatus",
-        },
-      ],
-    },
-
-    "Polling Intent Status": {
-      invoke: {
-        src: "pollIntentStatus",
-
-        input: ({ context }) => {
-          assert(
-            "intentHash" in context.intentStatus &&
-              context.intentStatus.intentHash != null,
-            "Intent hash is not set"
-          )
-          return { intentHash: context.intentStatus.intentHash }
-        },
-
-        onDone: {
-          target: "Completed",
-          reenter: true,
-
-          actions: {
-            type: "setIntentStatus",
-            params: ({ event }) => event.output,
-          },
-        },
-
-        onError: {
-          target: "Generic Error",
-          description: "CANNOT_OBTAIN_INTENT_STATUS",
-          reenter: true,
-
           actions: [
             {
-              type: "logError",
-              params: ({ event }) => event,
-            },
-            {
               type: "setError",
-              params: ({ event, context }) => {
-                assert(
-                  "intentHash" in context.intentStatus &&
-                    context.intentStatus.intentHash != null,
-                  "Intent hash is not set"
-                )
-
-                return {
-                  status: "ERR_CANNOT_OBTAIN_INTENT_STATUS",
-                  error: toError(event.error),
-                  intentHash: context.intentStatus.intentHash,
-                  txHash:
-                    "txHash" in context.intentStatus
-                      ? context.intentStatus.txHash
-                      : null,
-                }
+              params: {
+                status: "ERR_QUOTE_EXPIRED_RETURN_IS_LOWER",
               },
             },
           ],
         },
-      },
+      ],
     },
 
     Completed: {
