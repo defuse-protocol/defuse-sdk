@@ -55,7 +55,11 @@ export const SwapForm = () => {
     fieldName: string,
     selectToken: SwappableToken | undefined
   ) => {
-    setModalType(ModalType.MODAL_SELECT_ASSETS, { fieldName, selectToken })
+    setModalType(ModalType.MODAL_SELECT_ASSETS, {
+      fieldName,
+      selectToken,
+      balances: depositedBalanceRef?.getSnapshot().context.balances,
+    })
   }
 
   useEffect(() => {

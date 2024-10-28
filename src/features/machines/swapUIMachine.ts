@@ -42,6 +42,7 @@ export type Context = {
   }
   intentCreationResult: SwapIntentMachineOutput | null
   intentRefs: ActorRefFrom<typeof intentStatusMachine>[]
+  tokenList: SwappableToken[]
 }
 
 type PassthroughEvent = {
@@ -60,6 +61,7 @@ export const swapUIMachine = setup({
     input: {} as {
       tokenIn: SwappableToken
       tokenOut: SwappableToken
+      tokenList: SwappableToken[]
     },
     context: {} as Context,
     events: {} as
@@ -188,7 +190,10 @@ export const swapUIMachine = setup({
 
     spawnDepositedBalanceRef: spawnChild("depositedBalanceActor", {
       id: "depositedBalanceRef",
-      input: ({ self }) => ({ parentRef: self }),
+      input: ({ self, context }) => ({
+        parentRef: self,
+        tokenList: context.tokenList,
+      }),
     }),
     relayToDepositedBalanceRef: sendTo(
       "depositedBalanceRef",
@@ -255,6 +260,7 @@ export const swapUIMachine = setup({
     },
     intentCreationResult: null,
     intentRefs: [],
+    tokenList: input.tokenList,
   }),
 
   entry: ["spawnBackgroundQuoterRef", "spawnDepositedBalanceRef"],

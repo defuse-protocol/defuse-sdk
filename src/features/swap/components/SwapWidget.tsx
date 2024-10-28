@@ -28,6 +28,7 @@ export const SwapWidget = ({
         <SwapUIMachineProvider
           initialTokenIn={initialTokenIn}
           initialTokenOut={initialTokenOut}
+          tokenList={tokenList}
           signMessage={signMessage}
         >
           <SwapUIMachineFormSyncProvider

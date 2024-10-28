@@ -8,11 +8,13 @@ import {
   setup,
 } from "xstate"
 import { getDepositedBalances } from "../../services/defuseBalanceService"
-import type { BaseTokenInfo } from "../../types/base"
+import type { BaseTokenInfo, UnifiedTokenInfo } from "../../types/base"
+import { isBaseToken } from "../../utils"
 import { assert } from "../../utils/assert"
 
 export interface Input {
   parentRef: ParentActor
+  tokenList: (BaseTokenInfo | UnifiedTokenInfo)[]
 }
 
 export type BalanceMapping = Record<BaseTokenInfo["defuseAssetId"], bigint>
@@ -41,6 +43,7 @@ export const depositedBalanceMachine = setup({
   types: {
     context: {} as {
       parentRef: ParentActor
+      defuseTokenIds: string[]
       userAccountId: string | null
       balances: BalanceMapping
     },
@@ -55,6 +58,7 @@ export const depositedBalanceMachine = setup({
         input: {
           parentRef: ThisActor
           userAccountId: string
+          defuseTokenIds: string[]
         }
       }) => {
         const { parentRef, userAccountId } = input
@@ -63,7 +67,7 @@ export const depositedBalanceMachine = setup({
         // and `UPDATE_BALANCE_SLICE` on receiving each response
         const balance = await getDepositedBalances(
           userAccountId,
-          ["nep141:wrap.near", "nep141:usdt.tether-token.near"],
+          input.defuseTokenIds,
           new providers.JsonRpcProvider({
             url: "https://rpc.mainnet.near.org",
           })
@@ -133,6 +137,11 @@ export const depositedBalanceMachine = setup({
       userAccountId: null,
       balances: {},
       parentRef: input.parentRef,
+      defuseTokenIds: input.tokenList.flatMap((token) => {
+        return isBaseToken(token)
+          ? [token.defuseAssetId]
+          : token.groupedTokens.map((t) => t.defuseAssetId)
+      }),
     }
   },
 
@@ -149,7 +158,11 @@ export const depositedBalanceMachine = setup({
             id: "fetchBalanceRef",
             input: ({ self, context }) => {
               assert(context.userAccountId != null, "User is not authenticated")
-              return { parentRef: self, userAccountId: context.userAccountId }
+              return {
+                parentRef: self,
+                userAccountId: context.userAccountId,
+                defuseTokenIds: context.defuseTokenIds,
+              }
             },
             onDone: "idle",
           },
