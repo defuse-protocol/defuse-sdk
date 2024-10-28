@@ -6,7 +6,6 @@ import { Controller, useForm } from "react-hook-form"
 import { EmptyIcon } from "src/components/EmptyIcon"
 import { NetworkIcon } from "src/components/Network/NetworkIcon"
 import { TokenListUpdater } from "src/components/TokenListUpdater"
-import { settings } from "src/config/settings"
 import type { SwappableToken } from "src/types"
 import { isBaseToken } from "src/utils"
 import { assert } from "vitest"
@@ -37,9 +36,6 @@ export const DepositFormRouter = ({
   onSubmit,
   accountId,
 }: DepositFormRouterProps) => {
-  const [tokenListFiltered, setTokenListFiltered] = useState<SwappableToken[]>(
-    []
-  )
   const {
     handleSubmit,
     register,
@@ -92,11 +88,6 @@ export const DepositFormRouter = ({
           icon: "",
           symbol: "",
         })
-        setTokenListFiltered(
-          tokenList.filter((token) =>
-            filterGroupedTokens(token, getValues("blockchain"))
-          )
-        )
       }
       onSubmit({
         ...getValues(),
@@ -104,82 +95,70 @@ export const DepositFormRouter = ({
     })
 
     return () => subscription.unsubscribe()
-  }, [watch, setValue, onSubmit, getValues, tokenList])
+  }, [watch, setValue, onSubmit, getValues])
 
   return (
     <Form<DepositFormRouterValues>
       handleSubmit={handleSubmit(onSubmit)}
       register={register}
     >
-      <TokenListUpdater tokenList={tokenListFiltered} />
-      <div className={styles.selectWrapper}>
-        <Controller
-          name="blockchain"
-          control={control}
-          render={({ field }) => (
-            <Select<string, DepositFormRouterValues>
-              options={getBlockchainsOptions()}
-              placeholder={{
-                label: "Select network",
-                icon: <EmptyIcon />,
-              }}
-              fullWidth
-              {...field}
-            />
-          )}
-        />
-      </div>
-      {watch("blockchain") && (
-        <button
-          type="button"
-          className={styles.assetWrapper}
-          onClick={openModalSelectAssets}
-        >
-          <Flex gap="2" align="center" justify="between" width="100%">
-            <Flex gap="2" align="center">
-              {watch("asset.address") ? (
-                <AssetComboIcon icon={watch("asset.icon")} />
-              ) : (
-                <EmptyIcon />
-              )}
-              <Text>
-                {watch("asset.address") && assetsName
-                  ? assetsName
-                  : "Select asset"}
-              </Text>
-            </Flex>
-            {watch("asset.address") && (
-              <Button
-                size="2"
-                onClick={(e) => {
-                  e.stopPropagation()
-                }}
-                className={styles.copyButton}
-              >
-                <CopyToClipboard text={watch("asset.address")}>
-                  <Flex gap="2" align="center">
-                    <Text color="orange">Copy</Text>
-                    <CopyIcon height="14" width="14" color="orange" />
-                  </Flex>
-                </CopyToClipboard>
-              </Button>
+      <TokenListUpdater tokenList={tokenList} />
+      <button
+        type="button"
+        className={styles.assetWrapper}
+        onClick={openModalSelectAssets}
+      >
+        <Flex gap="2" align="center" justify="between" width="100%">
+          <Flex gap="2" align="center">
+            {watch("asset.address") ? (
+              <AssetComboIcon icon={watch("asset.icon")} />
+            ) : (
+              <EmptyIcon />
             )}
+            <Text>
+              {watch("asset.address") && assetsName
+                ? assetsName
+                : "Select asset"}
+            </Text>
           </Flex>
-        </button>
+          {watch("asset.address") && (
+            <Button
+              size="2"
+              onClick={(e) => {
+                e.stopPropagation()
+              }}
+              className={styles.copyButton}
+            >
+              <CopyToClipboard text={watch("asset.address")}>
+                <Flex gap="2" align="center">
+                  <Text color="orange">Copy</Text>
+                  <CopyIcon height="14" width="14" color="orange" />
+                </Flex>
+              </CopyToClipboard>
+            </Button>
+          )}
+        </Flex>
+      </button>
+      {watch("asset.address") && (
+        <div className={styles.selectWrapper}>
+          <Controller
+            name="blockchain"
+            control={control}
+            render={({ field }) => (
+              <Select<string, DepositFormRouterValues>
+                options={getBlockchainsOptions()}
+                placeholder={{
+                  label: "Select network",
+                  icon: <EmptyIcon />,
+                }}
+                fullWidth
+                {...field}
+              />
+            )}
+          />
+        </div>
       )}
     </Form>
-  )
-}
-
-function filterGroupedTokens(
-  token: SwappableToken,
-  blockchain: DepositBlockchainEnum
-) {
-  if (isBaseToken(token)) {
-    return token.chainName.toLowerCase() === blockchain.toLowerCase()
-  }
-  return token.groupedTokens.find(
-    (token) => token.chainName.toLowerCase() === blockchain.toLowerCase()
   )
 }
 
@@ -191,10 +170,9 @@ function getAssetAddress(
     "address" in token
       ? token.address
       : token.groupedTokens.find(
-          (token) => token.chainName.toLowerCase() === blockchain.toLowerCase()
+          (token) => token.chainName.toLowerCase() === blockchain?.toLowerCase()
         )?.address
-  assert(address, "Asset address not found")
-  return address
+  return address ?? ""
 }
 
 function getBlockchainsOptions(): Record<
