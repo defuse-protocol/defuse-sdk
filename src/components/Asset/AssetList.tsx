@@ -3,7 +3,6 @@ import clsx from "clsx"
 import { type ReactNode, useCallback } from "react"
 
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../types/base"
-import { balanceToCurrency } from "../../utils/balanceTo"
 import type { SelectItemToken } from "../Modal/ModalSelectAssets"
 
 import {
@@ -143,14 +142,12 @@ function renderBalance(
 ) {
   return (
     <Text as="span" size="2" weight="medium">
-      {balance != null ? (
-        formatTokenValue(balance, token.decimals, {
-          min: 0.0001,
-          fractionDigits: 4,
-        })
-      ) : (
-        <AssetBalance asset={token} />
-      )}
+      {balance != null
+        ? formatTokenValue(balance, token.decimals, {
+            min: 0.0001,
+            fractionDigits: 4,
+          })
+        : null}
     </Text>
   )
 }
