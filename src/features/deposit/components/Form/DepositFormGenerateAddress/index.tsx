@@ -23,12 +23,14 @@ import styles from "./styles.module.css"
 type DepositFormGenerateAddressProps = {
   blockchain: DepositBlockchainEnum
   asset: BaseAssetInfo
+  accountId: string | undefined
 }
 
 const depositNearService = new DepositService()
 
 export const DepositFormGenerateAddress = ({
   blockchain,
+  accountId,
   asset,
 }: DepositFormGenerateAddressProps) => {
   const [generateAddress, setGenerateAddress] = useState<string | null>(null)
@@ -41,7 +43,7 @@ export const DepositFormGenerateAddress = ({
           assert(assetAddress != null, "Asset is not selected")
           const address = await depositNearService.generateDepositAddress(
             blockchain,
-            assetAddress
+            assetAddress // TODO: accountId
           )
           return address
         }),
@@ -50,12 +52,14 @@ export const DepositFormGenerateAddress = ({
   )
 
   useEffect(() => {
+    assert(accountId != null, "Account ID is not defined")
+
     send({
       type: "INPUT",
       blockchain: blockchain,
       assetAddress: asset.address,
     })
-  }, [send, blockchain, asset.address])
+  }, [send, blockchain, asset.address, accountId])
 
   useEffect(() => {
     if (state.value === "Genereted") {

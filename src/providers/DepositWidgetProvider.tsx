@@ -4,17 +4,17 @@ import type { PropsWithChildren } from "react"
 import { ModalContainer } from "../components/Modal/ModalContainer"
 
 import { ModalStoreProvider } from "./ModalStoreProvider"
-import { RootProvider } from "./RootProvider"
+import { QueryClientProvider } from "./QueryClientProvider"
 
 export const DepositWidgetProvider: React.FC<PropsWithChildren> = ({
   children,
 }) => {
   return (
-    <RootProvider>
+    <QueryClientProvider>
       <ModalStoreProvider>
         {children}
         <ModalContainer />
       </ModalStoreProvider>
-    </RootProvider>
+    </QueryClientProvider>
   )
 }

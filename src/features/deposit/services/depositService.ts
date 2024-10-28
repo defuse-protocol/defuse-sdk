@@ -1,12 +1,8 @@
 import { getNearTxSuccessValue } from "src/features/machines/getTxMachine"
-import {
-  type DepositBlockchainEnum,
-  DepositTransactionMethod,
-  type Transaction,
-} from "../../../types/deposit"
+import type { DepositBlockchainEnum, Transaction } from "../../../types/deposit"
 
-export const FT_MAX_GAS_TRANSACTION = `300${"0".repeat(12)}`
-export const FT_DEPOSIT_GAS = `50${"0".repeat(12)}`
+export const FT_MAX_GAS_TRANSACTION = `300${"0".repeat(12)}` // 300 TGAS
+export const FT_DEPOSIT_GAS = `30${"0".repeat(12)}` // 30 TGAS
 
 export class DepositService {
   /**
@@ -39,7 +35,7 @@ export class DepositService {
           {
             type: "FunctionCall",
             params: {
-              methodName: DepositTransactionMethod.FT_TRANSFER_CALL,
+              methodName: "ft_transfer_call",
               args: {
                 receiver_id: receiverId,
                 amount,
@@ -54,18 +50,36 @@ export class DepositService {
     ]
   }
 
-  createNativeDepositNearTransaction(amount: string): Transaction[] {
+  createBatchDepositNearTransaction(
+    receiverId: string,
+    assetId: string,
+    fungibleAmount: string,
+    nativeAmount: string
+  ): Transaction[] {
     return [
       {
-        receiverId: "wrap.near",
+        receiverId: assetId,
         actions: [
           {
             type: "FunctionCall",
             params: {
-              methodName: DepositTransactionMethod.NEAR_DEPOSIT,
+              methodName: "near_deposit",
               args: {},
               gas: FT_DEPOSIT_GAS,
-              deposit: amount,
+              deposit: nativeAmount,
+            },
+          },
+          {
+            type: "FunctionCall",
+            params: {
+              methodName: "ft_transfer_call",
+              args: {
+                receiver_id: receiverId,
+                amount: fungibleAmount,
+                msg: "",
+              },
+              gas: `270${"0".repeat(12)}`, // Reduced to 270 TGAS
+              deposit: "1",
             },
           },
         ],
@@ -100,27 +114,14 @@ export class DepositService {
     accountId: string,
     amount: string
   ): Promise<boolean> {
-    // TODO: [TEMPORARY COMMENT] Resolve issue with jsonrpc stability, untile that we need to comment this
-    // cause this check breaks the deposit flow
-    // if (!txHash) {
-    //   throw new Error("Transaction hash is required")
-    // }
-
-    // const splitTxHashesToTxHash = txHash.includes(",")
-    //   ? txHash.split(",")[1]
-    //   : txHash
-
-    // if (!splitTxHashesToTxHash) {
-    //   throw new Error("Invalid transaction hash format")
-    // }
-
-    // const successValue = await getNearTxSuccessValue({
-    //   txHash: splitTxHashesToTxHash,
-    //   senderAccountId: accountId,
-    // })
-
+    if (!txHash) {
+      throw new Error("Transaction hash is required")
+    }
+    const successValue = await getNearTxSuccessValue({
+      txHash,
+      senderAccountId: accountId,
+    })
     // Check if input amount is equal to the success value
-    // return successValue === BigInt(amount)
-    return true
+    return successValue === BigInt(amount)
   }
 }

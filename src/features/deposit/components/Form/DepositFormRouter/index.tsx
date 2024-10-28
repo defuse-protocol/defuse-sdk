@@ -28,12 +28,14 @@ export type DepositFormRouterValues = {
 
 export interface DepositFormRouterProps {
   tokenList: SwappableToken[]
+  accountId: string | undefined
   onSubmit: (values: DepositFormRouterValues) => void
 }
 
 export const DepositFormRouter = ({
   tokenList,
   onSubmit,
+  accountId,
 }: DepositFormRouterProps) => {
   const [tokenListFiltered, setTokenListFiltered] = useState<SwappableToken[]>(
     []
@@ -60,6 +62,7 @@ export const DepositFormRouter = ({
     assetChangeRef.current = true
     setModalType(ModalType.MODAL_SELECT_ASSETS, {
       fieldName: "asset",
+      accountId,
     })
   }
 

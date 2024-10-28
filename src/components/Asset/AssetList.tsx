@@ -1,10 +1,15 @@
 import { Text } from "@radix-ui/themes"
 import clsx from "clsx"
-import React, { type ReactNode } from "react"
+import { type ReactNode, useCallback } from "react"
 
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../types/base"
 import type { SelectItemToken } from "../Modal/ModalSelectAssets"
 
+import {
+  useGetNearNativeBalance,
+  useGetNearNep141Balances,
+} from "src/hooks/useNearGetTokenBalance"
+import { formatUnits } from "viem"
 import { isBaseToken } from "../../utils"
 import { formatTokenValue } from "../../utils/format"
 import { AssetBalance } from "./AssetBalance"
@@ -15,33 +20,8 @@ type Props<T> = {
   assets: SelectItemToken<T>[]
   emptyState?: ReactNode
   className?: string
+  accountId?: string
   handleSelectToken?: (token: SelectItemToken<T>) => void
-}
-
-const EmptyAssetList = ({ className }: Pick<Props<unknown>, "className">) => {
-  return (
-    <div
-      className={clsx(
-        "flex-1 w-full flex flex-col justify-center items-center text-center -mt-10",
-        className && className
-      )}
-    >
-      <div className="flex justify-center items-center rounded-full bg-gray-950 p-6 mb-4">
-        <img
-          src="/static/icons/cross-1.svg"
-          alt="Close"
-          width={32}
-          height={32}
-        />
-      </div>
-      <Text size="4" weight="bold">
-        Your token not found
-      </Text>
-      <Text size="2" weight="medium" className="text-gray-600">
-        Try depositing to your wallet.
-      </Text>
-    </div>
-  )
 }
 
 type Token = BaseTokenInfo | UnifiedTokenInfo
@@ -49,13 +29,30 @@ type Token = BaseTokenInfo | UnifiedTokenInfo
 export const AssetList = <T extends Token>({
   title,
   assets,
-  emptyState,
   className,
+  accountId,
   handleSelectToken,
 }: Props<T>) => {
-  if (!assets.length) {
-    return emptyState || <EmptyAssetList className={className ?? ""} />
-  }
+  const { data: balances } = useGetNearNep141Balances(
+    {
+      tokenList: assets.map((item) => item.token),
+      accountId: accountId ?? "",
+    },
+    {
+      enabled: !!accountId,
+      retry: 2,
+    }
+  )
+  const { data: nearBalance } = useGetNearNativeBalance(
+    {
+      accountId: accountId ?? "",
+    },
+    {
+      enabled: !!accountId,
+      retry: 2,
+    }
+  )
+
   return (
     <div className={clsx("flex flex-col", className && className)}>
       <div className="sticky top-0 z-10 px-5 h-[46px] flex items-center bg-white dark:bg-black-800 dark:text-white">
@@ -68,7 +65,7 @@ export const AssetList = <T extends Token>({
           {title}
         </Text>
       </div>
-      {assets.map(({ itemId, token, disabled, balance }, i) => (
+      {assets.map(({ itemId, token, disabled, balance, defuseAssetId }, i) => (
         <button
           key={itemId}
           type={"button"}
@@ -104,20 +101,53 @@ export const AssetList = <T extends Token>({
   )
 }
 
+const AssetBalanceAdapter = ({
+  balances,
+  nearBalance,
+  decimals,
+  defuseAssetId,
+}: {
+  balances: Record<string, bigint>
+  nearBalance: bigint
+  decimals: number
+  defuseAssetId?: string
+}) => {
+  const calculateBalance = useCallback(() => {
+    if (!balances || !defuseAssetId) {
+      return "0"
+    }
+    const tokenIds = defuseAssetId.split(",")
+    const isGroupedToken = tokenIds.length > 1
+    if (isGroupedToken) {
+      return tokenIds.reduce((acc, assetId) => {
+        const balance = formatUnits(balances[assetId] ?? BigInt(0), decimals)
+        return (Number(acc) + Number(balance)).toString()
+      }, "0")
+    }
+    if (defuseAssetId === "nep141:wrap.near") {
+      return formatUnits(
+        (balances[defuseAssetId] ?? BigInt(0)) + nearBalance,
+        decimals
+      )
+    }
+    return formatUnits(balances[defuseAssetId] ?? BigInt(0), decimals)
+  }, [balances, defuseAssetId, decimals, nearBalance])
+
+  return <AssetBalance balance={calculateBalance()} />
+}
+
 function renderBalance(
   balance: string | undefined,
   token: BaseTokenInfo | UnifiedTokenInfo
 ) {
   return (
     <Text as="span" size="2" weight="medium">
-      {balance != null ? (
-        formatTokenValue(balance, token.decimals, {
-          min: 0.0001,
-          fractionDigits: 4,
-        })
-      ) : (
-        <AssetBalance asset={token} />
-      )}
+      {balance != null
+        ? formatTokenValue(balance, token.decimals, {
+            min: 0.0001,
+            fractionDigits: 4,
+          })
+        : null}
     </Text>
   )
 }
