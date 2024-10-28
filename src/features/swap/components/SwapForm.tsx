@@ -7,6 +7,7 @@ import type { ModalSelectAssetsPayload } from "../../../components/Modal/ModalSe
 import { useModalStore } from "../../../providers/ModalStoreProvider"
 import { ModalType } from "../../../stores/modalStore"
 import type { SwappableToken } from "../../../types"
+import type { Context } from "../../machines/swapUIMachine"
 import { SwapSubmitterContext } from "./SwapSubmitter"
 import { SwapUIMachineContext } from "./SwapUIMachineProvider"
 
@@ -23,6 +24,8 @@ export const SwapForm = () => {
   } = useFormContext<SwapFormValues>()
 
   const swapUIActorRef = SwapUIMachineContext.useActorRef()
+  const snapshot = SwapUIMachineContext.useSelector((snapshot) => snapshot)
+  const intentOutcome = snapshot.context.outcome
 
   const { tokenIn, tokenOut } = SwapUIMachineContext.useSelector(
     (snapshot) => snapshot.context.formValues
@@ -105,10 +108,59 @@ export const SwapForm = () => {
           disabled={true}
         />
 
-        <ButtonCustom type="submit" size="lg" fullWidth>
+        {renderIntentOutcome(intentOutcome)}
+
+        <ButtonCustom
+          type="submit"
+          size="lg"
+          fullWidth
+          isLoading={snapshot.matches("submitting")}
+        >
           Swap
         </ButtonCustom>
       </Form>
     </div>
   )
+}
+
+function renderIntentOutcome(intentOutcome: Context["outcome"]) {
+  if (!intentOutcome) {
+    return null
+  }
+
+  const status = intentOutcome.status
+  switch (status) {
+    case "SETTLED":
+      return null
+
+    case "NOT_FOUND_OR_NOT_VALID":
+      return (
+        <div className="text-red-500 text-sm">
+          Missed deadline or don't have enough funds!
+          {intentOutcome.txHash == null ? null : (
+            <>
+              <br />
+              Tx: {intentOutcome.txHash}
+            </>
+          )}
+          {intentOutcome.intentHash == null ? null : (
+            <>
+              <br />
+              Intent: {intentOutcome.intentHash}
+            </>
+          )}
+        </div>
+      )
+
+    case "ERR_CANNOT_OBTAIN_INTENT_STATUS":
+      return (
+        <div className="text-red-500 text-sm">
+          Cannot confirm intent status! Tx: {intentOutcome.txHash} Intent:{" "}
+          {intentOutcome.intentHash}
+        </div>
+      )
+
+    default:
+      return <div className="text-red-500 text-sm">Swap failed! {status}</div>
+  }
 }

@@ -39,13 +39,19 @@ export function SwapUIMachineFormSyncProvider({
 
   useEffect(() => {
     const sub = actorRef.on("swap_finished", (state) => {
-      if (state.data.intentOutcome.status === "confirmed") {
-        onSuccessSwapRef.current({
-          amountIn: state.data.amountIn,
-          amountOut: state.data.amountOut,
-          tokenIn: state.data.tokenIn,
-          tokenOut: state.data.tokenOut,
-        })
+      const intentStatus = state.data.intentOutcome.status
+      switch (intentStatus) {
+        case "SETTLED": {
+          onSuccessSwapRef.current({
+            amountIn: state.data.amountIn,
+            amountOut: state.data.amountOut,
+            tokenIn: state.data.tokenIn,
+            tokenOut: state.data.tokenOut,
+            txHash: state.data.intentOutcome.txHash,
+            intentHash: state.data.intentOutcome.intentHash,
+          })
+          break
+        }
       }
     })
 

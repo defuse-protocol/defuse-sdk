@@ -4,13 +4,18 @@ import type { providers } from "near-api-js"
 import {
   type ActorRefFrom,
   type OutputFrom,
-  and,
   assign,
   fromPromise,
   setup,
 } from "xstate"
 import { settings } from "../../config/settings"
-import { publishIntent } from "../../services/solverRelayHttpClient"
+import {
+  doesSignatureMatchUserAddress,
+  submitIntent,
+  waitForIntentSettlement,
+} from "../../services/intentService"
+import * as solverRelayClient from "../../services/solverRelayHttpClient"
+import type * as types from "../../services/solverRelayHttpClient/types"
 import type {
   SwappableToken,
   WalletMessage,
@@ -42,6 +47,41 @@ type Context = {
     innerMessage: DefuseMessageFor_DefuseIntents
   }
   signature: WalletSignatureResult | null
+  error:
+    | null
+    | {
+        status: "ERR_USER_DIDNT_SIGN"
+        error: Error
+      }
+    | {
+        status: "ERR_SIGNED_DIFFERENT_ACCOUNT"
+      }
+    | {
+        status: "ERR_CANNOT_VERIFY_PUBLIC_KEY"
+        error: Error
+      }
+    | {
+        status: "ERR_CANNOT_ADD_PUBLIC_KEY"
+      }
+    | {
+        status: "ERR_CANNOT_PUBLISH_INTENT"
+        error: Error
+      }
+    | {
+        status: "ERR_CANNOT_OBTAIN_INTENT_STATUS"
+        error: Error
+        txHash: string | null
+        intentHash: string
+      }
+  intentStatus:
+    | { status: "LIMB" }
+    | { status: "PENDING"; intentHash: string }
+    | { status: "SETTLED"; txHash: string; intentHash: string }
+    | {
+        status: "NOT_FOUND_OR_NOT_VALID"
+        txHash: string | null
+        intentHash: string | null
+      }
 }
 
 type Input = {
@@ -54,10 +94,41 @@ type Input = {
   amountIn: bigint
 }
 
-type Output = {
-  // todo: Output is expected to include intent status, intent entity and other relevant data
-  status: "aborted" | "confirmed" | "not-found-or-invalid" | "network-error"
-}
+type Output =
+  | {
+      status: "ERR_USER_DIDNT_SIGN"
+      error: Error
+    }
+  | {
+      status: "ERR_SIGNED_DIFFERENT_ACCOUNT"
+    }
+  | {
+      status: "ERR_CANNOT_VERIFY_PUBLIC_KEY"
+      error: Error
+    }
+  | {
+      status: "ERR_CANNOT_ADD_PUBLIC_KEY"
+    }
+  | {
+      status: "ERR_CANNOT_PUBLISH_INTENT"
+      error: Error
+    }
+  | {
+      status: "ERR_CANNOT_OBTAIN_INTENT_STATUS"
+      error: Error
+      txHash: string | null
+      intentHash: string
+    }
+  | {
+      status: "SETTLED"
+      txHash: string
+      intentHash: string
+    }
+  | {
+      status: "NOT_FOUND_OR_NOT_VALID"
+      txHash: string | null // txHash may present if the intent was broadcasted, but not settled
+      intentHash: string | null // intentHash may not present if the intent was invalidated before broadcasting
+    }
 
 export const swapIntentMachine = setup({
   types: {
@@ -66,11 +137,11 @@ export const swapIntentMachine = setup({
     output: {} as Output,
   },
   actions: {
-    setError: () => {
-      throw new Error("not implemented")
-    },
-    logError: (_, err: unknown) => {
-      console.error(err)
+    setError: assign({
+      error: (_, error: NonNullable<Context["error"]>) => error,
+    }),
+    logError: (_, params: { error: unknown }) => {
+      console.error(params.error)
     },
     assembleSignMessages: assign({
       messageToSign: ({ context }) => {
@@ -95,6 +166,22 @@ export const swapIntentMachine = setup({
     }),
     setSignature: assign({
       signature: (_, signature: WalletSignatureResult | null) => signature,
+    }),
+    setIntentStatus: assign({
+      intentStatus: (_, intentStatus: Context["intentStatus"]) => intentStatus,
+    }),
+    setPendingIntentStatus: assign({
+      intentStatus: (_, intentHash: string) => ({
+        status: "PENDING" as const,
+        intentHash: intentHash,
+      }),
+    }),
+    setNotValidIntentStatus: assign({
+      intentStatus: () => ({
+        status: "NOT_FOUND_OR_NOT_VALID" as const,
+        txHash: null,
+        intentHash: null,
+      }),
     }),
     startBackgroundQuoter: assign({
       // @ts-expect-error For some reason `spawn` creates object which type mismatch
@@ -127,50 +214,45 @@ export const swapIntentMachine = setup({
           signatureData: WalletSignatureResult
           quoteHashes: string[]
         }
-      }) => {
-        return publishIntent({
-          signed_data: prepareSwapSignedData(input.signatureData),
-          quote_hashes: input.quoteHashes,
-        })
-      }
+      }) => submitIntent(input.signatureData, input.quoteHashes)
     ),
-    getIntentStatus: fromPromise(async () => {
-      // todo: Implement this actor
-      console.warn("getIntentStatus actor is not implemented")
-    }),
+    pollIntentStatus: fromPromise(
+      ({
+        input,
+        signal,
+      }: { input: { intentHash: string }; signal: AbortSignal }) =>
+        waitForIntentSettlement(signal, input.intentHash)
+    ),
   },
   guards: {
-    isSettled: () => {
-      // todo: Implement this guard
-      console.warn("isSettled guard is not implemented")
-      return true
+    isSettled: (
+      _,
+      { status }: { status: "SETTLED" } | { status: "NOT_FOUND_OR_NOT_VALID" }
+    ) => {
+      return status === "SETTLED"
     },
-    isPending: () => {
-      throw new Error("not implemented")
+    isSignatureValid: (
+      { context },
+      signature: WalletSignatureResult | null
+    ) => {
+      return doesSignatureMatchUserAddress(signature, context.userAddress)
     },
-    isNotFoundOrInvalid: () => {
-      throw new Error("not implemented")
-    },
-    isSignatureValid: ({ context }) => {
-      // todo: Implement this guard
-      console.warn("isSignatureValid guard is not implemented")
-      return context.signature != null
-    },
-    isIntentRelevant: () => {
-      // todo: Implement this guard
-      console.warn("isIntentRelevant guard is not implemented")
-      return true
+    isIntentRelevant: ({ context }) => {
+      // Naively assume that the quote is still relevant if the expiration time is in the future
+      return context.quote.expirationTime * 1000 > Date.now()
     },
     isSigned: (_, params: WalletSignatureResult | null) => params != null,
     isTrue: (_, params: boolean) => params,
   },
 }).createMachine({
-  /** @xstate-layout N4IgpgJg5mDOIC5SwO4EMAOBaAlgOwBcxCA6HCAGzAGIBtABgF1FQMB7WHAnNvFkAB6IAjMIAcJACwBOAGwB2AKxiATJMnDpAZkmyANCACeiLVvkklK+iuk2tixfWmKAvi4OpMuQsQIkAamAATjgAZob4UAAEAAoArgBGFDgAxlEA0mCGsUFwxCk0ELxgZHgAbmwA1iWe2PhEpIEh4ZGxiclpmdkxubD5YAj4FSlo3LwMjBP87JxjfEiCJpIkWvSKcnJi8tKSiirCBsYIO8tiYtqykirnsirXbh7odT6NwWEReNHxSakZWTl5PAFahFPAlIZVGpPbwNPxNd6tb4dP7dXr9QblNgjOYTWjCZgLGZcHjzUBCBBYDQSFSKLQ7WR7OTXbSHRAnEhnC5XG53aQPEC1GG+AJvFqfNo-Tr-HqA4HBIJsIIkDAUUahRUAWxIgvqwvhYq+7V+XQBfSBAwh2JJuKY0w4xN4-HJWC0snoJAU0nokjM1j2jn0RkQYnUJEUDOE9Hk6lU8jEsn5OpefgAyjgoHhIiDiqUKtVtem8ABZOCwNAwKaE+1zJ0mCT0Onyfb0eiyMxx3SshCyENSMQByOSMT0G6J6G60hpjNZ0HgzH5zgZkuwMsV-F22Yk2sUyRRkhRu6qUzCcP7LuyaTmeQN27yJSiOTyMdeCepwtZ+WK5WqgjqoJaxdi1LcswErVhqy3BZnR0aQpEvXcG0UeRZGEQMjgcFQSBPaQ5HoYQVF9HZn2eWESAAIQVNAIBGWBuHFABJZNszBXNIW1YgIGXVdQNtKtN0dKC2S0Eh9mjRQrjva55HsLthB0ZZhEkaN8JUaSe2cYihVICi2Comi6OiRjYWoT8lRVNVNXYvBOOAitePA-jSUWClhDjETZDbbQ8NUaRFNkulFHcxTxGQhRrE018RWaD5DKYsCQCJGtBIQURqRg+Nw2vDQL1kqNhM2Ht1mkpRlAi5MooRBi4vXPiHSc8kZEwmlvUU25dlbaRZN2CQ70agjH3OMrSIAcTAAgDKiIzfCiFMCFGOJYGYuc8yhF9ytG8bWimwgZrmggFoxYZRmtJh4sSyCyRMQKbG5OMxC0c4lPE2TbialtHG2EcxEUlQhuFDaJu2ghdvmxbZ1Yhdx3WsbAeTEH9tgQ6sWO8ZTpqhy6u3V0JAZUxnHUFQ3TuLQXruET3qjL0zh+v7SABra4dm0GTKCBUzJ-P8AKhkaYYZ2F4YOy0UbwG0CQxpLLopZwPXWVTVFvNTJFk2llhkJTI3kRSzGkMQ3HcEA8DYCA4H4JNYQ3THkspDyRNpelGVuc4SaDFKdBE4ddy0O4NA12m-HIKgLYl5z8OEFZNbkxRRDjL3zi7QmJB9VTxJ1jQNCUP2KoNCVkRNGUzQKIOLucpSPW6k97FdNs45d77YK0VzLCUC86UkTOp0zT4i4EyXKXrn0H1Qqwm29LsrlkPtrxscN1m0XX9bN4UAGFeFCHB-0gbv6pEUwwwChvVK9mwxFk+MJFEVyPNpVDaS0TOADk2GBgAxNg4msqJFUm8o0GSCAt+3FcU4J4kJqFsJeVyp9lArDanSe6IYoyuAXtzYUABBBIioiD-1qsHZ0Nh3Q6DjPhcMSkRwqFPl6ESyFdgN12D2W4mcdJ6TQLRPmvgAFWyHLJRSsFhyiFdL5FsQ5M76hit-c2ODi7kkjIFA82hj7yQZCfF2kZFIrBwtYRBclrAJmQWtUi98xooEVJUKIABRVmioOG90jO6fYahXS6BniORQFC7HUNsKsUwzdM70yqvzJmCNrHOWjFIcSBM3TiBbCOLqmg4JnF9AovWLggA */
+  /** @xstate-layout N4IgpgJg5mDOIC5SwO4EMAOBaAlgOwBcxCA6HCAGzAGIBtABgF1FQMB7WHAnNvFkAB6IAjAGYAHCXoAmesIAsAVmniAnADZxa+QBoQAT0SjVk9dPn1Ri6wHZ689eoC+Tvaky5CxAiQDKOKDx8KGoIXjAyPAA3NgBrCM5AgFk4WDQYBmYkEHZObl5+IQRhdRJhRRL5eVF5cRtRUXUbPUMEdSqym0V2usULRVEXN3RsfCJSf0Dg0PDImPiSRLwU2DSM4SzWDi4ePmyirFFhSQdhaUbVCWNL3QNEMxPpdQ16VRkbdVFpIZB3Ua8JgEgngQmAAE5gthgkgYChoAgAMyhAFtFkCVmswJl+LkdgV9ogsE96CQtJ9yephG9hMIWogqqoSIpVPJVBout0VGIfn9POMfAA1cE4BH6YIAAgACgBXABGFBwAGNxQBpMD6KVguDERU0MJ4CL4eYJEZ87wkIVgkVikFSuUK5VqjWSrWwHVgBBGtiK+G7TLY7K4-J7UBFGokUT0ZnPTQ2FnKWl3BAs+SktSNeQqDTSFQ801jc2W60SmXypWq9Wa7V4XUzA1zOImjwF0hF0Ul+3lp1Vt01j1en3B-0bHHbYOFQlfRntFTiax1GxU26tNk2EiU5lz1n1Kk2PPNgGC4Xt22lh0V52u93UcGQ6Gw+FIsGo3kto9Wk9QO1lx2Vl3V3VPWib1fV4f0mFHPJdgnBAiTeEhpDedpM1UbpVEQukEDjaQSBscQlBUYxrk+fd-n5EgACFITQCAfVgbhbQASUPOtDWAhZX0PSjqNotB6IlZj+SAmJBz9JgAy2KD8VDRBFxIS4WTsdR6BsaQxBkTCxDMMpIwqGozisaQ91cX58y4qi2BouiGK-QTvBvCEoRhOFERRRYzPIiyrL4mzxTswhhJAodxIgwMx2gglYK5eS2VjBp2lUD5RE0qlSnERxWTkFSrBMUizVbY8bVsliJJycLpMERB0tw8xFDw+LjGsTTXlEKRXm6BxY0cPK3wtQqBJKkcwqkkNKoQI5GQaTNMspRNWmEFTShUj46vodLug+HquMlNgKAVJjD3FXwCHhaVYFYhsOI880dr2gb+SOk6CDOwLRLAkLNjKkaYPEHCviacRXgWkwo2aJMShzBD6CjFS3i0BRvhMzjyNu-bioe47TvO28nIfVzn3cg8Ud2tG-MOzHntgV7QLwcDPqDCKZNgyNU0uRQ6isRQZES8RNIIpk6jOLlFzw1QXBMvA2AgOB+GR7xILxUaDlEGw1xnLR51VpdNPQhDNEQrpMzWiR5C28jyCoBXx0ihQSW0bdEPQqkvkw-6SCNswqmeTM8LN81JmBKArcZsbEPdhaxA5kW6uqTDaj+iQbCUBGc3Q02keugqPyK79z27f9e11YOKqKeQ1aUPC8PZnnhDB1pxCpCNa66Iy0OMdPhiJ80vN4-iDv5YulcQdmpErhwc3wmotE0tThCZGllJkRpdLFjOu6z4t+-l4bFZghbFFHxCp3EGoHHZ5rG5PixYa5oXnDXsibpJ+7vEerHB5gzR3ccV451Q8e+h8zjGUWQFgJDHHoJSYyndH6kAAMJsGRLCMARAIAf0iolXC6FzByF+iUPC6hNJ4UeGIWQc5ZCyGgaZdePgADixBhTKgAKKOTBOgpmRJtI5iNnGPClhFyEPBsQ92akvhrWUDIFS4snBAA */
   context: ({ input }) => {
     return {
       quoterRef: null,
       messageToSign: null,
       signature: null,
+      error: null,
+      intentStatus: { status: "LIMB" },
       ...input,
     }
   },
@@ -181,10 +263,34 @@ export const swapIntentMachine = setup({
 
   entry: ["startBackgroundQuoter"],
 
-  output: ({ event }) => {
-    return {
-      // @ts-expect-error I don't know how to type "done" event
-      status: event.output.status,
+  output: ({ context }): Output => {
+    if (context.error != null) {
+      return context.error
+    }
+
+    const status = context.intentStatus.status
+    switch (status) {
+      case "SETTLED":
+        return {
+          status: "SETTLED",
+          txHash: context.intentStatus.txHash,
+          intentHash: context.intentStatus.intentHash,
+        }
+      case "NOT_FOUND_OR_NOT_VALID":
+        return {
+          status: "NOT_FOUND_OR_NOT_VALID",
+          txHash: context.intentStatus.txHash,
+          intentHash: context.intentStatus.intentHash,
+        }
+      case "LIMB":
+      case "PENDING":
+        throw new Error(
+          'Intent status is "LIMB" or "PENDING", but should not be'
+        )
+      default: {
+        status satisfies never
+        throw new Error("exhaustive check failed")
+      }
     }
   },
 
@@ -202,8 +308,6 @@ export const swapIntentMachine = setup({
       invoke: {
         id: "signMessage",
 
-        onError: "Aborted",
-
         src: "signMessage",
 
         input: ({ context }) => {
@@ -214,7 +318,10 @@ export const swapIntentMachine = setup({
         onDone: [
           {
             target: "Verifying Public Key Presence",
-            guard: { type: "isSigned", params: ({ event }) => event.output },
+            guard: {
+              type: "isSignatureValid",
+              params: ({ event }) => event.output,
+            },
 
             actions: {
               type: "setSignature",
@@ -224,14 +331,38 @@ export const swapIntentMachine = setup({
             reenter: true,
           },
           {
-            target: "Aborted",
+            target: "Generic Error",
+            description: "SIGNED_DIFFERENT_ACCOUNT",
             reenter: true,
+            actions: {
+              type: "setError",
+              params: {
+                status: "ERR_SIGNED_DIFFERENT_ACCOUNT",
+              },
+            },
           },
         ],
-      },
 
-      description:
-        "Generating sign message, wait for the proof of sign (signature).\n\nResult:\n\n- Update \\[context\\] with selected best quote;\n- Callback event to user for signing the solver message by wallet;",
+        onError: {
+          target: "Generic Error",
+          description: "USER_DIDNT_SIGN",
+          reenter: true,
+
+          actions: [
+            {
+              type: "logError",
+              params: ({ event }) => event,
+            },
+            {
+              type: "setError",
+              params: ({ event }) => ({
+                status: "ERR_USER_DIDNT_SIGN",
+                error: toError(event.error),
+              }),
+            },
+          ],
+        },
+      },
     },
 
     "Verifying Public Key Presence": {
@@ -259,48 +390,43 @@ export const swapIntentMachine = setup({
             },
           },
           {
-            target: "Aborted",
+            target: "Generic Error",
+            description: "CANNOT_ADD_PUBLIC_KEY",
             reenter: true,
+            actions: {
+              type: "setError",
+              params: {
+                status: "ERR_CANNOT_ADD_PUBLIC_KEY",
+              },
+            },
           },
         ],
         onError: {
-          target: "Aborted",
-          actions: {
-            type: "logError",
-            // @ts-expect-error Incorrect `event` type, `error` present in `event` for sure
-            params: ({ event }) => event.error,
-          },
+          target: "Generic Error",
+          description: "CANNOT_VERIFY_PUBLIC_KEY",
+          reenter: true,
+
+          actions: [
+            {
+              type: "logError",
+              params: ({ event }) => event,
+            },
+            {
+              type: "setError",
+              params: ({ event }) => ({
+                status: "ERR_CANNOT_VERIFY_PUBLIC_KEY",
+                error: toError(event.error),
+              }),
+            },
+          ],
         },
-      },
-    },
-
-    Confirmed: {
-      type: "final",
-      description: "The intent is executed successfully.",
-      output: {
-        status: "confirmed",
-      },
-    },
-
-    "Not Found or Invalid": {
-      type: "final",
-      description:
-        "Intent is either met deadline or user does not have funds or any other problem. Intent cannot be executed.",
-      output: {
-        status: "not-found-or-invalid",
-      },
-    },
-
-    Aborted: {
-      type: "final",
-      output: {
-        status: "aborted",
       },
     },
 
     "Broadcasting Intent": {
       invoke: {
-        id: "sendMessage",
+        src: "broadcastMessage",
+
         input: ({ context }) => {
           assert(context.signature != null, "Signature is not set")
           assert(context.messageToSign != null, "Sign message is not set")
@@ -310,65 +436,116 @@ export const swapIntentMachine = setup({
             signatureData: context.signature,
           }
         },
-        src: "broadcastMessage",
-        onError: {
-          target: "Network Error",
 
-          actions: "setError",
-
-          reenter: true,
-        },
         onDone: {
-          target: "Getting Intent Status",
+          target: "Polling Intent Status",
           reenter: true,
+          actions: {
+            type: "setPendingIntentStatus",
+            params: ({ event }) => event.output,
+          },
+        },
+
+        onError: {
+          target: "Generic Error",
+          description: "CANNOT_PUBLISH_INTENT",
+          reenter: true,
+
+          actions: [
+            {
+              type: "logError",
+              params: ({ event }) => event,
+            },
+            {
+              type: "setError",
+              params: ({ event }) => ({
+                status: "ERR_CANNOT_PUBLISH_INTENT",
+                error: toError(event.error),
+              }),
+            },
+          ],
         },
       },
-      description:
-        "Send user proof of sign (signature) to solver bus \\[relay responsibility\\].\n\nResult:\n\n- Update \\[context\\] with proof of broadcasting from solver;",
     },
 
     "Verifying Intent": {
       always: [
         {
           target: "Broadcasting Intent",
-          guard: and(["isIntentRelevant", "isSignatureValid"]),
+          guard: "isIntentRelevant",
         },
         {
-          target: "Not Found or Invalid",
+          target: "Completed",
           reenter: true,
+          actions: "setNotValidIntentStatus",
         },
       ],
     },
 
-    "Network Error": {
-      type: "final",
-      output: {
-        status: "network-error",
+    "Polling Intent Status": {
+      invoke: {
+        src: "pollIntentStatus",
+
+        input: ({ context }) => {
+          assert(
+            "intentHash" in context.intentStatus &&
+              context.intentStatus.intentHash != null,
+            "Intent hash is not set"
+          )
+          return { intentHash: context.intentStatus.intentHash }
+        },
+
+        onDone: {
+          target: "Completed",
+          reenter: true,
+
+          actions: {
+            type: "setIntentStatus",
+            params: ({ event }) => event.output,
+          },
+        },
+
+        onError: {
+          target: "Generic Error",
+          description: "CANNOT_OBTAIN_INTENT_STATUS",
+          reenter: true,
+
+          actions: [
+            {
+              type: "logError",
+              params: ({ event }) => event,
+            },
+            {
+              type: "setError",
+              params: ({ event, context }) => {
+                assert(
+                  "intentHash" in context.intentStatus &&
+                    context.intentStatus.intentHash != null,
+                  "Intent hash is not set"
+                )
+
+                return {
+                  status: "ERR_CANNOT_OBTAIN_INTENT_STATUS",
+                  error: toError(event.error),
+                  intentHash: context.intentStatus.intentHash,
+                  txHash:
+                    "txHash" in context.intentStatus
+                      ? context.intentStatus.txHash
+                      : null,
+                }
+              },
+            },
+          ],
+        },
       },
     },
 
-    "Getting Intent Status": {
-      invoke: {
-        src: "getIntentStatus",
+    Completed: {
+      type: "final",
+    },
 
-        onDone: [
-          {
-            target: "Confirmed",
-            guard: "isSettled",
-            reenter: true,
-          },
-          {
-            target: "Not Found or Invalid",
-            guard: "isNotFoundOrInvalid",
-            reenter: true,
-          },
-        ],
-
-        onError: {
-          target: "Network Error",
-          reenter: true,
-        },
-      },
+    "Generic Error": {
+      type: "final",
     },
   },
 })
@@ -377,4 +554,8 @@ function assert(condition: unknown, msg?: string): asserts condition {
   if (!condition) {
     throw new Error(msg)
   }
+}
+
+function toError(error: unknown): Error {
+  return error instanceof Error ? error : new Error("unknown error")
 }
