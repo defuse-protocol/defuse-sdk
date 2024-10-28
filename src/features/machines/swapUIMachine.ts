@@ -158,7 +158,7 @@ export const swapUIMachine = setup({
 
     spawnBackgroundQuoterRef: spawnChild("backgroundQuoterActor", {
       id: "backgroundQuoterRef",
-      input: ({ self }) => ({ parentRef: self, delayMs: 5000 }),
+      input: ({ self }) => ({ parentRef: self, delayMs: 1000 }),
     }),
     // Warning: This cannot be properly typed, so you can send an incorrect event
     sendToBackgroundQuoterRefNewQuoteInput: sendTo(

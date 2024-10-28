@@ -29,11 +29,16 @@ export const queryQuoteMachine = fromPromise(
   async ({
     input,
   }: { input: AggregatedQuoteParams }): Promise<AggregatedQuote> =>
-    queryQuote(input)
+    queryQuote(input, { signal: new AbortController().signal })
 )
 
 export async function queryQuote(
-  input: AggregatedQuoteParams
+  input: AggregatedQuoteParams,
+  {
+    signal,
+  }: {
+    signal?: AbortSignal
+  } = {}
 ): Promise<AggregatedQuote> {
   // Sanity checks
   const tokenOut = input.tokensOut[0]
@@ -49,12 +54,15 @@ export async function queryQuote(
 
   // If total available is less than requested, just quote the full amount from one token
   if (totalAvailableIn < input.amountIn) {
-    const q = await quote({
-      defuse_asset_identifier_in: tokenIn,
-      defuse_asset_identifier_out: tokenOut,
-      amount_in: input.amountIn.toString(),
-      min_deadline_ms: 120_000,
-    })
+    const q = await quote(
+      {
+        defuse_asset_identifier_in: tokenIn,
+        defuse_asset_identifier_out: tokenOut,
+        amount_in: input.amountIn.toString(),
+        min_deadline_ms: 120_000, // todo: move to settings
+      },
+      { signal }
+    )
 
     return aggregateQuotes([onlyValidQuotes(q)])
   }
@@ -68,7 +76,8 @@ export async function queryQuote(
   const quotes = await fetchQuotesForTokens(
     input.tokensIn,
     tokenOut,
-    amountsToQuote
+    amountsToQuote,
+    { signal }
   )
 
   return aggregateQuotes(quotes)
@@ -154,19 +163,23 @@ export function aggregateQuotes(
 export async function fetchQuotesForTokens(
   tokensIn: string[],
   tokenOut: string,
-  amountsToQuote: Record<string, bigint>
+  amountsToQuote: Record<string, bigint>,
+  { signal }: { signal?: AbortSignal } = {}
 ): Promise<NonNullable<QuoteResults>[]> {
   const quotes = await Promise.all(
     tokensIn.map(async (tokenIn) => {
       const amountIn = amountsToQuote[tokenIn]
       if (amountIn === undefined || amountIn === 0n) return null
 
-      return quote({
-        defuse_asset_identifier_in: tokenIn,
-        defuse_asset_identifier_out: tokenOut,
-        amount_in: amountIn.toString(),
-        min_deadline_ms: 120_000,
-      })
+      return quote(
+        {
+          defuse_asset_identifier_in: tokenIn,
+          defuse_asset_identifier_out: tokenOut,
+          amount_in: amountIn.toString(),
+          min_deadline_ms: 120_000,
+        },
+        { signal }
+      )
     })
   )
 
