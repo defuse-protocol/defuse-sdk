@@ -1,3 +1,4 @@
+/*
 import { InfoCircledIcon } from "@radix-ui/react-icons"
 import { Tooltip } from "@radix-ui/themes"
 import clsx from "clsx"
@@ -62,3 +63,4 @@ export const BlockEvaluatePrice = ({
     </span>
   )
 }
+*/

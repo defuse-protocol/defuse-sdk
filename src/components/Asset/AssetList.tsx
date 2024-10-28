@@ -3,10 +3,10 @@ import clsx from "clsx"
 import React, { type ReactNode } from "react"
 
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../types/base"
-import { balanceToCurrency, balanceToDecimal } from "../../utils/balanceTo"
 import type { SelectItemToken } from "../Modal/ModalSelectAssets"
 
 import { isBaseToken } from "../../utils"
+import { formatTokenValue } from "../../utils/format"
 import { AssetBalance } from "./AssetBalance"
 import { AssetComboIcon } from "./AssetComboIcon"
 
@@ -111,11 +111,10 @@ function renderBalance(
   return (
     <Text as="span" size="2" weight="medium">
       {balance != null ? (
-        Number(balanceToDecimal(balance, token.decimals)) < 0.00001 ? (
-          "< 0.00001"
-        ) : (
-          Number(balanceToDecimal(balance, token.decimals)).toFixed(7)
-        )
+        formatTokenValue(balance, token.decimals, {
+          min: 0.0001,
+          fractionDigits: 4,
+        })
       ) : (
         <AssetBalance asset={token} />
       )}

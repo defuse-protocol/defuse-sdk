@@ -8,7 +8,7 @@ import type { SwappableToken } from "src/types"
 import type { BaseTokenInfo } from "src/types/base"
 import { isBaseToken } from "src/utils"
 import { assert } from "src/utils/assert"
-import { balanceToDecimal } from "src/utils/balanceTo"
+import { formatTokenValue } from "../../../utils/format"
 
 type AssetBalanceProps = {
   asset: SwappableToken
@@ -66,16 +66,13 @@ export const AssetBalance = ({ asset }: AssetBalanceProps) => {
     void fetchBalance()
   }, [fetchBalance])
 
-  const balanceDecimal = balance
-    ? balanceToDecimal(balance.toString(), asset.decimals)
-    : null
-
   return (
     <div>
-      {balanceDecimal
-        ? Number(balanceDecimal) < 0.00001
-          ? "< 0.00001"
-          : Number(balanceDecimal).toFixed(7)
+      {balance != null
+        ? formatTokenValue(balance, asset.decimals, {
+            min: 0.0001,
+            fractionDigits: 4,
+          })
         : null}
     </div>
   )

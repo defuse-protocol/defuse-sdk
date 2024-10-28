@@ -20,10 +20,8 @@ import type {
   DepositWidgetProps,
   Transaction,
 } from "../../../../../types/deposit"
-import {
-  balanceToBignumberString,
-  balanceToDecimal,
-} from "../../../../../utils/balanceTo"
+import { balanceToBignumberString } from "../../../../../utils/balanceTo"
+import { formatTokenValue } from "../../../../../utils/format"
 import styles from "./styles.module.css"
 
 export type DepositFormNearValues = {
@@ -85,10 +83,7 @@ export const DepositFormNear = ({
     } else {
       balance = balanceData || 0n
     }
-    setValue(
-      "amount",
-      balanceToDecimal(balance.toString(), asset.decimals).toString()
-    )
+    setValue("amount", formatTokenValue(balance, asset.decimals))
   }
 
   const [state, send] = useActor(

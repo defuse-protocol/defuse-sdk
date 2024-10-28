@@ -33,9 +33,14 @@ export const SwapForm = () => {
   const snapshot = SwapUIMachineContext.useSelector((snapshot) => snapshot)
   const intentCreationResult = snapshot.context.intentCreationResult
 
-  const { tokenIn, tokenOut } = SwapUIMachineContext.useSelector(
-    (snapshot) => snapshot.context.formValues
-  )
+  const { tokenIn, tokenOut } = SwapUIMachineContext.useSelector((snapshot) => {
+    const tokenIn = snapshot.context.formValues.tokenIn
+
+    return {
+      tokenIn: tokenIn,
+      tokenOut: snapshot.context.formValues.tokenOut,
+    }
+  })
 
   const switchTokens = () => {
     swapUIActorRef.send({
@@ -100,6 +105,11 @@ export const SwapForm = () => {
     balanceSelector(tokenOut)
   )
 
+  const balanceInsufficient =
+    tokenInBalance != null
+      ? tokenInBalance < snapshot.context.parsedFormValues.amountIn
+      : null
+
   return (
     <div className="md:max-w-[472px] rounded-[1rem] p-5 shadow-paper bg-white dark:shadow-paper-dark dark:bg-black-800">
       <Form<SwapFormValues>
@@ -142,8 +152,9 @@ export const SwapForm = () => {
           size="lg"
           fullWidth
           isLoading={snapshot.matches("submitting")}
+          disabled={!!balanceInsufficient}
         >
-          Swap
+          {balanceInsufficient ? "Insufficient balance" : "Swap"}
         </ButtonCustom>
       </Form>
 
