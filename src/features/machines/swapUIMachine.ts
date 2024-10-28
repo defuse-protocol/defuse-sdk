@@ -2,7 +2,6 @@ import { parseUnits } from "ethers"
 import type { providers } from "near-api-js"
 import {
   type ActorRefFrom,
-  type OutputFrom,
   assertEvent,
   assign,
   emit,
@@ -18,9 +17,17 @@ import {
   type ChildEvent as BackgroundQuoterEvents,
   backgroundQuoterMachine,
 } from "./backgroundQuoterMachine"
+import {
+  type BalanceMapping,
+  type Events as DepositedBalanceEvents,
+  depositedBalanceMachine,
+} from "./depositedBalanceMachine"
 import { intentStatusMachine } from "./intentStatusMachine"
 import type { AggregatedQuote } from "./queryQuoteMachine"
-import { swapIntentMachine } from "./swapIntentMachine"
+import {
+  type Output as SwapIntentMachineOutput,
+  swapIntentMachine,
+} from "./swapIntentMachine"
 
 export type Context = {
   error: Error | null
@@ -33,7 +40,7 @@ export type Context = {
   parsedFormValues: {
     amountIn: bigint
   }
-  intentCreationResult: OutputFrom<typeof swapIntentMachine> | null
+  intentCreationResult: SwapIntentMachineOutput | null
   intentRefs: ActorRefFrom<typeof intentStatusMachine>[]
 }
 
@@ -74,13 +81,25 @@ export const swapUIMachine = setup({
             ) => Promise<{ txHash: string } | null>
           }
         }
+      | {
+          type: "BALANCE_CHANGED"
+          params: {
+            changedBalanceMapping: BalanceMapping
+          }
+        }
       | BackgroundQuoterEvents
+      | DepositedBalanceEvents
       | PassthroughEvent,
 
     emitted: {} as PassthroughEvent,
+
+    children: {} as {
+      depositedBalanceRef: "depositedBalanceActor"
+    },
   },
   actors: {
     backgroundQuoterActor: backgroundQuoterMachine,
+    depositedBalanceActor: depositedBalanceMachine,
     formValidationActor: fromPromise(async (): Promise<boolean> => {
       throw new Error("not implemented")
     }),
@@ -130,8 +149,7 @@ export const swapUIMachine = setup({
     clearQuote: assign({ quote: null }),
     clearError: assign({ error: null }),
     setIntentCreationResult: assign({
-      intentCreationResult: (_, value: OutputFrom<typeof swapIntentMachine>) =>
-        value,
+      intentCreationResult: (_, value: SwapIntentMachineOutput) => value,
     }),
     clearIntentCreationResult: assign({ intentCreationResult: null }),
     passthroughEvent: emit((_, event: PassthroughEvent) => event),
@@ -143,20 +161,42 @@ export const swapUIMachine = setup({
     // Warning: This cannot be properly typed, so you can send an incorrect event
     sendToBackgroundQuoterRefNewQuoteInput: sendTo(
       "backgroundQuoterRef",
-      ({ context }) => ({
-        type: "NEW_QUOTE_INPUT",
-        params: {
-          tokenIn: context.formValues.tokenIn,
-          tokenOut: context.formValues.tokenOut,
-          amountIn: context.parsedFormValues.amountIn,
-          balances: {}, // todo: pass real balances
-        },
-      })
+      ({ context, self }) => {
+        const snapshot = self.getSnapshot()
+
+        // However knows how to access the child's state, please update this
+        const depositedBalanceRef:
+          | ActorRefFrom<typeof depositedBalanceMachine>
+          | undefined = snapshot.children.depositedBalanceRef
+        const balances = depositedBalanceRef?.getSnapshot().context.balances
+
+        return {
+          type: "NEW_QUOTE_INPUT",
+          params: {
+            tokenIn: context.formValues.tokenIn,
+            tokenOut: context.formValues.tokenOut,
+            amountIn: context.parsedFormValues.amountIn,
+            balances: balances ?? {},
+          },
+        }
+      }
     ),
     // Warning: This cannot be properly typed, so you can send an incorrect event
     sendToBackgroundQuoterRefPause: sendTo("backgroundQuoterRef", {
       type: "PAUSE",
     }),
+
+    spawnDepositedBalanceRef: spawnChild("depositedBalanceActor", {
+      id: "depositedBalanceRef",
+      input: ({ self }) => ({ parentRef: self }),
+    }),
+    relayToDepositedBalanceRef: sendTo(
+      "depositedBalanceRef",
+      (_, event: DepositedBalanceEvents) => event
+    ),
+    sendToDepositedBalanceRefRefresh: sendTo("depositedBalanceRef", (_) => ({
+      type: "REQUEST_BALANCE_REFRESH",
+    })),
 
     // Warning: This cannot be properly typed, so you can send an incorrect event
     sendToSwapRefNewQuote: sendTo(
@@ -167,7 +207,7 @@ export const swapUIMachine = setup({
     spawnIntentStatusActor: assign({
       intentRefs: (
         { context, spawn, self },
-        output: OutputFrom<typeof swapIntentMachine>
+        output: SwapIntentMachineOutput
       ) => {
         if (output.status !== "INTENT_PUBLISHED") return context.intentRefs
 
@@ -199,7 +239,7 @@ export const swapUIMachine = setup({
     },
   },
 }).createMachine({
-  /** @xstate-layout N4IgpgJg5mDOIC5SwO4EMAOBaArgSwGIBJAOQBUBRcgfQGUKyyAZCgEQG0AGAXUVAwD2sPABc8AgHZ8QAD0QBGACwBmAHSLFAJnmdNnABybtigOwAaEAE9EWfSYCsqzff2d5J+c5P7lJgL5+FqiYuIQAQgCCTBEkAMIU1ACqAAqsEZQcPNKCwmKS0nIIWJquqgBs+ooGWgCcNR4mmmUW1kV2js6u7p723sr6AUHo2PiqkKJ4ElAEsDgARgC2oly8SCA5E-lrhfLuqiY1OprKivL69r32LTbKdeWaNWV1JZyPT4MgwSN4YxATUwRJhgcCIVtkhJspNsbE0Ort7Jx7PIyq8Sr5rkVfDVVEplG5lGVlPJbo8Pl9Qr9-tMSBQAOrUACKiQA8pQwWsNnkoaBClhTGo6sp7Lc7DVOFVlBisGVFI4emUZfZtPo7PIycMKeMxFNVAA3NAAGzwEDQ2umEEkYFUk11AgA1lbyaMtZMoHrDcbTa6EDaBABjL2SFbs-gQrkFGwuNQPeyKfQ6fQVLTNKw2ByqIUmV7yGpVC41HzqkLOv5m91Gk1mggWiRW30O1ROn4unX6iteqY+iS2gNc4PyVah3LibmySPnVScPEIpQq8Up1pYJSaSdnZTaJSKFFnMpF76N+ZLERVmt17v2x3DABKYAAZiH1mGRxGEKd5E4C5uNIn4+4pXiVy3SofxOAlTn8QJPg1UZZkWUQqzAAAnRCBEQ1QMANU1b1QhZG2vO8H05Z9oVfW4nHhIkyhcJ4VCuVMimRRR9lqWVlyaEwtD3ClYKPKsaXpJlWQoQiny2HlEFoydDl2F5wMRKVYxMDMygeAkfBolSAkgiQBAgOBpCbcFhzEscigqd8p0RNw41cLcpRMA4nG8fFtwVGpNC4ksqSMyEX2lZQ1EsmcbPnBTiQ-YUVI8XZ4wgoZi2bUtXWtCADTAHzwxIvlenUddzmOHNNAOcx6OKMVyJFZxThORQamUTzEqpctPTNDLiPEopjmxXwjERbwKjqFV7KU0U6qKwx+mJerIKbA84OPV02pMwp+kcU4URKDcygcErF1ORxdGcTxjjxYkty0vwgA */
+  /** @xstate-layout N4IgpgJg5mDOIC5SwO4EMAOBaArgSwGIBJAOQBUBRcgfQGUKyyAZCgEQG0AGAXUVAwD2sPABc8AgHZ8QAD0RYArAoAcAOgCMAdgWcALJ04BOZZoBMCgDQgAnvMO7Nq5ac6b1B07oWfDAX19WqJi4hABCAIJM4SQAwhTUMQAS0QDibFy8SCCCwmKS0nIIAMxFCk5GygBsmpqGnJUKlZVWtghYhpWmqtWG6lWuupWcRer+gejY+ARMAPIppBnSOaLiUlmFlUVOvbqmlbpFulpGmi12uoaqRW7Kt-aaRfUKYyBBk4SzKTMAqmSLWcs8mtQIUsKZ1JUNPpDOZwcoFJomsozm17Jdrn07g5Hg0Xm8QqpICsJFACLAcAAjAC2on+-CEK3y60Q6i0qlq7lMhz6Sm0KKwRUMl06HSFpmURiafgCrwmBKJYhJBDwEgwOBEdOyDKBBXkezK4PUOgUEKM4uu-Oul3UB046iKm3tQsqeLl+EJEGJpJIFAA6tQAIrfGaUTWA1a6trY1RC0qCkx1fRFfn7MrqcxNLxwkyjGX490KlVQVQANzQABs8BA0IrSRBJGBVCqSwIANaN-N4D1e0sVqs1osIZsCADGA8kGTD2ojzLaKi2pkMCl0yncVWUu2aNnk2iuCKM6nsnCUxiKruCBc9td7lertYI9YkjeH7dUne717Lt4HJKHEhbY5ApO6iZPSuQziC8gqGUwzHnaK4SoM-I2l0drKEUhq6IMaEunmbpduS1KiPej7Pv+bYdhMABKYAAGZTuBTKQQgRzqKoi6rlhWHrqypzbm0jxdIMG7rocDpHJo57vG+lI0iI95gAATopAiKaoGDljWtGqVSb7UXRDGMsCsiIAclyGgoIwNFU9ilMh+zsrs9gmrseyaLsUkEoRcn3j6-pBiGFCGTqs4HDBvSsuKejHJY-GKA4Vwig66GVPYnT+DKEgCBAcDSJ2SzTkxJltJUq6qLBOg2rcehbq0WASga7muIYjzpohnmXl6BWMcZoKbFsFXwdVSFxSaC5Lg6phuKyq6SXhF5doWJJNhA5ZgN1RmRlgXiOAc4reCMMK1HxdWLpw7FOs4y72lhLUdYtV5Fje-a1htIXMWCgpXGYLgIuuQq3PyNROLULVTc4RSriU90yUR8lFm9EHFZDZRHEM4qGtUCL8kcMGmOY6Zcq1hy4f4QA */
   id: "swap-ui",
 
   context: ({ input }) => ({
@@ -217,17 +257,39 @@ export const swapUIMachine = setup({
     intentRefs: [],
   }),
 
-  entry: "spawnBackgroundQuoterRef",
+  entry: ["spawnBackgroundQuoterRef", "spawnDepositedBalanceRef"],
 
   on: {
     INTENT_SETTLED: {
+      actions: [
+        {
+          type: "passthroughEvent",
+          params: ({ event }) => event,
+        },
+        "sendToDepositedBalanceRefRefresh",
+      ],
+    },
+
+    BALANCE_CHANGED: {
+      actions: [
+        ({ event }) => {
+          console.log("Balance changed", event.params.changedBalanceMapping)
+        },
+        "sendToBackgroundQuoterRefNewQuoteInput",
+      ],
+    },
+
+    LOGIN: {
       actions: {
-        type: "passthroughEvent",
+        type: "relayToDepositedBalanceRef",
         params: ({ event }) => event,
       },
     },
-    BALANCE_UPDATED: {
-      actions: "sendToBackgroundQuoterRefNewQuoteInput",
+    LOGOUT: {
+      actions: {
+        type: "relayToDepositedBalanceRef",
+        params: ({ event }) => event,
+      },
     },
   },
 

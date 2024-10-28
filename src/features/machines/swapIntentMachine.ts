@@ -69,25 +69,8 @@ type Input = {
   amountIn: bigint
 }
 
-type Output =
-  | {
-      status: "ERR_USER_DIDNT_SIGN"
-      error: Error
-    }
-  | {
-      status: "ERR_SIGNED_DIFFERENT_ACCOUNT"
-    }
-  | {
-      status: "ERR_CANNOT_VERIFY_PUBLIC_KEY"
-      error: Error | null
-    }
-  | {
-      status: "ERR_CANNOT_PUBLISH_INTENT"
-      error: Error
-    }
-  | {
-      status: "ERR_QUOTE_EXPIRED_RETURN_IS_LOWER"
-    }
+export type Output =
+  | NonNullable<Context["error"]>
   | {
       status: "INTENT_PUBLISHED"
       intentHash: string
