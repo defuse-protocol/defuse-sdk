@@ -28,9 +28,13 @@ export const SwapWidget = ({
         <SwapUIMachineProvider
           initialTokenIn={initialTokenIn}
           initialTokenOut={initialTokenOut}
+          tokenList={tokenList}
           signMessage={signMessage}
         >
-          <SwapUIMachineFormSyncProvider onSuccessSwap={onSuccessSwap}>
+          <SwapUIMachineFormSyncProvider
+            userAddress={userAddress}
+            onSuccessSwap={onSuccessSwap}
+          >
             <SwapSubmitterProvider
               userAddress={userAddress}
               sendNearTransaction={sendNearTransaction}

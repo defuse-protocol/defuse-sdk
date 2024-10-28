@@ -3,6 +3,7 @@ export enum BaseTokenConvertEnum {
 }
 
 export type BaseTokenBalance = {
+  /** bigint in string */
   balance: string
   balanceUsd?: string
   convertedLast?: {

@@ -5,11 +5,13 @@ import type { SwapFormValues } from "./SwapForm"
 import { SwapUIMachineContext } from "./SwapUIMachineProvider"
 
 type SwapUIMachineFormSyncProviderProps = PropsWithChildren<{
+  userAddress: string | null
   onSuccessSwap: SwapWidgetProps["onSuccessSwap"]
 }>
 
 export function SwapUIMachineFormSyncProvider({
   children,
+  userAddress,
   onSuccessSwap,
 }: SwapUIMachineFormSyncProviderProps) {
   const { watch } = useFormContext<SwapFormValues>()
@@ -38,15 +40,23 @@ export function SwapUIMachineFormSyncProvider({
   }, [watch, actorRef])
 
   useEffect(() => {
-    const sub = actorRef.on("swap_finished", (state) => {
-      if (state.data.intentOutcome.status === "confirmed") {
-        onSuccessSwapRef.current({
-          amountIn: state.data.amountIn,
-          amountOut: state.data.amountOut,
-          tokenIn: state.data.tokenIn,
-          tokenOut: state.data.tokenOut,
-        })
-      }
+    if (userAddress == null) {
+      actorRef.send({ type: "LOGOUT" })
+    } else {
+      actorRef.send({ type: "LOGIN", params: { accountId: userAddress } })
+    }
+  }, [actorRef, userAddress])
+
+  useEffect(() => {
+    const sub = actorRef.on("INTENT_SETTLED", ({ data }) => {
+      onSuccessSwapRef.current({
+        amountIn: data.quote.totalAmountIn,
+        amountOut: data.quote.totalAmountOut,
+        tokenIn: data.tokenIn,
+        tokenOut: data.tokenOut,
+        txHash: data.txHash,
+        intentHash: data.intentHash,
+      })
     })
 
     return () => {

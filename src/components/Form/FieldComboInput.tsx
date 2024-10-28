@@ -1,5 +1,6 @@
 import clsx from "clsx"
 import type React from "react"
+import { useRef } from "react"
 import type {
   FieldError,
   FieldErrors,
@@ -7,7 +8,8 @@ import type {
   Path,
   UseFormRegister,
 } from "react-hook-form"
-
+import { formatUnits } from "viem"
+import useMergedRef from "../../hooks/useMergedRef"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../types/base"
 import {
   BlockMultiBalances,
@@ -15,17 +17,17 @@ import {
 } from "../Block/BlockMultiBalances"
 import { SelectAssets } from "../SelectAssets"
 
-interface Props<T extends FieldValues> {
+interface Props<T extends FieldValues>
+  extends Omit<BlockMultiBalancesProps, "decimals" | "balance"> {
   fieldName: Path<T>
   register?: UseFormRegister<T>
   required?: string
   placeholder?: string
   label?: string | React.ReactNode
   price?: string
-  balance?: string | bigint
+  balance?: bigint
   selected?: BaseTokenInfo | UnifiedTokenInfo
   handleSelect?: () => void
-  handleSetMaxValue?: () => void
   className?: string
   errors?: FieldErrors
   errorSelect?: string
@@ -44,7 +46,6 @@ export const FieldComboInput = <T extends FieldValues>({
   balance,
   selected,
   handleSelect,
-  handleSetMaxValue,
   className,
   errors,
   withNativeSupport,
@@ -52,10 +53,12 @@ export const FieldComboInput = <T extends FieldValues>({
   nativeSupportChecked,
   errorSelect,
   disabled,
-}: Props<T> & BlockMultiBalancesProps) => {
+}: Props<T>) => {
   if (!register) {
     return null
   }
+
+  const inputRef = useRef<HTMLInputElement>(null)
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
     const allowedKeys = [
@@ -96,6 +99,33 @@ export const FieldComboInput = <T extends FieldValues>({
     }
   }
 
+  const setInputValue = (
+    value: string | ((previousValue: string) => string)
+  ) => {
+    if (inputRef.current) {
+      const lastValue = inputRef.current.value
+
+      inputRef.current.value =
+        typeof value === "function" ? value(lastValue) : value
+
+      // @ts-expect-error React hack for emitting change event
+      const tracker = inputRef.current._valueTracker
+      console.log(tracker)
+      if (tracker) {
+        tracker.setValue(lastValue)
+      }
+
+      const event = new Event("change", { bubbles: true })
+      inputRef.current.dispatchEvent(event)
+    }
+  }
+
+  const handleSetMaxValue = () => {
+    if (!disabled && balance != null && selected && inputRef.current) {
+      setInputValue(formatUnits(balance, selected.decimals))
+    }
+  }
+
   const option = {
     pattern: {
       value: /^(?!0(\.0+)?$)(\d+(\.\d+)?|\.\d+)$/, // Valid result "100", "1.000", "0.000123", etc.
@@ -106,18 +136,24 @@ export const FieldComboInput = <T extends FieldValues>({
     Object.assign(option, { required: "This field is required" })
   }
 
+  // react-hook-form specific props
+  const reactHookFormRegisterProps = register(fieldName, option)
+
+  const allInputRefs = useMergedRef(inputRef, reactHookFormRegisterProps.ref)
+
   return (
     <div
       className={clsx(
         "relative flex justify-between items-center px-5 py-[2.375rem] w-full bg-gray-50 dark:bg-black-900 dark:border-black-950",
         !label && "pt-5",
-        !price && !balance && errors && !errors[fieldName] && "pb-5",
+        !price && balance == null && errors && !errors[fieldName] && "pb-5",
         className && className
       )}
     >
       <input
         type={"text"}
-        {...register(fieldName, option)}
+        {...reactHookFormRegisterProps}
+        ref={allInputRefs}
         onKeyDown={handleKeyDown}
         onPaste={handlePaste}
         placeholder={placeholder}
@@ -144,15 +180,16 @@ export const FieldComboInput = <T extends FieldValues>({
           <SelectAssets selected={selected} handleSelect={handleSelect} />
         )}
       </div>
-      {Number(balance) > 0 && !errorSelect && (
+      {balance != null && !errorSelect && (
         <BlockMultiBalances
           balance={balance}
+          decimals={selected?.decimals ?? 0}
           withNativeSupport={withNativeSupport ?? false}
           handleIncludeNativeToSwap={
             handleIncludeNativeToSwap ? handleIncludeNativeToSwap : () => {}
           }
           nativeSupportChecked={nativeSupportChecked ?? false}
-          handleClick={handleSetMaxValue || (() => {})}
+          handleClick={handleSetMaxValue}
         />
       )}
       {errorSelect && (

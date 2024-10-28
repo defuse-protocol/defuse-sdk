@@ -73,6 +73,8 @@ export type SwapWidgetProps = {
     amountOut: bigint
     tokenIn: SwappableToken
     tokenOut: SwappableToken
+    txHash: string
+    intentHash: string
   }) => void
 }
 

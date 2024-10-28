@@ -12,6 +12,7 @@ import {
 } from "src/hooks/useNearGetTokenBalance"
 import { formatUnits } from "viem"
 import { isBaseToken } from "../../utils"
+import { formatTokenValue } from "../../utils/format"
 import { AssetBalance } from "./AssetBalance"
 import { AssetComboIcon } from "./AssetComboIcon"
 
@@ -87,25 +88,11 @@ export const AssetList = <T extends Token>({
               <Text as="span" size="2" weight="medium">
                 {token.name}
               </Text>
-              <Text as="span" size="2" weight="medium">
-                {balances && (
-                  <AssetBalanceAdapter
-                    balances={balances}
-                    nearBalance={nearBalance ?? 0n}
-                    decimals={token.decimals}
-                    defuseAssetId={defuseAssetId}
-                  />
-                )}
-              </Text>
+              {renderBalance(balance?.balance, token)}
             </div>
             <div className="flex justify-between items-center text-gray-600 dark:text-gray-500">
               <Text as="span" size="2">
                 {token.symbol}
-              </Text>
-              <Text as="span" size="2">
-                {balance
-                  ? `$${balanceToCurrency(Number(balance.balanceUsd))}`
-                  : null}
               </Text>
             </div>
           </div>
@@ -148,4 +135,22 @@ const AssetBalanceAdapter = ({
   }, [balances, defuseAssetId, decimals, nearBalance])
 
   return <AssetBalance balance={calculateBalance()} />
+}
+
+function renderBalance(
+  balance: string | undefined,
+  token: BaseTokenInfo | UnifiedTokenInfo
+) {
+  return (
+    <Text as="span" size="2" weight="medium">
+      {balance != null ? (
+        formatTokenValue(balance, token.decimals, {
+          min: 0.0001,
+          fractionDigits: 4,
+        })
+      ) : (
+        <AssetBalance asset={token} />
+      )}
+    </Text>
+  )
 }

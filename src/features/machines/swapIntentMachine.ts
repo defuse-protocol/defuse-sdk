@@ -1,16 +1,11 @@
-import { quoteMachine } from "@defuse-protocol/swap-facade"
-import type { SolverQuote } from "@defuse-protocol/swap-facade/dist/interfaces/swap-machine.in.interface"
 import type { providers } from "near-api-js"
-import {
-  type ActorRefFrom,
-  type OutputFrom,
-  and,
-  assign,
-  fromPromise,
-  setup,
-} from "xstate"
+import { assign, fromPromise, log, setup } from "xstate"
 import { settings } from "../../config/settings"
-import { publishIntent } from "../../services/solverRelayHttpClient"
+import {
+  doesSignatureMatchUserAddress,
+  submitIntent,
+  waitForIntentSettlement,
+} from "../../services/intentService"
 import type {
   SwappableToken,
   WalletMessage,
@@ -21,19 +16,18 @@ import {
   makeInnerSwapMessage,
   makeSwapMessage,
 } from "../../utils/messageFactory"
-import { prepareSwapSignedData } from "../../utils/prepareBroadcastRequest"
+import type { ChildEvent as BackgroundQuoterEvents } from "./backgroundQuoterMachine"
 import {
   type SendNearTransaction,
   publicKeyVerifierMachine,
 } from "./publicKeyVerifierMachine"
-import type { queryQuoteMachine } from "./queryQuoteMachine"
+import type { AggregatedQuote } from "./queryQuoteMachine"
 
 type Context = {
-  quoterRef: null | ActorRefFrom<typeof quoteMachine>
   userAddress: string
   nearClient: providers.Provider
   sendNearTransaction: SendNearTransaction
-  quote: OutputFrom<typeof queryQuoteMachine>
+  quote: AggregatedQuote
   tokenIn: SwappableToken
   tokenOut: SwappableToken
   amountIn: bigint
@@ -42,36 +36,67 @@ type Context = {
     innerMessage: DefuseMessageFor_DefuseIntents
   }
   signature: WalletSignatureResult | null
+  intentHash: string | null
+  error:
+    | null
+    | {
+        status: "ERR_USER_DIDNT_SIGN"
+        error: Error
+      }
+    | {
+        status: "ERR_SIGNED_DIFFERENT_ACCOUNT"
+      }
+    | {
+        status: "ERR_CANNOT_VERIFY_PUBLIC_KEY"
+        error: Error | null
+      }
+    | {
+        status: "ERR_CANNOT_PUBLISH_INTENT"
+        error: Error
+      }
+    | {
+        status: "ERR_QUOTE_EXPIRED_RETURN_IS_LOWER"
+      }
 }
 
 type Input = {
   userAddress: string
   nearClient: providers.Provider
   sendNearTransaction: SendNearTransaction
-  quote: OutputFrom<typeof queryQuoteMachine>
+  quote: AggregatedQuote
   tokenIn: SwappableToken
   tokenOut: SwappableToken
   amountIn: bigint
 }
 
-type Output = {
-  // todo: Output is expected to include intent status, intent entity and other relevant data
-  status: "aborted" | "confirmed" | "not-found-or-invalid" | "network-error"
-}
+export type Output =
+  | NonNullable<Context["error"]>
+  | {
+      status: "INTENT_PUBLISHED"
+      intentHash: string
+    }
+
+type Events = BackgroundQuoterEvents
 
 export const swapIntentMachine = setup({
   types: {
     context: {} as Context,
     input: {} as Input,
     output: {} as Output,
+    events: {} as Events,
   },
   actions: {
-    setError: () => {
-      throw new Error("not implemented")
+    setError: assign({
+      error: (_, error: NonNullable<Context["error"]>) => error,
+    }),
+    logError: (_, params: { error: unknown }) => {
+      console.error(params.error)
     },
-    logError: (_, err: unknown) => {
-      console.error(err)
-    },
+    proposeQuote: assign({
+      quote: ({ context }, proposedQuote: AggregatedQuote) => {
+        return determineNewestValidQuote(context.quote, proposedQuote)
+      },
+    }),
     assembleSignMessages: assign({
       messageToSign: ({ context }) => {
         const innerMessage = makeInnerSwapMessage({
@@ -96,18 +121,8 @@ export const swapIntentMachine = setup({
     setSignature: assign({
       signature: (_, signature: WalletSignatureResult | null) => signature,
     }),
-    startBackgroundQuoter: assign({
-      // @ts-expect-error For some reason `spawn` creates object which type mismatch
-      quoterRef: ({ spawn }) =>
-        // @ts-expect-error
-        spawn(
-          quoteMachine.provide({
-            actors: {
-              fetchQuotes: fromPromise(async (): Promise<SolverQuote[]> => []),
-            },
-          }),
-          { id: "quoter", input: {} }
-        ),
+    setIntentHash: assign({
+      intentHash: (_, intentHash: string) => intentHash,
     }),
   },
   actors: {
@@ -127,50 +142,44 @@ export const swapIntentMachine = setup({
           signatureData: WalletSignatureResult
           quoteHashes: string[]
         }
-      }) => {
-        return publishIntent({
-          signed_data: prepareSwapSignedData(input.signatureData),
-          quote_hashes: input.quoteHashes,
-        })
-      }
+      }) => submitIntent(input.signatureData, input.quoteHashes)
     ),
-    getIntentStatus: fromPromise(async () => {
-      // todo: Implement this actor
-      console.warn("getIntentStatus actor is not implemented")
-    }),
+    pollIntentStatus: fromPromise(
+      ({
+        input,
+        signal,
+      }: { input: { intentHash: string }; signal: AbortSignal }) =>
+        waitForIntentSettlement(signal, input.intentHash)
+    ),
   },
   guards: {
-    isSettled: () => {
-      // todo: Implement this guard
-      console.warn("isSettled guard is not implemented")
-      return true
+    isSettled: (
+      _,
+      { status }: { status: "SETTLED" } | { status: "NOT_FOUND_OR_NOT_VALID" }
+    ) => {
+      return status === "SETTLED"
     },
-    isPending: () => {
-      throw new Error("not implemented")
+    isSignatureValid: (
+      { context },
+      signature: WalletSignatureResult | null
+    ) => {
+      return doesSignatureMatchUserAddress(signature, context.userAddress)
     },
-    isNotFoundOrInvalid: () => {
-      throw new Error("not implemented")
-    },
-    isSignatureValid: ({ context }) => {
-      // todo: Implement this guard
-      console.warn("isSignatureValid guard is not implemented")
-      return context.signature != null
-    },
-    isIntentRelevant: () => {
-      // todo: Implement this guard
-      console.warn("isIntentRelevant guard is not implemented")
-      return true
+    isIntentRelevant: ({ context }) => {
+      // Naively assume that the quote is still relevant if the expiration time is in the future
+      return context.quote.expirationTime * 1000 > Date.now()
     },
     isSigned: (_, params: WalletSignatureResult | null) => params != null,
     isTrue: (_, params: boolean) => params,
   },
 }).createMachine({
-  /** @xstate-layout N4IgpgJg5mDOIC5SwO4EMAOBaAlgOwBcxCA6HCAGzAGIBtABgF1FQMB7WHAnNvFkAB6IAjMIAcJACwBOAGwB2AKxiATJMnDpAZkmyANCACeiLVvkklK+iuk2tixfWmKAvi4OpMuQsQIkAamAATjgAZob4UAAEAAoArgBGFDgAxlEA0mCGsUFwxCk0ELxgZHgAbmwA1iWe2PhEpIEh4ZGxiclpmdkxubD5YAj4FSlo3LwMjBP87JxjfEiCJpIkWvSKcnJi8tKSiirCBsYIO8tiYtqykirnsirXbh7odT6NwWEReNHxSakZWTl5PAFahFPAlIZVGpPbwNPxNd6tb4dP7dXr9QblNgjOYTWjCZgLGZcHjzUBCBBYDQSFSKLQ7WR7OTXbSHRAnEhnC5XG53aQPEC1GG+AJvFqfNo-Tr-HqA4HBIJsIIkDAUUahRUAWxIgvqwvhYq+7V+XQBfSBAwh2JJuKY0w4xN4-HJWC0snoJAU0nokjM1j2jn0RkQYnUJEUDOE9Hk6lU8jEsn5OpefgAyjgoHhIiDiqUKtVtem8ABZOCwNAwKaE+1zJ0mCT0Onyfb0eiyMxx3SshCyENSMQByOSMT0G6J6G60hpjNZ0HgzH5zgZkuwMsV-F22Yk2sUyRRkhRu6qUzCcP7LuyaTmeQN27yJSiOTyMdeCepwtZ+WK5WqgjqoJaxdi1LcswErVhqy3BZnR0aQpEvXcG0UeRZGEQMjgcFQSBPaQ5HoYQVF9HZn2eWESAAIQVNAIBGWBuHFABJZNszBXNIW1YgIGXVdQNtKtN0dKC2S0Eh9mjRQrjva55HsLthB0ZZhEkaN8JUaSe2cYihVICi2Comi6OiRjYWoT8lRVNVNXYvBOOAitePA-jSUWClhDjETZDbbQ8NUaRFNkulFHcxTxGQhRrE018RWaD5DKYsCQCJGtBIQURqRg+Nw2vDQL1kqNhM2Ht1mkpRlAi5MooRBi4vXPiHSc8kZEwmlvUU25dlbaRZN2CQ70agjH3OMrSIAcTAAgDKiIzfCiFMCFGOJYGYuc8yhF9ytG8bWimwgZrmggFoxYZRmtJh4sSyCyRMQKbG5OMxC0c4lPE2TbialtHG2EcxEUlQhuFDaJu2ghdvmxbZ1Yhdx3WsbAeTEH9tgQ6sWO8ZTpqhy6u3V0JAZUxnHUFQ3TuLQXruET3qjL0zh+v7SABra4dm0GTKCBUzJ-P8AKhkaYYZ2F4YOy0UbwG0CQxpLLopZwPXWVTVFvNTJFk2llhkJTI3kRSzGkMQ3HcEA8DYCA4H4JNYQ3THkspDyRNpelGVuc4SaDFKdBE4ddy0O4NA12m-HIKgLYl5z8OEFZNbkxRRDjL3zi7QmJB9VTxJ1jQNCUP2KoNCVkRNGUzQKIOLucpSPW6k97FdNs45d77YK0VzLCUC86UkTOp0zT4i4EyXKXrn0H1Qqwm29LsrlkPtrxscN1m0XX9bN4UAGFeFCHB-0gbv6pEUwwwChvVK9mwxFk+MJFEVyPNpVDaS0TOADk2GBgAxNg4msqJFUm8o0GSCAt+3FcU4J4kJqFsJeVyp9lArDanSe6IYoyuAXtzYUABBBIioiD-1qsHZ0Nh3Q6DjPhcMSkRwqFPl6ESyFdgN12D2W4mcdJ6TQLRPmvgAFWyHLJRSsFhyiFdL5FsQ5M76hit-c2ODi7kkjIFA82hj7yQZCfF2kZFIrBwtYRBclrAJmQWtUi98xooEVJUKIABRVmioOG90jO6fYahXS6BniORQFC7HUNsKsUwzdM70yqvzJmCNrHOWjFIcSBM3TiBbCOLqmg4JnF9AovWLggA */
+  /** @xstate-layout N4IgpgJg5mDOIC5SwO4EMAOBaAlgOwBcxCBiAOQFEB1AfQEUBVAeQBUKBtABgF1FQMA9rBwEcAvHxAAPRACYAnAFYAdPIAcigGyKA7It0BGTcYDMAGhABPRAZOzlJxfJNqdmnTs7zOsgCwBffwtUTFxCYgJlHAgAGzASLl4kEEFhUXFJGQRbNWUfTgNfRVk1eU01Ut8LawQTdWVNP05HfU9fY0Dg9Gx8IkJlAGUcKDx8KBIIcTAovAA3AQBraeERgFk4WDQYRMlUkTEJZKyjZQNFI19fE19XExN3asRNS9O9Z9dFX05FE06QEJ64X6QxGYwmUxm8yWyhWeHWsE22wMSX4Qn2GSOiCwJgMuXaBlk92cajqziqVieJWUvlkmjKXh8bjsfwBYT6kRBozw4zAACdeQJecoMDE0AQAGaCgC2MOGcI2WzAO2Se3Sh1AWSwtM4ygqmnu900Bm8BgMjwQl3kyicvnkZT0WhKthZ3TZEWUADU+ThxZYxgACAAKAFcAEYxHAAY39AGkwJYg7y4MRI-FJnhpvgoctXb13V7eT6-dyg2GI9G4wnA0nYCmwAgswJI2KDollai0gdMohrg5vmUyq55EVZGaKQhh75daV7jTSo0Si7Qnn+gWiwGQ+Go7H44nk3hU+CM5DFjnl0DImvfRuy9vK3vawf643m2q28jdmi1d2ENiFA05w0RRXB0Y1yRqO0dAaM51E+eQdBxeCl0BdlPW9a8S03csdyrGs6xIPkBSFEUxUlXkZVZFdL3Q4soFLLcK13at91TBs5ibFtxDbHhP07DENSxBQdSE54aSUOkFHNHR5HsHQ1BHElnDtfVkLdfoACEBTQCBm1gUQSwASQvI9M3Y6FKIvZRNIEbTdP0uijPZNj5lfVseHbFIvy7TEEFA1Q6l8TxNE4HRRxMHxzVsRpTnC85rgJRxZB0VSqKsrSdLQPSA0ciICP5QVhVFCVpRhXNLOs2zMvs-0csIZyOLfdyeJVLz+OkQS1AMVRlNuWd4P1SLjU0XVjFtAoQscdQUssq9aJq4yPNVbyBIQNRhtCoo5PcAlOE4B5x1NThcj0NRZE4TbGjcZKgn+MrUNm7KFo-Fq+PVdraj8a01t0RxcUZcwDpC4T5O8NxhyUYdAhuvABAgOBJAs9lePRN7NRMDwAJKICQLA81CStLwPFkQlvicI7ptQ6I4mR78fMKHVKltUK7VHZxZHNOxhppPa-HaYckrUCn3U5MYaeW97-18AwChcBDQL0HQrnNG57DuVwikKYmFD8IXVxom8GJwh86zFtqskCgDdFcDRSjkgwdHNTqrRxDxijeJSAhuxH3QqjKssMi9TdRxBgLyOTFYXeTrgqSLRy684jF2wl9X7XXqMLDCHMDl6UZ-aWVBChQ7HUa52mAyKCitEkvhCpQCmJzQ0+UABhAQpRFMAiAgIOfyUa1a5uXavAUyLiinUckuKdxgOk34vbu90AHFiG9aMKHy3ke58rVnn7jRdpg2QnAdg6x+UCe9FpE7Z6h-wgA */
   context: ({ input }) => {
     return {
-      quoterRef: null,
       messageToSign: null,
       signature: null,
+      error: null,
+      intentHash: null,
       ...input,
     }
   },
@@ -179,13 +188,30 @@ export const swapIntentMachine = setup({
 
   initial: "idle",
 
-  entry: ["startBackgroundQuoter"],
-
-  output: ({ event }) => {
-    return {
-      // @ts-expect-error I don't know how to type "done" event
-      status: event.output.status,
+  output: ({ context }): Output => {
+    if (context.intentHash != null) {
+      return {
+        status: "INTENT_PUBLISHED",
+        intentHash: context.intentHash,
+      }
     }
+
+    if (context.error != null) {
+      return context.error
+    }
+
+    throw new Error("Unexpected output")
+  },
+
+  on: {
+    NEW_QUOTE: {
+      actions: [
+        {
+          type: "proposeQuote",
+          params: ({ event }) => event.params.quote,
+        },
+      ],
+    },
   },
 
   states: {
@@ -202,8 +228,6 @@ export const swapIntentMachine = setup({
       invoke: {
         id: "signMessage",
 
-        onError: "Aborted",
-
         src: "signMessage",
 
         input: ({ context }) => {
@@ -214,7 +238,10 @@ export const swapIntentMachine = setup({
         onDone: [
           {
             target: "Verifying Public Key Presence",
-            guard: { type: "isSigned", params: ({ event }) => event.output },
+            guard: {
+              type: "isSignatureValid",
+              params: ({ event }) => event.output,
+            },
 
             actions: {
               type: "setSignature",
@@ -224,14 +251,38 @@ export const swapIntentMachine = setup({
             reenter: true,
           },
           {
-            target: "Aborted",
+            target: "Generic Error",
+            description: "SIGNED_DIFFERENT_ACCOUNT",
             reenter: true,
+            actions: {
+              type: "setError",
+              params: {
+                status: "ERR_SIGNED_DIFFERENT_ACCOUNT",
+              },
+            },
           },
         ],
-      },
 
-      description:
-        "Generating sign message, wait for the proof of sign (signature).\n\nResult:\n\n- Update \\[context\\] with selected best quote;\n- Callback event to user for signing the solver message by wallet;",
+        onError: {
+          target: "Generic Error",
+          description: "USER_DIDNT_SIGN",
+          reenter: true,
+
+          actions: [
+            {
+              type: "logError",
+              params: ({ event }) => event,
+            },
+            {
+              type: "setError",
+              params: ({ event }) => ({
+                status: "ERR_USER_DIDNT_SIGN",
+                error: toError(event.error),
+              }),
+            },
+          ],
+        },
+      },
     },
 
     "Verifying Public Key Presence": {
@@ -259,48 +310,44 @@ export const swapIntentMachine = setup({
             },
           },
           {
-            target: "Aborted",
+            target: "Generic Error",
+            description: "CANNOT_VERIFY_PUBLIC_KEY",
             reenter: true,
+            actions: {
+              type: "setError",
+              params: {
+                status: "ERR_CANNOT_VERIFY_PUBLIC_KEY",
+                error: null,
+              },
+            },
           },
         ],
         onError: {
-          target: "Aborted",
-          actions: {
-            type: "logError",
-            // @ts-expect-error Incorrect `event` type, `error` present in `event` for sure
-            params: ({ event }) => event.error,
-          },
+          target: "Generic Error",
+          description: "CANNOT_VERIFY_PUBLIC_KEY",
+          reenter: true,
+
+          actions: [
+            {
+              type: "logError",
+              params: ({ event }) => event,
+            },
+            {
+              type: "setError",
+              params: ({ event }) => ({
+                status: "ERR_CANNOT_VERIFY_PUBLIC_KEY",
+                error: toError(event.error),
+              }),
+            },
+          ],
         },
-      },
-    },
-
-    Confirmed: {
-      type: "final",
-      description: "The intent is executed successfully.",
-      output: {
-        status: "confirmed",
-      },
-    },
-
-    "Not Found or Invalid": {
-      type: "final",
-      description:
-        "Intent is either met deadline or user does not have funds or any other problem. Intent cannot be executed.",
-      output: {
-        status: "not-found-or-invalid",
-      },
-    },
-
-    Aborted: {
-      type: "final",
-      output: {
-        status: "aborted",
       },
     },
 
     "Broadcasting Intent": {
       invoke: {
-        id: "sendMessage",
+        src: "broadcastMessage",
+
         input: ({ context }) => {
           assert(context.signature != null, "Signature is not set")
           assert(context.messageToSign != null, "Sign message is not set")
@@ -310,65 +357,66 @@ export const swapIntentMachine = setup({
             signatureData: context.signature,
           }
         },
-        src: "broadcastMessage",
+
         onError: {
-          target: "Network Error",
-
-          actions: "setError",
-
+          target: "Generic Error",
+          description: "CANNOT_PUBLISH_INTENT",
           reenter: true,
+
+          actions: [
+            {
+              type: "logError",
+              params: ({ event }) => event,
+            },
+            {
+              type: "setError",
+              params: ({ event }) => ({
+                status: "ERR_CANNOT_PUBLISH_INTENT",
+                error: toError(event.error),
+              }),
+            },
+          ],
         },
+
         onDone: {
-          target: "Getting Intent Status",
+          target: "Completed",
           reenter: true,
+          actions: {
+            type: "setIntentHash",
+            params: ({ event }) => event.output,
+          },
         },
       },
-      description:
-        "Send user proof of sign (signature) to solver bus \\[relay responsibility\\].\n\nResult:\n\n- Update \\[context\\] with proof of broadcasting from solver;",
     },
 
     "Verifying Intent": {
       always: [
         {
           target: "Broadcasting Intent",
-          guard: and(["isIntentRelevant", "isSignatureValid"]),
+          guard: "isIntentRelevant",
         },
         {
-          target: "Not Found or Invalid",
+          target: "Completed",
+          description: "QUOTE_EXPIRED_RETURN_IS_LOWER",
           reenter: true,
+          actions: [
+            {
+              type: "setError",
+              params: {
+                status: "ERR_QUOTE_EXPIRED_RETURN_IS_LOWER",
+              },
+            },
+          ],
         },
       ],
     },
 
-    "Network Error": {
+    Completed: {
       type: "final",
-      output: {
-        status: "network-error",
-      },
     },
 
-    "Getting Intent Status": {
-      invoke: {
-        src: "getIntentStatus",
-
-        onDone: [
-          {
-            target: "Confirmed",
-            guard: "isSettled",
-            reenter: true,
-          },
-          {
-            target: "Not Found or Invalid",
-            guard: "isNotFoundOrInvalid",
-            reenter: true,
-          },
-        ],
-
-        onError: {
-          target: "Network Error",
-          reenter: true,
-        },
-      },
+    "Generic Error": {
+      type: "final",
     },
   },
 })
@@ -377,4 +425,22 @@ function assert(condition: unknown, msg?: string): asserts condition {
   if (!condition) {
     throw new Error(msg)
   }
+}
+
+function toError(error: unknown): Error {
+  return error instanceof Error ? error : new Error("unknown error")
+}
+
+function determineNewestValidQuote(
+  originalQuote: AggregatedQuote,
+  proposedQuote: AggregatedQuote
+): AggregatedQuote {
+  if (
+    originalQuote.totalAmountOut <= proposedQuote.totalAmountOut &&
+    originalQuote.expirationTime <= proposedQuote.expirationTime
+  ) {
+    return proposedQuote
+  }
+
+  return originalQuote
 }

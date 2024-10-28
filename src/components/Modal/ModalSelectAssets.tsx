@@ -1,5 +1,6 @@
 import { Text } from "@radix-ui/themes"
 import React, { useState, useDeferredValue, useEffect } from "react"
+import type { BalanceMapping } from "../../features/machines/depositedBalanceMachine"
 import { useModalStore } from "../../providers/ModalStoreProvider"
 import { useTokensStore } from "../../providers/TokensStoreProvider"
 import { ModalType } from "../../stores/modalStore"
@@ -20,6 +21,7 @@ export type ModalSelectAssetsPayload = {
   modalType?: ModalType.MODAL_SELECT_ASSETS
   token?: Token
   fieldName?: string
+  balances?: BalanceMapping
   accountId?: string
 }
 
@@ -71,7 +73,11 @@ export const ModalSelectAssets = () => {
     const { selectToken, fieldName } = payload as {
       selectToken: Token | undefined
       fieldName: string
+      balances?: BalanceMapping
     }
+
+    // Warning: This is unsafe type casting, payload could be anything
+    const balances = (payload as ModalSelectAssetsPayload).balances ?? {}
 
     const selectedTokenId = selectToken
       ? isBaseToken(selectToken)
@@ -94,13 +100,46 @@ export const ModalSelectAssets = () => {
         // We join defuseAssetId of all grouped tokens to get a single string
         // to simplify search balances and not mutate token object
         getAssetList.push({ itemId: tokenId, token, disabled, defuseAssetId })
-      } else if (isBaseToken(token)) {
-        getAssetList.push({
-          itemId: tokenId,
-          token,
-          disabled,
-          defuseAssetId: token.defuseAssetId,
-        })
+      }
+
+      if (isBaseToken(token)) {
+        const balance = balances[token.defuseAssetId]
+        if (balance != null && balance > 0n) {
+          getAssetList.push({
+            itemId: tokenId,
+            token,
+            disabled,
+            balance: {
+              balance: balance.toString(),
+              balanceUsd: undefined,
+              convertedLast: undefined,
+            },
+          })
+        }
+      } else {
+        const totalBalance = token.groupedTokens.reduce<undefined | bigint>(
+          (acc, innerToken) => {
+            const balance = balances[innerToken.defuseAssetId]
+            if (balance != null) {
+              return (acc ?? 0n) + balance
+            }
+            return acc
+          },
+          undefined
+        )
+
+        if (totalBalance != null && totalBalance > 0n) {
+          getAssetList.push({
+            itemId: tokenId,
+            token,
+            disabled,
+            balance: {
+              balance: totalBalance.toString(),
+              balanceUsd: undefined,
+              convertedLast: undefined,
+            },
+          })
+        }
       }
     }
     setAssetList(getAssetList)
