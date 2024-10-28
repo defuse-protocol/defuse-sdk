@@ -1,18 +1,12 @@
 import { Text } from "@radix-ui/themes"
 import clsx from "clsx"
-import { type ReactNode, useCallback } from "react"
+import type { ReactNode } from "react"
 
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../types/base"
 import type { SelectItemToken } from "../Modal/ModalSelectAssets"
 
-import {
-  useGetNearNativeBalance,
-  useGetNearNep141Balances,
-} from "src/hooks/useNearGetTokenBalance"
-import { formatUnits } from "viem"
 import { isBaseToken } from "../../utils"
 import { formatTokenValue } from "../../utils/format"
-import { AssetBalance } from "./AssetBalance"
 import { AssetComboIcon } from "./AssetComboIcon"
 
 type Props<T> = {
@@ -30,29 +24,8 @@ export const AssetList = <T extends Token>({
   title,
   assets,
   className,
-  accountId,
   handleSelectToken,
 }: Props<T>) => {
-  const { data: balances } = useGetNearNep141Balances(
-    {
-      tokenList: assets.map((item) => item.token),
-      accountId: accountId ?? "",
-    },
-    {
-      enabled: !!accountId,
-      retry: 2,
-    }
-  )
-  const { data: nearBalance } = useGetNearNativeBalance(
-    {
-      accountId: accountId ?? "",
-    },
-    {
-      enabled: !!accountId,
-      retry: 2,
-    }
-  )
-
   return (
     <div className={clsx("flex flex-col", className && className)}>
       <div className="sticky top-0 z-10 px-5 h-[46px] flex items-center bg-white dark:bg-black-800 dark:text-white">
@@ -65,7 +38,7 @@ export const AssetList = <T extends Token>({
           {title}
         </Text>
       </div>
-      {assets.map(({ itemId, token, disabled, balance, defuseAssetId }, i) => (
+      {assets.map(({ itemId, token, disabled, balance }, i) => (
         <button
           key={itemId}
           type={"button"}
@@ -99,41 +72,6 @@ export const AssetList = <T extends Token>({
       ))}
     </div>
   )
-}
-
-const AssetBalanceAdapter = ({
-  balances,
-  nearBalance,
-  decimals,
-  defuseAssetId,
-}: {
-  balances: Record<string, bigint>
-  nearBalance: bigint
-  decimals: number
-  defuseAssetId?: string
-}) => {
-  const calculateBalance = useCallback(() => {
-    if (!balances || !defuseAssetId) {
-      return "0"
-    }
-    const tokenIds = defuseAssetId.split(",")
-    const isGroupedToken = tokenIds.length > 1
-    if (isGroupedToken) {
-      return tokenIds.reduce((acc, assetId) => {
-        const balance = formatUnits(balances[assetId] ?? BigInt(0), decimals)
-        return (Number(acc) + Number(balance)).toString()
-      }, "0")
-    }
-    if (defuseAssetId === "nep141:wrap.near") {
-      return formatUnits(
-        (balances[defuseAssetId] ?? BigInt(0)) + nearBalance,
-        decimals
-      )
-    }
-    return formatUnits(balances[defuseAssetId] ?? BigInt(0), decimals)
-  }, [balances, defuseAssetId, decimals, nearBalance])
-
-  return <AssetBalance balance={calculateBalance()} />
 }
 
 function renderBalance(
