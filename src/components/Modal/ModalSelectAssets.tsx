@@ -90,6 +90,8 @@ export const ModalSelectAssets = () => {
     for (const [tokenId, token] of data) {
       const disabled = selectedTokenId != null && tokenId === selectedTokenId
       if (isUnifiedToken(token)) {
+        // We join defuseAssetId of all grouped tokens to get a single string
+        // to simplify search balances and not mutate token object
         const defuseAssetId = token.groupedTokens.reduce(
           (acc, innerToken) =>
             innerToken.defuseAssetId != null
@@ -97,26 +99,7 @@ export const ModalSelectAssets = () => {
               : acc,
           ""
         )
-        // We join defuseAssetId of all grouped tokens to get a single string
-        // to simplify search balances and not mutate token object
-        getAssetList.push({ itemId: tokenId, token, disabled, defuseAssetId })
-      }
 
-      if (isBaseToken(token)) {
-        const balance = balances[token.defuseAssetId]
-        if (balance != null && balance > 0n) {
-          getAssetList.push({
-            itemId: tokenId,
-            token,
-            disabled,
-            balance: {
-              balance: balance.toString(),
-              balanceUsd: undefined,
-              convertedLast: undefined,
-            },
-          })
-        }
-      } else {
         const totalBalance = token.groupedTokens.reduce<undefined | bigint>(
           (acc, innerToken) => {
             const balance = balances[innerToken.defuseAssetId]
@@ -128,18 +111,35 @@ export const ModalSelectAssets = () => {
           undefined
         )
 
-        if (totalBalance != null && totalBalance > 0n) {
-          getAssetList.push({
-            itemId: tokenId,
-            token,
-            disabled,
-            balance: {
-              balance: totalBalance.toString(),
-              balanceUsd: undefined,
-              convertedLast: undefined,
-            },
-          })
-        }
+        getAssetList.push({
+          itemId: tokenId,
+          token,
+          disabled,
+          defuseAssetId,
+          balance:
+            totalBalance == null
+              ? undefined
+              : {
+                  balance: totalBalance.toString(),
+                  balanceUsd: undefined,
+                  convertedLast: undefined,
+                },
+        })
+      } else if (isBaseToken(token)) {
+        const balance = balances[token.defuseAssetId]
+        getAssetList.push({
+          itemId: tokenId,
+          token,
+          disabled,
+          balance:
+            balance == null
+              ? undefined
+              : {
+                  balance: balance.toString(),
+                  balanceUsd: undefined,
+                  convertedLast: undefined,
+                },
+        })
       }
     }
     setAssetList(getAssetList)
