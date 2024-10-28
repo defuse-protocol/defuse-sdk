@@ -1,12 +1,11 @@
 import { Text } from "@radix-ui/themes"
 import clsx from "clsx"
-import React, { useCallback, useEffect, type ReactNode } from "react"
+import { type ReactNode, useCallback } from "react"
 
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../types/base"
 import { balanceToCurrency } from "../../utils/balanceTo"
 import type { SelectItemToken } from "../Modal/ModalSelectAssets"
 
-import { getNearNativeBalance } from "src/features/machines/getBalanceMachine"
 import {
   useGetNearNativeBalance,
   useGetNearNep141Balances,
@@ -25,46 +24,15 @@ type Props<T> = {
   handleSelectToken?: (token: SelectItemToken<T>) => void
 }
 
-const EmptyAssetList = ({ className }: Pick<Props<unknown>, "className">) => {
-  return (
-    <div
-      className={clsx(
-        "flex-1 w-full flex flex-col justify-center items-center text-center -mt-10",
-        className && className
-      )}
-    >
-      <div className="flex justify-center items-center rounded-full bg-gray-950 p-6 mb-4">
-        <img
-          src="/static/icons/cross-1.svg"
-          alt="Close"
-          width={32}
-          height={32}
-        />
-      </div>
-      <Text size="4" weight="bold">
-        Your token not found
-      </Text>
-      <Text size="2" weight="medium" className="text-gray-600">
-        Try depositing to your wallet.
-      </Text>
-    </div>
-  )
-}
-
 type Token = BaseTokenInfo | UnifiedTokenInfo
 
 export const AssetList = <T extends Token>({
   title,
   assets,
-  emptyState,
   className,
   accountId,
   handleSelectToken,
 }: Props<T>) => {
-  if (!assets.length) {
-    return emptyState || <EmptyAssetList className={className ?? ""} />
-  }
-
   const { data: balances } = useGetNearNep141Balances(
     {
       tokenList: assets.map((item) => item.token),

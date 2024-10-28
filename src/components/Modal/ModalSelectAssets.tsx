@@ -10,6 +10,7 @@ import type {
 } from "../../types/base"
 import { isBaseToken, isUnifiedToken } from "../../utils"
 import { AssetList } from "../Asset/AssetList"
+import { EmptyAssetList } from "../Asset/EmptyAssetList"
 import { SearchBar } from "../SearchBar"
 import { ModalDialog } from "./ModalDialog"
 
@@ -33,9 +34,6 @@ export type SelectItemToken<T = Token> = {
 export const ModalSelectAssets = () => {
   const [searchValue, setSearchValue] = useState("")
   const [assetList, setAssetList] = useState<SelectItemToken[]>([])
-  const [assetListWithBalances, setAssetListWithBalances] = useState<
-    SelectItemToken[]
-  >([])
 
   const { onCloseModal, modalType, payload } = useModalStore((state) => state)
   const { data, isLoading } = useTokensStore((state) => state)
@@ -119,13 +117,19 @@ export const ModalSelectAssets = () => {
           />
         </div>
         <div className="flex-1 flex flex-col justify-between border-b border-gray-100 px-2.5 overflow-y-auto dark:border-black-950">
-          <AssetList
-            assets={deferredQuery ? assetList.filter(filterPattern) : assetList}
-            title={deferredQuery ? "Search results" : "Popular tokens"}
-            className="h-full"
-            handleSelectToken={handleSelectToken}
-            accountId={(payload as ModalSelectAssetsPayload)?.accountId}
-          />
+          {assetList.length ? (
+            <AssetList
+              assets={
+                deferredQuery ? assetList.filter(filterPattern) : assetList
+              }
+              title={deferredQuery ? "Search results" : "Popular tokens"}
+              className="h-full"
+              handleSelectToken={handleSelectToken}
+              accountId={(payload as ModalSelectAssetsPayload)?.accountId}
+            />
+          ) : (
+            <EmptyAssetList className="h-full" />
+          )}
           {deferredQuery && (
             <div className="flex justify-center items-center">
               <button
