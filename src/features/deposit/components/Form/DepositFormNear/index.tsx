@@ -7,10 +7,10 @@ import { useFormContext } from "react-hook-form"
 import { settings } from "src/config/settings"
 import {
   useGetNearNativeBalance,
-  useGetNearNep141BalanceAccount,
+  useGetNearNep141Balance,
 } from "src/hooks/useNearGetTokenBalance"
 import { assert } from "vitest"
-import { fromPromise } from "xstate"
+import { fromPromise, log } from "xstate"
 import { Form } from "../../../../../components/Form"
 import { Input } from "../../../../../components/Input"
 import { DepositService } from "../../../../../features/deposit/services/depositService"
@@ -54,16 +54,25 @@ export const DepositFormNear = ({
     formState: { errors },
   } = useFormContext<DepositFormNearValues>()
 
-  const {
-    data: balanceData,
-    mutate: mutateNearNep141BalanceAccount,
-    isPending: isPendingNearNep141BalanceAccount,
-  } = useGetNearNep141BalanceAccount({ retry: true })
-  const {
-    data: balanceNativeData,
-    mutate: mutateNearNativeBalance,
-    isPending: isPendingNearNativeBalance,
-  } = useGetNearNativeBalance({ retry: true })
+  const { data: balanceData, isPending: isPendingNearNep141BalanceAccount } =
+    useGetNearNep141Balance(
+      {
+        tokenAddress: asset.address,
+        accountId: accountId ?? "",
+      },
+      {
+        retry: true,
+        enabled: !!accountId,
+      }
+    )
+
+  const { data: balanceNativeData, isPending: isPendingNearNativeBalance } =
+    useGetNearNativeBalance(
+      {
+        accountId: accountId ?? "",
+      },
+      { retry: true, enabled: !!accountId }
+    )
 
   const onSubmit = async (values: DepositFormNearValues) => {
     assert(accountId != null, "Account ID is not defined")
@@ -143,24 +152,6 @@ export const DepositFormNear = ({
       },
     })
   )
-
-  useEffect(() => {
-    if (!accountId) return
-
-    mutateNearNep141BalanceAccount({
-      tokenAddress: asset.address,
-      userAddress: accountId,
-    })
-    asset.address === "wrap.near" &&
-      mutateNearNativeBalance({
-        userAddress: accountId,
-      })
-  }, [
-    asset.address,
-    accountId,
-    mutateNearNep141BalanceAccount,
-    mutateNearNativeBalance,
-  ])
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: We want to reset the amount when the asset changes
   useEffect(() => {

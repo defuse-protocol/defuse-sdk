@@ -10,15 +10,15 @@ const RESERVED_NEAR_BALANCE = 1n * 10n ** 24n // 1 NEAR reserved for transaction
 const semaphore = new Semaphore(5, 500) // 5 concurrent request, 0.5 second delay (adjust maxConcurrent and delayMs as needed)
 
 export const getNearNativeBalance = async ({
-  userAddress,
+  accountId,
 }: {
-  userAddress: string
+  accountId: string
 }): Promise<bigint> => {
   try {
     const response = await getNearBalance({
       request_type: "view_account",
       finality: "final",
-      account_id: userAddress,
+      account_id: accountId,
     })
 
     const balance = BigInt(response.amount)
@@ -32,13 +32,13 @@ export const getNearNativeBalance = async ({
 
 export const getNearNep141Balance = async ({
   tokenAddress,
-  userAddress,
+  accountId,
 }: {
   tokenAddress: string
-  userAddress: string
+  accountId: string
 }): Promise<bigint> => {
   try {
-    const args = { account_id: userAddress }
+    const args = { account_id: accountId }
     const argsBase64 = Buffer.from(JSON.stringify(args)).toString("base64")
 
     const response = await getNearNep141BalanceAccount({
@@ -59,16 +59,16 @@ export const getNearNep141Balance = async ({
 /**
  * @returns An object where the keys are defuseAssetIds (which must be unique) and the values are balances
  */
-export const getNearBalances = async ({
+export const getNearNep141Balances = async ({
   tokenList,
-  userAddress,
+  accountId,
 }: {
   tokenList: Array<BaseTokenInfo | UnifiedTokenInfo>
-  userAddress: string
+  accountId: string
 }): Promise<Record<string, bigint>> => {
   try {
-    const tokenMap = mapTokenList(tokenList).filter(
-      ([_, tokenAddress]) => tokenAddress !== "near"
+    const tokenMap = mapTokenList(tokenList).filter(([_, tokenAddress]) =>
+      tokenAddress.includes("nep141:")
     )
     const results = await Promise.all([
       ...tokenMap.map(async ([tokenId, tokenAddress]) => {
@@ -77,23 +77,13 @@ export const getNearBalances = async ({
           return {
             [tokenId]: await getNearNep141Balance({
               tokenAddress,
-              userAddress,
+              accountId,
             }),
           }
         } finally {
           semaphore.release()
         }
       }),
-      (async () => {
-        await semaphore.acquire()
-        try {
-          return {
-            "near:native": await getNearNativeBalance({ userAddress }),
-          }
-        } finally {
-          semaphore.release()
-        }
-      })(),
     ])
 
     return Object.assign({}, ...results)

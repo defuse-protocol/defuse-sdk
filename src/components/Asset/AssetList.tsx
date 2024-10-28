@@ -6,7 +6,11 @@ import type { BaseTokenInfo, UnifiedTokenInfo } from "../../types/base"
 import { balanceToCurrency } from "../../utils/balanceTo"
 import type { SelectItemToken } from "../Modal/ModalSelectAssets"
 
-import { useGetNearBalances } from "src/hooks/useNearGetTokenBalance"
+import { getNearNativeBalance } from "src/features/machines/getBalanceMachine"
+import {
+  useGetNearNativeBalance,
+  useGetNearNep141Balances,
+} from "src/hooks/useNearGetTokenBalance"
 import { formatUnits } from "viem"
 import { isBaseToken } from "../../utils"
 import { AssetBalance } from "./AssetBalance"
@@ -61,16 +65,25 @@ export const AssetList = <T extends Token>({
     return emptyState || <EmptyAssetList className={className ?? ""} />
   }
 
-  const { data: balances, mutate: fetchBalances } = useGetNearBalances()
-
-  useEffect(() => {
-    if (accountId) {
-      fetchBalances({
-        tokenList: assets.map((item) => item.token),
-        userAddress: accountId,
-      })
+  const { data: balances } = useGetNearNep141Balances(
+    {
+      tokenList: assets.map((item) => item.token),
+      accountId: accountId ?? "",
+    },
+    {
+      enabled: !!accountId,
+      retry: 2,
     }
-  }, [accountId, fetchBalances, assets])
+  )
+  const { data: nearBalance } = useGetNearNativeBalance(
+    {
+      accountId: accountId ?? "",
+    },
+    {
+      enabled: !!accountId,
+      retry: 2,
+    }
+  )
 
   return (
     <div className={clsx("flex flex-col", className && className)}>
@@ -110,6 +123,7 @@ export const AssetList = <T extends Token>({
                 {balances && (
                   <AssetBalanceAdapter
                     balances={balances}
+                    nearBalance={nearBalance ?? 0n}
                     decimals={token.decimals}
                     defuseAssetId={defuseAssetId}
                   />
@@ -135,10 +149,12 @@ export const AssetList = <T extends Token>({
 
 const AssetBalanceAdapter = ({
   balances,
+  nearBalance,
   decimals,
   defuseAssetId,
 }: {
   balances: Record<string, bigint>
+  nearBalance: bigint
   decimals: number
   defuseAssetId?: string
 }) => {
@@ -156,13 +172,12 @@ const AssetBalanceAdapter = ({
     }
     if (defuseAssetId === "nep141:wrap.near") {
       return formatUnits(
-        (balances[defuseAssetId] ?? BigInt(0)) +
-          (balances["near:native"] ?? BigInt(0)),
+        (balances[defuseAssetId] ?? BigInt(0)) + nearBalance,
         decimals
       )
     }
     return formatUnits(balances[defuseAssetId] ?? BigInt(0), decimals)
-  }, [balances, defuseAssetId, decimals])
+  }, [balances, defuseAssetId, decimals, nearBalance])
 
   return <AssetBalance balance={calculateBalance()} />
 }
