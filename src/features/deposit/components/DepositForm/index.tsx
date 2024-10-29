@@ -49,15 +49,6 @@ export const DepositForm = () => {
     }
   })
 
-  const switchTokens = () => {
-    depositUIActorRef.send({
-      type: "INPUT",
-      params: {
-        token: token ?? undefined,
-      },
-    })
-  }
-
   const { setModalType, payload, onCloseModal } = useModalStore(
     (state) => state
   )
@@ -115,7 +106,7 @@ export const DepositForm = () => {
                 name="network"
                 control={control}
                 render={({ field }) => (
-                  <Select<string, DepositFormValues>
+                  <Select
                     options={getBlockchainsOptions()}
                     placeholder={{
                       label: "Select network",
@@ -128,6 +119,7 @@ export const DepositForm = () => {
               />
             </div>
           )}
+          {network && <Text>{network}</Text>}
         </Form>
       </div>
     </div>

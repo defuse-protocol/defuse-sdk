@@ -25,6 +25,9 @@ export function DepositUIMachineFormSyncProvider({
             params: { [name]: value[name] },
           })
         }
+        if (name === "network") {
+          console.log("network changed", value[name])
+        }
       }
     })
     return () => {
