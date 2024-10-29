@@ -145,7 +145,7 @@ export const DepositFormRouter = ({
             name="blockchain"
             control={control}
             render={({ field }) => (
-              <Select<string, DepositFormRouterValues>
+              <Select
                 options={getBlockchainsOptions()}
                 placeholder={{
                   label: "Select network",

@@ -107,10 +107,14 @@ export const depositUIMachine = setup({
               context.formValues.amount,
               context.formValues.token?.decimals ?? 0
             ),
+            network: context.formValues.network,
+            token: context.formValues.token,
           }
         } catch {
           return {
             amount: 0n,
+            network: null,
+            token: null,
           }
         }
       },

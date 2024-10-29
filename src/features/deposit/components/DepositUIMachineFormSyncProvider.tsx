@@ -1,5 +1,6 @@
 import { type PropsWithChildren, useEffect, useRef } from "react"
 import { useFormContext } from "react-hook-form"
+import type { DepositBlockchainEnum } from "src/types"
 import type { DepositFormValues } from "./DepositForm"
 import { DepositUIMachineContext } from "./DepositUIMachineProvider"
 
@@ -26,7 +27,10 @@ export function DepositUIMachineFormSyncProvider({
           })
         }
         if (name === "network") {
-          console.log("network changed", value[name])
+          actorRef.send({
+            type: "INPUT",
+            params: { [name]: value[name] as DepositBlockchainEnum },
+          })
         }
       }
     })

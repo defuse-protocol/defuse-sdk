@@ -1,8 +1,5 @@
-import { CopyIcon } from "@radix-ui/react-icons"
 import { Button, Flex, Text } from "@radix-ui/themes"
-import { useSelector } from "@xstate/react"
-import { useContext, useEffect } from "react"
-import CopyToClipboard from "react-copy-to-clipboard"
+import { useEffect } from "react"
 import { Controller, useFormContext } from "react-hook-form"
 import { AssetComboIcon } from "src/components/Asset/AssetComboIcon"
 import { EmptyIcon } from "src/components/EmptyIcon"
@@ -42,12 +39,12 @@ export const DepositForm = () => {
   const { token, network } = DepositUIMachineContext.useSelector((snapshot) => {
     const token = snapshot.context.formValues.token
     const network = snapshot.context.formValues.network
-
     return {
       token,
       network,
     }
   })
+  console.log(snapshot.context.formValues, "snapshot")
 
   const { setModalType, payload, onCloseModal } = useModalStore(
     (state) => state
