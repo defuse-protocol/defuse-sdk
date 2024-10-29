@@ -97,6 +97,7 @@ export const swapUIMachine = setup({
 
     children: {} as {
       depositedBalanceRef: "depositedBalanceActor"
+      swapRef: "swapActor"
     },
   },
   actors: {
@@ -158,7 +159,7 @@ export const swapUIMachine = setup({
 
     spawnBackgroundQuoterRef: spawnChild("backgroundQuoterActor", {
       id: "backgroundQuoterRef",
-      input: ({ self }) => ({ parentRef: self, delayMs: 5000 }),
+      input: ({ self }) => ({ parentRef: self, delayMs: 1000 }),
     }),
     // Warning: This cannot be properly typed, so you can send an incorrect event
     sendToBackgroundQuoterRefNewQuoteInput: sendTo(
@@ -244,7 +245,7 @@ export const swapUIMachine = setup({
     },
   },
 }).createMachine({
-  /** @xstate-layout N4IgpgJg5mDOIC5SwO4EMAOBaArgSwGIBJAOQBUBRcgfQGUKyyAZCgEQG0AGAXUVAwD2sPABc8AgHZ8QAD0RYArAoAcAOgCMAdgWcALJ04BOZZoBMCgDQgAnvMO7Nq5ac6b1B07oWfDAX19WqJi4hABCAIJM4SQAwhTUMQAS0QDibFy8SCCCwmKS0nIIAMxFCk5GygBsmpqGnJUKlZVWtghYhpWmqtWG6lWuupWcRer+gejY+ARMAPIppBnSOaLiUlmFlUVOvbqmlbpFulpGmi12uoaqRW7Kt-aaRfUKYyBBk4SzKTMAqmSLWcs8mtQIUsKZ1JUNPpDOZwcoFJomsozm17Jdrn07g5Hg0Xm8QqpICsJFACLAcAAjAC2on+-CEK3y60Q6i0qlq7lMhz6Sm0KKwRUMl06HSFpmURiafgCrwmBKJYhJBDwEgwOBEdOyDKBBXkezK4PUOgUEKM4uu-Oul3UB046iKm3tQsqeLl+EJEGJpJIFAA6tQAIrfGaUTWA1a6trY1RC0qCkx1fRFfn7MrqcxNLxwkyjGX490KlVQVQANzQABs8BA0IrSRBJGBVCqSwIANaN-N4D1e0sVqs1osIZsCADGA8kGTD2ojzLaKi2pkMCl0yncVWUu2aNnk2iuCKM6nsnCUxiKruCBc9td7lertYI9YkjeH7dUne717Lt4HJKHEhbY5ApO6iZPSuQziC8gqGUwzHnaK4SoM-I2l0drKEUhq6IMaEunmbpduS1KiPej7Pv+bYdhMABKYAAGZTuBTKQQgRzqKoi6rlhWHrqypzbm0jxdIMG7rocDpHJo57vG+lI0iI95gAATopAiKaoGDljWtGqVSb7UXRDGMsCsiIAclyGgoIwNFU9ilMh+zsrs9gmrseyaLsUkEoRcn3j6-pBiGFCGTqs4HDBvSsuKejHJY-GKA4Vwig66GVPYnT+DKEgCBAcDSJ2SzTkxJltJUq6qLBOg2rcehbq0WASga7muIYjzpohnmXl6BWMcZoKbFsFXwdVSFxSaC5Lg6phuKyq6SXhF5doWJJNhA5ZgN1RmRlgXiOAc4reCMMK1HxdWLpw7FOs4y72lhLUdYtV5Fje-a1htIXMWCgpXGYLgIuuQq3PyNROLULVTc4RSriU90yUR8lFm9EHFZDZRHEM4qGtUCL8kcMGmOY6Zcq1hy4f4QA */
+  /** @xstate-layout N4IgpgJg5mDOIC5SwO4EMAOBaArgSwGIBJAOQBUBRcgfQGUKyyAZCgEQG0AGAXUVAwD2sPABc8AgHZ8QAD0RYArAoAcAOgCMAdgWcALJ04BOZZoBMCgDQgAnvMO7Nq5ac6b1B07oWfDAX19WqJi4hABCAIJM4SQAwhTUMQAS0QDibFy8SCCCwmKS0nIIAMxFCk5GygBsmpqGnJUKlZVWtghYhpWmqtWG6lWuupWcRer+gejY+ARMAPIppBnSOaLiUlmFlUVOvbqmlbpFulpGmi12uoaqRW7Kt-aaRfUKYyBBk4SzKTMAqmSLWcs8mtQIUsKZ1JUNPpDOZwcoFJomsozm17Jdrn07g5Hg0Xm8QqpICsJFACLAcAAjAC2on+-CEK3y60Q6i0qlq7lMhz6Sm0KKwRUMl06HSFpmURiafgCrwmBKJYhJBDwEgwOBEdOyDKBBXkezK4PUOgUEKM4uu-Oul3UB046iKm3tQsqeLl+EJEGJpJIFAA6tQAIrfGaUTWA1a6trY1RC0qCkx1fRFfn7MrqcxNLxwkyjGX490KlVQVQANzQABs8BA0IrSRBJGBVCqSwIANaN-N4D1e0sVqs1osIZsCADGA8kGTD2ojzLaKi2pkMCl0yncVWUu2aNnk2iuCKM6nsnCUxiKruCBc9td7lertYI9YkjeH7dUne717Lt4HJKHEhbY5ApO6iZPSuQziC8gqGUwzHnaK4SoM-I2l0drKEUhq6IMaEunmbpduS1KiPej7Pv+bYdhMABKYAAGZTuBTKQQgRzqKoi6rlhWHrqypzbm0jxdIMG7rocDpHJo57vG+lI0iI95gAATopAiKaoGDljWtGqVSb7UXRDGMsCsiIAclyGgoIwNFU9ilMh+zsrs9gmrseyaLsUkEoRcn3j6-pBiGFCGTqs4HDBvSsuKejHJY-GKA4Vwig66GVPYnSeZePboF61AAI44AIIhgAQfmBsGoY8Es05MSZqKuKoCgwhKWhciYRTInFpRsaxvRDNcIzeP4MoSAIEBwNInZVYxxmgu4wwNU1dpmO1Dwda0WASga7mcIhpieJsZ54ReXaFiSU1GZG7RKAtUUtSt7X8iaC5Lg6pRmNiklHdJp3FlW5ZgOdIXMVgXiOAc4reCMMK1Hx62Lpw7FOs4y72lhhiHeMx0fkWN79rWgMQbVYKClcZguAi65Crc-I1E4tTo6YmjOO19oY7KWPecRRYEzVhTtWURxDOKhrVAi-JHDBe0mntJR2ocuGY99V449ltZ5QVRU8zNO5DE4m37vCuwQo9uiqIM3hPJsRu9UNvhAA */
   id: "swap-ui",
 
   context: ({ input }) => ({
@@ -343,12 +344,29 @@ export const swapUIMachine = setup({
 
             onDone: [
               {
-                target: "idle",
+                target: "waiting_quote",
                 guard: ({ event }) => event.output,
                 actions: "sendToBackgroundQuoterRefNewQuoteInput",
+                reenter: true,
               },
               "idle",
             ],
+          },
+        },
+
+        waiting_quote: {
+          on: {
+            NEW_QUOTE: {
+              target: "idle",
+              actions: [
+                {
+                  type: "setQuote",
+                  params: ({ event }) => event.params.quote,
+                },
+                "updateUIAmountOut",
+              ],
+              description: `should do the same as NEW_QUOTE on "editing" iteself`,
+            },
           },
         },
       },

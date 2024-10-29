@@ -1,5 +1,5 @@
 import type { providers } from "near-api-js"
-import { assign, fromPromise, log, setup } from "xstate"
+import { assign, fromPromise, setup } from "xstate"
 import { settings } from "../../config/settings"
 import {
   doesSignatureMatchUserAddress,
@@ -84,6 +84,9 @@ export const swapIntentMachine = setup({
     input: {} as Input,
     output: {} as Output,
     events: {} as Events,
+    children: {} as {
+      publicKeyVerifierRef: "publicKeyVerifierActor"
+    },
   },
   actions: {
     setError: assign({
@@ -126,7 +129,7 @@ export const swapIntentMachine = setup({
     }),
   },
   actors: {
-    publicKeyVerifier: publicKeyVerifierMachine,
+    publicKeyVerifierActor: publicKeyVerifierMachine,
     signMessage: fromPromise(
       async (_: {
         input: WalletMessage
@@ -287,7 +290,8 @@ export const swapIntentMachine = setup({
 
     "Verifying Public Key Presence": {
       invoke: {
-        src: "publicKeyVerifier",
+        id: "publicKeyVerifierRef",
+        src: "publicKeyVerifierActor",
         input: ({ context }) => {
           assert(context.signature != null, "Signature is not set")
 

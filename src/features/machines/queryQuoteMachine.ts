@@ -29,11 +29,16 @@ export const queryQuoteMachine = fromPromise(
   async ({
     input,
   }: { input: AggregatedQuoteParams }): Promise<AggregatedQuote> =>
-    queryQuote(input)
+    queryQuote(input, { signal: new AbortController().signal })
 )
 
 export async function queryQuote(
-  input: AggregatedQuoteParams
+  input: AggregatedQuoteParams,
+  {
+    signal,
+  }: {
+    signal?: AbortSignal
+  } = {}
 ): Promise<AggregatedQuote> {
   // Sanity checks
   const tokenOut = input.tokensOut[0]
@@ -49,12 +54,15 @@ export async function queryQuote(
 
   // If total available is less than requested, just quote the full amount from one token
   if (totalAvailableIn < input.amountIn) {
-    const q = await quote({
-      defuse_asset_identifier_in: tokenIn,
-      defuse_asset_identifier_out: tokenOut,
-      amount_in: input.amountIn.toString(),
-      min_deadline_ms: 120_000,
-    })
+    const q = await quote(
+      {
+        defuse_asset_identifier_in: tokenIn,
+        defuse_asset_identifier_out: tokenOut,
+        amount_in: input.amountIn.toString(),
+        min_deadline_ms: 120_000, // todo: move to settings
+      },
+      { signal }
+    )
 
     return aggregateQuotes([onlyValidQuotes(q)])
   }
@@ -68,7 +76,8 @@ export async function queryQuote(
   const quotes = await fetchQuotesForTokens(
     input.tokensIn,
     tokenOut,
-    amountsToQuote
+    amountsToQuote,
+    { signal }
   )
 
   return aggregateQuotes(quotes)
@@ -121,7 +130,14 @@ export function aggregateQuotes(
   let expirationTime = Number.POSITIVE_INFINITY
 
   for (const qList of quotes) {
-    const q = qList[0] // It is expected to be the best quote
+    qList.sort((a, b) => {
+      // Sort by `amount_out` in descending order, because backend does not sort
+      if (BigInt(a.amount_out) > BigInt(b.amount_out)) return -1
+      if (BigInt(a.amount_out) < BigInt(b.amount_out)) return 1
+      return 0
+    })
+
+    const q = qList[0]
     if (q === undefined) continue
 
     const amountOut = BigInt(q.amount_out)
@@ -154,19 +170,23 @@ export function aggregateQuotes(
 export async function fetchQuotesForTokens(
   tokensIn: string[],
   tokenOut: string,
-  amountsToQuote: Record<string, bigint>
+  amountsToQuote: Record<string, bigint>,
+  { signal }: { signal?: AbortSignal } = {}
 ): Promise<NonNullable<QuoteResults>[]> {
   const quotes = await Promise.all(
     tokensIn.map(async (tokenIn) => {
       const amountIn = amountsToQuote[tokenIn]
       if (amountIn === undefined || amountIn === 0n) return null
 
-      return quote({
-        defuse_asset_identifier_in: tokenIn,
-        defuse_asset_identifier_out: tokenOut,
-        amount_in: amountIn.toString(),
-        min_deadline_ms: 120_000,
-      })
+      return quote(
+        {
+          defuse_asset_identifier_in: tokenIn,
+          defuse_asset_identifier_out: tokenOut,
+          amount_in: amountIn.toString(),
+          min_deadline_ms: 120_000,
+        },
+        { signal }
+      )
     })
   )
 
