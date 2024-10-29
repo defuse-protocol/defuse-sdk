@@ -1,4 +1,4 @@
-import { Button, Flex, Text } from "@radix-ui/themes"
+import { Button, Flex, Spinner, Text } from "@radix-ui/themes"
 import { useEffect } from "react"
 import { Controller, useFormContext } from "react-hook-form"
 import { AssetComboIcon } from "src/components/Asset/AssetComboIcon"
@@ -12,7 +12,10 @@ import {
 import { useModalStore } from "src/providers/ModalStoreProvider"
 import { ModalType } from "src/stores/modalStore"
 import { DepositBlockchainEnum, type SwappableToken } from "src/types"
+import { isBaseToken } from "src/utils"
+import { formatTokenValue } from "src/utils/format"
 import { Form } from "../../../../components/Form"
+import { Input } from "../../../../components/Input"
 import { Select } from "../../../../components/Select/Select"
 import { DepositUIMachineContext } from "../DepositUIMachineProvider"
 import styles from "./styles.module.css"
@@ -29,6 +32,8 @@ export const DepositForm = () => {
     handleSubmit,
     register,
     control,
+    setValue,
+    watch,
     formState: { errors },
   } = useFormContext<DepositFormValues>()
 
@@ -36,14 +41,22 @@ export const DepositForm = () => {
   const snapshot = DepositUIMachineContext.useSelector((snapshot) => snapshot)
   const depositResult = snapshot.context.depositResult
 
-  const { token, network } = DepositUIMachineContext.useSelector((snapshot) => {
-    const token = snapshot.context.formValues.token
-    const network = snapshot.context.formValues.network
-    return {
-      token,
-      network,
-    }
-  })
+  const { token, network, amount, balance, nativeBalance } =
+    DepositUIMachineContext.useSelector((snapshot) => {
+      const token = snapshot.context.formValues.token
+      const network = snapshot.context.formValues.network
+      const amount = snapshot.context.formValues.amount
+      const balance = snapshot.context.balance
+      const nativeBalance = snapshot.context.nativeBalance
+      return {
+        token,
+        network,
+        amount,
+        balance,
+        nativeBalance,
+      }
+    })
+
   // TODO: remove
   console.log(snapshot.context, "snapshot")
 
@@ -77,6 +90,21 @@ export const DepositForm = () => {
 
   const onSubmit = (values: DepositFormValues) => {
     console.log(values)
+  }
+
+  const handleSetMaxValue = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.stopPropagation()
+    e.preventDefault()
+    if (!token) {
+      return
+    }
+    let maxValue = 0n
+    if (isBaseToken(token) && token?.address === "wrap.near") {
+      maxValue = (nativeBalance || 0n) + (balance || 0n)
+    } else {
+      maxValue = balance || 0n
+    }
+    setValue("amount", formatTokenValue(maxValue, token.decimals))
   }
 
   return (
@@ -117,7 +145,41 @@ export const DepositForm = () => {
               />
             </div>
           )}
-          {network && <Text>{network}</Text>}
+          {network === DepositBlockchainEnum.NEAR && (
+            <>
+              <Input
+                name="amount"
+                value={watch("amount")}
+                onChange={(value) => setValue("amount", value)}
+                type="number"
+                slotRight={
+                  <Button
+                    className={styles.maxButton}
+                    size="2"
+                    onClick={handleSetMaxValue}
+                  >
+                    <Text color="orange">Max</Text>
+                  </Button>
+                }
+              />
+              <div className={styles.buttonGroup}>
+                <Button
+                  variant="classic"
+                  size="3"
+                  radius="large"
+                  className={`${styles.button}`}
+                  color="orange"
+                  disabled={!watch("amount")}
+                >
+                  <span className={styles.buttonContent}>
+                    <Spinner loading={false} />
+                    <Text size="6">Deposit</Text>
+                  </span>
+                </Button>
+              </div>
+            </>
+          )}
+          {network && network !== DepositBlockchainEnum.NEAR && <Text>X</Text>}
         </Form>
       </div>
     </div>
