@@ -5,6 +5,7 @@ export type Context = {
   asset: string | null
   accountId: string | null
   txHash: string | null
+  balance: bigint | null
   error: string | undefined
   outcome: unknown | null
 }
@@ -14,11 +15,14 @@ type Events = {
   amount: string
   asset: string
   accountId: string
+  balance: bigint
 }
 
 type Input = {
   amount: string
   asset: string
+  balance: bigint
+  accountId: string
 }
 
 export const depositNearMachine = setup({
@@ -63,6 +67,7 @@ export const depositNearMachine = setup({
   initial: "idle",
   context: {
     amount: null,
+    balance: null,
     asset: null,
     accountId: null,
     txHash: null,
@@ -75,6 +80,7 @@ export const depositNearMachine = setup({
         INPUT: {
           target: "signing",
           actions: assign({
+            balance: ({ event }) => event.balance,
             amount: ({ event }) => event.amount,
             asset: ({ event }) => event.asset,
             accountId: ({ event }) => event.accountId,
@@ -89,6 +95,7 @@ export const depositNearMachine = setup({
         input: ({ context }) => ({
           amount: context.amount || "",
           asset: context.asset || "",
+          balance: context.balance || 0n,
           accountId: context.accountId || "",
         }),
         onDone: {

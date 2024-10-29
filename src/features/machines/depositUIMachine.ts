@@ -12,14 +12,11 @@ import {
 import type { SwappableToken } from "../../types"
 import type { DepositBlockchainEnum, Transaction } from "../../types/deposit"
 import { backgroundBalanceActor } from "./backgroundBalanceActor"
-import { depositGenerateAddressMachine } from "./depositGenerateAddressMachine"
-import { depositNearMachine } from "./depositNearMachine"
-import type { intentStatusMachine } from "./intentStatusMachine"
-import type { AggregatedQuote } from "./queryQuoteMachine"
 import {
-  type Output as SwapIntentMachineOutput,
-  swapIntentMachine,
-} from "./swapIntentMachine"
+  type Output as DepositGenerateAddressMachineOutput,
+  depositGenerateAddressMachine,
+} from "./depositGenerateAddressMachine"
+import { depositNearMachine } from "./depositNearMachine"
 
 export type Context = {
   error: Error | null
@@ -33,11 +30,15 @@ export type Context = {
   parsedFormValues: {
     amount: bigint
   }
-  depositResult: SwapIntentMachineOutput | null
-  intentRefs: ActorRefFrom<typeof intentStatusMachine>[]
+  depositResult: string | null
+  depositGenerateAddressRef: ActorRefFrom<
+    typeof depositGenerateAddressMachine
+  > | null
   tokenList: SwappableToken[]
   userAddress: string
   tokenAddress: string
+  defuseAssetId: string | null
+  generatedAddressResult: DepositGenerateAddressMachineOutput | null
 }
 
 export const depositUIMachine = setup({
@@ -123,26 +124,38 @@ export const depositUIMachine = setup({
     }),
     clearError: assign({ error: null }),
     setDepositNearResult: assign({
-      depositResult: (_, value: SwapIntentMachineOutput) => value,
+      depositResult: (_, value: string) => value,
     }),
-    setDepositPassiveResult: assign({
-      depositResult: (_, value: SwapIntentMachineOutput) => value,
+    setDepositGenerateAddressResult: assign({
+      generatedAddressResult: (_, value: DepositGenerateAddressMachineOutput) =>
+        value,
     }),
     clearDepositResult: assign({ depositResult: null }),
 
-    extractTokenAddress: assign({
-      tokenAddress: ({ context }) => {
+    extractDefuseAssetId: assign({
+      defuseAssetId: ({ context }) => {
         if (context.formValues.token == null) {
-          return ""
+          return null
         }
         if (isBaseToken(context.formValues.token)) {
-          return context.formValues.token.address
+          return context.formValues.token.defuseAssetId
         }
         return (
           context.formValues.token.groupedTokens.find(
             (token) => token.chainName === context.formValues.network
-          )?.address ?? ""
+          )?.defuseAssetId ?? null
         )
+      },
+    }),
+    spawnGeneratedAddressActor: assign({
+      depositGenerateAddressRef: (
+        { context, spawn, self },
+        output: { accountId: string; defuseAssetId: string }
+      ) => {
+        return spawn("depositGenerateAddressActor", {
+          id: "deposit-generate-address",
+          input: output,
+        })
       },
     }),
   },
@@ -158,9 +171,17 @@ export const depositUIMachine = setup({
       }
       return true
     },
+    isDepositNonNearRelevant: ({ context }) => {
+      return (
+        context.formValues.network != null &&
+        context.formValues.network !== "near" &&
+        context.defuseAssetId != null &&
+        context.userAddress != null
+      )
+    },
   },
 }).createMachine({
-  /** @xstate-layout N4IgpgJg5mDOIC5QTABwPawJYBcC0ArlgMQAyA8gOICSAcgNoAMAuoqBtjlugHZsgAPRAEZhADgB0AJgAsYgOyN5ANgDM89crEBWADQgAnojwbG07QE4xOpSrGrlAX0f6UHXIRIVK5AKoAVJlYkEHcuXn4hBDxRbQk5YVUZCxlU7QdVfSNo03MrG3k7dWdXNEwPIglIXCweKGIAZV8AIQBZakCWfjDuPhCosSl45Rkk7SlxZRHhZSzjKQcJMWEVK1VVcfkxGRKQN3L8SuquOuI6AAUAoO6D3sjjcTipbXSLFcTkqZk56JlhM3EqmEUmeUgsjHU8l2+04niqEBqpwAggFyAB9JptDrXEI9CL9ETCOLybQKRjbawg5Tyb6GYzJYRLEkKMRvRhTFTQsqwo4Ik5QCQANwAhgAbLAQYX84gQXhgCS1QXoADW8phFSw8MRApF4sl-IQivQAGMpb0gjj2Ld8aAonhLDIJIl2VsLElGKkpD88BZlEs5GsXuJEkSuWE4bACAAjAC2uGlsp48qNqok6pwtDAwoATgAlMAAM0toWtfVtiBklgkpNUKRGyisEx03tEQ3GHsYjHBkPsOxce25Gokkdj8dq9TA2ez6GzElQoqlBZnMbTg4zWbzheLeLLggryjMz2EKS22ghgyU3uUQwm-y0UnkiQssih-fTcJgSezZtOieTPCVVN00oMAvylMAkQgCBszgWB8yLLpcVLe4EBkKRJAPaYiSUBsvTpaJVAUeINg0EYLBJGRH1fUpw0qT9Jx-CcpxnOcFxwJdsxXYDQIYnAIKgmDYDgrdEKtTg7gJVCwWkGkHFsLsZgcb11gsasRk7FINimYFnH7Hh0BQeAQnfIgbnEm092iBsAVUF1WXdT1vUsOIrC0FJBmBD1VDDA44WOcczJqCy7RGIZnWpeyZA9NDvWSeQJC0IEZBGbQD0YdIfJ5TV-LqBUIFFMBAvCXc7VS+L1i2RThEozs9HwvBa3i9l0pUbQtnkX1qIHWjsr5cchTFCVGKKiTy2iBZVCdci0OUUlNm2WlshidRqykc9SWSiEPSkTKhxHOMcH5EbgsQQi4j+SwRkKbQoqBb0QUZJQkmWcigUKby3zXD8eO-I6kPMkrTuURlNPQ0lgR0EYnPJeIxAbGZBjdD1hF0xwgA */
+  /** @xstate-layout N4IgpgJg5mDOIC5QTABwPawJYBcC0ArlgMQAyA8gOICSAcgNoAMAuoqBtjlugHZsgAPRAEZhADgB0AJgAsYgOyN5ANgDM89crEBWADQgAnojwbG07QE4xOpSrGrlAX0f6UHXIRIVK5AKoAVJlYkEHcuXn4hBDxRbQk5YVUZCxlU7QdVfSNo03MrG3k7dWdXNEwPIglIXCweKGIAZV8AIQBZakCWfjDuPhCosSl45Rkk7SlxZRHhZSzjKQcJMWEVK1VVcfkxGRKQN3L8SuquOuI6AAUAoO6D3sjjcTipbXSLFcTkqZk56JlhM3EqmEUmeUgsjHU8l2+04niqEBqdQkADcAIYAGywEFRJ3qEF4YAktWR6AA1oSYRUsPDEVAURisTjalAEMT0ABjJm8ILXEI9CL9YwaIaMZRSeQWZSiMQWVRiWaGB6MGQSWz-KbTCzyMHQsqwyqwAgAIwAtrhccR8TxCWzyRJKThaGBUQAnABKYAAZrz2LcBaAojJLBJtPYUiNlFYJjofjFgSGpMrGIxwZD7DsXHs9VSJIbTebmcQwC6XegXRJUOicZ6yyb7dnHc73V6faE-X0A4gZMozM9hCkttoIYMlLGxdJRKLBvJEhZZFDMw64TBrS6macrTaeCS7Q7KGBVziwABBCAQF1wWAe71dPnt+4IGRSSQ96bCIerKSxuXyeIbDQjFq2gyDOC6lGEy4HsW671MWpblpW1a1vWYT7oeOAnmeF6wFeLa3r6nB3IKj5gtI8ijD2hQpjMDjfqoFghiMyYpBsUzArqEFHAiuL0pi2IWpuRLbmSFINnCxzMrxjK4qywmcuEPA8sIwQETU-qCMYChxMoM7igoypaCBsYLHE6xaFoligqBziZjw6AoPAIRLkQNyEepUR4FqwgSDpwJbIo3bbPIsaWHEViRowwFghY2jahxBzidxzKuWpHYadEc6qD5un+QZQWxskv5aECgIjEOkVOIuYlcbSRIQOiYApQpD4mAsEhArFVgWLKKZTAVKYhim8rASkkWMAo8X6tSElImifEwU1RGdtECxZf25FSMooabNs3yKtEiS-uMw6ht2ELKlIk05nmZo4Lii3uYgcpxH8lgjIUwEQsIxkTKqGgJFqQKFKoV2HNSK7Qfdd5uWlUQON5LHPqGwI6CMIXjfE8pvFoYKqMqwg2Y4QA */
   id: "deposit-ui",
 
   context: ({ input }) => ({
@@ -176,10 +197,12 @@ export const depositUIMachine = setup({
       amount: 0n,
     },
     depositResult: null,
-    intentRefs: [],
+    depositGenerateAddressRef: null,
     tokenList: input.tokenList,
     userAddress: "",
     tokenAddress: "",
+    defuseAssetId: null,
+    generatedAddressResult: null,
   }),
 
   on: {
@@ -218,18 +241,13 @@ export const depositUIMachine = setup({
             "parseFormValues",
           ],
         },
-
-        AUTO_SUBMIT: {
-          target: "generating",
-          reenter: true,
-        },
       },
 
       states: {
         idle: {},
 
         validating: {
-          entry: "extractTokenAddress",
+          entry: "extractDefuseAssetId",
 
           invoke: {
             src: "formValidationBalanceActor",
@@ -242,13 +260,24 @@ export const depositUIMachine = setup({
               }
             },
 
-            onDone: {
-              target: "idle",
-              actions: assign({
-                balance: ({ event }) => event.output.balance,
-                nativeBalance: ({ event }) => event.output.nativeBalance,
-              }),
-            },
+            onDone: [
+              {
+                target: "#deposit-ui.generating",
+
+                reenter: true,
+                guard: "isDepositNonNearRelevant",
+              },
+              {
+                target: "idle",
+
+                actions: assign({
+                  balance: ({ event }) => event.output.balance,
+                  nativeBalance: ({ event }) => event.output.nativeBalance,
+                }),
+
+                reenter: true,
+              },
+            ],
           },
         },
       },
@@ -263,14 +292,11 @@ export const depositUIMachine = setup({
 
         input: ({ context, event }) => {
           assertEvent(event, "SUBMIT")
-
           return {
-            userAddress: event.params.userAddress,
-            nearClient: event.params.nearClient,
-            sendNearTransaction: event.params.sendNearTransaction,
-            token: context.formValues.token,
-            network: context.formValues.network,
+            balance: context.balance,
             amount: context.parsedFormValues.amount,
+            asset: context.formValues.token,
+            accountId: context.userAddress,
           }
         },
 
@@ -294,15 +320,26 @@ export const depositUIMachine = setup({
         src: "depositGenerateAddressActor",
 
         input: ({ context, event }) => {
-          assertEvent(event, "AUTO_SUBMIT")
+          // TODO TypeError: Do not know how to serialize a BigInt
+          // assertEvent(event, "AUTO_SUBMIT")
 
+          if (context.defuseAssetId == null || context.userAddress == null) {
+            throw new Error("Asset address or account ID is missing")
+          }
           return {
-            userAddress: context.userAddress,
+            accountId: context.userAddress,
+            defuseAssetId: context.defuseAssetId,
           }
         },
 
         onDone: {
           target: "editing",
+          actions: [
+            {
+              type: "setDepositGenerateAddressResult",
+              params: ({ event }) => event.output,
+            },
+          ],
         },
 
         onError: {

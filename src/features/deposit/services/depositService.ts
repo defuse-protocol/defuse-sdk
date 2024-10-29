@@ -1,4 +1,8 @@
 import { getNearTxSuccessValue } from "src/features/machines/getTxMachine"
+import {
+  getDepositAddress,
+  getSupportedTokens,
+} from "src/services/poaBridgeClient"
 import type { DepositBlockchainEnum, Transaction } from "../../../types/deposit"
 
 export const FT_MAX_GAS_TRANSACTION = `300${"0".repeat(12)}` // 300 TGAS
@@ -95,14 +99,28 @@ export class DepositService {
    * @returns A Promise that resolves to the generated deposit address
    */
   async generateDepositAddress(
-    blockchain: DepositBlockchainEnum,
-    accountId: string
+    accountId: string,
+    defuseAssetId: string
   ): Promise<string> {
     try {
-      // TODO: Replace with actual API call
-      return new Promise((resolve) => {
-        resolve("0x0")
+      if (!defuseAssetId) {
+        throw new Error("Defuse asset ID is required")
+      }
+      const [blockchain, network] = defuseAssetId.split(":")
+      const supportedTokens = await getSupportedTokens({
+        chains: [`${blockchain}:${network}`],
       })
+
+      if (supportedTokens.tokens.length === 0) {
+        throw new Error("No supported tokens found")
+      }
+
+      const generatedDepositAddress = await getDepositAddress({
+        account_id: accountId,
+        chain: `${blockchain}:${network}`,
+      })
+
+      return generatedDepositAddress.address
     } catch (error) {
       console.error("Error generating deposit address:", error)
       throw error

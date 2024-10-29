@@ -10,12 +10,6 @@ export const backgroundBalanceActor = fromPromise(
     balance: bigint
     nativeBalance: bigint
   }> => {
-    if (assetAddress === "" || network === "") {
-      return {
-        balance: 0n,
-        nativeBalance: 0n,
-      }
-    }
     switch (network) {
       case "near":
         return {
@@ -26,7 +20,10 @@ export const backgroundBalanceActor = fromPromise(
           nativeBalance: await getNearNativeBalance({ accountId: userAddress }),
         }
       default:
-        throw new Error("backgroundBalanceActor not implemented")
+        return {
+          balance: 0n,
+          nativeBalance: 0n,
+        }
     }
   }
 )
