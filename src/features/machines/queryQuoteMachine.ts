@@ -130,7 +130,14 @@ export function aggregateQuotes(
   let expirationTime = Number.POSITIVE_INFINITY
 
   for (const qList of quotes) {
-    const q = qList[0] // It is expected to be the best quote
+    qList.sort((a, b) => {
+      // Sort by `amount_out` in descending order, because backend does not sort
+      if (BigInt(a.amount_out) > BigInt(b.amount_out)) return -1
+      if (BigInt(a.amount_out) < BigInt(b.amount_out)) return 1
+      return 0
+    })
+
+    const q = qList[0]
     if (q === undefined) continue
 
     const amountOut = BigInt(q.amount_out)
