@@ -13,7 +13,12 @@ import { useModalStore } from "../../../providers/ModalStoreProvider"
 
 import "./styles.css"
 
-export const ModalDialog = ({ children }: PropsWithChildren) => {
+export const ModalDialog = ({
+  children,
+  onClose,
+}: PropsWithChildren<{
+  onClose?: () => void
+}>) => {
   const { onCloseModal } = useModalStore((state) => state)
   const [open, setOpen] = useState(true)
   const [containerWidth, setContainerWidth] = useState<number>(0)
@@ -23,8 +28,11 @@ export const ModalDialog = ({ children }: PropsWithChildren) => {
   const defaultMaxWidth = "512px"
 
   const handleCloseModal = useCallback(() => {
-    if (!open) onCloseModal()
-  }, [open, onCloseModal])
+    if (!open) {
+      onCloseModal()
+      onClose?.()
+    }
+  }, [open, onCloseModal, onClose])
 
   useEffect(() => {
     handleCloseModal()

@@ -110,7 +110,6 @@ export const FieldComboInput = <T extends FieldValues>({
 
       // @ts-expect-error React hack for emitting change event
       const tracker = inputRef.current._valueTracker
-      console.log(tracker)
       if (tracker) {
         tracker.setValue(lastValue)
       }

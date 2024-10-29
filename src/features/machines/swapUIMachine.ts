@@ -97,6 +97,7 @@ export const swapUIMachine = setup({
 
     children: {} as {
       depositedBalanceRef: "depositedBalanceActor"
+      swapRef: "swapActor"
     },
   },
   actors: {

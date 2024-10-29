@@ -13,7 +13,7 @@ import { ModalType } from "../../../stores/modalStore"
 import type { SwappableToken } from "../../../types"
 import { isBaseToken } from "../../../utils"
 import type { depositedBalanceMachine } from "../../machines/depositedBalanceMachine"
-import { intentStatusMachine } from "../../machines/intentStatusMachine"
+import type { intentStatusMachine } from "../../machines/intentStatusMachine"
 import type { Context } from "../../machines/swapUIMachine"
 import { SwapSubmitterContext } from "./SwapSubmitter"
 import { SwapUIMachineContext } from "./SwapUIMachineProvider"
@@ -110,28 +110,6 @@ export const SwapForm = () => {
     tokenInBalance != null
       ? tokenInBalance < snapshot.context.parsedFormValues.amountIn
       : null
-
-  const intentRef = useActorRef(intentStatusMachine, {
-    input: {
-      // @ts-expect-error
-      parentRef: swapUIActorRef,
-      intentHash: "LiAqVEKaxWejXfoFe2Js8S+TygJt6hWJJ3+BVHVZ+GQ=",
-      tokenIn,
-      tokenOut,
-      quote: {
-        totalAmountIn: 13_123123n,
-        totalAmountOut: 971_231233n,
-        quoteHashes: [],
-        expirationTime: 0,
-        amountsIn: {},
-        amountsOut: {},
-      },
-    },
-  })
-
-  // useEffect(() => {
-  //   console.log(JSON.stringify(intentRef.getPersistedSnapshot()))
-  // }, [intentRef])
 
   return (
     <div className="md:max-w-[472px] rounded-[1rem] p-5 shadow-paper bg-white dark:shadow-paper-dark dark:bg-black-800">
