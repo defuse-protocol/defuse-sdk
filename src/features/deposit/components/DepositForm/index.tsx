@@ -44,7 +44,8 @@ export const DepositForm = () => {
       network,
     }
   })
-  console.log(snapshot.context.formValues, "snapshot")
+  // TODO: remove
+  console.log(snapshot.context, "snapshot")
 
   const { setModalType, payload, onCloseModal } = useModalStore(
     (state) => state

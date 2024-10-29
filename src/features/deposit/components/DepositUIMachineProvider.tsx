@@ -2,6 +2,7 @@ import { createActorContext } from "@xstate/react"
 import type { PropsWithChildren, ReactElement, ReactNode } from "react"
 import { useFormContext } from "react-hook-form"
 import { settings } from "src/config/settings"
+import { backgroundBalanceActor } from "src/features/machines/backgroundBalanceActor"
 import { depositNearMachine } from "src/features/machines/depositNearMachine"
 import type { SwappableToken, Transaction } from "src/types"
 import { formatUnits } from "viem"
@@ -64,14 +65,10 @@ export function DepositUIMachineProvider({
       }}
       logic={depositUIMachine.provide({
         actors: {
-          formValidationActor: fromPromise(async () => {
-            // We validate only `amount` and not entire form, because currently `amountOut` is also part of the form
-            return trigger("amount")
-          }),
           depositNearActor: depositNearMachine.provide({
             actors: {
               signAndSendTransactions: fromPromise(async ({ input }) => {
-                throw new Error("Not implemented")
+                throw new Error("signAndSendTransactions Not implemented")
               }),
               validateTransaction: fromPromise(async ({ input }) => {
                 const { txHash, accountId, amount } = input
