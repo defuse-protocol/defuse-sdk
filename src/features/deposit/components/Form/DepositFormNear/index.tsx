@@ -10,7 +10,7 @@ import {
   useGetNearNep141Balance,
 } from "src/hooks/useNearGetTokenBalance"
 import { assert } from "vitest"
-import { fromPromise, log } from "xstate"
+import { fromPromise } from "xstate"
 import { Form } from "../../../../../components/Form"
 import { Input } from "../../../../../components/Input"
 import { DepositService } from "../../../../../features/deposit/services/depositService"

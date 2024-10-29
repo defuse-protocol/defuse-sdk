@@ -1,16 +1,13 @@
-import {
-  CheckIcon,
-  ChevronDownIcon,
-  ChevronUpIcon,
-} from "@radix-ui/react-icons"
+import { ChevronDownIcon, ChevronUpIcon } from "@radix-ui/react-icons"
 import * as RadixSelect from "@radix-ui/react-select"
 import { Flex } from "@radix-ui/themes"
 import clsx from "clsx"
 import type React from "react"
+import { forwardRef } from "react"
 import type { FieldValues, Path, UseFormRegister } from "react-hook-form"
 import styles from "./styles.module.css"
 
-type Props<T, TFieldValues extends FieldValues> = {
+type Props<T extends string, TFieldValues extends FieldValues> = {
   name: string
   register?: UseFormRegister<TFieldValues>
   options: {
@@ -24,18 +21,25 @@ type Props<T, TFieldValues extends FieldValues> = {
   fullWidth?: boolean
   disabled?: boolean
   onChange?: (value: string) => void
+  innerRef?: React.Ref<HTMLSelectElement>
 }
 
-export const Select = <T extends string, TFieldValues extends FieldValues>({
-  name,
-  register,
-  options,
-  placeholder,
-  label,
-  fullWidth = false,
-  disabled = false,
-  onChange,
-}: Props<T, TFieldValues>) => {
+export const Select = forwardRef(function Select<
+  T extends string,
+  TFieldValues extends FieldValues,
+>(
+  {
+    name,
+    register,
+    options,
+    placeholder,
+    label,
+    fullWidth = false,
+    disabled = false,
+    onChange,
+  }: Props<T, TFieldValues>,
+  ref: React.Ref<HTMLSelectElement>
+) {
   const registerProps = register ? register(name as Path<TFieldValues>) : {}
   const { onChange: formOnChange, ...rest } = registerProps as {
     onChange?: (event: React.ChangeEvent<HTMLSelectElement>) => void
@@ -99,7 +103,7 @@ export const Select = <T extends string, TFieldValues extends FieldValues>({
       </RadixSelect.Portal>
     </RadixSelect.Root>
   )
-}
+})
 
 interface SelectItemProps {
   value: string

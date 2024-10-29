@@ -2,7 +2,7 @@ import type { SwappableToken } from "../types"
 
 export type DepositWidgetProps = {
   tokenList: SwappableToken[]
-  accountId: string | undefined
+  userAddress: string | null
   sendTransactionNear: (transactions: Transaction[]) => Promise<string>
   onEmit?: (event: DepositEvent) => void
 }

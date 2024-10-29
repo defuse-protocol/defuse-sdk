@@ -82,7 +82,7 @@ export const WithdrawForm = ({
               name="blockchain"
               control={control}
               render={({ field }) => (
-                <Select<string, WithdrawFormNearValues>
+                <Select
                   options={getBlockchains()}
                   placeholder={{
                     label: "Select network",
