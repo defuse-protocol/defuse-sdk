@@ -1,6 +1,7 @@
-import { Box } from "@radix-ui/themes"
-import { useActorRef, useSelector } from "@xstate/react"
-import { Fragment, useContext, useEffect } from "react"
+import { ExclamationTriangleIcon } from "@radix-ui/react-icons"
+import { Box, Callout, Flex } from "@radix-ui/themes"
+import { useSelector } from "@xstate/react"
+import { Fragment, type ReactNode, useContext, useEffect } from "react"
 import { useFormContext } from "react-hook-form"
 import type { ActorRefFrom, SnapshotFrom } from "xstate"
 import { ButtonCustom, ButtonSwitch } from "../../../components/Button"
@@ -112,7 +113,11 @@ export const SwapForm = () => {
       : null
 
   return (
-    <div className="md:max-w-[472px] rounded-[1rem] p-5 shadow-paper bg-white dark:shadow-paper-dark dark:bg-black-800">
+    <Flex
+      direction={"column"}
+      gap={"2"}
+      className="md:max-w-[472px] rounded-[1rem] p-5 shadow-paper bg-white dark:shadow-paper-dark dark:bg-black-800"
+    >
       <Form<SwapFormValues>
         handleSubmit={handleSubmit(onSubmit)}
         register={register}
@@ -143,10 +148,9 @@ export const SwapForm = () => {
           required="This field is required"
           errors={errors}
           disabled={true}
+          isLoading={snapshot.matches({ editing: "waiting_quote" })}
           balance={tokenOutBalance}
         />
-
-        {renderIntentCreationResult(intentCreationResult)}
 
         <ButtonCustom
           type="submit"
@@ -155,14 +159,16 @@ export const SwapForm = () => {
           isLoading={snapshot.matches("submitting")}
           disabled={!!balanceInsufficient}
         >
-          {balanceInsufficient ? "Insufficient balance" : "Swap"}
+          {balanceInsufficient ? "Insufficient Balance" : "Swap"}
         </ButtonCustom>
       </Form>
 
-      <Box mt={"2"}>
+      {renderIntentCreationResult(intentCreationResult)}
+
+      <Box>
         <Intents intentRefs={snapshot.context.intentRefs} />
       </Box>
-    </div>
+    </Flex>
   )
 }
 
@@ -189,20 +195,51 @@ function renderIntentCreationResult(
     return null
   }
 
+  let content: ReactNode = null
+
   const status = intentCreationResult.status
   switch (status) {
     case "INTENT_PUBLISHED":
       return null
 
+    case "ERR_USER_DIDNT_SIGN":
+      content =
+        "It seems the message wasn’t signed in your wallet. Please try again."
+      break
+
+    case "ERR_SIGNED_DIFFERENT_ACCOUNT":
+      content =
+        "The message was signed with a different wallet. Please try again."
+      break
+
+    case "ERR_CANNOT_VERIFY_PUBLIC_KEY":
+      content =
+        "We couldn’t verify your key, possibly due to a connection issue."
+      break
+
     case "ERR_QUOTE_EXPIRED_RETURN_IS_LOWER":
-      return <div className="text-red-500 text-sm">Missed deadline</div>
+      content =
+        "The quote has expired or the return is lower than expected. Please try again."
+      break
 
     case "ERR_CANNOT_PUBLISH_INTENT":
-      return <div className="text-red-500 text-sm">Cannot publish intent</div>
+      content =
+        "We couldn’t send your request, possibly due to a network issue or server downtime. Please check your connection or try again later."
+      break
 
     default:
-      return <div className="text-red-500 text-sm">Swap failed! {status}</div>
+      status satisfies never
+      content = "An error occurred. Please try again."
   }
+
+  return (
+    <Callout.Root size={"1"} color="red">
+      <Callout.Icon>
+        <ExclamationTriangleIcon />
+      </Callout.Icon>
+      <Callout.Text>{content}</Callout.Text>
+    </Callout.Root>
+  )
 }
 
 function balanceSelector(token: SwappableToken) {

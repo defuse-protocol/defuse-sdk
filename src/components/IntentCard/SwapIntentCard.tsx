@@ -1,4 +1,4 @@
-import { Box, Button, Flex, Link, Text } from "@radix-ui/themes"
+import { Box, Button, Flex, Link, Spinner, Text } from "@radix-ui/themes"
 import { useSelector } from "@xstate/react"
 import type { ActorRefFrom, StateValueFrom } from "xstate"
 import type { intentStatusMachine } from "../../features/machines/intentStatusMachine"
@@ -36,6 +36,10 @@ export function SwapIntentCard({ intentStatusActorRef }: SwapIntentCardProps) {
           </Box>
 
           <Flex gap={"1"} align={"center"}>
+            {(state.matches("pending") || state.matches("checking")) && (
+              <Spinner size="1" />
+            )}
+
             <Text
               size={"1"}
               weight={"medium"}
