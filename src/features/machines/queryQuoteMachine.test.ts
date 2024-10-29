@@ -36,12 +36,15 @@ describe("queryQuote()", () => {
     const result = await queryQuote(input)
 
     expect(relayClient.quote).toHaveBeenCalledTimes(1)
-    expect(relayClient.quote).toHaveBeenCalledWith({
-      defuse_asset_identifier_in: "token1",
-      defuse_asset_identifier_out: "tokenOut",
-      amount_in: "150",
-      min_deadline_ms: 120_000,
-    })
+    expect(relayClient.quote).toHaveBeenCalledWith(
+      {
+        defuse_asset_identifier_in: "token1",
+        defuse_asset_identifier_out: "tokenOut",
+        amount_in: "150",
+        min_deadline_ms: 120_000,
+      },
+      expect.any(Object)
+    )
     expect(result).toEqual({
       amountsIn: { token1: 150n },
       amountsOut: { tokenOut: 200n },
@@ -85,18 +88,24 @@ describe("queryQuote()", () => {
     const result = await queryQuote(input)
 
     expect(relayClient.quote).toHaveBeenCalledTimes(2)
-    expect(relayClient.quote).toHaveBeenCalledWith({
-      defuse_asset_identifier_in: "token1",
-      defuse_asset_identifier_out: "tokenOut",
-      amount_in: "100",
-      min_deadline_ms: 120_000,
-    })
-    expect(relayClient.quote).toHaveBeenCalledWith({
-      defuse_asset_identifier_in: "token2",
-      defuse_asset_identifier_out: "tokenOut",
-      amount_in: "50",
-      min_deadline_ms: 120_000,
-    })
+    expect(relayClient.quote).toHaveBeenCalledWith(
+      {
+        defuse_asset_identifier_in: "token1",
+        defuse_asset_identifier_out: "tokenOut",
+        amount_in: "100",
+        min_deadline_ms: 120_000,
+      },
+      expect.any(Object)
+    )
+    expect(relayClient.quote).toHaveBeenCalledWith(
+      {
+        defuse_asset_identifier_in: "token2",
+        defuse_asset_identifier_out: "tokenOut",
+        amount_in: "50",
+        min_deadline_ms: 120_000,
+      },
+      expect.any(Object)
+    )
     expect(result).toEqual({
       amountsIn: { token1: 100n, token2: 50n },
       amountsOut: { tokenOut: 30n },

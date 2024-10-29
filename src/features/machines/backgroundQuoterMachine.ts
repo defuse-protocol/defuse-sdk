@@ -1,4 +1,5 @@
 import { type ActorRef, type Snapshot, fromCallback } from "xstate"
+import { settings } from "../../config/settings"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../types/base"
 import { isBaseToken } from "../../utils"
 import { type AggregatedQuote, queryQuote } from "./queryQuoteMachine"
@@ -47,6 +48,12 @@ export const backgroundQuoterMachine = fromCallback<Events, Input>(
           return
         case "NEW_QUOTE_INPUT": {
           const quoteInput = event.params
+
+          // todo: `NEW_QUOTE_INPUT` should not be emitted for 0 amounts, this is temporary fix
+          if (quoteInput.amountIn === 0n) {
+            return
+          }
+
           pollQuote(
             abortController.signal,
             quoteInput,
@@ -85,27 +92,64 @@ async function pollQuoteLoop(
   delayMs: number,
   onResult: (result: AggregatedQuote) => void
 ): Promise<void> {
+  let lastPropagatedResultRequestedAt: number | null = null
+
   while (!signal.aborted) {
-    const quote = await queryQuote({
-      tokensIn: isBaseToken(quoteInput.tokenIn)
-        ? [quoteInput.tokenIn.defuseAssetId]
-        : quoteInput.tokenIn.groupedTokens.map((token) => token.defuseAssetId),
-      tokensOut: isBaseToken(quoteInput.tokenOut)
-        ? [quoteInput.tokenOut.defuseAssetId]
-        : quoteInput.tokenOut.groupedTokens.map((token) => token.defuseAssetId),
-      amountIn: quoteInput.amountIn,
-      balances: quoteInput.balances,
-    }).catch((e) => {
-      console.error("Error querying quote", e)
-      return null
-    })
+    const requestedAt = Date.now()
 
-    if (quote == null || signal.aborted) {
-      return
-    }
+    queryQuote(
+      {
+        tokensIn: getUnderlyingDefuseAssetIds(quoteInput.tokenIn),
+        tokensOut: getUnderlyingDefuseAssetIds(quoteInput.tokenOut),
+        amountIn: quoteInput.amountIn,
+        balances: quoteInput.balances,
+      },
+      {
+        signal: AbortSignal.timeout(settings.quoteQueryTimeoutMs),
+      }
+    ).then(
+      (quote) => {
+        // Don't propagate results if polling was cancelled
+        if (signal.aborted) return
 
-    onResult(quote)
+        if (
+          // We're interested in the latest result only
+          lastPropagatedResultRequestedAt == null ||
+          lastPropagatedResultRequestedAt < requestedAt
+        ) {
+          lastPropagatedResultRequestedAt = requestedAt
+          onResult(quote)
+        }
+      },
+      (e) => {
+        if (isTimedOut(e)) {
+          console.error("Timeout querying quote", { quoteInput })
+        } else {
+          console.error("Error querying quote", e)
+        }
+      }
+    )
 
     await new Promise((resolve) => setTimeout(resolve, delayMs))
   }
+}
+
+function getUnderlyingDefuseAssetIds(
+  token: BaseTokenInfo | UnifiedTokenInfo
+): BaseTokenInfo["defuseAssetId"][] {
+  return isBaseToken(token)
+    ? [token.defuseAssetId]
+    : token.groupedTokens.map((token) => token.defuseAssetId)
+}
+
+function isTimedOut(e: unknown): boolean {
+  if (e instanceof DOMException && e.name === "TimeoutError") {
+    return true
+  }
+
+  if (e instanceof Error) {
+    return isTimedOut(e.cause)
+  }
+
+  return false
 }

@@ -1,8 +1,11 @@
-import {
-  Nep413Payload,
-  type SignedPayloadFor_MultiStandardPayload,
-  type SignedPayloadFor_MultiStandardPayload1,
+import type {
+  SignedPayloadFor_MultiStandardPayload,
+  SignedPayloadFor_MultiStandardPayload1,
 } from "../../types/defuse-contracts-types"
+
+export type RequestConfig = {
+  signal?: AbortSignal
+}
 
 export type JSONRPCRequest<Method, Params> = {
   id: string
