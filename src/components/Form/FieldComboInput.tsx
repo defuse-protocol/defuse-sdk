@@ -206,6 +206,7 @@ export const FieldComboInput = <T extends FieldValues>({
           }
           nativeSupportChecked={nativeSupportChecked ?? false}
           handleClick={handleSetMaxValue}
+          disabled={disabled}
         />
       )}
       {errorSelect && (

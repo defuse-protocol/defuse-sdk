@@ -12,6 +12,7 @@ export interface BlockMultiBalancesProps {
   nativeSupportChecked?: CheckedState
   handleIncludeNativeToSwap?: (checked: CheckedState) => void
   handleClick?: () => void
+  disabled?: boolean
 }
 
 export const BlockMultiBalances = ({
@@ -21,10 +22,13 @@ export const BlockMultiBalances = ({
   nativeSupportChecked = false,
   handleIncludeNativeToSwap,
   handleClick,
+  disabled,
 }: BlockMultiBalancesProps) => {
+  const active = balance > 0n && !disabled
+
   return (
     <div className="absolute bottom-4 right-5 flex justify-center items-center gap-2">
-      {balance > 0n ? (
+      {active ? (
         <img
           src="/static/icons/wallet_active.svg"
           alt="Balance"
@@ -41,13 +45,13 @@ export const BlockMultiBalances = ({
       )}
       {/* biome-ignore lint/a11y/useKeyWithClickEvents: sorry keyboard users */}
       <span
-        onClick={handleClick}
+        onClick={active ? handleClick : undefined}
         className={clsx(
           "text-xs px-2 py-0.5 rounded-full",
-          balance > 0n
+          active
             ? "bg-red-100 text-red-400 dark:bg-red-200 dark:text-primary-400"
             : "bg-white-200 text-gray-600",
-          handleClick && "cursor-pointer"
+          handleClick && active && "cursor-pointer"
         )}
       >
         {formatTokenValue(balance, decimals, {
