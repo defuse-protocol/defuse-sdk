@@ -148,6 +148,7 @@ export const SwapForm = () => {
           required="This field is required"
           errors={errors}
           disabled={true}
+          isLoading={snapshot.matches({ editing: "waiting_quote" })}
           balance={tokenOutBalance}
         />
 

@@ -1,3 +1,4 @@
+import { Flex, Skeleton, Text } from "@radix-ui/themes"
 import clsx from "clsx"
 import type React from "react"
 import { useRef } from "react"
@@ -32,6 +33,7 @@ interface Props<T extends FieldValues>
   errors?: FieldErrors
   errorSelect?: string
   disabled?: boolean
+  isLoading?: boolean
 }
 
 export const FieldComboInputRegistryName = "FieldComboInput"
@@ -53,6 +55,7 @@ export const FieldComboInput = <T extends FieldValues>({
   nativeSupportChecked,
   errorSelect,
   disabled,
+  isLoading,
 }: Props<T>) => {
   if (!register) {
     return null
@@ -146,9 +149,18 @@ export const FieldComboInput = <T extends FieldValues>({
         "relative flex justify-between items-center px-5 py-[2.375rem] w-full bg-gray-50 dark:bg-black-900 dark:border-black-950",
         !label && "pt-5",
         !price && balance == null && errors && !errors[fieldName] && "pb-5",
-        className && className
+        className
       )}
     >
+      {isLoading && (
+        // 56px is a size of the input field, it is required to keep the layout stable
+        <Flex align={"center"} style={{ height: "56px" }}>
+          <Text size={"7"}>
+            <Skeleton>100.000000</Skeleton>
+          </Text>
+        </Flex>
+      )}
+
       <input
         type={"text"}
         {...reactHookFormRegisterProps}
@@ -160,9 +172,14 @@ export const FieldComboInput = <T extends FieldValues>({
         autoComplete={"off"}
         className={clsx(
           "grow flex-1 bg-gray-50 max-w-[140px] md:max-w-[none] md:min-w-[calc(100%-210px)] text-3xl font-medium placeholder-black border-transparent focus:border-transparent focus:ring-0 dark:bg-black-900 dark:placeholder-white",
-          disabled && "text-black-200 pointer-events-none placeholder-black-200"
+          disabled &&
+            "text-black-200 pointer-events-none placeholder-black-200",
+          {
+            hidden: isLoading,
+          }
         )}
       />
+
       {errors?.[fieldName] ? (
         <span className="absolute bottom-4 left-5 text-sm font-medium text-red-400">
           {(errors[fieldName] as FieldError).message}
