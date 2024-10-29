@@ -1,4 +1,4 @@
-import { Button } from "@radix-ui/themes"
+import { Button, Flex, Text } from "@radix-ui/themes"
 import { useModalStore } from "../../providers/ModalStoreProvider"
 import { ModalDialog } from "./ModalDialog"
 
@@ -19,23 +19,40 @@ export const ModalConfirmAddPubkey = () => {
         onAbort()
       }}
     >
-      Is it you {accountId}?
-      <Button
-        onClick={() => {
-          onConfirm()
-        }}
-      >
-        Confirm
-      </Button>
-      <Button
-        onClick={() => {
-          // `onCloseModal` does not call `onClose` prop passed to `ModalDialog`, so we need to call abort manually
-          onAbort()
-          onCloseModal()
-        }}
-      >
-        Cancel
-      </Button>
+      <Flex direction={"column"} gap={"4"}>
+        <Flex>
+          <Text size={"8"}>Confirm Your Account</Text>
+        </Flex>
+
+        <Text>
+          To verify your account (NEAR ID:{" "}
+          <Text weight={"bold"}>{accountId}</Text>), please send a one-time
+          transaction.
+        </Text>
+
+        <Flex gap={"3"} justify={"end"}>
+          <Button
+            color={"gray"}
+            variant={"outline"}
+            onClick={() => {
+              // `onCloseModal` does not call `onClose` prop passed to `ModalDialog`, so we need to call abort manually
+              onAbort()
+              onCloseModal()
+            }}
+          >
+            Cancel
+          </Button>
+
+          <Button
+            color={"orange"}
+            onClick={() => {
+              onConfirm()
+            }}
+          >
+            Confirm Account
+          </Button>
+        </Flex>
+      </Flex>
     </ModalDialog>
   )
 }
