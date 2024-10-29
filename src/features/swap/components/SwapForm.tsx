@@ -1,18 +1,19 @@
-import { useSelector } from "@xstate/react"
+import { Box } from "@radix-ui/themes"
+import { useActorRef, useSelector } from "@xstate/react"
 import { Fragment, useContext, useEffect } from "react"
 import { useFormContext } from "react-hook-form"
-import { formatUnits } from "viem"
 import type { ActorRefFrom, SnapshotFrom } from "xstate"
 import { ButtonCustom, ButtonSwitch } from "../../../components/Button"
 import { Form } from "../../../components/Form"
 import { FieldComboInput } from "../../../components/Form/FieldComboInput"
+import { SwapIntentCard } from "../../../components/IntentCard/SwapIntentCard"
 import type { ModalSelectAssetsPayload } from "../../../components/Modal/ModalSelectAssets"
 import { useModalStore } from "../../../providers/ModalStoreProvider"
 import { ModalType } from "../../../stores/modalStore"
 import type { SwappableToken } from "../../../types"
 import { isBaseToken } from "../../../utils"
 import type { depositedBalanceMachine } from "../../machines/depositedBalanceMachine"
-import type { intentStatusMachine } from "../../machines/intentStatusMachine"
+import { intentStatusMachine } from "../../machines/intentStatusMachine"
 import type { Context } from "../../machines/swapUIMachine"
 import { SwapSubmitterContext } from "./SwapSubmitter"
 import { SwapUIMachineContext } from "./SwapUIMachineProvider"
@@ -110,6 +111,28 @@ export const SwapForm = () => {
       ? tokenInBalance < snapshot.context.parsedFormValues.amountIn
       : null
 
+  const intentRef = useActorRef(intentStatusMachine, {
+    input: {
+      // @ts-expect-error
+      parentRef: swapUIActorRef,
+      intentHash: "LiAqVEKaxWejXfoFe2Js8S+TygJt6hWJJ3+BVHVZ+GQ=",
+      tokenIn,
+      tokenOut,
+      quote: {
+        totalAmountIn: 13_123123n,
+        totalAmountOut: 971_231233n,
+        quoteHashes: [],
+        expirationTime: 0,
+        amountsIn: {},
+        amountsOut: {},
+      },
+    },
+  })
+
+  // useEffect(() => {
+  //   console.log(JSON.stringify(intentRef.getPersistedSnapshot()))
+  // }, [intentRef])
+
   return (
     <div className="md:max-w-[472px] rounded-[1rem] p-5 shadow-paper bg-white dark:shadow-paper-dark dark:bg-black-800">
       <Form<SwapFormValues>
@@ -158,7 +181,9 @@ export const SwapForm = () => {
         </ButtonCustom>
       </Form>
 
-      <Intents intentRefs={snapshot.context.intentRefs} />
+      <Box mt={"2"}>
+        <Intents intentRefs={snapshot.context.intentRefs} />
+      </Box>
     </div>
   )
 }
@@ -171,86 +196,12 @@ function Intents({
       {intentRefs.map((intentRef, i, list) => {
         return (
           <Fragment key={intentRef.id}>
-            <Intent intentRef={intentRef} />
-            {i < list.length - 1 && <hr />}
+            <SwapIntentCard intentStatusActorRef={intentRef} />
           </Fragment>
         )
       })}
     </div>
   )
-}
-
-function Intent({
-  intentRef,
-}: { intentRef: ActorRefFrom<typeof intentStatusMachine> }) {
-  const snapshot = useSelector(intentRef, (state) => state)
-
-  const amountIn = formatUnits(
-    snapshot.context.quote.totalAmountIn,
-    snapshot.context.tokenIn.decimals
-  )
-  const amountOut = formatUnits(
-    snapshot.context.quote.totalAmountOut,
-    snapshot.context.tokenOut.decimals
-  )
-
-  const swapInfo = `${amountIn} ${snapshot.context.tokenIn.symbol} -> ${amountOut} ${snapshot.context.tokenOut.symbol}`
-
-  const value = snapshot.value
-  switch (value) {
-    case "pending":
-      return (
-        <div>
-          {swapInfo} 💤
-          <br />
-          Checking intent status... intentHash: {snapshot.context.intentHash}
-        </div>
-      )
-    case "checking":
-      return (
-        <div>
-          {swapInfo} 💤
-          <br />
-          Checking intent status... intentHash: {snapshot.context.intentHash}{" "}
-          tx: {snapshot.context.txHash}
-        </div>
-      )
-    case "success":
-      return (
-        <div>
-          {swapInfo} ✅
-          <br />
-          Intent settled! tx: {snapshot.context.txHash}
-        </div>
-      )
-    case "not_valid":
-      return (
-        <div>
-          {swapInfo} ❌
-          <br />
-          Intent not valid! tx: {snapshot.context.txHash} intent:{" "}
-          {snapshot.context.intentHash}
-        </div>
-      )
-    case "error":
-      return (
-        <div>
-          {swapInfo} 😓
-          <br />
-          Error checking intent status! tx: {snapshot.context.txHash} intent:{" "}
-          {snapshot.context.intentHash}
-          <button
-            type={"button"}
-            onClick={() => intentRef.send({ type: "RETRY" })}
-          >
-            retry
-          </button>
-        </div>
-      )
-    default:
-      value satisfies never
-      return null
-  }
 }
 
 function renderIntentCreationResult(
