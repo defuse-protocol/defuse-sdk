@@ -1,5 +1,5 @@
 import { providers } from "near-api-js"
-import { type ReactNode, createContext, useEffect } from "react"
+import { type ReactNode, createContext } from "react"
 import type { SendNearTransaction } from "../../machines/publicKeyVerifierMachine"
 import { SwapUIMachineContext } from "./SwapUIMachineProvider"
 
@@ -19,15 +19,6 @@ export function SwapSubmitterProvider({
   sendNearTransaction: SendNearTransaction
 }) {
   const actorRef = SwapUIMachineContext.useActorRef()
-
-  useEffect(() => {
-    const sub = actorRef.subscribe((state) => {
-      console.log("SwapSubmitterProvider state", state.value, state)
-    })
-    return () => {
-      sub.unsubscribe()
-    }
-  }, [actorRef])
 
   const onSubmit = () => {
     if (userAddress == null) {
