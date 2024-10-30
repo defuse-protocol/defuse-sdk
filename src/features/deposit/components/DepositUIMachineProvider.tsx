@@ -9,13 +9,13 @@ import {
   type Transaction,
 } from "src/types"
 import { isBaseToken } from "src/utils"
-import { assert } from "vitest"
 import {
   type Actor,
   type ActorOptions,
   type SnapshotFrom,
   fromPromise,
 } from "xstate"
+import { assert } from "../../../utils/assert"
 import { depositUIMachine } from "../../machines/depositUIMachine"
 import { DepositService } from "../services/depositService"
 
