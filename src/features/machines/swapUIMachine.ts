@@ -10,6 +10,7 @@ import {
   setup,
   spawnChild,
 } from "xstate"
+import { settings } from "../../config/settings"
 import type { SwappableToken } from "../../types"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../types/base"
 import type { Transaction } from "../../types/deposit"
@@ -159,7 +160,10 @@ export const swapUIMachine = setup({
 
     spawnBackgroundQuoterRef: spawnChild("backgroundQuoterActor", {
       id: "backgroundQuoterRef",
-      input: ({ self }) => ({ parentRef: self, delayMs: 1000 }),
+      input: ({ self }) => ({
+        parentRef: self,
+        delayMs: settings.quotePollingIntervalMs,
+      }),
     }),
     // Warning: This cannot be properly typed, so you can send an incorrect event
     sendToBackgroundQuoterRefNewQuoteInput: sendTo(
