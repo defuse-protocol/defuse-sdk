@@ -58,13 +58,10 @@ export const SwapForm = () => {
     (state) => state
   )
 
-  const openModalSelectAssets = (
-    fieldName: string,
-    selectToken: SwappableToken | undefined
-  ) => {
+  const openModalSelectAssets = (fieldName: string) => {
     setModalType(ModalType.MODAL_SELECT_ASSETS, {
       fieldName,
-      selectToken,
+      selectToken: undefined,
       balances: depositedBalanceRef?.getSnapshot().context.balances,
     })
   }
@@ -80,15 +77,29 @@ export const SwapForm = () => {
     if (modalType === ModalType.MODAL_SELECT_ASSETS && fieldName && token) {
       switch (fieldName) {
         case "tokenIn":
-          swapUIActorRef.send({ type: "input", params: { tokenIn: token } })
+          if (tokenOut === token) {
+            swapUIActorRef.send({
+              type: "input",
+              params: { tokenIn: tokenOut, tokenOut: tokenIn },
+            })
+          } else {
+            swapUIActorRef.send({ type: "input", params: { tokenIn: token } })
+          }
           break
         case "tokenOut":
-          swapUIActorRef.send({ type: "input", params: { tokenOut: token } })
+          if (tokenIn === token) {
+            swapUIActorRef.send({
+              type: "input",
+              params: { tokenIn: tokenOut, tokenOut: tokenIn },
+            })
+          } else {
+            swapUIActorRef.send({ type: "input", params: { tokenOut: token } })
+          }
           break
       }
       onCloseModal(undefined)
     }
-  }, [payload, onCloseModal, swapUIActorRef])
+  }, [payload, onCloseModal, swapUIActorRef, tokenIn, tokenOut])
 
   const { onSubmit } = useContext(SwapSubmitterContext)
 
@@ -126,7 +137,7 @@ export const SwapForm = () => {
           fieldName="amountIn"
           selected={tokenIn}
           handleSelect={() => {
-            openModalSelectAssets("tokenIn", tokenOut)
+            openModalSelectAssets("tokenIn")
           }}
           className="border rounded-t-xl"
           required="This field is required"
@@ -142,7 +153,7 @@ export const SwapForm = () => {
           fieldName="amountOut"
           selected={tokenOut}
           handleSelect={() => {
-            openModalSelectAssets("tokenOut", tokenIn)
+            openModalSelectAssets("tokenOut")
           }}
           className="border rounded-b-xl mb-5"
           required="This field is required"
