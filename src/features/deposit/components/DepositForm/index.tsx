@@ -1,14 +1,19 @@
-import { Button, Flex, Spinner, Text } from "@radix-ui/themes"
+import { CopyIcon, InfoCircledIcon } from "@radix-ui/react-icons"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@radix-ui/react-tooltip"
+import { Box, Button, Flex, Link, Spinner, Text } from "@radix-ui/themes"
+import { QRCodeSVG } from "qrcode.react"
 import { useEffect } from "react"
+import CopyToClipboard from "react-copy-to-clipboard"
 import { Controller, useFormContext } from "react-hook-form"
 import { AssetComboIcon } from "src/components/Asset/AssetComboIcon"
 import { EmptyIcon } from "src/components/EmptyIcon"
 import type { ModalSelectAssetsPayload } from "src/components/Modal/ModalSelectAssets"
 import { NetworkIcon } from "src/components/Network/NetworkIcon"
-import {
-  useGetNearNativeBalance,
-  useGetNearNep141Balance,
-} from "src/hooks/useNearGetTokenBalance"
 import { useModalStore } from "src/providers/ModalStoreProvider"
 import { ModalType } from "src/stores/modalStore"
 import { DepositBlockchainEnum, type SwappableToken } from "src/types"
@@ -39,7 +44,8 @@ export const DepositForm = () => {
 
   const depositUIActorRef = DepositUIMachineContext.useActorRef()
   const snapshot = DepositUIMachineContext.useSelector((snapshot) => snapshot)
-  const depositResult = snapshot.context.depositResult
+  const generatedAddressResult = snapshot.context.generatedAddressResult
+  const depositNearResult = snapshot.context.depositNearResult
 
   const { token, network, amount, balance, nativeBalance } =
     DepositUIMachineContext.useSelector((snapshot) => {
@@ -59,6 +65,7 @@ export const DepositForm = () => {
 
   // TODO: remove
   console.log(snapshot.context, "snapshot")
+  console.log(snapshot.value, "state")
 
   const { setModalType, payload, onCloseModal } = useModalStore(
     (state) => state
@@ -88,8 +95,10 @@ export const DepositForm = () => {
     }
   }, [payload, onCloseModal, depositUIActorRef])
 
-  const onSubmit = (values: DepositFormValues) => {
-    console.log(values)
+  const onSubmit = () => {
+    depositUIActorRef.send({
+      type: "SUBMIT",
+    })
   }
 
   const handleSetMaxValue = (e: React.MouseEvent<HTMLButtonElement>) => {
@@ -179,44 +188,138 @@ export const DepositForm = () => {
               </div>
             </>
           )}
-          {network && network !== DepositBlockchainEnum.NEAR && <Text>X</Text>}
+          {network && network !== DepositBlockchainEnum.NEAR && (
+            <div className={styles.containerQr}>
+              <h2 className={styles.title}>Deposit to the address below</h2>
+              <p className={styles.instruction}>
+                Withdraw assets from an exchange to the Ethereum address above.
+                Upon confirmation, you will receive your assets on Defuse within
+                minutes.
+              </p>
+              <div className={styles.qrCodeWrapper}>
+                {generatedAddressResult ? (
+                  <QRCodeSVG value={generatedAddressResult.depositAddress} />
+                ) : (
+                  <Spinner loading={true} />
+                )}
+              </div>
+              <Input
+                name="generatedAddress"
+                value={generatedAddressResult?.depositAddress ?? ""}
+                disabled
+                className={styles.inputGeneratedAddress}
+                slotRight={
+                  <Button
+                    size="2"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      e.preventDefault()
+                    }}
+                    className={styles.copyButton}
+                    disabled={!generatedAddressResult}
+                  >
+                    <CopyToClipboard
+                      text={generatedAddressResult?.depositAddress ?? ""}
+                    >
+                      <Flex gap="2" align="center">
+                        <Text color="orange">Copy</Text>
+                        <CopyIcon height="14" width="14" color="orange" />
+                      </Flex>
+                    </CopyToClipboard>
+                  </Button>
+                }
+              />
+              <Flex
+                direction="row"
+                gap="2"
+                align="center"
+                justify="center"
+                className={styles.hintWrapper}
+              >
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger>
+                      <InfoCircledIcon />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <span className={styles.tooltipContent}>
+                        Please make sure you connected to the right network
+                      </span>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+                <p className={styles.hint}>
+                  Make sure to select {network} as the deposit network
+                </p>
+              </Flex>
+            </div>
+          )}
         </Form>
+        {depositNearResult && (
+          <Box>
+            <Text size={"1"} color={"gray"}>
+              Transaction:
+            </Text>{" "}
+            <TransactionLink
+              txHash={
+                depositNearResult.status === "SUCCESSFUL"
+                  ? depositNearResult.txHash
+                  : ""
+              }
+            />
+          </Box>
+        )}
       </div>
     </div>
   )
 }
 
+const TransactionLink = ({ txHash }: { txHash: string }) => {
+  return (
+    <Link href={`https://nearblocks.io/txns/${txHash}`} target={"_blank"}>
+      {shortenTxHash(txHash)}
+    </Link>
+  )
+}
+
 function getBlockchainsOptions(): Record<
   string,
-  { label: string; icon: React.ReactNode }
+  { label: string; icon: React.ReactNode; value: string }
 > {
   return {
     near: {
-      label: DepositBlockchainEnum.NEAR,
+      label: "Near",
       icon: (
         <NetworkIcon
           chainIcon="/static/icons/network/near.svg"
-          chainName={DepositBlockchainEnum.NEAR}
+          chainName="near"
         />
       ),
+      value: DepositBlockchainEnum.NEAR,
     },
     ethereum: {
-      label: DepositBlockchainEnum.ETHEREUM,
+      label: "Ethereum",
       icon: (
         <NetworkIcon
           chainIcon="/static/icons/network/ethereum.svg"
-          chainName={DepositBlockchainEnum.ETHEREUM}
+          chainName="eth"
         />
       ),
+      value: DepositBlockchainEnum.ETHEREUM,
     },
     base: {
-      label: DepositBlockchainEnum.BASE,
+      label: "Base",
       icon: (
         <NetworkIcon
           chainIcon="/static/icons/network/base.svg"
-          chainName={DepositBlockchainEnum.BASE}
+          chainName="base"
         />
       ),
+      value: DepositBlockchainEnum.BASE,
     },
   }
+}
+
+function shortenTxHash(txHash: string) {
+  return `${txHash.slice(0, 5)}...${txHash.slice(-5)}`
 }

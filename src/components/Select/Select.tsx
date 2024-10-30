@@ -14,6 +14,7 @@ type Props<T extends string, TFieldValues extends FieldValues> = {
     [key in T extends string ? T : never]: {
       label: string
       icon: React.ReactNode
+      value: string
     }
   }
   placeholder: { label: string; icon: React.ReactNode }
@@ -79,7 +80,10 @@ export const Select = forwardRef(function Select<
         >
           <RadixSelect.Viewport className={styles.selectViewport}>
             {Object.keys(options).map((key: string) => (
-              <SelectItem key={key} value={key}>
+              <SelectItem
+                key={key}
+                value={options[key as keyof typeof options].value}
+              >
                 <Flex
                   as="span"
                   align="center"

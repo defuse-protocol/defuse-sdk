@@ -1,6 +1,6 @@
 import type * as types from "./types"
 
-const BASE_URL = "https://nearrpc.aurora.dev"
+const BASE_URL = "https://dev-bridge.chaindefuser.com"
 
 async function request(url: string, body: unknown): Promise<Response> {
   let response: Response
@@ -26,11 +26,11 @@ async function request(url: string, body: unknown): Promise<Response> {
 export async function jsonRPCRequest<
   T extends types.JSONRPCRequest<unknown, unknown>,
 >(method: T["method"], params: T["params"][0]) {
-  const response = await request(`${BASE_URL}`, {
+  const response = await request(`${BASE_URL}/rpc`, {
     id: "dontcare",
     jsonrpc: "2.0",
     method,
-    params: params !== undefined ? params : undefined,
+    params: params !== undefined ? [params] : undefined,
   })
   return response.json()
 }

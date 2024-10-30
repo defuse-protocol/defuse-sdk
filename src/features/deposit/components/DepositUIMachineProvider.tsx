@@ -1,11 +1,14 @@
 import { createActorContext } from "@xstate/react"
 import type { PropsWithChildren, ReactElement, ReactNode } from "react"
-import { useFormContext } from "react-hook-form"
 import { settings } from "src/config/settings"
-import { backgroundBalanceActor } from "src/features/machines/backgroundBalanceActor"
+import { depositGenerateAddressMachine } from "src/features/machines/depositGenerateAddressMachine"
 import { depositNearMachine } from "src/features/machines/depositNearMachine"
-import type { SwappableToken, Transaction } from "src/types"
-import { formatUnits } from "viem"
+import {
+  DepositBlockchainEnum,
+  type SwappableToken,
+  type Transaction,
+} from "src/types"
+import { isBaseToken } from "src/utils"
 import { assert } from "vitest"
 import {
   type Actor,
@@ -15,7 +18,6 @@ import {
 } from "xstate"
 import { depositUIMachine } from "../../machines/depositUIMachine"
 import { DepositService } from "../services/depositService"
-import type { DepositFormValues } from "./DepositForm"
 
 const depositNearService = new DepositService()
 
@@ -54,8 +56,6 @@ export function DepositUIMachineProvider({
   tokenList,
   sendTransactionNear,
 }: DepositUIMachineProviderProps) {
-  const { trigger, setValue } = useFormContext<DepositFormValues>()
-
   return (
     <DepositUIMachineContext.Provider
       options={{
@@ -68,7 +68,43 @@ export function DepositUIMachineProvider({
           depositNearActor: depositNearMachine.provide({
             actors: {
               signAndSendTransactions: fromPromise(async ({ input }) => {
-                throw new Error("signAndSendTransactions Not implemented")
+                const { asset, amount, balance, accountId } = input
+                assert(asset != null, "Asset is not selected")
+                assert(amount != null, "Amount is not selected")
+                assert(accountId != null, "Account ID is not selected")
+
+                const tokenAddress = isBaseToken(asset)
+                  ? asset.address
+                  : (asset.groupedTokens.find(
+                      (token) =>
+                        `${token.chainName.toLowerCase()}:${token.chainId.toString()}` ===
+                        DepositBlockchainEnum.NEAR
+                    )?.address ?? null)
+
+                assert(tokenAddress != null, "Token address is not defined")
+
+                let transactions: Transaction[] = []
+
+                if (Number(amount) > Number(balance || 0n)) {
+                  transactions =
+                    depositNearService.createBatchDepositNearTransaction(
+                      settings.defuseContractId,
+                      tokenAddress,
+                      amount.toString(),
+                      (BigInt(amount) - BigInt(balance || 0n)).toString()
+                    )
+                } else {
+                  transactions =
+                    depositNearService.createDepositNearTransaction(
+                      settings.defuseContractId,
+                      tokenAddress,
+                      amount.toString()
+                    )
+                }
+
+                const txHash = await sendTransactionNear(transactions)
+                assert(txHash != null, "Transaction failed")
+                return txHash
               }),
               validateTransaction: fromPromise(async ({ input }) => {
                 const { txHash, accountId, amount } = input
@@ -79,7 +115,7 @@ export function DepositUIMachineProvider({
                   await depositNearService.checkNearTransactionValidity(
                     txHash,
                     accountId,
-                    amount
+                    amount.toString()
                   )
                 return isValid
               }),
@@ -89,6 +125,21 @@ export function DepositUIMachineProvider({
                 if (!context.txHash) return false
                 return true
               },
+            },
+          }),
+          depositGenerateAddressActor: depositGenerateAddressMachine.provide({
+            actors: {
+              generateDepositAddress: fromPromise(async ({ input }) => {
+                const { accountId, chain } = input
+                assert(accountId != null, "Account ID is not defined")
+                assert(chain != null, "Chain is not defined")
+                const address = await depositNearService.generateDepositAddress(
+                  accountId,
+                  chain
+                )
+                console.log("generated address", address)
+                return address
+              }),
             },
           }),
         },

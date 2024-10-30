@@ -69,7 +69,7 @@ export const depositedBalanceMachine = setup({
           userAccountId,
           input.defuseTokenIds,
           new providers.JsonRpcProvider({
-            url: "https://rpc.mainnet.near.org",
+            url: "https://nearrpc.aurora.dev",
           })
         )
 

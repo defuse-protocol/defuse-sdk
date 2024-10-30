@@ -4,7 +4,6 @@ import {
   getNearNep141Balance,
   getNearNep141Balances,
 } from "src/features/machines/getBalanceMachine"
-import { getNearNep141BalanceAccount } from "src/services/nearHttpClient"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../types/base"
 
 const queryKey = "get-balance"
