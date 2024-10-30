@@ -1,16 +1,8 @@
 import { parseUnits } from "ethers"
-import type { providers } from "near-api-js"
-import { isBaseToken } from "src/utils"
-import {
-  type ActorRefFrom,
-  assertEvent,
-  assign,
-  fromPromise,
-  sendTo,
-  setup,
-} from "xstate"
+import { type ActorRefFrom, assertEvent, assign, setup } from "xstate"
 import type { SwappableToken } from "../../types"
-import { DepositBlockchainEnum, type Transaction } from "../../types/deposit"
+import { DepositBlockchainEnum } from "../../types/deposit"
+import { isBaseToken } from "../../utils/token"
 import { backgroundBalanceActor } from "./backgroundBalanceActor"
 import {
   type Output as DepositGenerateAddressMachineOutput,

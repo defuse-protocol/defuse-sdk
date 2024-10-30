@@ -1,10 +1,9 @@
-import { getNearTxSuccessValue } from "src/features/machines/getTxMachine"
 import {
   getDepositAddress,
   getSupportedTokens,
-} from "src/services/poaBridgeClient"
-import { parseDefuseAsset } from "src/utils"
+} from "../../../services/poaBridgeClient"
 import type { DepositBlockchainEnum, Transaction } from "../../../types/deposit"
+import { getNearTxSuccessValue } from "../../machines/getTxMachine"
 
 export const FT_MAX_GAS_TRANSACTION = `300${"0".repeat(12)}` // 300 TGAS
 export const FT_DEPOSIT_GAS = `30${"0".repeat(12)}` // 30 TGAS

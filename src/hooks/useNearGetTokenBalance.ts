@@ -1,9 +1,9 @@
-import { useMutation, useQuery } from "@tanstack/react-query"
+import { useQuery } from "@tanstack/react-query"
 import {
   getNearNativeBalance,
   getNearNep141Balance,
   getNearNep141Balances,
-} from "src/features/machines/getBalanceMachine"
+} from "../features/machines/getBalanceMachine"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../types/base"
 
 const queryKey = "get-balance"

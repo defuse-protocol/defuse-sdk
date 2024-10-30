@@ -1,6 +1,6 @@
-import { type PropsWithChildren, useEffect, useRef } from "react"
+import { type PropsWithChildren, useEffect } from "react"
 import { useFormContext } from "react-hook-form"
-import type { DepositBlockchainEnum } from "src/types"
+import type { DepositBlockchainEnum } from "../../../types/deposit"
 import type { DepositFormValues } from "./DepositForm"
 import { DepositUIMachineContext } from "./DepositUIMachineProvider"
 
