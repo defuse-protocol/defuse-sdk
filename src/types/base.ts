@@ -11,18 +11,39 @@ export type BaseTokenBalance = {
   }
 }
 
-export interface BaseTokenInfo extends Partial<BaseTokenBalance> {
+export interface FungibleTokenInfo extends Partial<BaseTokenBalance> {
   defuseAssetId: string
   address: string
   symbol: string
   name: string
   decimals: number
   icon: string
+  /** @deprecated */
   chainId: string
   chainIcon: string
   chainName: string
+  /** @deprecated */
   routes: string[]
 }
+
+export interface NativeTokenInfo extends Partial<BaseTokenBalance> {
+  defuseAssetId: string
+  type: "native"
+  /** this is a hack to have backward capability with `FungibleTokenInfo`, prefer using "type" property */
+  address: "native"
+  symbol: string
+  name: string
+  decimals: number
+  icon: string
+  /** @deprecated */
+  chainId: string
+  chainIcon: string
+  chainName: string
+  /** @deprecated */
+  routes: string[]
+}
+
+export type BaseTokenInfo = FungibleTokenInfo | NativeTokenInfo
 
 /**
  * A virtual aggregation of the same token across multiple blockchains.
