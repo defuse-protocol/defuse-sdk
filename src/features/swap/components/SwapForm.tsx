@@ -87,17 +87,28 @@ export const SwapForm = () => {
     }
     const { modalType, fieldName, token } = payload as ModalSelectAssetsPayload
     if (modalType === ModalType.MODAL_SELECT_ASSETS && fieldName && token) {
+      const { tokenIn, tokenOut } =
+        swapUIActorRef.getSnapshot().context.formValues
+
       switch (fieldName) {
         case "tokenIn":
           if (tokenOut === token) {
-            switchTokens()
+            // Don't need to switch amounts, when token selected from dialog
+            swapUIActorRef.send({
+              type: "input",
+              params: { tokenIn: tokenOut, tokenOut: tokenIn },
+            })
           } else {
             swapUIActorRef.send({ type: "input", params: { tokenIn: token } })
           }
           break
         case "tokenOut":
           if (tokenIn === token) {
-            switchTokens()
+            // Don't need to switch amounts, when token selected from dialog
+            swapUIActorRef.send({
+              type: "input",
+              params: { tokenIn: tokenOut, tokenOut: tokenIn },
+            })
           } else {
             swapUIActorRef.send({ type: "input", params: { tokenOut: token } })
           }
@@ -105,7 +116,7 @@ export const SwapForm = () => {
       }
       onCloseModal(undefined)
     }
-  }, [payload, onCloseModal, swapUIActorRef, tokenIn, tokenOut, switchTokens])
+  }, [payload, onCloseModal, swapUIActorRef])
 
   const { onSubmit } = useContext(SwapSubmitterContext)
 
