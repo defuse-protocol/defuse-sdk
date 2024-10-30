@@ -1,72 +1,143 @@
 import { PersonIcon } from "@radix-ui/react-icons"
 import { Button, Flex, Spinner, Text } from "@radix-ui/themes"
-import { useEffect, useState } from "react"
-import { Controller, useForm } from "react-hook-form"
+import { useEffect } from "react"
+import { useForm } from "react-hook-form"
 import { EmptyIcon } from "../../../../components/EmptyIcon"
 import { Form } from "../../../../components/Form"
 import { FieldComboInput } from "../../../../components/Form/FieldComboInput"
 import { NetworkIcon } from "../../../../components/Network/NetworkIcon"
 import { Select } from "../../../../components/Select/Select"
-import { useModalController, useShortAccountId } from "../../../../hooks"
+import { useModalController } from "../../../../hooks"
 import { useTokensStore } from "../../../../providers/TokensStoreProvider"
 import { ModalType } from "../../../../stores/modalStore"
-import { BlockchainEnum, type SwappableToken } from "../../../../types"
-import type { BaseTokenInfo } from "../../../../types/base"
+import type { BaseTokenInfo, UnifiedTokenInfo } from "../../../../types/base"
 import type { WithdrawWidgetProps } from "../../../../types/withdraw"
+import { isBaseToken } from "../../../../utils"
+import { assert } from "../../../../utils/assert"
+import { formatTokenValue } from "../../../../utils/format"
+import { SwapUIMachineContext } from "../../../swap/components/SwapUIMachineProvider"
 import styles from "./styles.module.css"
 
 export type WithdrawFormNearValues = {
-  tokenIn: SwappableToken
   amountIn: string
-  accountId: string
   recipient: string
-  blockchain: string
+}
+
+interface WithdrawFormProps extends WithdrawWidgetProps {
+  amountOutFormatted: string
 }
 
 export const WithdrawForm = ({
   accountId,
   tokenList,
-  signMessage,
-}: WithdrawWidgetProps) => {
+  amountOutFormatted,
+}: WithdrawFormProps) => {
+  const actorRef = SwapUIMachineContext.useActorRef()
+
+  useEffect(() => {
+    const s = actorRef.subscribe((state) => {
+      console.log("SwapUIMachine", JSON.stringify(state.value), state.context)
+    })
+    return () => s.unsubscribe()
+  }, [actorRef])
+
+  const { tokenIn, tokenOut, blockchainView } =
+    SwapUIMachineContext.useSelector((state) => {
+      const { tokenIn, tokenOut } = state.context.formValues
+
+      // Sanity check
+      assert(isBaseToken(tokenOut), "Token out must be base token")
+
+      return {
+        blockchainView: tokenOut.chainName,
+        tokenIn,
+        tokenOut,
+      }
+    })
+
   const {
     handleSubmit,
     register,
     setValue,
-    control,
     watch,
     formState: { errors },
-  } = useForm<WithdrawFormNearValues>({ reValidateMode: "onSubmit" })
-  const { setModalType, data } = useModalController<{
+  } = useForm<WithdrawFormNearValues>({
+    reValidateMode: "onSubmit",
+  })
+
+  const { setModalType, data: modalSelectAssetsData } = useModalController<{
     modalType: ModalType
-    token: BaseTokenInfo
+    token: BaseTokenInfo | UnifiedTokenInfo
   }>(ModalType.MODAL_SELECT_ASSETS, "token")
-  const { updateTokens, data: tokens } = useTokensStore((state) => state)
-  const [selectTokenIn, setSelectTokenIn] = useState<SwappableToken>(
-    // biome-ignore lint/style/noNonNullAssertion: tokenList[0] is guaranteed to be defined
-    tokenList[0]!
-  )
-  const [errorSelectTokenIn, setErrorSelectTokenIn] = useState("")
-  const { shortAccountId } = useShortAccountId(accountId)
+
+  const updateTokens = useTokensStore((state) => state.updateTokens)
 
   const handleSelect = () => {
+    updateTokens(tokenList)
     setModalType(ModalType.MODAL_SELECT_ASSETS, {
       fieldName: "tokenIn",
-      selectToken: selectTokenIn,
+      selectToken: tokenIn,
     })
   }
 
+  /**
+   * This is ModalSelectAssets "callback"
+   */
   useEffect(() => {
-    if (data?.token) {
-      setSelectTokenIn(data.token)
-      setValue("tokenIn", data.token)
+    if (modalSelectAssetsData?.token) {
+      const nextTokenIn = modalSelectAssetsData.token
+
+      const tokenOut = actorRef.getSnapshot().context.formValues.tokenOut
+      // Sanity check
+      assert(isBaseToken(tokenOut), "Token out must be base token")
+
+      const selectedChainName = tokenOut.chainName
+
+      const nextTokenOut = isBaseToken(nextTokenIn)
+        ? nextTokenIn
+        : (nextTokenIn.groupedTokens.find(
+            (t) => t.chainName === selectedChainName
+          ) ??
+          // biome-ignore lint/style/noNonNullAssertion: groupedTokens is not empty
+          nextTokenIn.groupedTokens[0]!)
+
+      actorRef.send({
+        type: "input",
+        params: {
+          tokenIn: nextTokenIn,
+          tokenOut: nextTokenOut,
+        },
+      })
     }
-  }, [data, setValue])
+  }, [modalSelectAssetsData, actorRef])
 
   useEffect(() => {
-    if (tokenList) {
-      updateTokens(tokenList)
+    // When values are set externally, they trigger "watch" callback too.
+    // In order to avoid, unnecessary state updates need to check if the form is changed by user
+    const sub = watch(async (value, { type, name }) => {
+      if (type === "change" && name != null) {
+        if (name === "amountIn") {
+          actorRef.send({
+            type: "input",
+            params: { [name]: value[name] },
+          })
+        }
+      }
+    })
+    return () => {
+      sub.unsubscribe()
     }
-  }, [tokenList, updateTokens])
+  }, [watch, actorRef])
+
+  const availableBlockchains = isBaseToken(tokenIn)
+    ? [tokenIn.chainName]
+    : tokenIn.groupedTokens.map((token) => token.chainName)
+
+  const blockchainSelectItems = Object.fromEntries(
+    allBlockchains
+      .filter((blockchain) => availableBlockchains.includes(blockchain.value))
+      .map((a) => [a.value, a])
+  )
 
   return (
     <div className={styles.container}>
@@ -78,32 +149,52 @@ export const WithdrawForm = ({
           register={register}
         >
           <div className={styles.selectWrapper}>
-            <Controller
-              name="blockchain"
-              control={control}
-              render={({ field }) => (
-                <Select
-                  options={getBlockchains()}
-                  placeholder={{
-                    label: "Select network",
-                    icon: <EmptyIcon />,
-                  }}
-                  fullWidth
-                  {...field}
-                />
-              )}
+            <Select
+              name={"blockchain"}
+              options={blockchainSelectItems}
+              placeholder={{
+                label: "Select network",
+                icon: <EmptyIcon />,
+              }}
+              fullWidth
+              value={blockchainView}
+              onChange={(value) => {
+                if (value === "") {
+                  /**
+                   * For some reason, Select emits empty string,
+                   * when the value is set to a value that is not in the list (?).
+                   */
+                  return
+                }
+
+                // Double check that the value is correct
+                assert(
+                  availableBlockchains.includes(value),
+                  `Unexpected blockchain value "${value}"`
+                )
+
+                const tokenOut = isBaseToken(tokenIn)
+                  ? tokenIn
+                  : (tokenIn.groupedTokens.find((t) => t.chainName === value) ??
+                    // biome-ignore lint/style/noNonNullAssertion: groupedTokens is not empty
+                    tokenIn.groupedTokens[0]!)
+
+                actorRef.send({
+                  type: "input",
+                  params: { tokenOut },
+                })
+              }}
             />
           </div>
           <FieldComboInput<WithdrawFormNearValues>
             fieldName="amountIn"
-            selected={selectTokenIn}
+            selected={tokenIn}
             handleSelect={() => {
               handleSelect()
             }}
             className="border rounded-t-xl"
             required="This field is required"
             errors={errors}
-            errorSelect={errorSelectTokenIn}
           />
           <Flex
             gap="2"
@@ -130,18 +221,8 @@ export const WithdrawForm = ({
           >
             <Text>Received amount</Text>
             <Text className={styles.receivedAmountValue}>
-              0 {selectTokenIn.symbol}
-            </Text>
-          </Flex>
-          <Flex
-            gap="2"
-            align="center"
-            justify="end"
-            className={styles.networkFee}
-          >
-            <Text>Network fee</Text>
-            <Text className={styles.networkFeeValue}>
-              0 {selectTokenIn.symbol}
+              {formatTokenValue(amountOutFormatted, tokenOut.decimals)}{" "}
+              {tokenOut.symbol} @ {renderBlockchainLabel(tokenOut.chainName)}
             </Text>
           </Flex>
           <div className={styles.buttonGroup}>
@@ -165,37 +246,54 @@ export const WithdrawForm = ({
   )
 }
 
-function getBlockchains() {
-  return {
-    near: {
-      label: "Near",
-      icon: (
-        <NetworkIcon
-          chainIcon="/static/icons/network/near_dark.svg"
-          chainName="Near"
-        />
-      ),
-      value: BlockchainEnum.NEAR,
-    },
-    ethereum: {
-      label: "Ethereum",
-      icon: (
-        <NetworkIcon
-          chainIcon="/static/icons/network/ethereum.svg"
-          chainName="Ethereum"
-        />
-      ),
-      value: BlockchainEnum.ETHEREUM,
-    },
-    base: {
-      label: "Base",
-      icon: (
-        <NetworkIcon
-          chainIcon="/static/icons/network/base.svg"
-          chainName="Base"
-        />
-      ),
-      value: BlockchainEnum.BASE,
-    },
+const allBlockchains = [
+  {
+    label: "Near",
+    icon: (
+      <NetworkIcon
+        chainIcon="/static/icons/network/near_dark.svg"
+        chainName="Near"
+      />
+    ),
+    value: "near",
+  },
+  {
+    label: "Ethereum",
+    icon: (
+      <NetworkIcon
+        chainIcon="/static/icons/network/ethereum.svg"
+        chainName="Ethereum"
+      />
+    ),
+    value: "eth",
+  },
+  {
+    label: "Base",
+    icon: (
+      <NetworkIcon
+        chainIcon="/static/icons/network/base.svg"
+        chainName="Base"
+      />
+    ),
+    value: "base",
+  },
+  {
+    label: "Bitcoin",
+    icon: (
+      <NetworkIcon
+        chainIcon="/static/icons/network/btc.svg"
+        chainName="Bitcoin"
+      />
+    ),
+    value: "bitcoin",
+  },
+]
+
+function renderBlockchainLabel(chainName: string): string {
+  const blockchain = allBlockchains.find((a) => a.value === chainName)
+  if (blockchain != null) {
+    console.warn(`Unknown blockchain: ${chainName}`)
+    return blockchain.label
   }
+  return chainName
 }
