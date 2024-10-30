@@ -16,7 +16,10 @@ import {
   type Output as DepositGenerateAddressMachineOutput,
   depositGenerateAddressMachine,
 } from "./depositGenerateAddressMachine"
-import { depositNearMachine } from "./depositNearMachine"
+import {
+  type Output as DepositNearMachineOutput,
+  depositNearMachine,
+} from "./depositNearMachine"
 
 export type Context = {
   error: Error | null
@@ -30,7 +33,6 @@ export type Context = {
   parsedFormValues: {
     amount: bigint
   }
-  depositResult: string | null
   depositGenerateAddressRef: ActorRefFrom<
     typeof depositGenerateAddressMachine
   > | null
@@ -38,6 +40,7 @@ export type Context = {
   userAddress: string
   defuseAssetId: string | null
   generatedAddressResult: DepositGenerateAddressMachineOutput | null
+  depositNearResult: DepositNearMachineOutput | null
 }
 
 export const depositUIMachine = setup({
@@ -116,13 +119,14 @@ export const depositUIMachine = setup({
     }),
     clearError: assign({ error: null }),
     setDepositNearResult: assign({
-      depositResult: (_, value: string) => value,
+      depositNearResult: (_, value: DepositNearMachineOutput) =>
+        value.status === "SUCCESSFUL" ? value : null,
     }),
     setDepositGenerateAddressResult: assign({
       generatedAddressResult: (_, value: DepositGenerateAddressMachineOutput) =>
         value,
     }),
-    clearDepositResult: assign({ depositResult: null }),
+    clearDepositResult: assign({ depositNearResult: null }),
 
     extractDefuseAssetId: assign({
       defuseAssetId: ({ context }) => {
@@ -193,7 +197,7 @@ export const depositUIMachine = setup({
     parsedFormValues: {
       amount: 0n,
     },
-    depositResult: null,
+    depositNearResult: null,
     depositGenerateAddressRef: null,
     tokenList: input.tokenList,
     userAddress: "",
@@ -302,6 +306,12 @@ export const depositUIMachine = setup({
 
         onDone: {
           target: "editing",
+          actions: [
+            {
+              type: "setDepositNearResult",
+              params: ({ event }) => event.output,
+            },
+          ],
         },
 
         onError: {

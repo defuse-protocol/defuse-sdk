@@ -5,7 +5,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@radix-ui/react-tooltip"
-import { Button, Flex, Spinner, Text } from "@radix-ui/themes"
+import { Box, Button, Flex, Link, Spinner, Text } from "@radix-ui/themes"
 import { QRCodeSVG } from "qrcode.react"
 import { useEffect } from "react"
 import CopyToClipboard from "react-copy-to-clipboard"
@@ -44,31 +44,24 @@ export const DepositForm = () => {
 
   const depositUIActorRef = DepositUIMachineContext.useActorRef()
   const snapshot = DepositUIMachineContext.useSelector((snapshot) => snapshot)
-  const depositResult = snapshot.context.depositResult
+  const generatedAddressResult = snapshot.context.generatedAddressResult
+  const depositNearResult = snapshot.context.depositNearResult
 
-  const {
-    token,
-    network,
-    amount,
-    balance,
-    nativeBalance,
-    generatedAddressResult,
-  } = DepositUIMachineContext.useSelector((snapshot) => {
-    const token = snapshot.context.formValues.token
-    const network = snapshot.context.formValues.network
-    const amount = snapshot.context.formValues.amount
-    const balance = snapshot.context.balance
-    const nativeBalance = snapshot.context.nativeBalance
-    const generatedAddressResult = snapshot.context.generatedAddressResult
-    return {
-      token,
-      network,
-      amount,
-      balance,
-      nativeBalance,
-      generatedAddressResult,
-    }
-  })
+  const { token, network, amount, balance, nativeBalance } =
+    DepositUIMachineContext.useSelector((snapshot) => {
+      const token = snapshot.context.formValues.token
+      const network = snapshot.context.formValues.network
+      const amount = snapshot.context.formValues.amount
+      const balance = snapshot.context.balance
+      const nativeBalance = snapshot.context.nativeBalance
+      return {
+        token,
+        network,
+        amount,
+        balance,
+        nativeBalance,
+      }
+    })
 
   // TODO: remove
   console.log(snapshot.context, "snapshot")
@@ -220,6 +213,7 @@ export const DepositForm = () => {
                     size="2"
                     onClick={(e) => {
                       e.stopPropagation()
+                      e.preventDefault()
                     }}
                     className={styles.copyButton}
                     disabled={!generatedAddressResult}
@@ -261,8 +255,30 @@ export const DepositForm = () => {
             </div>
           )}
         </Form>
+        {depositNearResult && (
+          <Box>
+            <Text size={"1"} color={"gray"}>
+              Transaction:
+            </Text>{" "}
+            <TransactionLink
+              txHash={
+                depositNearResult.status === "SUCCESSFUL"
+                  ? depositNearResult.txHash
+                  : ""
+              }
+            />
+          </Box>
+        )}
       </div>
     </div>
+  )
+}
+
+const TransactionLink = ({ txHash }: { txHash: string }) => {
+  return (
+    <Link href={`https://nearblocks.io/txns/${txHash}`} target={"_blank"}>
+      {shortenTxHash(txHash)}
+    </Link>
   )
 }
 
@@ -302,4 +318,8 @@ function getBlockchainsOptions(): Record<
       value: DepositBlockchainEnum.BASE,
     },
   }
+}
+
+function shortenTxHash(txHash: string) {
+  return `${txHash.slice(0, 5)}...${txHash.slice(-5)}`
 }
