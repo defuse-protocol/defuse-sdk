@@ -1,7 +1,13 @@
 import { ExclamationTriangleIcon } from "@radix-ui/react-icons"
 import { Box, Callout, Flex } from "@radix-ui/themes"
 import { useSelector } from "@xstate/react"
-import { Fragment, type ReactNode, useContext, useEffect } from "react"
+import {
+  Fragment,
+  type ReactNode,
+  useCallback,
+  useContext,
+  useEffect,
+} from "react"
 import { useFormContext } from "react-hook-form"
 import type { ActorRefFrom, SnapshotFrom } from "xstate"
 import { ButtonCustom, ButtonSwitch } from "../../../components/Button"
@@ -28,6 +34,8 @@ export const SwapForm = () => {
   const {
     handleSubmit,
     register,
+    setValue,
+    getValues,
     formState: { errors },
   } = useFormContext<SwapFormValues>()
 
@@ -44,7 +52,11 @@ export const SwapForm = () => {
     }
   })
 
-  const switchTokens = () => {
+  // we need stable references to allow passing to useEffect
+  const switchTokens = useCallback(() => {
+    const { amountIn, amountOut } = getValues()
+    setValue("amountIn", amountOut)
+    setValue("amountOut", amountIn)
     swapUIActorRef.send({
       type: "input",
       params: {
@@ -52,7 +64,7 @@ export const SwapForm = () => {
         tokenOut: tokenIn,
       },
     })
-  }
+  }, [tokenIn, tokenOut, getValues, setValue, swapUIActorRef.send])
 
   const { setModalType, payload, onCloseModal } = useModalStore(
     (state) => state
@@ -78,20 +90,14 @@ export const SwapForm = () => {
       switch (fieldName) {
         case "tokenIn":
           if (tokenOut === token) {
-            swapUIActorRef.send({
-              type: "input",
-              params: { tokenIn: tokenOut, tokenOut: tokenIn },
-            })
+            switchTokens()
           } else {
             swapUIActorRef.send({ type: "input", params: { tokenIn: token } })
           }
           break
         case "tokenOut":
           if (tokenIn === token) {
-            swapUIActorRef.send({
-              type: "input",
-              params: { tokenIn: tokenOut, tokenOut: tokenIn },
-            })
+            switchTokens()
           } else {
             swapUIActorRef.send({ type: "input", params: { tokenOut: token } })
           }
@@ -99,7 +105,7 @@ export const SwapForm = () => {
       }
       onCloseModal(undefined)
     }
-  }, [payload, onCloseModal, swapUIActorRef, tokenIn, tokenOut])
+  }, [payload, onCloseModal, swapUIActorRef, tokenIn, tokenOut, switchTokens])
 
   const { onSubmit } = useContext(SwapSubmitterContext)
 
