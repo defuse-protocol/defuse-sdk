@@ -1,5 +1,6 @@
 import { PersonIcon } from "@radix-ui/react-icons"
 import { Button, Flex, Spinner, Text } from "@radix-ui/themes"
+import { useSelector } from "@xstate/react"
 import { useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { EmptyIcon } from "../../../../components/EmptyIcon"
@@ -15,6 +16,7 @@ import type { WithdrawWidgetProps } from "../../../../types/withdraw"
 import { isBaseToken } from "../../../../utils"
 import { assert } from "../../../../utils/assert"
 import { formatTokenValue } from "../../../../utils/format"
+import { balanceSelector } from "../../../swap/components/SwapForm"
 import { SwapUIMachineContext } from "../../../swap/components/SwapUIMachineProvider"
 import styles from "./styles.module.css"
 
@@ -33,6 +35,25 @@ export const WithdrawForm = ({
   amountOutFormatted,
 }: WithdrawFormProps) => {
   const actorRef = SwapUIMachineContext.useActorRef()
+
+  const depositedBalanceRef = useSelector(
+    actorRef,
+    (state) => state.children.depositedBalanceRef
+  )
+
+  useEffect(() => {
+    console.log({ accountId })
+    if (accountId != null) {
+      actorRef.send({
+        type: "LOGIN",
+        params: { accountId },
+      })
+    } else {
+      actorRef.send({
+        type: "LOGOUT",
+      })
+    }
+  }, [accountId, actorRef])
 
   useEffect(() => {
     const s = actorRef.subscribe((state) => {
@@ -54,6 +75,11 @@ export const WithdrawForm = ({
         tokenOut,
       }
     })
+
+  const tokenInBalance = useSelector(
+    depositedBalanceRef,
+    balanceSelector(tokenIn)
+  )
 
   const {
     handleSubmit,
@@ -77,6 +103,7 @@ export const WithdrawForm = ({
     setModalType(ModalType.MODAL_SELECT_ASSETS, {
       fieldName: "tokenIn",
       selectToken: tokenIn,
+      balances: depositedBalanceRef?.getSnapshot().context.balances,
     })
   }
 
@@ -195,6 +222,7 @@ export const WithdrawForm = ({
             className="border rounded-t-xl"
             required="This field is required"
             errors={errors}
+            balance={tokenInBalance}
           />
           <Flex
             gap="2"
