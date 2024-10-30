@@ -57,13 +57,6 @@ export const depositUIMachine = setup({
         }
       | {
           type: "SUBMIT"
-          params: {
-            userAddress: string
-            nearClient: providers.Provider
-            sendNearTransaction: (
-              tx: Transaction
-            ) => Promise<{ txHash: string } | null>
-          }
         }
       | {
           type: "AUTO_SUBMIT"
@@ -162,7 +155,10 @@ export const depositUIMachine = setup({
   },
   guards: {
     isDepositNearRelevant: ({ context }) => {
-      return context.balance > context.parsedFormValues.amount
+      return (
+        context.balance + context.nativeBalance >=
+        context.parsedFormValues.amount
+      )
     },
     isBalanceSufficient: ({ event, context }) => {
       if (event.type === "SUBMIT") {
@@ -292,6 +288,10 @@ export const depositUIMachine = setup({
 
         input: ({ context, event }) => {
           assertEvent(event, "SUBMIT")
+
+          if (context.formValues.token == null || context.userAddress == null) {
+            throw new Error("Token or account ID is missing")
+          }
           return {
             balance: context.balance,
             amount: context.parsedFormValues.amount,

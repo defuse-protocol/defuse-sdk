@@ -1,8 +1,11 @@
+import { DepositBlockchainEnum, type SwappableToken } from "src/types"
+import { isBaseToken } from "src/utils"
 import { assign, emit, fromPromise, setup } from "xstate"
 
 export type Context = {
-  amount: string | null
-  asset: string | null
+  amount: bigint | null
+  asset: SwappableToken | null
+  tokenAddress: string | null
   accountId: string | null
   txHash: string | null
   balance: bigint | null
@@ -12,16 +15,16 @@ export type Context = {
 
 type Events = {
   type: "INPUT"
-  amount: string
-  asset: string
-  accountId: string
   balance: bigint
+  amount: bigint
+  asset: SwappableToken | null
+  accountId: string
 }
 
 type Input = {
-  amount: string
-  asset: string
   balance: bigint
+  amount: bigint
+  asset: SwappableToken | null
   accountId: string
 }
 
@@ -29,6 +32,7 @@ export const depositNearMachine = setup({
   types: {} as {
     context: Context
     events: Events
+    input: Input
   },
   actors: {
     signAndSendTransactions: fromPromise(
@@ -40,7 +44,7 @@ export const depositNearMachine = setup({
       async ({
         input,
       }: {
-        input: { txHash: string; accountId: string; amount: string }
+        input: { txHash: string; accountId: string; amount: bigint }
       }): Promise<boolean> => {
         throw new Error("not implemented")
       }
@@ -64,40 +68,32 @@ export const depositNearMachine = setup({
 }).createMachine({
   /** @xstate-layout N4IgpgJg5mDOIC5QTABwPawJYBcC0AdmAIYBOAdFhADZgDEAkgHIAKAqgCoDaADALqJQGbDizoCgkAA9EAVgDss8gGZ5AFgAcsjQCZ5ANgCcPAIyGANCACeiPDrWHya+TsMm1PfRv3LD6gL7+lijCuIQkFNhQBFgEUHQQ4mCUBABu6ADWySGYYURk5FExcQix6QDGxKLivHy1kqHVEkjSiPo6POSu3g728sbKapY2CDpKOh0aJhoaavam8gaBwWi5+PmRWNGx8WCkpOgUqNRVAGaHALbkOSLhBUU7pWnolU219S2NYs2gMgjKRnIAw0hg0Bjcnn0w0QYy6k2ms3mJkWyxANzyEXIqT2WFOVh2CSSKXSWWuq1uGyxOLxjzKLyq33e-Aaa2+kj+Jh49nIPl0hgBhjU+k00NG3h5GkGRimslMhlkqPR60x2NIuPxcToewORxOOHOpCuSruFFV6tpz1ejP4HyErPE7MQBn0XUGsjGWh4c2UGlFOnFXkGHXd02R+gVQTR5IxBQARgdiBBKrBRJqAKLYgg4AAEJltIC+DpaHNk7nIXu8nNk8pMyhMslFmhMKgU4fkWh00wUgUjBHQKHgLWNGxZIjZxcQyh48icPEMwu0+iM-SG1lsygBQJcbmlXo8GkV0eVBSotFHuHHv0nsiUHnnakXy8ForsPp5al8QvDak59cPjRNQotmKKBzyaR0EE0HRyEWZRXABYVBQBF8TDMch6w6Mw9E5SUHH-NZALNGk4jAy9WgQSVOm8eVpRvQUeGUUUTGFLohRBNQOOUUtTDUfCKUxABBWNDhwSBSKLK9IJ0F0XCmZjTC9JcGzXUYy36H0PFUAV7GUPiYwoeN0ETZNU1Az57R+cj3A6ct9AYoxDH5AEdD9dQYO0LQOLcB8pj048KCYdAcwAMXQABXAgIGzQ5swYNJiGoKhxMsv4DE6QZFklDQvQUVRGx0ZRyBDasQX6OzJXkPzAIAYXQC5jjAUSIGSiD3FmdCQTGHhPEmeRRVy8g5J4G9P30DCe38IA */
   id: "deposit-near",
-  initial: "idle",
-  context: {
-    amount: null,
-    balance: null,
-    asset: null,
-    accountId: null,
-    txHash: null,
-    error: undefined,
-    outcome: null,
+  initial: "signing",
+  context: ({ input }) => {
+    return {
+      balance: input.balance,
+      amount: input.amount,
+      asset: input.asset,
+      accountId: input.accountId,
+      txHash: null,
+      error: undefined,
+      outcome: null,
+      tokenAddress: null,
+    }
   },
   states: {
-    idle: {
-      on: {
-        INPUT: {
-          target: "signing",
-          actions: assign({
-            balance: ({ event }) => event.balance,
-            amount: ({ event }) => event.amount,
-            asset: ({ event }) => event.asset,
-            accountId: ({ event }) => event.accountId,
-          }),
-        },
-      },
-    },
-
     signing: {
       invoke: {
         id: "deposit-near.signing:invocation[0]",
-        input: ({ context }) => ({
-          amount: context.amount || "",
-          asset: context.asset || "",
-          balance: context.balance || 0n,
-          accountId: context.accountId || "",
-        }),
+
+        input: ({ context }) => {
+          return {
+            balance: context.balance || 0n,
+            amount: context.amount || 0n,
+            accountId: context.accountId || "",
+            asset: context.asset || null,
+          }
+        },
         onDone: {
           target: "verifying",
           actions: assign({
@@ -121,7 +117,7 @@ export const depositNearMachine = setup({
         input: ({ context }) => ({
           txHash: context.txHash || "",
           accountId: context.accountId || "",
-          amount: context.amount || "",
+          amount: context.amount || 0n,
         }),
         onDone: {
           target: "broadcasting",
@@ -138,7 +134,7 @@ export const depositNearMachine = setup({
 
     Aborted: {
       type: "final",
-      actions: ["emitFailedDeposit"],
+      entry: ["emitFailedDeposit"],
     },
 
     broadcasting: {

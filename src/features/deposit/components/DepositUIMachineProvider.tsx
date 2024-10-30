@@ -3,7 +3,12 @@ import type { PropsWithChildren, ReactElement, ReactNode } from "react"
 import { settings } from "src/config/settings"
 import { depositGenerateAddressMachine } from "src/features/machines/depositGenerateAddressMachine"
 import { depositNearMachine } from "src/features/machines/depositNearMachine"
-import type { SwappableToken, Transaction } from "src/types"
+import {
+  DepositBlockchainEnum,
+  type SwappableToken,
+  type Transaction,
+} from "src/types"
+import { isBaseToken } from "src/utils"
 import { assert } from "vitest"
 import {
   type Actor,
@@ -63,9 +68,20 @@ export function DepositUIMachineProvider({
           depositNearActor: depositNearMachine.provide({
             actors: {
               signAndSendTransactions: fromPromise(async ({ input }) => {
-                const { asset, amount, balance } = input
+                const { asset, amount, balance, accountId } = input
                 assert(asset != null, "Asset is not selected")
                 assert(amount != null, "Amount is not selected")
+                assert(accountId != null, "Account ID is not selected")
+
+                const tokenAddress = isBaseToken(asset)
+                  ? asset.address
+                  : (asset.groupedTokens.find(
+                      (token) =>
+                        `${token.chainName.toLowerCase()}:${token.chainId.toString()}` ===
+                        DepositBlockchainEnum.NEAR
+                    )?.address ?? null)
+
+                assert(tokenAddress != null, "Token address is not defined")
 
                 let transactions: Transaction[] = []
 
@@ -73,16 +89,16 @@ export function DepositUIMachineProvider({
                   transactions =
                     depositNearService.createBatchDepositNearTransaction(
                       settings.defuseContractId,
-                      asset,
-                      amount,
+                      tokenAddress,
+                      amount.toString(),
                       (BigInt(amount) - BigInt(balance || 0n)).toString()
                     )
                 } else {
                   transactions =
                     depositNearService.createDepositNearTransaction(
                       settings.defuseContractId,
-                      asset,
-                      amount
+                      tokenAddress,
+                      amount.toString()
                     )
                 }
 
@@ -99,7 +115,7 @@ export function DepositUIMachineProvider({
                   await depositNearService.checkNearTransactionValidity(
                     txHash,
                     accountId,
-                    amount
+                    amount.toString()
                   )
                 return isValid
               }),

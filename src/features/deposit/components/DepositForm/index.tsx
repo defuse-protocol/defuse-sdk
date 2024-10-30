@@ -102,8 +102,10 @@ export const DepositForm = () => {
     }
   }, [payload, onCloseModal, depositUIActorRef])
 
-  const onSubmit = (values: DepositFormValues) => {
-    console.log(values)
+  const onSubmit = () => {
+    depositUIActorRef.send({
+      type: "SUBMIT",
+    })
   }
 
   const handleSetMaxValue = (e: React.MouseEvent<HTMLButtonElement>) => {
