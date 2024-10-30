@@ -14,6 +14,7 @@ const config = [
       {
         file: "dist/index.esm.js",
         format: "es",
+        sourcemap: true,
       },
     ],
     plugins: [

@@ -2,7 +2,7 @@ import { useEffect } from "react"
 import { DepositWidgetProvider } from "../../../providers"
 import type { DepositWidgetProps } from "../../../types/deposit"
 
-import { useTokensStore } from "src/providers/TokensStoreProvider"
+import { useTokensStore } from "../../../providers/TokensStoreProvider"
 import { DepositForm } from "./DepositForm"
 import { DepositFormProvider } from "./DepositFormProvider"
 import { DepositUIMachineFormSyncProvider } from "./DepositUIMachineFormSyncProvider"

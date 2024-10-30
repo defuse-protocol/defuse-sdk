@@ -1,21 +1,21 @@
 import { createActorContext } from "@xstate/react"
 import type { PropsWithChildren, ReactElement, ReactNode } from "react"
-import { settings } from "src/config/settings"
-import { depositGenerateAddressMachine } from "src/features/machines/depositGenerateAddressMachine"
-import { depositNearMachine } from "src/features/machines/depositNearMachine"
-import {
-  DepositBlockchainEnum,
-  type SwappableToken,
-  type Transaction,
-} from "src/types"
-import { isBaseToken } from "src/utils"
-import { assert } from "vitest"
 import {
   type Actor,
   type ActorOptions,
   type SnapshotFrom,
   fromPromise,
 } from "xstate"
+import { settings } from "../../../config/settings"
+import {
+  DepositBlockchainEnum,
+  type SwappableToken,
+  type Transaction,
+} from "../../../types"
+import { assert } from "../../../utils/assert"
+import { isBaseToken } from "../../../utils/token"
+import { depositGenerateAddressMachine } from "../../machines/depositGenerateAddressMachine"
+import { depositNearMachine } from "../../machines/depositNearMachine"
 import { depositUIMachine } from "../../machines/depositUIMachine"
 import { DepositService } from "../services/depositService"
 

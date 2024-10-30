@@ -1,6 +1,5 @@
-import { DepositBlockchainEnum, type SwappableToken } from "src/types"
-import { isBaseToken } from "src/utils"
 import { assign, emit, fromPromise, setup } from "xstate"
+import type { SwappableToken } from "../../types"
 
 export type Context = {
   amount: bigint | null

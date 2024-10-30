@@ -1,6 +1,6 @@
-import { DepositBlockchainEnum } from "src/types"
-import { parseDefuseAsset } from "src/utils"
 import { fromPromise } from "xstate"
+import { DepositBlockchainEnum } from "../../types/deposit"
+import { parseDefuseAsset } from "../../utils/parseDefuseAsset"
 import { getNearNativeBalance, getNearNep141Balance } from "./getBalanceMachine"
 
 export const backgroundBalanceActor = fromPromise(

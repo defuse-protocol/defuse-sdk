@@ -1,4 +1,4 @@
-import { getTx } from "src/services/nearHttpClient"
+import { getTx } from "../../services/nearHttpClient"
 
 export const getNearTxSuccessValue = async ({
   txHash,

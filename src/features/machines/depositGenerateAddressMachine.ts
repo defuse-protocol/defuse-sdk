@@ -1,5 +1,5 @@
-import type { DepositBlockchainEnum } from "src/types"
 import { assign, fromPromise, setup } from "xstate"
+import type { DepositBlockchainEnum } from "../../types/deposit"
 
 type Context = {
   accountId: string | null
