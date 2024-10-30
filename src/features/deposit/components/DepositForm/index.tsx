@@ -21,7 +21,7 @@ import { useModalStore } from "../../../../providers/ModalStoreProvider"
 import { ModalType } from "../../../../stores/modalStore"
 import { DepositBlockchainEnum, type SwappableToken } from "../../../../types"
 import { formatTokenValue } from "../../../../utils/format"
-import { isBaseToken } from "../../../../utils/token"
+import { isBaseToken, isUnifiedToken } from "../../../../utils/token"
 import { DepositUIMachineContext } from "../DepositUIMachineProvider"
 import styles from "./styles.module.css"
 
@@ -116,6 +116,13 @@ export const DepositForm = () => {
     setValue("amount", formatTokenValue(maxValue, token.decimals))
   }
 
+  useEffect(() => {
+    if (token && getDefaultBlockchainOption(token)) {
+      const networkOption = getDefaultBlockchainOption(token)
+      setValue("network", networkOption?.value ?? "")
+    }
+  }, [token, setValue])
+
   return (
     <div className={styles.container}>
       <div className={styles.formWrapper}>
@@ -148,7 +155,11 @@ export const DepositForm = () => {
                       icon: <EmptyIcon />,
                     }}
                     fullWidth
-                    {...field}
+                    value={getDefaultBlockchainOption(token)}
+                    disabled={!isUnifiedToken(token)}
+                    onChange={field.onChange}
+                    name={field.name}
+                    ref={field.ref}
                   />
                 )}
               />
@@ -287,7 +298,7 @@ function getBlockchainsOptions(): Record<
   { label: string; icon: React.ReactNode; value: string }
 > {
   return {
-    near: {
+    [DepositBlockchainEnum.NEAR]: {
       label: "Near",
       icon: (
         <NetworkIcon
@@ -297,7 +308,7 @@ function getBlockchainsOptions(): Record<
       ),
       value: DepositBlockchainEnum.NEAR,
     },
-    ethereum: {
+    [DepositBlockchainEnum.ETHEREUM]: {
       label: "Ethereum",
       icon: (
         <NetworkIcon
@@ -307,7 +318,7 @@ function getBlockchainsOptions(): Record<
       ),
       value: DepositBlockchainEnum.ETHEREUM,
     },
-    base: {
+    [DepositBlockchainEnum.BASE]: {
       label: "Base",
       icon: (
         <NetworkIcon
@@ -322,4 +333,12 @@ function getBlockchainsOptions(): Record<
 
 function shortenTxHash(txHash: string) {
   return `${txHash.slice(0, 5)}...${txHash.slice(-5)}`
+}
+
+function getDefaultBlockchainOption(token: SwappableToken) {
+  if (token && !isUnifiedToken(token)) {
+    const key = `${token.chainName}:${token.chainId}`
+    return getBlockchainsOptions()[key]
+  }
+  return undefined
 }

@@ -1,7 +1,7 @@
 import { TextField } from "@radix-ui/themes"
 import clsx from "clsx"
 import type { ReactNode } from "react"
-import type { FieldValues, Path, UseFormRegister } from "react-hook-form"
+import type { FieldValues } from "react-hook-form"
 import styles from "./styles.module.css"
 
 type Props<T, TFieldValues extends FieldValues> = {
