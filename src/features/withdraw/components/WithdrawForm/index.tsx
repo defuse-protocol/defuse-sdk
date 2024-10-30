@@ -9,7 +9,7 @@ import { Select } from "src/components/Select/Select"
 import { useModalController, useShortAccountId } from "src/hooks"
 import { useTokensStore } from "src/providers/TokensStoreProvider"
 import { ModalType } from "src/stores/modalStore"
-import type { SwappableToken } from "src/types"
+import { DepositBlockchainEnum, type SwappableToken } from "src/types"
 import type { BaseTokenInfo } from "src/types/base"
 import type { WithdrawWidgetProps } from "src/types/withdraw"
 import { FieldComboInput } from "../../../../components/Form/FieldComboInput"
@@ -175,6 +175,7 @@ function getBlockchains() {
           chainName="Near"
         />
       ),
+      value: DepositBlockchainEnum.NEAR,
     },
     ethereum: {
       label: "Ethereum",
@@ -184,6 +185,7 @@ function getBlockchains() {
           chainName="Ethereum"
         />
       ),
+      value: DepositBlockchainEnum.ETHEREUM,
     },
     base: {
       label: "Base",
@@ -193,6 +195,7 @@ function getBlockchains() {
           chainName="Base"
         />
       ),
+      value: DepositBlockchainEnum.BASE,
     },
   }
 }

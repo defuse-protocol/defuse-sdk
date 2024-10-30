@@ -14,9 +14,9 @@ export type DepositEvent = {
 }
 
 export enum DepositBlockchainEnum {
-  NEAR = "near",
-  ETHEREUM = "ethereum",
-  BASE = "base",
+  NEAR = "near:mainnet",
+  ETHEREUM = "eth:1",
+  BASE = "eth:8453",
 }
 
 export interface FunctionCallAction {

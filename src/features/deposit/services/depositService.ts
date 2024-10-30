@@ -3,6 +3,7 @@ import {
   getDepositAddress,
   getSupportedTokens,
 } from "src/services/poaBridgeClient"
+import { parseDefuseAsset } from "src/utils"
 import type { DepositBlockchainEnum, Transaction } from "../../../types/deposit"
 
 export const FT_MAX_GAS_TRANSACTION = `300${"0".repeat(12)}` // 300 TGAS
@@ -100,15 +101,11 @@ export class DepositService {
    */
   async generateDepositAddress(
     accountId: string,
-    defuseAssetId: string
+    chain: DepositBlockchainEnum
   ): Promise<string> {
     try {
-      if (!defuseAssetId) {
-        throw new Error("Defuse asset ID is required")
-      }
-      const [blockchain, network] = defuseAssetId.split(":")
       const supportedTokens = await getSupportedTokens({
-        chains: [`${blockchain}:${network}`],
+        chains: [chain],
       })
 
       if (supportedTokens.tokens.length === 0) {
@@ -117,7 +114,7 @@ export class DepositService {
 
       const generatedDepositAddress = await getDepositAddress({
         account_id: accountId,
-        chain: `${blockchain}:${network}`,
+        chain,
       })
 
       return generatedDepositAddress.address

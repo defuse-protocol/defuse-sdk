@@ -266,35 +266,38 @@ export const DepositForm = () => {
 
 function getBlockchainsOptions(): Record<
   string,
-  { label: string; icon: React.ReactNode }
+  { label: string; icon: React.ReactNode; value: string }
 > {
   return {
     near: {
-      label: DepositBlockchainEnum.NEAR,
+      label: "Near",
       icon: (
         <NetworkIcon
           chainIcon="/static/icons/network/near.svg"
-          chainName={DepositBlockchainEnum.NEAR}
+          chainName="near"
         />
       ),
+      value: DepositBlockchainEnum.NEAR,
     },
     ethereum: {
-      label: DepositBlockchainEnum.ETHEREUM,
+      label: "Ethereum",
       icon: (
         <NetworkIcon
           chainIcon="/static/icons/network/ethereum.svg"
-          chainName={DepositBlockchainEnum.ETHEREUM}
+          chainName="eth"
         />
       ),
+      value: DepositBlockchainEnum.ETHEREUM,
     },
     base: {
-      label: DepositBlockchainEnum.BASE,
+      label: "Base",
       icon: (
         <NetworkIcon
           chainIcon="/static/icons/network/base.svg"
-          chainName={DepositBlockchainEnum.BASE}
+          chainName="base"
         />
       ),
+      value: DepositBlockchainEnum.BASE,
     },
   }
 }

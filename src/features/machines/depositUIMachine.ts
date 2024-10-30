@@ -10,7 +10,7 @@ import {
   setup,
 } from "xstate"
 import type { SwappableToken } from "../../types"
-import type { DepositBlockchainEnum, Transaction } from "../../types/deposit"
+import { DepositBlockchainEnum, type Transaction } from "../../types/deposit"
 import { backgroundBalanceActor } from "./backgroundBalanceActor"
 import {
   type Output as DepositGenerateAddressMachineOutput,
@@ -36,7 +36,6 @@ export type Context = {
   > | null
   tokenList: SwappableToken[]
   userAddress: string
-  tokenAddress: string
   defuseAssetId: string | null
   generatedAddressResult: DepositGenerateAddressMachineOutput | null
 }
@@ -142,7 +141,9 @@ export const depositUIMachine = setup({
         }
         return (
           context.formValues.token.groupedTokens.find(
-            (token) => token.chainName === context.formValues.network
+            (token) =>
+              `${token.chainName.toLowerCase()}:${token.chainId.toString()}` ===
+              context.formValues.network
           )?.defuseAssetId ?? null
         )
       },
@@ -150,7 +151,7 @@ export const depositUIMachine = setup({
     spawnGeneratedAddressActor: assign({
       depositGenerateAddressRef: (
         { context, spawn, self },
-        output: { accountId: string; defuseAssetId: string }
+        output: { accountId: string; chain: DepositBlockchainEnum }
       ) => {
         return spawn("depositGenerateAddressActor", {
           id: "deposit-generate-address",
@@ -165,7 +166,7 @@ export const depositUIMachine = setup({
     },
     isBalanceSufficient: ({ event, context }) => {
       if (event.type === "SUBMIT") {
-        return context.formValues.network === "near"
+        return context.formValues.network === DepositBlockchainEnum.NEAR
           ? context.balance > context.parsedFormValues.amount
           : true
       }
@@ -174,7 +175,7 @@ export const depositUIMachine = setup({
     isDepositNonNearRelevant: ({ context }) => {
       return (
         context.formValues.network != null &&
-        context.formValues.network !== "near" &&
+        context.formValues.network !== DepositBlockchainEnum.NEAR &&
         context.defuseAssetId != null &&
         context.userAddress != null
       )
@@ -200,7 +201,6 @@ export const depositUIMachine = setup({
     depositGenerateAddressRef: null,
     tokenList: input.tokenList,
     userAddress: "",
-    tokenAddress: "",
     defuseAssetId: null,
     generatedAddressResult: null,
   }),
@@ -254,9 +254,9 @@ export const depositUIMachine = setup({
 
             input: ({ context }) => {
               return {
-                assetAddress: context.tokenAddress,
+                defuseAssetId: context.defuseAssetId,
                 userAddress: context.userAddress,
-                network: context.formValues.network ?? "",
+                network: context.formValues.network,
               }
             },
 
@@ -323,12 +323,15 @@ export const depositUIMachine = setup({
           // TODO TypeError: Do not know how to serialize a BigInt
           // assertEvent(event, "AUTO_SUBMIT")
 
-          if (context.defuseAssetId == null || context.userAddress == null) {
-            throw new Error("Asset address or account ID is missing")
+          if (
+            context.formValues.network == null ||
+            context.userAddress == null
+          ) {
+            throw new Error("Chain or account ID is missing")
           }
           return {
             accountId: context.userAddress,
-            defuseAssetId: context.defuseAssetId,
+            chain: context.formValues.network,
           }
         },
 

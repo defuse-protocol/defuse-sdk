@@ -1,8 +1,9 @@
+import type { DepositBlockchainEnum } from "src/types"
 import { assign, fromPromise, setup } from "xstate"
 
 type Context = {
   accountId: string | null
-  defuseAssetId: string | null
+  chain: DepositBlockchainEnum | null
   depositAddress: string | null
 }
 
@@ -14,7 +15,7 @@ type Events = {
 
 type Input = {
   accountId: string
-  defuseAssetId: string
+  chain: DepositBlockchainEnum
 }
 
 export type Output = {
@@ -41,7 +42,7 @@ export const depositGenerateAddressMachine = setup({
   context: ({ input }) => {
     return {
       accountId: input.accountId,
-      defuseAssetId: input.defuseAssetId,
+      chain: input.chain,
       depositAddress: null,
     }
   },
@@ -68,12 +69,12 @@ export const depositGenerateAddressMachine = setup({
     generating: {
       invoke: {
         input: ({ context }) => {
-          if (!context.defuseAssetId || !context.accountId) {
+          if (!context.chain || !context.accountId) {
             throw new Error("Asset address or account ID is missing")
           }
           return {
             accountId: context.accountId as string,
-            defuseAssetId: context.defuseAssetId,
+            chain: context.chain,
           }
         },
         onDone: {

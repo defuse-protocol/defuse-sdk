@@ -1,6 +1,6 @@
 import type * as types from "./types"
 
-const BASE_URL = "https://rpc.mainnet.near.org"
+const BASE_URL = "https://nearrpc.aurora.dev"
 
 async function request(url: string, body: unknown): Promise<Response> {
   let response: Response

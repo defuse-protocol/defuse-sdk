@@ -114,12 +114,12 @@ export function DepositUIMachineProvider({
           depositGenerateAddressActor: depositGenerateAddressMachine.provide({
             actors: {
               generateDepositAddress: fromPromise(async ({ input }) => {
-                const { accountId, defuseAssetId } = input
+                const { accountId, chain } = input
                 assert(accountId != null, "Account ID is not defined")
-                assert(defuseAssetId != null, "Asset is not selected")
+                assert(chain != null, "Chain is not defined")
                 const address = await depositNearService.generateDepositAddress(
                   accountId,
-                  defuseAssetId
+                  chain
                 )
                 console.log("generated address", address)
                 return address
