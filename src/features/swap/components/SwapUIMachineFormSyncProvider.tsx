@@ -27,16 +27,12 @@ export function SwapUIMachineFormSyncProvider({
   onSuccessSwapRef.current = onSuccessSwap
 
   useEffect(() => {
-    // When values are set externally, they trigger "watch" callback too.
-    // In order to avoid, unnecessary state updates need to check if the form is changed by user
-    const sub = watch(async (value, { type, name }) => {
-      if (type === "change" && name != null) {
-        if (name === "amountIn") {
-          actorRef.send({
-            type: "input",
-            params: { [name]: value[name] },
-          })
-        }
+    const sub = watch(async (value, { name }) => {
+      if (name != null && name === "amountIn") {
+        actorRef.send({
+          type: "input",
+          params: { [name]: value[name] },
+        })
       }
     })
     return () => {
