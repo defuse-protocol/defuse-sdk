@@ -21,11 +21,13 @@ type Props<T extends string, TFieldValues extends FieldValues> = {
   label?: string
   fullWidth?: boolean
   disabled?: boolean
-  value?: {
-    label: string
-    icon: React.ReactNode
-    value: string
-  }
+  value?:
+    | {
+        label: string
+        icon: React.ReactNode
+        value: string
+      }
+    | string
   onChange?: (value: string) => void
   innerRef?: React.Ref<HTMLSelectElement>
 }
@@ -52,7 +54,11 @@ export const Select = forwardRef(function Select<
     onChange?: (event: React.ChangeEvent<HTMLSelectElement>) => void
   }
   return (
-    <RadixSelect.Root onValueChange={onChange} value={value?.value} {...rest}>
+    <RadixSelect.Root
+      onValueChange={onChange}
+      value={typeof value === "string" ? value : value?.value}
+      {...rest}
+    >
       <RadixSelect.Trigger
         className={clsx(styles.selectTrigger, {
           [styles.selectTriggerFullWidth || ""]: fullWidth,
