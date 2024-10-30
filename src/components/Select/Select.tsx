@@ -44,11 +44,15 @@ export const Select = forwardRef(function Select<
   ref: React.Ref<HTMLSelectElement>
 ) {
   const registerProps = register ? register(name as Path<TFieldValues>) : {}
-  const { onChange: formOnChange, ...rest } = registerProps as {
-    onChange?: (event: React.ChangeEvent<HTMLSelectElement>) => void
-  }
+
   return (
-    <RadixSelect.Root onValueChange={onChange} value={value} {...rest}>
+    <RadixSelect.Root
+      onValueChange={onChange}
+      value={value}
+      name={name}
+      disabled={disabled}
+      {...registerProps}
+    >
       <RadixSelect.Trigger
         className={clsx(styles.selectTrigger, {
           [styles.selectTriggerFullWidth || ""]: fullWidth,
