@@ -60,6 +60,11 @@ export const ModalDialog = ({
               : defaultMaxWidth
             : defaultMaxWidth
         }
+        onOpenAutoFocus={(e) => {
+          // This is a workaround for focusing the first input in the modal
+          // Focusing first input is annoying for mobile users
+          e.preventDefault()
+        }}
       >
         <VisuallyHidden>
           <Dialog.Title>null</Dialog.Title>
