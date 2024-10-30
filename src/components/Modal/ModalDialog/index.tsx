@@ -1,4 +1,4 @@
-import * as ReactDialog from "@radix-ui/react-dialog"
+import { DialogOverlay } from "@radix-ui/react-dialog"
 import { Dialog, VisuallyHidden } from "@radix-ui/themes"
 import React, {
   type PropsWithChildren,
@@ -50,7 +50,7 @@ export const ModalDialog = ({
 
   return (
     <Dialog.Root open={open} onOpenChange={setOpen}>
-      <ReactDialog.Overlay className="DialogOverlay" />
+      <DialogOverlay className="DialogOverlay" />
       <Dialog.Content
         className="DialogContent p-0 dark:bg-black-800"
         maxWidth={
