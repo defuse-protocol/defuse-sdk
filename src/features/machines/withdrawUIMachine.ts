@@ -28,6 +28,10 @@ import {
   type Output as SwapIntentMachineOutput,
   swapIntentMachine,
 } from "./swapIntentMachine"
+import {
+  type Events as WithdrawFormEvents,
+  withdrawFormReducer,
+} from "./withdrawFormReducer"
 
 export type Context = {
   error: Error | null
@@ -70,14 +74,6 @@ export const withdrawUIMachine = setup({
     context: {} as Context,
     events: {} as
       | {
-          type: "input"
-          params: Partial<{
-            tokenIn: BaseTokenInfo | UnifiedTokenInfo
-            tokenOut: BaseTokenInfo
-            amountIn: string
-          }>
-        }
-      | {
           type: "submit"
           params: {
             userAddress: string
@@ -95,6 +91,7 @@ export const withdrawUIMachine = setup({
         }
       | BackgroundQuoterEvents
       | DepositedBalanceEvents
+      | WithdrawFormEvents
       | PassthroughEvent,
 
     emitted: {} as PassthroughEvent,
@@ -102,6 +99,7 @@ export const withdrawUIMachine = setup({
     children: {} as {
       depositedBalanceRef: "depositedBalanceActor"
       swapRef: "swapActor"
+      withdrawFormRef: "withdrawFormActor"
     },
   },
   actors: {
@@ -112,25 +110,9 @@ export const withdrawUIMachine = setup({
     }),
     swapActor: swapIntentMachine,
     intentStatusActor: intentStatusMachine,
+    withdrawFormActor: withdrawFormReducer,
   },
   actions: {
-    setFormValues: assign({
-      formValues: (
-        { context },
-        {
-          data,
-        }: {
-          data: Partial<{
-            tokenIn: BaseTokenInfo | UnifiedTokenInfo
-            tokenOut: BaseTokenInfo
-            amountIn: string
-          }>
-        }
-      ) => ({
-        ...context.formValues,
-        ...data,
-      }),
-    }),
     parseFormValues: assign({
       parsedFormValues: ({ context }) => {
         try {
@@ -241,6 +223,11 @@ export const withdrawUIMachine = setup({
         return [intentRef, ...context.intentRefs]
       },
     }),
+
+    relayToWithdrawFormRef: sendTo(
+      "withdrawFormRef",
+      (_, event: WithdrawFormEvents) => event
+    ),
   },
   guards: {
     isQuoteRelevant: ({ context }) => {
@@ -271,7 +258,16 @@ export const withdrawUIMachine = setup({
     tokenList: input.tokenList,
   }),
 
-  entry: ["spawnBackgroundQuoterRef", "spawnDepositedBalanceRef"],
+  entry: [
+    "spawnBackgroundQuoterRef",
+    "spawnDepositedBalanceRef",
+    spawnChild("withdrawFormActor", {
+      id: "withdrawFormRef",
+      input: ({ context }) => ({
+        tokenIn: context.formValues.tokenIn,
+      }),
+    }),
+  ],
 
   on: {
     INTENT_SETTLED: {
@@ -316,7 +312,7 @@ export const withdrawUIMachine = setup({
           actions: "clearIntentCreationResult",
         },
 
-        input: {
+        "WITHDRAW_FORM.*": {
           target: ".validating",
           actions: [
             "clearQuote",
@@ -324,8 +320,8 @@ export const withdrawUIMachine = setup({
             "sendToBackgroundQuoterRefPause",
             "clearError",
             {
-              type: "setFormValues",
-              params: ({ event }) => ({ data: event.params }),
+              type: "relayToWithdrawFormRef",
+              params: ({ event }) => event,
             },
             "parseFormValues",
           ],

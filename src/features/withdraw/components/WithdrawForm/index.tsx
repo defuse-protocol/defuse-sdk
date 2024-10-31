@@ -17,7 +17,7 @@ import { isBaseToken } from "../../../../utils"
 import { assert } from "../../../../utils/assert"
 import { formatTokenValue } from "../../../../utils/format"
 import { balanceSelector } from "../../../swap/components/SwapForm"
-import { SwapUIMachineContext } from "../../../swap/components/SwapUIMachineProvider"
+import { WithdrawUIMachineContext } from "../../WithdrawUIMachineContext"
 import styles from "./styles.module.css"
 
 export type WithdrawFormNearValues = {
@@ -34,7 +34,12 @@ export const WithdrawForm = ({
   tokenList,
   amountOutFormatted,
 }: WithdrawFormProps) => {
-  const actorRef = SwapUIMachineContext.useActorRef()
+  const actorRef = WithdrawUIMachineContext.useActorRef()
+
+  const formRef = WithdrawUIMachineContext.useSelector(
+    (state) => state.children.withdrawFormRef
+  )
+  assert(formRef != null, "Form ref must be defined")
 
   const depositedBalanceRef = useSelector(
     actorRef,
@@ -42,7 +47,6 @@ export const WithdrawForm = ({
   )
 
   useEffect(() => {
-    console.log({ accountId })
     if (accountId != null) {
       actorRef.send({
         type: "LOGIN",
@@ -62,23 +66,23 @@ export const WithdrawForm = ({
     return () => s.unsubscribe()
   }, [actorRef])
 
-  const { tokenIn, tokenOut, blockchainView } =
-    SwapUIMachineContext.useSelector((state) => {
-      const { tokenIn, tokenOut } = state.context.formValues
-
-      // Sanity check
-      assert(isBaseToken(tokenOut), "Token out must be base token")
+  const { token, blockchain, amount, recipient } = useSelector(
+    formRef,
+    (state) => {
+      const { tokenOut } = state.context
 
       return {
-        blockchainView: tokenOut.chainName,
-        tokenIn,
-        tokenOut,
+        blockchain: tokenOut.chainName,
+        token: state.context.tokenIn,
+        amount: state.context.amount,
+        recipient: state.context.recipient,
       }
-    })
+    }
+  )
 
   const tokenInBalance = useSelector(
     depositedBalanceRef,
-    balanceSelector(tokenIn)
+    balanceSelector(token)
   )
 
   const {
@@ -89,6 +93,10 @@ export const WithdrawForm = ({
     formState: { errors },
   } = useForm<WithdrawFormNearValues>({
     reValidateMode: "onSubmit",
+    values: {
+      amountIn: amount,
+      recipient: recipient,
+    },
   })
 
   const { setModalType, data: modalSelectAssetsData } = useModalController<{
@@ -102,7 +110,7 @@ export const WithdrawForm = ({
     updateTokens(tokenList)
     setModalType(ModalType.MODAL_SELECT_ASSETS, {
       fieldName: "tokenIn",
-      selectToken: tokenIn,
+      selectToken: token,
       balances: depositedBalanceRef?.getSnapshot().context.balances,
     })
   }
@@ -112,27 +120,10 @@ export const WithdrawForm = ({
    */
   useEffect(() => {
     if (modalSelectAssetsData?.token) {
-      const nextTokenIn = modalSelectAssetsData.token
-
-      const tokenOut = actorRef.getSnapshot().context.formValues.tokenOut
-      // Sanity check
-      assert(isBaseToken(tokenOut), "Token out must be base token")
-
-      const selectedChainName = tokenOut.chainName
-
-      const nextTokenOut = isBaseToken(nextTokenIn)
-        ? nextTokenIn
-        : (nextTokenIn.groupedTokens.find(
-            (t) => t.chainName === selectedChainName
-          ) ??
-          // biome-ignore lint/style/noNonNullAssertion: groupedTokens is not empty
-          nextTokenIn.groupedTokens[0]!)
-
       actorRef.send({
-        type: "input",
+        type: "WITHDRAW_FORM.UPDATE_TOKEN",
         params: {
-          tokenIn: nextTokenIn,
-          tokenOut: nextTokenOut,
+          token: modalSelectAssetsData.token,
         },
       })
     }
@@ -145,8 +136,14 @@ export const WithdrawForm = ({
       if (type === "change" && name != null) {
         if (name === "amountIn") {
           actorRef.send({
-            type: "input",
-            params: { [name]: value[name] },
+            type: "WITHDRAW_FORM.UPDATE_AMOUNT",
+            params: { amount: value[name] ?? "" },
+          })
+        }
+        if (name === "recipient") {
+          actorRef.send({
+            type: "WITHDRAW_FORM.RECIPIENT",
+            params: { recipient: value[name] ?? "" },
           })
         }
       }
@@ -156,9 +153,9 @@ export const WithdrawForm = ({
     }
   }, [watch, actorRef])
 
-  const availableBlockchains = isBaseToken(tokenIn)
-    ? [tokenIn.chainName]
-    : tokenIn.groupedTokens.map((token) => token.chainName)
+  const availableBlockchains = isBaseToken(token)
+    ? [token.chainName]
+    : token.groupedTokens.map((token) => token.chainName)
 
   const blockchainSelectItems = Object.fromEntries(
     allBlockchains
@@ -184,38 +181,18 @@ export const WithdrawForm = ({
                 icon: <EmptyIcon />,
               }}
               fullWidth
-              value={blockchainView}
+              value={blockchain}
               onChange={(value) => {
-                if (value === "") {
-                  /**
-                   * For some reason, Select emits empty string,
-                   * when the value is set to a value that is not in the list (?).
-                   */
-                  return
-                }
-
-                // Double check that the value is correct
-                assert(
-                  availableBlockchains.includes(value),
-                  `Unexpected blockchain value "${value}"`
-                )
-
-                const tokenOut = isBaseToken(tokenIn)
-                  ? tokenIn
-                  : (tokenIn.groupedTokens.find((t) => t.chainName === value) ??
-                    // biome-ignore lint/style/noNonNullAssertion: groupedTokens is not empty
-                    tokenIn.groupedTokens[0]!)
-
                 actorRef.send({
-                  type: "input",
-                  params: { tokenOut },
+                  type: "WITHDRAW_FORM.UPDATE_BLOCKCHAIN",
+                  params: { blockchain: value },
                 })
               }}
             />
           </div>
           <FieldComboInput<WithdrawFormNearValues>
             fieldName="amountIn"
-            selected={tokenIn}
+            selected={token}
             handleSelect={() => {
               handleSelect()
             }}
@@ -249,8 +226,8 @@ export const WithdrawForm = ({
           >
             <Text>Received amount</Text>
             <Text className={styles.receivedAmountValue}>
-              {formatTokenValue(amountOutFormatted, tokenOut.decimals)}{" "}
-              {tokenOut.symbol} @ {renderBlockchainLabel(tokenOut.chainName)}
+              {formatTokenValue(amountOutFormatted, token.decimals)}{" "}
+              {token.symbol} @ {renderBlockchainLabel(blockchain)}
             </Text>
           </Flex>
           <div className={styles.buttonGroup}>
@@ -320,8 +297,8 @@ const allBlockchains = [
 function renderBlockchainLabel(chainName: string): string {
   const blockchain = allBlockchains.find((a) => a.value === chainName)
   if (blockchain != null) {
-    console.warn(`Unknown blockchain: ${chainName}`)
     return blockchain.label
   }
+  console.warn(`Unknown blockchain: ${chainName}`)
   return chainName
 }
