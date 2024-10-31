@@ -1,6 +1,7 @@
 import { PersonIcon } from "@radix-ui/react-icons"
 import { Button, Flex, Spinner, Text } from "@radix-ui/themes"
 import { useSelector } from "@xstate/react"
+import { parseUnits } from "ethers"
 import { useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { EmptyIcon } from "../../../../components/EmptyIcon"
@@ -120,14 +121,20 @@ export const WithdrawForm = ({
    */
   useEffect(() => {
     if (modalSelectAssetsData?.token) {
+      let parsedAmount = 0n
+      try {
+        parsedAmount = parseUnits(amount, token.decimals)
+      } catch {}
+
       actorRef.send({
         type: "WITHDRAW_FORM.UPDATE_TOKEN",
         params: {
           token: modalSelectAssetsData.token,
+          parsedAmount: parsedAmount,
         },
       })
     }
-  }, [modalSelectAssetsData, actorRef])
+  }, [modalSelectAssetsData, actorRef, token.decimals, amount])
 
   useEffect(() => {
     // When values are set externally, they trigger "watch" callback too.
@@ -135,9 +142,16 @@ export const WithdrawForm = ({
     const sub = watch(async (value, { type, name }) => {
       if (type === "change" && name != null) {
         if (name === "amountIn") {
+          const amount = value[name] ?? ""
+
+          let parsedAmount = 0n
+          try {
+            parsedAmount = parseUnits(amount, token.decimals)
+          } catch {}
+
           actorRef.send({
             type: "WITHDRAW_FORM.UPDATE_AMOUNT",
-            params: { amount: value[name] ?? "" },
+            params: { amount, parsedAmount },
           })
         }
         if (name === "recipient") {
@@ -151,7 +165,7 @@ export const WithdrawForm = ({
     return () => {
       sub.unsubscribe()
     }
-  }, [watch, actorRef])
+  }, [watch, actorRef, token.decimals])
 
   const availableBlockchains = isBaseToken(token)
     ? [token.chainName]
@@ -281,6 +295,16 @@ const allBlockchains = [
       />
     ),
     value: "base",
+  },
+  {
+    label: "Arbitrum",
+    icon: (
+      <NetworkIcon
+        chainIcon="/static/icons/network/arbitrum.svg"
+        chainName="Arbitrum"
+      />
+    ),
+    value: "arbitrum",
   },
   {
     label: "Bitcoin",

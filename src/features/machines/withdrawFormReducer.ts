@@ -8,18 +8,30 @@ export type Events =
       type: "WITHDRAW_FORM.UPDATE_TOKEN"
       params: {
         token: BaseTokenInfo | UnifiedTokenInfo
+        /**
+         * It's important to provide `parsedAmount` here, because the actual amount is
+         * different because of the decimals. We cannot parse it here, because we don't
+         * know what format UI uses to display the amount.
+         */
+        parsedAmount: bigint
       }
     }
   | {
       type: "WITHDRAW_FORM.UPDATE_BLOCKCHAIN"
       params: {
         blockchain: string
+        /**
+         * Don't need to provide `parsedAmount` here, because amount is not
+         * expected to change when blockchain changes, because decimals for
+         * a token are the same across all blockchains.
+         */
       }
     }
   | {
       type: "WITHDRAW_FORM.UPDATE_AMOUNT"
       params: {
         amount: string
+        parsedAmount: bigint
       }
     }
   | {
@@ -33,6 +45,7 @@ type State = {
   tokenIn: BaseTokenInfo | UnifiedTokenInfo
   tokenOut: BaseTokenInfo
   amount: string
+  parsedAmount: bigint
   recipient: string
 }
 
@@ -43,6 +56,7 @@ export const withdrawFormReducer = fromTransition(
       case "WITHDRAW_FORM.UPDATE_TOKEN": {
         return {
           ...state,
+          parsedAmount: event.params.parsedAmount,
           tokenIn: event.params.token,
           tokenOut: getWithdrawTokenWithFallback(
             event.params.token,
@@ -62,6 +76,7 @@ export const withdrawFormReducer = fromTransition(
       case "WITHDRAW_FORM.UPDATE_AMOUNT": {
         return {
           ...state,
+          parsedAmount: event.params.parsedAmount,
           amount: event.params.amount,
         }
       }
@@ -84,6 +99,7 @@ export const withdrawFormReducer = fromTransition(
       tokenIn: input.tokenIn,
       tokenOut: getWithdrawTokenWithFallback(input.tokenIn, null),
       amount: "",
+      parsedAmount: 0n,
       recipient: "",
     }
   }
