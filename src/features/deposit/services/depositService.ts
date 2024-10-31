@@ -1,10 +1,10 @@
+import type { BlockchainEnum } from "src/types"
 import {
   getDepositAddress,
   getSupportedTokens,
 } from "../../../services/poaBridgeClient"
-import type { DepositBlockchainEnum, Transaction } from "../../../types/deposit"
+import type { Transaction } from "../../../types/deposit"
 import { getNearTxSuccessValue } from "../../machines/getTxMachine"
-
 export const FT_MAX_GAS_TRANSACTION = `300${"0".repeat(12)}` // 300 TGAS
 export const FT_DEPOSIT_GAS = `30${"0".repeat(12)}` // 30 TGAS
 
@@ -100,7 +100,7 @@ export class DepositService {
    */
   async generateDepositAddress(
     accountId: string,
-    chain: DepositBlockchainEnum
+    chain: BlockchainEnum
   ): Promise<string> {
     try {
       const supportedTokens = await getSupportedTokens({

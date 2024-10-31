@@ -10,7 +10,7 @@ import { Select } from "../../../../components/Select/Select"
 import { useModalController, useShortAccountId } from "../../../../hooks"
 import { useTokensStore } from "../../../../providers/TokensStoreProvider"
 import { ModalType } from "../../../../stores/modalStore"
-import { DepositBlockchainEnum, type SwappableToken } from "../../../../types"
+import { BlockchainEnum, type SwappableToken } from "../../../../types"
 import type { BaseTokenInfo } from "../../../../types/base"
 import type { WithdrawWidgetProps } from "../../../../types/withdraw"
 import styles from "./styles.module.css"
@@ -175,7 +175,7 @@ function getBlockchains() {
           chainName="Near"
         />
       ),
-      value: DepositBlockchainEnum.NEAR,
+      value: BlockchainEnum.NEAR,
     },
     ethereum: {
       label: "Ethereum",
@@ -185,7 +185,7 @@ function getBlockchains() {
           chainName="Ethereum"
         />
       ),
-      value: DepositBlockchainEnum.ETHEREUM,
+      value: BlockchainEnum.ETHEREUM,
     },
     base: {
       label: "Base",
@@ -195,7 +195,7 @@ function getBlockchains() {
           chainName="Base"
         />
       ),
-      value: DepositBlockchainEnum.BASE,
+      value: BlockchainEnum.BASE,
     },
   }
 }

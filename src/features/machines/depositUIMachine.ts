@@ -1,7 +1,8 @@
 import { parseUnits } from "ethers"
+import { assetNetworkAdapter } from "src/utils/adapters"
 import { type ActorRefFrom, assertEvent, assign, setup } from "xstate"
 import type { SwappableToken } from "../../types"
-import { DepositBlockchainEnum } from "../../types/deposit"
+import { BlockchainEnum } from "../../types"
 import { isBaseToken } from "../../utils/token"
 import { backgroundBalanceActor } from "./backgroundBalanceActor"
 import {
@@ -19,7 +20,7 @@ export type Context = {
   nativeBalance: bigint
   formValues: {
     token: SwappableToken | null
-    network: DepositBlockchainEnum | null
+    network: BlockchainEnum | null
     amount: string
   }
   parsedFormValues: {
@@ -46,7 +47,7 @@ export const depositUIMachine = setup({
           type: "INPUT"
           params: Partial<{
             token: SwappableToken
-            network: DepositBlockchainEnum
+            network: BlockchainEnum
             amount: string
           }>
         }
@@ -80,7 +81,7 @@ export const depositUIMachine = setup({
         }: {
           data: Partial<{
             token: SwappableToken
-            network: DepositBlockchainEnum
+            network: BlockchainEnum
             amount: string
           }>
         }
@@ -131,7 +132,7 @@ export const depositUIMachine = setup({
         return (
           context.formValues.token.groupedTokens.find(
             (token) =>
-              `${token.chainName.toLowerCase()}:${token.chainId.toString()}` ===
+              assetNetworkAdapter[token.chainName] ===
               context.formValues.network
           )?.defuseAssetId ?? null
         )
@@ -140,7 +141,7 @@ export const depositUIMachine = setup({
     spawnGeneratedAddressActor: assign({
       depositGenerateAddressRef: (
         { context, spawn, self },
-        output: { accountId: string; chain: DepositBlockchainEnum }
+        output: { accountId: string; chain: BlockchainEnum }
       ) => {
         return spawn("depositGenerateAddressActor", {
           id: "deposit-generate-address",
@@ -158,7 +159,7 @@ export const depositUIMachine = setup({
     },
     isBalanceSufficient: ({ event, context }) => {
       if (event.type === "SUBMIT") {
-        return context.formValues.network === DepositBlockchainEnum.NEAR
+        return context.formValues.network === BlockchainEnum.NEAR
           ? context.balance > context.parsedFormValues.amount
           : true
       }
@@ -167,7 +168,7 @@ export const depositUIMachine = setup({
     isDepositNonNearRelevant: ({ context }) => {
       return (
         context.formValues.network != null &&
-        context.formValues.network !== DepositBlockchainEnum.NEAR &&
+        context.formValues.network !== BlockchainEnum.NEAR &&
         context.defuseAssetId != null &&
         context.userAddress != null
       )

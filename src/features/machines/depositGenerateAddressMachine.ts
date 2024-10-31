@@ -1,9 +1,9 @@
+import type { BlockchainEnum } from "src/types"
 import { assign, fromPromise, setup } from "xstate"
-import type { DepositBlockchainEnum } from "../../types/deposit"
 
 type Context = {
   accountId: string | null
-  chain: DepositBlockchainEnum | null
+  chain: BlockchainEnum | null
   depositAddress: string | null
 }
 
@@ -15,7 +15,7 @@ type Events = {
 
 type Input = {
   accountId: string
-  chain: DepositBlockchainEnum
+  chain: BlockchainEnum
 }
 
 export type Output = {

@@ -1,6 +1,6 @@
 import { type PropsWithChildren, useEffect } from "react"
 import { useFormContext } from "react-hook-form"
-import type { DepositBlockchainEnum } from "../../../types/deposit"
+import type { BlockchainEnum } from "../../../types"
 import type { DepositFormValues } from "./DepositForm"
 import { DepositUIMachineContext } from "./DepositUIMachineProvider"
 
@@ -20,7 +20,7 @@ export function DepositUIMachineFormSyncProvider({
       if (name === "network") {
         actorRef.send({
           type: "INPUT",
-          params: { [name]: value[name] as DepositBlockchainEnum },
+          params: { [name]: value[name] as BlockchainEnum },
         })
       }
       if (name === "amount") {
