@@ -11,6 +11,7 @@ import { useEffect } from "react"
 import CopyToClipboard from "react-copy-to-clipboard"
 import { Controller, useFormContext } from "react-hook-form"
 import { useGetSupportedTokens } from "src/hooks/usePoABridge"
+import { assetNetworkAdapter } from "src/utils/adapters"
 import { AssetComboIcon } from "../../../../components/Asset/AssetComboIcon"
 import { EmptyIcon } from "../../../../components/EmptyIcon"
 import { Form } from "../../../../components/Form"
@@ -20,7 +21,7 @@ import { NetworkIcon } from "../../../../components/Network/NetworkIcon"
 import { Select } from "../../../../components/Select/Select"
 import { useModalStore } from "../../../../providers/ModalStoreProvider"
 import { ModalType } from "../../../../stores/modalStore"
-import { DepositBlockchainEnum, type SwappableToken } from "../../../../types"
+import { BlockchainEnum, type SwappableToken } from "../../../../types"
 import { formatTokenValue } from "../../../../utils/format"
 import { isBaseToken, isUnifiedToken } from "../../../../utils/token"
 import { DepositUIMachineContext } from "../DepositUIMachineProvider"
@@ -172,7 +173,7 @@ export const DepositForm = () => {
               />
             </div>
           )}
-          {network === DepositBlockchainEnum.NEAR && (
+          {network === BlockchainEnum.NEAR && (
             <>
               <Input
                 name="amount"
@@ -206,7 +207,7 @@ export const DepositForm = () => {
               </div>
             </>
           )}
-          {network && network !== DepositBlockchainEnum.NEAR && (
+          {network && network !== BlockchainEnum.NEAR && (
             <div className={styles.containerQr}>
               <h2 className={styles.title}>Deposit to the address below</h2>
               <p className={styles.instruction}>
@@ -305,7 +306,7 @@ function getBlockchainsOptions(): Record<
   { label: string; icon: React.ReactNode; value: string }
 > {
   return {
-    [DepositBlockchainEnum.NEAR]: {
+    [BlockchainEnum.NEAR]: {
       label: "Near",
       icon: (
         <NetworkIcon
@@ -313,9 +314,9 @@ function getBlockchainsOptions(): Record<
           chainName="near"
         />
       ),
-      value: DepositBlockchainEnum.NEAR,
+      value: BlockchainEnum.NEAR,
     },
-    [DepositBlockchainEnum.ETHEREUM]: {
+    [BlockchainEnum.ETHEREUM]: {
       label: "Ethereum",
       icon: (
         <NetworkIcon
@@ -323,9 +324,9 @@ function getBlockchainsOptions(): Record<
           chainName="eth"
         />
       ),
-      value: DepositBlockchainEnum.ETHEREUM,
+      value: BlockchainEnum.ETHEREUM,
     },
-    [DepositBlockchainEnum.BASE]: {
+    [BlockchainEnum.BASE]: {
       label: "Base",
       icon: (
         <NetworkIcon
@@ -333,9 +334,9 @@ function getBlockchainsOptions(): Record<
           chainName="base"
         />
       ),
-      value: DepositBlockchainEnum.BASE,
+      value: BlockchainEnum.BASE,
     },
-    [DepositBlockchainEnum.ARBITRUM]: {
+    [BlockchainEnum.ARBITRUM]: {
       label: "Arbitrum",
       icon: (
         <NetworkIcon
@@ -343,9 +344,9 @@ function getBlockchainsOptions(): Record<
           chainName="arbitrum"
         />
       ),
-      value: DepositBlockchainEnum.ARBITRUM,
+      value: BlockchainEnum.ARBITRUM,
     },
-    [DepositBlockchainEnum.BITCOIN]: {
+    [BlockchainEnum.BITCOIN]: {
       label: "Bitcoin",
       icon: (
         <NetworkIcon
@@ -353,7 +354,7 @@ function getBlockchainsOptions(): Record<
           chainName="bitcoin"
         />
       ),
-      value: DepositBlockchainEnum.BITCOIN,
+      value: BlockchainEnum.BITCOIN,
     },
   }
 }
@@ -371,7 +372,7 @@ function filterBlockchainsOptions(
         >,
         token
       ) => {
-        const key = adapterMap[token.chainName]
+        const key = assetNetworkAdapter[token.chainName]
         if (key) {
           const option = getBlockchainsOptions()[key]
           if (option) {
@@ -394,16 +395,8 @@ function getDefaultBlockchainOptionValue(
   token: SwappableToken
 ): string | undefined {
   if (!isUnifiedToken(token)) {
-    const key = adapterMap[token.chainName]
+    const key = assetNetworkAdapter[token.chainName]
     return key ? getBlockchainsOptions()[key]?.value : undefined
   }
   return undefined
-}
-
-const adapterMap: Record<string, DepositBlockchainEnum> = {
-  near: DepositBlockchainEnum.NEAR,
-  eth: DepositBlockchainEnum.ETHEREUM,
-  base: DepositBlockchainEnum.BASE,
-  arbitrum: DepositBlockchainEnum.ARBITRUM,
-  bitcoin: DepositBlockchainEnum.BITCOIN,
 }

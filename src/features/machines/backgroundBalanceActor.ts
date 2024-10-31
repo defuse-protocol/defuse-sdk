@@ -1,5 +1,5 @@
+import { BlockchainEnum } from "src/types"
 import { fromPromise } from "xstate"
-import { DepositBlockchainEnum } from "../../types/deposit"
 import { parseDefuseAsset } from "../../utils/parseDefuseAsset"
 import { getNearNativeBalance, getNearNep141Balance } from "./getBalanceMachine"
 
@@ -33,7 +33,7 @@ export const backgroundBalanceActor = fromPromise(
     }
 
     switch (network) {
-      case DepositBlockchainEnum.NEAR:
+      case BlockchainEnum.NEAR:
         return {
           balance: assetAddress
             ? await getNearNep141Balance({

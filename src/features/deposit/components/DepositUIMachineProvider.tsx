@@ -7,11 +7,8 @@ import {
   fromPromise,
 } from "xstate"
 import { settings } from "../../../config/settings"
-import {
-  DepositBlockchainEnum,
-  type SwappableToken,
-  type Transaction,
-} from "../../../types"
+import type { SwappableToken, Transaction } from "../../../types"
+import { BlockchainEnum } from "../../../types"
 import { assert } from "../../../utils/assert"
 import { isBaseToken } from "../../../utils/token"
 import { depositGenerateAddressMachine } from "../../machines/depositGenerateAddressMachine"
@@ -78,7 +75,7 @@ export function DepositUIMachineProvider({
                   : (asset.groupedTokens.find(
                       (token) =>
                         `${token.chainName.toLowerCase()}:${token.chainId.toString()}` ===
-                        DepositBlockchainEnum.NEAR
+                        BlockchainEnum.NEAR
                     )?.address ?? null)
 
                 assert(tokenAddress != null, "Token address is not defined")

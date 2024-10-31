@@ -214,21 +214,6 @@ export type JobsDetails = {
   link: string
 }
 
-export enum BlockchainEnum {
-  Near = "near",
-  Eth = "eth",
-  Btc = "btc",
-}
-
-export enum NetworkEnum {
-  Mainnet = "mainnet",
-  Base = "8453",
-}
-
-export enum ContractIdEnum {
-  Native = "native",
-}
-
 export interface NearViewAccount {
   amount: string
   block_hash: string
@@ -253,4 +238,12 @@ export interface BitcoinPriceInUsdEntity {
   bitcoin: {
     usd: number
   }
+}
+
+export enum BlockchainEnum {
+  NEAR = "near:mainnet",
+  ETHEREUM = "eth:1",
+  BASE = "eth:8453",
+  ARBITRUM = "eth:42161",
+  BITCOIN = "btc:mainnet",
 }
