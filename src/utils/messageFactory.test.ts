@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest"
+import { FT_MAX_GAS_TRANSACTION } from "../features/deposit/services/depositService"
 import {
   makeInnerSwapAndWithdrawMessage,
   makeInnerSwapMessage,
@@ -79,6 +80,7 @@ describe("makeInnerSwapAndWithdrawMessage()", () => {
           },
           {
             "amount": "200",
+            "gas": "15000000000000",
             "intent": "ft_withdraw",
             "receiver_id": "receiver.near",
             "token": "bar.near",
@@ -110,6 +112,7 @@ describe("makeInnerSwapAndWithdrawMessage()", () => {
         "intents": [
           {
             "amount": "200",
+            "gas": "15000000000000",
             "intent": "ft_withdraw",
             "receiver_id": "receiver.near",
             "token": "bar.near",
@@ -126,8 +129,7 @@ describe("makeInnerSwapAndWithdrawMessage()", () => {
       withdrawParams: {
         type: "via_poa_bridge",
         amount: 200n,
-        tokenAccountId: "bar.near",
-        poaBridgeAccountId: "poa.near",
+        tokenAccountId: "bar-poa-bridge-token.near",
         destinationAddress: "0xdead",
       },
       signerId: "user.near",
@@ -142,10 +144,11 @@ describe("makeInnerSwapAndWithdrawMessage()", () => {
         "intents": [
           {
             "amount": "200",
+            "gas": "15000000000000",
             "intent": "ft_withdraw",
-            "msg": "WITHDRAW_TO:0xdead",
-            "receiver_id": "poa.near",
-            "token": "bar.near",
+            "memo": "WITHDRAW_TO:0xdead",
+            "receiver_id": "bar-poa-bridge-token.near",
+            "token": "bar-poa-bridge-token.near",
           },
         ],
         "signer_id": "user.near",

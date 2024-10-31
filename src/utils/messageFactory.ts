@@ -6,6 +6,8 @@ import type {
 } from "../types/defuse-contracts-types"
 import { assert } from "./assert"
 
+export const ONE_TGAS = 1_000000000000n
+
 export function makeInnerSwapMessage({
   amountsIn,
   amountsOut,
@@ -86,7 +88,6 @@ type WithdrawParams =
       type: "via_poa_bridge"
       amount: bigint
       tokenAccountId: string
-      poaBridgeAccountId: string
       destinationAddress: string
     }
 
@@ -99,15 +100,17 @@ function makeInnerWithdrawMessage(params: WithdrawParams): Intent {
         token: params.tokenAccountId,
         receiver_id: params.receiverId,
         amount: params.amount.toString(),
+        gas: (15n * ONE_TGAS).toString(), // this is enough for a simple transfer
       }
 
     case "via_poa_bridge":
       return {
         intent: "ft_withdraw",
         token: params.tokenAccountId,
-        receiver_id: params.poaBridgeAccountId,
+        receiver_id: params.tokenAccountId,
         amount: params.amount.toString(),
-        msg: `WITHDRAW_TO:${params.destinationAddress}`,
+        memo: `WITHDRAW_TO:${params.destinationAddress}`,
+        gas: (15n * ONE_TGAS).toString(), // this is enough for a simple transfer
       }
 
     default:
