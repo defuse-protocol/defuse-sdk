@@ -161,7 +161,9 @@ export const DepositForm = () => {
                       icon: <EmptyIcon />,
                     }}
                     fullWidth
-                    value={network || ""}
+                    value={
+                      getDefaultBlockchainOptionValue(token) || network || ""
+                    }
                     disabled={!isUnifiedToken(token)}
                     onChange={field.onChange}
                     name={field.name}
