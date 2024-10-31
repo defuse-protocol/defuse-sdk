@@ -11,7 +11,6 @@ import {
   spawnChild,
 } from "xstate"
 import { settings } from "../../config/settings"
-import type { SwappableToken } from "../../types"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../types/base"
 import type { Transaction } from "../../types/deposit"
 import {
@@ -34,8 +33,8 @@ export type Context = {
   error: Error | null
   quote: AggregatedQuote | null
   formValues: {
-    tokenIn: SwappableToken
-    tokenOut: SwappableToken
+    tokenIn: BaseTokenInfo | UnifiedTokenInfo
+    tokenOut: BaseTokenInfo
     amountIn: string
   }
   parsedFormValues: {
@@ -43,7 +42,7 @@ export type Context = {
   }
   intentCreationResult: SwapIntentMachineOutput | null
   intentRefs: ActorRefFrom<typeof intentStatusMachine>[]
-  tokenList: SwappableToken[]
+  tokenList: (BaseTokenInfo | UnifiedTokenInfo)[]
 }
 
 type PassthroughEvent = {
@@ -52,6 +51,10 @@ type PassthroughEvent = {
     intentHash: string
     txHash: string
     tokenIn: BaseTokenInfo | UnifiedTokenInfo
+    /**
+     * This is not true, because tokenOut should be `BaseTokenInfo`.
+     * It left `BaseTokenInfo | UnifiedTokenInfo` for compatibility with `intentStatusActor`.
+     */
     tokenOut: BaseTokenInfo | UnifiedTokenInfo
     quote: AggregatedQuote
   }
@@ -60,17 +63,17 @@ type PassthroughEvent = {
 export const withdrawUIMachine = setup({
   types: {
     input: {} as {
-      tokenIn: SwappableToken
-      tokenOut: SwappableToken
-      tokenList: SwappableToken[]
+      tokenIn: BaseTokenInfo | UnifiedTokenInfo
+      tokenOut: BaseTokenInfo
+      tokenList: (BaseTokenInfo | UnifiedTokenInfo)[]
     },
     context: {} as Context,
     events: {} as
       | {
           type: "input"
           params: Partial<{
-            tokenIn: SwappableToken
-            tokenOut: SwappableToken
+            tokenIn: BaseTokenInfo | UnifiedTokenInfo
+            tokenOut: BaseTokenInfo
             amountIn: string
           }>
         }
@@ -118,8 +121,8 @@ export const withdrawUIMachine = setup({
           data,
         }: {
           data: Partial<{
-            tokenIn: SwappableToken
-            tokenOut: SwappableToken
+            tokenIn: BaseTokenInfo | UnifiedTokenInfo
+            tokenOut: BaseTokenInfo
             amountIn: string
           }>
         }
