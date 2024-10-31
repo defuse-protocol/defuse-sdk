@@ -1,6 +1,6 @@
 {
   "name": "@defuse-protocol/defuse-sdk",
-  "version": "1.31.2",
+  "version": "1.32.0",
   "author": "Defuse Protocol",
   "license": "MIT",
   "type": "module",
