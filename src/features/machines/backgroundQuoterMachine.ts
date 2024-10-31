@@ -4,14 +4,21 @@ import type { BaseTokenInfo, UnifiedTokenInfo } from "../../types/base"
 import { isBaseToken } from "../../utils"
 import { type AggregatedQuote, queryQuote } from "./queryQuoteMachine"
 
-export type QuoteInput = {
-  tokenIn: BaseTokenInfo | UnifiedTokenInfo
-  tokenOut: BaseTokenInfo | UnifiedTokenInfo
-  amountIn: bigint
-  balances: Record<BaseTokenInfo["defuseAssetId"], bigint>
-}
+export type QuoteInput =
+  | {
+      tokenIn: BaseTokenInfo | UnifiedTokenInfo
+      tokenOut: BaseTokenInfo | UnifiedTokenInfo
+      amountIn: bigint
+      balances: Record<BaseTokenInfo["defuseAssetId"], bigint>
+    }
+  | {
+      tokensIn: Array<BaseTokenInfo>
+      tokenOut: BaseTokenInfo
+      amountIn: bigint
+      balances: Record<BaseTokenInfo["defuseAssetId"], bigint>
+    }
 
-type Events =
+export type Events =
   | {
       type: "NEW_QUOTE_INPUT"
       params: QuoteInput
@@ -20,14 +27,14 @@ type Events =
       type: "PAUSE"
     }
 
-export type ChildEvent = {
+export type ParentEvents = {
   type: "NEW_QUOTE"
   params: {
     quoteInput: QuoteInput
     quote: AggregatedQuote
   }
 }
-type ParentActor = ActorRef<Snapshot<unknown>, ChildEvent>
+type ParentActor = ActorRef<Snapshot<unknown>, ParentEvents>
 
 type Input = {
   parentRef: ParentActor
@@ -99,8 +106,10 @@ async function pollQuoteLoop(
 
     queryQuote(
       {
-        tokensIn: getUnderlyingDefuseAssetIds(quoteInput.tokenIn),
-        tokensOut: getUnderlyingDefuseAssetIds(quoteInput.tokenOut),
+        tokensIn: getUnderlyingDefuseAssetIds(
+          "tokensIn" in quoteInput ? quoteInput.tokensIn : [quoteInput.tokenIn]
+        ),
+        tokensOut: getUnderlyingDefuseAssetIds([quoteInput.tokenOut]),
         amountIn: quoteInput.amountIn,
         balances: quoteInput.balances,
       },
@@ -135,11 +144,13 @@ async function pollQuoteLoop(
 }
 
 function getUnderlyingDefuseAssetIds(
-  token: BaseTokenInfo | UnifiedTokenInfo
+  tokens: Array<BaseTokenInfo | UnifiedTokenInfo>
 ): BaseTokenInfo["defuseAssetId"][] {
-  return isBaseToken(token)
-    ? [token.defuseAssetId]
-    : token.groupedTokens.map((token) => token.defuseAssetId)
+  return tokens.flatMap((token) => {
+    return isBaseToken(token)
+      ? [token.defuseAssetId]
+      : token.groupedTokens.map((token) => token.defuseAssetId)
+  })
 }
 
 function isTimedOut(e: unknown): boolean {

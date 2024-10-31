@@ -14,7 +14,8 @@ import { settings } from "../../config/settings"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../types/base"
 import type { Transaction } from "../../types/deposit"
 import {
-  type ChildEvent as BackgroundQuoterEvents,
+  type Events as BackgroundQuoterEvents,
+  type ParentEvents as BackgroundQuoterParentEvents,
   backgroundQuoterMachine,
 } from "./backgroundQuoterMachine"
 import {
@@ -89,7 +90,7 @@ export const withdrawUIMachine = setup({
             changedBalanceMapping: BalanceMapping
           }
         }
-      | BackgroundQuoterEvents
+      | BackgroundQuoterParentEvents
       | DepositedBalanceEvents
       | WithdrawFormEvents
       | PassthroughEvent,
@@ -150,10 +151,9 @@ export const withdrawUIMachine = setup({
         delayMs: settings.quotePollingIntervalMs,
       }),
     }),
-    // Warning: This cannot be properly typed, so you can send an incorrect event
     sendToBackgroundQuoterRefNewQuoteInput: sendTo(
       "backgroundQuoterRef",
-      ({ context, self }) => {
+      ({ context, self }): BackgroundQuoterEvents => {
         const snapshot = self.getSnapshot()
 
         // However knows how to access the child's state, please update this
@@ -196,7 +196,7 @@ export const withdrawUIMachine = setup({
     // Warning: This cannot be properly typed, so you can send an incorrect event
     sendToSwapRefNewQuote: sendTo(
       "swapRef",
-      (_, event: BackgroundQuoterEvents) => event
+      (_, event: BackgroundQuoterParentEvents) => event
     ),
 
     spawnIntentStatusActor: assign({

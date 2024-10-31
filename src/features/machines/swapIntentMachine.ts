@@ -16,7 +16,7 @@ import {
   makeInnerSwapMessage,
   makeSwapMessage,
 } from "../../utils/messageFactory"
-import type { ChildEvent as BackgroundQuoterEvents } from "./backgroundQuoterMachine"
+import type { ParentEvents as BackgroundQuoterEvents } from "./backgroundQuoterMachine"
 import {
   type SendNearTransaction,
   publicKeyVerifierMachine,
