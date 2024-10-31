@@ -8,19 +8,19 @@ import type { BaseTokenInfo, UnifiedTokenInfo } from "../types/base"
 
 const queryKey = "get-balance"
 
-export const getGetNearNativeBalanceKey = [queryKey, "get-near-native-balance"]
+export const getNearNativeBalanceKey = [queryKey, "get-near-native-balance"]
 
 export const useGetNearNativeBalance = (
   params: { accountId: string },
   options = {}
 ) =>
   useQuery({
-    queryKey: getGetNearNativeBalanceKey,
+    queryKey: getNearNativeBalanceKey,
     queryFn: () => getNearNativeBalance(params),
     ...options,
   })
 
-export const getGetNearNep141BalanceAccountKey = [
+export const getNearNep141BalanceAccountKey = [
   queryKey,
   "get-near-nep141-balance",
 ]
@@ -33,7 +33,7 @@ export const useGetNearNep141Balance = (
   options = {}
 ) =>
   useQuery({
-    queryKey: getGetNearNep141BalanceAccountKey,
+    queryKey: getNearNep141BalanceAccountKey,
     queryFn: () => getNearNep141Balance(params),
     ...options,
   })

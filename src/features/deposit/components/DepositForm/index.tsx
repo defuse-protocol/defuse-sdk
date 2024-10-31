@@ -10,6 +10,7 @@ import { QRCodeSVG } from "qrcode.react"
 import { useEffect } from "react"
 import CopyToClipboard from "react-copy-to-clipboard"
 import { Controller, useFormContext } from "react-hook-form"
+import { useGetSupportedTokens } from "src/hooks/usePoABridge"
 import { AssetComboIcon } from "../../../../components/Asset/AssetComboIcon"
 import { EmptyIcon } from "../../../../components/EmptyIcon"
 import { Form } from "../../../../components/Form"
@@ -21,7 +22,7 @@ import { useModalStore } from "../../../../providers/ModalStoreProvider"
 import { ModalType } from "../../../../stores/modalStore"
 import { DepositBlockchainEnum, type SwappableToken } from "../../../../types"
 import { formatTokenValue } from "../../../../utils/format"
-import { isBaseToken } from "../../../../utils/token"
+import { isBaseToken, isUnifiedToken } from "../../../../utils/token"
 import { DepositUIMachineContext } from "../DepositUIMachineProvider"
 import styles from "./styles.module.css"
 
@@ -116,6 +117,19 @@ export const DepositForm = () => {
     setValue("amount", formatTokenValue(maxValue, token.decimals))
   }
 
+  const { data: supportedTokens } = useGetSupportedTokens({
+    chains: [],
+  })
+  // TODO: use supportedTokensList
+  const supportedTokensList = supportedTokens?.tokens || []
+
+  useEffect(() => {
+    if (token && getDefaultBlockchainOptionValue(token)) {
+      const networkOption = getDefaultBlockchainOptionValue(token)
+      setValue("network", networkOption ?? "")
+    }
+  }, [token, setValue])
+
   return (
     <div className={styles.container}>
       <div className={styles.formWrapper}>
@@ -142,13 +156,17 @@ export const DepositForm = () => {
                 control={control}
                 render={({ field }) => (
                   <Select
-                    options={getBlockchainsOptions()}
+                    options={filterBlockchainsOptions(token)}
                     placeholder={{
                       label: "Select network",
                       icon: <EmptyIcon />,
                     }}
                     fullWidth
-                    {...field}
+                    value={getDefaultBlockchainOptionValue(token)}
+                    disabled={!isUnifiedToken(token)}
+                    onChange={field.onChange}
+                    name={field.name}
+                    ref={field.ref}
                   />
                 )}
               />
@@ -287,7 +305,7 @@ function getBlockchainsOptions(): Record<
   { label: string; icon: React.ReactNode; value: string }
 > {
   return {
-    near: {
+    [DepositBlockchainEnum.NEAR]: {
       label: "Near",
       icon: (
         <NetworkIcon
@@ -297,7 +315,7 @@ function getBlockchainsOptions(): Record<
       ),
       value: DepositBlockchainEnum.NEAR,
     },
-    ethereum: {
+    [DepositBlockchainEnum.ETHEREUM]: {
       label: "Ethereum",
       icon: (
         <NetworkIcon
@@ -307,7 +325,7 @@ function getBlockchainsOptions(): Record<
       ),
       value: DepositBlockchainEnum.ETHEREUM,
     },
-    base: {
+    [DepositBlockchainEnum.BASE]: {
       label: "Base",
       icon: (
         <NetworkIcon
@@ -317,9 +335,75 @@ function getBlockchainsOptions(): Record<
       ),
       value: DepositBlockchainEnum.BASE,
     },
+    [DepositBlockchainEnum.ARBITRUM]: {
+      label: "Arbitrum",
+      icon: (
+        <NetworkIcon
+          chainIcon="/static/icons/network/arbitrum.svg"
+          chainName="arbitrum"
+        />
+      ),
+      value: DepositBlockchainEnum.ARBITRUM,
+    },
+    [DepositBlockchainEnum.BITCOIN]: {
+      label: "Bitcoin",
+      icon: (
+        <NetworkIcon
+          chainIcon="/static/icons/network/btc.svg"
+          chainName="bitcoin"
+        />
+      ),
+      value: DepositBlockchainEnum.BITCOIN,
+    },
   }
+}
+
+function filterBlockchainsOptions(
+  token: SwappableToken
+): Record<string, { label: string; icon: React.ReactNode; value: string }> {
+  // TODO: use supportedTokensList
+  if (isUnifiedToken(token)) {
+    return token.groupedTokens.reduce(
+      (
+        acc: Record<
+          string,
+          { label: string; icon: React.ReactNode; value: string }
+        >,
+        token
+      ) => {
+        const key = adapterMap[token.chainName]
+        if (key) {
+          const option = getBlockchainsOptions()[key]
+          if (option) {
+            acc[key] = option
+          }
+        }
+        return acc
+      },
+      {}
+    )
+  }
+  return getBlockchainsOptions()
 }
 
 function shortenTxHash(txHash: string) {
   return `${txHash.slice(0, 5)}...${txHash.slice(-5)}`
+}
+
+function getDefaultBlockchainOptionValue(
+  token: SwappableToken
+): string | undefined {
+  if (!isUnifiedToken(token)) {
+    const key = adapterMap[token.chainName]
+    return key ? getBlockchainsOptions()[key]?.value : undefined
+  }
+  return undefined
+}
+
+const adapterMap: Record<string, DepositBlockchainEnum> = {
+  near: DepositBlockchainEnum.NEAR,
+  eth: DepositBlockchainEnum.ETHEREUM,
+  base: DepositBlockchainEnum.BASE,
+  arbitrum: DepositBlockchainEnum.ARBITRUM,
+  bitcoin: DepositBlockchainEnum.BITCOIN,
 }

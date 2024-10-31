@@ -24,6 +24,15 @@
 .selectWrapper {
   margin-bottom: 1rem;
 }
+.selectWrapper > button[disabled] {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.selectWrapper > *[disabled] {
+  pointer-events: none;
+}
 
 .buttonWrapper {
   margin-bottom: 1rem;
