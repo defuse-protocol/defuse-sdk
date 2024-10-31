@@ -6,6 +6,7 @@ const queryKey = "poa-bridge"
 
 export const getSupportedTokensKey = [queryKey, "get-supported-tokens"]
 
+// TODO: Probably we don't need this hook
 export const useGetSupportedTokens = (
   params: { chains?: BlockchainEnum[] },
   options = {}

@@ -10,7 +10,6 @@ import { QRCodeSVG } from "qrcode.react"
 import { useEffect } from "react"
 import CopyToClipboard from "react-copy-to-clipboard"
 import { Controller, useFormContext } from "react-hook-form"
-import { useGetSupportedTokens } from "src/hooks/usePoABridge"
 import { assetNetworkAdapter } from "src/utils/adapters"
 import { AssetComboIcon } from "../../../../components/Asset/AssetComboIcon"
 import { EmptyIcon } from "../../../../components/EmptyIcon"
@@ -92,10 +91,15 @@ export const DepositForm = () => {
     }
     const { modalType, fieldName, token } = payload as ModalSelectAssetsPayload
     if (modalType === ModalType.MODAL_SELECT_ASSETS && fieldName && token) {
-      depositUIActorRef.send({ type: "INPUT", params: { token } })
+      depositUIActorRef.send({
+        type: "INPUT",
+        params: { token, network: undefined },
+      })
+      // We have to clean up network because it could be not a valid value for the previous token
+      setValue("network", "")
       onCloseModal(undefined)
     }
-  }, [payload, onCloseModal, depositUIActorRef])
+  }, [payload, onCloseModal, depositUIActorRef, setValue])
 
   const onSubmit = () => {
     depositUIActorRef.send({
@@ -117,12 +121,6 @@ export const DepositForm = () => {
     }
     setValue("amount", formatTokenValue(maxValue, token.decimals))
   }
-
-  const { data: supportedTokens } = useGetSupportedTokens({
-    chains: [],
-  })
-  // TODO: use supportedTokensList
-  const supportedTokensList = supportedTokens?.tokens || []
 
   useEffect(() => {
     if (token && getDefaultBlockchainOptionValue(token)) {
@@ -163,7 +161,7 @@ export const DepositForm = () => {
                       icon: <EmptyIcon />,
                     }}
                     fullWidth
-                    value={getDefaultBlockchainOptionValue(token)}
+                    value={network || ""}
                     disabled={!isUnifiedToken(token)}
                     onChange={field.onChange}
                     name={field.name}
