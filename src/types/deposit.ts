@@ -17,6 +17,8 @@ export enum DepositBlockchainEnum {
   NEAR = "near:mainnet",
   ETHEREUM = "eth:1",
   BASE = "eth:8453",
+  ARBITRUM = "eth:42161",
+  BITCOIN = "btc:mainnet",
 }
 
 export interface FunctionCallAction {
