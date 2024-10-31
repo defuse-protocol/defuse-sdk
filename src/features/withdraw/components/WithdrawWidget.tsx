@@ -6,8 +6,8 @@ import type { WithdrawWidgetProps } from "../../../types/withdraw"
 import { isBaseToken } from "../../../utils"
 import { assert } from "../../../utils/assert"
 import { swapIntentMachine } from "../../machines/swapIntentMachine"
-import { swapUIMachine } from "../../machines/swapUIMachine"
-import { SwapUIMachineContext } from "../../swap/components/SwapUIMachineProvider"
+import { withdrawUIMachine } from "../../machines/withdrawUIMachine"
+import { WithdrawUIMachineContext } from "../WithdrawUIMachineContext"
 import { WithdrawForm } from "./WithdrawForm"
 
 export const WithdrawWidget = (props: WithdrawWidgetProps) => {
@@ -27,7 +27,7 @@ export const WithdrawWidget = (props: WithdrawWidgetProps) => {
 
   return (
     <WithdrawWidgetProvider>
-      <SwapUIMachineContext.Provider
+      <WithdrawUIMachineContext.Provider
         options={{
           input: {
             tokenIn: initialTokenIn,
@@ -35,7 +35,7 @@ export const WithdrawWidget = (props: WithdrawWidgetProps) => {
             tokenList: props.tokenList,
           },
         }}
-        logic={swapUIMachine.provide({
+        logic={withdrawUIMachine.provide({
           actions: {
             updateUIAmountOut: ({ context }) => {
               const quote = context.quote
@@ -66,7 +66,7 @@ export const WithdrawWidget = (props: WithdrawWidgetProps) => {
         })}
       >
         <WithdrawForm {...props} amountOutFormatted={amountOutFormatted} />
-      </SwapUIMachineContext.Provider>
+      </WithdrawUIMachineContext.Provider>
     </WithdrawWidgetProvider>
   )
 }
