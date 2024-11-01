@@ -23,14 +23,16 @@ import {
 } from "./publicKeyVerifierMachine"
 import type { AggregatedQuote } from "./queryQuoteMachine"
 
+type IntentOperationParams = {
+  type: "swap"
+  quote: AggregatedQuote
+}
+
 type Context = {
   userAddress: string
   nearClient: providers.Provider
   sendNearTransaction: SendNearTransaction
-  quote: AggregatedQuote
-  tokenIn: SwappableToken
-  tokenOut: SwappableToken
-  amountIn: bigint
+  intentOperationParams: IntentOperationParams
   messageToSign: null | {
     walletMessage: WalletMessage
     innerMessage: DefuseMessageFor_DefuseIntents
@@ -63,10 +65,7 @@ type Input = {
   userAddress: string
   nearClient: providers.Provider
   sendNearTransaction: SendNearTransaction
-  quote: AggregatedQuote
-  tokenIn: SwappableToken
-  tokenOut: SwappableToken
-  amountIn: bigint
+  intentOperationParams: IntentOperationParams
 }
 
 export type Output =
@@ -96,19 +95,34 @@ export const swapIntentMachine = setup({
       console.error(params.error)
     },
     proposeQuote: assign({
-      quote: ({ context }, proposedQuote: AggregatedQuote) => {
-        return determineNewestValidQuote(context.quote, proposedQuote)
+      intentOperationParams: ({ context }, proposedQuote: AggregatedQuote) => {
+        if (context.intentOperationParams.type === "swap") {
+          return {
+            ...context.intentOperationParams,
+            quote: determineNewestValidQuote(
+              context.intentOperationParams.quote,
+              proposedQuote
+            ),
+          }
+        }
+
+        return context.intentOperationParams
       },
     }),
     assembleSignMessages: assign({
       messageToSign: ({ context }) => {
+        assert(
+          context.intentOperationParams.type === "swap",
+          "Operation must be swap"
+        )
+
         const innerMessage = makeInnerSwapMessage({
-          amountsIn: context.quote.amountsIn,
-          amountsOut: context.quote.amountsOut,
+          amountsIn: context.intentOperationParams.quote.amountsIn,
+          amountsOut: context.intentOperationParams.quote.amountsOut,
           signerId: context.userAddress,
           deadlineTimestamp: Math.min(
             Math.floor(Date.now() / 1000) + settings.swapExpirySec,
-            context.quote.expirationTime
+            context.intentOperationParams.quote.expirationTime
           ),
         })
 
@@ -169,8 +183,14 @@ export const swapIntentMachine = setup({
       return doesSignatureMatchUserAddress(signature, context.userAddress)
     },
     isIntentRelevant: ({ context }) => {
-      // Naively assume that the quote is still relevant if the expiration time is in the future
-      return context.quote.expirationTime * 1000 > Date.now()
+      if (context.intentOperationParams.quote != null) {
+        // Naively assume that the quote is still relevant if the expiration time is in the future
+        return (
+          context.intentOperationParams.quote.expirationTime * 1000 > Date.now()
+        )
+      }
+
+      return true
     },
     isSigned: (_, params: WalletSignatureResult | null) => params != null,
     isTrue: (_, params: boolean) => params,
@@ -356,8 +376,13 @@ export const swapIntentMachine = setup({
           assert(context.signature != null, "Signature is not set")
           assert(context.messageToSign != null, "Sign message is not set")
 
+          let quoteHashes: string[] = []
+          if (context.intentOperationParams.quote) {
+            quoteHashes = context.intentOperationParams.quote.quoteHashes
+          }
+
           return {
-            quoteHashes: context.quote.quoteHashes,
+            quoteHashes,
             signatureData: context.signature,
           }
         },
