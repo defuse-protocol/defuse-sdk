@@ -29,6 +29,15 @@ export function makeInnerSwapMessage({
     tokenDiff[token] = amount.toString()
   }
 
+  if (Object.keys(tokenDiff).length === 0) {
+    console.warn("Empty diff")
+    return {
+      deadline: { timestamp: deadlineTimestamp },
+      intents: [],
+      signer_id: signerId,
+    }
+  }
+
   return {
     deadline: { timestamp: deadlineTimestamp },
     intents: [
