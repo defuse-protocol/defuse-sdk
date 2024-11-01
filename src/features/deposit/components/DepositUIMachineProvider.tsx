@@ -82,20 +82,27 @@ export function DepositUIMachineProvider({
 
                 let transactions: Transaction[] = []
 
-                if (Number(amount) > Number(balance || 0n)) {
+                if (tokenAddress === "wrap.near") {
+                  const isWrapNearRequired =
+                    Number(amount) > Number(balance || 0n)
                   transactions =
-                    depositNearService.createBatchDepositNearTransaction(
-                      settings.defuseContractId,
+                    depositNearService.createBatchDepositNearNativeTransaction(
                       tokenAddress,
-                      amount.toString(),
-                      (BigInt(amount) - BigInt(balance || 0n)).toString()
+                      amount,
+                      amount - balance,
+                      isWrapNearRequired
                     )
                 } else {
-                  transactions =
-                    depositNearService.createDepositNearTransaction(
-                      settings.defuseContractId,
+                  const isStorageDepositRequired =
+                    await depositNearService.isStorageDepositRequired(
                       tokenAddress,
-                      amount.toString()
+                      settings.defuseContractId
+                    )
+                  transactions =
+                    depositNearService.createBatchDepositNearNep141Transaction(
+                      tokenAddress,
+                      amount,
+                      isStorageDepositRequired
                     )
                 }
 

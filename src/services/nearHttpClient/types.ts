@@ -60,3 +60,21 @@ export type GetNearTxRequest = JSONRPCRequest<
 export type GetNearTxResponse = JSONRPCResponse<{
   status: { SuccessValue: string }
 }>
+
+export type GetNearNep141StorageBalanceOfRequest = JSONRPCRequest<
+  "query",
+  {
+    request_type: "call_function"
+    account_id: string
+    method_name: "storage_balance_of"
+    args_base64: string
+    finality: "optimistic"
+  }
+>
+
+export type GetNearNep141StorageBalanceOfResponse = JSONRPCResponse<{
+  block_hash: string
+  block_height: number
+  logs: []
+  result: number[]
+}>
