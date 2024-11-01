@@ -13,6 +13,7 @@ import {
 import { settings } from "../../config/settings"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../types/base"
 import type { Transaction } from "../../types/deposit"
+import { isBaseToken } from "../../utils"
 import {
   type Events as BackgroundQuoterEvents,
   type ParentEvents as BackgroundQuoterParentEvents,
@@ -37,17 +38,14 @@ import {
 export type Context = {
   error: Error | null
   quote: AggregatedQuote | null
-  formValues: {
+  initialFormValues: {
     tokenIn: BaseTokenInfo | UnifiedTokenInfo
     tokenOut: BaseTokenInfo
-    amountIn: string
-  }
-  parsedFormValues: {
-    amountIn: bigint
   }
   intentCreationResult: SwapIntentMachineOutput | null
   intentRefs: ActorRefFrom<typeof intentStatusMachine>[]
   tokenList: (BaseTokenInfo | UnifiedTokenInfo)[]
+  withdrawalSpec: WithdrawalSpec | null
 }
 
 type PassthroughEvent = {
@@ -114,22 +112,6 @@ export const withdrawUIMachine = setup({
     withdrawFormActor: withdrawFormReducer,
   },
   actions: {
-    parseFormValues: assign({
-      parsedFormValues: ({ context }) => {
-        try {
-          return {
-            amountIn: parseUnits(
-              context.formValues.amountIn,
-              context.formValues.tokenIn.decimals
-            ),
-          }
-        } catch {
-          return {
-            amountIn: 0n,
-          }
-        }
-      },
-    }),
     updateUIAmountOut: () => {
       throw new Error("not implemented")
     },
@@ -144,6 +126,24 @@ export const withdrawUIMachine = setup({
     clearIntentCreationResult: assign({ intentCreationResult: null }),
     passthroughEvent: emit((_, event: PassthroughEvent) => event),
 
+    setWithdrawalSpec: assign({
+      withdrawalSpec: ({ self }) => {
+        const snapshot = self.getSnapshot()
+
+        const balances =
+          snapshot.children.depositedBalanceRef?.getSnapshot().context.balances
+        const formValues =
+          snapshot.children.withdrawFormRef?.getSnapshot().context
+
+        return getRequiredSwapAmount(
+          formValues.tokenIn,
+          formValues.tokenOut,
+          formValues.parsedAmount,
+          balances
+        )
+      },
+    }),
+
     spawnBackgroundQuoterRef: spawnChild("backgroundQuoterActor", {
       id: "backgroundQuoterRef",
       input: ({ self }) => ({
@@ -153,23 +153,16 @@ export const withdrawUIMachine = setup({
     }),
     sendToBackgroundQuoterRefNewQuoteInput: sendTo(
       "backgroundQuoterRef",
-      ({ context, self }): BackgroundQuoterEvents => {
-        const snapshot = self.getSnapshot()
+      ({ context }): BackgroundQuoterEvents => {
+        const withdrawalSpec = context.withdrawalSpec
 
-        // However knows how to access the child's state, please update this
-        const depositedBalanceRef:
-          | ActorRefFrom<typeof depositedBalanceMachine>
-          | undefined = snapshot.children.depositedBalanceRef
-        const balances = depositedBalanceRef?.getSnapshot().context.balances
+        if (withdrawalSpec == null || withdrawalSpec.swapParams == null) {
+          return { type: "PAUSE" }
+        }
 
         return {
           type: "NEW_QUOTE_INPUT",
-          params: {
-            tokenIn: context.formValues.tokenIn,
-            tokenOut: context.formValues.tokenOut,
-            amountIn: context.parsedFormValues.amountIn,
-            balances: balances ?? {},
-          },
+          params: withdrawalSpec.swapParams,
         }
       }
     ),
@@ -207,16 +200,34 @@ export const withdrawUIMachine = setup({
         if (output.status !== "INTENT_PUBLISHED") return context.intentRefs
 
         // todo: take quote from result of `swap`
-        assert(context.quote != null, "quote is null")
+        const quote =
+          context.quote != null
+            ? context.quote
+            : {
+                quoteHashes: [],
+                expirationTime: 0,
+                totalAmountIn: 0n,
+                totalAmountOut: 0n,
+                amountsIn: {},
+                amountsOut: {},
+              }
+
+        const snapshot = self.getSnapshot()
+
+        // However knows how to access the child's state nicely, please update this
+        const formRef: ActorRefFrom<typeof withdrawFormReducer> | undefined =
+          snapshot.children.withdrawFormRef
+        assert(formRef, "formRef is undefined")
+        const formValues = formRef.getSnapshot().context
 
         const intentRef = spawn("intentStatusActor", {
           id: `intent-${output.intentHash}`,
           input: {
             parentRef: self,
             intentHash: output.intentHash,
-            tokenIn: context.formValues.tokenIn,
-            tokenOut: context.formValues.tokenOut,
-            quote: context.quote,
+            tokenIn: formValues.tokenIn,
+            tokenOut: formValues.tokenOut,
+            quote: quote,
           },
         })
 
@@ -231,10 +242,9 @@ export const withdrawUIMachine = setup({
   },
   guards: {
     isQuoteRelevant: ({ context }) => {
-      // todo: implement real check for fetched quotes if they're expired or not
-      console.warn(
-        "Implement real check for fetched quotes if they're expired or not"
-      )
+      if (context.withdrawalSpec == null) return false
+      if (context.withdrawalSpec.swapParams == null) return true
+
       return context.quote != null && context.quote.totalAmountOut > 0n
     },
   },
@@ -245,17 +255,14 @@ export const withdrawUIMachine = setup({
   context: ({ input }) => ({
     error: null,
     quote: null,
-    formValues: {
+    initialFormValues: {
       tokenIn: input.tokenIn,
       tokenOut: input.tokenOut,
-      amountIn: "",
-    },
-    parsedFormValues: {
-      amountIn: 0n,
     },
     intentCreationResult: null,
     intentRefs: [],
     tokenList: input.tokenList,
+    withdrawalSpec: null,
   }),
 
   entry: [
@@ -264,7 +271,7 @@ export const withdrawUIMachine = setup({
     spawnChild("withdrawFormActor", {
       id: "withdrawFormRef",
       input: ({ context }) => ({
-        tokenIn: context.formValues.tokenIn,
+        tokenIn: context.initialFormValues.tokenIn,
       }),
     }),
   ],
@@ -285,6 +292,7 @@ export const withdrawUIMachine = setup({
         ({ event }) => {
           console.log("Balance changed", event.params.changedBalanceMapping)
         },
+        "setWithdrawalSpec",
         "sendToBackgroundQuoterRefNewQuoteInput",
       ],
     },
@@ -323,7 +331,6 @@ export const withdrawUIMachine = setup({
               type: "relayToWithdrawFormRef",
               params: ({ event }) => event,
             },
-            "parseFormValues",
           ],
         },
 
@@ -349,7 +356,10 @@ export const withdrawUIMachine = setup({
               {
                 target: "waiting_quote",
                 guard: ({ event }) => event.output,
-                actions: "sendToBackgroundQuoterRefNewQuoteInput",
+                actions: [
+                  "setWithdrawalSpec",
+                  "sendToBackgroundQuoterRefNewQuoteInput",
+                ],
                 reenter: true,
               },
               "idle",
@@ -358,6 +368,13 @@ export const withdrawUIMachine = setup({
         },
 
         waiting_quote: {
+          always: {
+            target: "idle",
+            guard: ({ context }) => {
+              assert(context.withdrawalSpec != null, "withdrawalSpec is null")
+              return context.withdrawalSpec.swapParams == null
+            },
+          },
           on: {
             NEW_QUOTE: {
               target: "idle",
@@ -383,22 +400,35 @@ export const withdrawUIMachine = setup({
         id: "swapRef",
         src: "swapActor",
 
-        input: ({ context, event }) => {
+        input: ({ context, event, self }) => {
           assertEvent(event, "submit")
 
+          assert(context.withdrawalSpec, "withdrawalSpec is null")
+
           const quote = context.quote
-          if (!quote) {
-            throw new Error("quote not available")
+          if (context.withdrawalSpec.swapParams) {
+            assert(quote, "quote is null")
           }
+
+          const snapshot = self.getSnapshot()
+
+          const formRef: ActorRefFrom<typeof withdrawFormReducer> | undefined =
+            snapshot.children.withdrawFormRef
+          assert(formRef, "formRef is undefined")
+          const { recipient } = formRef.getSnapshot().context
 
           return {
             userAddress: event.params.userAddress,
             nearClient: event.params.nearClient,
             sendNearTransaction: event.params.sendNearTransaction,
-            quote,
-            tokenIn: context.formValues.tokenIn,
-            tokenOut: context.formValues.tokenOut,
-            amountIn: context.parsedFormValues.amountIn,
+            intentOperationParams: {
+              type: "withdraw",
+              quote,
+              directWithdrawalAmount:
+                context.withdrawalSpec.directWithdrawalAmount,
+              tokenOut: context.withdrawalSpec.tokenOut,
+              recipient: recipient,
+            },
           }
         },
 
@@ -450,4 +480,80 @@ function assert(condition: unknown, msg?: string): asserts condition {
   if (!condition) {
     throw new Error(msg)
   }
+}
+
+interface WithdrawalSpec {
+  swapParams: null | {
+    tokensIn: BaseTokenInfo[]
+    tokenOut: BaseTokenInfo
+    amountIn: bigint
+    balances: Record<BaseTokenInfo["defuseAssetId"], bigint>
+  }
+  directWithdrawalAmount: bigint
+  tokenOut: BaseTokenInfo
+}
+
+function getRequiredSwapAmount(
+  tokenIn: UnifiedTokenInfo | BaseTokenInfo,
+  tokenOut: BaseTokenInfo,
+  totalAmountIn: bigint,
+  balances: Record<BaseTokenInfo["defuseAssetId"], bigint>
+): WithdrawalSpec | null {
+  const underlyingTokensIn = isBaseToken(tokenIn)
+    ? [tokenIn]
+    : tokenIn.groupedTokens
+
+  /**
+   * It is crucial to know balances of involved tokens, otherwise we can't
+   * make informed decisions.
+   */
+  if (
+    underlyingTokensIn.some((t) => balances[t.defuseAssetId] == null) ||
+    balances[tokenOut.defuseAssetId] == null
+  ) {
+    return null
+  }
+
+  /**
+   * We want to swap only tokens that are not `tokenOut`.
+   *
+   * For example, user wants to swap USDC to USDC@Solana, we will quote for:
+   * - USDC@Near → USDC@Solana
+   * - USDC@Base → USDC@Solana
+   * - USDC@Ethereum → USDC@Solana
+   * We skip from quote:
+   * - USDC@Solana → USDC@Solana
+   */
+  const tokensIn = underlyingTokensIn.filter(
+    (t) => tokenOut.defuseAssetId !== t.defuseAssetId
+  )
+
+  /**
+   * Some portion of the `tokenOut` balance is already available and doesn’t
+   * require swapping.
+   *
+   * For example, in a swap USDC → USDC@Solana, any existing USDC@Solana
+   * balance is directly counted towards the total output, reducing the amount
+   * we need to quote for.
+   */
+  let swapAmount = totalAmountIn
+  if (underlyingTokensIn.length !== tokensIn.length) {
+    const tokenOutBalance = balances[tokenOut.defuseAssetId]
+    // Help Typescript
+    assert(tokenOutBalance != null, "Token out balance is missing")
+    swapAmount -= min(tokenOutBalance, swapAmount)
+  }
+
+  return {
+    swapParams:
+      swapAmount > 0n
+        ? { tokensIn, tokenOut, amountIn: swapAmount, balances }
+        : null,
+    directWithdrawalAmount: totalAmountIn - swapAmount,
+    tokenOut,
+  }
+}
+
+function min(a: bigint, b: bigint): bigint {
+  return a < b ? a : b
 }

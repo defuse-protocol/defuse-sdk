@@ -6,11 +6,8 @@ import {
   submitIntent,
   waitForIntentSettlement,
 } from "../../services/intentService"
-import type {
-  SwappableToken,
-  WalletMessage,
-  WalletSignatureResult,
-} from "../../types"
+import type { WalletMessage, WalletSignatureResult } from "../../types"
+import type { BaseTokenInfo } from "../../types/base"
 import type { DefuseMessageFor_DefuseIntents } from "../../types/defuse-contracts-types"
 import {
   makeInnerSwapMessage,
@@ -23,10 +20,18 @@ import {
 } from "./publicKeyVerifierMachine"
 import type { AggregatedQuote } from "./queryQuoteMachine"
 
-type IntentOperationParams = {
-  type: "swap"
-  quote: AggregatedQuote
-}
+type IntentOperationParams =
+  | {
+      type: "swap"
+      quote: AggregatedQuote
+    }
+  | {
+      type: "withdraw"
+      tokenOut: BaseTokenInfo
+      quote: AggregatedQuote | null
+      directWithdrawalAmount: bigint
+      recipient: string
+    }
 
 type Context = {
   userAddress: string

@@ -2,11 +2,14 @@ import { PersonIcon } from "@radix-ui/react-icons"
 import { Button, Flex, Spinner, Text } from "@radix-ui/themes"
 import { useSelector } from "@xstate/react"
 import { parseUnits } from "ethers"
-import { useEffect } from "react"
+import { providers } from "near-api-js"
+import { Fragment, useEffect } from "react"
 import { useForm } from "react-hook-form"
+import type { ActorRefFrom } from "xstate"
 import { EmptyIcon } from "../../../../components/EmptyIcon"
 import { Form } from "../../../../components/Form"
 import { FieldComboInput } from "../../../../components/Form/FieldComboInput"
+import { WithdrawIntentCard } from "../../../../components/IntentCard/WithdrawIntentCard"
 import { NetworkIcon } from "../../../../components/Network/NetworkIcon"
 import { Select } from "../../../../components/Select/Select"
 import { useModalController } from "../../../../hooks"
@@ -17,7 +20,11 @@ import type { WithdrawWidgetProps } from "../../../../types/withdraw"
 import { isBaseToken } from "../../../../utils"
 import { assert } from "../../../../utils/assert"
 import { formatTokenValue } from "../../../../utils/format"
-import { balanceSelector } from "../../../swap/components/SwapForm"
+import type { intentStatusMachine } from "../../../machines/intentStatusMachine"
+import {
+  balanceSelector,
+  renderIntentCreationResult,
+} from "../../../swap/components/SwapForm"
 import { WithdrawUIMachineContext } from "../../WithdrawUIMachineContext"
 import styles from "./styles.module.css"
 
@@ -26,14 +33,12 @@ export type WithdrawFormNearValues = {
   recipient: string
 }
 
-interface WithdrawFormProps extends WithdrawWidgetProps {
-  amountOutFormatted: string
-}
+interface WithdrawFormProps extends WithdrawWidgetProps {}
 
 export const WithdrawForm = ({
   accountId,
   tokenList,
-  amountOutFormatted,
+  sendNearTransaction,
 }: WithdrawFormProps) => {
   const actorRef = WithdrawUIMachineContext.useActorRef()
 
@@ -42,10 +47,23 @@ export const WithdrawForm = ({
   )
   assert(formRef != null, "Form ref must be defined")
 
-  const depositedBalanceRef = useSelector(
-    actorRef,
-    (state) => state.children.depositedBalanceRef
-  )
+  const {
+    depositedBalanceRef,
+    intentCreationResult,
+    intentRefs,
+    state,
+    totalAmountReceived,
+  } = WithdrawUIMachineContext.useSelector((state) => {
+    return {
+      depositedBalanceRef: state.children.depositedBalanceRef,
+      intentCreationResult: state.context.intentCreationResult,
+      intentRefs: state.context.intentRefs,
+      state,
+      totalAmountReceived:
+        (state.context.quote?.totalAmountOut ?? 0n) +
+        (state.context.withdrawalSpec?.directWithdrawalAmount ?? 0n),
+    }
+  })
 
   useEffect(() => {
     if (accountId != null) {
@@ -179,10 +197,24 @@ export const WithdrawForm = ({
 
   return (
     <div className={styles.container}>
-      <div className={styles.formWrapper}>
+      <Flex direction={"column"} gap={"2"} className={styles.formWrapper}>
         <Form<WithdrawFormNearValues>
           handleSubmit={handleSubmit(() => {
-            // TODO: Call withdraw fn at withdraw machine
+            if (accountId == null) {
+              console.warn("No user address provided")
+              return
+            }
+
+            actorRef.send({
+              type: "submit",
+              params: {
+                userAddress: accountId,
+                nearClient: new providers.JsonRpcProvider({
+                  url: "https://nearrpc.aurora.dev",
+                }),
+                sendNearTransaction: sendNearTransaction,
+              },
+            })
           })}
           register={register}
         >
@@ -240,7 +272,7 @@ export const WithdrawForm = ({
           >
             <Text>Received amount</Text>
             <Text className={styles.receivedAmountValue}>
-              {formatTokenValue(amountOutFormatted, token.decimals)}{" "}
+              {formatTokenValue(totalAmountReceived ?? 0n, token.decimals)}{" "}
               {token.symbol} @ {renderBlockchainLabel(blockchain)}
             </Text>
           </Flex>
@@ -251,16 +283,20 @@ export const WithdrawForm = ({
               radius="large"
               className={`${styles.button}`}
               color="orange"
-              disabled={!watch("amountIn") || !watch("recipient")}
+              disabled={state.matches("submitting")}
             >
               <span className={styles.buttonContent}>
-                <Spinner loading={false} />
+                <Spinner loading={state.matches("submitting")} />
                 <Text size="6">Withdraw</Text>
               </span>
             </Button>
           </div>
         </Form>
-      </div>
+
+        {renderIntentCreationResult(intentCreationResult)}
+
+        <Intents intentRefs={intentRefs} />
+      </Flex>
     </div>
   )
 }
@@ -325,4 +361,20 @@ function renderBlockchainLabel(chainName: string): string {
   }
   console.warn(`Unknown blockchain: ${chainName}`)
   return chainName
+}
+
+function Intents({
+  intentRefs,
+}: { intentRefs: ActorRefFrom<typeof intentStatusMachine>[] }) {
+  return (
+    <div>
+      {intentRefs.map((intentRef) => {
+        return (
+          <Fragment key={intentRef.id}>
+            <WithdrawIntentCard intentStatusActorRef={intentRef} />
+          </Fragment>
+        )
+      })}
+    </div>
+  )
 }

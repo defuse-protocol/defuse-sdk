@@ -216,7 +216,7 @@ function Intents({
   )
 }
 
-function renderIntentCreationResult(
+export function renderIntentCreationResult(
   intentCreationResult: Context["intentCreationResult"]
 ) {
   if (!intentCreationResult) {
