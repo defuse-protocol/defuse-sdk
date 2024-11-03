@@ -2,8 +2,8 @@ import type { CheckedState } from "@radix-ui/react-checkbox"
 import { InfoCircledIcon } from "@radix-ui/react-icons"
 import { Checkbox, Flex, Text, Tooltip } from "@radix-ui/themes"
 import clsx from "clsx"
-import React from "react"
-import { formatTokenValue } from "../../utils/format"
+import { formatTokenValue } from "../../../utils/format"
+import styles from "./styles.module.css"
 
 export interface BlockMultiBalancesProps {
   balance: bigint
@@ -13,6 +13,7 @@ export interface BlockMultiBalancesProps {
   handleIncludeNativeToSwap?: (checked: CheckedState) => void
   handleClick?: () => void
   disabled?: boolean
+  className?: string
 }
 
 export const BlockMultiBalances = ({
@@ -23,6 +24,7 @@ export const BlockMultiBalances = ({
   handleIncludeNativeToSwap,
   handleClick,
   disabled,
+  className,
 }: BlockMultiBalancesProps) => {
   const active = balance > 0n && !disabled
 
@@ -30,7 +32,7 @@ export const BlockMultiBalances = ({
     <Flex
       gap={"1"}
       asChild
-      style={{ position: "absolute", bottom: "1rem", right: "1.25rem" }}
+      className={clsx(styles.balanceContainer, className)}
     >
       <button type={"button"} onClick={handleClick} disabled={!active}>
         {active ? (

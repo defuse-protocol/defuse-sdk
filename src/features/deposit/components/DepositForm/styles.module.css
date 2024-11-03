@@ -68,9 +68,18 @@
   background-color: darkorange;
 }
 
-.maxButton {
-  background-color: #ff9c0029;
+.maxButtonWrapper {
+  height: 56px;
+  position: relative;
+  background-color: rgba(249, 249, 248, 1);
   cursor: pointer;
+}
+
+.balanceWrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  position: relative;
 }
 
 .clickableDisabled {
@@ -233,4 +242,25 @@
 
 .inputGeneratedAddress > input {
   font-size: 16px;
+}
+
+.amountInput {
+  padding-bottom: 4rem;
+}
+
+.balanceBoxWrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-direction: row;
+  position: absolute;
+  right: 1.25rem;
+  bottom: 1.25rem;
+}
+
+.blockMultiBalances {
+  position: static;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }

@@ -1,17 +1,14 @@
 import { CopyIcon, InfoCircledIcon } from "@radix-ui/react-icons"
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@radix-ui/react-tooltip"
 import { Box, Button, Flex, Link, Spinner, Text } from "@radix-ui/themes"
 import { QRCodeSVG } from "qrcode.react"
-import { useEffect } from "react"
+import { useEffect, useRef } from "react"
 import CopyToClipboard from "react-copy-to-clipboard"
 import { Controller, useFormContext } from "react-hook-form"
+import { TooltipInfo } from "src/components/TooltipInfo"
+import { RESERVED_NEAR_BALANCE } from "src/features/machines/getBalanceMachine"
 import { assetNetworkAdapter } from "src/utils/adapters"
 import { AssetComboIcon } from "../../../../components/Asset/AssetComboIcon"
+import { BlockMultiBalances } from "../../../../components/Block/BlockMultiBalances"
 import { EmptyIcon } from "../../../../components/EmptyIcon"
 import { Form } from "../../../../components/Form"
 import { Input } from "../../../../components/Input"
@@ -108,9 +105,7 @@ export const DepositForm = () => {
     })
   }
 
-  const handleSetMaxValue = (e: React.MouseEvent<HTMLButtonElement>) => {
-    e.stopPropagation()
-    e.preventDefault()
+  const handleSetMaxValue = () => {
     if (!token) {
       return
     }
@@ -131,12 +126,20 @@ export const DepositForm = () => {
   }, [token, setValue])
 
   const balanceInsufficient = isInsufficientBalance(
-    watch("amount"),
+    amount,
     balance,
     nativeBalance,
     token,
     network
   )
+
+  const amountInputRef = useRef<HTMLInputElement | null>(null)
+
+  useEffect(() => {
+    if (network === BlockchainEnum.NEAR && amountInputRef.current) {
+      setTimeout(() => amountInputRef.current?.focus(), 0)
+    }
+  }, [network])
 
   return (
     <div className={styles.container}>
@@ -189,14 +192,41 @@ export const DepositForm = () => {
                 value={watch("amount")}
                 onChange={(value) => setValue("amount", value)}
                 type="number"
+                ref={amountInputRef as React.Ref<HTMLInputElement>}
+                className={styles.amountInput}
                 slotRight={
-                  <Button
-                    className={styles.maxButton}
-                    size="2"
-                    onClick={handleSetMaxValue}
-                  >
-                    <Text color="orange">Max</Text>
-                  </Button>
+                  <div className={styles.balanceBoxWrapper}>
+                    {token &&
+                      isBaseToken(token) &&
+                      token.address === "wrap.near" && (
+                        <TooltipInfo icon={<InfoCircledIcon color="orange" />}>
+                          Combined balance of NEAR and wNEAR.
+                          <br /> NEAR will be automatically wrapped to wNEAR
+                          <br /> if your wNEAR balance isn't sufficient for the
+                          swap.
+                          <br />
+                          Note that to cover network fees, we reserve
+                          {` ${formatTokenValue(
+                            RESERVED_NEAR_BALANCE,
+                            token.decimals
+                          )} NEAR`}
+                          <br /> in your wallet.
+                        </TooltipInfo>
+                      )}
+                    <BlockMultiBalances
+                      balance={
+                        token &&
+                        isBaseToken(token) &&
+                        token.address === "wrap.near"
+                          ? balance + nativeBalance
+                          : balance
+                      }
+                      decimals={token?.decimals ?? 0}
+                      handleClick={() => handleSetMaxValue()}
+                      disabled={false}
+                      className={styles.blockMultiBalances}
+                    />
+                  </div>
                 }
               />
               <div className={styles.buttonGroup}>
@@ -270,18 +300,9 @@ export const DepositForm = () => {
                 justify="center"
                 className={styles.hintWrapper}
               >
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger>
-                      <InfoCircledIcon />
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <span className={styles.tooltipContent}>
-                        Please make sure you connected to the right network
-                      </span>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
+                <TooltipInfo icon={<InfoCircledIcon />}>
+                  Please make sure you connected to the right network
+                </TooltipInfo>
                 <p className={styles.hint}>
                   Make sure to select {network} as the deposit network
                 </p>
@@ -427,12 +448,15 @@ function isInsufficientBalance(
     return false
   }
   const balanceToFormat = formatTokenValue(balance, token.decimals)
-  const nativeBalanceFormatted = formatTokenValue(nativeBalance, token.decimals)
   if (network === BlockchainEnum.NEAR) {
     if (isBaseToken(token) && token.address === "wrap.near") {
-      return formAmount >= balanceToFormat + nativeBalanceFormatted
+      const balanceToFormat = formatTokenValue(
+        balance + nativeBalance,
+        token.decimals
+      )
+      return formAmount > balanceToFormat
     }
-    return formAmount >= balanceToFormat
+    return formAmount > balanceToFormat
   }
   return false
 }
