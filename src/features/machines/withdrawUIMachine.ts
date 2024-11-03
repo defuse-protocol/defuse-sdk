@@ -32,20 +32,24 @@ import {
 } from "./swapIntentMachine"
 import {
   type Events as WithdrawFormEvents,
+  type ParentEvents as WithdrawFormParentEvents,
   withdrawFormReducer,
 } from "./withdrawFormReducer"
 
 export type Context = {
   error: Error | null
   quote: AggregatedQuote | null
-  initialFormValues: {
-    tokenIn: BaseTokenInfo | UnifiedTokenInfo
-    tokenOut: BaseTokenInfo
-  }
   intentCreationResult: SwapIntentMachineOutput | null
   intentRefs: ActorRefFrom<typeof intentStatusMachine>[]
   tokenList: (BaseTokenInfo | UnifiedTokenInfo)[]
   withdrawalSpec: WithdrawalSpec | null
+  depositedBalanceRef: ActorRefFrom<typeof depositedBalanceMachine>
+  withdrawFormRef: ActorRefFrom<typeof withdrawFormReducer>
+  submitDeps: {
+    userAddress: string
+    nearClient: providers.Provider
+    sendNearTransaction: (tx: Transaction) => Promise<{ txHash: string } | null>
+  } | null
 }
 
 type PassthroughEvent = {
@@ -74,13 +78,7 @@ export const withdrawUIMachine = setup({
     events: {} as
       | {
           type: "submit"
-          params: {
-            userAddress: string
-            nearClient: providers.Provider
-            sendNearTransaction: (
-              tx: Transaction
-            ) => Promise<{ txHash: string } | null>
-          }
+          params: NonNullable<Context["submitDeps"]>
         }
       | {
           type: "BALANCE_CHANGED"
@@ -91,6 +89,7 @@ export const withdrawUIMachine = setup({
       | BackgroundQuoterParentEvents
       | DepositedBalanceEvents
       | WithdrawFormEvents
+      | WithdrawFormParentEvents
       | PassthroughEvent,
 
     emitted: {} as PassthroughEvent,
@@ -126,14 +125,18 @@ export const withdrawUIMachine = setup({
     clearIntentCreationResult: assign({ intentCreationResult: null }),
     passthroughEvent: emit((_, event: PassthroughEvent) => event),
 
-    setWithdrawalSpec: assign({
-      withdrawalSpec: ({ self }) => {
-        const snapshot = self.getSnapshot()
+    setSubmitDeps: assign({
+      submitDeps: (_, value: Context["submitDeps"]) => value,
+    }),
 
+    clearWithdrawalSpec: assign({
+      withdrawalSpec: null,
+    }),
+    updateWithdrawalSpec: assign({
+      withdrawalSpec: ({ context }) => {
         const balances =
-          snapshot.children.depositedBalanceRef?.getSnapshot().context.balances
-        const formValues =
-          snapshot.children.withdrawFormRef?.getSnapshot().context
+          context.depositedBalanceRef.getSnapshot().context.balances
+        const formValues = context.withdrawFormRef.getSnapshot().context
 
         return getRequiredSwapAmount(
           formValues.tokenIn,
@@ -171,13 +174,6 @@ export const withdrawUIMachine = setup({
       type: "PAUSE",
     }),
 
-    spawnDepositedBalanceRef: spawnChild("depositedBalanceActor", {
-      id: "depositedBalanceRef",
-      input: ({ self, context }) => ({
-        parentRef: self,
-        tokenList: context.tokenList,
-      }),
-    }),
     relayToDepositedBalanceRef: sendTo(
       "depositedBalanceRef",
       (_, event: DepositedBalanceEvents) => event
@@ -212,13 +208,7 @@ export const withdrawUIMachine = setup({
                 amountsOut: {},
               }
 
-        const snapshot = self.getSnapshot()
-
-        // However knows how to access the child's state nicely, please update this
-        const formRef: ActorRefFrom<typeof withdrawFormReducer> | undefined =
-          snapshot.children.withdrawFormRef
-        assert(formRef, "formRef is undefined")
-        const formValues = formRef.getSnapshot().context
+        const formValues = context.withdrawFormRef.getSnapshot().context
 
         const intentRef = spawn("intentStatusActor", {
           id: `intent-${output.intentHash}`,
@@ -247,34 +237,73 @@ export const withdrawUIMachine = setup({
 
       return context.quote != null && context.quote.totalAmountOut > 0n
     },
+    isSwapNotNeeded: ({ context }) => {
+      assert(context.withdrawalSpec != null, "withdrawalSpec is null")
+      return context.withdrawalSpec.swapParams == null
+    },
+    isTrue: (_, value: boolean) => value,
+    isFalse: (_, value: boolean) => !value,
+    isBalanceReady: ({ context }) => {
+      const snapshot = context.depositedBalanceRef.getSnapshot()
+      return Object.keys(snapshot.context.balances).length > 0
+    },
+
+    isBalanceSufficientForQuote: (
+      _,
+      {
+        balances,
+        quote,
+      }: { balances: BalanceMapping; quote: AggregatedQuote | null }
+    ) => {
+      // We can't proceed without a quote
+      if (quote == null) return false
+
+      for (const [token, amount] of Object.entries(quote.amountsIn)) {
+        // We need to know balances of all tokens involved in the swap
+        const balance = balances[token]
+        if (balance == null || balance < amount) {
+          return false
+        }
+      }
+
+      return true
+    },
+
+    isCoreInputData: (_, event: WithdrawFormParentEvents) => {
+      const v =
+        event.fields.includes("parsedAmount") ||
+        event.fields.includes("tokenIn") ||
+        event.fields.includes("tokenOut")
+
+      return v
+    },
   },
 }).createMachine({
-  /** @xstate-layout N4IgpgJg5mDOIC5SwO4EMAOBaArgSwGIBJAOQBUBRcgfQGUKyyAZCgEQG0AGAXUVAwD2sPABc8AgHZ8QAD0RYArAoAcAOgCMAdgWcALJ04BOZZoBMCgDQgAnvMO7Nq5ac6b1B07oWfDAX19WqJi4hABCAIJM4SQAwhTUMQAS0QDibFy8SCCCwmKS0nIIAMxFCk5GygBsmpqGnJUKlZVWtghYhpWmqtWG6lWuupWcRer+gejY+ARMAPIppBnSOaLiUlmFlUVOvbqmlbpFulpGmi12uoaqRW7Kt-aaRfUKYyBBk4SzKTMAqmSLWcs8mtQIUsKZ1JUNPpDOZwcoFJomsozm17Jdrn07g5Hg0Xm8QqpICsJFACLAcAAjAC2on+-CEK3y60Q6i0qlq7lMhz6Sm0KKwRUMl06HSFpmURiafgCrwmBKJYhJBDwEgwOBEdOyDKBBXkezK4PUOgUEKM4uu-Oul3UB046iKm3tQsqeLl+EJEGJpJIFAA6tQAIrfGaUTWA1a6trY1RC0qCkx1fRFfn7MrqcxNLxwkyjGX490KlVQVQANzQABs8BA0IrSRBJGBVCqSwIANaN-N4D1e0sVqs1osIZsCADGA8kGTD2ojzLaKi2pkMCl0yncVWUu2aNnk2iuCKM6nsnCUxiKruCBc9td7lertYI9YkjeH7dUne717Lt4HJKHEhbY5ApO6iZPSuQziC8gqGUwzHnaK4SoM-I2l0drKEUhq6IMaEunmbpduS1KiPej7Pv+bYdhMABKYAAGZTuBTKQQgRzqKoi6rlhWHrqypzbm0jxdIMG7rocDpHJo57vG+lI0iI95gAATopAiKaoGDljWtGqVSb7UXRDGMsCsiIAclyGgoIwNFU9ilMh+zsrs9gmrseyaLsUkEoRcn3j6-pBiGFCGTqs4HDBvSsuKejHJY-GKA4Vwig66GVPYnSeZePboF61AAI44AIIhgAQfmBsGoY8Es05MSZqKuKoCgwhKWhciYRTInFpRsaxvRDNcIzeP4MoSAIEBwNInZVYxxmgu4wwNU1dpmO1Dwda0WASga7mcIhpieJsZ54ReXaFiSU1GZG7RKAtUUtSt7X8iaC5Lg6pRmNiklHdJp3FlW5ZgOdIXMVgXiOAc4reCMMK1Hx62Lpw7FOs4y72lhhiHeMx0fkWN79rWgMQbVYKClcZguAi65Crc-I1E4tTo6YmjOO19oY7KWPecRRYEzVhTtWURxDOKhrVAi-JHDBe0mntJR2ocuGY99V449ltZ5QVRU8zNO5DE4m37vCuwQo9uiqIM3hPJsRu9UNvhAA */
-  id: "swap-ui",
+  /** @xstate-layout N4IgpgJg5mDOIC5QHcCWAXAFhATgQ2QFoBXVAYgEkA5AFQFFaB9AZTppoBk6ARAbQAYAuolAAHAPawMqcQDsRIAB6JCAVlUA2AHQBGAEwBmVXp0GAHBtX8LAGhABPFQHYAnHt0aX-VQBZVZpw0fHzMAX1C7NCxcAhJyDgB5AHFqAWEkEAkpdBl5DOUESy0XHz0S1R0fDXMnYLtHBEJXAy0nPX5DIx1+UqDwyIxsfCJSMkSkhIBVGjSFLOk5BQLCEx8taxL+Sy2DDQ765xcWto6DLp69PoiQKKHY0i1IaVkoMgg5MC1YdDx0T9uYiNUI8IM8oLMMvMcot8og-O5+DpAmUXGY9GY3IYDo0dP5Wn5qkYnPwthonP0boNAXEQWCyAB1Cg0AAS3AASgBBemMABiCTZAFktAAqCFiSQLPKgZYaMxrMxmVROfylHwklwabGEAylLQaPYlLy1XZ6VQUgHDGlPHIvMgAIQ5HA5VAAwnRGC7mc6kjwxZkJdCpUoVKb+FofAZ9Ls0Rp0fw2lqde59fxDfGI7GzdcLfdgdbULaHU7Xe7Pd7fTp0uLsrklipce4MYYepZZU5AlrcS1usZ2n4SXt4+aqZaHvnbYyWeyubz+QLeRQ6BxuMwPV6qD6+EI5gHa7DGmTtOiXDokcr2mcnJ29lo9FVIz5umZ47jydmR7naTaoFpUBAADZgGQsDEAARgAthgfpQnu0oqBqqitOomjVPoLj+KoWp6G0WgWBYqg1NYCrDtEo55qC36-gBQFUHQ3IAIqTAk9DQbuMJwTilSIeqOguMqXF8XoWpuMUd4hM+GI6GifgkXcQJfgWP6iDgYCiHg+CBm8HxfD8fxaDm8njkpKlqRpuSsTW7HBo0JQtOU+onoepg6FhYZmAY6IEaaZKSUcsnUmOFGKVoymqepvy5PpeBgowoF4P+eCyAAxkBRbOm6a7lluVb+pZQYyth6whEipQKhoSKYQ4iBGIhJXGDqThSUiOr+WRCkvCFJnhYGUUxXFCXJUBFmSnWjSKohlyGFJnn+Ki2JEuG2GnlJj6uMErWfkZnVhWZchUYBWmyJ83y-P8H6GUFHWhaZEV7X+gHDYGo2EKi6xnGYp7+N00ZXlVCBGNoZIVKtbTmO5G0XWC203T193HcgeCiIwACOxDiHpcNkLRDFMSx26Qmx+UqKVb1bD46G1E4GJ1H9gRrKoGrBBU5iPiEENWpdxk7bdsj7fDiMo2jGPUWQj2wdZhBM29SpyimMbYsSLitAqPS+OVUk9OzDwgRBGDfodnwFgAbuIADW-OiGyYAAGZi1ZBT6k4xSEeh1SNWYWETe5bRTYiXgGG+AykZ+OuQeg+tgDgODiDgIUJeg1sx+BXwI5bNt20ThR8Vo6jObiMsJn9n24WU7bk3epwB1rwKh3rilY3RjCMcxdAZ6NnjuLiar6MDpgGImEbhiU6J094JJ6OE1yyOIEBwAoBlxDueXPfoj7rKmvH8X4glauVYa7IiZK7PegTV+1UBLyN+6EKeRzryefHAwzhcNJLgS3vGrjqOi+o6BoZ9bThpfJ618FRKxJPxDEJ4DDWCEn9G+g9LAMwfGiOUj4sxBzkhzKG11urixgvbesh9cL+AsMqHUUlsSvW8FYYIqY1Ton0AAzm0M8F7QRn1eKiUUrAPFssWoYZeLRjASSAILk-qeXDFUS4VQgiBAHMwnBXVdq8yAQTZe18NRmBIWVchj4PZ-TVErPuFMPq9COIHSkwdIaUVwSovmKcBao3RmAXhhCDyGHDOVdsFgTyIgqNicq2jCSU3cmcVE-93zWOwbY5RPMHGwFToLFxWhnF-EYCpPAEAGjVivhxFYqZcKnnocDdC1gfAK28MUFCgR1CthKIo2J3NYbUUcUjNJhtqJuMzmoZUXizy+O6LicRDRiROwvP2GBIQyiNOCnY+JcMdIxzwDARgs8oTJL+N056bg3KkKBhQgxDRyprGwsgo4kZeKGFmVdOJLTAJLPwKs9ZAZNmfHeEdbZoCcKKl0QRfRlSdA51RHhbwGYDA3K5jDSK8zAxrI+F8-JwytAeSamI1W6hfoNHRGsXi6EYEnhOB5SFWgPmuPUXkiWfjwxU1cF2Ho3QsUqCTOsdQfgKg7GfEYM+tdw6KURdZaogM-4RiTFYQ+nZ3LFCOH7Mh7RKiT1CEAA */
+  id: "withdraw-ui",
 
-  context: ({ input }) => ({
+  context: ({ input, spawn, self }) => ({
     error: null,
     quote: null,
-    initialFormValues: {
-      tokenIn: input.tokenIn,
-      tokenOut: input.tokenOut,
-    },
     intentCreationResult: null,
     intentRefs: [],
     tokenList: input.tokenList,
     withdrawalSpec: null,
+    depositedBalanceRef: spawn("depositedBalanceActor", {
+      id: "depositedBalanceRef",
+      input: {
+        parentRef: self,
+        tokenList: input.tokenList,
+      },
+    }),
+    withdrawFormRef: spawn("withdrawFormActor", {
+      id: "withdrawFormRef",
+      input: { parentRef: self, tokenIn: input.tokenIn },
+    }),
+    submitDeps: null,
   }),
 
-  entry: [
-    "spawnBackgroundQuoterRef",
-    "spawnDepositedBalanceRef",
-    spawnChild("withdrawFormActor", {
-      id: "withdrawFormRef",
-      input: ({ context }) => ({
-        tokenIn: context.initialFormValues.tokenIn,
-      }),
-    }),
-  ],
+  entry: ["spawnBackgroundQuoterRef"],
 
   on: {
     INTENT_SETTLED: {
@@ -287,22 +316,13 @@ export const withdrawUIMachine = setup({
       ],
     },
 
-    BALANCE_CHANGED: {
-      actions: [
-        ({ event }) => {
-          console.log("Balance changed", event.params.changedBalanceMapping)
-        },
-        "setWithdrawalSpec",
-        "sendToBackgroundQuoterRefNewQuoteInput",
-      ],
-    },
-
     LOGIN: {
       actions: {
         type: "relayToDepositedBalanceRef",
         params: ({ event }) => event,
       },
     },
+
     LOGOUT: {
       actions: {
         type: "relayToDepositedBalanceRef",
@@ -313,19 +333,13 @@ export const withdrawUIMachine = setup({
 
   states: {
     editing: {
-      on: {
-        submit: {
-          target: "submitting",
-          guard: "isQuoteRelevant",
-          actions: "clearIntentCreationResult",
-        },
+      initial: "idle",
+      entry: "updateUIAmountOut",
 
+      on: {
         "WITHDRAW_FORM.*": {
-          target: ".validating",
+          target: "editing",
           actions: [
-            "clearQuote",
-            "updateUIAmountOut",
-            "sendToBackgroundQuoterRefPause",
             "clearError",
             {
               type: "relayToWithdrawFormRef",
@@ -334,65 +348,153 @@ export const withdrawUIMachine = setup({
           ],
         },
 
-        NEW_QUOTE: {
-          actions: [
-            {
-              type: "setQuote",
-              params: ({ event }) => event.params.quote,
+        BALANCE_CHANGED: [
+          {
+            target: "editing",
+            guard: {
+              type: "isBalanceSufficientForQuote",
+              params: ({ context }) => {
+                return {
+                  balances:
+                    context.depositedBalanceRef.getSnapshot().context.balances,
+                  quote: context.quote,
+                }
+              },
             },
-            "updateUIAmountOut",
-          ],
+            actions: [
+              "updateWithdrawalSpec",
+              "sendToBackgroundQuoterRefNewQuoteInput",
+            ],
+          },
+          ".preparation",
+        ],
+
+        WITHDRAW_FORM_FIELDS_CHANGED: {
+          target: ".preparation",
+          guard: {
+            type: "isCoreInputData",
+            params: ({ event }) => event,
+          },
         },
       },
 
       states: {
-        idle: {},
+        idle: {
+          on: {
+            submit: {
+              target: "done",
+              guard: "isQuoteRelevant",
+              actions: [
+                "clearIntentCreationResult",
+                { type: "setSubmitDeps", params: ({ event }) => event.params },
+              ],
+            },
 
-        validating: {
-          invoke: {
-            src: "formValidationActor",
-
-            onDone: [
-              {
-                target: "waiting_quote",
-                guard: ({ event }) => event.output,
-                actions: [
-                  "setWithdrawalSpec",
-                  "sendToBackgroundQuoterRefNewQuoteInput",
-                ],
-                reenter: true,
-              },
-              "idle",
-            ],
+            NEW_QUOTE: {
+              actions: ["updateUIAmountOut"],
+            },
           },
         },
 
-        waiting_quote: {
-          always: {
-            target: "idle",
-            guard: ({ context }) => {
-              assert(context.withdrawalSpec != null, "withdrawalSpec is null")
-              return context.withdrawalSpec.swapParams == null
+        preparation: {
+          initial: "waiting_balance",
+
+          states: {
+            waiting_balance: {
+              on: {
+                BALANCE_CHANGED: "idle",
+              },
+
+              always: {
+                target: "idle",
+                guard: "isBalanceReady",
+              },
             },
-          },
-          on: {
-            NEW_QUOTE: {
-              target: "idle",
-              actions: [
-                {
-                  type: "setQuote",
-                  params: ({ event }) => event.params.quote,
+
+            idle: {
+              type: "parallel",
+
+              states: {
+                swap_quote: {
+                  initial: "idle",
+                  states: {
+                    quote_ready: {
+                      type: "final",
+                    },
+
+                    idle: {
+                      on: {
+                        NEW_QUOTE: {
+                          target: "quote_ready",
+
+                          actions: {
+                            type: "setQuote",
+                            params: ({ event }) => event.params.quote,
+                          },
+
+                          reenter: true,
+                        },
+                      },
+
+                      always: {
+                        target: "quote_ready",
+                        guard: "isSwapNotNeeded",
+                        reenter: true,
+                      },
+                    },
+                  },
                 },
-                "updateUIAmountOut",
+
+                storage_deposit_quote: {
+                  states: {
+                    done: {
+                      type: "final",
+                    },
+                  },
+
+                  initial: "done",
+                },
+              },
+
+              entry: [
+                () => {
+                  console.log("prep")
+                },
+                "updateWithdrawalSpec",
+                "sendToBackgroundQuoterRefNewQuoteInput",
               ],
-              description: `should do the same as NEW_QUOTE on "editing" iteself`,
+
+              onDone: {
+                target: "preparation_done",
+                reenter: true,
+              },
+            },
+
+            preparation_done: {
+              type: "final",
             },
           },
+
+          onDone: {
+            target: "idle",
+            actions: "updateUIAmountOut",
+          },
+
+          entry: [
+            "clearWithdrawalSpec",
+            "clearQuote",
+            "sendToBackgroundQuoterRefPause",
+          ],
+        },
+
+        done: {
+          type: "final",
         },
       },
 
-      initial: "idle",
-      entry: "updateUIAmountOut",
+      onDone: {
+        target: "submitting",
+      },
     },
 
     submitting: {
@@ -400,9 +502,8 @@ export const withdrawUIMachine = setup({
         id: "swapRef",
         src: "swapActor",
 
-        input: ({ context, event, self }) => {
-          assertEvent(event, "submit")
-
+        input: ({ context, self }) => {
+          assert(context.submitDeps, "submitDeps is null")
           assert(context.withdrawalSpec, "withdrawalSpec is null")
 
           const quote = context.quote
@@ -410,17 +511,12 @@ export const withdrawUIMachine = setup({
             assert(quote, "quote is null")
           }
 
-          const snapshot = self.getSnapshot()
-
-          const formRef: ActorRefFrom<typeof withdrawFormReducer> | undefined =
-            snapshot.children.withdrawFormRef
-          assert(formRef, "formRef is undefined")
-          const { recipient } = formRef.getSnapshot().context
+          const { recipient } = context.withdrawFormRef.getSnapshot().context
 
           return {
-            userAddress: event.params.userAddress,
-            nearClient: event.params.nearClient,
-            sendNearTransaction: event.params.sendNearTransaction,
+            userAddress: context.submitDeps.userAddress,
+            nearClient: context.submitDeps.nearClient,
+            sendNearTransaction: context.submitDeps.sendNearTransaction,
             intentOperationParams: {
               type: "withdraw",
               quote,
