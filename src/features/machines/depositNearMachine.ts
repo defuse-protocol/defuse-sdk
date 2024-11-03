@@ -40,6 +40,9 @@ export type Output =
   | {
       status: "DEPOSIT_COMPLETED"
       txHash: string
+      userAddressId: string
+      amount: bigint
+      asset: SwappableToken
     }
 
 export const depositNearMachine = setup({
@@ -93,10 +96,18 @@ export const depositNearMachine = setup({
   initial: "signing",
 
   output: ({ context }): Output => {
-    if (context.txHash != null) {
+    if (
+      context.txHash != null &&
+      context.accountId != null &&
+      context.amount != null &&
+      context.asset != null
+    ) {
       return {
         status: "DEPOSIT_COMPLETED",
         txHash: context.txHash,
+        userAddressId: context.accountId,
+        amount: context.amount,
+        asset: context.asset,
       }
     }
 

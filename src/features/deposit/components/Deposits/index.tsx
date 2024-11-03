@@ -1,26 +1,16 @@
 import { Box, Flex, Link, Text } from "@radix-ui/themes"
 import { AssetComboIcon } from "src/components/Asset/AssetComboIcon"
-import type { SwappableToken } from "src/types"
+import { formatTokenValue } from "src/utils/format"
 import type { Context } from "../../../machines/depositUIMachine"
 
 const NEAR_EXPLORER = "https://nearblocks.io"
 
 export const Deposits = ({
-  amount,
-  asset,
-  userAddressId,
   depositNearResult,
 }: {
-  amount: string
-  asset: SwappableToken | null
-  userAddressId: string
   depositNearResult: Context["depositNearResult"]
 }) => {
-  if (
-    depositNearResult?.status !== "DEPOSIT_COMPLETED" ||
-    depositNearResult?.txHash == null ||
-    asset == null
-  ) {
+  if (depositNearResult?.status !== "DEPOSIT_COMPLETED") {
     return null
   }
 
@@ -32,7 +22,10 @@ export const Deposits = ({
   return (
     <Flex p={"2"} gap={"3"}>
       <Box pt={"2"}>
-        <AssetComboIcon icon={asset.icon} name={asset.name} />
+        <AssetComboIcon
+          icon={depositNearResult.asset.icon}
+          name={depositNearResult.asset.name}
+        />
       </Box>
 
       <Flex direction={"column"} flexGrow={"1"}>
@@ -53,13 +46,22 @@ export const Deposits = ({
         <Flex align={"center"}>
           <Box flexGrow={"1"}>
             <Text size={"1"} weight={"medium"} color={"gray"}>
-              From {shortenText(userAddressId)}
+              From {shortenText(depositNearResult.userAddressId)}
             </Text>
           </Box>
 
           <Box>
             <Text size={"1"} weight={"medium"} color={"green"}>
-              +{amount.toString()} {asset?.symbol}
+              +
+              {formatTokenValue(
+                depositNearResult.amount,
+                depositNearResult.asset.decimals,
+                {
+                  min: 0.0001,
+                  fractionDigits: 4,
+                }
+              )}{" "}
+              {depositNearResult.asset.symbol}
             </Text>
           </Box>
         </Flex>

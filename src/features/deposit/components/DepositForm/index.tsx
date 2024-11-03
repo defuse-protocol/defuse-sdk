@@ -312,12 +312,7 @@ export const DepositForm = () => {
             </div>
           )}
         </Form>
-        <Deposits
-          amount={amount}
-          asset={token}
-          userAddressId={userAddress}
-          depositNearResult={snapshot.context.depositNearResult}
-        />
+        <Deposits depositNearResult={snapshot.context.depositNearResult} />
       </div>
     </div>
   )
