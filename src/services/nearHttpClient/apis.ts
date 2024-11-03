@@ -39,3 +39,14 @@ export async function getNearNep141StorageBalanceOf(
   )
   return json.result
 }
+
+export async function getNearNep141StorageBalanceBounds(
+  params: types.GetNearNep141StorageBalanceBoundsRequest["params"][0]
+): Promise<types.GetNearNep141StorageBalanceBoundsResponse["result"]> {
+  const json =
+    await jsonRPCRequest<types.GetNearNep141StorageBalanceBoundsRequest>(
+      "query",
+      params
+    )
+  return json.result
+}

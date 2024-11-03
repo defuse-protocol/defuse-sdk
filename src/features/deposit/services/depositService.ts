@@ -5,12 +5,14 @@ import {
   getSupportedTokens,
 } from "../../../services/poaBridgeClient"
 import type { Transaction } from "../../../types/deposit"
-import { getNearNep141StorageBalance } from "../../machines/getBalanceMachine"
+import {
+  getNearNep141MinStorageBalance,
+  getNearNep141StorageBalance,
+} from "../../machines/getBalanceMachine"
 import { getNearTxSuccessValue } from "../../machines/getTxMachine"
 export const FT_MAX_GAS_TRANSACTION = `300${"0".repeat(12)}` // 300 TGAS
 export const FT_REDUCED_GAS_TRANSACTION = `270${"0".repeat(12)}` // 270 TGAS (for storage deposit)
 export const FT_DEPOSIT_GAS = `30${"0".repeat(12)}` // 30 TGAS
-export const FT_MINIMUM_STORAGE_BALANCE = 1250000000000000000000n
 
 export class DepositService {
   /**
@@ -34,7 +36,8 @@ export class DepositService {
   createBatchDepositNearNep141Transaction(
     assetAccountId: string,
     amount: bigint,
-    isStorageDepositRequired: boolean
+    isStorageDepositRequired: boolean,
+    minStorageBalance: bigint
   ): Transaction[] {
     return [
       {
@@ -51,7 +54,7 @@ export class DepositService {
                       registration_only: true,
                     },
                     gas: FT_DEPOSIT_GAS,
-                    deposit: FT_MINIMUM_STORAGE_BALANCE.toString(),
+                    deposit: minStorageBalance.toString(),
                   },
                 },
               ]
@@ -80,7 +83,8 @@ export class DepositService {
     assetAccountId: string,
     amount: bigint,
     wrapAmount: bigint,
-    isWrapNearRequired: boolean
+    isWrapNearRequired: boolean,
+    minStorageBalance: bigint
   ): Transaction[] {
     return [
       {
@@ -94,9 +98,7 @@ export class DepositService {
                     methodName: "near_deposit",
                     args: {},
                     gas: FT_DEPOSIT_GAS,
-                    deposit: (
-                      wrapAmount + FT_MINIMUM_STORAGE_BALANCE
-                    ).toString(),
+                    deposit: (wrapAmount + minStorageBalance).toString(),
                   },
                 },
               ]
@@ -181,6 +183,12 @@ export class DepositService {
       contractId,
       accountId,
     })
-    return storageBalance < BigInt(FT_MINIMUM_STORAGE_BALANCE)
+    return storageBalance < (await this.getMinimumStorageBalance(contractId))
+  }
+
+  async getMinimumStorageBalance(contractId: string): Promise<bigint> {
+    return await getNearNep141MinStorageBalance({
+      contractId,
+    })
   }
 }

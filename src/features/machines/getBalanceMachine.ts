@@ -1,6 +1,7 @@
 import {
   getNearBalance,
   getNearNep141BalanceAccount,
+  getNearNep141StorageBalanceBounds,
   getNearNep141StorageBalanceOf,
 } from "../../services/nearHttpClient"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../types/base"
@@ -132,4 +133,20 @@ export const getNearNep141StorageBalance = async ({
   } catch (err: unknown) {
     throw new Error("Error fetching balance", { cause: err })
   }
+}
+
+export const getNearNep141MinStorageBalance = async ({
+  contractId,
+}: {
+  contractId: string
+}): Promise<bigint> => {
+  const response = await getNearNep141StorageBalanceBounds({
+    request_type: "call_function",
+    method_name: "storage_balance_bounds",
+    account_id: contractId,
+    args_base64: "e30=",
+    finality: "optimistic",
+  })
+  const balance = JSON.parse(Buffer.from(response.result).toString())
+  return BigInt(balance.min)
 }
