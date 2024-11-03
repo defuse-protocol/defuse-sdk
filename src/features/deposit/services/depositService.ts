@@ -1,12 +1,16 @@
 import type { BlockchainEnum } from "src/types"
+import { settings } from "../../../config/settings"
 import {
   getDepositAddress,
   getSupportedTokens,
 } from "../../../services/poaBridgeClient"
 import type { Transaction } from "../../../types/deposit"
+import { getNearNep141StorageBalance } from "../../machines/getBalanceMachine"
 import { getNearTxSuccessValue } from "../../machines/getTxMachine"
 export const FT_MAX_GAS_TRANSACTION = `300${"0".repeat(12)}` // 300 TGAS
+export const FT_REDUCED_GAS_TRANSACTION = `270${"0".repeat(12)}` // 270 TGAS (for storage deposit)
 export const FT_DEPOSIT_GAS = `30${"0".repeat(12)}` // 30 TGAS
+export const FT_MINIMUM_STORAGE_BALANCE = 1250000000000000000000n
 
 export class DepositService {
   /**
@@ -27,25 +31,43 @@ export class DepositService {
    *     "refund_if_failed": true // optional, default: false
    *   }
    */
-  createDepositNearTransaction(
-    receiverId: string,
-    assetId: string,
-    amount: string
+  createBatchDepositNearNep141Transaction(
+    assetAccountId: string,
+    amount: bigint,
+    isStorageDepositRequired: boolean
   ): Transaction[] {
     return [
       {
-        receiverId: assetId,
+        receiverId: assetAccountId,
         actions: [
+          ...(isStorageDepositRequired
+            ? [
+                {
+                  type: "FunctionCall" as const,
+                  params: {
+                    methodName: "storage_deposit",
+                    args: {
+                      account_id: settings.defuseContractId,
+                      registration_only: true,
+                    },
+                    gas: FT_DEPOSIT_GAS,
+                    deposit: FT_MINIMUM_STORAGE_BALANCE.toString(),
+                  },
+                },
+              ]
+            : []),
           {
             type: "FunctionCall",
             params: {
               methodName: "ft_transfer_call",
               args: {
-                receiver_id: receiverId,
-                amount,
+                receiver_id: settings.defuseContractId,
+                amount: amount.toString(),
                 msg: "",
               },
-              gas: FT_MAX_GAS_TRANSACTION,
+              gas: isStorageDepositRequired
+                ? FT_REDUCED_GAS_TRANSACTION
+                : FT_MAX_GAS_TRANSACTION,
               deposit: "1",
             },
           },
@@ -54,35 +76,43 @@ export class DepositService {
     ]
   }
 
-  createBatchDepositNearTransaction(
-    receiverId: string,
-    assetId: string,
-    fungibleAmount: string,
-    nativeAmount: string
+  createBatchDepositNearNativeTransaction(
+    assetAccountId: string,
+    amount: bigint,
+    wrapAmount: bigint,
+    isWrapNearRequired: boolean
   ): Transaction[] {
     return [
       {
-        receiverId: assetId,
+        receiverId: assetAccountId,
         actions: [
-          {
-            type: "FunctionCall",
-            params: {
-              methodName: "near_deposit",
-              args: {},
-              gas: FT_DEPOSIT_GAS,
-              deposit: nativeAmount,
-            },
-          },
+          ...(isWrapNearRequired
+            ? [
+                {
+                  type: "FunctionCall" as const,
+                  params: {
+                    methodName: "near_deposit",
+                    args: {},
+                    gas: FT_DEPOSIT_GAS,
+                    deposit: (
+                      wrapAmount + FT_MINIMUM_STORAGE_BALANCE
+                    ).toString(),
+                  },
+                },
+              ]
+            : []),
           {
             type: "FunctionCall",
             params: {
               methodName: "ft_transfer_call",
               args: {
-                receiver_id: receiverId,
-                amount: fungibleAmount,
+                receiver_id: settings.defuseContractId,
+                amount: amount.toString(),
                 msg: "",
               },
-              gas: `270${"0".repeat(12)}`, // Reduced to 270 TGAS
+              gas: isWrapNearRequired
+                ? FT_REDUCED_GAS_TRANSACTION
+                : FT_MAX_GAS_TRANSACTION,
               deposit: "1",
             },
           },
@@ -137,5 +167,20 @@ export class DepositService {
     })
     // Check if input amount is equal to the success value
     return successValue === BigInt(amount)
+  }
+
+  async isStorageDepositRequired(
+    contractId: string,
+    accountId: string
+  ): Promise<boolean> {
+    // Aurora is a special case and does not require storage deposit
+    if (accountId === "aurora") {
+      return false
+    }
+    const storageBalance = await getNearNep141StorageBalance({
+      contractId,
+      accountId,
+    })
+    return storageBalance < BigInt(FT_MINIMUM_STORAGE_BALANCE)
   }
 }

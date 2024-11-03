@@ -29,3 +29,13 @@ export async function getTx(
   const json = await jsonRPCRequest<types.GetNearTxRequest>("tx", params)
   return json.result
 }
+
+export async function getNearNep141StorageBalanceOf(
+  params: types.GetNearNep141StorageBalanceOfRequest["params"][0]
+): Promise<types.GetNearNep141StorageBalanceOfResponse["result"]> {
+  const json = await jsonRPCRequest<types.GetNearNep141StorageBalanceOfRequest>(
+    "query",
+    params
+  )
+  return json.result
+}

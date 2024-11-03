@@ -97,6 +97,7 @@ export const DepositForm = () => {
       })
       // We have to clean up network because it could be not a valid value for the previous token
       setValue("network", "")
+      setValue("amount", "")
       onCloseModal(undefined)
     }
   }, [payload, onCloseModal, depositUIActorRef, setValue])
@@ -128,6 +129,14 @@ export const DepositForm = () => {
       setValue("network", networkOption ?? "")
     }
   }, [token, setValue])
+
+  const balanceInsufficient = isInsufficientBalance(
+    watch("amount"),
+    balance,
+    nativeBalance,
+    token,
+    network
+  )
 
   return (
     <div className={styles.container}>
@@ -197,11 +206,17 @@ export const DepositForm = () => {
                   radius="large"
                   className={`${styles.button}`}
                   color="orange"
-                  disabled={!watch("amount")}
+                  disabled={!watch("amount") || balanceInsufficient}
                 >
                   <span className={styles.buttonContent}>
                     <Spinner loading={false} />
-                    <Text size="6">Deposit</Text>
+                    <Text size="6">
+                      {watch("amount") >= "0"
+                        ? balanceInsufficient
+                          ? "Insufficient Balance"
+                          : "Deposit"
+                        : "Deposit"}
+                    </Text>
                   </span>
                 </Button>
               </div>
@@ -399,4 +414,25 @@ function getDefaultBlockchainOptionValue(
     return key ? getBlockchainsOptions()[key]?.value : undefined
   }
   return undefined
+}
+
+function isInsufficientBalance(
+  formAmount: string,
+  balance: bigint,
+  nativeBalance: bigint,
+  token: SwappableToken | null,
+  network: BlockchainEnum | null
+) {
+  if (!token || !network) {
+    return false
+  }
+  const balanceToFormat = formatTokenValue(balance, token.decimals)
+  const nativeBalanceFormatted = formatTokenValue(nativeBalance, token.decimals)
+  if (network === BlockchainEnum.NEAR) {
+    if (isBaseToken(token) && token.address === "wrap.near") {
+      return formAmount >= balanceToFormat + nativeBalanceFormatted
+    }
+    return formAmount >= balanceToFormat
+  }
+  return false
 }
