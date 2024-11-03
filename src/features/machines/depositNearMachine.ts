@@ -8,8 +8,16 @@ export type Context = {
   accountId: string | null
   txHash: string | null
   balance: bigint | null
-  error: string | undefined
-  outcome: unknown | null
+  error:
+    | null
+    | {
+        status: "ERR_SUBMITTING_TRANSACTION"
+        error: Error
+      }
+    | {
+        status: "ERR_VERIFYING_TRANSACTION"
+        error: Error | null
+      }
 }
 
 type Events = {
@@ -28,13 +36,10 @@ type Input = {
 }
 
 export type Output =
+  | NonNullable<Context["error"]>
   | {
-      status: "SUCCESSFUL"
+      status: "DEPOSIT_COMPLETED"
       txHash: string
-    }
-  | {
-      status: "FAILED"
-      error: string
     }
 
 export const depositNearMachine = setup({
@@ -61,6 +66,12 @@ export const depositNearMachine = setup({
     ),
   },
   actions: {
+    setError: assign({
+      error: (_, error: NonNullable<Context["error"]>) => error,
+    }),
+    logError: (_, params: { error: unknown }) => {
+      console.error(params.error)
+    },
     emitSuccessfulDeposit: emit(({ context }) => ({
       type: "SUCCESSFUL_DEPOSIT",
       data: context.txHash,
@@ -76,7 +87,7 @@ export const depositNearMachine = setup({
     },
   },
 }).createMachine({
-  /** @xstate-layout N4IgpgJg5mDOIC5QTABwPawJYBcC0AdmAIYBOAdNlAVgVAMQTpHm0Bu6A1mOShtviJlKWarSgJ26AMbEcWZgG0ADAF0VqxKH64FBLSAAeiAOwAOACzkAbNYBMAVhPWnATguuAzAEYANCABPRDxvC2VyVxMHHzsTT1c7O2VvawBfVP8+TFxCEgoqGjp6MFJSdApUABs5ADNygFteNGzBPJExOkkCDll5JTUNAx0+-SQjUzMHck9PZWjXB0nlM3N-IIQ8B1cbewXvFIszbzMzdMzmgVzhNhKsGoDxRmYeKW4m4auKG9I7h86pXp6DSDMbDPQGYwIbyeOzWGwpZLKOwLCyeBx2NbBfYmCKuFYOZQWEzeWI+U4ZEBZS5CL63e6PEplCrVHB1UiNKk5Gnkb6-cRdHpyIEDNRDFrgsaQ6GxGxmSKuawWawmMKeMyYjaTcjKGb7TwWBz7OyTTxnSkXLltABGZWIEFksHkRRB2nFzAhiG8eLs5EsBNscWR3miGpC3hxrjxUUJxNJdm86QpBHQKHgY05rTIYoEEtAkNRVhMga8tg8qOsocSZnIROiXsc+rMaIcZozn3ahSg2d07sliEOPqLMJLivcngrgSxXvIwaS9eJy31rlbFsztJ+9Lo3ZGHqhyms2y8JIDJmUKuUrlD+3COp8PnRhOsTbsK4+3Jt6DtDqdXdBbtGeaek+OJmDGJJHIsRLqpOGz7Ns9ZJHYnhFgWDgWK+LTtgAcugOAAAQAGLoAArgQEB4eUeEAJLdMQlRYBA265uMUIwjiYReK43iEqEtieFeOJ2AOcQONEBb7hh1JtAAwug9RVGAOCQExvaAQgSRyuQomRnMcZzA4V5JOQKr4osxLEsc6EUm23IAIJWuUSmMX+OaqSxJh4tMRw+O45hqiYGIwWh5BCRYFhetp9hNomqRAA */
+  /** @xstate-layout N4IgpgJg5mDOIC5QTABwPawJYBcC0AdmAIYBOAdNlAVgVAMQTpHm0Bu6A1mOShtviJlKWarSgJ26AMbEcWZgG0ADAF0VqxKH64FBLSAAeiAOwAOACzkAbNYBMAVhPWnATguuAzAEYANCABPRDxvC2VyVxMHHzsTT1c7O2VvawBfVP8+TFxCEgoqGjp6MFJSdApUABs5ADNygFteNGzBPJExOkkCDll5JTUNAx0+-SQjUzMHck9PZWjXB0nlM3N-IIQ8B1cbewXvFIszbzMzdMzmgVzhNhKsGoDxRmYeKW4m4auKG9I7h86pXp6DSDMbDPQGYwIbyeOzWGwpZLKOwLCyeBx2NbBfYmCKuFYOZQWEzeWI+U4ZEBZS5CL63e6PEplCrVHB1UiNKk5Gnkb6-cRdHpyIEDNRDFrgsaQ6GxGxmSKuawWawmMKeMyYjaTcjKGb7TwWBz7OyTTxnSkXLltABGZWIEFksHkRRB2nFzAhiG8eLs5EsBNscWR3miGpC3hxrjxUUJxNJdm86QpBHQKHgY05rTIYoEEtAkNRVhMga8tg8qOsocSZnIRPRhx1K0JJzNGc+7UKUGzundksQhx9RZhJcV7k8FcCWK95GDSS9sW8y31rhbFsztJ+9LoXZGHqhyms2y8JIDJmUKuUrlD+3COp8PnRhOsZhhK4+3Jt6DtDqdndBbtGeaek+OJmDGJJHIsRLqhOGz7Nsc5JHYnhFgWDgWK+LRtgAcugOAAAQAGLoAArgQEB4eUeEAJLdMQlRYBA265uMUIwt4vo6he+r7geaIakqNZosqHjRDqXoOGkFKttyADC6D1FUYA4JATE9oBCBJHK5AOFsrhzHGcwOFeSTkCq+KLMSxLHOhUmrm2ACCVrlMpjF-jmaksSYeLTEcMISbE9johqC7sZptgIQ2diJqkQA */
   id: "deposit-near",
 
   initial: "signing",
@@ -84,15 +95,13 @@ export const depositNearMachine = setup({
   output: ({ context }): Output => {
     if (context.txHash != null) {
       return {
-        status: "SUCCESSFUL",
+        status: "DEPOSIT_COMPLETED",
         txHash: context.txHash,
       }
     }
+
     if (context.error != null) {
-      return {
-        status: "FAILED",
-        error: context.error,
-      }
+      return context.error
     }
 
     throw new Error("Unexpected output")
@@ -105,8 +114,7 @@ export const depositNearMachine = setup({
       asset: input.asset,
       accountId: input.accountId,
       txHash: null,
-      error: undefined,
-      outcome: null,
+      error: null,
       tokenAddress: null,
     }
   },
@@ -131,10 +139,19 @@ export const depositNearMachine = setup({
         },
         onError: {
           target: "Aborted",
-          actions: assign((context) => ({
-            ...context,
-            error: "Signing error",
-          })),
+          actions: [
+            {
+              type: "logError",
+              params: ({ event }) => event,
+            },
+            {
+              type: "setError",
+              params: ({ event }) => ({
+                status: "ERR_SUBMITTING_TRANSACTION",
+                error: toError(event.error),
+              }),
+            },
+          ],
         },
         src: "signAndSendTransactions",
       },
@@ -156,6 +173,13 @@ export const depositNearMachine = setup({
         },
         onError: {
           target: "Not Found or Invalid",
+          actions: {
+            type: "setError",
+            params: {
+              status: "ERR_VERIFYING_TRANSACTION",
+              error: null,
+            },
+          },
         },
         src: "validateTransaction",
       },
@@ -188,3 +212,7 @@ export const depositNearMachine = setup({
     },
   },
 })
+
+function toError(error: unknown): Error {
+  return error instanceof Error ? error : new Error("unknown error")
+}

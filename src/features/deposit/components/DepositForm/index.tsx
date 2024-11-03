@@ -21,6 +21,7 @@ import { BlockchainEnum, type SwappableToken } from "../../../../types"
 import { formatTokenValue } from "../../../../utils/format"
 import { isBaseToken, isUnifiedToken } from "../../../../utils/token"
 import { DepositUIMachineContext } from "../DepositUIMachineProvider"
+import { Deposits } from "../Deposits"
 import styles from "./styles.module.css"
 
 export type DepositFormValues = {
@@ -43,21 +44,22 @@ export const DepositForm = () => {
   const depositUIActorRef = DepositUIMachineContext.useActorRef()
   const snapshot = DepositUIMachineContext.useSelector((snapshot) => snapshot)
   const generatedAddressResult = snapshot.context.generatedAddressResult
-  const depositNearResult = snapshot.context.depositNearResult
 
-  const { token, network, amount, balance, nativeBalance } =
+  const { token, network, amount, balance, nativeBalance, userAddress } =
     DepositUIMachineContext.useSelector((snapshot) => {
       const token = snapshot.context.formValues.token
       const network = snapshot.context.formValues.network
       const amount = snapshot.context.formValues.amount
       const balance = snapshot.context.balance
       const nativeBalance = snapshot.context.nativeBalance
+      const userAddress = snapshot.context.userAddress
       return {
         token,
         network,
         amount,
         balance,
         nativeBalance,
+        userAddress,
       }
     })
 
@@ -310,30 +312,14 @@ export const DepositForm = () => {
             </div>
           )}
         </Form>
-        {depositNearResult && (
-          <Box>
-            <Text size={"1"} color={"gray"}>
-              Transaction:
-            </Text>{" "}
-            <TransactionLink
-              txHash={
-                depositNearResult.status === "SUCCESSFUL"
-                  ? depositNearResult.txHash
-                  : ""
-              }
-            />
-          </Box>
-        )}
+        <Deposits
+          amount={amount}
+          asset={token}
+          userAddressId={userAddress}
+          depositNearResult={snapshot.context.depositNearResult}
+        />
       </div>
     </div>
-  )
-}
-
-const TransactionLink = ({ txHash }: { txHash: string }) => {
-  return (
-    <Link href={`https://nearblocks.io/txns/${txHash}`} target={"_blank"}>
-      {shortenTxHash(txHash)}
-    </Link>
   )
 }
 
