@@ -1,15 +1,14 @@
-import { type ActorRefFrom, assign, fromPromise } from "xstate"
+import { assign, fromPromise } from "xstate"
 import { settings } from "../../../config/settings"
 import { WithdrawWidgetProvider } from "../../../providers/WithdrawWidgetProvider"
 import type { WithdrawWidgetProps } from "../../../types/withdraw"
-import { isBaseToken, isFungibleToken } from "../../../utils"
+import { isBaseToken } from "../../../utils"
 import { assert } from "../../../utils/assert"
 import {
   makeInnerSwapAndWithdrawMessage,
   makeSwapMessage,
 } from "../../../utils/messageFactory"
 import { swapIntentMachine } from "../../machines/swapIntentMachine"
-import type { withdrawFormReducer } from "../../machines/withdrawFormReducer"
 import { withdrawUIMachine } from "../../machines/withdrawUIMachine"
 import { WithdrawUIMachineContext } from "../WithdrawUIMachineContext"
 import { WithdrawForm } from "./WithdrawForm"
@@ -51,10 +50,7 @@ export const WithdrawWidget = (props: WithdrawWidgetProps) => {
             swapActor: swapIntentMachine.provide({
               actors: {
                 signMessage: fromPromise(({ input }) => {
-                  console.log("signMessage")
-                  const a = props.signMessage(input)
-                  console.log({ a })
-                  return a
+                  return props.signMessage(input)
                 }),
               },
               actions: {
@@ -72,27 +68,36 @@ export const WithdrawWidget = (props: WithdrawWidgetProps) => {
                       recipient,
                     } = context.intentOperationParams
 
-                    assert(
-                      isFungibleToken(tokenOut) &&
-                        tokenOut.chainName === "near",
-                      "Token out must be fungible base token with source on NEAR"
-                    )
-
                     const totalAmountWithdrawn =
                       directWithdrawalAmount + (quote?.totalAmountOut ?? 0n)
 
+                    const tokenOutAccountId =
+                      tokenOut.defuseAssetId.split(":")[1]
+                    assert(
+                      tokenOutAccountId != null,
+                      "Token out account id must be defined"
+                    )
+
                     const innerMessage = makeInnerSwapAndWithdrawMessage({
                       swapParams: quote,
-                      withdrawParams: {
-                        type: "to_near",
-                        amount: totalAmountWithdrawn,
-                        receiverId: recipient,
-                        tokenAccountId: tokenOut.address,
-                      },
+                      withdrawParams:
+                        tokenOut.chainName === "near"
+                          ? {
+                              type: "to_near",
+                              amount: totalAmountWithdrawn,
+                              receiverId: recipient,
+                              tokenAccountId: tokenOutAccountId,
+                            }
+                          : {
+                              type: "via_poa_bridge",
+                              amount: totalAmountWithdrawn,
+                              tokenAccountId: tokenOutAccountId,
+                              destinationAddress: recipient,
+                            },
                       signerId: context.userAddress,
                       deadlineTimestamp:
                         // Expiry time maybe zero if nothing to swap, so let's just fallback to the default
-                        Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60,
+                        Math.floor(Date.now() / 1000) + 10 * 60,
                     })
 
                     return {
