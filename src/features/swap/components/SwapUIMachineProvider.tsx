@@ -73,9 +73,6 @@ export function SwapUIMachineProvider({
         },
       }}
       logic={swapUIMachine.provide({
-        delays: {
-          quotePollingInterval: 1000, // temporary increase to 5 sec during development in order to reduce polluting the logs
-        },
         actions: {
           updateUIAmountOut: ({ context }) => {
             const quote = context.quote

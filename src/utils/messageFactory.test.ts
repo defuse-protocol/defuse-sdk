@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest"
-import { makeInnerSwapMessage, makeSwapMessage } from "./messageFactory"
+import { FT_MAX_GAS_TRANSACTION } from "../features/deposit/services/depositService"
+import {
+  makeInnerSwapAndWithdrawMessage,
+  makeInnerSwapMessage,
+  makeSwapMessage,
+} from "./messageFactory"
 
 describe("makeSwapMessage()", () => {
   const innerMessage = makeInnerSwapMessage({
@@ -40,5 +45,114 @@ describe("makeSwapMessage()", () => {
     })
 
     expect(msg1.NEP413.nonce).not.toEqual(msg2.NEP413.nonce)
+  })
+})
+
+describe("makeInnerSwapAndWithdrawMessage()", () => {
+  it("generates message with swaps", () => {
+    const innerMessage = makeInnerSwapAndWithdrawMessage({
+      swapParams: {
+        amountsIn: { "foo.near": 100n },
+        amountsOut: { "bar.near": 200n },
+      },
+      withdrawParams: {
+        type: "to_near",
+        amount: 200n,
+        tokenAccountId: "bar.near",
+        receiverId: "receiver.near",
+      },
+      signerId: "user.near",
+      deadlineTimestamp: 1000000,
+    })
+
+    expect(innerMessage).toMatchInlineSnapshot(`
+      {
+        "deadline": {
+          "timestamp": 1000000,
+        },
+        "intents": [
+          {
+            "diff": {
+              "bar.near": "200",
+              "foo.near": "-100",
+            },
+            "intent": "token_diff",
+          },
+          {
+            "amount": "200",
+            "gas": "15000000000000",
+            "intent": "ft_withdraw",
+            "receiver_id": "receiver.near",
+            "token": "bar.near",
+          },
+        ],
+        "signer_id": "user.near",
+      }
+    `)
+  })
+
+  it("generates message without swaps", () => {
+    const innerMessage = makeInnerSwapAndWithdrawMessage({
+      swapParams: null,
+      withdrawParams: {
+        type: "to_near",
+        amount: 200n,
+        tokenAccountId: "bar.near",
+        receiverId: "receiver.near",
+      },
+      signerId: "user.near",
+      deadlineTimestamp: 1000000,
+    })
+
+    expect(innerMessage).toMatchInlineSnapshot(`
+      {
+        "deadline": {
+          "timestamp": 1000000,
+        },
+        "intents": [
+          {
+            "amount": "200",
+            "gas": "15000000000000",
+            "intent": "ft_withdraw",
+            "receiver_id": "receiver.near",
+            "token": "bar.near",
+          },
+        ],
+        "signer_id": "user.near",
+      }
+    `)
+  })
+
+  it("generates message for withdrawing via POA Bridge", () => {
+    const innerMessage = makeInnerSwapAndWithdrawMessage({
+      swapParams: null,
+      withdrawParams: {
+        type: "via_poa_bridge",
+        amount: 200n,
+        tokenAccountId: "bar-poa-bridge-token.near",
+        destinationAddress: "0xdead",
+      },
+      signerId: "user.near",
+      deadlineTimestamp: 1000000,
+    })
+
+    expect(innerMessage).toMatchInlineSnapshot(`
+      {
+        "deadline": {
+          "timestamp": 1000000,
+        },
+        "intents": [
+          {
+            "amount": "200",
+            "gas": "15000000000000",
+            "intent": "ft_withdraw",
+            "memo": "WITHDRAW_TO:0xdead",
+            "receiver_id": "bar-poa-bridge-token.near",
+            "token": "bar-poa-bridge-token.near",
+          },
+        ],
+        "signer_id": "user.near",
+      }
+    `)
   })
 })

@@ -7,7 +7,8 @@ export let settings: Settings = {
   /**
    * Quote query lasts 1.4 seconds in good network conditions
    */
-  quoteQueryTimeoutMs: 4000,
+  quoteQueryTimeoutMs: 30000,
+  quotePollingIntervalMs: 1000,
   queries: {
     staleTime: 2000 * 60, // 2 minutes
   },

@@ -10,11 +10,13 @@ import {
   setup,
   spawnChild,
 } from "xstate"
+import { settings } from "../../config/settings"
 import type { SwappableToken } from "../../types"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../types/base"
 import type { Transaction } from "../../types/deposit"
 import {
-  type ChildEvent as BackgroundQuoterEvents,
+  type Events as BackgroundQuoterEvents,
+  type ParentEvents as BackgroundQuoterParentEvents,
   backgroundQuoterMachine,
 } from "./backgroundQuoterMachine"
 import {
@@ -89,7 +91,7 @@ export const swapUIMachine = setup({
             changedBalanceMapping: BalanceMapping
           }
         }
-      | BackgroundQuoterEvents
+      | BackgroundQuoterParentEvents
       | DepositedBalanceEvents
       | PassthroughEvent,
 
@@ -159,12 +161,15 @@ export const swapUIMachine = setup({
 
     spawnBackgroundQuoterRef: spawnChild("backgroundQuoterActor", {
       id: "backgroundQuoterRef",
-      input: ({ self }) => ({ parentRef: self, delayMs: 1000 }),
+      input: ({ self }) => ({
+        parentRef: self,
+        delayMs: settings.quotePollingIntervalMs,
+      }),
     }),
     // Warning: This cannot be properly typed, so you can send an incorrect event
     sendToBackgroundQuoterRefNewQuoteInput: sendTo(
       "backgroundQuoterRef",
-      ({ context, self }) => {
+      ({ context, self }): BackgroundQuoterEvents => {
         const snapshot = self.getSnapshot()
 
         // However knows how to access the child's state, please update this
@@ -207,7 +212,7 @@ export const swapUIMachine = setup({
     // Warning: This cannot be properly typed, so you can send an incorrect event
     sendToSwapRefNewQuote: sendTo(
       "swapRef",
-      (_, event: BackgroundQuoterEvents) => event
+      (_, event: BackgroundQuoterParentEvents) => event
     ),
 
     spawnIntentStatusActor: assign({
@@ -392,10 +397,7 @@ export const swapUIMachine = setup({
             userAddress: event.params.userAddress,
             nearClient: event.params.nearClient,
             sendNearTransaction: event.params.sendNearTransaction,
-            quote,
-            tokenIn: context.formValues.tokenIn,
-            tokenOut: context.formValues.tokenOut,
-            amountIn: context.parsedFormValues.amountIn,
+            intentOperationParams: { type: "swap" as const, quote },
           }
         },
 
