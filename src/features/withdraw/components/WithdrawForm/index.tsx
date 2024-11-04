@@ -68,7 +68,8 @@ export const WithdrawForm = ({
       intentCreationResult: state.context.intentCreationResult,
       intentRefs: state.context.intentRefs,
       nep141StorageRequired:
-        state.context.nep141StorageOutput?.result === "NEED_NEP141_STORAGE",
+        state.context.nep141StorageOutput?.tag === "ok" &&
+        state.context.nep141StorageOutput.value > 0n,
     }
   })
 
