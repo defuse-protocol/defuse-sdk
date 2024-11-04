@@ -2,9 +2,15 @@ import { type ActorRef, type Snapshot, fromTransition } from "xstate"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../types/base"
 import { isBaseToken } from "../../utils"
 import { assert } from "../../utils/assert"
+import { isLegitAccountId } from "../../utils/near"
 
 export type Fields = Array<Exclude<keyof State, "parentRef">>
-const fields: Fields = ["tokenIn", "tokenOut", "parsedAmount", "recipient"]
+const fields: Fields = [
+  "tokenIn",
+  "tokenOut",
+  "parsedAmount",
+  "parsedRecipient",
+]
 
 export type ParentEvents = {
   type: "WITHDRAW_FORM_FIELDS_CHANGED"
@@ -22,7 +28,7 @@ export type Events =
          * different because of the decimals. We cannot parse it here, because we don't
          * know what format UI uses to display the amount.
          */
-        parsedAmount: bigint
+        parsedAmount: bigint | null
       }
     }
   | {
@@ -40,7 +46,7 @@ export type Events =
       type: "WITHDRAW_FORM.UPDATE_AMOUNT"
       params: {
         amount: string
-        parsedAmount: bigint
+        parsedAmount: bigint | null
       }
     }
   | {
@@ -55,8 +61,9 @@ type State = {
   tokenIn: BaseTokenInfo | UnifiedTokenInfo
   tokenOut: BaseTokenInfo
   amount: string
-  parsedAmount: bigint
+  parsedAmount: bigint | null
   recipient: string
+  parsedRecipient: string | null
 }
 
 export const withdrawFormReducer = fromTransition(
@@ -65,24 +72,28 @@ export const withdrawFormReducer = fromTransition(
     const eventType = event.type
     switch (eventType) {
       case "WITHDRAW_FORM.UPDATE_TOKEN": {
+        const tokenOut = getWithdrawTokenWithFallback(
+          event.params.token,
+          state.tokenOut.chainName
+        )
         newState = {
           ...state,
           parsedAmount: event.params.parsedAmount,
           tokenIn: event.params.token,
-          tokenOut: getWithdrawTokenWithFallback(
-            event.params.token,
-            state.tokenOut.chainName
-          ),
+          tokenOut,
+          parsedRecipient: getParsedRecipient(state.recipient, tokenOut),
         }
         break
       }
       case "WITHDRAW_FORM.UPDATE_BLOCKCHAIN": {
+        const tokenOut = getWithdrawTokenWithFallback(
+          state.tokenIn,
+          event.params.blockchain
+        )
         newState = {
           ...state,
-          tokenOut: getWithdrawTokenWithFallback(
-            state.tokenIn,
-            event.params.blockchain
-          ),
+          tokenOut,
+          parsedRecipient: getParsedRecipient(state.recipient, tokenOut),
         }
         break
       }
@@ -98,6 +109,10 @@ export const withdrawFormReducer = fromTransition(
         newState = {
           ...state,
           recipient: event.params.recipient,
+          parsedRecipient: getParsedRecipient(
+            event.params.recipient,
+            state.tokenOut
+          ),
         }
         break
       }
@@ -132,8 +147,9 @@ export const withdrawFormReducer = fromTransition(
       tokenIn: input.tokenIn,
       tokenOut: getWithdrawTokenWithFallback(input.tokenIn, null),
       amount: "",
-      parsedAmount: 0n,
+      parsedAmount: null,
       recipient: "",
+      parsedRecipient: null,
     }
   }
 )
@@ -158,4 +174,18 @@ function getWithdrawTokenWithFallback(
   const tokenOut = tokenIn.groupedTokens[0]
   assert(tokenOut != null, "Token out not found")
   return tokenOut
+}
+
+function getParsedRecipient(
+  recipient: string,
+  tokenOut: BaseTokenInfo
+): string | null {
+  if (tokenOut.chainName === "near") {
+    if (isLegitAccountId(recipient)) {
+      return recipient.toLowerCase()
+    }
+    return null
+  }
+
+  return recipient
 }

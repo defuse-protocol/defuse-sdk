@@ -134,7 +134,8 @@ export const withdrawUIMachine = setup({
       submitDeps: (_, value: Context["submitDeps"]) => value,
     }),
     setNEP141StorageOutput: assign({
-      nep141StorageOutput: (_, result: NEP141StorageOutput) => result,
+      nep141StorageOutput: (_, result: Context["nep141StorageOutput"]) =>
+        result,
     }),
     clearNEP141StorageOutput: assign({
       nep141StorageOutput: null,
@@ -148,6 +149,10 @@ export const withdrawUIMachine = setup({
         const balances =
           context.depositedBalanceRef.getSnapshot().context.balances
         const formValues = context.withdrawFormRef.getSnapshot().context
+
+        if (formValues.parsedAmount == null) {
+          return null
+        }
 
         if (context.nep141StorageOutput == null) {
           return null
@@ -164,15 +169,13 @@ export const withdrawUIMachine = setup({
             return null
         }
 
-        const withdrawalSpec = getWithdrawalSpec(
+        return getWithdrawalSpec(
           formValues.tokenIn,
           formValues.tokenOut,
           formValues.parsedAmount,
           nep141StorageBalanceNeeded,
           balances
         )
-
-        return withdrawalSpec
       },
     }),
 
@@ -318,9 +321,16 @@ export const withdrawUIMachine = setup({
           context.nep141StorageOutput.result === "NEED_NEP141_STORAGE")
       )
     },
+
+    isWithdrawParamsComplete: ({ context }) => {
+      const formContext = context.withdrawFormRef.getSnapshot().context
+      return (
+        formContext.parsedAmount != null && formContext.parsedRecipient != null
+      )
+    },
   },
 }).createMachine({
-  /** @xstate-layout N4IgpgJg5mDOIC5QHcCWAXAFhATgQ2QFoBXVAYgEkA5AFQFFaB9AZTppoBk6ARAbQAYAuolAAHAPawMqcQDsRIAB6JCAVlUAWAHQAOAOwA2AEwBOEwf4BGfUYA0IAJ4q9ey1oN71rjZaMBmHT8jAF9g+zQsXAIScg4AeQBxagFhJBAJKXQZeTTlBA8tSxMrAwMTP0t+Iw0reycEQhc-LSMjD1V+Pz9VSwMNHVDwjGx8IlIyeIS4gFUaFIUM6TkFPMIjX10NdZ0NPXW9vz665z1m1vbO7t7+wZAIkejSLUhpWSgyCDkwLVh0PHRvvcomNUM8IK8oPM0ossstcogNF0tHoTKo9p5+qpAh5jg1rM0zJZdusfHodJY9LcgaMYmCIWQAOoUGgACW4ACUAIIMxgAMTi7IAsloAFRQsSSJY5UCrDTmdx+Ew6KxmAJFU64wiHPRaXa7Pz8YpBSxU4bA2kvLJvMgAIU5HE5VAAwnRGE6WY6EjxxelJbDpUoVNUTFo-Cj+OS2vwtqYNJrtbq9PrDZ11qbIjSnpbUNa7Q7na73Z7vZZUhLMtkVoh-FpDaiDX0IyZDG1NdY3AE+gEk2VvAZ0w8QXSre8mayOdy+QLBXyKHQONxmG6PVQvXwhAs-ZX4Q0NFtCl09YrKiY2+TQzo+jV+IZUc2B+as+CR1pUBAADZgMiwYgAIwAthgPowtuMrODoIaGGGFRWD0gR+PGViFHKNi9C4ZgaA+magtmbxaKIOBgKIeD4P6HxfD8fwAlo1KPDhz45lA+GEcRpHZMBW5wmBDR7Ko7iuOUBj6PohiqJq8oeL45RVOSRQmmEdxmthw6McxREkf82RqYwYCKGAADGxD+owhEAI6kIR-5gLI6CwORsjfL8-yAkpdEqXhBHqWxcjabpBlGdkJlgOZqCWdZtkcRWXGBg0qh9FoWJkp4cUeD4diOIgOiaIU-C9kYypVIaqhYW5uFMZ5rGaT5nk6XphnGWZFlgFZNl2Z8DmUc5NGuUOZVqZV-q+XVAVyEFIVha1vClpuUUBnkpzIsYhJBCYvinOl9SBEYCWqIc0kaAY1gmCECm0b1DEeSxGmDTVfn1YFjWhc14WwFov54O+eCyPpgJ4BCjAAGbiDgjDvZ931fnmjousuxbrmWvqzVWDQGvwob+L4+gRnouU6LiqhmIUgSRkYnimMVp09RaF3lVd3myEN-kNcFTUtbZb0fV9P2vh+X6RVKyOEAd2j5TsvStEmRhxXouJhjqqJYoinS7Pw-AU0MGalTT-XXVpt3Dcz43Pa1HPg9zb6fmQU0IyB0WrPlbjSZYcVVEme4yxlCAxloSrRjjaJ7OUzsledEI6-TjP3aNj0TezDmiESliML8wN4DAoOcxDWgQGAAI4IBsiMWNrMvfZ3w5gAbuIADWLma6HL4Vbr1WEbVTMPSzT1s698eJ8n6Cp+nYNc98Od5wXRcx8btkIJX4j6VVsgpPz-qCzoEHIQa+WtBUQke-U-TaMqlhEhYzsQc26uKfX1Nh03Ed3SNsjF13pftY5VF14Ot+N3Ti-PAbDuRtu4r1AjFSwBp+Jqy6OvCoh5cTJRaNYXahokyHGjCHH+ql77-0fobEuJtYDIDwKIRg5lxDUQtl+KgdAeQAEVphxHoKAu2Kg1T8SJBGC+Qlna4kxjqG8BhoKHXMBUAYlMb5Pjvn-QaeCgEEPZkQkhZDiAUPLrzK2G5oScTmmwpU-EDCaEVFlVw5I+H+G2m0FEpwTBbEVJ4TBTwfwAQwCOMur5ZBV1rj8Yhoh2RgABiw3R+Q1Y+26P0XwhjcpJk1B0BK5NDAHTKFUE6Gtv5OL-IBdAbiwA4BwMDfCn10BA3zj4kh-jAlaPLALHcQi+KaGVFtAmrReGe2KAlQIx1BGnBPpoRxoJnFZLcTQ+hjDmFVMRjU7iQi0bOxvDsdYDTqjxiEsiGoidrHrBOgpWQ4gc7wDSGdGIM0pkxUIL0kMyDDgVA6BoHocZPaED6AYWsiSPAYw8C4fp7koAnNXjuc5J83BXKEXMu5RJYknx9tUIFrgbxyn7BI9J9Ew5UL+WA1YrhmiwSEntboXQ2yuDCd4Zs1j1B9KRY+FFv8vKL3RawvEuVmggpudGe5bZtCdEliiFBYZDHfL6jgm6rc5HR07rHA51T-ncXObBImu1QW3J6AhT2FJtqVBxqtfK5gigCu1kKvWIrAFiuAS9U2I96XBLUBsUWPhjCky2HFXEUsQxbDMBBNEPglSIrSVSn54d-763biahRr1h5Z2If9EpGczZgEtYLWMiZ3l1iMNA3K+MKjuH0MSCxECeh6ukbS4VYA25R2flPbu5qs7v3jQCqWOhawO29TBA6YlPZCT4ocSo15nnvILTSgahqS2ivLeK6eYbM7m15rWmV-gXnqA8KiHQbRkHLM9n4A6yJVCizJIlMkqTr7Iv9Qaluw7jWjtNSbXuPh+6DxLeGn6M6znmB1CysFyrnXxSEd0OKYtDHyV9cpQVMih2lqfi-CVWhr1JxTvgIek7R651yRPN4EHx1PtWKtS5WVrnvogbLHoPs4rbv6I01NpN+3YJA6esD+DX5XqIn3WDad70Iezl8DDKhAjyyxL4E+uVUQ3nxs2dwasUk+DirsK+RypEDubgzEdaHu6cYaMUHUhwdi7BscdHwuIdU+0XWrEk7YD0yepVRotWlFMVrNUo0h5CAQqbUC4HKUsAiwTUyq+oJ8fCFAgUIso3qKR+Eo5dSzPlrNjsrXZlRaj2MOSc70Zo4KcOdIWaicx+VdSHAsB0OWl4fWHr9cB8LCnz1Kds742LlDp3aKRgC7dlyqi7WPgTG8XnEC+FMFmroSVLzRkK2Z491GyvBovaGqDjGb3MfTg5uNdXTmrCyiGDT7ttMwr4USTlPRVaeAjEdSklKgP6pGwAsbFWGMJ2mwPODJa5vxfm1KjFXGoWra04qHTlhzGZugtxrKaJSaHcA1rQtg7T1g+fjWhb0rwGdEKH0Zsgn-Bqbbd5lzh1EQQLQhYQx0mqaydUlDp7DLGgbt1FjKTDZ4GPLlsiVwhgrCmL2N8wZrjGIqc9e4CBqaehtCuJqVNIZ-DryTFUY8QRMKhGCEAA */
+  /** @xstate-layout N4IgpgJg5mDOIC5QHcCWAXAFhATgQ2QFoBXVAYgEkA5AFQFFaB9AZTppoBk6ARAbQAYAuolAAHAPawMqcQDsRIAB6JCAVlUAWAHQAOAOwA2AEwBOEwf4BGfUYA0IAJ4q9ey1oN71rjZaMBmHT8jAF9g+zQsXAIScg4AeQBxagFhJBAJKXQZeTTlBA8tSxMrAwMTP0t+Iw0reycEQhc-LSMjD1V+Pz9VSwMNHVDwjGx8IlIyeIS4gFUaFIUM6TkFPMIjX10NdZ0NPXW9vz665z1m1vbO7t7+wZAIkejSLUhpWSgyCDkwLVh0PHRvvcomNUM8IK8oPM0ossstcogNF0tHoTKo9p5+qpAh5jg1rM0zJZdusfHodJY9LcgaMYmCIWQAOoUGgACW4ACUAIIMxgAMTi7IAsloAFRQsSSJY5UCrDTmdx+Ew6KxmAJFU64wiHPRaXa7Pz8YpBSxU4bA2kvLJvMgAIU5HE5VAAwnRGE6WY6EjxxelJbDpUoVESzp0TJYOvp+GVypqAvwtFG-BoykYdIFwyEwnczTSnpbUNa7Q7na73Z7vZZUhLMtkVoh-AmzKoDX1+DoTIY2prrG4An0Anpkx2iQZTZFc6D89amayOdy+QLBXyKHQONxmG6PVQvXwhAs-bX4Q05dpw6pjOH255uhpu+StH2NE-26pzKdKVnqY9J+CrVAtKgEAADZgGQsDEAARgAthgPowoeMoqOS2hGJ0OjGOSPQmKYsb8NogR6p4HY9JYJqfjm350n+WiiDgYCiHg+D+h8Xw-H8AJaF+IJUQW-60fRjH-NkcEHnCiENHsqjuK45QGPo+iGKomryh4vjlFU5JFGRQzjpRU58XRDFMdkNF0YwYCKGAADGxD+owdEAI6kHRUFgLI6CwCxsjfL8-yAhR3H6aZAnGXIwXmZZNl2Y5zlgK57mwCJNZiYGDRolJBhaZoaaHNYt6OIglRkoUxg9CUz7WGODyBb+vHBUZQlhfxEXWbZ2T2WATmoC5bkeV5Pnsf5uk1RC9WCf64UWa10WdbF8Uebwlb7slAZ5Ho8bJq4aLoXJiqorilTqCVZg1C4qitH4VXmnmtVvGNoWyJNkVtXIHVdT1CVaBBeBAXgshWYCeAQowABm4g4Iw32-f9oFFo6LqbuWu5Vr6K11g0pjaEmpR+C4ck6Oefi4iizSDq0mjWOt5Tadmw0WrdBkhY1j3NVNUXtTF3Vxb1sBfT9f0AwBwGgUlUro4QGhYg+pHYed+jpeGuJokYWg9FsOwmMmcoE1dE48Xd-ENRNrPPTN73c59UMC98gEgWQi0o-BKWrEYnhaKihwGBGRFbLimU6s27a+P0xRhpmOnVfTo2G+NJkm9NHOzVz82895ohEpYjC-ODeAwJD-Mw0Ldui-64vKiYhRosSbR9EU+X1FiUmtMqRhoodhi63pDP3czT0J69nMfR5WhpxnWfoDnedW4XEBgACOAwbIvFvXNPP9QBsgAG7iAA1kNkc3dHhmx01Zlsy9sgr8nPMj-RY-Z-gU8F4Ls-z4vy+DxbHkIAW29WczKQS4IVSoQeS7tFQ1BqKYKMFJib3iKG2TWcpNCuxMJ3Ea1EY4PWeKbRO5sU7r18hxLiUdMHH2wefM2q8EpAOdoVV2D5BxezlEUVC-B+BKQKggQk7hAimBJNeJM6DSF1Swb3SheDqHD1gMgPAohGBOXEBxW2oEqB0B5AARWmHEegtDVoqACNoFEGJ+CDkMHXTh9RwxEndrsOS61JbNnUMIw+ZCmYTQkQPJOQ9eYyLkQo4gSibbC3tnuaEol9HHisLoKo7RAiHHPBwg6yZ4yWEVKmU4u0rDh1pgfH8R8wCEDEcxPR4sigV3QliboSY2y7H0H7NwvRzCBCsJUVuT4XH5LcUU8hzN7ZLXCWjI8Wp1oxK6EEYwfZzAGAacdLJpEqiaA0J0n4kEYLoD-OvX+u8fKyNEOyMAINSlHgsFJco2VfBeyjIOTUHRVamDRH0UoxRWgrPAtBDAmywA4BwODGiv10BgwXj8PZByjlhOrGLE53RVb9DbEEV8rRFZcOKKrQI2FTEeAqOGZZ5E6ZPHeeszZajNHaN0RC1GULxIGANJXUxOx1jZWqLGOSyIagZ2MesTMWZZDiFnvANIJDSDLSpSA0i-R3bklOC+GlT4iZcLUGYFouwSgcMqBUAYeK8n6ygCK0uwyFnxiVBSAIqJZWIk1MmKShpNrajQjSlZQUVF6uAasVwzQrDnmxOcro3ZXDgO8B2Yx6hNCOu7sU4BTtImEEOirY10qzVJgtVw3ovYUTqH8K3ZU3Qw0FKNnHM+uCvH4J5i6uheJ2HaHjaawmcrcRXGRCRTobR-CDlRLmtx+bT5gBauzYtUjebTwBmW6NHQDDS1YXLTwnhkX1ElgSNMPhjB7BgWgrV10umiN6cbQt-dL6fxTnzaGgtZHAyBfnY9YAR3i1TDoVW7D-DsPOqhdpxM2jKtfBnRE5QKgdq3e4gtPbPH7u8V-Qdz9vifG8te4ZrcVZqvWoYMMRQZlcP0BXMMmtyQdieedP9Btt2Ad7RfK+Pij3WyLlewZoqXa0qxJ0PCaYaVJj2ErHwE6ghBo4Z2fDjMu0s13X2kDJbPqjx8OPSePah1Uchfq8ShAzWSpNTKpN8q52KgTIOEohg2ztjaLxnuO6gNFuEwO2+6dxMP1zlJiDlGYPyeVDqUifRzxYvQkkrh51x2KjKAaVumtOijnXXrIKEbu3EaodfUTd9LMT0fjZy9WhX7fPfm8UjYH7MgOKHe6tKm61cL6He7GrsugWCTDsAzYWBPGb3elw9YnM5WafolqDMnKVyZAToVusK20uGma23E7Z8JdHiVGfQT5VCVcI2FYDdXS3UY66sMMG1NZolRPJC8B1rAVMVBSNMsTg5TYAzNkzc3Pp+PkYogEmXVj0ZaKmZ56FDHnQOocHLBNK3mB6OYo7-GcG1YPTfC7ASglJa+DdoMpRVZ9YJvYskunknngfKYsMOwaVlDwr9k+j1ZuA-O3skHyjhYQ7SkEe7O0lQ0p2C9lNksA6aBTOsOuHYscUNO3j4eDWJPxcJ21qNZdjC6lW+mjb6xXv+uwhdFw6YKSs-Eez0D9WYuNbi9Z3nYPoMLddUhGxJ41tYjJJt2nr4P3WNTL0Cok3gtdzzdjwz7VWsk8qBXc8r48LNnMB2To9bdj3JqOSOMHCGcGcd1r8tjQky6kjLsZsiYkyxhcMiVwOmKSUxyUKzdBHClVZJzG86uhSLKg6P4boVRcKFFTJLcwXRrCZXTwFWkhLPm8RJ1XdwaTUI9DaFcTUqEK7+DTFp-wYYgi4tCEAA */
   id: "withdraw-ui",
 
   context: ({ input, spawn, self }) => ({
@@ -377,7 +387,6 @@ export const withdrawUIMachine = setup({
   states: {
     editing: {
       initial: "idle",
-      entry: "updateUIAmountOut",
 
       on: {
         "WITHDRAW_FORM.*": {
@@ -408,10 +417,10 @@ export const withdrawUIMachine = setup({
               "sendToBackgroundQuoterRefNewQuoteInput",
             ],
           },
-          ".preparation",
+          ".pre-preparation",
         ],
 
-        WITHDRAW_FORM_FIELDS_CHANGED: ".preparation",
+        WITHDRAW_FORM_FIELDS_CHANGED: ".pre-preparation",
       },
 
       states: {
@@ -478,9 +487,15 @@ export const withdrawUIMachine = setup({
                         input: ({ context }) => {
                           const formContext =
                             context.withdrawFormRef.getSnapshot().context
+
+                          assert(
+                            formContext.parsedRecipient != null,
+                            "parsedRecipient is null"
+                          )
+
                           return {
                             token: formContext.tokenOut,
-                            userAccountId: formContext.recipient,
+                            userAccountId: formContext.parsedRecipient,
                           }
                         },
 
@@ -588,6 +603,16 @@ export const withdrawUIMachine = setup({
         done: {
           type: "final",
         },
+
+        "pre-preparation": {
+          always: [
+            {
+              target: "preparation",
+              guard: "isWithdrawParamsComplete",
+            },
+            "idle",
+          ],
+        },
       },
 
       onDone: {
@@ -609,7 +634,9 @@ export const withdrawUIMachine = setup({
             assert(quote, "quote is null")
           }
 
-          const { recipient } = context.withdrawFormRef.getSnapshot().context
+          const recipient =
+            context.withdrawFormRef.getSnapshot().context.parsedRecipient
+          assert(recipient, "recipient is null")
 
           return {
             userAddress: context.submitDeps.userAddress,
