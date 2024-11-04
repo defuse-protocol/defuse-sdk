@@ -1,9 +1,11 @@
 import type { providers } from "near-api-js"
 import {
   type ActorRefFrom,
+  and,
   assign,
   emit,
   fromPromise,
+  not,
   sendTo,
   setup,
   spawnChild,
@@ -54,6 +56,7 @@ export type Context = {
   } | null
   nep141StorageOutput: NEP141StorageOutput | null
   nep141StorageQuote: AggregatedQuote | null
+  preparationOutcome: null | { tag: "ok" } | { tag: "err"; value: string }
 }
 
 type PassthroughEvent = {
@@ -139,6 +142,12 @@ export const withdrawUIMachine = setup({
     }),
     clearNEP141StorageOutput: assign({
       nep141StorageOutput: null,
+    }),
+    setPreparationOutcome: assign({
+      preparationOutcome: (_, val: Context["preparationOutcome"]) => val,
+    }),
+    clearPreparationOutcome: assign({
+      preparationOutcome: null,
     }),
 
     clearWithdrawalSpec: assign({
@@ -314,6 +323,28 @@ export const withdrawUIMachine = setup({
       return true
     },
 
+    isBalanceSufficientForAmountIn: ({ context }) => {
+      const formContext = context.withdrawFormRef.getSnapshot().context
+      assert(formContext.parsedAmount != null, "parsedAmount is null")
+
+      const balances =
+        context.depositedBalanceRef.getSnapshot().context.balances
+
+      const underlyingTokensIn = isBaseToken(formContext.tokenIn)
+        ? [formContext.tokenIn]
+        : formContext.tokenIn.groupedTokens
+
+      let totalBalance = 0n
+      for (const token of underlyingTokensIn) {
+        const balance = balances[token.defuseAssetId]
+        if (balance != null) {
+          totalBalance += balance
+        }
+      }
+
+      return formContext.parsedAmount <= totalBalance
+    },
+
     isNEP141StorageFetched: ({ context }) => {
       return (
         context.nep141StorageOutput != null &&
@@ -328,9 +359,13 @@ export const withdrawUIMachine = setup({
         formContext.parsedAmount != null && formContext.parsedRecipient != null
       )
     },
+
+    isPreparationOk: ({ context }) => {
+      return context.preparationOutcome?.tag === "ok"
+    },
   },
 }).createMachine({
-  /** @xstate-layout N4IgpgJg5mDOIC5QHcCWAXAFhATgQ2QFoBXVAYgEkA5AFQFFaB9AZTppoBk6ARAbQAYAuolAAHAPawMqcQDsRIAB6JCAVlUAWAHQAOAOwA2AEwBOEwf4BGfUYA0IAJ4q9ey1oN71rjZaMBmHT8jAF9g+zQsXAIScg4AeQBxagFhJBAJKXQZeTTlBA8tSxMrAwMTP0t+Iw0reycEQhc-LSMjD1V+Pz9VSwMNHVDwjGx8IlIyeIS4gFUaFIUM6TkFPMIjX10NdZ0NPXW9vz665z1m1vbO7t7+wZAIkejSLUhpWSgyCDkwLVh0PHRvvcomNUM8IK8oPM0ossstcogNF0tHoTKo9p5+qpAh5jg1rM0zJZdusfHodJY9LcgaMYmCIWQAOoUGgACW4ACUAIIMxgAMTi7IAsloAFRQsSSJY5UCrDTmdx+Ew6KxmAJFU64wiHPRaXa7Pz8YpBSxU4bA2kvLJvMgAIU5HE5VAAwnRGE6WY6EjxxelJbDpUoVESzp0TJYOvp+GVypqAvwtFG-BoykYdIFwyEwnczTSnpbUNa7Q7na73Z7vZZUhLMtkVoh-AmzKoDX1+DoTIY2prrG4An0Anpkx2iQZTZFc6D89amayOdy+QLBXyKHQONxmG6PVQvXwhAs-bX4Q05dpw6pjOH255uhpu+StH2NE-26pzKdKVnqY9J+CrVAtKgEAADZgGQsDEAARgAthgPowoeMoqOS2hGJ0OjGOSPQmKYsb8NogR6p4HY9JYJqfjm350n+WiiDgYCiHg+D+h8Xw-H8AJaF+IJUQW-60fRjH-NkcEHnCiENHsqjuK45QGPo+iGKomryh4vjlFU5JFGRQzjpRU58XRDFMdkNF0YwYCKGAADGxD+owdEAI6kHRUFgLI6CwCxsjfL8-yAhR3H6aZAnGXIwXmZZNl2Y5zlgK57mwCJNZiYGDRolJBhaZoaaHNYt6OIglRkoUxg9CUz7WGODyBb+vHBUZQlhfxEXWbZ2T2WATmoC5bkeV5Pnsf5uk1RC9WCf64UWa10WdbF8Uebwlb7slAZ5Ho8bJq4aLoXJiqorilTqCVZg1C4qitH4VXmnmtVvGNoWyJNkVtXIHVdT1CVaBBeBAXgshWYCeAQowABm4g4Iw32-f9oFFo6LqbuWu5Vr6K11g0pjaEmpR+C4ck6Oefi4iizSDq0mjWOt5Tadmw0WrdBkhY1j3NVNUXtTF3Vxb1sBfT9f0AwBwGgUlUro4QGhYg+pHYed+jpeGuJokYWg9FsOwmMmcoE1dE48Xd-ENRNrPPTN73c59UMC98gEgWQi0o-BKWrEYnhaKihwGBGRFbLimU6s27a+P0xRhpmOnVfTo2G+NJkm9NHOzVz82895ohEpYjC-ODeAwJD-Mw0Ldui-64vKiYhRosSbR9EU+X1FiUmtMqRhoodhi63pDP3czT0J69nMfR5WhpxnWfoDnedW4XEBgACOAwbIvFvXNPP9QBsgAG7iAA1kNkc3dHhmx01Zlsy9sgr8nPMj-RY-Z-gU8F4Ls-z4vy+DxbHkIAW29WczKQS4IVSoQeS7tFQ1BqKYKMFJib3iKG2TWcpNCuxMJ3Ea1EY4PWeKbRO5sU7r18hxLiUdMHH2wefM2q8EpAOdoVV2D5BxezlEUVC-B+BKQKggQk7hAimBJNeJM6DSF1Swb3SheDqHD1gMgPAohGBOXEBxW2oEqB0B5AARWmHEegtDVoqACNoFEGJ+CDkMHXTh9RwxEndrsOS61JbNnUMIw+ZCmYTQkQPJOQ9eYyLkQo4gSibbC3tnuaEol9HHisLoKo7RAiHHPBwg6yZ4yWEVKmU4u0rDh1pgfH8R8wCEDEcxPR4sigV3QliboSY2y7H0H7NwvRzCBCsJUVuT4XH5LcUU8hzN7ZLXCWjI8Wp1oxK6EEYwfZzAGAacdLJpEqiaA0J0n4kEYLoD-OvX+u8fKyNEOyMAINSlHgsFJco2VfBeyjIOTUHRVamDRH0UoxRWgrPAtBDAmywA4BwODGiv10BgwXj8PZByjlhOrGLE53RVb9DbEEV8rRFZcOKKrQI2FTEeAqOGZZ5E6ZPHeeszZajNHaN0RC1GULxIGANJXUxOx1jZWqLGOSyIagZ2MesTMWZZDiFnvANIJDSDLSpSA0i-R3bklOC+GlT4iZcLUGYFouwSgcMqBUAYeK8n6ygCK0uwyFnxiVBSAIqJZWIk1MmKShpNrajQjSlZQUVF6uAasVwzQrDnmxOcro3ZXDgO8B2Yx6hNCOu7sU4BTtImEEOirY10qzVJgtVw3ovYUTqH8K3ZU3Qw0FKNnHM+uCvH4J5i6uheJ2HaHjaawmcrcRXGRCRTobR-CDlRLmtx+bT5gBauzYtUjebTwBmW6NHQDDS1YXLTwnhkX1ElgSNMPhjB7BgWgrV10umiN6cbQt-dL6fxTnzaGgtZHAyBfnY9YAR3i1TDoVW7D-DsPOqhdpxM2jKtfBnRE5QKgdq3e4gtPbPH7u8V-Qdz9vifG8te4ZrcVZqvWoYMMRQZlcP0BXMMmtyQdieedP9Btt2Ad7RfK+Pij3WyLlewZoqXa0qxJ0PCaYaVJj2ErHwE6ghBo4Z2fDjMu0s13X2kDJbPqjx8OPSePah1Uchfq8ShAzWSpNTKpN8q52KgTIOEohg2ztjaLxnuO6gNFuEwO2+6dxMP1zlJiDlGYPyeVDqUifRzxYvQkkrh51x2KjKAaVumtOijnXXrIKEbu3EaodfUTd9LMT0fjZy9WhX7fPfm8UjYH7MgOKHe6tKm61cL6He7GrsugWCTDsAzYWBPGb3elw9YnM5WafolqDMnKVyZAToVusK20uGma23E7Z8JdHiVGfQT5VCVcI2FYDdXS3UY66sMMG1NZolRPJC8B1rAVMVBSNMsTg5TYAzNkzc3Pp+PkYogEmXVj0ZaKmZ56FDHnQOocHLBNK3mB6OYo7-GcG1YPTfC7ASglJa+DdoMpRVZ9YJvYskunknngfKYsMOwaVlDwr9k+j1ZuA-O3skHyjhYQ7SkEe7O0lQ0p2C9lNksA6aBTOsOuHYscUNO3j4eDWJPxcJ21qNZdjC6lW+mjb6xXv+uwhdFw6YKSs-Eez0D9WYuNbi9Z3nYPoMLddUhGxJ41tYjJJt2nr4P3WNTL0Cok3gtdzzdjwz7VWsk8qBXc8r48LNnMB2To9bdj3JqOSOMHCGcGcd1r8tjQky6kjLsZsiYkyxhcMiVwOmKSUxyUKzdBHClVZJzG86uhSLKg6P4boVRcKFFTJLcwXRrCZXTwFWkhLPm8RJ1XdwaTUI9DaFcTUqEK7+DTFp-wYYgi4tCEAA */
+  /** @xstate-layout N4IgpgJg5mDOIC5QHcCWAXAFhATgQ2QFoBXVAYgEkA5AFQFFaB9AZTppoBk6ARAbQAYAuolAAHAPawMqcQDsRIAB6JCAVlUAWAHQAOAOwA2AEwBOEwf4BGfUYA0IAJ4q9ey1oN71rjZaMBmHT8jAF9g+zQsXAIScg4AeQBxagFhJBAJKXQZeTTlBA8tSxMrAwMTP0t+Iw0reycEQhc-LSMjD1V+Pz9VSwMNHVDwjGx8IlIyeIS4gFUaFIUM6TkFPMIjX10NdZ0NPXW9vz665z1m1vbO7t7+wZAIkejSLUhpWSgyCDkwLVh0PHRvvcomNUM8IK8oPM0ossstcogNF0tHoTKo9p5+qpAh5jg1rM0zJZdusfHodJY9LcgaMYmCIWQAOoUGgACW4ACUAIIMxgAMTi7IAsloAFRQsSSJY5UCrDTmdx+Ew6KxmAJFU64wiHPRaXa7Pz8YpBSxU4bA2kvLJvMgAIU5HE5VAAwnRGE6WY6EjxxelJbDpUoVESzp0TJYOvp+GVypqAvwtFG-BoykYdIFwyEwnczTSnpbUNa7Q7na73Z7vZZUhLMtkVoh-AmzKoDX1+DoTIY2prrG4An0Anpkx2iQZTZFc6D89amayOdy+QLBXyKHQONxmG6PVQvXwhAs-bX4Q05dpw6pjOH255uhpu+StH2NE-26pzKdKVnqY9J+CrVAtKgEAADZgGQsDEAARgAthgPowoeMrODoRgJuoNT8FYRj8P0t6OCoFQoWm5IGPoxREmGH5DOO350n+AHAaBVB0DyACK0xxPQcEHnCiENMUOiFMSnR7HKyq4fUhDhs0g4GJYFQGFi6oeGODwgrRBb-qIOBgKIeD4P6HxfD8fwAloX5qVOmnabp+nZFxNY8YGDR7Ko7iuOUJFki4CmavKHi+OUVTkkUJqfjmNGWVoWk6Xp-zZFF2mMGAihgAAxsQ-qMNpACOpDaVBYCyOgsCGbI3y-P8gLhRZv4aQlMW2XI9VJSl6WZTleVgAVRWwPZUp1g0aKubJYaaGmhzWOJiCVGShTGD0JTPtYKnmnmtVvPVNlxU10UtWlGXZFlYC5ag+WFcVpXlSZVXUTVEKbbF-rNcl+3tcdnXdcVvCVvuDkBqsbSuYayE7EY6gdEquIzQJvRg5U1z9MtYW3Ra61WQ122yM9rUHXIR0nWdPWXcZlVmdVqP3dFW1PbtL1tYdHWnV1529UYVa+n9A1aq+upJk+-jktUr5Q74zQGtY-ARu2WGUdmKNrZT1mPfFtM429BPMz1WgQXgQF4LIqWAngEKMAAZuIOCMDresG6BRaOi6m7lru7PwY5AMmNoSalH43lpuefi4ii0lbGDPiRuUoVUapFN0VTys7YldO47I+MfSz2u6-rhv0SBZB9f6XMaFiD6WEUYOpp4njhriaIoT0Ww7J7fRKqoK0TupG3x41WOq69DPvUzn2wJnNs54Beffa73H-SoRieFoqKHApbaeJ7dh4fkFJaM27a+P0xRhpm0erT+isYzTSdqwPGvD1oZWiESliML8Ft4DAVtZ7bWgQGAAI4DBWQGk05DxZsTAsAA3cQABrG6McFZxyVj3bG-c8aM0JsVe+Okn4v3QG-D+1ts7fF-v-QBwD0Ga2KggSB4hUqYxSAXBCTlCA7CBh4YuT4Kjnh0LiDwzRNAByCFhLC7Z24RTRg9ZByd1bpyJp8MqJNTLmVjnVbumNnjXzQYPDBvU9zQhngNXwAk0Sh38L7KMyEN71DLqcXmFRKhmFDm3ZG8Cz6IIvvFaRN9ZGYNgMgPAohGC5XEKZCejFmKMDYhxOgjD3b4R2MiDsmh+CDkMEUYuUMG6L12J5bC6hujOJPh3SKainpeK0bfDOfiAlBOICE74YT856OrP1I8hAahuGVG0TwgRDjnkllDZM8Y5ImErocQImExF3XcYQUp2QmnT05m0ooJhdAKUCM2GoOwvK8LcL0cwEyy5VE0BoKZKiu7aVmUgzG+cfr6KWbxLUeh4zKi6EEYwfZzAGF2XNA54tKhh1OS40+PxIIwXQH+cBsgoGwJ+P40Q7IwCm1ibPfIktF43kFivdhmoOg71MGiPopRiitDOU8cC0EMCQrADgHAFsop63QObABcKAmIuRc0jmrTeIGG6DvfobYgivlaDXTexQd6BFGSkvhZdNBktBBS8FkKmKsXYpxTlbtUW8uGR0MkWxwz9GqLGEiyIOmkg7OsTMWZZDiF-vANIyjSC-W5cwsu4ZCiGjJOULEOgOiqFxWYFouxJbnj2DoPoUc5auM7lAZ1hdllRh1A4r13R-YDM3u0hSjZg36AUm0Eifh5UxtzmAONTDViuGaFYbhhxvVdG7K4DF3gOwok8GhItJTrnxpad211KoPUdnbKm316brF8oCJixEvhXBIyKeI8+1MVZX1QanChw8y1xL4o25NQ6fV+txMvVColUw9FBmiDtEi5mJzAHtemFSfEj0IbbDdqK1BRlLuXVQlchqivqMXAk41gouB7ECud0zVFdqXTe8pq7tGUMfV-HO-iTbMs-mPUt9yXUAzTDvDC-gMJfuEZoIObQg2vifoicoFQL0LoTr3Zdd7YOVK1k+nO8iMM9vLXPL9qEKTSrDEUb5m9SKL3SeSDsRKv00fcYu69t6U4gJ0aPIhJaX1c3wxKzo2E0y8qTHsWuPgP1BBbZLTs0mIMeLkzBxT8GsGPx8Lg-BN7WMca5b21Yozmg7u9Wm-1m9-0PhcJHJ8X7fagajSCztln6PQc0Uxh9dmcGv3wAQxDxC-40rIW8Gz67MPuZUPoVy3nh37s3sk5EVhMJth6KYcLjq3EWdkzF+TMjQFawfklvBKXnNpZ-l8NTbSURuHaGNFZAUTBB30IUf2rhg5frlcC4pl7INNWs2ulmA3HlhnjCeNEqJ9DhvWCLdsuhFQ9BbMRNM5mLnRY0SunLVT4W1PqZt5hWJ4ytHDWUcNARi5WOmuMxevrKhPjbP4Xl130ZNbu4xh7WtqmBOCaZdjr3Vi9AMDvILvrPJkjbDwzeRJzwPhSWGHYvKyjYUh5I9Ra24N3wR890JDFUcqGbChT7xKfusP+wgQnOo0IpnWOkjsVOr1Y1p8xzBHWHPJffjepHrnNVc0O7qT2e2sRkgvFDX2bhRkyyjKSM7ouVvi7i3DqX2CZddbl4z4h-W8tcYaOSbQu2UQa8O5YQZPMhbhiMb0Lhxvbti8YCjh3m6HE7wUsUf95gOydAPbsfFWy5LKhDcmKnofOObsaEmXUkZdjNkTEmWMLhkSzYsBSawexA9XOiyzvEPHgrKg6GYlvsZhmpmLuYLo1hZLHwix3RVVKNL15Me4OSWEau8p6JqLCqyBb6BqP4MMQQgWhCAA */
   id: "withdraw-ui",
 
   context: ({ input, spawn, self }) => ({
@@ -354,6 +389,7 @@ export const withdrawUIMachine = setup({
     submitDeps: null,
     nep141StorageOutput: null,
     nep141StorageQuote: null,
+    preparationOutcome: null,
   }),
 
   entry: ["spawnBackgroundQuoterRef"],
@@ -428,14 +464,19 @@ export const withdrawUIMachine = setup({
           on: {
             submit: {
               target: "done",
-              guard: "satisfiesWithdrawalSpec",
+              guard: and(["satisfiesWithdrawalSpec", "isPreparationOk"]),
               actions: [
                 "clearIntentCreationResult",
                 { type: "setSubmitDeps", params: ({ event }) => event.params },
               ],
             },
 
-            NEW_QUOTE: undefined,
+            NEW_QUOTE: {
+              actions: {
+                type: "setQuote",
+                params: ({ event }) => event.params.quote,
+              },
+            },
           },
         },
 
@@ -521,11 +562,23 @@ export const withdrawUIMachine = setup({
 
               onDone: [
                 {
-                  target: "execution_requirements",
-                  guard: "isNEP141StorageFetched",
+                  target: "preparation_done",
+                  guard: not("isNEP141StorageFetched"),
+                  actions: {
+                    type: "setPreparationOutcome",
+                    params: { tag: "err", value: "ERR_NEP141_STORAGE" },
+                  },
                 },
                 {
                   target: "preparation_done",
+                  guard: not("isBalanceSufficientForAmountIn"),
+                  actions: {
+                    type: "setPreparationOutcome",
+                    params: { tag: "err", value: "ERR_BALANCE_INSUFFICIENT" },
+                  },
+                },
+                {
+                  target: "execution_requirements",
                 },
               ],
             },
@@ -550,8 +603,6 @@ export const withdrawUIMachine = setup({
                             type: "setQuote",
                             params: ({ event }) => event.params.quote,
                           },
-
-                          reenter: true,
                         },
                       },
 
@@ -582,7 +633,10 @@ export const withdrawUIMachine = setup({
 
               onDone: {
                 target: "preparation_done",
-                reenter: true,
+                actions: {
+                  type: "setPreparationOutcome",
+                  params: { tag: "ok" },
+                },
               },
             },
 
@@ -597,6 +651,7 @@ export const withdrawUIMachine = setup({
             "clearWithdrawalSpec",
             "clearQuote",
             "sendToBackgroundQuoterRefPause",
+            "clearPreparationOutcome",
           ],
         },
 
