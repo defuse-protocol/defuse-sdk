@@ -445,6 +445,13 @@ export const withdrawUIMachine = setup({
         ],
 
         WITHDRAW_FORM_FIELDS_CHANGED: ".pre-preparation",
+
+        NEW_QUOTE: {
+          actions: {
+            type: "setQuote",
+            params: ({ event }) => event.params.quote,
+          },
+        },
       },
 
       states: {
