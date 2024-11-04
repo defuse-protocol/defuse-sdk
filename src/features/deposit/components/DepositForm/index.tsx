@@ -137,12 +137,6 @@ export const DepositForm = () => {
 
   const amountInputRef = useRef<HTMLInputElement | null>(null)
 
-  useEffect(() => {
-    if (network === BlockchainEnum.NEAR && amountInputRef.current) {
-      setTimeout(() => amountInputRef.current?.focus(), 0)
-    }
-  }, [network])
-
   return (
     <div className={styles.container}>
       <div className={styles.formWrapper}>
@@ -194,7 +188,12 @@ export const DepositForm = () => {
                 value={watch("amount")}
                 onChange={(value) => setValue("amount", value)}
                 type="number"
-                ref={amountInputRef as React.Ref<HTMLInputElement>}
+                ref={(ref) => {
+                  if (network === BlockchainEnum.NEAR && ref) {
+                    ref.focus()
+                  }
+                  amountInputRef.current = ref
+                }}
                 className={styles.amountInput}
                 slotRight={
                   <div className={styles.balanceBoxWrapper}>
@@ -435,9 +434,9 @@ function isInsufficientBalance(
         balance + nativeBalance,
         token.decimals
       )
-      return formAmount > balanceToFormat
+      return Number.parseFloat(formAmount) > Number.parseFloat(balanceToFormat)
     }
-    return formAmount > balanceToFormat
+    return Number.parseFloat(formAmount) > Number.parseFloat(balanceToFormat)
   }
   return false
 }
