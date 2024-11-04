@@ -8,11 +8,12 @@ import {
 
 export type Output =
   | {
-      result: "OK" | "ERR_NEP141_STORAGE_CANNOT_FETCH"
+      tag: "ok"
+      value: bigint
     }
   | {
-      result: "NEED_NEP141_STORAGE"
-      amount: bigint
+      tag: "err"
+      value: "ERR_NEP141_STORAGE_CANNOT_FETCH"
     }
 
 export const nep141StorageActor = fromPromise(
@@ -25,7 +26,7 @@ export const nep141StorageActor = fromPromise(
     }
   }): Promise<Output> => {
     if (input.token.chainName !== "near" || isNativeToken(input.token)) {
-      return { result: "OK" }
+      return { tag: "ok", value: 0n }
     }
 
     const [minStorageBalanceResult, userStorageBalanceResult] =
@@ -42,14 +43,16 @@ export const nep141StorageActor = fromPromise(
     if (minStorageBalanceResult.status === "rejected") {
       console.error(new Error(minStorageBalanceResult.reason))
       return {
-        result: "ERR_NEP141_STORAGE_CANNOT_FETCH",
+        tag: "err",
+        value: "ERR_NEP141_STORAGE_CANNOT_FETCH",
       }
     }
 
     if (userStorageBalanceResult.status === "rejected") {
       console.error(userStorageBalanceResult.reason)
       return {
-        result: "ERR_NEP141_STORAGE_CANNOT_FETCH",
+        tag: "err",
+        value: "ERR_NEP141_STORAGE_CANNOT_FETCH",
       }
     }
 
@@ -58,13 +61,14 @@ export const nep141StorageActor = fromPromise(
 
     if (userStorageBalance < minStorageBalance) {
       return {
-        result: "NEED_NEP141_STORAGE",
-        amount: minStorageBalance,
+        tag: "ok",
+        value: minStorageBalance,
       }
     }
 
     return {
-      result: "OK",
+      tag: "ok",
+      value: 0n,
     }
   }
 )

@@ -163,26 +163,18 @@ export const withdrawUIMachine = setup({
           return null
         }
 
-        if (context.nep141StorageOutput == null) {
+        if (
+          context.nep141StorageOutput == null ||
+          context.nep141StorageOutput.tag === "err"
+        ) {
           return null
-        }
-        let nep141StorageBalanceNeeded = 0n
-        switch (context.nep141StorageOutput.result) {
-          case "OK":
-            nep141StorageBalanceNeeded = 0n
-            break
-          case "NEED_NEP141_STORAGE":
-            nep141StorageBalanceNeeded = context.nep141StorageOutput.amount
-            break
-          default:
-            return null
         }
 
         return getWithdrawalSpec(
           formValues.tokenIn,
           formValues.tokenOut,
           formValues.parsedAmount,
-          nep141StorageBalanceNeeded,
+          context.nep141StorageOutput.value,
           balances
         )
       },
@@ -346,11 +338,7 @@ export const withdrawUIMachine = setup({
     },
 
     isNEP141StorageFetched: ({ context }) => {
-      return (
-        context.nep141StorageOutput != null &&
-        (context.nep141StorageOutput.result === "OK" ||
-          context.nep141StorageOutput.result === "NEED_NEP141_STORAGE")
-      )
+      return context.nep141StorageOutput?.tag === "ok"
     },
 
     isWithdrawParamsComplete: ({ context }) => {
