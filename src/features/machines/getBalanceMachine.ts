@@ -1,3 +1,4 @@
+import { base64 } from "@scure/base"
 import {
   getNearBalance,
   getNearNep141BalanceAccount,
@@ -51,7 +52,10 @@ export const getNearNep141Balance = async ({
       finality: "optimistic",
     })
 
-    const balance = BigInt(JSON.parse(Buffer.from(response.result).toString()))
+    const uint8Array = new Uint8Array(response.result)
+    const decoder = new TextDecoder()
+    const parsed = JSON.parse(decoder.decode(uint8Array))
+    const balance = BigInt(parsed)
     return balance
   } catch (err: unknown) {
     throw new Error("Error fetching balance", { cause: err })
@@ -128,8 +132,11 @@ export const getNearNep141StorageBalance = async ({
       args_base64: argsBase64,
       finality: "optimistic",
     })
-    const balance = JSON.parse(Buffer.from(response.result).toString())
-    return BigInt(balance?.total || "0")
+
+    const uint8Array = new Uint8Array(response.result)
+    const decoder = new TextDecoder()
+    const parsed = JSON.parse(decoder.decode(uint8Array))
+    return BigInt(parsed?.total || "0")
   } catch (err: unknown) {
     throw new Error("Error fetching balance", { cause: err })
   }
@@ -144,9 +151,12 @@ export const getNearNep141MinStorageBalance = async ({
     request_type: "call_function",
     method_name: "storage_balance_bounds",
     account_id: contractId,
-    args_base64: "e30=",
+    args_base64: base64.encode(new TextEncoder().encode(JSON.stringify({}))),
     finality: "optimistic",
   })
-  const balance = JSON.parse(Buffer.from(response.result).toString())
-  return BigInt(balance.min)
+
+  const uint8Array = new Uint8Array(response.result)
+  const decoder = new TextDecoder()
+  const parsed = JSON.parse(decoder.decode(uint8Array))
+  return BigInt(parsed.min)
 }

@@ -187,7 +187,7 @@ export class DepositService {
   }
 
   async getMinimumStorageBalance(contractId: string): Promise<bigint> {
-    return await getNearNep141MinStorageBalance({
+    return getNearNep141MinStorageBalance({
       contractId,
     })
   }

@@ -103,10 +103,14 @@ export function DepositUIMachineProvider({
                       tokenAddress,
                       settings.defuseContractId
                     )
-                  const minStorageBalance =
-                    await depositNearService.getMinimumStorageBalance(
-                      tokenAddress
-                    )
+
+                  let minStorageBalance = 0n
+                  if (isStorageDepositRequired) {
+                    minStorageBalance =
+                      await depositNearService.getMinimumStorageBalance(
+                        tokenAddress
+                      )
+                  }
                   transactions =
                     depositNearService.createBatchDepositNearNep141Transaction(
                       tokenAddress,
