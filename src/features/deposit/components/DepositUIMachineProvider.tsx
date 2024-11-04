@@ -85,12 +85,17 @@ export function DepositUIMachineProvider({
                 if (tokenAddress === "wrap.near") {
                   const isWrapNearRequired =
                     Number(amount) > Number(balance || 0n)
+                  const minStorageBalance =
+                    await depositNearService.getMinimumStorageBalance(
+                      tokenAddress
+                    )
                   transactions =
                     depositNearService.createBatchDepositNearNativeTransaction(
                       tokenAddress,
                       amount,
                       amount - balance,
-                      isWrapNearRequired
+                      isWrapNearRequired,
+                      minStorageBalance
                     )
                 } else {
                   const isStorageDepositRequired =
@@ -98,11 +103,20 @@ export function DepositUIMachineProvider({
                       tokenAddress,
                       settings.defuseContractId
                     )
+
+                  let minStorageBalance = 0n
+                  if (isStorageDepositRequired) {
+                    minStorageBalance =
+                      await depositNearService.getMinimumStorageBalance(
+                        tokenAddress
+                      )
+                  }
                   transactions =
                     depositNearService.createBatchDepositNearNep141Transaction(
                       tokenAddress,
                       amount,
-                      isStorageDepositRequired
+                      isStorageDepositRequired,
+                      minStorageBalance
                     )
                 }
 

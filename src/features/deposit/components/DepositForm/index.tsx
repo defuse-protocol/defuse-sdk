@@ -1,17 +1,14 @@
 import { CopyIcon, InfoCircledIcon } from "@radix-ui/react-icons"
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@radix-ui/react-tooltip"
 import { Box, Button, Flex, Link, Spinner, Text } from "@radix-ui/themes"
 import { QRCodeSVG } from "qrcode.react"
-import { useEffect } from "react"
+import { useEffect, useRef } from "react"
 import CopyToClipboard from "react-copy-to-clipboard"
 import { Controller, useFormContext } from "react-hook-form"
+import { TooltipInfo } from "src/components/TooltipInfo"
+import { RESERVED_NEAR_BALANCE } from "src/features/machines/getBalanceMachine"
 import { assetNetworkAdapter } from "src/utils/adapters"
 import { AssetComboIcon } from "../../../../components/Asset/AssetComboIcon"
+import { BlockMultiBalances } from "../../../../components/Block/BlockMultiBalances"
 import { EmptyIcon } from "../../../../components/EmptyIcon"
 import { Form } from "../../../../components/Form"
 import { Input } from "../../../../components/Input"
@@ -24,6 +21,7 @@ import { BlockchainEnum, type SwappableToken } from "../../../../types"
 import { formatTokenValue } from "../../../../utils/format"
 import { isBaseToken, isUnifiedToken } from "../../../../utils/token"
 import { DepositUIMachineContext } from "../DepositUIMachineProvider"
+import { Deposits } from "../Deposits"
 import styles from "./styles.module.css"
 
 export type DepositFormValues = {
@@ -46,21 +44,22 @@ export const DepositForm = () => {
   const depositUIActorRef = DepositUIMachineContext.useActorRef()
   const snapshot = DepositUIMachineContext.useSelector((snapshot) => snapshot)
   const generatedAddressResult = snapshot.context.generatedAddressResult
-  const depositNearResult = snapshot.context.depositNearResult
 
-  const { token, network, amount, balance, nativeBalance } =
+  const { token, network, amount, balance, nativeBalance, userAddress } =
     DepositUIMachineContext.useSelector((snapshot) => {
       const token = snapshot.context.formValues.token
       const network = snapshot.context.formValues.network
       const amount = snapshot.context.formValues.amount
       const balance = snapshot.context.balance
       const nativeBalance = snapshot.context.nativeBalance
+      const userAddress = snapshot.context.userAddress
       return {
         token,
         network,
         amount,
         balance,
         nativeBalance,
+        userAddress,
       }
     })
 
@@ -108,9 +107,7 @@ export const DepositForm = () => {
     })
   }
 
-  const handleSetMaxValue = (e: React.MouseEvent<HTMLButtonElement>) => {
-    e.stopPropagation()
-    e.preventDefault()
+  const handleSetMaxValue = () => {
     if (!token) {
       return
     }
@@ -131,12 +128,14 @@ export const DepositForm = () => {
   }, [token, setValue])
 
   const balanceInsufficient = isInsufficientBalance(
-    watch("amount"),
+    amount,
     balance,
     nativeBalance,
     token,
     network
   )
+
+  const amountInputRef = useRef<HTMLInputElement | null>(null)
 
   return (
     <div className={styles.container}>
@@ -189,14 +188,46 @@ export const DepositForm = () => {
                 value={watch("amount")}
                 onChange={(value) => setValue("amount", value)}
                 type="number"
+                ref={(ref) => {
+                  if (network === BlockchainEnum.NEAR && ref) {
+                    ref.focus()
+                  }
+                  amountInputRef.current = ref
+                }}
+                className={styles.amountInput}
                 slotRight={
-                  <Button
-                    className={styles.maxButton}
-                    size="2"
-                    onClick={handleSetMaxValue}
-                  >
-                    <Text color="orange">Max</Text>
-                  </Button>
+                  <div className={styles.balanceBoxWrapper}>
+                    {token &&
+                      isBaseToken(token) &&
+                      token.address === "wrap.near" && (
+                        <TooltipInfo icon={<InfoCircledIcon color="orange" />}>
+                          Combined balance of NEAR and wNEAR.
+                          <br /> NEAR will be automatically wrapped to wNEAR
+                          <br /> if your wNEAR balance isn't sufficient for the
+                          swap.
+                          <br />
+                          Note that to cover network fees, we reserve
+                          {` ${formatTokenValue(
+                            RESERVED_NEAR_BALANCE,
+                            token.decimals
+                          )} NEAR`}
+                          <br /> in your wallet.
+                        </TooltipInfo>
+                      )}
+                    <BlockMultiBalances
+                      balance={
+                        token &&
+                        isBaseToken(token) &&
+                        token.address === "wrap.near"
+                          ? balance + nativeBalance
+                          : balance
+                      }
+                      decimals={token?.decimals ?? 0}
+                      handleClick={() => handleSetMaxValue()}
+                      disabled={false}
+                      className={styles.blockMultiBalances}
+                    />
+                  </div>
                 }
               />
               <div className={styles.buttonGroup}>
@@ -270,18 +301,9 @@ export const DepositForm = () => {
                 justify="center"
                 className={styles.hintWrapper}
               >
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger>
-                      <InfoCircledIcon />
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <span className={styles.tooltipContent}>
-                        Please make sure you connected to the right network
-                      </span>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
+                <TooltipInfo icon={<InfoCircledIcon />}>
+                  Please make sure you connected to the right network
+                </TooltipInfo>
                 <p className={styles.hint}>
                   Make sure to select {network} as the deposit network
                 </p>
@@ -289,30 +311,9 @@ export const DepositForm = () => {
             </div>
           )}
         </Form>
-        {depositNearResult && (
-          <Box>
-            <Text size={"1"} color={"gray"}>
-              Transaction:
-            </Text>{" "}
-            <TransactionLink
-              txHash={
-                depositNearResult.status === "SUCCESSFUL"
-                  ? depositNearResult.txHash
-                  : ""
-              }
-            />
-          </Box>
-        )}
+        <Deposits depositNearResult={snapshot.context.depositNearResult} />
       </div>
     </div>
-  )
-}
-
-const TransactionLink = ({ txHash }: { txHash: string }) => {
-  return (
-    <Link href={`https://nearblocks.io/txns/${txHash}`} target={"_blank"}>
-      {shortenTxHash(txHash)}
-    </Link>
   )
 }
 
@@ -427,12 +428,15 @@ function isInsufficientBalance(
     return false
   }
   const balanceToFormat = formatTokenValue(balance, token.decimals)
-  const nativeBalanceFormatted = formatTokenValue(nativeBalance, token.decimals)
   if (network === BlockchainEnum.NEAR) {
     if (isBaseToken(token) && token.address === "wrap.near") {
-      return formAmount >= balanceToFormat + nativeBalanceFormatted
+      const balanceToFormat = formatTokenValue(
+        balance + nativeBalance,
+        token.decimals
+      )
+      return Number.parseFloat(formAmount) > Number.parseFloat(balanceToFormat)
     }
-    return formAmount >= balanceToFormat
+    return Number.parseFloat(formAmount) > Number.parseFloat(balanceToFormat)
   }
   return false
 }
