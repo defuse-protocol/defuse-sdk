@@ -1,11 +1,18 @@
 import { ExclamationTriangleIcon, PersonIcon } from "@radix-ui/react-icons"
-import { Button, Callout, Flex, Spinner, Text } from "@radix-ui/themes"
+import {
+  Button,
+  Callout,
+  Flex,
+  Skeleton,
+  Spinner,
+  Text,
+} from "@radix-ui/themes"
 import { useSelector } from "@xstate/react"
 import { parseUnits } from "ethers"
 import { providers } from "near-api-js"
 import { Fragment, useEffect } from "react"
 import { useForm } from "react-hook-form"
-import type { ActorRefFrom } from "xstate"
+import type { ActorRefFrom, SnapshotFrom } from "xstate"
 import { EmptyIcon } from "../../../../components/EmptyIcon"
 import { Form } from "../../../../components/Form"
 import { FieldComboInput } from "../../../../components/Form/FieldComboInput"
@@ -21,6 +28,7 @@ import { isBaseToken } from "../../../../utils"
 import { assert } from "../../../../utils/assert"
 import { formatTokenValue } from "../../../../utils/format"
 import type { intentStatusMachine } from "../../../machines/intentStatusMachine"
+import type { withdrawUIMachine } from "../../../machines/withdrawUIMachine"
 import {
   balanceSelector,
   renderIntentCreationResult,
@@ -48,25 +56,25 @@ export const WithdrawForm = ({
   assert(formRef != null, "Form ref must be defined")
 
   const {
+    state,
     depositedBalanceRef,
     intentCreationResult,
     intentRefs,
-    state,
-    totalAmountReceived,
     nep141StorageRequired,
   } = WithdrawUIMachineContext.useSelector((state) => {
     return {
+      state,
       depositedBalanceRef: state.children.depositedBalanceRef,
       intentCreationResult: state.context.intentCreationResult,
       intentRefs: state.context.intentRefs,
-      state,
-      totalAmountReceived:
-        (state.context.quote?.totalAmountOut ?? 0n) +
-        (state.context.withdrawalSpec?.directWithdrawalAmount ?? 0n),
       nep141StorageRequired:
         state.context.nep141StorageOutput?.result === "NEED_NEP141_STORAGE",
     }
   })
+
+  const totalAmountReceived = WithdrawUIMachineContext.useSelector(
+    totalAmountReceivedSelector
+  )
 
   useEffect(() => {
     if (accountId != null) {
@@ -291,8 +299,15 @@ export const WithdrawForm = ({
             className={styles.receivedAmount}
           >
             <Text>Received amount</Text>
+
             <Text className={styles.receivedAmountValue}>
-              {formatTokenValue(totalAmountReceived ?? 0n, token.decimals)}{" "}
+              {state.matches({ editing: "preparation" }) ? (
+                <Skeleton>100.000000</Skeleton>
+              ) : totalAmountReceived == null ? (
+                "–"
+              ) : (
+                formatTokenValue(totalAmountReceived, token.decimals)
+              )}{" "}
               {token.symbol} @ {renderBlockchainLabel(blockchain)}
             </Text>
           </Flex>
@@ -396,5 +411,17 @@ function Intents({
         )
       })}
     </div>
+  )
+}
+
+function totalAmountReceivedSelector(
+  state: SnapshotFrom<typeof withdrawUIMachine>
+): bigint | null {
+  if (state.context.withdrawalSpec == null) {
+    return null
+  }
+  return (
+    (state.context.quote?.totalAmountOut ?? 0n) +
+    state.context.withdrawalSpec.directWithdrawalAmount
   )
 }
