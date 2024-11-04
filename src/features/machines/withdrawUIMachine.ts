@@ -393,7 +393,6 @@ export const withdrawUIMachine = setup({
 
         BALANCE_CHANGED: [
           {
-            target: "editing",
             guard: {
               type: "isBalanceSufficientForQuote",
               params: ({ context }) => {
@@ -446,7 +445,6 @@ export const withdrawUIMachine = setup({
                       on: {
                         BALANCE_CHANGED: {
                           target: "done",
-                          reenter: true,
                         },
                       },
                     },
