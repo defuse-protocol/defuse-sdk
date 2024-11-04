@@ -78,3 +78,21 @@ export type GetNearNep141StorageBalanceOfResponse = JSONRPCResponse<{
   logs: []
   result: number[]
 }>
+
+export type GetNearNep141StorageBalanceBoundsRequest = JSONRPCRequest<
+  "query",
+  {
+    request_type: "call_function"
+    account_id: string
+    method_name: "storage_balance_bounds"
+    args_base64: string
+    finality: "optimistic"
+  }
+>
+
+export type GetNearNep141StorageBalanceBoundsResponse = JSONRPCResponse<{
+  block_hash: string
+  block_height: number
+  logs: []
+  result: number[]
+}>
