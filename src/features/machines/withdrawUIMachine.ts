@@ -1,8 +1,6 @@
-import { parseUnits } from "ethers"
 import type { providers } from "near-api-js"
 import {
   type ActorRefFrom,
-  assertEvent,
   assign,
   emit,
   fromPromise,
@@ -25,6 +23,10 @@ import {
   depositedBalanceMachine,
 } from "./depositedBalanceMachine"
 import { intentStatusMachine } from "./intentStatusMachine"
+import {
+  type Output as NEP141StorageOutput,
+  nep141StorageActor,
+} from "./nep141StorageActor"
 import type { AggregatedQuote } from "./queryQuoteMachine"
 import {
   type Output as SwapIntentMachineOutput,
@@ -50,6 +52,8 @@ export type Context = {
     nearClient: providers.Provider
     sendNearTransaction: (tx: Transaction) => Promise<{ txHash: string } | null>
   } | null
+  nep141StorageOutput: NEP141StorageOutput | null
+  nep141StorageQuote: AggregatedQuote | null
 }
 
 type PassthroughEvent = {
@@ -109,6 +113,7 @@ export const withdrawUIMachine = setup({
     swapActor: swapIntentMachine,
     intentStatusActor: intentStatusMachine,
     withdrawFormActor: withdrawFormReducer,
+    nep141StorageActor: nep141StorageActor,
   },
   actions: {
     updateUIAmountOut: () => {
@@ -128,6 +133,12 @@ export const withdrawUIMachine = setup({
     setSubmitDeps: assign({
       submitDeps: (_, value: Context["submitDeps"]) => value,
     }),
+    setNEP141StorageOutput: assign({
+      nep141StorageOutput: (_, result: NEP141StorageOutput) => result,
+    }),
+    clearNEP141StorageOutput: assign({
+      nep141StorageOutput: null,
+    }),
 
     clearWithdrawalSpec: assign({
       withdrawalSpec: null,
@@ -138,12 +149,30 @@ export const withdrawUIMachine = setup({
           context.depositedBalanceRef.getSnapshot().context.balances
         const formValues = context.withdrawFormRef.getSnapshot().context
 
-        return getRequiredSwapAmount(
+        if (context.nep141StorageOutput == null) {
+          return null
+        }
+        let nep141StorageBalanceNeeded = 0n
+        switch (context.nep141StorageOutput.result) {
+          case "OK":
+            nep141StorageBalanceNeeded = 0n
+            break
+          case "NEED_NEP141_STORAGE":
+            nep141StorageBalanceNeeded = context.nep141StorageOutput.amount
+            break
+          default:
+            return null
+        }
+
+        const withdrawalSpec = getWithdrawalSpec(
           formValues.tokenIn,
           formValues.tokenOut,
           formValues.parsedAmount,
+          nep141StorageBalanceNeeded,
           balances
         )
+
+        return withdrawalSpec
       },
     }),
 
@@ -231,11 +260,24 @@ export const withdrawUIMachine = setup({
     ),
   },
   guards: {
-    isQuoteRelevant: ({ context }) => {
+    satisfiesWithdrawalSpec: ({ context }) => {
       if (context.withdrawalSpec == null) return false
-      if (context.withdrawalSpec.swapParams == null) return true
 
-      return context.quote != null && context.quote.totalAmountOut > 0n
+      let isValid = true
+
+      const swapRequired = context.withdrawalSpec.swapParams != null
+      if (swapRequired) {
+        isValid =
+          isValid && context.quote != null && context.quote.totalAmountOut > 0n
+      }
+
+      const nep141StorageRequired =
+        context.withdrawalSpec.nep141StorageAcquireParams != null
+      if (nep141StorageRequired) {
+        isValid = isValid && context.nep141StorageQuote != null
+      }
+
+      return isValid
     },
     isSwapNotNeeded: ({ context }) => {
       assert(context.withdrawalSpec != null, "withdrawalSpec is null")
@@ -269,17 +311,16 @@ export const withdrawUIMachine = setup({
       return true
     },
 
-    isCoreInputData: (_, event: WithdrawFormParentEvents) => {
-      const v =
-        event.fields.includes("parsedAmount") ||
-        event.fields.includes("tokenIn") ||
-        event.fields.includes("tokenOut")
-
-      return v
+    isNEP141StorageFetched: ({ context }) => {
+      return (
+        context.nep141StorageOutput != null &&
+        (context.nep141StorageOutput.result === "OK" ||
+          context.nep141StorageOutput.result === "NEED_NEP141_STORAGE")
+      )
     },
   },
 }).createMachine({
-  /** @xstate-layout N4IgpgJg5mDOIC5QHcCWAXAFhATgQ2QFoBXVAYgEkA5AFQFFaB9AZTppoBk6ARAbQAYAuolAAHAPawMqcQDsRIAB6JCAVlUA2AHQBGAEwBmVXp0GAHBtX8LAGhABPFQHYAnHt0aX-VQBZVZpw0fHzMAX1C7NCxcAhJyDgB5AHFqAWEkEAkpdBl5DOUESy0XHz0S1R0fDXMnYLtHBEJXAy0nPX5DIx1+UqDwyIxsfCJSMkSkhIBVGjSFLOk5BQLCEx8taxL+Sy2DDQ765xcWto6DLp69PoiQKKHY0i1IaVkoMgg5MC1YdDx0T9uYiNUI8IM8oLMMvMcot8og-O5+DpAmUXGY9GY3IYDo0dP5Wn5qkYnPwthonP0boNAXEQWCyAB1Cg0AAS3AASgBBemMABiCTZAFktAAqCFiSQLPKgZYaMxrMxmVROfylHwklwabGEAylLQaPYlLy1XZ6VQUgHDGlPHIvMgAIQ5HA5VAAwnRGC7mc6kjwxZkJdCpUoVKb+FofAZ9Ls0Rp0fw2lqde59fxDfGI7GzdcLfdgdbULaHU7Xe7Pd7fTp0uLsrklipce4MYYepZZU5AlrcS1usZ2n4SXt4+aqZaHvnbYyWeyubz+QLeRQ6BxuMwPV6qD6+EI5gHa7DGmTtOiXDokcr2mcnJ29lo9FVIz5umZ47jydmR7naTaoFpUBAADZgGQsDEAARgAthgfpQnu0oqBqqitOomjVPoLj+KoWp6G0WgWBYqg1NYCrDtEo55qC36-gBQFUHQ3IAIqTAk9DQbuMJwTilSIeqOguMqXF8XoWpuMUd4hM+GI6GifgkXcQJfgWP6iDgYCiHg+CBm8HxfD8fxaDm8njkpKlqRpuSsTW7HBo0JQtOU+onoepg6FhYZmAY6IEaaZKSUcsnUmOFGKVoymqepvy5PpeBgowoF4P+eCyAAxkBRbOm6a7lluVb+pZQYyth6whEipQKhoSKYQ4iBGIhJXGDqThSUiOr+WRCkvCFJnhYGUUxXFCXJUBFmSnWjSKohlyGFJnn+Ki2JEuG2GnlJj6uMErWfkZnVhWZchUYBWmyJ83y-P8H6GUFHWhaZEV7X+gHDYGo2EKi6xnGYp7+N00ZXlVCBGNoZIVKtbTmO5G0XWC203T193HcgeCiIwACOxDiHpcNkLRDFMSx26Qmx+UqKVb1bD46G1E4GJ1H9gRrKoGrBBU5iPiEENWpdxk7bdsj7fDiMo2jGPUWQj2wdZhBM29SpyimMbYsSLitAqPS+OVUk9OzDwgRBGDfodnwFgAbuIADW-OiGyYAAGZi1ZBT6k4xSEeh1SNWYWETe5bRTYiXgGG+AykZ+OuQeg+tgDgODiDgIUJeg1sx+BXwI5bNt20ThR8Vo6jObiMsJn9n24WU7bk3epwB1rwKh3rilY3RjCMcxdAZ6NnjuLiar6MDpgGImEbhiU6J094JJ6OE1yyOIEBwAoBlxDueXPfoj7rKmvH8X4glauVYa7IiZK7PegTV+1UBLyN+6EKeRzryefHAwzhcNJLgS3vGrjqOi+o6BoZ9bThpfJ618FRKxJPxDEJ4DDWCEn9G+g9LAMwfGiOUj4sxBzkhzKG11urixgvbesh9cL+AsMqHUUlsSvW8FYYIqY1Ton0AAzm0M8F7QRn1eKiUUrAPFssWoYZeLRjASSAILk-qeXDFUS4VQgiBAHMwnBXVdq8yAQTZe18NRmBIWVchj4PZ-TVErPuFMPq9COIHSkwdIaUVwSovmKcBao3RmAXhhCDyGHDOVdsFgTyIgqNicq2jCSU3cmcVE-93zWOwbY5RPMHGwFToLFxWhnF-EYCpPAEAGjVivhxFYqZcKnnocDdC1gfAK28MUFCgR1CthKIo2J3NYbUUcUjNJhtqJuMzmoZUXizy+O6LicRDRiROwvP2GBIQyiNOCnY+JcMdIxzwDARgs8oTJL+N056bg3KkKBhQgxDRyprGwsgo4kZeKGFmVdOJLTAJLPwKs9ZAZNmfHeEdbZoCcKKl0QRfRlSdA51RHhbwGYDA3K5jDSK8zAxrI+F8-JwytAeSamI1W6hfoNHRGsXi6EYEnhOB5SFWgPmuPUXkiWfjwxU1cF2Ho3QsUqCTOsdQfgKg7GfEYM+tdw6KURdZaogM-4RiTFYQ+nZ3LFCOH7Mh7RKiT1CEAA */
+  /** @xstate-layout N4IgpgJg5mDOIC5QHcCWAXAFhATgQ2QFoBXVAYgEkA5AFQFFaB9AZTppoBk6ARAbQAYAuolAAHAPawMqcQDsRIAB6JCAVlUAWAHQAOAOwA2AEwBOEwf4BGfUYA0IAJ4q9ey1oN71rjZaMBmHT8jAF9g+zQsXAIScg4AeQBxagFhJBAJKXQZeTTlBA8tSxMrAwMTP0t+Iw0reycEQhc-LSMjD1V+Pz9VSwMNHVDwjGx8IlIyeIS4gFUaFIUM6TkFPMIjX10NdZ0NPXW9vz665z1m1vbO7t7+wZAIkejSLUhpWSgyCDkwLVh0PHRvvcomNUM8IK8oPM0ossstcogNF0tHoTKo9p5+qpAh5jg1rM0zJZdusfHodJY9LcgaMYmCIWQAOoUGgACW4ACUAIIMxgAMTi7IAsloAFRQsSSJY5UCrDTmdx+Ew6KxmAJFU64wiHPRaXa7Pz8YpBSxU4bA2kvLJvMgAIU5HE5VAAwnRGE6WY6EjxxelJbDpUoVNUTFo-Cj+OS2vwtqYNJrtbq9PrDZ11qbIjSnpbUNa7Q7na73Z7vZZUhLMtkVoh-FpDaiDX0IyZDG1NdY3AE+gEk2VvAZ0w8QXSre8mayOdy+QLBXyKHQONxmG6PVQvXwhAs-ZX4Q0NFtCl09YrKiY2+TQzo+jV+IZUc2B+as+CR1pUBAADZgMiwYgAIwAthgPowtuMrODoIaGGGFRWD0gR+PGViFHKNi9C4ZgaA+magtmbxaKIOBgKIeD4P6HxfD8fwAlo1KPDhz45lA+GEcRpHZMBW5wmBDR7Ko7iuOUBj6PohiqJq8oeL45RVOSRQmmEdxmthw6McxREkf82RqYwYCKGAADGxD+owhEAI6kIR-5gLI6CwORsjfL8-yAkpdEqXhBHqWxcjabpBlGdkJlgOZqCWdZtkcRWXGBg0qh9FoWJkp4cUeD4diOIgOiaIU-C9kYypVIaqhYW5uFMZ5rGaT5nk6XphnGWZFlgFZNl2Z8DmUc5NGuUOZVqZV-q+XVAVyEFIVha1vClpuUUBnkpzIsYhJBCYvinOl9SBEYCWqIc0kaAY1gmCECm0b1DEeSxGmDTVfn1YFjWhc14WwFov54O+eCyPpgJ4BCjAAGbiDgjDvZ931fnmjousuxbrmWvqzVWDQGvwob+L4+gRnouU6LiqhmIUgSRkYnimMVp09RaF3lVd3myEN-kNcFTUtbZb0fV9P2vh+X6RVKyOEAd2j5TsvStEmRhxXouJhjqqJYoinS7Pw-AU0MGalTT-XXVpt3Dcz43Pa1HPg9zb6fmQU0IyB0WrPlbjSZYcVVEme4yxlCAxloSrRjjaJ7OUzsledEI6-TjP3aNj0TezDmiESliML8wN4DAoOcxDWgQGAAI4IBsiMWNrMvfZ3w5gAbuIADWLma6HL4Vbr1WEbVTMPSzT1s698eJ8n6Cp+nYNc98Od5wXRcx8btkIJX4j6VVsgpPz-qCzoEHIQa+WtBUQke-U-TaMqlhEhYzsQc26uKfX1Nh03Ed3SNsjF13pftY5VF14Ot+N3Ti-PAbDuRtu4r1AjFSwBp+Jqy6OvCoh5cTJRaNYXahokyHGjCHH+ql77-0fobEuJtYDIDwKIRg5lxDUQtl+KgdAeQAEVphxHoKAu2Kg1T8SJBGC+Qlna4kxjqG8BhoKHXMBUAYlMb5Pjvn-QaeCgEEPZkQkhZDiAUPLrzK2G5oScTmmwpU-EDCaEVFlVw5I+H+G2m0FEpwTBbEVJ4TBTwfwAQwCOMur5ZBV1rj8Yhoh2RgABiw3R+Q1Y+26P0XwhjcpJk1B0BK5NDAHTKFUE6Gtv5OL-IBdAbiwA4BwMDfCn10BA3zj4kh-jAlaPLALHcQi+KaGVFtAmrReGe2KAlQIx1BGnBPpoRxoJnFZLcTQ+hjDmFVMRjU7iQi0bOxvDsdYDTqjxiEsiGoidrHrBOgpWQ4gc7wDSGdGIM0pkxUIL0kMyDDgVA6BoHocZPaED6AYWsiSPAYw8C4fp7koAnNXjuc5J83BXKEXMu5RJYknx9tUIFrgbxyn7BI9J9Ew5UL+WA1YrhmiwSEntboXQ2yuDCd4Zs1j1B9KRY+FFv8vKL3RawvEuVmggpudGe5bZtCdEliiFBYZDHfL6jgm6rc5HR07rHA51T-ncXObBImu1QW3J6AhT2FJtqVBxqtfK5gigCu1kKvWIrAFiuAS9U2I96XBLUBsUWPhjCky2HFXEUsQxbDMBBNEPglSIrSVSn54d-763biahRr1h5Z2If9EpGczZgEtYLWMiZ3l1iMNA3K+MKjuH0MSCxECeh6ukbS4VYA25R2flPbu5qs7v3jQCqWOhawO29TBA6YlPZCT4ocSo15nnvILTSgahqS2ivLeK6eYbM7m15rWmV-gXnqA8KiHQbRkHLM9n4A6yJVCizJIlMkqTr7Iv9Qaluw7jWjtNSbXuPh+6DxLeGn6M6znmB1CysFyrnXxSEd0OKYtDHyV9cpQVMih2lqfi-CVWhr1JxTvgIek7R651yRPN4EHx1PtWKtS5WVrnvogbLHoPs4rbv6I01NpN+3YJA6esD+DX5XqIn3WDad70Iezl8DDKhAjyyxL4E+uVUQ3nxs2dwasUk+DirsK+RypEDubgzEdaHu6cYaMUHUhwdi7BscdHwuIdU+0XWrEk7YD0yepVRotWlFMVrNUo0h5CAQqbUC4HKUsAiwTUyq+oJ8fCFAgUIso3qKR+Eo5dSzPlrNjsrXZlRaj2MOSc70Zo4KcOdIWaicx+VdSHAsB0OWl4fWHr9cB8LCnz1Kds742LlDp3aKRgC7dlyqi7WPgTG8XnEC+FMFmroSVLzRkK2Z491GyvBovaGqDjGb3MfTg5uNdXTmrCyiGDT7ttMwr4USTlPRVaeAjEdSklKgP6pGwAsbFWGMJ2mwPODJa5vxfm1KjFXGoWra04qHTlhzGZugtxrKaJSaHcA1rQtg7T1g+fjWhb0rwGdEKH0Zsgn-Bqbbd5lzh1EQQLQhYQx0mqaydUlDp7DLGgbt1FjKTDZ4GPLlsiVwhgrCmL2N8wZrjGIqc9e4CBqaehtCuJqVNIZ-DryTFUY8QRMKhGCEAA */
   id: "withdraw-ui",
 
   context: ({ input, spawn, self }) => ({
@@ -301,6 +342,8 @@ export const withdrawUIMachine = setup({
       input: { parentRef: self, tokenIn: input.tokenIn },
     }),
     submitDeps: null,
+    nep141StorageOutput: null,
+    nep141StorageQuote: null,
   }),
 
   entry: ["spawnBackgroundQuoterRef"],
@@ -369,13 +412,7 @@ export const withdrawUIMachine = setup({
           ".preparation",
         ],
 
-        WITHDRAW_FORM_FIELDS_CHANGED: {
-          target: ".preparation",
-          guard: {
-            type: "isCoreInputData",
-            params: ({ event }) => event,
-          },
-        },
+        WITHDRAW_FORM_FIELDS_CHANGED: ".preparation",
       },
 
       states: {
@@ -383,49 +420,118 @@ export const withdrawUIMachine = setup({
           on: {
             submit: {
               target: "done",
-              guard: "isQuoteRelevant",
+              guard: "satisfiesWithdrawalSpec",
               actions: [
                 "clearIntentCreationResult",
                 { type: "setSubmitDeps", params: ({ event }) => event.params },
               ],
             },
 
-            NEW_QUOTE: {
-              actions: ["updateUIAmountOut"],
-            },
+            NEW_QUOTE: undefined,
           },
         },
 
         preparation: {
-          initial: "waiting_balance",
+          initial: "pre_execution_requirements",
 
           states: {
-            waiting_balance: {
-              on: {
-                BALANCE_CHANGED: "idle",
+            pre_execution_requirements: {
+              type: "parallel",
+
+              states: {
+                balance: {
+                  initial: "idle",
+                  states: {
+                    waiting_for_balance: {
+                      on: {
+                        BALANCE_CHANGED: {
+                          target: "done",
+                          reenter: true,
+                        },
+                      },
+                    },
+
+                    done: {
+                      type: "final",
+                    },
+
+                    idle: {
+                      always: [
+                        {
+                          target: "done",
+                          guard: "isBalanceReady",
+                        },
+                        {
+                          target: "waiting_for_balance",
+                          actions: "sendToDepositedBalanceRefRefresh",
+                        },
+                      ],
+                    },
+                  },
+                },
+
+                nep141_storage_balance: {
+                  initial: "determining_requirements",
+                  states: {
+                    determining_requirements: {
+                      invoke: {
+                        src: "nep141StorageActor",
+
+                        input: ({ context }) => {
+                          const formContext =
+                            context.withdrawFormRef.getSnapshot().context
+                          return {
+                            token: formContext.tokenOut,
+                            userAccountId: formContext.recipient,
+                          }
+                        },
+
+                        onDone: {
+                          target: "done",
+
+                          actions: {
+                            type: "setNEP141StorageOutput",
+                            params: ({ event }) => event.output,
+                          },
+                        },
+                      },
+
+                      entry: "clearNEP141StorageOutput",
+                    },
+
+                    done: {
+                      type: "final",
+                    },
+                  },
+                },
               },
 
-              always: {
-                target: "idle",
-                guard: "isBalanceReady",
-              },
+              onDone: [
+                {
+                  target: "execution_requirements",
+                  guard: "isNEP141StorageFetched",
+                },
+                {
+                  target: "preparation_done",
+                },
+              ],
             },
 
-            idle: {
+            execution_requirements: {
               type: "parallel",
 
               states: {
                 swap_quote: {
                   initial: "idle",
                   states: {
-                    quote_ready: {
+                    done: {
                       type: "final",
                     },
 
                     idle: {
                       on: {
                         NEW_QUOTE: {
-                          target: "quote_ready",
+                          target: "done",
 
                           actions: {
                             type: "setQuote",
@@ -437,7 +543,7 @@ export const withdrawUIMachine = setup({
                       },
 
                       always: {
-                        target: "quote_ready",
+                        target: "done",
                         guard: "isSwapNotNeeded",
                         reenter: true,
                       },
@@ -445,7 +551,7 @@ export const withdrawUIMachine = setup({
                   },
                 },
 
-                storage_deposit_quote: {
+                nep141_storage_quote: {
                   states: {
                     done: {
                       type: "final",
@@ -457,9 +563,6 @@ export const withdrawUIMachine = setup({
               },
 
               entry: [
-                () => {
-                  console.log("prep")
-                },
                 "updateWithdrawalSpec",
                 "sendToBackgroundQuoterRefNewQuoteInput",
               ],
@@ -475,10 +578,7 @@ export const withdrawUIMachine = setup({
             },
           },
 
-          onDone: {
-            target: "idle",
-            actions: "updateUIAmountOut",
-          },
+          onDone: "idle",
 
           entry: [
             "clearWithdrawalSpec",
@@ -502,7 +602,7 @@ export const withdrawUIMachine = setup({
         id: "swapRef",
         src: "swapActor",
 
-        input: ({ context, self }) => {
+        input: ({ context }) => {
           assert(context.submitDeps, "submitDeps is null")
           assert(context.withdrawalSpec, "withdrawalSpec is null")
 
@@ -585,8 +685,58 @@ interface WithdrawalSpec {
     amountIn: bigint
     balances: Record<BaseTokenInfo["defuseAssetId"], bigint>
   }
+  nep141StorageAcquireParams: null | {
+    tokenIn: BaseTokenInfo
+    tokenOut: BaseTokenInfo
+    exactAmountOut: bigint
+  }
   directWithdrawalAmount: bigint
   tokenOut: BaseTokenInfo
+}
+
+const STORAGE_BALANCE_TOKEN: BaseTokenInfo = {
+  defuseAssetId: "nep141:wrap.near",
+  address: "wrap.near",
+  decimals: 24,
+  icon: "https://assets.coingecko.com/coins/images/10365/standard/near.jpg",
+  chainId: "mainnet",
+  chainIcon: "/static/icons/network/near.svg",
+  chainName: "near",
+  routes: [],
+  symbol: "NEAR",
+  name: "Near",
+}
+
+function getWithdrawalSpec(
+  tokenIn: UnifiedTokenInfo | BaseTokenInfo,
+  tokenOut: BaseTokenInfo,
+  totalAmountIn: bigint,
+  nep141StorageBalanceNeeded: bigint,
+  balances: Record<BaseTokenInfo["defuseAssetId"], bigint>
+): null | WithdrawalSpec {
+  const requiredSwap = getRequiredSwapAmount(
+    tokenIn,
+    tokenOut,
+    totalAmountIn,
+    balances
+  )
+
+  if (!requiredSwap) return null
+
+  return {
+    swapParams: requiredSwap.swapParams,
+    nep141StorageAcquireParams:
+      nep141StorageBalanceNeeded === 0n
+        ? null
+        : {
+            // We sell output token to tiny bit of wNEAR to cover storage
+            tokenIn: tokenOut,
+            tokenOut: STORAGE_BALANCE_TOKEN,
+            exactAmountOut: nep141StorageBalanceNeeded,
+          },
+    directWithdrawalAmount: requiredSwap.directWithdrawalAmount,
+    tokenOut: tokenOut,
+  }
 }
 
 function getRequiredSwapAmount(
@@ -594,7 +744,7 @@ function getRequiredSwapAmount(
   tokenOut: BaseTokenInfo,
   totalAmountIn: bigint,
   balances: Record<BaseTokenInfo["defuseAssetId"], bigint>
-): WithdrawalSpec | null {
+) {
   const underlyingTokensIn = isBaseToken(tokenIn)
     ? [tokenIn]
     : tokenIn.groupedTokens

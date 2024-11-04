@@ -1,5 +1,5 @@
-import { PersonIcon } from "@radix-ui/react-icons"
-import { Button, Flex, Spinner, Text } from "@radix-ui/themes"
+import { ExclamationTriangleIcon, PersonIcon } from "@radix-ui/react-icons"
+import { Button, Callout, Flex, Spinner, Text } from "@radix-ui/themes"
 import { useSelector } from "@xstate/react"
 import { parseUnits } from "ethers"
 import { providers } from "near-api-js"
@@ -53,6 +53,7 @@ export const WithdrawForm = ({
     intentRefs,
     state,
     totalAmountReceived,
+    nep141StorageRequired,
   } = WithdrawUIMachineContext.useSelector((state) => {
     return {
       depositedBalanceRef: state.children.depositedBalanceRef,
@@ -62,6 +63,8 @@ export const WithdrawForm = ({
       totalAmountReceived:
         (state.context.quote?.totalAmountOut ?? 0n) +
         (state.context.withdrawalSpec?.directWithdrawalAmount ?? 0n),
+      nep141StorageRequired:
+        state.context.nep141StorageOutput?.result === "NEED_NEP141_STORAGE",
     }
   })
 
@@ -247,23 +250,40 @@ export const WithdrawForm = ({
             errors={errors}
             balance={tokenInBalance}
           />
-          <Flex
-            gap="2"
-            align="center"
-            justify="between"
-            className={styles.input}
-          >
-            <input
-              {...register("recipient")}
-              placeholder="Enter wallet address"
-            />
-            <PersonIcon
-              width={20}
-              height={20}
-              className={styles.personIcon}
-              onClick={() => setValue("recipient", "")}
-            />
+          <Flex direction={"column"} gap={"2"}>
+            <Flex
+              gap="2"
+              align="center"
+              justify="between"
+              className={styles.input}
+            >
+              <input
+                {...register("recipient")}
+                placeholder="Enter wallet address"
+              />
+              <PersonIcon
+                width={20}
+                height={20}
+                className={styles.personIcon}
+                onClick={() => setValue("recipient", "")}
+              />
+            </Flex>
+
+            {nep141StorageRequired && (
+              <Callout.Root size={"1"} color="red">
+                <Callout.Icon>
+                  <ExclamationTriangleIcon />
+                </Callout.Icon>
+                <Callout.Text>
+                  Withdrawal isn’t possible right now because this account
+                  doesn’t have the necessary storage for the token. To resolve
+                  this, you can send a small amount of the token to the account.
+                  We’re working on a long-term solution.
+                </Callout.Text>
+              </Callout.Root>
+            )}
           </Flex>
+
           <Flex
             gap="2"
             align="center"
