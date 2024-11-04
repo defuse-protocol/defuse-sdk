@@ -297,8 +297,8 @@ export const withdrawUIMachine = setup({
         quote,
       }: { balances: BalanceMapping; quote: AggregatedQuote | null }
     ) => {
-      // We can't proceed without a quote
-      if (quote == null) return false
+      // No quote - no need to check balances
+      if (quote == null) return true
 
       for (const [token, amount] of Object.entries(quote.amountsIn)) {
         // We need to know balances of all tokens involved in the swap
