@@ -81,25 +81,3 @@ export async function waitForIntentSettlement(
     await new Promise((resolve) => setTimeout(resolve, 200))
   }
 }
-
-export function doesSignatureMatchUserAddress(
-  signature: WalletSignatureResult | null,
-  userAddress: string
-) {
-  if (signature == null) return false
-
-  const signatureType = signature.type
-  switch (signatureType) {
-    case "NEP413":
-      return (
-        // For NEP-413, it's enough to ensure user didn't switch the account
-        signature.signatureData.accountId === userAddress
-      )
-    case "EIP712":
-      // For EIP-712, we need to derive the signer address from the signature
-      throw new Error("EIP712 signature is not supported")
-    default:
-      signatureType satisfies never
-      throw new Error("exhaustive check failed")
-  }
-}

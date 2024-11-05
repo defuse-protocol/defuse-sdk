@@ -1,8 +1,8 @@
 import type { providers } from "near-api-js"
+import { verifyMessage as verifyMessageViem } from "viem"
 import { assign, fromPromise, setup } from "xstate"
 import { settings } from "../../config/settings"
 import {
-  doesSignatureMatchUserAddress,
   submitIntent,
   waitForIntentSettlement,
 } from "../../services/intentService"
@@ -49,6 +49,9 @@ type Context = {
     | {
         status: "ERR_USER_DIDNT_SIGN"
         error: Error
+      }
+    | {
+        status: "ERR_CANNOT_VERIFY_SIGNATURE"
       }
     | {
         status: "ERR_SIGNED_DIFFERENT_ACCOUNT"
@@ -148,6 +151,15 @@ export const swapIntentMachine = setup({
     }),
   },
   actors: {
+    verifySignatureActor: fromPromise(
+      ({
+        input,
+      }: {
+        input: { signature: WalletSignatureResult; userAddress: string }
+      }) => {
+        return verifyWalletSignature(input.signature, input.userAddress)
+      }
+    ),
     publicKeyVerifierActor: publicKeyVerifierMachine,
     signMessage: fromPromise(
       async (_: {
@@ -181,12 +193,6 @@ export const swapIntentMachine = setup({
     ) => {
       return status === "SETTLED"
     },
-    isSignatureValid: (
-      { context },
-      signature: WalletSignatureResult | null
-    ) => {
-      return doesSignatureMatchUserAddress(signature, context.userAddress)
-    },
     isIntentRelevant: ({ context }) => {
       if (context.intentOperationParams.quote != null) {
         // Naively assume that the quote is still relevant if the expiration time is in the future
@@ -201,7 +207,7 @@ export const swapIntentMachine = setup({
     isTrue: (_, params: boolean) => params,
   },
 }).createMachine({
-  /** @xstate-layout N4IgpgJg5mDOIC5SwO4EMAOBaAlgOwBcxCBiAOQFEB1AfQEUBVAeQBUKBtABgF1FQMA9rBwEcAvHxAAPRACYAnAFYAdPIAcigGyKA7It0BGTcYDMAGhABPRAZOzlJxfJNqdmnTs7zOsgCwBffwtUTFxCYgJlHAgAGzASLl4kEEFhUXFJGQRbNWUfTgNfRVk1eU01Ut8LawQTdWVNP05HfU9fY0Dg9Gx8IkJlAGUcKDx8KBIIcTAovAA3AQBraeERgFk4WDQYRMlUkTEJZKyjZQNFI19fE19XExN3asRNS9O9Z9dFX05FE06QEJ64X6QxGYwmUxm8yWyhWeHWsE22wMSX4Qn2GSOiCwJgMuXaBlk92cajqziqVieJWUvlkmjKXh8bjsfwBYT6kRBozw4zAACdeQJecoMDE0AQAGaCgC2MOGcI2WzAO2Se3Sh1AWSwtM4ygqmnu900Bm8BgMjwQl3kyicvnkZT0WhKthZ3TZEWUADU+ThxZYxgACAAKAFcAEYxHAAY39AGkwJYg7y4MRI-FJnhpvgoctXb13V7eT6-dyg2GI9G4wnA0nYCmwAgswJI2KDollai0gdMohrg5vmUyq55EVZGaKQhh75daV7jTSo0Si7Qnn+gWiwGQ+Go7H44nk3hU+CM5DFjnl0DImvfRuy9vK3vawf643m2q28jdmi1d2ENiFA05w0RRXB0Y1yRqO0dAaM51E+eQdBxeCl0BdlPW9a8S03csdyrGs6xIPkBSFEUxUlXkZVZFdL3Q4soFLLcK13at91TBs5ibFtxDbHhP07DENSxBQdSE54aSUOkFHNHR5HsHQ1BHElnDtfVkLdfoACEBTQCBm1gUQSwASQvI9M3Y6FKIvZRNIEbTdP0uijPZNj5lfVseHbFIvy7TEEFA1Q6l8TxNE4HRRxMHxzVsRpTnC85rgJRxZB0VSqKsrSdLQPSA0ciICP5QVhVFCVpRhXNLOs2zMvs-0csIZyOLfdyeJVLz+OkQS1AMVRlNuWd4P1SLjU0XVjFtAoQscdQUssq9aJq4yPNVbyBIQNRhtCoo5PcAlOE4B5x1NThcj0NRZE4TbGjcZKgn+MrUNm7KFo-Fq+PVdraj8a01t0RxcUZcwDpC4T5O8NxhyUYdAhuvABAgOBJAs9lePRN7NRMDwAJKICQLA81CStLwPFkQlvicI7ptQ6I4mR78fMKHVKltUK7VHZxZHNOxhppPa-HaYckrUCn3U5MYaeW97-18AwChcBDQL0HQrnNG57DuVwikKYmFD8IXVxom8GJwh86zFtqskCgDdFcDRSjkgwdHNTqrRxDxijeJSAhuxH3QqjKssMi9TdRxBgLyOTFYXeTrgqSLRy684jF2wl9X7XXqMLDCHMDl6UZ-aWVBChQ7HUa52mAyKCitEkvhCpQCmJzQ0+UABhAQpRFMAiAgIOfyUa1a5uXavAUyLiinUckuKdxgOk34vbu90AHFiG9aMKHy3ke58rVnn7jRdpg2QnAdg6x+UCe9FpE7Z6h-wgA */
+  /** @xstate-layout N4IgpgJg5mDOIC5SwO4EMAOBaAlgOwBcxCBiAOQFEB1AfQEUBVAeQBUKBtABgF1FQMA9rBwEcAvHxAAPRACYAnAFYAdPIAcigGyKA7It0BGTcYDMAGhABPRAZOzlJxfJNqdmnTs7zOsgCwBffwtUTFxCYgJlHAgAGzASLl4kEEFhUXFJGQRbNWUfTgNfRVk1eU01Ut8LawQTdWVNP05HfU9fY0Dg9Gx8IkJlAGUcKDx8KBIIcTAovAA3AQBraeERgFk4WDQYRMlUkTEJZKzvZRLdV0bfWVkdAwNqxEaDVSKTO18dK7cTTpAQnvC-SGIzGJDAACdwQJwcoMDE0AQAGbQgC2yhWeHWsE22x4uyE+wyR0QWFkmk4ygqmhM1OMBm8dweCF8vnkyicrLKei0JVsv3+YT6kQAahCcIjLGMAAQABQArgAjGI4ADGUoA0mBLLLwXBiCr4pM8NN8PMlrDFcqVZrLKLweKcBCAEpgRE7ZJ7dKHUBZWQmVT09qFbxvLwGHRMgycHT2WRGErucn0-T87qCiLKO3iyV4KCyy2qjVanV6vAGiZTGZm6YYAvWrVZxGO8Eut0GJL8AlezJyMqUv1qO5RpxqD6aSN3XyqckKTjlQfRn5BP5p3oZxs5vPypWFm0l2D6+IQqEwuEI5HgtG1nf121ipvO13uztpA49hCkk5XeSfZzFOMFFUVg2JwnAqJoUYuDog6KEYHipqEa79AAQlCaAQCqaCwKIuZSgAkoCBAVsaVaLMsq6EcoqECOhmHYdKBFCggpoCJhXqJM+KRdm+xIILclKgS4fqKEU+gFJGHwqIojjRtc8gGBUnABMuApIZE1G0VhOF5oxERgpC0KwvCSKouiFFClRaEYVpDGEcxcysQiBwcXiHrcUSPokiU9g5B4+ilAY+juJGJhRqctxKaUajznoCEAhZG62UKCSuS+hLetIiDReyGiskpCkiWS47Adk1w+Y03yiWoSmKHF6b9IluG6aQ7Dtvir4eZltR+MoLKfBoZLSZo8iyCFPWhm8ziTbIxR1Wpmb3puUrAngCJyrqxEmg55qqZRjV5ita26vZ8xsc5PCcZ6PGed1yjfPksEiSyaijSVGgUmJnh1KB1LOHNe2LdKh0EOthqVixO3meugO4cDoMnY57EXW1bkdRlWRYCYvjPApZJhj+bweEyg72NGOgmHocafM0S5dIhAP2hKQPDKtIMbcehlniZl5mfTCUwwdLNHWACNneILkdlxaPvpjzSnGSFTyKyL2OPcJXGLkmjYxBSuFLY1yBMueACBAcCSLtQrtelMsuGyuPkvJBMUxGJV+myXhuPISgwUUyl0-FGbRHEVvdrxhQUpUrIxl7cbOK9NR2JovWyHOfjtErNxqP9FkrWMIfXV1Ci9VGvkU+Gui+OYJW+C9DhQUUhRlSNfsrnz0OM0t25WkW2oyrqB5lmA+edRjKheBULKBbB4blPITJx6csHDToShlNotOtwHKFWXR2n4YRw-o4guiqHU2gr3oHjlC7NT61O8kQU4dyKGobyaNn7fZklESH++Ub328UcHwTDRgqFoCcbxTguC0OUBQ2gfAf36AAYQECiOEYAiAQF-rxJQDh5xOH6iUGMxVb7Uh0A0cMoUp4iWjIgyIABxYgYo1QUAMuCbBN1SRawaJJCedx5JExKkYCmFDybP30L4WhKkoYNQFstIWbMh6o2trxaSd1mhuEUKBUchUgI1HJvYQcdRX5Y3UB4ZSgQgA */
   context: ({ input }) => {
     return {
       messageToSign: null,
@@ -244,10 +250,7 @@ export const swapIntentMachine = setup({
 
   states: {
     idle: {
-      always: {
-        target: "Signing",
-        reenter: true,
-      },
+      always: "Signing",
     },
 
     Signing: {
@@ -263,38 +266,18 @@ export const swapIntentMachine = setup({
           return context.messageToSign.walletMessage
         },
 
-        onDone: [
-          {
-            target: "Verifying Public Key Presence",
-            guard: {
-              type: "isSignatureValid",
-              params: ({ event }) => event.output,
-            },
+        onDone: {
+          target: "Verifying Signature",
 
-            actions: {
-              type: "setSignature",
-              params: ({ event }) => event.output,
-            },
-
-            reenter: true,
+          actions: {
+            type: "setSignature",
+            params: ({ event }) => event.output,
           },
-          {
-            target: "Generic Error",
-            description: "SIGNED_DIFFERENT_ACCOUNT",
-            reenter: true,
-            actions: {
-              type: "setError",
-              params: {
-                status: "ERR_SIGNED_DIFFERENT_ACCOUNT",
-              },
-            },
-          },
-        ],
+        },
 
         onError: {
           target: "Generic Error",
           description: "USER_DIDNT_SIGN",
-          reenter: true,
 
           actions: [
             {
@@ -305,6 +288,56 @@ export const swapIntentMachine = setup({
               type: "setError",
               params: ({ event }) => ({
                 status: "ERR_USER_DIDNT_SIGN",
+                error: toError(event.error),
+              }),
+            },
+          ],
+        },
+      },
+    },
+
+    "Verifying Signature": {
+      invoke: {
+        src: "verifySignatureActor",
+        input: ({ context }) => {
+          assert(context.signature != null, "Signature is not set")
+          return {
+            signature: context.signature,
+            userAddress: context.userAddress,
+          }
+        },
+        onDone: [
+          {
+            target: "Verifying Public Key Presence",
+            guard: {
+              type: "isTrue",
+              params: ({ event }) => event.output,
+            },
+          },
+          {
+            target: "Generic Error",
+            description: "SIGNED_DIFFERENT_ACCOUNT",
+            actions: {
+              type: "setError",
+              params: {
+                status: "ERR_SIGNED_DIFFERENT_ACCOUNT",
+              },
+            },
+          },
+        ],
+        onError: {
+          target: "Generic Error",
+          description: "ERR_CANNOT_VERIFY_SIGNATURE",
+
+          actions: [
+            {
+              type: "logError",
+              params: ({ event }) => event,
+            },
+            {
+              type: "setError",
+              params: ({ event }) => ({
+                status: "ERR_CANNOT_VERIFY_SIGNATURE",
                 error: toError(event.error),
               }),
             },
@@ -332,7 +365,7 @@ export const swapIntentMachine = setup({
         onDone: [
           {
             target: "Verifying Intent",
-            reenter: true,
+
             guard: {
               type: "isTrue",
               params: ({ event }) => event.output,
@@ -341,7 +374,7 @@ export const swapIntentMachine = setup({
           {
             target: "Generic Error",
             description: "CANNOT_VERIFY_PUBLIC_KEY",
-            reenter: true,
+
             actions: {
               type: "setError",
               params: {
@@ -354,7 +387,6 @@ export const swapIntentMachine = setup({
         onError: {
           target: "Generic Error",
           description: "CANNOT_VERIFY_PUBLIC_KEY",
-          reenter: true,
 
           actions: [
             {
@@ -395,7 +427,6 @@ export const swapIntentMachine = setup({
         onError: {
           target: "Generic Error",
           description: "CANNOT_PUBLISH_INTENT",
-          reenter: true,
 
           actions: [
             {
@@ -414,7 +445,7 @@ export const swapIntentMachine = setup({
 
         onDone: {
           target: "Completed",
-          reenter: true,
+
           actions: {
             type: "setIntentHash",
             params: ({ event }) => event.output,
@@ -432,7 +463,7 @@ export const swapIntentMachine = setup({
         {
           target: "Completed",
           description: "QUOTE_EXPIRED_RETURN_IS_LOWER",
-          reenter: true,
+
           actions: [
             {
               type: "setError",
@@ -477,4 +508,30 @@ function determineNewestValidQuote(
   }
 
   return originalQuote
+}
+
+async function verifyWalletSignature(
+  signature: WalletSignatureResult,
+  userAddress: string
+) {
+  if (signature == null) return false
+
+  const signatureType = signature.type
+  switch (signatureType) {
+    case "NEP413":
+      return (
+        // For NEP-413, it's enough to ensure user didn't switch the account
+        signature.signatureData.accountId === userAddress
+      )
+    case "ERC191": {
+      return verifyMessageViem({
+        address: userAddress as "0x${string}",
+        message: signature.signedData.message,
+        signature: signature.signatureData as "0x${string}",
+      })
+    }
+    default:
+      signatureType satisfies never
+      throw new Error("exhaustive check failed")
+  }
 }
