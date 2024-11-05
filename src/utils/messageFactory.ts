@@ -1,3 +1,5 @@
+import { base64 } from "@scure/base"
+import { settings } from "../config/settings"
 import type { WalletMessage } from "../types"
 import type {
   Intent,
@@ -144,9 +146,14 @@ export function makeSwapMessage({
       recipient,
       nonce,
     },
-    EIP712: {
-      // todo: This is a temporary implementation
-      json: "{}",
+    ERC191: {
+      message: JSON.stringify({
+        signer_id: innerMessage.signer_id,
+        verifying_contract: settings.defuseContractId,
+        deadline: innerMessage.deadline,
+        nonce: base64.encode(nonce),
+        intents: innerMessage.intents,
+      }),
     },
   }
 }

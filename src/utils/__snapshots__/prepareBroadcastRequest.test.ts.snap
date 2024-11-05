@@ -13,3 +13,11 @@ exports[`prepareSwapSignedData() > should return the correct signed data for a N
   "standard": "nep413",
 }
 `;
+
+exports[`prepareSwapSignedData() > should return the correct signed data for an ERC191 signature 1`] = `
+{
+  "payload": "{"foo":"bar"}",
+  "signature": "0xdeadbeef",
+  "standard": "erc191",
+}
+`;

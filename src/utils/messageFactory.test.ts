@@ -1,5 +1,4 @@
 import { describe, expect, it } from "vitest"
-import { FT_MAX_GAS_TRANSACTION } from "../features/deposit/services/depositService"
 import {
   makeInnerSwapAndWithdrawMessage,
   makeInnerSwapMessage,
@@ -27,8 +26,8 @@ describe("makeSwapMessage()", () => {
         recipient: "recipient.near",
         nonce: new Uint8Array(32),
       },
-      EIP712: {
-        json: "{}",
+      ERC191: {
+        message: `{"signer_id":"user.near","verifying_contract":"intents.near","deadline":{"timestamp":1000000},"nonce":"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=","intents":[{"intent":"token_diff","diff":{"foo.near":"100"}}]}`,
       },
     })
   })

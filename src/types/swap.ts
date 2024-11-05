@@ -2,14 +2,14 @@ import type { SendNearTransaction } from "../features/machines/publicKeyVerifier
 import type { BaseTokenInfo, UnifiedTokenInfo } from "./base"
 
 // Message for EVM wallets
-export type EIP712Message = {
-  // todo: update to real field, now it's just a placeholder
-  json: string
+export type ERC191Message = {
+  message: string
 }
 
-export type EIP712SignatureData = {
-  type: "EIP712"
+export type ERC191SignatureData = {
+  type: "ERC191"
   signatureData: string
+  signedData: ERC191Message
 }
 
 // Message for NEAR wallets
@@ -40,11 +40,11 @@ export type NEP413SignatureData = {
 }
 
 export type WalletMessage = {
-  EIP712: EIP712Message
+  ERC191: ERC191Message
   NEP413: NEP413Message
 }
 
-export type WalletSignatureResult = EIP712SignatureData | NEP413SignatureData
+export type WalletSignatureResult = ERC191SignatureData | NEP413SignatureData
 
 export type SwapEvent = {
   type: string
