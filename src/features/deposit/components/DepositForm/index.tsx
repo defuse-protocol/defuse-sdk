@@ -141,6 +141,7 @@ export const DepositForm = () => {
 
   const amountInputRef = useRef<HTMLInputElement | null>(null)
 
+  // TODO: Move to DepositUIMachineProvider, example `updateUIAmountOut` or use emit action
   useEffect(() => {
     if (snapshot.context.depositNearResult?.status === "DEPOSIT_COMPLETED") {
       setValue("amount", "")
