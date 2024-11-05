@@ -141,6 +141,12 @@ export const DepositForm = () => {
 
   const amountInputRef = useRef<HTMLInputElement | null>(null)
 
+  useEffect(() => {
+    if (snapshot.context.depositNearResult?.status === "DEPOSIT_COMPLETED") {
+      setValue("amount", "")
+    }
+  }, [snapshot.context.depositNearResult, setValue])
+
   return (
     <div className={styles.container}>
       <div className={styles.formWrapper}>

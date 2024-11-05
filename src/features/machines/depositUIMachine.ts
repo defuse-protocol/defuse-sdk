@@ -111,6 +111,13 @@ export const depositUIMachine = setup({
       },
     }),
     clearError: assign({ error: null }),
+    clearDepositAmount: assign({
+      parsedFormValues: { amount: 0n },
+      formValues: ({ context }) => ({
+        ...context.formValues,
+        amount: "",
+      }),
+    }),
     setDepositNearResult: assign({
       depositNearResult: (_, value: DepositNearMachineOutput) =>
         value.status === "DEPOSIT_COMPLETED" ? value : null,
@@ -175,7 +182,7 @@ export const depositUIMachine = setup({
     },
   },
 }).createMachine({
-  /** @xstate-layout N4IgpgJg5mDOIC5QTABwPawJYBcC0ArlgMQAyA8gOICSAcgNoAMAuoqBtjlugHZsgAPRAEZhADgB0AJgAsYgOyN5ANgDM89crEBWADQgAnojwbG07QE4xOpSrGrlAX0f6UHXIRIVK5AKoAVJlYkEHcuXn4hBDxRbQk5YVUZCxlU7QdVfSNo03MrG3k7dWdXNEwPIglIXCweKGIAZV8AIQBZakCWfjDuPhCo4SlVCST5CylLRmSxRm0ZLONksynGQYsNeTFlKWESkDdy-ErqrjriOgAFAKDuw97I43E4ifSLYXlE5OVlecNF4TM4lUgwmUgsjHU8j2B04niqEBqdQkADcAIYAGywEFRp3qEF4YAktWR6AA1oSYRUsPDEVAURisTjalAEMT0ABjJm8II3EI9CL9YwKSSqGbKJTaOYA5QLaLCNQSGbpVRKew2CyqaFlWHHBG4+mY7G44j4niEtnkiSUo7Uk7Mg2M3GsngkznhHg84TBdh3AWgKJ4BRxZQfKSKGSMKRg+WyvBSMRSCRaKPyGTKCzaMEaGRasJw2AEABGAFtcMbTeaXWSKdrcLQwKiAE4AJTAADNeT7OPdBQg5MoJGMtnJxoVtIwM7GI2Z1tp7FpGJHxVCXPtazaJAWS2XmcQwI3G+hGxJUOicW2j8Wrev603Wx2unzfX1-Yg5PIJG852oAWm5FJY2BD9GBDKRlDmeQhgTXNDjhGAzUbJkzgrIkq0ta1KDABCcTAABBCAIEbOBYHvTtQmfB4+zkEYwXBBMQxAsRfmyGJ5RGD4ZElJjEnUbQnFXa04Kw-ckPqfdD2PU9z0va8wkw7CcDwgiiNgEj2zI-kX0EN9qIsdZrB2DMHC0GU-miYEaIUad4x41R0mcVceHQFB4BCQSiFubs-W06J1mEJNQ3DSNo1Mli5ziIFEmESVVAzbRdgE9c4TtOpPJqbyA3GYYQ0GIKozeULFnWJN7GENMwzEeVRX40o811WkiQgdEwDS91KJMIYRmioc9JVCxvinCcJHHKxwOSCNxwUGCdVtPV7TRQ1RNantX2iIZhmEdYZDA8KKtSWNEg-TMIR0JjxRVbbpqpTci1LHBcWWjK30SCQlCsWdxATFI9DMvAlmGtQ+P7RIExzRK6upeCRIep8vK0qJRQsJMlAmFZRFUeNMl+qNJEjPjwL0tMVH6hzHCAA */
+  /** @xstate-layout N4IgpgJg5mDOIC5QTABwPawJYBcC0ArlgMQAyA8gOICSAcgNoAMAuoqBtjlugHZsgAPRIwB0ATjEAOAEwA2RtMYBGWQHZpAVmnSALABoQAT0R4ZGkUskqxSgMyqdSxo0kBfVwZQdchEhUrkAKoAKkysSCDeXLz8Qgh40rZK4hqykmKqsho6aUmyBsbxZhZWsjb2js5uHiBemD5EIpC4WDxQxADKgQBCALLUoSz8Udx8EXGytiVKStk2mRKSqgUmcqJqNjpiSduS2e6eaPX4jc1cbcR0AAohYcPHo7EmllO2GuqJSjrSStupK-E3qpxDNbLZvjMypYDrUjpxfE0IC02iIAG4AQwANlgIOjzu0ILwwCJWqj0ABrYl1eGnJH4tFYnF41pQBCk9AAY2ZvDCdwiIxi4xMsh0OhEOg0S2yYLUshUALwWmBjgcOwyWVUShh1IaWERyKgDOxuPxxEJPGJ7MpIh1Jz1ZxZRqZ+LZPDJXOiPF5SnC7AegtAcVMXxEaSUiW+MlUGnBCp09hE0jEGi+YkUQNUb21cN1IlgBAARgBbXCm82Wt0Uqk5nC0MDogBOACUwAAzPl+ziPIUIHSSWQiVRSaOqGQqdS2BWpkS2NS2aSSHQuRgxrLZqII-PF0ss4hgBsN9ANkSoTF41tHos2mt1xst9tDfn+saBxB94E2SViRiZZQZMQKmkIgptImSqOBjAZJIthiOuxwIjAFoNsyFzliSlbWralBgEheJgAAghAEANnAsD3h2kTPk8vZ9jOtjOEu0FKKojDxnGOTARIGjcbOYhZDocE0nqiH7ih7T7oex6nuel7XlE2G4TgBFESRsBkW2FECi+ghvrREijmOyazmk+RGCYs7mD8GQOJofYvIJuYEKgJpgN0WLojwHJgMQAiwDgeEiOirZKQ2AAUijOAAlGaNYIk5LluWenlgJpVE9lk4jfGm4bZEushyFOcgzt+DiStB2jOBo7g1Dw6AoPAES2r49xdgGOnxGIooWJ1uj0Zk8iZAqLFTPMoqLlY6YOXa+r4i1LRtUG6QDr83zxj+sgDaZhR4HKA4qjk4GZuC-ZTQiDoojimJgHNnrUaYtErb162bQqWiSCCqrpJKthWFqNRNbSBpOiaLI3d2r7xEmYrpKBaR8X8ST6GZ8SzGIg5fH16rvFIp2NFuJY4LNT6tdpcSOFMy7KDMvxaPYCpyMkiiaFYjhWDGti48JOGiUTnbzaTiA-WjA0LvIP5SCoW0mO80NpEOqR8SuVX-bFjTxXhiUeV5YMLYg2jSKGq58d8P46EOUso6BIjpKbGTMZmQ7Va4QA */
   id: "deposit-ui",
 
   context: ({ input }) => ({
@@ -298,13 +305,17 @@ export const depositUIMachine = setup({
         },
 
         onDone: {
-          target: "editing",
+          target: "updateBalance",
+
           actions: [
             {
               type: "setDepositNearResult",
               params: ({ event }) => event.output,
             },
+            { type: "clearDepositAmount" },
           ],
+
+          reenter: true,
         },
 
         onError: {
@@ -350,6 +361,16 @@ export const depositUIMachine = setup({
           actions: ({ event }) => {
             console.error(event.error)
           },
+        },
+      },
+    },
+
+    // Delay the request by 2 seconds to ensure accurate balance retrieval due to NEAR RPC latency issues.
+    updateBalance: {
+      after: {
+        "2000": {
+          target: "editing.validating",
+          reenter: true,
         },
       },
     },
