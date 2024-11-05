@@ -1,8 +1,12 @@
 import type { WalletMessage } from "../types"
 import type {
   DefuseMessageFor_DefuseIntents,
+  Intent,
   TokenAmountsForInt128,
 } from "../types/defuse-contracts-types"
+import { assert } from "./assert"
+
+export const ONE_TGAS = 1_000000000000n
 
 export function makeInnerSwapMessage({
   amountsIn,
@@ -25,6 +29,15 @@ export function makeInnerSwapMessage({
     tokenDiff[token] = amount.toString()
   }
 
+  if (Object.keys(tokenDiff).length === 0) {
+    console.warn("Empty diff")
+    return {
+      deadline: { timestamp: deadlineTimestamp },
+      intents: [],
+      signer_id: signerId,
+    }
+  }
+
   return {
     deadline: { timestamp: deadlineTimestamp },
     intents: [
@@ -34,6 +47,84 @@ export function makeInnerSwapMessage({
       },
     ],
     signer_id: signerId,
+  }
+}
+
+export function makeInnerSwapAndWithdrawMessage({
+  swapParams,
+  withdrawParams,
+  signerId,
+  deadlineTimestamp,
+}: {
+  swapParams: {
+    amountsIn: Record<string, bigint>
+    amountsOut: Record<string, bigint>
+  } | null
+  withdrawParams: WithdrawParams
+  signerId: string
+  deadlineTimestamp: number
+}): DefuseMessageFor_DefuseIntents {
+  const intents: NonNullable<DefuseMessageFor_DefuseIntents["intents"]> = []
+
+  if (swapParams) {
+    const { intents: swapIntents } = makeInnerSwapMessage({
+      amountsIn: swapParams.amountsIn,
+      amountsOut: swapParams.amountsOut,
+      signerId,
+      deadlineTimestamp,
+    })
+    assert(swapIntents, "swapIntents must be defined")
+    intents.push(...swapIntents)
+  }
+
+  intents.push(makeInnerWithdrawMessage(withdrawParams))
+
+  return {
+    deadline: { timestamp: deadlineTimestamp },
+    intents: intents,
+    signer_id: signerId,
+  }
+}
+
+type WithdrawParams =
+  | {
+      type: "to_near"
+      amount: bigint
+      tokenAccountId: string
+      receiverId: string
+    }
+  | {
+      type: "via_poa_bridge"
+      amount: bigint
+      tokenAccountId: string
+      destinationAddress: string
+    }
+
+function makeInnerWithdrawMessage(params: WithdrawParams): Intent {
+  const paramsType = params.type
+  switch (paramsType) {
+    case "to_near":
+      return {
+        intent: "ft_withdraw",
+        token: params.tokenAccountId,
+        receiver_id: params.receiverId,
+        amount: params.amount.toString(),
+        gas: (15n * ONE_TGAS).toString(), // this is enough for a simple transfer
+      }
+
+    case "via_poa_bridge":
+      return {
+        intent: "ft_withdraw",
+        token: params.tokenAccountId,
+        receiver_id: params.tokenAccountId,
+        amount: params.amount.toString(),
+        memo: `WITHDRAW_TO:${params.destinationAddress}`,
+        gas: (15n * ONE_TGAS).toString(), // this is enough for a simple transfer
+      }
+
+    default:
+      paramsType satisfies never
+      throw new Error(`Unknown withdraw type: ${paramsType}`)
   }
 }
 

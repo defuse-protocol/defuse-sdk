@@ -25,6 +25,7 @@ export interface Settings {
   defuseContractId: string
   swapExpirySec: number
   quoteQueryTimeoutMs: number
+  quotePollingIntervalMs: number
   queries: {
     staleTime: number
   }

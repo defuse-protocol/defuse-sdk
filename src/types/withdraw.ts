@@ -1,11 +1,10 @@
-import type {
-  SwappableToken,
-  WalletMessage,
-  WalletSignatureResult,
-} from "./swap"
+import type { SendNearTransaction } from "../features/machines/publicKeyVerifierMachine"
+import type { BaseTokenInfo, UnifiedTokenInfo } from "./base"
+import type { WalletMessage, WalletSignatureResult } from "./swap"
 
 export type WithdrawWidgetProps = {
-  accountId: string
-  tokenList: SwappableToken[]
+  accountId: string | undefined
+  tokenList: (BaseTokenInfo | UnifiedTokenInfo)[]
   signMessage: (params: WalletMessage) => Promise<WalletSignatureResult | null>
+  sendNearTransaction: SendNearTransaction
 }

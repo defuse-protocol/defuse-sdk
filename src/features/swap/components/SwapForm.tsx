@@ -216,7 +216,7 @@ function Intents({
   )
 }
 
-function renderIntentCreationResult(
+export function renderIntentCreationResult(
   intentCreationResult: Context["intentCreationResult"]
 ) {
   if (!intentCreationResult) {
@@ -270,7 +270,7 @@ function renderIntentCreationResult(
   )
 }
 
-function balanceSelector(token: SwappableToken) {
+export function balanceSelector(token: SwappableToken) {
   return (state: undefined | SnapshotFrom<typeof depositedBalanceMachine>) => {
     if (!state) return
 
