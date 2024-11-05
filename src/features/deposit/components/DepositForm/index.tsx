@@ -1,7 +1,11 @@
-import { CopyIcon, InfoCircledIcon } from "@radix-ui/react-icons"
-import { Box, Button, Flex, Link, Spinner, Text } from "@radix-ui/themes"
+import {
+  CopyIcon,
+  ExclamationTriangleIcon,
+  InfoCircledIcon,
+} from "@radix-ui/react-icons"
+import { Box, Button, Callout, Flex, Spinner, Text } from "@radix-ui/themes"
 import { QRCodeSVG } from "qrcode.react"
-import { useEffect, useRef } from "react"
+import { type ReactNode, useEffect, useRef } from "react"
 import CopyToClipboard from "react-copy-to-clipboard"
 import { Controller, useFormContext } from "react-hook-form"
 import { TooltipInfo } from "src/components/TooltipInfo"
@@ -181,7 +185,7 @@ export const DepositForm = () => {
               />
             </div>
           )}
-          {network === BlockchainEnum.NEAR && (
+          {network === BlockchainEnum.NEAR && userAddress && (
             <>
               <Input
                 name="amount"
@@ -253,7 +257,7 @@ export const DepositForm = () => {
               </div>
             </>
           )}
-          {network && network !== BlockchainEnum.NEAR && (
+          {network && network !== BlockchainEnum.NEAR && userAddress && (
             <div className={styles.containerQr}>
               <h2 className={styles.title}>Deposit to the address below</h2>
               <p className={styles.instruction}>
@@ -311,7 +315,10 @@ export const DepositForm = () => {
             </div>
           )}
         </Form>
-        <Deposits depositNearResult={snapshot.context.depositNearResult} />
+        {token && network && !userAddress && renderDepositWarning(userAddress)}
+        {userAddress && network === BlockchainEnum.NEAR && (
+          <Deposits depositNearResult={snapshot.context.depositNearResult} />
+        )}
       </div>
     </div>
   )
@@ -403,10 +410,6 @@ function filterBlockchainsOptions(
   return getBlockchainsOptions()
 }
 
-function shortenTxHash(txHash: string) {
-  return `${txHash.slice(0, 5)}...${txHash.slice(-5)}`
-}
-
 function getDefaultBlockchainOptionValue(
   token: SwappableToken
 ): string | undefined {
@@ -439,4 +442,20 @@ function isInsufficientBalance(
     return Number.parseFloat(formAmount) > Number.parseFloat(balanceToFormat)
   }
   return false
+}
+
+function renderDepositWarning(userAddress: string | null) {
+  let content: ReactNode = null
+  if (!userAddress) {
+    content = "Please connect your wallet to continue"
+  }
+
+  return (
+    <Callout.Root size={"1"} color="red">
+      <Callout.Icon>
+        <ExclamationTriangleIcon />
+      </Callout.Icon>
+      <Callout.Text>{content}</Callout.Text>
+    </Callout.Root>
+  )
 }

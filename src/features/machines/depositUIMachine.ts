@@ -169,8 +169,8 @@ export const depositUIMachine = setup({
       return (
         context.formValues.network != null &&
         context.formValues.network !== BlockchainEnum.NEAR &&
-        context.defuseAssetId != null &&
-        context.userAddress != null
+        !!context.userAddress &&
+        !!context.defuseAssetId
       )
     },
   },
@@ -286,7 +286,7 @@ export const depositUIMachine = setup({
         input: ({ context, event }) => {
           assertEvent(event, "SUBMIT")
 
-          if (context.formValues.token == null || context.userAddress == null) {
+          if (context.formValues.token == null || !context.userAddress) {
             throw new Error("Token or account ID is missing")
           }
           return {
@@ -325,11 +325,7 @@ export const depositUIMachine = setup({
         input: ({ context, event }) => {
           // TODO TypeError: Do not know how to serialize a BigInt
           // assertEvent(event, "AUTO_SUBMIT")
-
-          if (
-            context.formValues.network == null ||
-            context.userAddress == null
-          ) {
+          if (context.formValues.network == null || !context.userAddress) {
             throw new Error("Chain or account ID is missing")
           }
           return {

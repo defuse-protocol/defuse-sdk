@@ -16,7 +16,7 @@ export const backgroundBalanceActor = fromPromise(
     balance: bigint
     nativeBalance: bigint
   }> => {
-    if (defuseAssetId == null) {
+    if (!defuseAssetId || !network || !userAddress) {
       return {
         balance: 0n,
         nativeBalance: 0n,
