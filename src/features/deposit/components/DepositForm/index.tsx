@@ -28,6 +28,9 @@ import { DepositUIMachineContext } from "../DepositUIMachineProvider"
 import { Deposits } from "../Deposits"
 import styles from "./styles.module.css"
 
+// TODO: Temporary disable deposit through POA bridge
+const ENABLE_DEPOSIT_THROUGH_POA_BRIDGE = false
+
 export type DepositFormValues = {
   network: string
   amount: string
@@ -264,64 +267,71 @@ export const DepositForm = () => {
               </div>
             </>
           )}
-          {network && network !== BlockchainEnum.NEAR && userAddress && (
-            <div className={styles.containerQr}>
-              <h2 className={styles.title}>Deposit to the address below</h2>
-              <p className={styles.instruction}>
-                Withdraw assets from an exchange to the Ethereum address above.
-                Upon confirmation, you will receive your assets on Defuse within
-                minutes.
-              </p>
-              <div className={styles.qrCodeWrapper}>
-                {generatedAddressResult ? (
-                  <QRCodeSVG value={generatedAddressResult.depositAddress} />
-                ) : (
-                  <Spinner loading={true} />
-                )}
-              </div>
-              <Input
-                name="generatedAddress"
-                value={generatedAddressResult?.depositAddress ?? ""}
-                disabled
-                className={styles.inputGeneratedAddress}
-                slotRight={
-                  <Button
-                    size="2"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      e.preventDefault()
-                    }}
-                    className={styles.copyButton}
-                    disabled={!generatedAddressResult}
-                  >
-                    <CopyToClipboard
-                      text={generatedAddressResult?.depositAddress ?? ""}
-                    >
-                      <Flex gap="2" align="center">
-                        <Text color="orange">Copy</Text>
-                        <CopyIcon height="14" width="14" color="orange" />
-                      </Flex>
-                    </CopyToClipboard>
-                  </Button>
-                }
-              />
-              <Flex
-                direction="row"
-                gap="2"
-                align="center"
-                justify="center"
-                className={styles.hintWrapper}
-              >
-                <TooltipInfo icon={<InfoCircledIcon />}>
-                  Please make sure you connected to the right network
-                </TooltipInfo>
-                <p className={styles.hint}>
-                  Make sure to select {network} as the deposit network
+          {ENABLE_DEPOSIT_THROUGH_POA_BRIDGE &&
+            network &&
+            network !== BlockchainEnum.NEAR &&
+            userAddress && (
+              <div className={styles.containerQr}>
+                <h2 className={styles.title}>Deposit to the address below</h2>
+                <p className={styles.instruction}>
+                  Withdraw assets from an exchange to the Ethereum address
+                  above. Upon confirmation, you will receive your assets on
+                  Defuse within minutes.
                 </p>
-              </Flex>
-            </div>
-          )}
+                <div className={styles.qrCodeWrapper}>
+                  {generatedAddressResult ? (
+                    <QRCodeSVG value={generatedAddressResult.depositAddress} />
+                  ) : (
+                    <Spinner loading={true} />
+                  )}
+                </div>
+                <Input
+                  name="generatedAddress"
+                  value={generatedAddressResult?.depositAddress ?? ""}
+                  disabled
+                  className={styles.inputGeneratedAddress}
+                  slotRight={
+                    <Button
+                      size="2"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        e.preventDefault()
+                      }}
+                      className={styles.copyButton}
+                      disabled={!generatedAddressResult}
+                    >
+                      <CopyToClipboard
+                        text={generatedAddressResult?.depositAddress ?? ""}
+                      >
+                        <Flex gap="2" align="center">
+                          <Text color="orange">Copy</Text>
+                          <CopyIcon height="14" width="14" color="orange" />
+                        </Flex>
+                      </CopyToClipboard>
+                    </Button>
+                  }
+                />
+                <Flex
+                  direction="row"
+                  gap="2"
+                  align="center"
+                  justify="center"
+                  className={styles.hintWrapper}
+                >
+                  <TooltipInfo icon={<InfoCircledIcon />}>
+                    Please make sure you connected to the right network
+                  </TooltipInfo>
+                  <p className={styles.hint}>
+                    Make sure to select {network} as the deposit network
+                  </p>
+                </Flex>
+              </div>
+            )}
         </Form>
+        {token &&
+          network &&
+          network !== BlockchainEnum.NEAR &&
+          !ENABLE_DEPOSIT_THROUGH_POA_BRIDGE && <UnderFeatureFlag />}
         {token && network && !userAddress && renderDepositWarning(userAddress)}
         {userAddress && network === BlockchainEnum.NEAR && (
           <Deposits depositNearResult={snapshot.context.depositNearResult} />
@@ -463,6 +473,19 @@ function renderDepositWarning(userAddress: string | null) {
         <ExclamationTriangleIcon />
       </Callout.Icon>
       <Callout.Text>{content}</Callout.Text>
+    </Callout.Root>
+  )
+}
+
+function UnderFeatureFlag() {
+  return (
+    <Callout.Root size={"1"} color="yellow">
+      <Callout.Icon>
+        <ExclamationTriangleIcon />
+      </Callout.Icon>
+      <Callout.Text>
+        Temporaty disable feature, please use NEAR bridge to deposit
+      </Callout.Text>
     </Callout.Root>
   )
 }
