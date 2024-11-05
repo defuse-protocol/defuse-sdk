@@ -137,6 +137,9 @@ export const WithdrawForm = ({
 
   const updateTokens = useTokensStore((state) => state.updateTokens)
 
+  // This hack to avoid unnecessary calls of ModalSelectAssets "callback"
+  const [tokenSelectModalIsOpen, setIsTokenSelectModalOpen] = useState(false)
+
   const handleSelect = () => {
     updateTokens(tokenList)
     setModalType(ModalType.MODAL_SELECT_ASSETS, {
@@ -144,27 +147,30 @@ export const WithdrawForm = ({
       selectToken: token,
       balances: depositedBalanceRef?.getSnapshot().context.balances,
     })
+    setIsTokenSelectModalOpen(true)
   }
 
   /**
    * This is ModalSelectAssets "callback"
    */
   useEffect(() => {
-    if (modalSelectAssetsData?.token) {
+    if (tokenSelectModalIsOpen && modalSelectAssetsData?.token) {
+      const token = modalSelectAssetsData.token
       let parsedAmount = 0n
       try {
-        parsedAmount = parseUnits(amount, token.decimals)
+        parsedAmount = parseUnits(amountIn, token.decimals)
       } catch {}
 
       actorRef.send({
         type: "WITHDRAW_FORM.UPDATE_TOKEN",
         params: {
-          token: modalSelectAssetsData.token,
+          token: token,
           parsedAmount: parsedAmount,
         },
       })
+      setIsTokenSelectModalOpen(false)
     }
-  }, [modalSelectAssetsData, actorRef, token.decimals, amount])
+  }, [tokenSelectModalIsOpen, modalSelectAssetsData, actorRef, amountIn])
 
   useEffect(() => {
     // When values are set externally, they trigger "watch" callback too.
