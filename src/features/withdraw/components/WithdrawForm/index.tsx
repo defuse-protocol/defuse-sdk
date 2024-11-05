@@ -10,8 +10,13 @@ import {
 import { useSelector } from "@xstate/react"
 import { parseUnits } from "ethers"
 import { providers } from "near-api-js"
-import { Fragment, useEffect } from "react"
-import { useForm } from "react-hook-form"
+import { Fragment, useEffect, useState } from "react"
+import {
+  Controller,
+  type FieldErrors,
+  type Resolver,
+  useForm,
+} from "react-hook-form"
 import type { ActorRefFrom, SnapshotFrom } from "xstate"
 import { EmptyIcon } from "../../../../components/EmptyIcon"
 import { Form } from "../../../../components/Form"
@@ -27,6 +32,7 @@ import type { WithdrawWidgetProps } from "../../../../types/withdraw"
 import { isBaseToken } from "../../../../utils"
 import { assert } from "../../../../utils/assert"
 import { formatTokenValue } from "../../../../utils/format"
+import { validateAddress } from "../../../../utils/validateAddress"
 import type { intentStatusMachine } from "../../../machines/intentStatusMachine"
 import type { withdrawUIMachine } from "../../../machines/withdrawUIMachine"
 import {
@@ -39,9 +45,22 @@ import styles from "./styles.module.css"
 export type WithdrawFormNearValues = {
   amountIn: string
   recipient: string
+  blockchain: string
 }
 
 interface WithdrawFormProps extends WithdrawWidgetProps {}
+
+const resolver: Resolver<WithdrawFormNearValues> = (values) => {
+  const errors: FieldErrors<WithdrawFormNearValues> = {}
+
+  if (!validateAddress(values.recipient, values.blockchain)) {
+    errors.recipient = {
+      type: "manual",
+      message: "Invalid address for the selected blockchain",
+    }
+  }
+  return { values, errors }
+}
 
 export const WithdrawForm = ({
   accountId,
@@ -97,7 +116,7 @@ export const WithdrawForm = ({
     return () => s.unsubscribe()
   }, [actorRef])
 
-  const { token, blockchain, amount, recipient } = useSelector(
+  const { token, blockchain, amountIn, recipient } = useSelector(
     formRef,
     (state) => {
       const { tokenOut } = state.context
@@ -105,7 +124,7 @@ export const WithdrawForm = ({
       return {
         blockchain: tokenOut.chainName,
         token: state.context.tokenIn,
-        amount: state.context.amount,
+        amountIn: state.context.amount,
         recipient: state.context.recipient,
       }
     }
@@ -119,15 +138,19 @@ export const WithdrawForm = ({
   const {
     handleSubmit,
     register,
+    control,
     setValue,
     watch,
     formState: { errors },
   } = useForm<WithdrawFormNearValues>({
-    reValidateMode: "onSubmit",
+    mode: "onTouched",
+    reValidateMode: "onChange",
     values: {
-      amountIn: amount,
-      recipient: recipient,
+      amountIn,
+      recipient,
+      blockchain,
     },
+    resolver,
   })
 
   const { setModalType, data: modalSelectAssetsData } = useModalController<{
@@ -137,6 +160,9 @@ export const WithdrawForm = ({
 
   const updateTokens = useTokensStore((state) => state.updateTokens)
 
+  // This hack to avoid unnecessary calls of ModalSelectAssets "callback"
+  const [tokenSelectModalIsOpen, setIsTokenSelectModalOpen] = useState(false)
+
   const handleSelect = () => {
     updateTokens(tokenList)
     setModalType(ModalType.MODAL_SELECT_ASSETS, {
@@ -144,27 +170,30 @@ export const WithdrawForm = ({
       selectToken: token,
       balances: depositedBalanceRef?.getSnapshot().context.balances,
     })
+    setIsTokenSelectModalOpen(true)
   }
 
   /**
    * This is ModalSelectAssets "callback"
    */
   useEffect(() => {
-    if (modalSelectAssetsData?.token) {
+    if (tokenSelectModalIsOpen && modalSelectAssetsData?.token) {
+      const token = modalSelectAssetsData.token
       let parsedAmount = 0n
       try {
-        parsedAmount = parseUnits(amount, token.decimals)
+        parsedAmount = parseUnits(amountIn, token.decimals)
       } catch {}
 
       actorRef.send({
         type: "WITHDRAW_FORM.UPDATE_TOKEN",
         params: {
-          token: modalSelectAssetsData.token,
+          token: token,
           parsedAmount: parsedAmount,
         },
       })
+      setIsTokenSelectModalOpen(false)
     }
-  }, [modalSelectAssetsData, actorRef, token.decimals, amount])
+  }, [tokenSelectModalIsOpen, modalSelectAssetsData, actorRef, amountIn])
 
   useEffect(() => {
     // When values are set externally, they trigger "watch" callback too.
@@ -188,6 +217,12 @@ export const WithdrawForm = ({
           actorRef.send({
             type: "WITHDRAW_FORM.RECIPIENT",
             params: { recipient: value[name] ?? "" },
+          })
+        }
+        if (name === "blockchain") {
+          actorRef.send({
+            type: "WITHDRAW_FORM.UPDATE_BLOCKCHAIN",
+            params: { blockchain: value[name] ?? "" },
           })
         }
       }
@@ -231,20 +266,24 @@ export const WithdrawForm = ({
           register={register}
         >
           <div className={styles.selectWrapper}>
-            <Select
-              name={"blockchain"}
-              options={blockchainSelectItems}
-              placeholder={{
-                label: "Select network",
-                icon: <EmptyIcon />,
-              }}
-              fullWidth
-              value={blockchain}
-              onChange={(value) => {
-                actorRef.send({
-                  type: "WITHDRAW_FORM.UPDATE_BLOCKCHAIN",
-                  params: { blockchain: value },
-                })
+            <Controller
+              name="blockchain"
+              control={control}
+              render={({ field }) => {
+                return (
+                  <Select
+                    name={field.name}
+                    value={field.value}
+                    onChange={field.onChange}
+                    disabled={Object.keys(blockchainSelectItems).length === 1}
+                    options={blockchainSelectItems}
+                    placeholder={{
+                      label: "Select network",
+                      icon: <EmptyIcon />,
+                    }}
+                    fullWidth
+                  />
+                )
               }}
             />
           </div>
@@ -277,17 +316,19 @@ export const WithdrawForm = ({
                 onClick={() => setValue("recipient", "")}
               />
             </Flex>
-
+            {errors.recipient && (
+              <Text color="red">{errors.recipient.message}</Text>
+            )}
             {nep141StorageRequired && (
               <Callout.Root size={"1"} color="red">
                 <Callout.Icon>
                   <ExclamationTriangleIcon />
                 </Callout.Icon>
                 <Callout.Text>
-                  Withdrawal isn’t possible right now because this account
-                  doesn’t have the necessary storage for the token. To resolve
-                  this, you can send a small amount of the token to the account.
-                  We’re working on a long-term solution.
+                  You need a small amount of this token in the withdrawal
+                  address to complete the transaction. Please send a small
+                  amount to the withdrawal address to proceed. We're working on
+                  a permanent fix.
                 </Callout.Text>
               </Callout.Root>
             )}

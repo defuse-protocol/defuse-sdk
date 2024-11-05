@@ -2,7 +2,7 @@ import { type ActorRef, type Snapshot, fromTransition } from "xstate"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../types/base"
 import { isBaseToken } from "../../utils"
 import { assert } from "../../utils/assert"
-import { isLegitAccountId } from "../../utils/near"
+import { validateAddress } from "../../utils/validateAddress"
 
 export type Fields = Array<Exclude<keyof State, "parentRef">>
 const fields: Fields = [
@@ -81,7 +81,8 @@ export const withdrawFormReducer = fromTransition(
           parsedAmount: event.params.parsedAmount,
           tokenIn: event.params.token,
           tokenOut,
-          parsedRecipient: getParsedRecipient(state.recipient, tokenOut),
+          recipient: "",
+          parsedRecipient: null,
         }
         break
       }
@@ -93,7 +94,8 @@ export const withdrawFormReducer = fromTransition(
         newState = {
           ...state,
           tokenOut,
-          parsedRecipient: getParsedRecipient(state.recipient, tokenOut),
+          recipient: "",
+          parsedRecipient: null,
         }
         break
       }
@@ -106,13 +108,12 @@ export const withdrawFormReducer = fromTransition(
         break
       }
       case "WITHDRAW_FORM.RECIPIENT": {
+        const recipient = event.params.recipient
+        const parsedRecipient = getParsedRecipient(recipient, state.tokenOut)
         newState = {
           ...state,
-          recipient: event.params.recipient,
-          parsedRecipient: getParsedRecipient(
-            event.params.recipient,
-            state.tokenOut
-          ),
+          recipient,
+          parsedRecipient,
         }
         break
       }
@@ -180,12 +181,9 @@ function getParsedRecipient(
   recipient: string,
   tokenOut: BaseTokenInfo
 ): string | null {
-  if (tokenOut.chainName === "near") {
-    if (isLegitAccountId(recipient)) {
-      return recipient.toLowerCase()
-    }
+  if (!validateAddress(recipient, tokenOut.chainName)) {
     return null
   }
 
-  return recipient
+  return recipient.toLowerCase()
 }
