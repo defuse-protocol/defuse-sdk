@@ -2,7 +2,7 @@ import type { Settings } from "../types"
 
 export let settings: Settings = {
   providerIds: [],
-  defuseContractId: "defuse-alpha.near",
+  defuseContractId: "intents.near",
   swapExpirySec: 600, // 10 minutes
   /**
    * Quote query lasts 1.4 seconds in good network conditions
