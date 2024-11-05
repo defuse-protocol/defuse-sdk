@@ -290,10 +290,10 @@ export const WithdrawForm = ({
                   <ExclamationTriangleIcon />
                 </Callout.Icon>
                 <Callout.Text>
-                  Withdrawal isn’t possible right now because this account
-                  doesn’t have the necessary storage for the token. To resolve
-                  this, you can send a small amount of the token to the account.
-                  We’re working on a long-term solution.
+                  You need a small amount of this token in the withdrawal
+                  address to complete the transaction. Please send a small
+                  amount to the withdrawal address to proceed. We're working on
+                  a permanent fix.
                 </Callout.Text>
               </Callout.Root>
             )}
