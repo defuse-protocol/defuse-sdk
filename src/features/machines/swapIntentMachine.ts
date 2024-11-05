@@ -8,7 +8,7 @@ import {
 } from "../../services/intentService"
 import type { WalletMessage, WalletSignatureResult } from "../../types"
 import type { BaseTokenInfo } from "../../types/base"
-import type { DefuseMessageFor_DefuseIntents } from "../../types/defuse-contracts-types"
+import type { Nep413DefuseMessageFor_DefuseIntents } from "../../types/defuse-contracts-types"
 import {
   makeInnerSwapMessage,
   makeSwapMessage,
@@ -40,7 +40,7 @@ type Context = {
   intentOperationParams: IntentOperationParams
   messageToSign: null | {
     walletMessage: WalletMessage
-    innerMessage: DefuseMessageFor_DefuseIntents
+    innerMessage: Nep413DefuseMessageFor_DefuseIntents
   }
   signature: WalletSignatureResult | null
   intentHash: string | null

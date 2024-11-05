@@ -1,7 +1,7 @@
 import type { WalletMessage } from "../types"
 import type {
-  DefuseMessageFor_DefuseIntents,
   Intent,
+  Nep413DefuseMessageFor_DefuseIntents,
   TokenAmountsForInt128,
 } from "../types/defuse-contracts-types"
 import { assert } from "./assert"
@@ -18,8 +18,8 @@ export function makeInnerSwapMessage({
   amountsOut: Record<string, bigint>
   signerId: string
   deadlineTimestamp: number
-}): DefuseMessageFor_DefuseIntents {
-  const tokenDiff = {} as TokenAmountsForInt128
+}): Nep413DefuseMessageFor_DefuseIntents {
+  const tokenDiff: TokenAmountsForInt128 = {}
 
   for (const [token, amount] of Object.entries(amountsIn)) {
     tokenDiff[token] = (-amount).toString()
@@ -63,8 +63,9 @@ export function makeInnerSwapAndWithdrawMessage({
   withdrawParams: WithdrawParams
   signerId: string
   deadlineTimestamp: number
-}): DefuseMessageFor_DefuseIntents {
-  const intents: NonNullable<DefuseMessageFor_DefuseIntents["intents"]> = []
+}): Nep413DefuseMessageFor_DefuseIntents {
+  const intents: NonNullable<Nep413DefuseMessageFor_DefuseIntents["intents"]> =
+    []
 
   if (swapParams) {
     const { intents: swapIntents } = makeInnerSwapMessage({
@@ -133,7 +134,7 @@ export function makeSwapMessage({
   recipient,
   nonce = randomDefuseNonce(),
 }: {
-  innerMessage: DefuseMessageFor_DefuseIntents
+  innerMessage: Nep413DefuseMessageFor_DefuseIntents
   recipient: string
   nonce?: Uint8Array
 }): WalletMessage {

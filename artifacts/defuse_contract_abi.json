@@ -4,13 +4,28 @@
     "name": "defuse-contract",
     "version": "0.1.0",
     "build": {
-      "compiler": "rustc 1.80.0",
-      "builder": "cargo-near cargo-near-build 0.2.0"
+      "compiler": "rustc 1.82.0",
+      "builder": "cargo-near cargo-near-build 0.3.0"
     },
-    "wasm_hash": "E3qvMizA8EtGTCRDBAxz4i4j4fVWxrkkZNxPozRuYh7j"
+    "wasm_hash": "5ua1YFQLixUTgZYGcgqg1KkAhyVnmsHm5FkvC9HT127m"
   },
   "body": {
     "functions": [
+      {
+        "name": "abi",
+        "kind": "view",
+        "params": {
+          "serialization_type": "json",
+          "args": [
+            {
+              "name": "abi",
+              "type_schema": {
+                "$ref": "#/definitions/Abi"
+              }
+            }
+          ]
+        }
+      },
       {
         "name": "acl_add_admin",
         "kind": "call",
@@ -529,6 +544,9 @@
       {
         "name": "add_full_access_key",
         "kind": "call",
+        "modifiers": [
+          "payable"
+        ],
         "params": {
           "serialization_type": "json",
           "args": [
@@ -596,6 +614,9 @@
       {
         "name": "delete_key",
         "kind": "call",
+        "modifiers": [
+          "payable"
+        ],
         "params": {
           "serialization_type": "json",
           "args": [
@@ -617,6 +638,9 @@
       {
         "name": "delete_relayer_key",
         "kind": "call",
+        "modifiers": [
+          "payable"
+        ],
         "params": {
           "serialization_type": "json",
           "args": [
@@ -624,6 +648,96 @@
               "name": "public_key",
               "type_schema": {
                 "type": "string"
+              }
+            }
+          ]
+        },
+        "result": {
+          "serialization_type": "json",
+          "type_schema": {
+            "$ref": "#/definitions/Promise"
+          }
+        }
+      },
+      {
+        "name": "do_add_relayer_key",
+        "kind": "call",
+        "modifiers": [
+          "private"
+        ],
+        "params": {
+          "serialization_type": "json",
+          "args": [
+            {
+              "name": "public_key",
+              "type_schema": {
+                "type": "string"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "name": "do_ft_withdraw",
+        "kind": "view",
+        "modifiers": [
+          "private"
+        ],
+        "params": {
+          "serialization_type": "json",
+          "args": [
+            {
+              "name": "withdraw",
+              "type_schema": {
+                "$ref": "#/definitions/FtWithdraw"
+              }
+            }
+          ]
+        },
+        "result": {
+          "serialization_type": "json",
+          "type_schema": {
+            "$ref": "#/definitions/Promise"
+          }
+        }
+      },
+      {
+        "name": "do_mt_withdraw",
+        "kind": "view",
+        "modifiers": [
+          "private"
+        ],
+        "params": {
+          "serialization_type": "json",
+          "args": [
+            {
+              "name": "withdraw",
+              "type_schema": {
+                "$ref": "#/definitions/MtWithdraw"
+              }
+            }
+          ]
+        },
+        "result": {
+          "serialization_type": "json",
+          "type_schema": {
+            "$ref": "#/definitions/Promise"
+          }
+        }
+      },
+      {
+        "name": "do_nft_withdraw",
+        "kind": "view",
+        "modifiers": [
+          "private"
+        ],
+        "params": {
+          "serialization_type": "json",
+          "args": [
+            {
+              "name": "withdraw",
+              "type_schema": {
+                "$ref": "#/definitions/NftWithdraw"
               }
             }
           ]
@@ -651,12 +765,6 @@
               }
             }
           ]
-        },
-        "result": {
-          "serialization_type": "json",
-          "type_schema": {
-            "type": "null"
-          }
         }
       },
       {
@@ -676,6 +784,57 @@
           "serialization_type": "json",
           "type_schema": {
             "$ref": "#/definitions/AccountId"
+          }
+        }
+      },
+      {
+        "name": "ft_force_withdraw",
+        "kind": "call",
+        "modifiers": [
+          "payable"
+        ],
+        "params": {
+          "serialization_type": "json",
+          "args": [
+            {
+              "name": "owner_id",
+              "type_schema": {
+                "$ref": "#/definitions/AccountId"
+              }
+            },
+            {
+              "name": "token",
+              "type_schema": {
+                "$ref": "#/definitions/AccountId"
+              }
+            },
+            {
+              "name": "receiver_id",
+              "type_schema": {
+                "$ref": "#/definitions/AccountId"
+              }
+            },
+            {
+              "name": "amount",
+              "type_schema": {
+                "type": "string"
+              }
+            },
+            {
+              "name": "memo",
+              "type_schema": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            }
+          ]
+        },
+        "result": {
+          "serialization_type": "json",
+          "type_schema": {
+            "$ref": "#/definitions/PromiseOrValueBoolean"
           }
         }
       },
@@ -739,19 +898,13 @@
               "type_schema": {
                 "type": "string"
               }
-            },
-            {
-              "name": "is_call",
-              "type_schema": {
-                "type": "boolean"
-              }
             }
           ]
         },
         "result": {
           "serialization_type": "json",
           "type_schema": {
-            "type": "string"
+            "type": "boolean"
           }
         }
       },
@@ -790,22 +943,13 @@
                   "null"
                 ]
               }
-            },
-            {
-              "name": "msg",
-              "type_schema": {
-                "type": [
-                  "string",
-                  "null"
-                ]
-              }
             }
           ]
         },
         "result": {
           "serialization_type": "json",
           "type_schema": {
-            "$ref": "#/definitions/PromiseOrValueString"
+            "$ref": "#/definitions/PromiseOrValueBoolean"
           }
         }
       },
@@ -856,12 +1000,6 @@
               }
             }
           ]
-        },
-        "result": {
-          "serialization_type": "json",
-          "type_schema": {
-            "type": "null"
-          }
         }
       },
       {
@@ -1139,6 +1277,69 @@
         }
       },
       {
+        "name": "mt_force_withdraw",
+        "kind": "call",
+        "modifiers": [
+          "payable"
+        ],
+        "params": {
+          "serialization_type": "json",
+          "args": [
+            {
+              "name": "owner_id",
+              "type_schema": {
+                "$ref": "#/definitions/AccountId"
+              }
+            },
+            {
+              "name": "token",
+              "type_schema": {
+                "$ref": "#/definitions/AccountId"
+              }
+            },
+            {
+              "name": "receiver_id",
+              "type_schema": {
+                "$ref": "#/definitions/AccountId"
+              }
+            },
+            {
+              "name": "token_ids",
+              "type_schema": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            },
+            {
+              "name": "amounts",
+              "type_schema": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            },
+            {
+              "name": "memo",
+              "type_schema": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            }
+          ]
+        },
+        "result": {
+          "serialization_type": "json",
+          "type_schema": {
+            "$ref": "#/definitions/PromiseOrValueBoolean"
+          }
+        }
+      },
+      {
         "name": "mt_on_transfer",
         "doc": " Deposit multi-tokens.\n\n `msg` contains [`AccountId`] of the internal recipient.\n Empty `msg` means deposit to `sender_id`",
         "kind": "call",
@@ -1318,22 +1519,13 @@
                   "type": "string"
                 }
               }
-            },
-            {
-              "name": "is_call",
-              "type_schema": {
-                "type": "boolean"
-              }
             }
           ]
         },
         "result": {
           "serialization_type": "json",
           "type_schema": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
+            "type": "boolean"
           }
         }
       },
@@ -1574,22 +1766,13 @@
                   "null"
                 ]
               }
-            },
-            {
-              "name": "msg",
-              "type_schema": {
-                "type": [
-                  "string",
-                  "null"
-                ]
-              }
             }
           ]
         },
         "result": {
           "serialization_type": "json",
           "type_schema": {
-            "$ref": "#/definitions/PromiseOrValueArray_of_String"
+            "$ref": "#/definitions/PromiseOrValueBoolean"
           }
         }
       },
@@ -1603,62 +1786,63 @@
           "serialization_type": "json",
           "args": [
             {
-              "name": "fee",
+              "name": "config",
               "type_schema": {
-                "$ref": "#/definitions/Pips"
+                "$ref": "#/definitions/DefuseConfig"
               }
-            },
+            }
+          ]
+        }
+      },
+      {
+        "name": "nft_force_withdraw",
+        "kind": "call",
+        "modifiers": [
+          "payable"
+        ],
+        "params": {
+          "serialization_type": "json",
+          "args": [
             {
-              "name": "fee_collector",
+              "name": "owner_id",
               "type_schema": {
                 "$ref": "#/definitions/AccountId"
               }
             },
             {
-              "name": "super_admins",
+              "name": "token",
               "type_schema": {
-                "type": "array",
-                "items": {
-                  "$ref": "#/definitions/AccountId"
-                }
+                "$ref": "#/definitions/AccountId"
               }
             },
             {
-              "name": "admins",
+              "name": "receiver_id",
               "type_schema": {
-                "type": "object",
-                "additionalProperties": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/definitions/AccountId"
-                  }
-                }
+                "$ref": "#/definitions/AccountId"
               }
             },
             {
-              "name": "grantees",
+              "name": "token_id",
               "type_schema": {
-                "type": "object",
-                "additionalProperties": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/definitions/AccountId"
-                  }
-                }
+                "type": "string"
               }
             },
             {
-              "name": "staging_duration",
+              "name": "memo",
               "type_schema": {
                 "type": [
-                  "integer",
+                  "string",
                   "null"
-                ],
-                "format": "uint64",
-                "minimum": 0.0
+                ]
               }
             }
           ]
+        },
+        "result": {
+          "serialization_type": "json",
+          "type_schema": {
+            "$ref": "#/definitions/PromiseOrValueBoolean"
+          }
         }
       },
       {
@@ -1727,12 +1911,6 @@
               "type_schema": {
                 "type": "string"
               }
-            },
-            {
-              "name": "is_call",
-              "type_schema": {
-                "type": "boolean"
-              }
             }
           ]
         },
@@ -1772,15 +1950,6 @@
             },
             {
               "name": "memo",
-              "type_schema": {
-                "type": [
-                  "string",
-                  "null"
-                ]
-              }
-            },
-            {
-              "name": "msg",
               "type_schema": {
                 "type": [
                   "string",
@@ -1966,97 +2135,18 @@
         }
       },
       {
-        "name": "simulate_intents",
-        "kind": "view",
-        "params": {
-          "serialization_type": "json",
-          "args": [
-            {
-              "name": "intents",
-              "type_schema": {
-                "type": "array",
-                "items": {
-                  "$ref": "#/definitions/DefuseMessage_for_DefuseIntents"
-                }
-              }
-            }
-          ]
-        },
-        "result": {
-          "serialization_type": "json",
-          "type_schema": {
-            "type": "null"
-          }
-        }
-      },
-      {
-        "name": "up_apply_update_staging_duration",
-        "kind": "call"
-      },
-      {
-        "name": "up_deploy_code",
+        "name": "state_migrate",
         "kind": "call",
-        "params": {
-          "serialization_type": "json",
-          "args": [
-            {
-              "name": "hash",
-              "type_schema": {
-                "type": "string"
-              }
-            },
-            {
-              "name": "function_call_args",
-              "type_schema": {
-                "anyOf": [
-                  {
-                    "$ref": "#/definitions/FunctionCallArgs"
-                  },
-                  {
-                    "type": "null"
-                  }
-                ]
-              }
-            }
-          ]
-        },
-        "result": {
-          "serialization_type": "json",
-          "type_schema": {
-            "$ref": "#/definitions/Promise"
-          }
-        }
+        "modifiers": [
+          "private"
+        ]
       },
       {
-        "name": "up_get_delay_status",
-        "kind": "view",
-        "result": {
-          "serialization_type": "json",
-          "type_schema": {
-            "$ref": "#/definitions/UpgradableDurationStatus"
-          }
-        }
-      },
-      {
-        "name": "up_init_staging_duration",
+        "name": "upgrade",
         "kind": "call",
-        "params": {
-          "serialization_type": "json",
-          "args": [
-            {
-              "name": "staging_duration",
-              "type_schema": {
-                "type": "integer",
-                "format": "uint64",
-                "minimum": 0.0
-              }
-            }
-          ]
-        }
-      },
-      {
-        "name": "up_stage_code",
-        "kind": "call",
+        "modifiers": [
+          "payable"
+        ],
         "params": {
           "serialization_type": "borsh",
           "args": [
@@ -2080,104 +2170,52 @@
                   }
                 }
               }
-            }
-          ]
-        }
-      },
-      {
-        "name": "up_stage_update_staging_duration",
-        "kind": "call",
-        "params": {
-          "serialization_type": "json",
-          "args": [
-            {
-              "name": "staging_duration",
-              "type_schema": {
-                "type": "integer",
-                "format": "uint64",
-                "minimum": 0.0
-              }
-            }
-          ]
-        }
-      },
-      {
-        "name": "up_staged_code",
-        "kind": "view",
-        "result": {
-          "serialization_type": "borsh",
-          "type_schema": {
-            "declaration": "Option<Vec<u8>>",
-            "definitions": {
-              "()": {
-                "Primitive": 0
-              },
-              "Option<Vec<u8>>": {
-                "Enum": {
-                  "tag_width": 1,
-                  "variants": [
-                    [
-                      0,
-                      "None",
-                      "()"
-                    ],
-                    [
-                      1,
-                      "Some",
-                      "Vec<u8>"
-                    ]
-                  ]
-                }
-              },
-              "Vec<u8>": {
-                "Sequence": {
-                  "length_width": 4,
-                  "length_range": {
-                    "start": 0,
-                    "end": 4294967295
-                  },
-                  "elements": "u8"
-                }
-              },
-              "u8": {
-                "Primitive": 1
-              }
-            }
-          }
-        }
-      },
-      {
-        "name": "up_staged_code_hash",
-        "kind": "view",
-        "result": {
-          "serialization_type": "json",
-          "type_schema": {
-            "type": [
-              "array",
-              "null"
-            ],
-            "items": {
-              "type": "integer",
-              "format": "uint8",
-              "minimum": 0.0
             },
-            "maxItems": 32,
-            "minItems": 32
-          }
-        }
-      },
-      {
-        "name": "up_storage_prefix",
-        "kind": "view",
+            {
+              "name": "state_migration_gas",
+              "type_schema": {
+                "declaration": "Option<NearGas>",
+                "definitions": {
+                  "()": {
+                    "Primitive": 0
+                  },
+                  "NearGas": {
+                    "Struct": [
+                      [
+                        "inner",
+                        "u64"
+                      ]
+                    ]
+                  },
+                  "Option<NearGas>": {
+                    "Enum": {
+                      "tag_width": 1,
+                      "variants": [
+                        [
+                          0,
+                          "None",
+                          "()"
+                        ],
+                        [
+                          1,
+                          "Some",
+                          "NearGas"
+                        ]
+                      ]
+                    }
+                  },
+                  "u64": {
+                    "Primitive": 8
+                  }
+                }
+              }
+            }
+          ]
+        },
         "result": {
           "serialization_type": "json",
           "type_schema": {
-            "type": "array",
-            "items": {
-              "type": "integer",
-              "format": "uint8",
-              "minimum": 0.0
-            }
+            "$ref": "#/definitions/Promise"
           }
         }
       }
@@ -2187,6 +2225,21 @@
       "title": "String",
       "type": "string",
       "definitions": {
+        "Abi": {
+          "type": "object",
+          "required": [
+            "erc191_payload",
+            "nep413_payload"
+          ],
+          "properties": {
+            "erc191_payload": {
+              "$ref": "#/definitions/DefusePayload_for_DefuseIntents"
+            },
+            "nep413_payload": {
+              "$ref": "#/definitions/Nep413DefuseMessage_for_DefuseIntents"
+            }
+          }
+        },
         "AccountId": {
           "description": "NEAR Account Identifier.\n\nThis is a unique, syntactically valid, human-readable account identifier on the NEAR network.\n\n[See the crate-level docs for information about validation.](index.html#account-id-rules)\n\nAlso see [Error kind precedence](AccountId#error-kind-precedence).\n\n## Examples\n\n``` use near_account_id::AccountId;\n\nlet alice: AccountId = \"alice.near\".parse().unwrap();\n\nassert!(\"ƒelicia.near\".parse::<AccountId>().is_err()); // (ƒ is not f) ```",
           "type": "string"
@@ -2225,58 +2278,103 @@
             }
           ]
         },
-        "DefuseMessage_for_DefuseIntents": {
+        "DefuseConfig": {
+          "type": "object",
+          "required": [
+            "fees",
+            "roles",
+            "wnear_id"
+          ],
+          "properties": {
+            "fees": {
+              "$ref": "#/definitions/FeesConfig"
+            },
+            "roles": {
+              "$ref": "#/definitions/RolesConfig"
+            },
+            "wnear_id": {
+              "$ref": "#/definitions/AccountId"
+            }
+          }
+        },
+        "DefusePayload_for_DefuseIntents": {
           "type": "object",
           "required": [
             "deadline",
-            "signer_id"
+            "nonce",
+            "signer_id",
+            "verifying_contract"
           ],
           "properties": {
             "deadline": {
               "$ref": "#/definitions/Deadline"
             },
             "intents": {
-              "description": "Sequence of intents to execute in given order. Empty list is also a valid sequence, i.e. it doesn't do anything, but still invalidates the [`nonce`](crate::nep413::Nep413Payload::nonce) for the signer",
+              "description": "Sequence of intents to execute in given order. Empty list is also a valid sequence, i.e. it doesn't do anything, but still invalidates the [`nonce`](crate::defuse::DefusePayload::nonce) for the signer",
               "type": "array",
               "items": {
                 "$ref": "#/definitions/Intent"
               }
             },
+            "nonce": {
+              "examples": [
+                "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+              ],
+              "type": "string",
+              "contentEncoding": "base64"
+            },
             "signer_id": {
+              "$ref": "#/definitions/AccountId"
+            },
+            "verifying_contract": {
               "$ref": "#/definitions/AccountId"
             }
           }
         },
-        "FunctionCallArgs": {
-          "description": "Specifies a function call to be appended to the actions of a promise via [`near_sdk::Promise::function_call`]).",
+        "FeesConfig": {
+          "type": "object",
+          "required": [
+            "fee",
+            "fee_collector"
+          ],
+          "properties": {
+            "fee": {
+              "$ref": "#/definitions/Pips"
+            },
+            "fee_collector": {
+              "$ref": "#/definitions/AccountId"
+            }
+          }
+        },
+        "FtWithdraw": {
           "type": "object",
           "required": [
             "amount",
-            "arguments",
-            "function_name",
-            "gas"
+            "receiver_id",
+            "token"
           ],
           "properties": {
             "amount": {
-              "description": "The amount of tokens to transfer to the receiver.",
               "type": "string"
             },
-            "arguments": {
-              "description": "The arguments to pass to the function.",
-              "type": "array",
-              "items": {
-                "type": "integer",
-                "format": "uint8",
-                "minimum": 0.0
-              }
+            "memo": {
+              "type": [
+                "string",
+                "null"
+              ]
             },
-            "function_name": {
-              "description": "The name of the function to call.",
-              "type": "string"
+            "receiver_id": {
+              "$ref": "#/definitions/AccountId"
             },
-            "gas": {
-              "description": "The gas limit for the function call.",
-              "type": "string"
+            "storage_deposit": {
+              "description": "Optionally make `storage_deposit` for `receiver_id` on `token`. The amount will be subtracted from user's NEP-141 `wNEAR` balance.",
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "token": {
+              "$ref": "#/definitions/AccountId"
             }
           }
         },
@@ -2397,13 +2495,6 @@
                     "type": "string"
                   }
                 },
-                "gas_for_mt_on_transfer": {
-                  "description": "Optional static gas to attach to `mt_on_transfer`",
-                  "type": [
-                    "string",
-                    "null"
-                  ]
-                },
                 "intent": {
                   "type": "string",
                   "enum": [
@@ -2443,13 +2534,6 @@
                 "amount": {
                   "type": "string"
                 },
-                "gas": {
-                  "description": "Optional static gas to attach to `ft_transfer` or `ft_transfer_call`",
-                  "type": [
-                    "string",
-                    "null"
-                  ]
-                },
                 "intent": {
                   "type": "string",
                   "enum": [
@@ -2462,15 +2546,15 @@
                     "null"
                   ]
                 },
-                "msg": {
-                  "description": "Message to pass to `ft_transfer_call`. Otherwise, `ft_transfer` will be used",
+                "receiver_id": {
+                  "$ref": "#/definitions/AccountId"
+                },
+                "storage_deposit": {
+                  "description": "Optionally make `storage_deposit` for `receiver_id` on `token`. The amount will be subtracted from user's NEP-141 `wNEAR` balance.",
                   "type": [
                     "string",
                     "null"
                   ]
-                },
-                "receiver_id": {
-                  "$ref": "#/definitions/AccountId"
                 },
                 "token": {
                   "$ref": "#/definitions/AccountId"
@@ -2486,13 +2570,6 @@
                 "token_id"
               ],
               "properties": {
-                "gas": {
-                  "description": "Optional static gas to attach to `nft_transfer` or `nft_transfer_call`",
-                  "type": [
-                    "string",
-                    "null"
-                  ]
-                },
                 "intent": {
                   "type": "string",
                   "enum": [
@@ -2505,15 +2582,15 @@
                     "null"
                   ]
                 },
-                "msg": {
-                  "description": "Message to pass to `nft_transfer_call`. Otherwise, `nft_transfer` will be used",
+                "receiver_id": {
+                  "$ref": "#/definitions/AccountId"
+                },
+                "storage_deposit": {
+                  "description": "Optionally make `storage_deposit` for `receiver_id` on `token`. The amount will be subtracted from user's NEP-141 `wNEAR` balance.",
                   "type": [
                     "string",
                     "null"
                   ]
-                },
-                "receiver_id": {
-                  "$ref": "#/definitions/AccountId"
                 },
                 "token": {
                   "$ref": "#/definitions/AccountId"
@@ -2539,13 +2616,6 @@
                     "type": "string"
                   }
                 },
-                "gas": {
-                  "description": "Optional static gas to attach to `mt_batch_transfer` or `mt_batch_transfer_call`",
-                  "type": [
-                    "string",
-                    "null"
-                  ]
-                },
                 "intent": {
                   "type": "string",
                   "enum": [
@@ -2558,15 +2628,15 @@
                     "null"
                   ]
                 },
-                "msg": {
-                  "description": "Message to pass to `mt_batch_transfer_call`. Otherwise, `mt_batch_transfer` will be used",
+                "receiver_id": {
+                  "$ref": "#/definitions/AccountId"
+                },
+                "storage_deposit": {
+                  "description": "Optionally make `storage_deposit` for `receiver_id` on `token`. The amount will be subtracted from user's NEP-141 `wNEAR` balance.",
                   "type": [
                     "string",
                     "null"
                   ]
-                },
-                "receiver_id": {
-                  "$ref": "#/definitions/AccountId"
                 },
                 "token": {
                   "$ref": "#/definitions/AccountId"
@@ -2599,6 +2669,70 @@
             }
           ]
         },
+        "MtWithdraw": {
+          "type": "object",
+          "required": [
+            "amounts",
+            "receiver_id",
+            "token",
+            "token_ids"
+          ],
+          "properties": {
+            "amounts": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "memo": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "receiver_id": {
+              "$ref": "#/definitions/AccountId"
+            },
+            "storage_deposit": {
+              "description": "Optionally make `storage_deposit` for `receiver_id` on `token`. The amount will be subtracted from user's NEP-141 `wNEAR` balance.",
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "token": {
+              "$ref": "#/definitions/AccountId"
+            },
+            "token_ids": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "Nep413DefuseMessage_for_DefuseIntents": {
+          "type": "object",
+          "required": [
+            "deadline",
+            "signer_id"
+          ],
+          "properties": {
+            "deadline": {
+              "$ref": "#/definitions/Deadline"
+            },
+            "intents": {
+              "description": "Sequence of intents to execute in given order. Empty list is also a valid sequence, i.e. it doesn't do anything, but still invalidates the [`nonce`](crate::defuse::DefusePayload::nonce) for the signer",
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/Intent"
+              }
+            },
+            "signer_id": {
+              "$ref": "#/definitions/AccountId"
+            }
+          }
+        },
         "Nep413Payload": {
           "type": "object",
           "required": [
@@ -2624,6 +2758,38 @@
               "contentEncoding": "base64"
             },
             "recipient": {
+              "type": "string"
+            }
+          }
+        },
+        "NftWithdraw": {
+          "type": "object",
+          "required": [
+            "receiver_id",
+            "token",
+            "token_id"
+          ],
+          "properties": {
+            "memo": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "receiver_id": {
+              "$ref": "#/definitions/AccountId"
+            },
+            "storage_deposit": {
+              "description": "Optionally make `storage_deposit` for `receiver_id` on `token`. The amount will be subtracted from user's NEP-141 `wNEAR` balance.",
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "token": {
+              "$ref": "#/definitions/AccountId"
+            },
+            "token_id": {
               "type": "string"
             }
           }
@@ -2713,11 +2879,51 @@
             }
           ]
         },
+        "RolesConfig": {
+          "type": "object",
+          "required": [
+            "admins",
+            "grantees",
+            "super_admins"
+          ],
+          "properties": {
+            "admins": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/definitions/AccountId"
+                },
+                "uniqueItems": true
+              }
+            },
+            "grantees": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/definitions/AccountId"
+                },
+                "uniqueItems": true
+              }
+            },
+            "super_admins": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/AccountId"
+              },
+              "uniqueItems": true
+            }
+          }
+        },
         "SignedPayload_for_MultiStandardPayload": {
           "examples": [
             {
               "public_key": "ed25519:5TagutioHgKLh7KZ1VEFBYfgRkPtqnKm9LoMnJMJugxm",
               "signature": "ed25519:DNxoVu7L7sHr9pcHGWQoJtPsrwheB8akht1JxaGpc9hGrpehdycXBMLJg4ph1bQ9bXdfoxJCbbwxj3Bdrda52eF"
+            },
+            {
+              "signature": "secp256k1:7huDZxNnibusy6wFkbUBQ9Rqq2VmCKgTWYdJwcPj8VnciHjZKPa41rn5n6WZnMqSUCGRHWMAsMjKGtMVVmpETCeCs"
             }
           ],
           "type": "object",
@@ -2759,6 +2965,7 @@
           ],
           "oneOf": [
             {
+              "description": "See [NEP-413](https://github.com/near/NEPs/blob/master/neps/nep-0413.md)",
               "type": "object",
               "required": [
                 "payload",
@@ -2772,6 +2979,25 @@
                   "type": "string",
                   "enum": [
                     "nep413"
+                  ]
+                }
+              }
+            },
+            {
+              "description": "See [ERC-191](https://github.com/ethereum/ercs/blob/master/ERCS/erc-191.md), [personal_sign](https://docs.metamask.io/wallet/reference/json-rpc-methods/personal_sign)",
+              "type": "object",
+              "required": [
+                "payload",
+                "standard"
+              ],
+              "properties": {
+                "payload": {
+                  "type": "string"
+                },
+                "standard": {
+                  "type": "string",
+                  "enum": [
+                    "erc191"
                   ]
                 }
               }
@@ -2812,43 +3038,6 @@
             "nep245:mt.near:token_id1"
           ],
           "type": "string"
-        },
-        "UpgradableDurationStatus": {
-          "type": "object",
-          "properties": {
-            "new_staging_duration": {
-              "type": [
-                "integer",
-                "null"
-              ],
-              "format": "uint64",
-              "minimum": 0.0
-            },
-            "new_staging_duration_timestamp": {
-              "type": [
-                "integer",
-                "null"
-              ],
-              "format": "uint64",
-              "minimum": 0.0
-            },
-            "staging_duration": {
-              "type": [
-                "integer",
-                "null"
-              ],
-              "format": "uint64",
-              "minimum": 0.0
-            },
-            "staging_timestamp": {
-              "type": [
-                "integer",
-                "null"
-              ],
-              "format": "uint64",
-              "minimum": 0.0
-            }
-          }
         }
       }
     }
