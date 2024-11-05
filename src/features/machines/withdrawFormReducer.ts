@@ -81,7 +81,8 @@ export const withdrawFormReducer = fromTransition(
           parsedAmount: event.params.parsedAmount,
           tokenIn: event.params.token,
           tokenOut,
-          parsedRecipient: getParsedRecipient(state.recipient, tokenOut),
+          recipient: "",
+          parsedRecipient: null,
         }
         break
       }
@@ -93,7 +94,8 @@ export const withdrawFormReducer = fromTransition(
         newState = {
           ...state,
           tokenOut,
-          parsedRecipient: getParsedRecipient(state.recipient, tokenOut),
+          recipient: "",
+          parsedRecipient: null,
         }
         break
       }
