@@ -28,7 +28,22 @@ describe("makeSwapMessage()", () => {
         nonce: new Uint8Array(32),
       },
       ERC191: {
-        message: `{"signer_id":"user.near","verifying_contract":"intents.near","deadline":{"timestamp":1000000},"nonce":"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=","intents":[{"intent":"token_diff","diff":{"foo.near":"100"}}]}`,
+        message: `{
+  "signer_id": "user.near",
+  "verifying_contract": "intents.near",
+  "deadline": {
+    "timestamp": 1000000
+  },
+  "nonce": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+  "intents": [
+    {
+      "intent": "token_diff",
+      "diff": {
+        "foo.near": "100"
+      }
+    }
+  ]
+}`,
       },
     })
   })
@@ -80,7 +95,6 @@ describe("makeInnerSwapAndWithdrawMessage()", () => {
           },
           {
             "amount": "200",
-            "gas": "15000000000000",
             "intent": "ft_withdraw",
             "receiver_id": "receiver.near",
             "token": "bar.near",
@@ -112,7 +126,6 @@ describe("makeInnerSwapAndWithdrawMessage()", () => {
         "intents": [
           {
             "amount": "200",
-            "gas": "15000000000000",
             "intent": "ft_withdraw",
             "receiver_id": "receiver.near",
             "token": "bar.near",
@@ -144,7 +157,6 @@ describe("makeInnerSwapAndWithdrawMessage()", () => {
         "intents": [
           {
             "amount": "200",
-            "gas": "15000000000000",
             "intent": "ft_withdraw",
             "memo": "WITHDRAW_TO:0xdead",
             "receiver_id": "bar-poa-bridge-token.near",
