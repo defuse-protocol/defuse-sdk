@@ -9,6 +9,7 @@ import {
 import type { WalletMessage, WalletSignatureResult } from "../../types"
 import type { BaseTokenInfo } from "../../types/base"
 import type { Nep413DefuseMessageFor_DefuseIntents } from "../../types/defuse-contracts-types"
+import { userAddressToDefuseUserId } from "../../utils/defuse"
 import {
   makeInnerSwapMessage,
   makeSwapMessage,
@@ -127,7 +128,7 @@ export const swapIntentMachine = setup({
         const innerMessage = makeInnerSwapMessage({
           amountsIn: context.intentOperationParams.quote.amountsIn,
           amountsOut: context.intentOperationParams.quote.amountsOut,
-          signerId: context.userAddress,
+          signerId: userAddressToDefuseUserId(context.userAddress),
           deadlineTimestamp: Math.min(
             Math.floor(Date.now() / 1000) + settings.swapExpirySec,
             context.intentOperationParams.quote.expirationTime

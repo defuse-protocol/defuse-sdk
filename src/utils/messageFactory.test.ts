@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest"
+import { userAddressToDefuseUserId } from "./defuse"
 import {
   makeInnerSwapAndWithdrawMessage,
   makeInnerSwapMessage,
@@ -9,7 +10,7 @@ describe("makeSwapMessage()", () => {
   const innerMessage = makeInnerSwapMessage({
     amountsIn: {},
     amountsOut: { "foo.near": 100n },
-    signerId: "user.near",
+    signerId: userAddressToDefuseUserId("user.near"),
     deadlineTimestamp: 1000000,
   })
 
@@ -60,7 +61,7 @@ describe("makeInnerSwapAndWithdrawMessage()", () => {
         tokenAccountId: "bar.near",
         receiverId: "receiver.near",
       },
-      signerId: "user.near",
+      signerId: userAddressToDefuseUserId("user.near"),
       deadlineTimestamp: 1000000,
     })
 
@@ -99,7 +100,7 @@ describe("makeInnerSwapAndWithdrawMessage()", () => {
         tokenAccountId: "bar.near",
         receiverId: "receiver.near",
       },
-      signerId: "user.near",
+      signerId: userAddressToDefuseUserId("user.near"),
       deadlineTimestamp: 1000000,
     })
 
@@ -131,7 +132,7 @@ describe("makeInnerSwapAndWithdrawMessage()", () => {
         tokenAccountId: "bar-poa-bridge-token.near",
         destinationAddress: "0xdead",
       },
-      signerId: "user.near",
+      signerId: userAddressToDefuseUserId("user.near"),
       deadlineTimestamp: 1000000,
     })
 

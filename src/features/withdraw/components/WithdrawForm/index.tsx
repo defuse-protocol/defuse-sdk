@@ -63,7 +63,7 @@ const resolver: Resolver<WithdrawFormNearValues> = (values) => {
 }
 
 export const WithdrawForm = ({
-  accountId,
+  userAddress,
   tokenList,
   sendNearTransaction,
 }: WithdrawFormProps) => {
@@ -97,17 +97,17 @@ export const WithdrawForm = ({
   )
 
   useEffect(() => {
-    if (accountId != null) {
+    if (userAddress != null) {
       actorRef.send({
         type: "LOGIN",
-        params: { accountId },
+        params: { accountId: userAddress },
       })
     } else {
       actorRef.send({
         type: "LOGOUT",
       })
     }
-  }, [accountId, actorRef])
+  }, [userAddress, actorRef])
 
   useEffect(() => {
     const s = actorRef.subscribe((state) => {
@@ -247,7 +247,7 @@ export const WithdrawForm = ({
       <Flex direction={"column"} gap={"2"} className={styles.formWrapper}>
         <Form<WithdrawFormNearValues>
           handleSubmit={handleSubmit(() => {
-            if (accountId == null) {
+            if (userAddress == null) {
               console.warn("No user address provided")
               return
             }
@@ -255,7 +255,7 @@ export const WithdrawForm = ({
             actorRef.send({
               type: "submit",
               params: {
-                userAddress: accountId,
+                userAddress,
                 nearClient: new providers.JsonRpcProvider({
                   url: "https://nearrpc.aurora.dev",
                 }),

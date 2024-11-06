@@ -7,6 +7,7 @@ import type {
   TokenAmountsForInt128,
 } from "../types/defuse-contracts-types"
 import { assert } from "./assert"
+import type { DefuseUserId } from "./defuse"
 
 export const ONE_TGAS = 1_000000000000n
 
@@ -18,7 +19,7 @@ export function makeInnerSwapMessage({
 }: {
   amountsIn: Record<string, bigint>
   amountsOut: Record<string, bigint>
-  signerId: string
+  signerId: DefuseUserId
   deadlineTimestamp: number
 }): Nep413DefuseMessageFor_DefuseIntents {
   const tokenDiff: TokenAmountsForInt128 = {}
@@ -63,7 +64,7 @@ export function makeInnerSwapAndWithdrawMessage({
     amountsOut: Record<string, bigint>
   } | null
   withdrawParams: WithdrawParams
-  signerId: string
+  signerId: DefuseUserId
   deadlineTimestamp: number
 }): Nep413DefuseMessageFor_DefuseIntents {
   const intents: NonNullable<Nep413DefuseMessageFor_DefuseIntents["intents"]> =
