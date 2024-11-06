@@ -11,6 +11,8 @@ export type BaseTokenBalance = {
   }
 }
 
+type SupportedChainName = "eth" | "near" | "base" | "arbitrum" | "bitcoin"
+
 export interface FungibleTokenInfo extends Partial<BaseTokenBalance> {
   defuseAssetId: string
   address: string
@@ -21,7 +23,7 @@ export interface FungibleTokenInfo extends Partial<BaseTokenBalance> {
   /** @deprecated */
   chainId: string
   chainIcon: string
-  chainName: string
+  chainName: SupportedChainName
   /** @deprecated */
   routes: string[]
 }
@@ -38,7 +40,7 @@ export interface NativeTokenInfo extends Partial<BaseTokenBalance> {
   /** @deprecated */
   chainId: string
   chainIcon: string
-  chainName: string
+  chainName: SupportedChainName
   /** @deprecated */
   routes: string[]
 }
