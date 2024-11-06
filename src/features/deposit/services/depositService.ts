@@ -1,10 +1,11 @@
-import type { BlockchainEnum } from "src/types"
 import { settings } from "../../../config/settings"
 import {
   getDepositAddress,
   getSupportedTokens,
 } from "../../../services/poaBridgeClient"
+import type { BlockchainEnum } from "../../../types"
 import type { Transaction } from "../../../types/deposit"
+import type { DefuseUserId } from "../../../utils/defuse"
 import {
   getNearNep141MinStorageBalance,
   getNearNep141StorageBalance,
@@ -126,12 +127,12 @@ export class DepositService {
   /**
    * Generate a deposit address for the specified blockchain and asset through the POA bridge API call.
    *
-   * @param blockchain - The blockchain for which to generate the address
-   * @param accountId - The address of the asset being deposited
+   * @param userAddress - The user address from the wallet
+   * @param chain - The blockchain for which to generate the address
    * @returns A Promise that resolves to the generated deposit address
    */
   async generateDepositAddress(
-    accountId: string,
+    userAddress: DefuseUserId,
     chain: BlockchainEnum
   ): Promise<string> {
     try {
@@ -144,7 +145,7 @@ export class DepositService {
       }
 
       const generatedDepositAddress = await getDepositAddress({
-        account_id: accountId,
+        account_id: userAddress,
         chain,
       })
 

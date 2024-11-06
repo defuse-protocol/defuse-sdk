@@ -10,6 +10,7 @@ import { settings } from "../../../config/settings"
 import type { SwappableToken, Transaction } from "../../../types"
 import { BlockchainEnum } from "../../../types"
 import { assert } from "../../../utils/assert"
+import { userAddressToDefuseUserId } from "../../../utils/defuse"
 import { isBaseToken } from "../../../utils/token"
 import { depositGenerateAddressMachine } from "../../machines/depositGenerateAddressMachine"
 import { depositNearMachine } from "../../machines/depositNearMachine"
@@ -152,7 +153,7 @@ export function DepositUIMachineProvider({
                 assert(accountId != null, "Account ID is not defined")
                 assert(chain != null, "Chain is not defined")
                 const address = await depositNearService.generateDepositAddress(
-                  accountId,
+                  userAddressToDefuseUserId(accountId),
                   chain
                 )
                 console.log("generated address", address)
