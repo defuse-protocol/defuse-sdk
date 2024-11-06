@@ -16,7 +16,7 @@ export const getNearNativeBalance = async ({
   accountId,
 }: {
   accountId: string
-}): Promise<bigint> => {
+}): Promise<bigint | null> => {
   try {
     const response = await getNearBalance({
       request_type: "view_account",
@@ -29,7 +29,8 @@ export const getNearNativeBalance = async ({
       ? 0n
       : balance - RESERVED_NEAR_BALANCE
   } catch (err: unknown) {
-    throw new Error("Error fetching balance", { cause: err })
+    console.warn(err, "error fetching near native balance")
+    return null
   }
 }
 
@@ -39,7 +40,7 @@ export const getNearNep141Balance = async ({
 }: {
   tokenAddress: string
   accountId: string
-}): Promise<bigint> => {
+}): Promise<bigint | null> => {
   try {
     const args = { account_id: accountId }
     const argsBase64 = Buffer.from(JSON.stringify(args)).toString("base64")
@@ -58,7 +59,8 @@ export const getNearNep141Balance = async ({
     const balance = BigInt(parsed)
     return balance
   } catch (err: unknown) {
-    throw new Error("Error fetching balance", { cause: err })
+    console.warn(err, "error fetching near nep141 balance")
+    return null
   }
 }
 
