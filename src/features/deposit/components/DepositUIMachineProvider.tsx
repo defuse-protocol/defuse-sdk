@@ -1,5 +1,6 @@
 import { createActorContext } from "@xstate/react"
 import type { PropsWithChildren, ReactElement, ReactNode } from "react"
+import { userAddressToDefuseUserId } from "src/utils/defuse"
 import {
   type Actor,
   type ActorOptions,
@@ -152,7 +153,7 @@ export function DepositUIMachineProvider({
                 assert(accountId != null, "Account ID is not defined")
                 assert(chain != null, "Chain is not defined")
                 const address = await depositNearService.generateDepositAddress(
-                  accountId,
+                  userAddressToDefuseUserId(accountId),
                   chain
                 )
                 console.log("generated address", address)
