@@ -41,7 +41,8 @@ function transformNEP141Signature(signature: string) {
 }
 
 function transformERC191Signature(signature: string) {
-  const bytes = hexToBytes(signature as "0x${string}")
+  const normalizedSignature = normalizeERC191Signature(signature)
+  const bytes = hexToBytes(normalizedSignature as "0x${string}")
   return `secp256k1:${base58.encode(bytes)}`
 }
 
