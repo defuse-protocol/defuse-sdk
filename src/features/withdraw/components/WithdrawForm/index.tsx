@@ -387,7 +387,7 @@ const allBlockchains = [
         chainName="Near"
       />
     ),
-    value: "near",
+    value: "near" as const,
   },
   {
     label: "Ethereum",
@@ -397,7 +397,7 @@ const allBlockchains = [
         chainName="Ethereum"
       />
     ),
-    value: "eth",
+    value: "eth" as const,
   },
   {
     label: "Base",
@@ -407,7 +407,7 @@ const allBlockchains = [
         chainName="Base"
       />
     ),
-    value: "base",
+    value: "base" as const,
   },
   {
     label: "Arbitrum",
@@ -417,7 +417,7 @@ const allBlockchains = [
         chainName="Arbitrum"
       />
     ),
-    value: "arbitrum",
+    value: "arbitrum" as const,
   },
   {
     label: "Bitcoin",
@@ -427,7 +427,7 @@ const allBlockchains = [
         chainName="Bitcoin"
       />
     ),
-    value: "bitcoin",
+    value: "bitcoin" as const,
   },
 ]
 
