@@ -4,6 +4,7 @@ import type { ActorRefFrom, StateValueFrom } from "xstate"
 import type { intentStatusMachine } from "../../features/machines/intentStatusMachine"
 import { formatTokenValue } from "../../utils/format"
 import { AssetComboIcon } from "../Asset/AssetComboIcon"
+import { CopyButton } from "./CopyButton"
 
 type WithdrawIntentCardProps = {
   intentStatusActorRef: ActorRefFrom<typeof intentStatusMachine>
@@ -15,8 +16,8 @@ export function WithdrawIntentCard({
   intentStatusActorRef,
 }: WithdrawIntentCardProps) {
   const state = useSelector(intentStatusActorRef, (state) => state)
-  const { tokenIn, tokenOut } = state.context
-  const { totalAmountIn, totalAmountOut } = state.context.quote
+  const { tokenOut } = state.context
+  const { totalAmountOut } = state.context.quote
 
   const txUrl =
     state.context.txHash != null
@@ -29,7 +30,7 @@ export function WithdrawIntentCard({
         <AssetComboIcon {...tokenOut} />
       </Box>
 
-      <Flex direction={"column"} flexGrow={"1"}>
+      <Flex direction={"column"} gap={"1"} flexGrow={"1"}>
         <Flex>
           <Box flexGrow={"1"}>
             <Text size={"2"} weight={"medium"}>
@@ -66,50 +67,56 @@ export function WithdrawIntentCard({
           </Flex>
         </Flex>
 
-        <Flex align={"center"}>
-          <Box flexGrow={"1"}>
-            <Text size={"1"} weight={"medium"} color={"gray"}>
-              -
-              {formatTokenValue(totalAmountIn, tokenIn.decimals, {
-                min: 0.0001,
-                fractionDigits: 4,
-              })}{" "}
-              {tokenIn.symbol}
-            </Text>
-          </Box>
+        <Flex>
+          <Flex direction={"column"} gap={"1"} flexGrow={"1"}>
+            {state.context.intentHash != null && (
+              <Flex align={"center"} gap={"1"}>
+                <Text size={"1"} color={"gray"}>
+                  Intent: {truncateHash(state.context.intentHash)}
+                </Text>
 
-          <Box>
-            <Text size={"1"} weight={"medium"} color={"green"}>
-              +
-              {formatTokenValue(totalAmountOut, tokenOut.decimals, {
-                min: 0.0001,
-                fractionDigits: 4,
-              })}{" "}
-              {tokenOut.symbol}
-            </Text>
-          </Box>
+                <CopyButton
+                  text={state.context.intentHash}
+                  ariaLabel={"Copy Intent hash"}
+                />
+              </Flex>
+            )}
+
+            {state.context.txHash != null && txUrl != null && (
+              <Flex align={"center"} gap={"1"}>
+                <Text size={"1"} color={"gray"}>
+                  Transaction:{" "}
+                  <Link href={txUrl} target={"_blank"} color={"blue"}>
+                    {truncateHash(state.context.txHash)}
+                  </Link>
+                </Text>
+
+                <CopyButton
+                  text={state.context.txHash}
+                  ariaLabel={"Copy Transaction hash"}
+                />
+              </Flex>
+            )}
+          </Flex>
+
+          <Text
+            size={"1"}
+            weight={"medium"}
+            color={state.matches("not_valid") ? "gray" : "green"}
+            style={{
+              textDecoration: state.matches("not_valid")
+                ? "line-through"
+                : undefined,
+            }}
+          >
+            +
+            {formatTokenValue(totalAmountOut, tokenOut.decimals, {
+              min: 0.0001,
+              fractionDigits: 4,
+            })}{" "}
+            {tokenOut.symbol}
+          </Text>
         </Flex>
-
-        {state.context.intentHash != null && (
-          <Box>
-            <Text size={"1"} color={"gray"} wrap={"nowrap"}>
-              Intent: {state.context.intentHash}
-            </Text>
-          </Box>
-        )}
-
-        {state.context.txHash != null && txUrl != null && (
-          <Box>
-            <Text size={"1"} color={"gray"}>
-              Transaction:
-            </Text>{" "}
-            <Text size={"1"}>
-              <Link href={txUrl} target={"_blank"}>
-                {shortenTxHash(state.context.txHash)}
-              </Link>
-            </Text>
-          </Box>
-        )}
       </Flex>
     </Flex>
   )
@@ -131,6 +138,6 @@ function renderStatusLabel(val: StateValueFrom<typeof intentStatusMachine>) {
   }
 }
 
-function shortenTxHash(txHash: string) {
-  return `${txHash.slice(0, 5)}...${txHash.slice(-5)}`
+function truncateHash(hash: string) {
+  return `${hash.slice(0, 5)}...${hash.slice(-5)}`
 }
