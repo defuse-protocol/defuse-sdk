@@ -177,7 +177,7 @@ export class DepositService {
     accountId: string
   ): Promise<boolean> {
     // Aurora is a special case and does not require storage deposit
-    if (accountId === "aurora") {
+    if (contractId === "aurora") {
       return false
     }
     const storageBalance = await getNearNep141StorageBalance({
