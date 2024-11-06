@@ -148,13 +148,17 @@ export function makeSwapMessage({
       nonce,
     },
     ERC191: {
-      message: JSON.stringify({
-        signer_id: innerMessage.signer_id,
-        verifying_contract: settings.defuseContractId,
-        deadline: innerMessage.deadline,
-        nonce: base64.encode(nonce),
-        intents: innerMessage.intents,
-      }),
+      message: JSON.stringify(
+        {
+          signer_id: innerMessage.signer_id,
+          verifying_contract: settings.defuseContractId,
+          deadline: innerMessage.deadline,
+          nonce: base64.encode(nonce),
+          intents: innerMessage.intents,
+        },
+        null,
+        2
+      ),
     },
   }
 }

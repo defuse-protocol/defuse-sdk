@@ -28,7 +28,22 @@ describe("makeSwapMessage()", () => {
         nonce: new Uint8Array(32),
       },
       ERC191: {
-        message: `{"signer_id":"user.near","verifying_contract":"intents.near","deadline":{"timestamp":1000000},"nonce":"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=","intents":[{"intent":"token_diff","diff":{"foo.near":"100"}}]}`,
+        message: `{
+  "signer_id": "user.near",
+  "verifying_contract": "intents.near",
+  "deadline": {
+    "timestamp": 1000000
+  },
+  "nonce": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+  "intents": [
+    {
+      "intent": "token_diff",
+      "diff": {
+        "foo.near": "100"
+      }
+    }
+  ]
+}`,
       },
     })
   })
