@@ -1,6 +1,5 @@
 import { createActorContext } from "@xstate/react"
 import type { PropsWithChildren, ReactElement, ReactNode } from "react"
-import { userAddressToDefuseUserId } from "src/utils/defuse"
 import {
   type Actor,
   type ActorOptions,
@@ -11,6 +10,7 @@ import { settings } from "../../../config/settings"
 import type { SwappableToken, Transaction } from "../../../types"
 import { BlockchainEnum } from "../../../types"
 import { assert } from "../../../utils/assert"
+import { userAddressToDefuseUserId } from "../../../utils/defuse"
 import { isBaseToken } from "../../../utils/token"
 import { depositGenerateAddressMachine } from "../../machines/depositGenerateAddressMachine"
 import { depositNearMachine } from "../../machines/depositNearMachine"
