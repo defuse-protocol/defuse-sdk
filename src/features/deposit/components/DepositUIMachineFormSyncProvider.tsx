@@ -5,7 +5,7 @@ import type { DepositFormValues } from "./DepositForm"
 import { DepositUIMachineContext } from "./DepositUIMachineProvider"
 
 type DepositUIMachineFormSyncProviderProps = PropsWithChildren<{
-  userAddress: string | null
+  userAddress?: string
 }>
 
 export function DepositUIMachineFormSyncProvider({
@@ -36,7 +36,7 @@ export function DepositUIMachineFormSyncProvider({
   }, [watch, actorRef])
 
   useEffect(() => {
-    if (userAddress == null) {
+    if (!userAddress) {
       actorRef.send({ type: "LOGIN", params: { userAddress: "" } })
     } else {
       actorRef.send({ type: "LOGIN", params: { userAddress } })

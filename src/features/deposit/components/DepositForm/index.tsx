@@ -23,7 +23,7 @@ import { useModalStore } from "../../../../providers/ModalStoreProvider"
 import { ModalType } from "../../../../stores/modalStore"
 import {
   BlockchainEnum,
-  SignInType,
+  ChainType,
   type SwappableToken,
 } from "../../../../types"
 import { formatTokenValue } from "../../../../utils/format"
@@ -42,7 +42,7 @@ export type DepositFormValues = {
   userAddress: string | null
 }
 
-export const DepositForm = ({ userNetwork }: { userNetwork: string }) => {
+export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
   const {
     handleSubmit,
     register,
@@ -132,11 +132,11 @@ export const DepositForm = ({ userNetwork }: { userNetwork: string }) => {
   }
 
   useEffect(() => {
-    if (token && getDefaultBlockchainOptionValue(token, userNetwork)) {
-      const networkOption = getDefaultBlockchainOptionValue(token, userNetwork)
+    if (token && getDefaultBlockchainOptionValue(token, chainType)) {
+      const networkOption = getDefaultBlockchainOptionValue(token, chainType)
       setValue("network", networkOption ?? "")
     }
-  }, [token, setValue, userNetwork])
+  }, [token, setValue, chainType])
 
   const balanceInsufficient = isInsufficientBalance(
     amount,
@@ -181,14 +181,14 @@ export const DepositForm = ({ userNetwork }: { userNetwork: string }) => {
                 control={control}
                 render={({ field }) => (
                   <Select
-                    options={filterBlockchainsOptions(token, userNetwork)}
+                    options={filterBlockchainsOptions(token, chainType)}
                     placeholder={{
                       label: "Select network",
                       icon: <EmptyIcon />,
                     }}
                     fullWidth
                     value={
-                      getDefaultBlockchainOptionValue(token, userNetwork) ||
+                      getDefaultBlockchainOptionValue(token, chainType) ||
                       network ||
                       ""
                     }
@@ -201,7 +201,7 @@ export const DepositForm = ({ userNetwork }: { userNetwork: string }) => {
               />
             </div>
           )}
-          {userNetwork === "near:mainnet" &&
+          {chainType === ChainType.Near &&
             network === BlockchainEnum.NEAR &&
             userAddress && (
               <>
@@ -352,7 +352,7 @@ export const DepositForm = ({ userNetwork }: { userNetwork: string }) => {
 }
 
 function getBlockchainsOptions(
-  userNetwork: string
+  chainType?: ChainType
 ): Record<string, { label: string; icon: React.ReactNode; value: string }> {
   const options = {
     [BlockchainEnum.NEAR]: {
@@ -406,7 +406,7 @@ function getBlockchainsOptions(
       value: BlockchainEnum.BITCOIN,
     },
   }
-  if (userNetwork !== "near:mainnet") {
+  if (chainType !== ChainType.Near) {
     delete (options as Partial<typeof options>)[BlockchainEnum.NEAR]
   }
   return options
@@ -414,7 +414,7 @@ function getBlockchainsOptions(
 
 function filterBlockchainsOptions(
   token: SwappableToken,
-  userNetwork: string
+  chainType?: ChainType
 ): Record<string, { label: string; icon: React.ReactNode; value: string }> {
   // TODO: use supportedTokensList
   if (isUnifiedToken(token)) {
@@ -428,7 +428,7 @@ function filterBlockchainsOptions(
       ) => {
         const key = assetNetworkAdapter[token.chainName]
         if (key) {
-          const option = getBlockchainsOptions(userNetwork)[key]
+          const option = getBlockchainsOptions(chainType)[key]
           if (option) {
             acc[key] = option
           }
@@ -438,16 +438,16 @@ function filterBlockchainsOptions(
       {}
     )
   }
-  return getBlockchainsOptions(userNetwork)
+  return getBlockchainsOptions(chainType)
 }
 
 function getDefaultBlockchainOptionValue(
   token: SwappableToken,
-  userNetwork: string
+  chainType?: ChainType
 ): string | undefined {
   if (!isUnifiedToken(token)) {
     const key = assetNetworkAdapter[token.chainName]
-    return key ? getBlockchainsOptions(userNetwork)[key]?.value : undefined
+    return key ? getBlockchainsOptions(chainType)[key]?.value : undefined
   }
   return undefined
 }
