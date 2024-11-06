@@ -1,11 +1,13 @@
 import { ExclamationTriangleIcon, PersonIcon } from "@radix-ui/react-icons"
 import {
+  Box,
   Button,
   Callout,
   Flex,
   Skeleton,
   Spinner,
   Text,
+  TextField,
 } from "@radix-ui/themes"
 import { useSelector } from "@xstate/react"
 import { parseUnits } from "ethers"
@@ -265,95 +267,99 @@ export const WithdrawForm = ({
           })}
           register={register}
         >
-          <div className={styles.selectWrapper}>
-            <Controller
-              name="blockchain"
-              control={control}
-              render={({ field }) => {
-                return (
-                  <Select
-                    name={field.name}
-                    value={field.value}
-                    onChange={field.onChange}
-                    disabled={Object.keys(blockchainSelectItems).length === 1}
-                    options={blockchainSelectItems}
-                    placeholder={{
-                      label: "Select network",
-                      icon: <EmptyIcon />,
-                    }}
-                    fullWidth
-                  />
-                )
+          <Flex direction={"column"} gap={"5"}>
+            <FieldComboInput<WithdrawFormNearValues>
+              fieldName="amountIn"
+              selected={token}
+              handleSelect={() => {
+                handleSelect()
               }}
+              className="border rounded-xl"
+              required="This field is required"
+              errors={errors}
+              balance={tokenInBalance}
+              register={register}
             />
-          </div>
-          <FieldComboInput<WithdrawFormNearValues>
-            fieldName="amountIn"
-            selected={token}
-            handleSelect={() => {
-              handleSelect()
-            }}
-            className="border rounded-t-xl"
-            required="This field is required"
-            errors={errors}
-            balance={tokenInBalance}
-          />
-          <Flex direction={"column"} gap={"2"}>
-            <Flex
-              gap="2"
-              align="center"
-              justify="between"
-              className={styles.input}
-            >
-              <input
-                {...register("recipient")}
-                placeholder="Enter wallet address"
+
+            <Flex direction={"column"} gap={"2"}>
+              <Box px={"2"} asChild>
+                <Text size={"1"} weight={"bold"}>
+                  Recipient
+                </Text>
+              </Box>
+              <Controller
+                name="blockchain"
+                control={control}
+                render={({ field }) => {
+                  return (
+                    <Select
+                      name={field.name}
+                      value={field.value}
+                      onChange={field.onChange}
+                      disabled={Object.keys(blockchainSelectItems).length === 1}
+                      options={blockchainSelectItems}
+                      placeholder={{
+                        label: "Select network",
+                        icon: <EmptyIcon />,
+                      }}
+                      fullWidth
+                    />
+                  )
+                }}
               />
-              <PersonIcon
-                width={20}
-                height={20}
-                className={styles.personIcon}
-                onClick={() => setValue("recipient", "")}
-              />
+
+              <Flex direction={"column"} gap={"1"}>
+                <TextField.Root
+                  size={"3"}
+                  {...register("recipient")}
+                  placeholder="Enter wallet address"
+                >
+                  <TextField.Slot>
+                    <PersonIcon height="16" width="16" />
+                  </TextField.Slot>
+                </TextField.Root>
+
+                {errors.recipient && (
+                  <Box px={"2"} asChild>
+                    <Text size={"1"} color={"red"} weight={"medium"}>
+                      {errors.recipient.message}
+                    </Text>
+                  </Box>
+                )}
+
+                {nep141StorageRequired && (
+                  <Callout.Root size={"1"} color="red">
+                    <Callout.Icon>
+                      <ExclamationTriangleIcon />
+                    </Callout.Icon>
+                    <Callout.Text>
+                      You need a small amount of this token in the withdrawal
+                      address to complete the transaction. Please send a small
+                      amount to the withdrawal address to proceed. We're working
+                      on a permanent fix.
+                    </Callout.Text>
+                  </Callout.Root>
+                )}
+              </Flex>
             </Flex>
-            {errors.recipient && (
-              <Text color="red">{errors.recipient.message}</Text>
-            )}
-            {nep141StorageRequired && (
-              <Callout.Root size={"1"} color="red">
-                <Callout.Icon>
-                  <ExclamationTriangleIcon />
-                </Callout.Icon>
-                <Callout.Text>
-                  You need a small amount of this token in the withdrawal
-                  address to complete the transaction. Please send a small
-                  amount to the withdrawal address to proceed. We're working on
-                  a permanent fix.
-                </Callout.Text>
-              </Callout.Root>
-            )}
-          </Flex>
 
-          <Flex
-            gap="2"
-            align="center"
-            justify="end"
-            className={styles.receivedAmount}
-          >
-            <Text>Received amount</Text>
+            <Flex justify={"between"} px={"2"}>
+              <Text size={"1"} weight={"medium"} color={"gray"}>
+                Received amount
+              </Text>
 
-            <Text className={styles.receivedAmountValue}>
-              {state.matches({ editing: "preparation" }) ? (
-                <Skeleton>100.000000</Skeleton>
-              ) : totalAmountReceived == null ? (
-                "–"
-              ) : (
-                formatTokenValue(totalAmountReceived, token.decimals)
-              )}{" "}
-              {token.symbol} @ {renderBlockchainLabel(blockchain)}
-            </Text>
-          </Flex>
-          <div className={styles.buttonGroup}>
+              <Text size={"1"} weight={"bold"}>
+                {state.matches({ editing: "preparation" }) ? (
+                  <Skeleton>100.000000</Skeleton>
+                ) : totalAmountReceived == null ? (
+                  "–"
+                ) : (
+                  formatTokenValue(totalAmountReceived, token.decimals)
+                )}{" "}
+                {token.symbol}
+              </Text>
+            </Flex>
+
             <Button
               variant="classic"
               size="3"
@@ -367,7 +373,7 @@ export const WithdrawForm = ({
                 <Text size="6">Withdraw</Text>
               </span>
             </Button>
-          </div>
+          </Flex>
         </Form>
 
         {renderIntentCreationResult(intentCreationResult)}
