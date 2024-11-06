@@ -33,7 +33,7 @@ import { Deposits } from "../Deposits"
 import styles from "./styles.module.css"
 
 // TODO: Temporary disable deposit through POA bridge
-const ENABLE_DEPOSIT_THROUGH_POA_BRIDGE = false
+const ENABLE_DEPOSIT_THROUGH_POA_BRIDGE = true
 
 export type DepositFormValues = {
   network: string

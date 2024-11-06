@@ -1,6 +1,6 @@
 import type * as types from "./types"
 
-const BASE_URL = "https://dev-bridge.chaindefuser.com"
+const BASE_URL = "https://bridge.chaindefuser.com"
 
 async function request(url: string, body: unknown): Promise<Response> {
   let response: Response
