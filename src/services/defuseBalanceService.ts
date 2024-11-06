@@ -3,11 +3,12 @@ import type { CodeResult } from "near-api-js/lib/providers/provider"
 import { settings } from "../config/settings"
 import type { BaseTokenInfo } from "../types/base"
 import { assert } from "../utils/assert"
+import type { DefuseUserId } from "../utils/defuse"
 
 type TokenBalances = Record<BaseTokenInfo["defuseAssetId"], bigint>
 
 export async function getDepositedBalances(
-  accountId: string,
+  accountId: DefuseUserId,
   tokenIds: BaseTokenInfo["defuseAssetId"][],
   nearClient: providers.Provider
 ): Promise<TokenBalances> {

@@ -1,10 +1,13 @@
+import { base64 } from "@scure/base"
+import { settings } from "../config/settings"
 import type { WalletMessage } from "../types"
 import type {
-  DefuseMessageFor_DefuseIntents,
   Intent,
+  Nep413DefuseMessageFor_DefuseIntents,
   TokenAmountsForInt128,
 } from "../types/defuse-contracts-types"
 import { assert } from "./assert"
+import type { DefuseUserId } from "./defuse"
 
 export const ONE_TGAS = 1_000000000000n
 
@@ -16,10 +19,10 @@ export function makeInnerSwapMessage({
 }: {
   amountsIn: Record<string, bigint>
   amountsOut: Record<string, bigint>
-  signerId: string
+  signerId: DefuseUserId
   deadlineTimestamp: number
-}): DefuseMessageFor_DefuseIntents {
-  const tokenDiff = {} as TokenAmountsForInt128
+}): Nep413DefuseMessageFor_DefuseIntents {
+  const tokenDiff: TokenAmountsForInt128 = {}
 
   for (const [token, amount] of Object.entries(amountsIn)) {
     tokenDiff[token] = (-amount).toString()
@@ -61,10 +64,11 @@ export function makeInnerSwapAndWithdrawMessage({
     amountsOut: Record<string, bigint>
   } | null
   withdrawParams: WithdrawParams
-  signerId: string
+  signerId: DefuseUserId
   deadlineTimestamp: number
-}): DefuseMessageFor_DefuseIntents {
-  const intents: NonNullable<DefuseMessageFor_DefuseIntents["intents"]> = []
+}): Nep413DefuseMessageFor_DefuseIntents {
+  const intents: NonNullable<Nep413DefuseMessageFor_DefuseIntents["intents"]> =
+    []
 
   if (swapParams) {
     const { intents: swapIntents } = makeInnerSwapMessage({
@@ -133,7 +137,7 @@ export function makeSwapMessage({
   recipient,
   nonce = randomDefuseNonce(),
 }: {
-  innerMessage: DefuseMessageFor_DefuseIntents
+  innerMessage: Nep413DefuseMessageFor_DefuseIntents
   recipient: string
   nonce?: Uint8Array
 }): WalletMessage {
@@ -143,9 +147,14 @@ export function makeSwapMessage({
       recipient,
       nonce,
     },
-    EIP712: {
-      // todo: This is a temporary implementation
-      json: "{}",
+    ERC191: {
+      message: JSON.stringify({
+        signer_id: innerMessage.signer_id,
+        verifying_contract: settings.defuseContractId,
+        deadline: innerMessage.deadline,
+        nonce: base64.encode(nonce),
+        intents: innerMessage.intents,
+      }),
     },
   }
 }

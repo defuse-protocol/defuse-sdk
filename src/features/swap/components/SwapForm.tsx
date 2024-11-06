@@ -235,6 +235,11 @@ export function renderIntentCreationResult(
         "It seems the message wasn’t signed in your wallet. Please try again."
       break
 
+    case "ERR_CANNOT_VERIFY_SIGNATURE":
+      content =
+        "We couldn’t verify your signature, please try again with another wallet."
+      break
+
     case "ERR_SIGNED_DIFFERENT_ACCOUNT":
       content =
         "The message was signed with a different wallet. Please try again."

@@ -4,6 +4,7 @@ import { WithdrawWidgetProvider } from "../../../providers/WithdrawWidgetProvide
 import type { WithdrawWidgetProps } from "../../../types/withdraw"
 import { isBaseToken } from "../../../utils"
 import { assert } from "../../../utils/assert"
+import { userAddressToDefuseUserId } from "../../../utils/defuse"
 import {
   makeInnerSwapAndWithdrawMessage,
   makeSwapMessage,
@@ -94,7 +95,7 @@ export const WithdrawWidget = (props: WithdrawWidgetProps) => {
                               tokenAccountId: tokenOutAccountId,
                               destinationAddress: recipient,
                             },
-                      signerId: context.userAddress,
+                      signerId: userAddressToDefuseUserId(context.userAddress),
                       deadlineTimestamp:
                         // Expiry time maybe zero if nothing to swap, so let's just fallback to the default
                         Math.floor(Date.now() / 1000) + 10 * 60,

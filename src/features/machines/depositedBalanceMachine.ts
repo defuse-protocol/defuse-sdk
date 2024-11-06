@@ -11,6 +11,7 @@ import { getDepositedBalances } from "../../services/defuseBalanceService"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../types/base"
 import { isBaseToken } from "../../utils"
 import { assert } from "../../utils/assert"
+import { userAddressToDefuseUserId } from "../../utils/defuse"
 
 export interface Input {
   parentRef: ParentActor
@@ -66,7 +67,7 @@ export const depositedBalanceMachine = setup({
         // If the token list is too large (>100 tokens) we should split it into multiple requests
         // and `UPDATE_BALANCE_SLICE` on receiving each response
         const balance = await getDepositedBalances(
-          userAccountId,
+          userAddressToDefuseUserId(userAccountId),
           input.defuseTokenIds,
           new providers.JsonRpcProvider({
             url: "https://nearrpc.aurora.dev",
