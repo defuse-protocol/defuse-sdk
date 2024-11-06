@@ -95,7 +95,6 @@ describe("makeInnerSwapAndWithdrawMessage()", () => {
           },
           {
             "amount": "200",
-            "gas": "15000000000000",
             "intent": "ft_withdraw",
             "receiver_id": "receiver.near",
             "token": "bar.near",
@@ -127,7 +126,6 @@ describe("makeInnerSwapAndWithdrawMessage()", () => {
         "intents": [
           {
             "amount": "200",
-            "gas": "15000000000000",
             "intent": "ft_withdraw",
             "receiver_id": "receiver.near",
             "token": "bar.near",
@@ -159,7 +157,6 @@ describe("makeInnerSwapAndWithdrawMessage()", () => {
         "intents": [
           {
             "amount": "200",
-            "gas": "15000000000000",
             "intent": "ft_withdraw",
             "memo": "WITHDRAW_TO:0xdead",
             "receiver_id": "bar-poa-bridge-token.near",
