@@ -29,7 +29,8 @@ export const getNearNativeBalance = async ({
       ? 0n
       : balance - RESERVED_NEAR_BALANCE
   } catch (err: unknown) {
-    throw new Error("Error fetching balance", { cause: err })
+    console.warn(err, "error fetching near native balance")
+    return 0n
   }
 }
 
@@ -58,7 +59,8 @@ export const getNearNep141Balance = async ({
     const balance = BigInt(parsed)
     return balance
   } catch (err: unknown) {
-    throw new Error("Error fetching balance", { cause: err })
+    console.warn(err, "error fetching near nep141 balance")
+    return 0n
   }
 }
 

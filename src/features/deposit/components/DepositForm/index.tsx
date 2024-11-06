@@ -21,7 +21,11 @@ import { NetworkIcon } from "../../../../components/Network/NetworkIcon"
 import { Select } from "../../../../components/Select/Select"
 import { useModalStore } from "../../../../providers/ModalStoreProvider"
 import { ModalType } from "../../../../stores/modalStore"
-import { BlockchainEnum, type SwappableToken } from "../../../../types"
+import {
+  BlockchainEnum,
+  SignInType,
+  type SwappableToken,
+} from "../../../../types"
 import { formatTokenValue } from "../../../../utils/format"
 import { isBaseToken, isUnifiedToken } from "../../../../utils/token"
 import { DepositUIMachineContext } from "../DepositUIMachineProvider"
@@ -38,7 +42,7 @@ export type DepositFormValues = {
   userAddress: string | null
 }
 
-export const DepositForm = () => {
+export const DepositForm = ({ userNetwork }: { userNetwork: string }) => {
   const {
     handleSubmit,
     register,
@@ -128,11 +132,11 @@ export const DepositForm = () => {
   }
 
   useEffect(() => {
-    if (token && getDefaultBlockchainOptionValue(token)) {
-      const networkOption = getDefaultBlockchainOptionValue(token)
+    if (token && getDefaultBlockchainOptionValue(token, userNetwork)) {
+      const networkOption = getDefaultBlockchainOptionValue(token, userNetwork)
       setValue("network", networkOption ?? "")
     }
-  }, [token, setValue])
+  }, [token, setValue, userNetwork])
 
   const balanceInsufficient = isInsufficientBalance(
     amount,
@@ -177,14 +181,16 @@ export const DepositForm = () => {
                 control={control}
                 render={({ field }) => (
                   <Select
-                    options={filterBlockchainsOptions(token)}
+                    options={filterBlockchainsOptions(token, userNetwork)}
                     placeholder={{
                       label: "Select network",
                       icon: <EmptyIcon />,
                     }}
                     fullWidth
                     value={
-                      getDefaultBlockchainOptionValue(token) || network || ""
+                      getDefaultBlockchainOptionValue(token, userNetwork) ||
+                      network ||
+                      ""
                     }
                     disabled={!isUnifiedToken(token)}
                     onChange={field.onChange}
@@ -195,78 +201,82 @@ export const DepositForm = () => {
               />
             </div>
           )}
-          {network === BlockchainEnum.NEAR && userAddress && (
-            <>
-              <Input
-                name="amount"
-                value={watch("amount")}
-                onChange={(value) => setValue("amount", value)}
-                type="number"
-                ref={(ref) => {
-                  if (network === BlockchainEnum.NEAR && ref) {
-                    ref.focus()
-                  }
-                  amountInputRef.current = ref
-                }}
-                className={styles.amountInput}
-                slotRight={
-                  <div className={styles.balanceBoxWrapper}>
-                    {token &&
-                      isBaseToken(token) &&
-                      token.address === "wrap.near" && (
-                        <TooltipInfo icon={<InfoCircledIcon color="orange" />}>
-                          Combined balance of NEAR and wNEAR.
-                          <br /> NEAR will be automatically wrapped to wNEAR
-                          <br /> if your wNEAR balance isn't sufficient for the
-                          swap.
-                          <br />
-                          Note that to cover network fees, we reserve
-                          {` ${formatTokenValue(
-                            RESERVED_NEAR_BALANCE,
-                            token.decimals
-                          )} NEAR`}
-                          <br /> in your wallet.
-                        </TooltipInfo>
-                      )}
-                    <BlockMultiBalances
-                      balance={
-                        token &&
+          {userNetwork === "near:mainnet" &&
+            network === BlockchainEnum.NEAR &&
+            userAddress && (
+              <>
+                <Input
+                  name="amount"
+                  value={watch("amount")}
+                  onChange={(value) => setValue("amount", value)}
+                  type="number"
+                  ref={(ref) => {
+                    if (network === BlockchainEnum.NEAR && ref) {
+                      ref.focus()
+                    }
+                    amountInputRef.current = ref
+                  }}
+                  className={styles.amountInput}
+                  slotRight={
+                    <div className={styles.balanceBoxWrapper}>
+                      {token &&
                         isBaseToken(token) &&
-                        token.address === "wrap.near"
-                          ? balance + nativeBalance
-                          : balance
-                      }
-                      decimals={token?.decimals ?? 0}
-                      handleClick={() => handleSetMaxValue()}
-                      disabled={false}
-                      className={styles.blockMultiBalances}
-                    />
-                  </div>
-                }
-              />
-              <div className={styles.buttonGroup}>
-                <Button
-                  variant="classic"
-                  size="3"
-                  radius="large"
-                  className={`${styles.button}`}
-                  color="orange"
-                  disabled={!watch("amount") || balanceInsufficient}
-                >
-                  <span className={styles.buttonContent}>
-                    <Spinner loading={false} />
-                    <Text size="6">
-                      {watch("amount") >= "0"
-                        ? balanceInsufficient
-                          ? "Insufficient Balance"
-                          : "Deposit"
-                        : "Deposit"}
-                    </Text>
-                  </span>
-                </Button>
-              </div>
-            </>
-          )}
+                        token.address === "wrap.near" && (
+                          <TooltipInfo
+                            icon={<InfoCircledIcon color="orange" />}
+                          >
+                            Combined balance of NEAR and wNEAR.
+                            <br /> NEAR will be automatically wrapped to wNEAR
+                            <br /> if your wNEAR balance isn't sufficient for
+                            the swap.
+                            <br />
+                            Note that to cover network fees, we reserve
+                            {` ${formatTokenValue(
+                              RESERVED_NEAR_BALANCE,
+                              token.decimals
+                            )} NEAR`}
+                            <br /> in your wallet.
+                          </TooltipInfo>
+                        )}
+                      <BlockMultiBalances
+                        balance={
+                          token &&
+                          isBaseToken(token) &&
+                          token.address === "wrap.near"
+                            ? balance + nativeBalance
+                            : balance
+                        }
+                        decimals={token?.decimals ?? 0}
+                        handleClick={() => handleSetMaxValue()}
+                        disabled={false}
+                        className={styles.blockMultiBalances}
+                      />
+                    </div>
+                  }
+                />
+                <div className={styles.buttonGroup}>
+                  <Button
+                    variant="classic"
+                    size="3"
+                    radius="large"
+                    className={`${styles.button}`}
+                    color="orange"
+                    disabled={!watch("amount") || balanceInsufficient}
+                  >
+                    <span className={styles.buttonContent}>
+                      <Spinner loading={false} />
+                      <Text size="6">
+                        {watch("amount") >= "0"
+                          ? balanceInsufficient
+                            ? "Insufficient Balance"
+                            : "Deposit"
+                          : "Deposit"}
+                      </Text>
+                    </span>
+                  </Button>
+                </div>
+              </>
+            )}
           {ENABLE_DEPOSIT_THROUGH_POA_BRIDGE &&
             network &&
             network !== BlockchainEnum.NEAR &&
@@ -341,11 +351,10 @@ export const DepositForm = () => {
   )
 }
 
-function getBlockchainsOptions(): Record<
-  string,
-  { label: string; icon: React.ReactNode; value: string }
-> {
-  return {
+function getBlockchainsOptions(
+  userNetwork: string
+): Record<string, { label: string; icon: React.ReactNode; value: string }> {
+  const options = {
     [BlockchainEnum.NEAR]: {
       label: "Near",
       icon: (
@@ -397,10 +406,15 @@ function getBlockchainsOptions(): Record<
       value: BlockchainEnum.BITCOIN,
     },
   }
+  if (userNetwork !== "near:mainnet") {
+    delete (options as Partial<typeof options>)[BlockchainEnum.NEAR]
+  }
+  return options
 }
 
 function filterBlockchainsOptions(
-  token: SwappableToken
+  token: SwappableToken,
+  userNetwork: string
 ): Record<string, { label: string; icon: React.ReactNode; value: string }> {
   // TODO: use supportedTokensList
   if (isUnifiedToken(token)) {
@@ -414,7 +428,7 @@ function filterBlockchainsOptions(
       ) => {
         const key = assetNetworkAdapter[token.chainName]
         if (key) {
-          const option = getBlockchainsOptions()[key]
+          const option = getBlockchainsOptions(userNetwork)[key]
           if (option) {
             acc[key] = option
           }
@@ -424,15 +438,16 @@ function filterBlockchainsOptions(
       {}
     )
   }
-  return getBlockchainsOptions()
+  return getBlockchainsOptions(userNetwork)
 }
 
 function getDefaultBlockchainOptionValue(
-  token: SwappableToken
+  token: SwappableToken,
+  userNetwork: string
 ): string | undefined {
   if (!isUnifiedToken(token)) {
     const key = assetNetworkAdapter[token.chainName]
-    return key ? getBlockchainsOptions()[key]?.value : undefined
+    return key ? getBlockchainsOptions(userNetwork)[key]?.value : undefined
   }
   return undefined
 }

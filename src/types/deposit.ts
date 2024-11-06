@@ -1,8 +1,14 @@
 import type { SwappableToken } from "../types"
 
+export enum SignInType {
+  NearWalletSelector = "near-wallet-selector",
+  Wagmi = "wagmi",
+}
+
 export type DepositWidgetProps = {
   tokenList: SwappableToken[]
   userAddress: string | null
+  userNetwork: string | undefined
   sendTransactionNear: (transactions: Transaction[]) => Promise<string>
   onEmit?: (event: DepositEvent) => void
 }
