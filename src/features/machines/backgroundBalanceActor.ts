@@ -36,12 +36,13 @@ export const backgroundBalanceActor = fromPromise(
       case BlockchainEnum.NEAR:
         return {
           balance: assetAddress
-            ? await getNearNep141Balance({
+            ? ((await getNearNep141Balance({
                 tokenAddress: assetAddress,
                 accountId: userAddress,
-              })
+              })) ?? 0n)
             : 0n,
-          nativeBalance: await getNearNativeBalance({ accountId: userAddress }),
+          nativeBalance:
+            (await getNearNativeBalance({ accountId: userAddress })) ?? 0n,
         }
       default:
         return {
