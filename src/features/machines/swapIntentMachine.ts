@@ -34,6 +34,15 @@ type IntentOperationParams =
       recipient: string
     }
 
+export type IntentDescription =
+  | {
+      type: "swap"
+    }
+  | {
+      type: "withdraw"
+      amountWithdrawn: bigint
+    }
+
 type Context = {
   userAddress: string
   nearClient: providers.Provider
@@ -82,6 +91,7 @@ export type Output =
   | {
       status: "INTENT_PUBLISHED"
       intentHash: string
+      intentDescription: IntentDescription
     }
 
 type Events = BackgroundQuoterEvents
@@ -225,9 +235,33 @@ export const swapIntentMachine = setup({
 
   output: ({ context }): Output => {
     if (context.intentHash != null) {
-      return {
-        status: "INTENT_PUBLISHED",
-        intentHash: context.intentHash,
+      const intentType = context.intentOperationParams.type
+      switch (intentType) {
+        case "swap":
+          return {
+            status: "INTENT_PUBLISHED",
+            intentHash: context.intentHash,
+            intentDescription: { type: "swap" },
+          }
+        case "withdraw": {
+          const { quote, directWithdrawalAmount } =
+            context.intentOperationParams
+
+          const totalAmountWithdrawn =
+            directWithdrawalAmount + (quote?.totalAmountOut ?? 0n)
+
+          return {
+            status: "INTENT_PUBLISHED",
+            intentHash: context.intentHash,
+            intentDescription: {
+              type: "withdraw",
+              amountWithdrawn: totalAmountWithdrawn,
+            },
+          }
+        }
+        default:
+          intentType satisfies never
+          throw new Error("exhaustive check failed")
       }
     }
 

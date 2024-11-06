@@ -251,6 +251,7 @@ export const withdrawUIMachine = setup({
             tokenIn: formValues.tokenIn,
             tokenOut: formValues.tokenOut,
             quote: quote,
+            intentDescription: output.intentDescription,
           },
         })
 

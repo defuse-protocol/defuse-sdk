@@ -2,6 +2,7 @@ import { Box, Button, Flex, Link, Spinner, Text } from "@radix-ui/themes"
 import { useSelector } from "@xstate/react"
 import type { ActorRefFrom, StateValueFrom } from "xstate"
 import type { intentStatusMachine } from "../../features/machines/intentStatusMachine"
+import { assert } from "../../utils/assert"
 import { formatTokenValue } from "../../utils/format"
 import { AssetComboIcon } from "../Asset/AssetComboIcon"
 import { CopyButton } from "./CopyButton"
@@ -16,8 +17,10 @@ export function WithdrawIntentCard({
   intentStatusActorRef,
 }: WithdrawIntentCardProps) {
   const state = useSelector(intentStatusActorRef, (state) => state)
-  const { tokenOut } = state.context
-  const { totalAmountOut } = state.context.quote
+  const { tokenOut, intentDescription } = state.context
+
+  assert(intentDescription.type === "withdraw", "Type must be withdraw")
+  const amountWithdrawn = intentDescription.amountWithdrawn
 
   const txUrl =
     state.context.txHash != null
@@ -110,7 +113,7 @@ export function WithdrawIntentCard({
             }}
           >
             +
-            {formatTokenValue(totalAmountOut, tokenOut.decimals, {
+            {formatTokenValue(amountWithdrawn, tokenOut.decimals, {
               min: 0.0001,
               fractionDigits: 4,
             })}{" "}

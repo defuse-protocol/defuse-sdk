@@ -12,6 +12,7 @@ import {
 } from "../../services/intentService"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../types/base"
 import type { AggregatedQuote } from "./queryQuoteMachine"
+import type { IntentDescription } from "./swapIntentMachine"
 
 type ChildEvent = {
   type: "INTENT_SETTLED"
@@ -33,6 +34,7 @@ export const intentStatusMachine = setup({
       tokenIn: BaseTokenInfo | UnifiedTokenInfo
       tokenOut: BaseTokenInfo | UnifiedTokenInfo
       quote: AggregatedQuote
+      intentDescription: IntentDescription
     },
     context: {} as {
       parentRef: ParentActor
@@ -41,6 +43,7 @@ export const intentStatusMachine = setup({
       tokenOut: BaseTokenInfo | UnifiedTokenInfo
       quote: AggregatedQuote
       txHash: string | null
+      intentDescription: IntentDescription
     },
   },
   actions: {
@@ -80,6 +83,7 @@ export const intentStatusMachine = setup({
       tokenOut: input.tokenOut,
       quote: input.quote,
       txHash: null,
+      intentDescription: input.intentDescription,
     }
   },
   states: {
