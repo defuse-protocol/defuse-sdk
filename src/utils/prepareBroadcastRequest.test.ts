@@ -38,7 +38,7 @@ describe("prepareSwapSignedData()", () => {
   it("should return the correct signed data for an ERC191 signature", () => {
     const signature: ERC191SignatureData = {
       type: "ERC191",
-      signatureData: "0xdeadbeef",
+      signatureData: "0xdeadbeef1c",
       signedData: walletMessage.ERC191,
     }
 

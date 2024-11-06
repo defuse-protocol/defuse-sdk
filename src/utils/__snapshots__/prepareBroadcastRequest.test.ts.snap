@@ -17,7 +17,7 @@ exports[`prepareSwapSignedData() > should return the correct signed data for a N
 exports[`prepareSwapSignedData() > should return the correct signed data for an ERC191 signature 1`] = `
 {
   "payload": "{"foo":"bar"}",
-  "signature": "secp256k1:6h8cQN",
+  "signature": "secp256k1:S88bG7i",
   "standard": "erc191",
 }
 `;
