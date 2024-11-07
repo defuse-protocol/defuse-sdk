@@ -157,7 +157,7 @@ export const SwapForm = () => {
             openModalSelectAssets("tokenIn")
           }}
           className="border rounded-t-xl"
-          required="This field is required"
+          required
           errors={errors}
           balance={tokenInBalance}
         />
@@ -173,7 +173,6 @@ export const SwapForm = () => {
             openModalSelectAssets("tokenOut")
           }}
           className="border rounded-b-xl mb-5"
-          required="This field is required"
           errors={errors}
           disabled={true}
           isLoading={snapshot.matches({ editing: "waiting_quote" })}

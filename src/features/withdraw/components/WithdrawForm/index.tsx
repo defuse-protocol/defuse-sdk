@@ -275,7 +275,7 @@ export const WithdrawForm = ({
                 handleSelect()
               }}
               className="border rounded-xl"
-              required="This field is required"
+              required
               errors={errors}
               balance={tokenInBalance}
               register={register}
