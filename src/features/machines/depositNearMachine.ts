@@ -157,10 +157,12 @@ export const depositNearMachine = setup({
             },
             {
               type: "setError",
-              params: ({ event }) => ({
-                status: "ERR_SUBMITTING_TRANSACTION",
-                error: toError(event.error),
-              }),
+              params: ({ event }) => {
+                return {
+                  status: "ERR_SUBMITTING_TRANSACTION",
+                  error: toError(event.error),
+                }
+              },
             },
           ],
         },

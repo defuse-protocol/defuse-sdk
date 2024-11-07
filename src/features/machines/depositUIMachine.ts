@@ -119,8 +119,7 @@ export const depositUIMachine = setup({
       }),
     }),
     setDepositNearResult: assign({
-      depositNearResult: (_, value: DepositNearMachineOutput) =>
-        value.status === "DEPOSIT_COMPLETED" ? value : null,
+      depositNearResult: (_, value: DepositNearMachineOutput) => value,
     }),
     setDepositGenerateAddressResult: assign({
       generatedAddressResult: (_, value: DepositGenerateAddressMachineOutput) =>

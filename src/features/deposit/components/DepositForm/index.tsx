@@ -29,6 +29,7 @@ import {
 } from "../../../../types"
 import { formatTokenValue } from "../../../../utils/format"
 import { isBaseToken, isUnifiedToken } from "../../../../utils/token"
+import type { Context } from "../../../machines/depositUIMachine"
 import { DepositUIMachineContext } from "../DepositUIMachineProvider"
 import { Deposits } from "../Deposits"
 import styles from "./styles.module.css"
@@ -56,6 +57,7 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
   const depositUIActorRef = DepositUIMachineContext.useActorRef()
   const snapshot = DepositUIMachineContext.useSelector((snapshot) => snapshot)
   const generatedAddressResult = snapshot.context.generatedAddressResult
+  const depositNearResult = snapshot.context.depositNearResult
 
   const { token, network, amount, balance, nativeBalance, userAddress } =
     DepositUIMachineContext.useSelector((snapshot) => {
@@ -343,7 +345,7 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
           network &&
           network !== BlockchainEnum.NEAR &&
           !ENABLE_DEPOSIT_THROUGH_POA_BRIDGE && <UnderFeatureFlag />}
-        {token && !userAddress && renderDepositWarning(userAddress)}
+        {token && renderDepositWarning(userAddress, depositNearResult)}
         {userAddress && network === BlockchainEnum.NEAR && (
           <Deposits depositNearResult={snapshot.context.depositNearResult} />
         )}
@@ -480,10 +482,28 @@ function isInsufficientBalance(
   return false
 }
 
-function renderDepositWarning(userAddress: string | null) {
+function renderDepositWarning(
+  userAddress: string | null,
+  depositNearResult: Context["depositNearResult"]
+) {
   let content: ReactNode = null
   if (!userAddress) {
     content = "Please connect your wallet to continue"
+  }
+  if (depositNearResult !== null) {
+    const status = depositNearResult.status
+    switch (status) {
+      case "ERR_SUBMITTING_TRANSACTION":
+        content =
+          "It seems the transaction was rejected in your wallet. Please try again."
+        break
+      default:
+        content = "An error occurred. Please try again."
+    }
+  }
+
+  if (!content) {
+    return null
   }
 
   return (
