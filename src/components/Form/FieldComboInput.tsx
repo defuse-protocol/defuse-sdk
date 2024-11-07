@@ -22,7 +22,7 @@ interface Props<T extends FieldValues>
   extends Omit<BlockMultiBalancesProps, "decimals" | "balance"> {
   fieldName: Path<T>
   register?: UseFormRegister<T>
-  required?: string
+  required?: boolean
   placeholder?: string
   label?: string | React.ReactNode
   price?: string
