@@ -1,18 +1,17 @@
 import { useQuery } from "@tanstack/react-query"
-import { getSupportedTokens } from "src/services/poaBridgeClient"
+import { getDepositStatus } from "src/services/poaBridgeClient"
 import type { BlockchainEnum } from "src/types"
 
 const queryKey = "poa-bridge"
 
-export const getSupportedTokensKey = [queryKey, "get-supported-tokens"]
+export const getDepositStatusKey = [queryKey, "get-deposit-status"]
 
-// TODO: Probably we don't need this hook
-export const useGetSupportedTokens = (
-  params: { chains?: BlockchainEnum[] },
+export const useGetDepositStatus = (
+  params: { account_id: string; chain: string },
   options = {}
 ) =>
   useQuery({
-    queryKey: getSupportedTokensKey,
-    queryFn: () => getSupportedTokens(params),
+    queryKey: getDepositStatusKey,
+    queryFn: () => getDepositStatus(params),
     ...options,
   })

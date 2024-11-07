@@ -42,3 +42,7 @@ export interface BaseAssetInfo {
   icon: string
   symbol: string
 }
+
+export type DepositSnapshot = {
+  txHash: string
+}
