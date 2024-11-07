@@ -227,19 +227,16 @@ export const swapUIMachine = setup({
         { context, spawn, self },
         output: SwapIntentMachineOutput
       ) => {
-        if (output.status !== "INTENT_PUBLISHED") return context.intentRefs
-
-        // todo: take quote from result of `swap`
-        assert(context.quote != null, "quote is null")
+        if (output.tag !== "ok") return context.intentRefs
 
         const intentRef = spawn("intentStatusActor", {
-          id: `intent-${output.intentHash}`,
+          id: `intent-${output.value.intentHash}`,
           input: {
             parentRef: self,
-            intentHash: output.intentHash,
+            intentHash: output.value.intentHash,
             tokenIn: context.formValues.tokenIn,
             tokenOut: context.formValues.tokenOut,
-            intentDescription: output.intentDescription,
+            intentDescription: output.value.intentDescription,
           },
         })
 

@@ -218,17 +218,14 @@ function Intents({
 export function renderIntentCreationResult(
   intentCreationResult: Context["intentCreationResult"]
 ) {
-  if (!intentCreationResult) {
+  if (!intentCreationResult || intentCreationResult.tag === "ok") {
     return null
   }
 
   let content: ReactNode = null
 
-  const status = intentCreationResult.status
+  const status = intentCreationResult.value.reason
   switch (status) {
-    case "INTENT_PUBLISHED":
-      return null
-
     case "ERR_USER_DIDNT_SIGN":
       content =
         "It seems the message wasn’t signed in your wallet. Please try again."
