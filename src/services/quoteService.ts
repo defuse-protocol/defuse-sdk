@@ -186,3 +186,7 @@ function onlyValidQuotes(quotes: QuoteResults): NonNullable<QuoteResults> {
   if (quotes === null) return []
   return quotes.filter((q): q is NonNullable<typeof q> => q !== null)
 }
+
+export function isAggregatedQuoteEmpty(a: AggregatedQuote): boolean {
+  return !a.quoteHashes.length || a.totalAmountOut === 0n
+}

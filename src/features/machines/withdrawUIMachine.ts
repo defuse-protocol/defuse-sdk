@@ -11,7 +11,10 @@ import {
   spawnChild,
 } from "xstate"
 import { settings } from "../../config/settings"
-import type { AggregatedQuote } from "../../services/quoteService"
+import {
+  type AggregatedQuote,
+  isAggregatedQuoteEmpty,
+} from "../../services/quoteService"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../types/base"
 import type { Transaction } from "../../types/deposit"
 import { isBaseToken } from "../../utils"
@@ -273,7 +276,9 @@ export const withdrawUIMachine = setup({
       const swapRequired = context.withdrawalSpec.swapParams != null
       if (swapRequired) {
         isValid =
-          isValid && context.quote != null && context.quote.totalAmountOut > 0n
+          isValid &&
+          context.quote != null &&
+          !isAggregatedQuoteEmpty(context.quote)
       }
 
       const nep141StorageRequired =
@@ -352,9 +357,12 @@ export const withdrawUIMachine = setup({
     isPreparationOk: ({ context }) => {
       return context.preparationOutput?.tag === "ok"
     },
+
+    isQuoteNotEmpty: (_, quote: AggregatedQuote) =>
+      !isAggregatedQuoteEmpty(quote),
   },
 }).createMachine({
-  /** @xstate-layout N4IgpgJg5mDOIC5QHcCWAXAFhATgQ2QFoBXVAYgEkA5AFQFFaB9AZTppoBk6ARAbQAYAuolAAHAPawMqcQDsRIAB6JCAVlUAWAHQAOAOwA2AEwBOEwf4BGfUYA0IAJ4q9ey1oN71rjZaMBmHT8jAF9g+zQsXAIScg4AeQBxagFhJBAJKXQZeTTlBA8tSxMrAwMTP0t+Iw0reycEQhc-LSMjD1V+Pz9VSwMNHVDwjGx8IlIyeIS4gFUaFIUM6TkFPMIjX10NdZ0NPXW9vz665z1m1vbO7t7+wZAIkejSLUhpWSgyCDkwLVh0PHRvvcomNUM8IK8oPM0ossstcogNF0tHoTKo9p5+qpAh5jg1rM0zJZdusfHodJY9LcgaMYmCIWQAOoUGgACW4ACUAIIMxgAMTi7IAsloAFRQsSSJY5UCrDTmdx+Ew6KxmAJFU64wiHPRaXa7Pz8YpBSxU4bA2kvLJvMgAIU5HE5VAAwnRGE6WY6EjxxelJbDpUoVESzp0TJYOvp+GVypqAvwtFG-BoykYdIFwyEwnczTSnpbUNa7Q7na73Z7vZZUhLMtkVoh-AmzKoDX1+DoTIY2prrG4An0Anpkx2iQZTZFc6D89amayOdy+QLBXyKHQONxmG6PVQvXwhAs-bX4Q0Om5NFUkwFDmjAt2jKpdcYijpVBZPM-M0Nx49J+Cre8qHQPIAIrTHE9A+jCh4yioSoGMivTKqYHQopYsaaIUHiKmmFT6F0o5ZtS350n+WioBAAA2YBkLAxAAEYALYYBBB5wtBDRkkYCbqDU-BWEY-D9BosYbGm5IGPoxREmGlIETmRFTlAWiiDgYCiHg+D+h8Xw-H8AJaIRILEQWinKap6n-NkzE1qxgbsXe7iuOU4lki4BiqJq8oeL45RVOSRQmrJX6GQpSkqWpGnZKFYCMGAihgAAxsQ-qMCpACOpAqfRYCyOgsBabI3y-P8gJycFv7GVF4UWXIUUxXFiXJWlGVgFlOWwFZUp1seg7InKuyaKqqZCY4iCWJYBqFGNAl+aopgBZ+DxlRClXmf6tWxQlSXZClYDpagmXZbl+WFbpJVBRa5VvCtEU1aZdWbY1u3Na1uW8JW+7WQGqxdDqbZJlYY01B0w31GNE1jZU-RjbNYZjotF3LaZVVrXdG0NdtTX7S1h15Z8BU6cV+mlQjJFI6tkWo-VW1yDte0HW1vBGFWvqfV1WrdAmOx7GevGGESuK+P0hRRkYehRr0AlYnD5p5pdJlheTt0qfd6M05j9O5VotF4OReCyPFgJ4BCjAAGbiDgjDa7r+tUUWjoupu5a7szkE2aspjNLsZRYgEGgvsYuI7PeZT8Ci6x+Ci57SxORlXWTN2yOtVOPXT2NtVrOt6wbpEUVRHX+mzfs6hoWzVKoRqpj0uLGNoyapq07anKHAyBfDsuIwrCdJw9GNPVjL2wBn1vZ2RlFkG9LssV9Kii-ef1KmilwCahI35GUur6H7AmKsU-CqNH8ly9d1WJ5TPdq33GuDwVohEpYjC-ObeAwJbmc21oEBgACOCMbIxm089HGx1SKyAAG7iAANZnTbj+DuZku5n1VrIAB-ccZaBvnfB+6An4vytlnb4n9v6-3-urNOuUEAFnAfFE+KR85QVsoQHY2h1QuGBuiFEuJua6hMKSMargrDkgPktUmncT7PGTr3VOA9gFFT0gZEmFV45iLRtTZBpCB50LdqNUwupESST2ONH2AtWj3jVH0dsW8kwfmzOdduIj4HKIkRfKRaDYDIDwKIRg6VxB6VHlRACwFQLgT3NCKebNLxaGbNYHwY00wGHGiDUafRmE9GiZoMWzZrHyLsYo0Ra0VEp0AenNxHivHEB8d8Px48QnVk6keQgPFImHA7MYaaHYeECyxCYLQViyT9DKOSNMQiFFxxUoQJRmlNHTwaG0bQodMSol4lGEw1RcT+DgqHZufQKShzKH4YZOTRlgHGXk7I493qhNZvU3YbgVk6DaOJIk6wKRrMOAmMWLhegGisFiFuC0ZaghogxDAf5gGUMgYVdxoh2RgBNlMrqFh7zlE0OSNoHQPCJOPPGGGaI+ilGKK0A5gK6KMXQKCsAOAcDmyUrrdAZsf4-ChTCuFNSWZ1LYgYDmKK-p3hWesdyq9iiRMCCs3ZpxoYaCJT8ElILjJkACYwECYE6DwqPJy+M4Zm5bHDP0VZq8tTiV6lYUkHZ1iZizLIcQn94BpGyagD67KGEQ20NUKwhoOx+0RZqcu3TqgDLDHoxE+F-kxwUg6gu9TKilBaDUSoZhBwvj3pqZMc8eHeyNEURU+9W4AtjopPx4b6GrFcM0H54lmndC6N2VwWhyjeA7CiTw3EpUhQmfQ120zCCVGsDGt18bPVJtXhUTiUlXCaAWYOFtR821K2igUyRRTcqFq0Q0Ds8ZXVxo9YmgV9QfA6ATJ0QcrRvChmzSGw+cDkYU2VvO5xi7B54JtsuztHR7wl1aH7Cuz4V71FfbWiOVRTC4WMN0Kdl7FanxvU4tRl8yEPrftndxxt6Wv2HmAZ9bNUw6nVeoKMHgwx3k4WSQoPC-b8R4UeyVObQ3TtObOlWqiUFXyHvgj+XwMP1LvG4aw-FUwtmKOXOwgqKi6HEiqFZ6I-ZgfsVe+jt6YMuPTo+keucONsTWDo-hxhcP8RLm5XE5czjlx0B4AxAR1DSdyQ4lGUHz4Kfveg1SmDH74FwQh9DlzHWrD5b2zdCavWrz-UEUoyZwzanGpZo5snINzug0xuDjnb4+CwTg6KymCFfwpcQt48WB5qYYZvXz7r-ODt-Ss9wcpcOdEM-oSL8trPXti3Z3LaCMHJZc8-NL7m2MFXy8WoVyosTiXJP0HegdFSFAjnGwciIkwyXPcIqz0XxHNfUTjPrMFDQtFTBJVEYYBICwqN0gSDzuhpjlM+Orx98lxbW8UqFZSKkbe6vu8wpgxb+AjK4AWF3CjnZhkmMofQrszsTvJlr93SneL0njDztSI3qd6KY3wqZEUEtFnoTpz5ImA3DOYWabYQd0bB7d2DA9GVQ-Kb41TnmEcMObPGN7a7Pttm+6vcMJnkRYmsMOQHpwicNZquDu7ms2v3w6y-aHcO2V09WCZtwDddvl0hp0qwhQ7ziTRLNTlngBfLeF2T1rTn2vYNc9FKXPXpcdrZuSM4O2UR7ZV+z35uiTP9DJBUOUeuIPXe2rD57U1dTdB9isrCbP6g711HseJ5QDRu919Ri9JF-e06Lc4JMG8xb9RbF0TFWoXDIlcIYKwrgbAC5OYLgM1vONCqVDUEOpHAiYu6c+XeaY7zF9FlRhbtIgWkr-M9tE2h4lBD3r4TlVd9XkZaAETe54wxBCo6EIAA */
+  /** @xstate-layout N4IgpgJg5mDOIC5QHcCWAXAFhATgQ2QFoBXVAYgEkA5AFQFFaB9AZTppoBk6ARAbQAYAuolAAHAPawMqcQDsRIAB6JCAVlUAWAHQAOAOwA2AEwBOEwf4BGfUYA0IAJ4q9ey1oN71rjZaMBmHT8jAF9g+zQsXAIScg4AeQBxagFhJBAJKXQZeTTlBA8tSxMrAwMTP0t+Iw0reycEQhc-LSMjD1V+Pz9VSwMNHVDwjGx8IlIyeIS4gFUaFIUM6TkFPMIjX10NdZ0NPXW9vz665z1m1vbO7t7+wZAIkejSLUhpWSgyCDkwLVh0PHRvvcomNUM8IK8oPM0ossstcogNF0tHoTKo9p5+qpAh5jg1rM0zJZdusfHodJY9LcgaMYmCIWQAOoUGgACW4ACUAIIMxgAMTi7IAsloAFRQsSSJY5UCrDTmdx+Ew6KxmAJFU64wiHPRaXa7Pz8YpBSxU4bA2kvLJvMgAIU5HE5VAAwnRGE6WY6EjxxelJbDpUoVESzp0TJYOvp+GVypqAvwtFG-BoykYdIFwyEwnczTSnpbUNa7Q7na73Z7vZZUhLMtkVoh-AmzKoDX1+DoTIY2prrG4An0Anpkx2iQZTZFc6D89amayOdy+QLBXyKHQONxmG6PVQvXwhAs-bX4Q0Om5NFUkwFDmjAt2jKpdcYijpVBZPM-M0Nx49J+Cre8qHQPIAIrTHE9A+jCh4ykGUYmFohz8D0YZyjoqYGJqphwVibbNr0BiWBSGgaGODwgnSf5aKgEAADZgGQsDEAARgAthgEEHnC0ENGSRgJuoNT8FYRj8P0GixhsabkgY+jFESYaUlm1LfuRBZQFoog4GAoh4Pg-ofF8Px-ACWhKWRU5qRpWk6f82TsTWnGBtxd7uK45TSWSLgGKomryh4vjlFU5JFCaik5sp5nqZp2m6dkkVgIwYCKGAADGxD+owmkAI6kJpzFgLI6CwPpsjfL8-yAmFZm-qpcXRTZchxQlSWpelWU5WAeUFbAdlSnWx6Dsicq7JoqqpmJjiIARBqFARIlBaopghZ+pEWtVby1dZ-qNYlKVpdkGVgNlqC5flhXFaVRkVV+VUQhtMUNZZTW7a1h3tZ1hW8JW+72QGqxdDqbZJlYBE1B0431FN8YEZU-QEQtYYkeaeZrRZUWbbFj07S1+1tcdHWnUVnwlYZ5UmZVq23ZZdVbZjzV7XIB1HSdXW8EYVa+j9fVat0CY7HsZ6CYYRK4r4-SFFGRh6FGvQiViiMTip61U+jD2aU92MM7jzOFVojF4NReCyMlgJ4BCjAAGbiDgjB6wbRt0UWjoupu5a7uzkEOaspjNLsZRYgEGgvsYuI7PeZT8Ci6x+Ci57y+FKN3fVsjbXTL1M-jXW6-rhvG5RNF0T1-pc4HOpEa0gdGqmPS4sY2jJqmrTtqcEcDKF10UxRyv3cntPPTjr14+9sBZ3budUbRZCfe7HG-Sokv3oDSpopcImWDXZS6vogciYqxSIXHN2d2j3cp33msD9rw8laIRKWIwvxW3gMA29n9taBAYAAjgrGyKpjNvQTc6lFZAADdxAAGsrorWRpTY+SdT4a1kP-QeBMtDX1vvfdAj9n62xzt8D+X8f5-y1hnQqCACxgOSknFIhcoKOUIDsbQ6oXBg3RCiXE-NdQmFJARVwVhyQHw7jVLu8Csb0yQSQoeQCyrGVMkIpWcCtpiLTgAlme5oQzz6v5XUiJZJ7EsN0G8E0EC+GcmqPo7Zt5Jg-NmduMCj5WRPso-u6ch4-GQHgUQjBsriGMuPOiAFgKgXAuo6svUjxakCFoXCOxoZpnwkmEWfQmE9GsIHXYiEgiCPscIxRsVnHn1cag2AHivE+L8fnSeoSObhK4oQAS0TDgdmMHNDs3CRZYjgtYsk-QyjkjTNkn8sCwCEBEXpWhns559ATIOZ8qJBKwWqLifwBgZktz6BSCOZQ-CDMVqjEZYzsiTy+hozmETdhuBMA3Uo5Iti8OWYcNZLhegGisFiVuy0kaggYixDAf4gEUIgaVUp7IwDmwmbPfIiEtDlE0OSNoHQPDgxUB0aJpg0R9FKMUVouyfmsXQP8sAOAcBW3UgbdAltv7uM8aC8F1SPaQoMDzOFgM7xXPWN5YxxRomBCuVs04cNiJt2gd8pi+L-mBMYCBMCdAIV9SZVDDoPSOX9CWcYrU0lBpWFJB2dYmYsyyHEB-eAaQ5GkG+rU+h0MdQISQnJVCOh0LqtUGYFoQ58LqECC6mxZqhl-gtUXCJlRShuqsIaDsgcLCcvqPUryjZkwlx6KUIkuyIr+IDXQ1YrhmhvOkk07oXRuyuBhdHOSLgOzqE0KmhOhyHIMq5pUawobKhmEHC+RCuIKi8Tkh4HYd4bAmGrcM6mGM1YFIkRfUhJqwmBrqR2eM1Qw2tsjR24xPgdAJk6Dc1oLqRpDocSO1W8Vx3IMviPPBGbJnHmhWXaoLrOhVzXsYjo943KoRqH7ds+7cmOPgb3RBp6p3nrfh4s2lKX6jzAJeyFax9AKkQoijwYY7wcLJIUbhgdhLcMHNUb9Cjf00zHanFxqida4LfkTKDpzLVex6IUVCgUWzFG9bicobhHXKiKFc9Egc8P7MPT3IjZ8J1FMzuRse+doNc1aHBPhxh1BVBEsmaNiAXVnBdY6lwUdnyqD44nQjx7iOFNI1fLSGCH74Bwa-Y2UmInsubeGttUbcQvvgm0CwYYDTcOknp2tgnDPCcA249BPhMHYPiuJ-Bn8iVELeEFgmtm6lbwc8u9tKmEDevcHKBTnQ1P6F83ko96txHxcziFu+Fmn4Res-gr4iX6Ex10IhDjtzeUmBDoqQopbDSDkREmBSnyFYRT888IzImTP1dWMUOCjcZKojDCJEWFQ4IiTvP2MuwYCsEfyWN0rOsSmeO8cQXxVGZ2ZpRWh8wpgpb+AjK4EWKF6OBAOAYnw4YtsCdG4FyRxTSlHZO+-Or1HZ1WrjV2tCiFsWSz0B0580SQbhnMAtNsH2VbJxPT9zOB2ynHYqbRSbKLppXfnbdts93jHhkdciLE1hhxJg8Ds4VXy9n6Z299ydwWzOhcq8-cpp2akg9WI6tws2UTzZhh0qwhR+1EgxZ2H15Mcn4c+xjjnqDythcs-FPngOSoE4aOSM4qY5suolxT95OjHX9DJBUOUqOT5+cYJR-Xs1dTdH9lcxU+gn31F3rqPY+FygGit54PTzvgfne4kmTeUthoti6Miho0cdTPMMFYVwNgtujMKwGetETTDxiVB+6bRFAiJ7gnMwSaY7xp8lkKwbyk8V-NUvrtE2gEnCR6G0K4GFDQtACFvc8nncOhGCEAA */
   id: "withdraw-ui",
 
   context: ({ input, spawn, self }) => ({
@@ -448,6 +456,10 @@ export const withdrawUIMachine = setup({
         WITHDRAW_FORM_FIELDS_CHANGED: ".pre-preparation",
 
         NEW_QUOTE: {
+          guard: {
+            type: "isQuoteNotEmpty",
+            params: ({ event }) => event.params.quote,
+          },
           actions: {
             type: "setQuote",
             params: ({ event }) => event.params.quote,
@@ -725,6 +737,10 @@ export const withdrawUIMachine = setup({
 
       on: {
         NEW_QUOTE: {
+          guard: {
+            type: "isQuoteNotEmpty",
+            params: ({ event }) => event.params.quote,
+          },
           actions: [
             {
               type: "setQuote",
