@@ -76,6 +76,8 @@ type PassthroughEvent = {
   }
 }
 
+type EmittedEvents = PassthroughEvent | { type: "INTENT_PUBLISHED" }
+
 export const withdrawUIMachine = setup({
   types: {
     input: {} as {
@@ -101,7 +103,7 @@ export const withdrawUIMachine = setup({
       | WithdrawFormParentEvents
       | PassthroughEvent,
 
-    emitted: {} as PassthroughEvent,
+    emitted: {} as EmittedEvents,
 
     children: {} as {
       depositedBalanceRef: "depositedBalanceActor"
@@ -248,6 +250,10 @@ export const withdrawUIMachine = setup({
       "withdrawFormRef",
       (_, event: WithdrawFormEvents) => event
     ),
+
+    emitEventIntentPublished: emit(() => ({
+      type: "INTENT_PUBLISHED" as const,
+    })),
   },
   guards: {
     satisfiesWithdrawalSpec: ({ context }) => {
@@ -342,9 +348,11 @@ export const withdrawUIMachine = setup({
 
     isQuoteNotEmpty: (_, quote: AggregatedQuote) =>
       !isAggregatedQuoteEmpty(quote),
+
+    isOk: (_, a: { tag: "err" | "ok" }) => a.tag === "ok",
   },
 }).createMachine({
-  /** @xstate-layout N4IgpgJg5mDOIC5QHcCWAXAFhATgQ2QFoBXVAYgEkA5AFQFFaB9AZTppoBk6ARAbQAYAuolAAHAPawMqcQDsRIAB6JCAVlUAWAHQAOAOwA2AEwBOEwf4BGfUYA0IAJ4q9ey1oN71rjZaMBmHT8jAF9g+zQsXAIScg4AeQBxagFhJBAJKXQZeTTlBA8tSxMrAwMTP0t+Iw0reycEQhc-LSMjD1V+Pz9VSwMNHVDwjGx8IlIyeIS4gFUaFIUM6TkFPMIjX10NdZ0NPXW9vz665z1m1vbO7t7+wZAIkejSLUhpWSgyCDkwLVh0PHRvvcomNUM8IK8oPM0ossstcogNF0tHoTKo9p5+qpAh5jg1rM0zJZdusfHodJY9LcgaMYmCIWQAOoUGgACW4ACUAIIMxgAMTi7IAsloAFRQsSSJY5UCrDTmdx+Ew6KxmAJFU64wiHPRaXa7Pz8YpBSxU4bA2kvLJvMgAIU5HE5VAAwnRGE6WY6EjxxelJbDpUoVESzp0TJYOvp+GVypqAvwtFG-BoykYdIFwyEwnczTSnpbUNa7Q7na73Z7vZZUhLMtkVoh-AmzKoDX1+DoTIY2prrG4An0Anpkx2iQZTZFc6D89amayOdy+QLBXyKHQONxmG6PVQvXwhAs-bX4Q0Om5NFUkwFDmjAt2jKpdcYijpVBZPM-M0Nx49J+Cre8qHQPIAIrTHE9A+jCh4ykGUYmFohz8D0YZyjoqYGJqphwVibbNr0BiWBSGgaGODwgnSf5aKgEAADZgGQsDEAARgAthgEEHnC0ENGSRgJuoNT8FYRj8P0GixhsabkgY+jFESYaUlm1LfuRBZQFoog4GAoh4Pg-ofF8Px-ACWhKWRU5qRpWk6f82TsTWnGBtxd7uK45TSWSLgGKomryh4vjlFU5JFCaik5sp5nqZp2m6dkkVgIwYCKGAADGxD+owmkAI6kJpzFgLI6CwPpsjfL8-yAmFZm-qpcXRTZchxQlSWpelWU5WAeUFbAdlSnWx6Dsicq7JoqqpmJjiIARBqFARIlBaopghZ+pEWtVby1dZ-qNYlKVpdkGVgNlqC5flhXFaVRkVV+VUQhtMUNZZTW7a1h3tZ1hW8JW+72QGqxdDqbZJlYBE1B0431FN8YEZU-QEQtYYkeaeZrRZUWbbFj07S1+1tcdHWnUVnwlYZ5UmZVq23ZZdVbZjzV7XIB1HSdXW8EYVa+j9fVat0CY7HsZ6CYYRK4r4-SFFGRh6FGvQiViiMTip61U+jD2aU92MM7jzOFVojF4NReCyMlgJ4BCjAAGbiDgjB6wbRt0UWjoupu5a7uzkEOaspjNLsZRYgEGgvsYuI7PeZT8Ci6x+Ci57y+FKN3fVsjbXTL1M-jXW6-rhvG5RNF0T1-pc4HOpEa0gdGqmPS4sY2jJqmrTtqcEcDKF10UxRyv3cntPPTjr14+9sBZ3budUbRZCfe7HG-Sokv3oDSpopcImWDXZS6vogciYqxSIXHN2d2j3cp33msD9rw8laIRKWIwvxW3gMA29n9taBAYAAjgrGyKpjNvQTc6lFZAADdxAAGsrorWRpTY+SdT4a1kP-QeBMtDX1vvfdAj9n62xzt8D+X8f5-y1hnQqCACxgOSknFIhcoKOUIDsbQ6oXBg3RCiXE-NdQmFJARVwVhyQHw7jVLu8Csb0yQSQoeQCyrGVMkIpWcCtpiLTgAlme5oQzz6v5XUiJZJ7EsN0G8E0EC+GcmqPo7Zt5Jg-NmduMCj5WRPso-u6ch4-GQHgUQjBsriGMuPOiAFgKgXAuo6svUjxakCFoXCOxoZpnwkmEWfQmE9GsIHXYiEgiCPscIxRsVnHn1cag2AHivE+L8fnSeoSObhK4oQAS0TDgdmMHNDs3CRZYjgtYsk-QyjkjTNkn8sCwCEBEXpWhns559ATIOZ8qJBKwWqLifwBgZktz6BSCOZQ-CDMVqjEZYzsiTy+hozmETdhuBMA3Uo5Iti8OWYcNZLhegGisFiVuy0kaggYixDAf4gEUIgaVUp7IwDmwmbPfIiEtDlE0OSNoHQPDgxUB0aJpg0R9FKMUVouyfmsXQP8sAOAcBW3UgbdAltv7uM8aC8F1SPaQoMDzOFgM7xXPWN5YxxRomBCuVs04cNiJt2gd8pi+L-mBMYCBMCdAIV9SZVDDoPSOX9CWcYrU0lBpWFJB2dYmYsyyHEB-eAaQ5GkG+rU+h0MdQISQnJVCOh0LqtUGYFoQ58LqECC6mxZqhl-gtUXCJlRShuqsIaDsgcLCcvqPUryjZkwlx6KUIkuyIr+IDXQ1YrhmhvOkk07oXRuyuBhdHOSLgOzqE0KmhOhyHIMq5pUawobKhmEHC+RCuIKi8Tkh4HYd4bAmGrcM6mGM1YFIkRfUhJqwmBrqR2eM1Qw2tsjR24xPgdAJk6Dc1oLqRpDocSO1W8Vx3IMviPPBGbJnHmhWXaoLrOhVzXsYjo943KoRqH7ds+7cmOPgb3RBp6p3nrfh4s2lKX6jzAJeyFax9AKkQoijwYY7wcLJIUbhgdhLcMHNUb9Cjf00zHanFxqida4LfkTKDpzLVex6IUVCgUWzFG9bicobhHXKiKFc9Egc8P7MPT3IjZ8J1FMzuRse+doNc1aHBPhxh1BVBEsmaNiAXVnBdY6lwUdnyqD44nQjx7iOFNI1fLSGCH74Bwa-Y2UmInsubeGttUbcQvvgm0CwYYDTcOknp2tgnDPCcA249BPhMHYPiuJ-Bn8iVELeEFgmtm6lbwc8u9tKmEDevcHKBTnQ1P6F83ko96txHxcziFu+Fmn4Res-gr4iX6Ex10IhDjtzeUmBDoqQopbDSDkREmBSnyFYRT888IzImTP1dWMUOCjcZKojDCJEWFQ4IiTvP2MuwYCsEfyWN0rOsSmeO8cQXxVGZ2ZpRWh8wpgpb+AjK4EWKF6OBAOAYnw4YtsCdG4FyRxTSlHZO+-Or1HZ1WrjV2tCiFsWSz0B0580SQbhnMAtNsH2VbJxPT9zOB2ynHYqbRSbKLppXfnbdts93jHhkdciLE1hhxJg8Ds4VXy9n6Z299ydwWzOhcq8-cpp2akg9WI6tws2UTzZhh0qwhR+1EgxZ2H15Mcn4c+xjjnqDythcs-FPngOSoE4aOSM4qY5suolxT95OjHX9DJBUOUqOT5+cYJR-Xs1dTdH9lcxU+gn31F3rqPY+FygGit54PTzvgfne4kmTeUthoti6Miho0cdTPMMFYVwNgtujMKwGetETTDxiVB+6bRFAiJ7gnMwSaY7xp8lkKwbyk8V-NUvrtE2gEnCR6G0K4GFDQtACFvc8nncOhGCEAA */
+  /** @xstate-layout N4IgpgJg5mDOIC5QHcCWAXAFhATgQ2QFoBXVAYgEkA5AFQFFaB9AZTppoBk6ARAbQAYAuolAAHAPawMqcQDsRIAB6JCAVlUAWAHQAOAOwA2AEwBOEwf4BGfUYA0IAJ4q9ey1oN71rjZaMBmHT8jAF9g+zQsXAIScg4AeQBxagFhJBAJKXQZeTTlBA8tSxMrAwMTP0t+Iw0reycEQhc-LSMjD1V+Pz9VSwMNHVDwjGx8IlIyeIS4gFUaFIUM6TkFPMIjX10NdZ0NPXW9vz665z1m1vbO7t7+wZAIkejSLUhpWSgyCDkwLVh0PHRvvcomNUM8IK8oPM0ossstcogNF0tHoTKo9p5+qpAh5jg1rM0zJZdusfHodJY9LcgaMYmCIWQAOoUGgACW4ACUAIIMxgAMTi7IAsloAFRQsSSJY5UCrDTmdx+Ew6KxmAJFU64wiHPRaXa7Pz8YpBSxU4bA2kvLJvMgAIU5HE5VAAwnRGE6WY6EjxxelJbDpUoVESzp0TJYOvp+GVypqAvwtFG-BoykYdIFwyEwnczTSnpbUNa7Q7na73Z7vZZUhLMtkVoh-AmzKoDX1+DoTIY2prrG4An0Anpkx2iQZTZFc6D89amayOdy+QLBXyKHQONxmG6PVQvXwhAs-bX4Q0Om5NFUkwFDmjAt2jKpdcYijpVBZPM-M0Nx49J+Cre8qHQPIAIrTHE9A+jCh4ykGUYmFohz8D0YZyjoqYGJqphwVibbNr0BiWBSGgaGODwgnSf5aKgEAADZgGQsDEAARgAthgEEHnC0ENGSRgJuoNT8FYRj8P0GixhsabkgY+jFESYaUlm1LfuRBZQFoog4GAoh4Pg-ofF8Px-ACWhKWRU5qRpWk6f82TsTWnGBtxd7uK45TSWSLgGKomryh4vjlFU5JFCaik5sp5nqZp2m6dkkVgIwYCKGAADGxD+owmkAI6kJpzFgLI6CwPpsjfL8-yAmFZm-qpcXRTZchxQlSWpelWU5WAeUFbAdlSnWx6Dsicq7JoqqpmJjiIARBqFARIlBaopghZ+pEWtVby1dZ-qNYlKVpdkGVgNlqC5flhXFaVRkVV+VUQhtMUNZZTW7a1h3tZ1hW8JW+72QGqxdDqbZJlYBE1B0431FN8YEZU-QEQtYYkeaeZrRZUWbbFj07S1+1tcdHWnUVnwlYZ5UmZVq23ZZdVbZjzV7XIB1HSdXW8EYVa+j9fVat0CY7HsZ6CYYRK4r4-SFFGRh6FGvQiViiMTip61U+jD2aU92MM7jzOFVojF4NReCyMlgJ4BCjAAGbiDgjB6wbRt0UWjoupu5a7uzkEOaspjNLsZRYgEGgvsYuI7PeZT8Ci6x+Ci57y+FKN3fVsjbXTL1M-jXW6-rhvG5RNF0T1-pc4HOpEa0gdGqmPS4sY2jJqmrTtqcEcDKF10UxRyv3cntPPTjr14+9sBZ3budUbRZCfe7HG-Sokv3oDSpopcImWDXZS6vogciYqxSIXHN2d2j3cp33msD9rw8laIRKWIwvxW3gMA29n9taBAYAAjgrGyKpjNvQTc6lFZAADdxAAGsrorWRpTY+SdT4a1kP-QeBMtDX1vvfdAj9n62xzt8D+X8f5-y1hnQqCACxgOSknFIhcoKOUIDsbQ6oXBg3RCiXE-NdQmFJARVwVhyQHw7jVLu8Csb0yQSQoeQCyrGVMkIpWcCtpiLTgAlme5oQzz6v5XUiJZJ7EsN0G8E0EC+GcmqPo7Zt5Jg-NmduMCj5WRPso-u6ch4-GQHgUQjBsriGMuPOiAFgKgXAuo6svUjxakCFoXCOxoZpnwkmEWfQmE9GsIHXYiEgiCPscIxRsVnHn1cag2AHivE+L8fnSeoSObhK4oQAS0TDgdmMHNDs3CRZYjgtYsk-QyjkjTNkn8sCwCEBEXpWhns559ATIOZ8qJBKwWqLifwBgZktz6BSCOZQ-CDMVqjEZYzsiTy+hozmETdhuBMA3Uo5Iti8OWYcNZLhegGisFiVuy0kaggYixDAf4gEUIgaVUp7IwDmwmbPfIiEtDlBGpsuUVz0LGIYW4KM8MjQvj2EqXZPzWLoH+UTb4gLIHuM8aC8FJywlFyPJ0woQQ2yIRfIaXwId7yGGkt0SW3DTDNhxUxPF-ywA4BwFbdSBt0CW2-qS0Q5KIV9T6KsqWZQXCS0qPiEW3DdSqCVL0XVqIt58t+fi1SZBAmMBAmBOgcqjwGGmuGFudzNCoXBioQ4OhBpWFJB2dYmYsyyHEB-eAaQ5GkG+rU+h0MdQISQnJVCOgkX1DUGYFoQ5zClC8voBSnyFbmTDdSuplRSgpqsIaDsgcLDeWRcmBe3Cbmy0EiYXZEV-F5roasVwzQ3kcu2c2Pw3ZXAwujnJFwHZ1CaCbQnQ5DkPaQsIGq911QS1mEHEyyt9QKi8WHSDNE6IPm2OgUMhx1MMZqwKRIi+pCg1UrbSoDs8ZF2VGXeWxCuIfDusEtHax7ZSi7AncM49qt4pnuQZfEeeDW2TOPNCsu1RtWdCrmvYxHR7xuVREqfo1Rnw7LbgevZicaantTi41ROtcFvw8WbSVL9R5gAg7O1MOpbWMqjB4MMd4OFkkKNwwOwluGDmqH+o9Kse6EbPueopmcyO50JXRrmd43DWGEqmFsxRtV2GMeUNw8blRFCueiQOgncmOPgb3RBIHL1gbfi2054avamGRIWu8HRhJES8ribVZxtXxpVQY58qhDMKOMwRoDRHCkkavlpDBD98A4NfsbWTESrm8QfaWldFb3PQqCD+9YxgdNeQC-sgDImQtifM249BPhMHYPilJ-Bn8hVELeGVgmCW6lb2LY+stq73NXPcHKdQH6PP6AK-hk9JWzOSNQRVu+0Wn41bi-gr4rX6Ex10IhbTtzAhmBDoqOlfCy2IiTFm-dXy8NTuTsBybXVlurGKHBRuMk0MwxFhUOCIk2jxsFm0GxIbD1GaK88UL4nwvSu8cQXxtGbP5vodeGFxg73+AjK4EWKFChpgjIaYSrgRvncB6Vq7OsSmeLBxD9+S2oc3rxF5eCpjPtwdaC4Dpz5okg3DOYBabYcd5Iapdi9biidlPBxU2iN2VDNnjOYUwUtEdtmR8Y8M8bkRYmsMOJMHhsPZvjv+4TeOJt86m5Fyrs3n7lMh9eyDDD8ItFTI97Vz35cnkKHeQczLBK+C50F-JQPmuZ2m1VmL8VTdk5KqLho5Izg25RE9kSTP3VEXjf0MkFQ5Qe4B+dxgMmKeQdmrqbo-srmKn0Ih9dybiT4XKAaBPngRuZ-N7O04ddIzDRbF0F1DRo46meYYKwrgbAe9GdzgMM65PFBhTsWChp4+JI07oODbZUJogsJLYiOHTu4r+apUPaJtAJOEj0NoVwMKGhaAELe54wxBBX6EIAA */
   id: "withdraw-ui",
 
   context: ({ input, spawn, self }) => ({
@@ -693,20 +701,32 @@ export const withdrawUIMachine = setup({
           }
         },
 
-        onDone: {
-          target: "editing",
-
-          actions: [
-            {
-              type: "spawnIntentStatusActor",
-              params: ({ event }) => event.output,
-            },
-            {
-              type: "setIntentCreationResult",
-              params: ({ event }) => event.output,
-            },
-          ],
-        },
+        onDone: [
+          {
+            target: "editing",
+            guard: { type: "isOk", params: ({ event }) => event.output },
+            actions: [
+              {
+                type: "spawnIntentStatusActor",
+                params: ({ event }) => event.output,
+              },
+              {
+                type: "setIntentCreationResult",
+                params: ({ event }) => event.output,
+              },
+              "emitEventIntentPublished",
+            ],
+          },
+          {
+            target: "editing",
+            actions: [
+              {
+                type: "setIntentCreationResult",
+                params: ({ event }) => event.output,
+              },
+            ],
+          },
+        ],
 
         onError: {
           target: "editing",
