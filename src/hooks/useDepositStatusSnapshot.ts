@@ -1,10 +1,11 @@
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import type { DepositStatus } from "src/services/poaBridgeClient/types"
-import type { DepositSnapshot } from "src/types"
+import { BlockchainEnum, type DepositSnapshot } from "src/types"
 import { useGetDepositStatus } from "./usePoABridge"
 
-const INTERVAL_TIME = 1000
-const RESET_DEPOSIT_RECEIVED_TIME = 10000
+const INTERVAL_TIME = 1000 // 1 second
+const INITIALIZATION_DEPOSIT_RECEIVED_TIMEOUT = 15000 // 15 seconds
+const RESET_DEPOSIT_RECEIVED_TIME = 10000 // 10 seconds
 
 export const useDepositStatusSnapshot = (params: {
   accountId: string
@@ -16,7 +17,7 @@ export const useDepositStatusSnapshot = (params: {
   >(undefined)
   const [isInitialSnapshot, setIsInitialSnapshot] = useState<boolean>(true)
   const [snapshot, setSnapshot] = useState<DepositSnapshot[]>([])
-  const { data, isLoading, isFetched, refetch } = useGetDepositStatus(
+  const { data, isLoading, refetch } = useGetDepositStatus(
     {
       account_id: params.accountId,
       chain: params.chain,
@@ -69,24 +70,35 @@ export const useDepositStatusSnapshot = (params: {
   )
 
   useEffect(() => {
-    if (isFetched) {
-      setIsInitialSnapshot(false)
-    }
     if (data?.deposits) {
       takeSnapshot(data.deposits)
     } else {
       console.warn("Query data is undefined or deposits are missing.")
     }
-  }, [data, isFetched, takeSnapshot])
+    setTimeout(() => {
+      setIsInitialSnapshot(false)
+    }, INITIALIZATION_DEPOSIT_RECEIVED_TIMEOUT)
+  }, [data, takeSnapshot])
+
+  const intervalRef = useRef<NodeJS.Timeout | undefined>(undefined)
 
   useEffect(() => {
-    const intervalID = setInterval(() => {
-      if (params.generatedAddress) {
+    intervalRef.current = setInterval(() => {
+      if (params.generatedAddress && params.chain !== BlockchainEnum.NEAR) {
         refetch()
       }
     }, INTERVAL_TIME)
-    return () => clearInterval(intervalID)
-  }, [params.generatedAddress, refetch])
+    return () => clearInterval(intervalRef.current)
+  }, [params.generatedAddress, params.chain, refetch])
+
+  useEffect(() => {
+    if (
+      (params.chain === BlockchainEnum.NEAR && intervalRef.current) ||
+      (!params.chain && intervalRef.current)
+    ) {
+      clearInterval(intervalRef.current)
+    }
+  }, [params.chain])
 
   return {
     isDepositReceived,
