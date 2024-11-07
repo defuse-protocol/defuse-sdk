@@ -75,10 +75,6 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
       }
     })
 
-  // TODO: remove
-  console.log(snapshot.context, "snapshot")
-  console.log(snapshot.value, "state")
-
   const { setModalType, payload, onCloseModal } = useModalStore(
     (state) => state
   )
@@ -211,79 +207,77 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
           {chainType === ChainType.Near &&
             network === BlockchainEnum.NEAR &&
             userAddress && (
-              <>
-                <Input
-                  name="amount"
-                  value={watch("amount")}
-                  onChange={(value) => setValue("amount", value)}
-                  type="number"
-                  ref={(ref) => {
-                    if (network === BlockchainEnum.NEAR && ref) {
-                      ref.focus()
-                    }
-                    amountInputRef.current = ref
-                  }}
-                  className={styles.amountInput}
-                  slotRight={
-                    <div className={styles.balanceBoxWrapper}>
-                      {token &&
-                        isBaseToken(token) &&
-                        token.address === "wrap.near" && (
-                          <TooltipInfo
-                            icon={<InfoCircledIcon color="orange" />}
-                          >
-                            Combined balance of NEAR and wNEAR.
-                            <br /> NEAR will be automatically wrapped to wNEAR
-                            <br /> if your wNEAR balance isn't sufficient for
-                            the swap.
-                            <br />
-                            Note that to cover network fees, we reserve
-                            {` ${formatTokenValue(
-                              RESERVED_NEAR_BALANCE,
-                              token.decimals
-                            )} NEAR`}
-                            <br /> in your wallet.
-                          </TooltipInfo>
-                        )}
-                      <BlockMultiBalances
-                        balance={
-                          token &&
-                          isBaseToken(token) &&
-                          token.address === "wrap.near"
-                            ? balance + nativeBalance
-                            : balance
-                        }
-                        decimals={token?.decimals ?? 0}
-                        handleClick={() => handleSetMaxValue()}
-                        disabled={false}
-                        className={styles.blockMultiBalances}
-                      />
-                    </div>
+              <Input
+                name="amount"
+                value={watch("amount")}
+                onChange={(value) => setValue("amount", value)}
+                type="number"
+                ref={(ref) => {
+                  if (network === BlockchainEnum.NEAR && ref) {
+                    ref.focus()
                   }
-                />
-                <div className={styles.buttonGroup}>
-                  <Button
-                    variant="classic"
-                    size="3"
-                    radius="large"
-                    className={`${styles.button}`}
-                    color="orange"
-                    disabled={!watch("amount") || balanceInsufficient}
-                  >
-                    <span className={styles.buttonContent}>
-                      <Spinner loading={false} />
-                      <Text size="6">
-                        {watch("amount") >= "0"
-                          ? balanceInsufficient
-                            ? "Insufficient Balance"
-                            : "Deposit"
-                          : "Deposit"}
-                      </Text>
-                    </span>
-                  </Button>
-                </div>
-              </>
+                  amountInputRef.current = ref
+                }}
+                className={styles.amountInput}
+                slotRight={
+                  <div className={styles.balanceBoxWrapper}>
+                    {token &&
+                      isBaseToken(token) &&
+                      token.address === "wrap.near" && (
+                        <TooltipInfo icon={<InfoCircledIcon color="orange" />}>
+                          Combined balance of NEAR and wNEAR.
+                          <br /> NEAR will be automatically wrapped to wNEAR
+                          <br /> if your wNEAR balance isn't sufficient for the
+                          swap.
+                          <br />
+                          Note that to cover network fees, we reserve
+                          {` ${formatTokenValue(
+                            RESERVED_NEAR_BALANCE,
+                            token.decimals
+                          )} NEAR`}
+                          <br /> in your wallet.
+                        </TooltipInfo>
+                      )}
+                    <BlockMultiBalances
+                      balance={
+                        token &&
+                        isBaseToken(token) &&
+                        token.address === "wrap.near"
+                          ? balance + nativeBalance
+                          : balance
+                      }
+                      decimals={token?.decimals ?? 0}
+                      handleClick={() => handleSetMaxValue()}
+                      disabled={false}
+                      className={styles.blockMultiBalances}
+                    />
+                  </div>
+                }
+              />
             )}
+          {(network === BlockchainEnum.NEAR || !network) && (
+            <div className={styles.buttonGroup}>
+              <Button
+                variant="classic"
+                size="3"
+                radius="large"
+                className={`${styles.button}`}
+                color="orange"
+                disabled={!watch("amount") || balanceInsufficient}
+              >
+                <span className={styles.buttonContent}>
+                  <Spinner loading={false} />
+                  <Text size="6">
+                    {renderDepositButtonText(
+                      watch("amount") >= "0" && balanceInsufficient,
+                      network,
+                      token
+                    )}
+                  </Text>
+                </span>
+              </Button>
+            </div>
+          )}
           {ENABLE_DEPOSIT_THROUGH_POA_BRIDGE &&
             network &&
             network !== BlockchainEnum.NEAR &&
@@ -353,7 +347,9 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
         {userAddress && network === BlockchainEnum.NEAR && (
           <Deposits depositNearResult={snapshot.context.depositNearResult} />
         )}
-        {isDepositReceived && <DepositSuccess />}
+        {network !== BlockchainEnum.NEAR && isDepositReceived && (
+          <DepositSuccess />
+        )}
       </div>
     </div>
   )
@@ -522,4 +518,18 @@ function DepositSuccess() {
       <Callout.Text>Deposit received</Callout.Text>
     </Callout.Root>
   )
+}
+
+function renderDepositButtonText(
+  isBalanceInsufficient: boolean,
+  network: BlockchainEnum | null,
+  token: SwappableToken | null
+) {
+  if (isBalanceInsufficient) {
+    return "Insufficient Balance"
+  }
+  if (network === BlockchainEnum.NEAR && !!token) {
+    return "Deposit"
+  }
+  return !network && !token ? "Select asset first" : "Select network first"
 }
