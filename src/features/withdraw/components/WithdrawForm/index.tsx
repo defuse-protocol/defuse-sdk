@@ -111,13 +111,6 @@ export const WithdrawForm = ({
     }
   }, [userAddress, actorRef])
 
-  useEffect(() => {
-    const s = actorRef.subscribe((state) => {
-      console.log("SwapUIMachine", JSON.stringify(state.value), state.context)
-    })
-    return () => s.unsubscribe()
-  }, [actorRef])
-
   const { token, blockchain, amountIn, recipient } = useSelector(
     formRef,
     (state) => {
@@ -162,24 +155,20 @@ export const WithdrawForm = ({
 
   const updateTokens = useTokensStore((state) => state.updateTokens)
 
-  // This hack to avoid unnecessary calls of ModalSelectAssets "callback"
-  const [tokenSelectModalIsOpen, setIsTokenSelectModalOpen] = useState(false)
-
   const handleSelect = () => {
     updateTokens(tokenList)
     setModalType(ModalType.MODAL_SELECT_ASSETS, {
       fieldName: "tokenIn",
-      selectToken: token,
+      selectToken: undefined,
       balances: depositedBalanceRef?.getSnapshot().context.balances,
     })
-    setIsTokenSelectModalOpen(true)
   }
 
   /**
    * This is ModalSelectAssets "callback"
    */
   useEffect(() => {
-    if (tokenSelectModalIsOpen && modalSelectAssetsData?.token) {
+    if (modalSelectAssetsData?.token) {
       const token = modalSelectAssetsData.token
       let parsedAmount = 0n
       try {
@@ -193,9 +182,8 @@ export const WithdrawForm = ({
           parsedAmount: parsedAmount,
         },
       })
-      setIsTokenSelectModalOpen(false)
     }
-  }, [tokenSelectModalIsOpen, modalSelectAssetsData, actorRef, amountIn])
+  }, [modalSelectAssetsData?.token, actorRef, amountIn])
 
   useEffect(() => {
     // When values are set externally, they trigger "watch" callback too.
