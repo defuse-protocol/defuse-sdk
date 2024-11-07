@@ -10,7 +10,6 @@ import {
   type IntentSettlementResult,
   waitForIntentSettlement,
 } from "../../services/intentService"
-import type { AggregatedQuote } from "../../services/quoteService"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../types/base"
 import type { IntentDescription } from "./swapIntentMachine"
 
@@ -21,7 +20,6 @@ type ChildEvent = {
     txHash: string
     tokenIn: BaseTokenInfo | UnifiedTokenInfo
     tokenOut: BaseTokenInfo | UnifiedTokenInfo
-    quote: AggregatedQuote
   }
 }
 type ParentActor = ActorRef<Snapshot<unknown>, ChildEvent>
@@ -33,7 +31,6 @@ export const intentStatusMachine = setup({
       intentHash: string
       tokenIn: BaseTokenInfo | UnifiedTokenInfo
       tokenOut: BaseTokenInfo | UnifiedTokenInfo
-      quote: AggregatedQuote
       intentDescription: IntentDescription
     },
     context: {} as {
@@ -41,7 +38,6 @@ export const intentStatusMachine = setup({
       intentHash: string
       tokenIn: BaseTokenInfo | UnifiedTokenInfo
       tokenOut: BaseTokenInfo | UnifiedTokenInfo
-      quote: AggregatedQuote
       txHash: string | null
       intentDescription: IntentDescription
     },
@@ -81,7 +77,6 @@ export const intentStatusMachine = setup({
       intentHash: input.intentHash,
       tokenIn: input.tokenIn,
       tokenOut: input.tokenOut,
-      quote: input.quote,
       txHash: null,
       intentDescription: input.intentDescription,
     }
@@ -134,7 +129,6 @@ export const intentStatusMachine = setup({
               txHash: context.txHash,
               tokenIn: context.tokenIn,
               tokenOut: context.tokenOut,
-              quote: context.quote,
             },
           }
         }
