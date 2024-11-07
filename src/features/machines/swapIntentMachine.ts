@@ -37,6 +37,7 @@ type IntentOperationParams =
 export type IntentDescription =
   | {
       type: "swap"
+      quote: AggregatedQuote
     }
   | {
       type: "withdraw"
@@ -241,7 +242,10 @@ export const swapIntentMachine = setup({
           return {
             status: "INTENT_PUBLISHED",
             intentHash: context.intentHash,
-            intentDescription: { type: "swap" },
+            intentDescription: {
+              type: "swap",
+              quote: context.intentOperationParams.quote,
+            },
           }
         case "withdraw": {
           const { quote, directWithdrawalAmount } =

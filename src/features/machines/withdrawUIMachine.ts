@@ -73,7 +73,6 @@ type PassthroughEvent = {
      * It left `BaseTokenInfo | UnifiedTokenInfo` for compatibility with `intentStatusActor`.
      */
     tokenOut: BaseTokenInfo | UnifiedTokenInfo
-    quote: AggregatedQuote
   }
 }
 
@@ -231,19 +230,6 @@ export const withdrawUIMachine = setup({
       ) => {
         if (output.status !== "INTENT_PUBLISHED") return context.intentRefs
 
-        // todo: take quote from result of `swap`
-        const quote =
-          context.quote != null
-            ? context.quote
-            : {
-                quoteHashes: [],
-                expirationTime: 0,
-                totalAmountIn: 0n,
-                totalAmountOut: 0n,
-                amountsIn: {},
-                amountsOut: {},
-              }
-
         const formValues = context.withdrawFormRef.getSnapshot().context
 
         const intentRef = spawn("intentStatusActor", {
@@ -253,7 +239,6 @@ export const withdrawUIMachine = setup({
             intentHash: output.intentHash,
             tokenIn: formValues.tokenIn,
             tokenOut: formValues.tokenOut,
-            quote: quote,
             intentDescription: output.intentDescription,
           },
         })

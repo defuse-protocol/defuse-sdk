@@ -51,8 +51,8 @@ export function SwapUIMachineFormSyncProvider({
   useEffect(() => {
     const sub = actorRef.on("INTENT_SETTLED", ({ data }) => {
       onSuccessSwapRef.current({
-        amountIn: data.quote.totalAmountIn,
-        amountOut: data.quote.totalAmountOut,
+        amountIn: 0n, // todo: remove amount fields, as they may not exist for all types of intents
+        amountOut: 0n,
         tokenIn: data.tokenIn,
         tokenOut: data.tokenOut,
         txHash: data.txHash,
