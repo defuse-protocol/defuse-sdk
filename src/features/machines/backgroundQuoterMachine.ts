@@ -83,6 +83,10 @@ export const backgroundQuoterMachine = fromCallback<Events, Input>(
           console.warn("Unhandled event type", { eventType })
       }
     })
+
+    return () => {
+      abortController.abort()
+    }
   }
 )
 
