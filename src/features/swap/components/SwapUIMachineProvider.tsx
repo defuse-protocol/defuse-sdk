@@ -61,7 +61,7 @@ export function SwapUIMachineProvider({
   tokenList,
   signMessage,
 }: SwapUIMachineProviderProps) {
-  const { trigger, setValue } = useFormContext<SwapFormValues>()
+  const { setValue, resetField } = useFormContext<SwapFormValues>()
 
   return (
     <SwapUIMachineContext.Provider
@@ -81,17 +81,15 @@ export function SwapUIMachineProvider({
                 quote.totalAmountOut,
                 context.formValues.tokenOut.decimals
               )
-              setValue("amountOut", amountOutFormatted)
+              setValue("amountOut", amountOutFormatted, {
+                shouldValidate: true,
+              })
             } else {
-              setValue("amountOut", "")
+              resetField("amountOut")
             }
           },
         },
         actors: {
-          formValidationActor: fromPromise(async () => {
-            // We validate only `amountIn` and not entire form, because currently `amountOut` is also part of the form
-            return trigger("amountIn")
-          }),
           swapActor: swapIntentMachine.provide({
             actors: {
               signMessage: fromPromise(({ input }) => signMessage(input)),

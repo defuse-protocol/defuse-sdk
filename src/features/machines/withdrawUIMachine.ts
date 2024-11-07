@@ -112,9 +112,6 @@ export const withdrawUIMachine = setup({
   actors: {
     backgroundQuoterActor: backgroundQuoterMachine,
     depositedBalanceActor: depositedBalanceMachine,
-    formValidationActor: fromPromise(async (): Promise<boolean> => {
-      throw new Error("not implemented")
-    }),
     swapActor: swapIntentMachine,
     intentStatusActor: intentStatusMachine,
     withdrawFormActor: withdrawFormReducer,
