@@ -107,9 +107,14 @@ export const swapUIMachine = setup({
   actors: {
     backgroundQuoterActor: backgroundQuoterMachine,
     depositedBalanceActor: depositedBalanceMachine,
-    formValidationActor: fromPromise(async (): Promise<boolean> => {
-      throw new Error("not implemented")
-    }),
+    formValidationActor: fromPromise(
+      async ({
+        input,
+      }: { input: Context["parsedFormValues"] }): Promise<boolean> => {
+        // todo: as it is a sync function, it should be a guard
+        return input.amountIn > 0n
+      }
+    ),
     swapActor: swapIntentMachine,
     intentStatusActor: intentStatusMachine,
   },
@@ -349,6 +354,7 @@ export const swapUIMachine = setup({
         validating: {
           invoke: {
             src: "formValidationActor",
+            input: ({ context }) => context.parsedFormValues,
 
             onDone: [
               {

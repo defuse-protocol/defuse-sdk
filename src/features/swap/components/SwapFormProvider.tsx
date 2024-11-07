@@ -6,6 +6,8 @@ type SwapFormProps = PropsWithChildren
 
 export function SwapFormProvider({ children }: SwapFormProps) {
   const methods = useForm<SwapFormValues>({
+    mode: "onSubmit",
+    reValidateMode: "onChange",
     defaultValues: {
       amountIn: "",
       amountOut: "",

@@ -44,10 +44,6 @@ export const WithdrawWidget = (props: WithdrawWidgetProps) => {
             },
           },
           actors: {
-            formValidationActor: fromPromise(async () => {
-              console.warn("add real amount in check")
-              return true
-            }),
             swapActor: swapIntentMachine.provide({
               actors: {
                 signMessage: fromPromise(({ input }) => {
