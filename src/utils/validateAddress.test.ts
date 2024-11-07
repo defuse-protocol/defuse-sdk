@@ -22,13 +22,20 @@ describe("validateAddress", () => {
     }
   )
 
-  it("should validate Bitcoin addresses", () => {
-    expect(
-      validateAddress("1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa", "bitcoin")
-    ).toBe(true)
-    expect(
-      validateAddress("3J98t1WpEZ73CNmQviecrnyiWrnqRhWNLy", "bitcoin")
-    ).toBe(true)
+  it.each([
+    // Taproot address - P2TR
+    "bc1p5d7rjq7g6rdk2yhzks9smlaqtedr4dekq08ge8ztwac72sfr9rusxg3297",
+    // SegWit address - P2WPKH
+    "bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq",
+    // Script address - P2SH
+    "3J98t1WpEZ73CNmQviecrnyiWrnqRhWNLy",
+    // Legacy address - P2PKH
+    "1BvBMSEYstWetqTFn5Au4m4GFg7xJaNVN2",
+  ])("should validate Bitcoin addresses", (addr) => {
+    expect(validateAddress(addr, "bitcoin")).toBe(true)
+  })
+
+  it("should return false for invalid Bitcoin address", () => {
     expect(validateAddress("invalidBitcoinAddress", "bitcoin")).toBe(false)
   })
 
