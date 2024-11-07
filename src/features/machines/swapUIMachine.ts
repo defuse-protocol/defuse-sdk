@@ -229,9 +229,6 @@ export const swapUIMachine = setup({
       ) => {
         if (output.tag !== "ok") return context.intentRefs
 
-        // todo: take quote from result of `swap`
-        assert(context.quote != null, "quote is null")
-
         const intentRef = spawn("intentStatusActor", {
           id: `intent-${output.value.intentHash}`,
           input: {
