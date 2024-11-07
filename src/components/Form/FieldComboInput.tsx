@@ -63,45 +63,6 @@ export const FieldComboInput = <T extends FieldValues>({
 
   const inputRef = useRef<HTMLInputElement>(null)
 
-  const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
-    const allowedKeys = [
-      "Backspace",
-      "Tab",
-      "ArrowLeft",
-      "ArrowRight",
-      "Delete", // control keys
-      "0",
-      "1",
-      "2",
-      "3",
-      "4",
-      "5",
-      "6",
-      "7",
-      "8",
-      "9", // numeric keys
-      ".", // decimal point
-    ]
-
-    if (!allowedKeys.includes(event.key) && !event.ctrlKey) {
-      event.preventDefault()
-    }
-
-    // Ensure only one dot is allowed
-    const inputValue = (event.target as HTMLInputElement).value
-    if (event.key === "." && inputValue.includes(".")) {
-      event.preventDefault()
-    }
-  }
-
-  const handlePaste = (event: React.ClipboardEvent<HTMLInputElement>) => {
-    const paste = event.clipboardData.getData("text")
-
-    if (!/^[0-9.,]+$/.test(paste)) {
-      event.preventDefault()
-    }
-  }
-
   const setInputValue = (
     value: string | ((previousValue: string) => string)
   ) => {
@@ -165,8 +126,6 @@ export const FieldComboInput = <T extends FieldValues>({
         type={"text"}
         {...reactHookFormRegisterProps}
         ref={allInputRefs}
-        onKeyDown={handleKeyDown}
-        onPaste={handlePaste}
         placeholder={placeholder}
         disabled={disabled}
         autoComplete={"off"}
