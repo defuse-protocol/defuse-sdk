@@ -60,6 +60,8 @@ type PassthroughEvent = {
   }
 }
 
+type EmittedEvents = PassthroughEvent | { type: "INTENT_PUBLISHED" }
+
 export const swapUIMachine = setup({
   types: {
     input: {} as {
@@ -97,7 +99,7 @@ export const swapUIMachine = setup({
       | DepositedBalanceEvents
       | PassthroughEvent,
 
-    emitted: {} as PassthroughEvent,
+    emitted: {} as EmittedEvents,
 
     children: {} as {
       depositedBalanceRef: "depositedBalanceActor"
@@ -243,6 +245,10 @@ export const swapUIMachine = setup({
         return [intentRef, ...context.intentRefs]
       },
     }),
+
+    emitEventIntentPublished: emit(() => ({
+      type: "INTENT_PUBLISHED" as const,
+    })),
   },
   guards: {
     isQuoteRelevant: ({ context }) => {
@@ -254,6 +260,8 @@ export const swapUIMachine = setup({
     },
     isQuoteNotEmpty: (_, quote: AggregatedQuote) =>
       !isAggregatedQuoteEmpty(quote),
+
+    isOk: (_, a: { tag: "err" | "ok" }) => a.tag === "ok",
   },
 }).createMachine({
   /** @xstate-layout N4IgpgJg5mDOIC5SwO4EMAOBaArgSwGIBJAOQBUBRcgfQGUKyyAZCgEQG0AGAXUVAwD2sPABc8AgHZ8QAD0RYArAoAcAOgCMAdgWcALJ04BOZZoBMCgDQgAnvMO7Nq5ac6b1B07oWfDAX19WqJi4hABCAIJM4SQAwhTUMQAS0QDibFy8SCCCwmKS0nIIAMxFCk5GygBsmpqGnJUKlZVWtghYhpWmqtWG6lWuupWcRer+gejY+ARMAPIppBnSOaLiUlmFlUVOvbqmlbpFulpGmi12uoaqRW7Kt-aaRfUKYyBBk4SzKTMAqmSLWcs8mtQIUsKZ1JUNPpDOZwcoFJomsozm17Jdrn07g5Hg0Xm8QqpICsJFACLAcAAjAC2on+-CEK3y60Q6i0qlq7lMhz6Sm0KKwRUMl06HSFpmURiafgCrwmBKJYhJBDwEgwOBEdOyDKBBXkezK4PUOgUEKM4uu-Oul3UB046iKm3tQsqeLl+EJEGJpJIFAA6tQAIrfGaUTWA1a6trY1RC0qCkx1fRFfn7MrqcxNLxwkyjGX490KlVQVQANzQABs8BA0IrSRBJGBVCqSwIANaN-N4D1e0sVqs1osIZsCADGA8kGTD2ojzLaKi2pkMCl0yncVWUu2aNnk2iuCKM6nsnCUxiKruCBc9td7lertYI9YkjeH7dUne717Lt4HJKHEhbY5ApO6iZPSuQziC8gqGUwzHnaK4SoM-I2l0drKEUhq6IMaEunmbpdoWJKqOgXrUAAjjgAgiGABA+v6QYhhQU7gUykGoq4qgKDCEpaFyJhFMi25tKU6iqEch6mtcIzeOe7xvpSNIiPej7Pv+bYdhMABKYAAGbMYywKyIg4mqIuq5YVh66sqcQkCpwXSDBu66HA6RyaLJBLktSoj3mAABOfkCH5qgYOWNY6UFVJvlpun6Tqs4HJchoKCMDRVPYpTIfs7K7PYJq7Hsmi7B57peYp950YGwahjwSzTqxRkIAcMG9Ky4p6Mcli2cujgOouDroZU9idP4MoSAIEBwNInZ1Sxhmgu4wycdxdpmAJDyCa0WASgaRWuJoG5JiMJUEVeRazQZkbtEoy3tbx60CfyJoLkuVpHEMiKmCdH5Fk2EDlmAF3xWxWBeI4Bzit4IwwrUNlbYunCmU6zjLvaWGGGeeEXqdPZfv2tZAxBjVgoKVxmC4CLrkKtz8jUTi1BjpgHXx9qY+M2M-URJG1uRlHUYTDWgoiiO3Me+7wrsEJPboYkNC4DSbJLvS4ezcllT550AvV82IAJZTvfZzistUCL8kcMGmOY6Zco8aO4f4QA */
@@ -407,20 +415,34 @@ export const swapUIMachine = setup({
           }
         },
 
-        onDone: {
-          target: "editing",
+        onDone: [
+          {
+            target: "editing",
+            guard: { type: "isOk", params: ({ event }) => event.output },
 
-          actions: [
-            {
-              type: "spawnIntentStatusActor",
-              params: ({ event }) => event.output,
-            },
-            {
-              type: "setIntentCreationResult",
-              params: ({ event }) => event.output,
-            },
-          ],
-        },
+            actions: [
+              {
+                type: "spawnIntentStatusActor",
+                params: ({ event }) => event.output,
+              },
+              {
+                type: "setIntentCreationResult",
+                params: ({ event }) => event.output,
+              },
+              "emitEventIntentPublished",
+            ],
+          },
+          {
+            target: "editing",
+
+            actions: [
+              {
+                type: "setIntentCreationResult",
+                params: ({ event }) => event.output,
+              },
+            ],
+          },
+        ],
 
         onError: {
           target: "editing",

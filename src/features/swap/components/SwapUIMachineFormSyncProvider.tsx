@@ -19,7 +19,7 @@ export function SwapUIMachineFormSyncProvider({
   userAddress,
   onSuccessSwap,
 }: SwapUIMachineFormSyncProviderProps) {
-  const { watch } = useFormContext<SwapFormValues>()
+  const { watch, setValue } = useFormContext<SwapFormValues>()
   const actorRef = SwapUIMachineContext.useActorRef()
 
   // Make `onSuccessSwap` stable reference, waiting for `useEvent` hook to come out
@@ -49,21 +49,31 @@ export function SwapUIMachineFormSyncProvider({
   }, [actorRef, userAddress])
 
   useEffect(() => {
-    const sub = actorRef.on("INTENT_SETTLED", ({ data }) => {
-      onSuccessSwapRef.current({
-        amountIn: 0n, // todo: remove amount fields, as they may not exist for all types of intents
-        amountOut: 0n,
-        tokenIn: data.tokenIn,
-        tokenOut: data.tokenOut,
-        txHash: data.txHash,
-        intentHash: data.intentHash,
-      })
+    const sub = actorRef.on("*", (event) => {
+      switch (event.type) {
+        case "INTENT_PUBLISHED": {
+          setValue("amountIn", "")
+          break
+        }
+
+        case "INTENT_SETTLED": {
+          onSuccessSwapRef.current({
+            amountIn: 0n, // todo: remove amount fields, as they may not exist for all types of intents
+            amountOut: 0n,
+            tokenIn: event.data.tokenIn,
+            tokenOut: event.data.tokenOut,
+            txHash: event.data.txHash,
+            intentHash: event.data.intentHash,
+          })
+          break
+        }
+      }
     })
 
     return () => {
       sub.unsubscribe()
     }
-  }, [actorRef])
+  }, [actorRef, setValue])
 
   const { setModalType, onCloseModal } = useModalStore((state) => state)
 
