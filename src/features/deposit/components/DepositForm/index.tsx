@@ -10,6 +10,7 @@ import CopyToClipboard from "react-copy-to-clipboard"
 import { Controller, useFormContext } from "react-hook-form"
 import { TooltipInfo } from "src/components/TooltipInfo"
 import { RESERVED_NEAR_BALANCE } from "src/features/machines/getBalanceMachine"
+import { useDepositStatusSnapshot } from "src/hooks/useDepositStatusSnapshot"
 import { assetNetworkAdapter } from "src/utils/adapters"
 import { AssetComboIcon } from "../../../../components/Asset/AssetComboIcon"
 import { BlockMultiBalances } from "../../../../components/Block/BlockMultiBalances"
@@ -154,6 +155,12 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
       setValue("amount", "")
     }
   }, [snapshot.context.depositNearResult, setValue])
+
+  const { isDepositReceived } = useDepositStatusSnapshot({
+    accountId: userAddress ?? "",
+    chain: network ?? "",
+    generatedAddress: generatedAddressResult?.depositAddress ?? "",
+  })
 
   return (
     <div className={styles.container}>
@@ -346,6 +353,7 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
         {userAddress && network === BlockchainEnum.NEAR && (
           <Deposits depositNearResult={snapshot.context.depositNearResult} />
         )}
+        {isDepositReceived && <DepositSuccess />}
       </div>
     </div>
   )
@@ -501,6 +509,17 @@ function UnderFeatureFlag() {
       <Callout.Text>
         Temporaty disable feature, please use NEAR bridge to deposit
       </Callout.Text>
+    </Callout.Root>
+  )
+}
+
+function DepositSuccess() {
+  return (
+    <Callout.Root size={"1"} color="green">
+      <Callout.Icon>
+        <ExclamationTriangleIcon />
+      </Callout.Icon>
+      <Callout.Text>Deposit received</Callout.Text>
     </Callout.Root>
   )
 }

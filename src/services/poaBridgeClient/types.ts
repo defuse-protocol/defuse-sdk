@@ -36,7 +36,31 @@ export type GetDepositAddressRequest = JSONRPCRequest<
     chain: string
   }
 >
+
 export type GetDepositAddressResponse = JSONRPCResponse<{
   address: string
   chain: string
+}>
+
+export type DepositStatus = {
+  tx_hash: string
+  chain: string
+  defuse_asset_identifier: string
+  decimals: number
+  amount: number
+  account_id: string
+  address: string
+  status: "COMPLETED"
+}
+
+export type GetDepositStatusRequest = JSONRPCRequest<
+  "recent_deposits",
+  {
+    account_id: string
+    chain: string
+  }
+>
+
+export type GetDepositStatusResponse = JSONRPCResponse<{
+  deposits: DepositStatus[]
 }>
