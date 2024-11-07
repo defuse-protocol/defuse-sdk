@@ -1,8 +1,8 @@
 import { type ActorRef, type Snapshot, fromCallback } from "xstate"
 import { settings } from "../../config/settings"
+import { type AggregatedQuote, queryQuote } from "../../services/quoteService"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../types/base"
 import { isBaseToken } from "../../utils"
-import { type AggregatedQuote, queryQuote } from "./queryQuoteMachine"
 
 export type QuoteInput =
   | {

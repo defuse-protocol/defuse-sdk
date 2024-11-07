@@ -10,8 +10,8 @@ import {
   type IntentSettlementResult,
   waitForIntentSettlement,
 } from "../../services/intentService"
+import type { AggregatedQuote } from "../../services/quoteService"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../types/base"
-import type { AggregatedQuote } from "./queryQuoteMachine"
 import type { IntentDescription } from "./swapIntentMachine"
 
 type ChildEvent = {

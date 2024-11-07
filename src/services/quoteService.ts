@@ -1,6 +1,6 @@
-import { fromPromise } from "xstate"
-import { quote } from "../../services/solverRelayHttpClient"
-import type { QuoteResponse } from "../../services/solverRelayHttpClient/types"
+import { settings } from "../config/settings"
+import { quote } from "./solverRelayHttpClient"
+import type { QuoteResponse } from "./solverRelayHttpClient/types"
 
 export interface AggregatedQuoteParams {
   tokensIn: string[] // set of close tokens, e.g. [USDC on Solana", USDC on Ethereum, USDC on Near]
@@ -20,17 +20,6 @@ export interface AggregatedQuote {
 }
 
 type QuoteResults = QuoteResponse["result"]
-
-/**
- * Machine to query quotes for a given input.
- * It also acts as a simple router when natively multichain assets are involved.
- */
-export const queryQuoteMachine = fromPromise(
-  async ({
-    input,
-  }: { input: AggregatedQuoteParams }): Promise<AggregatedQuote> =>
-    queryQuote(input, { signal: new AbortController().signal })
-)
 
 export async function queryQuote(
   input: AggregatedQuoteParams,
@@ -59,7 +48,7 @@ export async function queryQuote(
         defuse_asset_identifier_in: tokenIn,
         defuse_asset_identifier_out: tokenOut,
         amount_in: input.amountIn.toString(),
-        min_deadline_ms: 120_000, // todo: move to settings
+        min_deadline_ms: settings.quoteMinDeadlineMs,
       },
       { signal }
     )
@@ -183,7 +172,7 @@ export async function fetchQuotesForTokens(
           defuse_asset_identifier_in: tokenIn,
           defuse_asset_identifier_out: tokenOut,
           amount_in: amountIn.toString(),
-          min_deadline_ms: 120_000,
+          min_deadline_ms: settings.quoteMinDeadlineMs,
         },
         { signal }
       )
@@ -196,4 +185,8 @@ export async function fetchQuotesForTokens(
 function onlyValidQuotes(quotes: QuoteResults): NonNullable<QuoteResults> {
   if (quotes === null) return []
   return quotes.filter((q): q is NonNullable<typeof q> => q !== null)
+}
+
+export function isAggregatedQuoteEmpty(a: AggregatedQuote): boolean {
+  return !a.quoteHashes.length || a.totalAmountOut === 0n
 }

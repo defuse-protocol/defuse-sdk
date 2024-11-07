@@ -11,6 +11,10 @@ import {
   spawnChild,
 } from "xstate"
 import { settings } from "../../config/settings"
+import {
+  type AggregatedQuote,
+  isAggregatedQuoteEmpty,
+} from "../../services/quoteService"
 import type { SwappableToken } from "../../types"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../types/base"
 import type { Transaction } from "../../types/deposit"
@@ -25,7 +29,6 @@ import {
   depositedBalanceMachine,
 } from "./depositedBalanceMachine"
 import { intentStatusMachine } from "./intentStatusMachine"
-import type { AggregatedQuote } from "./queryQuoteMachine"
 import {
   type Output as SwapIntentMachineOutput,
   swapIntentMachine,
@@ -247,11 +250,13 @@ export const swapUIMachine = setup({
       console.warn(
         "Implement real check for fetched quotes if they're expired or not"
       )
-      return context.quote != null && context.quote.totalAmountOut > 0n
+      return context.quote != null && !isAggregatedQuoteEmpty(context.quote)
     },
+    isQuoteNotEmpty: (_, quote: AggregatedQuote) =>
+      !isAggregatedQuoteEmpty(quote),
   },
 }).createMachine({
-  /** @xstate-layout N4IgpgJg5mDOIC5SwO4EMAOBaArgSwGIBJAOQBUBRcgfQGUKyyAZCgEQG0AGAXUVAwD2sPABc8AgHZ8QAD0RYArAoAcAOgCMAdgWcALJ04BOZZoBMCgDQgAnvMO7Nq5ac6b1B07oWfDAX19WqJi4hABCAIJM4SQAwhTUMQAS0QDibFy8SCCCwmKS0nIIAMxFCk5GygBsmpqGnJUKlZVWtghYhpWmqtWG6lWuupWcRer+gejY+ARMAPIppBnSOaLiUlmFlUVOvbqmlbpFulpGmi12uoaqRW7Kt-aaRfUKYyBBk4SzKTMAqmSLWcs8mtQIUsKZ1JUNPpDOZwcoFJomsozm17Jdrn07g5Hg0Xm8QqpICsJFACLAcAAjAC2on+-CEK3y60Q6i0qlq7lMhz6Sm0KKwRUMl06HSFpmURiafgCrwmBKJYhJBDwEgwOBEdOyDKBBXkezK4PUOgUEKM4uu-Oul3UB046iKm3tQsqeLl+EJEGJpJIFAA6tQAIrfGaUTWA1a6trY1RC0qCkx1fRFfn7MrqcxNLxwkyjGX490KlVQVQANzQABs8BA0IrSRBJGBVCqSwIANaN-N4D1e0sVqs1osIZsCADGA8kGTD2ojzLaKi2pkMCl0yncVWUu2aNnk2iuCKM6nsnCUxiKruCBc9td7lertYI9YkjeH7dUne717Lt4HJKHEhbY5ApO6iZPSuQziC8gqGUwzHnaK4SoM-I2l0drKEUhq6IMaEunmbpduS1KiPej7Pv+bYdhMABKYAAGZTuBTKQQgRzqKoi6rlhWHrqypzbm0jxdIMG7rocDpHJo57vG+lI0iI95gAATopAiKaoGDljWtGqVSb7UXRDGMsCsiIAclyGgoIwNFU9ilMh+zsrs9gmrseyaLsUkEoRcn3j6-pBiGFCGTqs4HDBvSsuKejHJY-GKA4Vwig66GVPYnSeZePboF61AAI44AIIhgAQfmBsGoY8Es05MSZqKuKoCgwhKWhciYRTInFpRsaxvRDNcIzeP4MoSAIEBwNInZVYxxmgu4wwNU1dpmO1Dwda0WASga7mcIhpieJsZ54ReXaFiSU1GZG7RKAtUUtSt7X8iaC5Lg6pRmNiklHdJp3FlW5ZgOdIXMVgXiOAc4reCMMK1Hx62Lpw7FOs4y72lhhiHeMx0fkWN79rWgMQbVYKClcZguAi65Crc-I1E4tTo6YmjOO19oY7KWPecRRYEzVhTtWURxDOKhrVAi-JHDBe0mntJR2ocuGY99V449ltZ5QVRU8zNO5DE4m37vCuwQo9uiqIM3hPJsRu9UNvhAA */
+  /** @xstate-layout N4IgpgJg5mDOIC5SwO4EMAOBaArgSwGIBJAOQBUBRcgfQGUKyyAZCgEQG0AGAXUVAwD2sPABc8AgHZ8QAD0RYArAoAcAOgCMAdgWcALJ04BOZZoBMCgDQgAnvMO7Nq5ac6b1B07oWfDAX19WqJi4hABCAIJM4SQAwhTUMQAS0QDibFy8SCCCwmKS0nIIAMxFCk5GygBsmpqGnJUKlZVWtghYhpWmqtWG6lWuupWcRer+gejY+ARMAPIppBnSOaLiUlmFlUVOvbqmlbpFulpGmi12uoaqRW7Kt-aaRfUKYyBBk4SzKTMAqmSLWcs8mtQIUsKZ1JUNPpDOZwcoFJomsozm17Jdrn07g5Hg0Xm8QqpICsJFACLAcAAjAC2on+-CEK3y60Q6i0qlq7lMhz6Sm0KKwRUMl06HSFpmURiafgCrwmBKJYhJBDwEgwOBEdOyDKBBXkezK4PUOgUEKM4uu-Oul3UB046iKm3tQsqeLl+EJEGJpJIFAA6tQAIrfGaUTWA1a6trY1RC0qCkx1fRFfn7MrqcxNLxwkyjGX490KlVQVQANzQABs8BA0IrSRBJGBVCqSwIANaN-N4D1e0sVqs1osIZsCADGA8kGTD2ojzLaKi2pkMCl0yncVWUu2aNnk2iuCKM6nsnCUxiKruCBc9td7lertYI9YkjeH7dUne717Lt4HJKHEhbY5ApO6iZPSuQziC8gqGUwzHnaK4SoM-I2l0drKEUhq6IMaEunmbpdoWJKqOgXrUAAjjgAgiGABA+v6QYhhQU7gUykGoq4qgKDCEpaFyJhFMi25tKU6iqEch6mtcIzeOe7xvpSNIiPej7Pv+bYdhMABKYAAGbMYywKyIg4mqIuq5YVh66sqcQkCpwXSDBu66HA6RyaLJBLktSoj3mAABOfkCH5qgYOWNY6UFVJvlpun6Tqs4HJchoKCMDRVPYpTIfs7K7PYJq7Hsmi7B57peYp950YGwahjwSzTqxRkIAcMG9Ky4p6Mcli2cujgOouDroZU9idP4MoSAIEBwNInZ1Sxhmgu4wycdxdpmAJDyCa0WASgaRWuJoG5JiMJUEVeRazQZkbtEoy3tbx60CfyJoLkuVpHEMiKmCdH5Fk2EDlmAF3xWxWBeI4Bzit4IwwrUNlbYunCmU6zjLvaWGGGeeEXqdPZfv2tZAxBjVgoKVxmC4CLrkKtz8jUTi1BjpgHXx9qY+M2M-URJG1uRlHUYTDWgoiiO3Me+7wrsEJPboYkNC4DSbJLvS4ezcllT550AvV82IAJZTvfZzistUCL8kcMGmOY6Zco8aO4f4QA */
   id: "swap-ui",
 
   context: ({ input }) => ({
@@ -284,12 +289,7 @@ export const swapUIMachine = setup({
     },
 
     BALANCE_CHANGED: {
-      actions: [
-        ({ event }) => {
-          console.log("Balance changed", event.params.changedBalanceMapping)
-        },
-        "sendToBackgroundQuoterRefNewQuoteInput",
-      ],
+      actions: "sendToBackgroundQuoterRefNewQuoteInput",
     },
 
     LOGIN: {
@@ -331,6 +331,10 @@ export const swapUIMachine = setup({
         },
 
         NEW_QUOTE: {
+          guard: {
+            type: "isQuoteNotEmpty",
+            params: ({ event }) => event.params.quote,
+          },
           actions: [
             {
               type: "setQuote",
@@ -371,7 +375,7 @@ export const swapUIMachine = setup({
                 },
                 "updateUIAmountOut",
               ],
-              description: `should do the same as NEW_QUOTE on "editing" iteself`,
+              description: `should do the same as NEW_QUOTE on "editing" itself`,
             },
           },
         },
@@ -428,6 +432,10 @@ export const swapUIMachine = setup({
 
       on: {
         NEW_QUOTE: {
+          guard: {
+            type: "isQuoteNotEmpty",
+            params: ({ event }) => event.params.quote,
+          },
           actions: [
             {
               type: "setQuote",

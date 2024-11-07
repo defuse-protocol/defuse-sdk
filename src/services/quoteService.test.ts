@@ -3,9 +3,9 @@ import {
   aggregateQuotes,
   calculateSplitAmounts,
   queryQuote,
-} from "./queryQuoteMachine"
+} from "./quoteService"
 
-import * as relayClient from "../../services/solverRelayHttpClient"
+import * as relayClient from "./solverRelayHttpClient"
 
 vi.spyOn(relayClient, "quote")
 
