@@ -285,9 +285,10 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
               <div className={styles.containerQr}>
                 <h2 className={styles.title}>Deposit to the address below</h2>
                 <p className={styles.instruction}>
-                  Withdraw assets from an exchange to the Ethereum address
-                  above. Upon confirmation, you will receive your assets on
-                  Defuse within minutes.
+                  Withdraw assets from an exchange to the{" "}
+                  {networkSelectToLabel[network]} address below. Upon
+                  confirmation, you will receive your assets on Defuse within
+                  minutes.
                 </p>
                 <div className={styles.qrCodeWrapper}>
                   {generatedAddressResult ? (
@@ -329,11 +330,10 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
                   justify="center"
                   className={styles.hintWrapper}
                 >
-                  <TooltipInfo icon={<InfoCircledIcon />}>
-                    Please make sure you connected to the right network
-                  </TooltipInfo>
+                  <InfoCircledIcon />
                   <p className={styles.hint}>
-                    Make sure to select {network} as the deposit network
+                    Make sure to select {networkSelectToLabel[network]} as the
+                    deposit network
                   </p>
                 </Flex>
               </div>
@@ -343,7 +343,7 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
           network &&
           network !== BlockchainEnum.NEAR &&
           !ENABLE_DEPOSIT_THROUGH_POA_BRIDGE && <UnderFeatureFlag />}
-        {token && network && !userAddress && renderDepositWarning(userAddress)}
+        {token && !userAddress && renderDepositWarning(userAddress)}
         {userAddress && network === BlockchainEnum.NEAR && (
           <Deposits depositNearResult={snapshot.context.depositNearResult} />
         )}
@@ -487,7 +487,7 @@ function renderDepositWarning(userAddress: string | null) {
   }
 
   return (
-    <Callout.Root size={"1"} color="red">
+    <Callout.Root size={"1"} color="red" mt="4">
       <Callout.Icon>
         <ExclamationTriangleIcon />
       </Callout.Icon>
@@ -531,5 +531,12 @@ function renderDepositButtonText(
   if (network === BlockchainEnum.NEAR && !!token) {
     return "Deposit"
   }
-  return !network && !token ? "Select asset first" : "Select network first"
+  return !network && !token ? "Select asset first" : "Select network"
+}
+
+const networkSelectToLabel = {
+  [BlockchainEnum.ETHEREUM]: "Ethereum",
+  [BlockchainEnum.BASE]: "Base",
+  [BlockchainEnum.ARBITRUM]: "Arbitrum",
+  [BlockchainEnum.BITCOIN]: "Bitcoin",
 }
