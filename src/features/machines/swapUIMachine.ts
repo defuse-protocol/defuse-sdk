@@ -57,7 +57,6 @@ type PassthroughEvent = {
     txHash: string
     tokenIn: BaseTokenInfo | UnifiedTokenInfo
     tokenOut: BaseTokenInfo | UnifiedTokenInfo
-    quote: AggregatedQuote
   }
 }
 
@@ -235,7 +234,6 @@ export const swapUIMachine = setup({
             intentHash: output.intentHash,
             tokenIn: context.formValues.tokenIn,
             tokenOut: context.formValues.tokenOut,
-            quote: context.quote,
             intentDescription: output.intentDescription,
           },
         })

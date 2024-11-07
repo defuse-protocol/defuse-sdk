@@ -2,6 +2,7 @@ import { Box, Button, Flex, Link, Spinner, Text } from "@radix-ui/themes"
 import { useSelector } from "@xstate/react"
 import type { ActorRefFrom, StateValueFrom } from "xstate"
 import type { intentStatusMachine } from "../../features/machines/intentStatusMachine"
+import { assert } from "../../utils/assert"
 import { formatTokenValue } from "../../utils/format"
 import { AssetComboIcon } from "../Asset/AssetComboIcon"
 import { CopyButton } from "./CopyButton"
@@ -14,8 +15,9 @@ const NEAR_EXPLORER = "https://nearblocks.io"
 
 export function SwapIntentCard({ intentStatusActorRef }: SwapIntentCardProps) {
   const state = useSelector(intentStatusActorRef, (state) => state)
-  const { tokenIn, tokenOut } = state.context
-  const { totalAmountIn, totalAmountOut } = state.context.quote
+  const { tokenIn, tokenOut, intentDescription } = state.context
+  assert(intentDescription.type === "swap", "Type must be swap")
+  const { totalAmountIn, totalAmountOut } = intentDescription.quote
 
   const txUrl =
     state.context.txHash != null
