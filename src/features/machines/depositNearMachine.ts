@@ -2,12 +2,12 @@ import { assign, emit, fromPromise, setup } from "xstate"
 import type { SwappableToken } from "../../types"
 
 export type Context = {
-  amount: bigint | null
-  asset: SwappableToken | null
-  tokenAddress: string | null
-  accountId: string | null
+  balance: bigint
+  amount: bigint
+  asset: SwappableToken
+  accountId: string
+  tokenAddress: string
   txHash: string | null
-  balance: bigint | null
   error:
     | null
     | {
@@ -24,14 +24,14 @@ type Events = {
   type: "INPUT"
   balance: bigint
   amount: bigint
-  asset: SwappableToken | null
+  asset: SwappableToken
   accountId: string
 }
 
 type Input = {
   balance: bigint
   amount: bigint
-  asset: SwappableToken | null
+  asset: SwappableToken
   accountId: string
 }
 
@@ -126,7 +126,7 @@ export const depositNearMachine = setup({
       accountId: input.accountId,
       txHash: null,
       error: null,
-      tokenAddress: null,
+      tokenAddress: "",
     }
   },
   states: {
@@ -136,10 +136,10 @@ export const depositNearMachine = setup({
 
         input: ({ context }) => {
           return {
-            balance: context.balance || 0n,
-            amount: context.amount || 0n,
-            accountId: context.accountId || "",
-            asset: context.asset || null,
+            balance: context.balance,
+            amount: context.amount,
+            accountId: context.accountId,
+            asset: context.asset,
           }
         },
         onDone: {

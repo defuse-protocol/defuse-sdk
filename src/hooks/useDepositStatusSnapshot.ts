@@ -4,7 +4,7 @@ import { BlockchainEnum, type DepositSnapshot } from "src/types"
 import { useGetDepositStatus } from "./usePoABridge"
 
 const INTERVAL_TIME = 1000 // 1 second
-const INITIALIZATION_DEPOSIT_RECEIVED_TIMEOUT = 15000 // 15 seconds
+const INITIALIZATION_DEPOSIT_RECEIVED_TIMEOUT = 25000 // 25 seconds
 const RESET_DEPOSIT_RECEIVED_TIME = 10000 // 10 seconds
 
 export const useDepositStatusSnapshot = (params: {
