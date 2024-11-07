@@ -8,6 +8,7 @@ import {
   type SnapshotFrom,
   fromPromise,
 } from "xstate"
+import { isAggregatedQuoteEmpty } from "../../../services/quoteService"
 import type {
   SwappableToken,
   WalletMessage,
@@ -76,7 +77,7 @@ export function SwapUIMachineProvider({
         actions: {
           updateUIAmountOut: ({ context }) => {
             const quote = context.quote
-            if (quote) {
+            if (quote != null && !isAggregatedQuoteEmpty(quote)) {
               const amountOutFormatted = formatUnits(
                 quote.totalAmountOut,
                 context.formValues.tokenOut.decimals

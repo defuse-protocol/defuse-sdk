@@ -173,7 +173,6 @@ export const SwapForm = () => {
             openModalSelectAssets("tokenOut")
           }}
           className="border rounded-b-xl mb-5"
-          required
           errors={errors}
           disabled={true}
           isLoading={snapshot.matches({ editing: "waiting_quote" })}
