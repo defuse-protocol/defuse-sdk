@@ -12,7 +12,7 @@ import {
 import { useSelector } from "@xstate/react"
 import { parseUnits } from "ethers"
 import { providers } from "near-api-js"
-import { Fragment, useEffect, useState } from "react"
+import { Fragment, useEffect } from "react"
 import {
   Controller,
   type FieldErrors,
@@ -134,9 +134,9 @@ export const WithdrawForm = ({
     handleSubmit,
     register,
     control,
-    setValue,
     watch,
     formState: { errors },
+    setValue,
   } = useForm<WithdrawFormNearValues>({
     mode: "onTouched",
     reValidateMode: "onChange",
@@ -186,41 +186,47 @@ export const WithdrawForm = ({
   }, [modalSelectAssetsData?.token, actorRef, amountIn])
 
   useEffect(() => {
-    // When values are set externally, they trigger "watch" callback too.
-    // In order to avoid, unnecessary state updates need to check if the form is changed by user
-    const sub = watch(async (value, { type, name }) => {
-      if (type === "change" && name != null) {
-        if (name === "amountIn") {
-          const amount = value[name] ?? ""
+    const sub = watch(async (value, { name }) => {
+      if (name === "amountIn") {
+        const amount = value[name] ?? ""
 
-          let parsedAmount = 0n
-          try {
-            parsedAmount = parseUnits(amount, token.decimals)
-          } catch {}
+        let parsedAmount = 0n
+        try {
+          parsedAmount = parseUnits(amount, token.decimals)
+        } catch {}
 
-          actorRef.send({
-            type: "WITHDRAW_FORM.UPDATE_AMOUNT",
-            params: { amount, parsedAmount },
-          })
-        }
-        if (name === "recipient") {
-          actorRef.send({
-            type: "WITHDRAW_FORM.RECIPIENT",
-            params: { recipient: value[name] ?? "" },
-          })
-        }
-        if (name === "blockchain") {
-          actorRef.send({
-            type: "WITHDRAW_FORM.UPDATE_BLOCKCHAIN",
-            params: { blockchain: value[name] ?? "" },
-          })
-        }
+        actorRef.send({
+          type: "WITHDRAW_FORM.UPDATE_AMOUNT",
+          params: { amount, parsedAmount },
+        })
+      }
+      if (name === "recipient") {
+        actorRef.send({
+          type: "WITHDRAW_FORM.RECIPIENT",
+          params: { recipient: value[name] ?? "" },
+        })
+      }
+      if (name === "blockchain") {
+        actorRef.send({
+          type: "WITHDRAW_FORM.UPDATE_BLOCKCHAIN",
+          params: { blockchain: value[name] ?? "" },
+        })
       }
     })
     return () => {
       sub.unsubscribe()
     }
   }, [watch, actorRef, token.decimals])
+
+  useEffect(() => {
+    const sub = actorRef.on("INTENT_PUBLISHED", () => {
+      setValue("amountIn", "")
+    })
+
+    return () => {
+      sub.unsubscribe()
+    }
+  }, [actorRef, setValue])
 
   const availableBlockchains = isBaseToken(token)
     ? [token.chainName]

@@ -11,9 +11,9 @@ import {
   getNearNep141StorageBalance,
 } from "../../machines/getBalanceMachine"
 import { getNearTxSuccessValue } from "../../machines/getTxMachine"
-export const FT_MAX_GAS_TRANSACTION = `300${"0".repeat(12)}` // 300 TGAS
-export const FT_REDUCED_GAS_TRANSACTION = `270${"0".repeat(12)}` // 270 TGAS (for storage deposit)
-export const FT_DEPOSIT_GAS = `30${"0".repeat(12)}` // 30 TGAS
+
+const FT_DEPOSIT_GAS = `30${"0".repeat(12)}` // 30 TGAS
+const FT_TRANSFER_GAS = `30${"0".repeat(12)}` // 30 TGAS
 
 export class DepositService {
   /**
@@ -69,9 +69,7 @@ export class DepositService {
                 amount: amount.toString(),
                 msg: "",
               },
-              gas: isStorageDepositRequired
-                ? FT_REDUCED_GAS_TRANSACTION
-                : FT_MAX_GAS_TRANSACTION,
+              gas: FT_TRANSFER_GAS,
               deposit: "1",
             },
           },
@@ -113,9 +111,7 @@ export class DepositService {
                 amount: amount.toString(),
                 msg: "",
               },
-              gas: isWrapNearRequired
-                ? FT_REDUCED_GAS_TRANSACTION
-                : FT_MAX_GAS_TRANSACTION,
+              gas: FT_TRANSFER_GAS,
               deposit: "1",
             },
           },

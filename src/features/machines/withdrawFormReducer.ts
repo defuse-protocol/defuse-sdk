@@ -185,5 +185,5 @@ function getParsedRecipient(
     return null
   }
 
-  return recipient.toLowerCase()
+  return recipient
 }
