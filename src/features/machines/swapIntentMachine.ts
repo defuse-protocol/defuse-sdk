@@ -55,29 +55,19 @@ type Context = {
   }
   signature: WalletSignatureResult | null
   intentHash: string | null
-  error:
-    | null
-    | {
-        status: "ERR_USER_DIDNT_SIGN"
-        error: Error
-      }
-    | {
-        status: "ERR_CANNOT_VERIFY_SIGNATURE"
-      }
-    | {
-        status: "ERR_SIGNED_DIFFERENT_ACCOUNT"
-      }
-    | {
-        status: "ERR_CANNOT_VERIFY_PUBLIC_KEY"
-        error: Error | null
-      }
-    | {
-        status: "ERR_CANNOT_PUBLISH_INTENT"
-        error: Error
-      }
-    | {
-        status: "ERR_QUOTE_EXPIRED_RETURN_IS_LOWER"
-      }
+  error: null | {
+    tag: "err"
+    value: {
+      reason:
+        | "ERR_USER_DIDNT_SIGN"
+        | "ERR_CANNOT_VERIFY_SIGNATURE"
+        | "ERR_SIGNED_DIFFERENT_ACCOUNT"
+        | "ERR_CANNOT_VERIFY_PUBLIC_KEY"
+        | "ERR_CANNOT_PUBLISH_INTENT"
+        | "ERR_QUOTE_EXPIRED_RETURN_IS_LOWER"
+      error: Error | null
+    }
+  }
 }
 
 type Input = {
@@ -90,9 +80,11 @@ type Input = {
 export type Output =
   | NonNullable<Context["error"]>
   | {
-      status: "INTENT_PUBLISHED"
-      intentHash: string
-      intentDescription: IntentDescription
+      tag: "ok"
+      value: {
+        intentHash: string
+        intentDescription: IntentDescription
+      }
     }
 
 type Events = BackgroundQuoterEvents
@@ -109,7 +101,10 @@ export const swapIntentMachine = setup({
   },
   actions: {
     setError: assign({
-      error: (_, error: NonNullable<Context["error"]>) => error,
+      error: (_, error: NonNullable<Context["error"]>["value"]) => ({
+        tag: "err" as const,
+        value: error,
+      }),
     }),
     logError: (_, params: { error: unknown }) => {
       console.error(params.error)
@@ -240,11 +235,13 @@ export const swapIntentMachine = setup({
       switch (intentType) {
         case "swap":
           return {
-            status: "INTENT_PUBLISHED",
-            intentHash: context.intentHash,
-            intentDescription: {
-              type: "swap",
-              quote: context.intentOperationParams.quote,
+            tag: "ok",
+            value: {
+              intentHash: context.intentHash,
+              intentDescription: {
+                type: "swap",
+                quote: context.intentOperationParams.quote,
+              },
             },
           }
         case "withdraw": {
@@ -255,11 +252,13 @@ export const swapIntentMachine = setup({
             directWithdrawalAmount + (quote?.totalAmountOut ?? 0n)
 
           return {
-            status: "INTENT_PUBLISHED",
-            intentHash: context.intentHash,
-            intentDescription: {
-              type: "withdraw",
-              amountWithdrawn: totalAmountWithdrawn,
+            tag: "ok",
+            value: {
+              intentHash: context.intentHash,
+              intentDescription: {
+                type: "withdraw",
+                amountWithdrawn: totalAmountWithdrawn,
+              },
             },
           }
         }
@@ -326,7 +325,7 @@ export const swapIntentMachine = setup({
             {
               type: "setError",
               params: ({ event }) => ({
-                status: "ERR_USER_DIDNT_SIGN",
+                reason: "ERR_USER_DIDNT_SIGN",
                 error: toError(event.error),
               }),
             },
@@ -359,7 +358,8 @@ export const swapIntentMachine = setup({
             actions: {
               type: "setError",
               params: {
-                status: "ERR_SIGNED_DIFFERENT_ACCOUNT",
+                reason: "ERR_SIGNED_DIFFERENT_ACCOUNT",
+                error: null,
               },
             },
           },
@@ -376,7 +376,7 @@ export const swapIntentMachine = setup({
             {
               type: "setError",
               params: ({ event }) => ({
-                status: "ERR_CANNOT_VERIFY_SIGNATURE",
+                reason: "ERR_CANNOT_VERIFY_SIGNATURE",
                 error: toError(event.error),
               }),
             },
@@ -417,7 +417,7 @@ export const swapIntentMachine = setup({
             actions: {
               type: "setError",
               params: {
-                status: "ERR_CANNOT_VERIFY_PUBLIC_KEY",
+                reason: "ERR_CANNOT_VERIFY_PUBLIC_KEY",
                 error: null,
               },
             },
@@ -435,7 +435,7 @@ export const swapIntentMachine = setup({
             {
               type: "setError",
               params: ({ event }) => ({
-                status: "ERR_CANNOT_VERIFY_PUBLIC_KEY",
+                reason: "ERR_CANNOT_VERIFY_PUBLIC_KEY",
                 error: toError(event.error),
               }),
             },
@@ -475,7 +475,7 @@ export const swapIntentMachine = setup({
             {
               type: "setError",
               params: ({ event }) => ({
-                status: "ERR_CANNOT_PUBLISH_INTENT",
+                reason: "ERR_CANNOT_PUBLISH_INTENT",
                 error: toError(event.error),
               }),
             },
@@ -507,7 +507,8 @@ export const swapIntentMachine = setup({
             {
               type: "setError",
               params: {
-                status: "ERR_QUOTE_EXPIRED_RETURN_IS_LOWER",
+                reason: "ERR_QUOTE_EXPIRED_RETURN_IS_LOWER",
+                error: null,
               },
             },
           ],

@@ -225,18 +225,18 @@ export const withdrawUIMachine = setup({
         { context, spawn, self },
         output: SwapIntentMachineOutput
       ) => {
-        if (output.status !== "INTENT_PUBLISHED") return context.intentRefs
+        if (output.tag !== "ok") return context.intentRefs
 
         const formValues = context.withdrawFormRef.getSnapshot().context
 
         const intentRef = spawn("intentStatusActor", {
-          id: `intent-${output.intentHash}`,
+          id: `intent-${output.value.intentHash}`,
           input: {
             parentRef: self,
-            intentHash: output.intentHash,
+            intentHash: output.value.intentHash,
             tokenIn: formValues.tokenIn,
             tokenOut: formValues.tokenOut,
-            intentDescription: output.intentDescription,
+            intentDescription: output.value.intentDescription,
           },
         })
 
