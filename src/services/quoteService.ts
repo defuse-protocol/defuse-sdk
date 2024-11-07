@@ -1,3 +1,4 @@
+import { settings } from "../config/settings"
 import { quote } from "./solverRelayHttpClient"
 import type { QuoteResponse } from "./solverRelayHttpClient/types"
 
@@ -47,7 +48,7 @@ export async function queryQuote(
         defuse_asset_identifier_in: tokenIn,
         defuse_asset_identifier_out: tokenOut,
         amount_in: input.amountIn.toString(),
-        min_deadline_ms: 120_000, // todo: move to settings
+        min_deadline_ms: settings.quoteMinDeadlineMs,
       },
       { signal }
     )
@@ -171,7 +172,7 @@ export async function fetchQuotesForTokens(
           defuse_asset_identifier_in: tokenIn,
           defuse_asset_identifier_out: tokenOut,
           amount_in: amountIn.toString(),
-          min_deadline_ms: 120_000,
+          min_deadline_ms: settings.quoteMinDeadlineMs,
         },
         { signal }
       )

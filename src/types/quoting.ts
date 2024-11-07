@@ -26,6 +26,7 @@ export interface Settings {
   swapExpirySec: number
   quoteQueryTimeoutMs: number
   quotePollingIntervalMs: number
+  quoteMinDeadlineMs: number
   queries: {
     staleTime: number
   }

@@ -9,6 +9,11 @@ export let settings: Settings = {
    */
   quoteQueryTimeoutMs: 4000,
   quotePollingIntervalMs: 3000,
+  /**
+   * Minimum deadline for a quote.
+   * The server will return quotes with at least this much time remaining.
+   */
+  quoteMinDeadlineMs: 120_000,
   queries: {
     staleTime: 2000 * 60, // 2 minutes
   },
