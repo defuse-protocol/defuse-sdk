@@ -1,5 +1,5 @@
-import { quote } from "../../services/solverRelayHttpClient"
-import type { QuoteResponse } from "../../services/solverRelayHttpClient/types"
+import { quote } from "./solverRelayHttpClient"
+import type { QuoteResponse } from "./solverRelayHttpClient/types"
 
 export interface AggregatedQuoteParams {
   tokensIn: string[] // set of close tokens, e.g. [USDC on Solana", USDC on Ethereum, USDC on Near]

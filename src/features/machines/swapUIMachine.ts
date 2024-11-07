@@ -11,6 +11,7 @@ import {
   spawnChild,
 } from "xstate"
 import { settings } from "../../config/settings"
+import type { AggregatedQuote } from "../../services/quoteService"
 import type { SwappableToken } from "../../types"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../types/base"
 import type { Transaction } from "../../types/deposit"
@@ -25,7 +26,6 @@ import {
   depositedBalanceMachine,
 } from "./depositedBalanceMachine"
 import { intentStatusMachine } from "./intentStatusMachine"
-import type { AggregatedQuote } from "./queryQuoteMachine"
 import {
   type Output as SwapIntentMachineOutput,
   swapIntentMachine,

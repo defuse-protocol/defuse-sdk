@@ -11,6 +11,7 @@ import {
   spawnChild,
 } from "xstate"
 import { settings } from "../../config/settings"
+import type { AggregatedQuote } from "../../services/quoteService"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../types/base"
 import type { Transaction } from "../../types/deposit"
 import { isBaseToken } from "../../utils"
@@ -29,7 +30,6 @@ import {
   type Output as NEP141StorageOutput,
   nep141StorageActor,
 } from "./nep141StorageActor"
-import type { AggregatedQuote } from "./queryQuoteMachine"
 import {
   type Output as SwapIntentMachineOutput,
   swapIntentMachine,
