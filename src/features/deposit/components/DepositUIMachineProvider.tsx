@@ -8,7 +8,6 @@ import {
 } from "xstate"
 import { settings } from "../../../config/settings"
 import type { SwappableToken, Transaction } from "../../../types"
-import { BlockchainEnum } from "../../../types"
 import { assert } from "../../../utils/assert"
 import { userAddressToDefuseUserId } from "../../../utils/defuse"
 import { isBaseToken } from "../../../utils/token"
@@ -66,17 +65,12 @@ export function DepositUIMachineProvider({
           depositNearActor: depositNearMachine.provide({
             actors: {
               signAndSendTransactions: fromPromise(async ({ input }) => {
-                const { asset, amount, balance, accountId } = input
-                assert(asset != null, "Asset is not selected")
-                assert(amount != null, "Amount is not selected")
-                assert(accountId != null, "Account ID is not selected")
+                const { asset, amount, balance } = input
 
                 const tokenAddress = isBaseToken(asset)
                   ? asset.address
                   : (asset.groupedTokens.find(
-                      (token) =>
-                        `${token.chainName.toLowerCase()}:${token.chainId.toString()}` ===
-                        BlockchainEnum.NEAR
+                      (token) => token.chainName === "near"
                     )?.address ?? null)
 
                 assert(tokenAddress != null, "Token address is not defined")

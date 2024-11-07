@@ -334,8 +334,6 @@ export const depositUIMachine = setup({
         src: "depositGenerateAddressActor",
 
         input: ({ context, event }) => {
-          // TODO TypeError: Do not know how to serialize a BigInt
-          // assertEvent(event, "AUTO_SUBMIT")
           if (context.formValues.network == null || !context.userAddress) {
             throw new Error("Chain or account ID is missing")
           }
