@@ -7,7 +7,6 @@ import {
   fromPromise,
   getNextSnapshot,
 } from "xstate"
-import type { queryQuoteMachine } from "./queryQuoteMachine"
 import type { swapIntentMachine } from "./swapIntentMachine"
 import { swapUIMachine } from "./swapUIMachine"
 
@@ -16,12 +15,9 @@ describe.skip("swapUIMachine", () => {
     formValidation: vi.fn(async (): Promise<boolean> => {
       return true
     }),
-    queryQuote: vi.fn(
-      async (): Promise<OutputFrom<typeof queryQuoteMachine>> => {
-        // @ts-expect-error
-        return {}
-      }
-    ),
+    queryQuote: vi.fn(async (): Promise<unknown> => {
+      return {}
+    }),
     swap: async (): Promise<OutputFrom<typeof swapIntentMachine>> => {
       // @ts-expect-error
       return {}
@@ -106,7 +102,6 @@ describe.skip("swapUIMachine", () => {
     const err = new Error("Something went wrong")
     defaultActorImpls.queryQuote
       .mockRejectedValueOnce(err)
-      // @ts-expect-error
       .mockResolvedValueOnce({})
     const service = interpret().start()
 

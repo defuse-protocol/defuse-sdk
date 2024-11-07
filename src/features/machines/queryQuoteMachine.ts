@@ -1,4 +1,3 @@
-import { fromPromise } from "xstate"
 import { quote } from "../../services/solverRelayHttpClient"
 import type { QuoteResponse } from "../../services/solverRelayHttpClient/types"
 
@@ -20,17 +19,6 @@ export interface AggregatedQuote {
 }
 
 type QuoteResults = QuoteResponse["result"]
-
-/**
- * Machine to query quotes for a given input.
- * It also acts as a simple router when natively multichain assets are involved.
- */
-export const queryQuoteMachine = fromPromise(
-  async ({
-    input,
-  }: { input: AggregatedQuoteParams }): Promise<AggregatedQuote> =>
-    queryQuote(input, { signal: new AbortController().signal })
-)
 
 export async function queryQuote(
   input: AggregatedQuoteParams,
