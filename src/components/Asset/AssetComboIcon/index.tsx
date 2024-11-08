@@ -6,6 +6,7 @@ type AssetComboIconProps = {
   name?: string
   chainIcon?: string
   chainName?: string
+  showChainIcon?: boolean
 }
 
 export const AssetComboIcon = ({
@@ -13,6 +14,7 @@ export const AssetComboIcon = ({
   name,
   chainIcon,
   chainName,
+  showChainIcon = false,
 }: AssetComboIconProps) => {
   return (
     <div className={styles.container}>
@@ -23,17 +25,19 @@ export const AssetComboIcon = ({
           <EmptyAssetComboIcon />
         )}
       </div>
-      <div className={styles.chainIconWrapper}>
-        {chainIcon ? (
-          <img
-            src={chainIcon}
-            alt={chainName || "Network Logo"}
-            className={styles.chainIcon}
-          />
-        ) : (
-          <EmptyChainIcon />
-        )}
-      </div>
+      {showChainIcon && (
+        <div className={styles.chainIconWrapper}>
+          {chainIcon ? (
+            <img
+              src={chainIcon}
+              alt={chainName || "Network Logo"}
+              className={styles.chainIcon}
+            />
+          ) : (
+            <EmptyChainIcon />
+          )}
+        </div>
+      )}
     </div>
   )
 }
