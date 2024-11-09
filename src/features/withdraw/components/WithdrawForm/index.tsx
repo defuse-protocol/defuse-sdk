@@ -12,12 +12,7 @@ import {
 import { useSelector } from "@xstate/react"
 import { providers } from "near-api-js"
 import { Fragment, useEffect } from "react"
-import {
-  Controller,
-  type FieldErrors,
-  type Resolver,
-  useForm,
-} from "react-hook-form"
+import { Controller, useForm } from "react-hook-form"
 import type { ActorRefFrom, SnapshotFrom } from "xstate"
 import { EmptyIcon } from "../../../../components/EmptyIcon"
 import { Form } from "../../../../components/Form"
@@ -52,18 +47,6 @@ export type WithdrawFormNearValues = {
 }
 
 interface WithdrawFormProps extends WithdrawWidgetProps {}
-
-const resolver: Resolver<WithdrawFormNearValues> = (values) => {
-  const errors: FieldErrors<WithdrawFormNearValues> = {}
-
-  if (!validateAddress(values.recipient, values.blockchain)) {
-    errors.recipient = {
-      type: "manual",
-      message: "Invalid address for the selected blockchain",
-    }
-  }
-  return { values, errors }
-}
 
 export const WithdrawForm = ({
   userAddress,
@@ -154,7 +137,6 @@ export const WithdrawForm = ({
       recipient,
       blockchain,
     },
-    resolver,
   })
 
   const { setModalType, data: modalSelectAssetsData } = useModalController<{
@@ -293,6 +275,10 @@ export const WithdrawForm = ({
               <Controller
                 name="blockchain"
                 control={control}
+                rules={{
+                  required: "This field is required",
+                  deps: "recipient",
+                }}
                 render={({ field }) => {
                   return (
                     <Select
@@ -314,7 +300,15 @@ export const WithdrawForm = ({
               <Flex direction={"column"} gap={"1"}>
                 <TextField.Root
                   size={"3"}
-                  {...register("recipient")}
+                  {...register("recipient", {
+                    validate: {
+                      pattern: (value, formValues) => {
+                        if (!validateAddress(value, formValues.blockchain)) {
+                          return "Invalid address for the selected blockchain"
+                        }
+                      },
+                    },
+                  })}
                   placeholder="Enter wallet address"
                 >
                   <TextField.Slot>
