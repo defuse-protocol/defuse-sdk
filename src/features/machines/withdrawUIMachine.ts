@@ -64,7 +64,17 @@ export type Context = {
   } | null
   nep141StorageOutput: NEP141StorageOutput | null
   nep141StorageQuote: AggregatedQuote | null
-  preparationOutput: null | { tag: "ok" } | { tag: "err"; value: string }
+  preparationOutput:
+    | null
+    | { tag: "ok" }
+    | {
+        tag: "err"
+        value:
+          | "ERR_BALANCE_INSUFFICIENT"
+          | "ERR_NEP141_STORAGE"
+          | "ERR_CANNOT_FETCH_POA_BRIDGE_INFO"
+          | "ERR_AMOUNT_TOO_LOW"
+      }
 }
 
 type PassthroughEvent = {

@@ -15,7 +15,7 @@ import {
 } from "@radix-ui/themes"
 import { useSelector } from "@xstate/react"
 import { providers } from "near-api-js"
-import { Fragment, useEffect } from "react"
+import { Fragment, type ReactNode, useEffect } from "react"
 import { Controller, useForm } from "react-hook-form"
 import type { ActorRefFrom, SnapshotFrom } from "xstate"
 import { EmptyIcon } from "../../../../components/EmptyIcon"
@@ -506,15 +506,35 @@ function renderMinWithdrawalAmount(
 function renderPreparationResult(
   preparationOutput: Context["preparationOutput"]
 ) {
+  if (preparationOutput?.tag !== "err") return null
+
+  let content: ReactNode = null
+  const val = preparationOutput.value
+  switch (val) {
+    case "ERR_NEP141_STORAGE":
+      content = val
+      break
+    case "ERR_CANNOT_FETCH_POA_BRIDGE_INFO":
+      content = "Cannot fetch POA Bridge info"
+      break
+    case "ERR_BALANCE_INSUFFICIENT":
+    case "ERR_AMOUNT_TOO_LOW":
+      // Don't duplicate error messages, this should be handled by input validation
+      break
+    default:
+      val satisfies never
+      content = val
+  }
+
+  if (content == null) return null
+
   return (
-    preparationOutput?.tag === "err" && (
-      <Callout.Root size={"1"} color="red">
-        <Callout.Icon>
-          <ExclamationTriangleIcon />
-        </Callout.Icon>
-        <Callout.Text>{preparationOutput.value}</Callout.Text>
-      </Callout.Root>
-    )
+    <Callout.Root size={"1"} color="red">
+      <Callout.Icon>
+        <ExclamationTriangleIcon />
+      </Callout.Icon>
+      <Callout.Text>{content}</Callout.Text>
+    </Callout.Root>
   )
 }
 
