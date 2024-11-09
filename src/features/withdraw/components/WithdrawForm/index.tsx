@@ -144,7 +144,7 @@ export const WithdrawForm = ({
 
   const { setModalType, data: modalSelectAssetsData } = useModalController<{
     modalType: ModalType
-    token: BaseTokenInfo | UnifiedTokenInfo
+    token: BaseTokenInfo | UnifiedTokenInfo | undefined
   }>(ModalType.MODAL_SELECT_ASSETS, "token")
 
   const updateTokens = useTokensStore((state) => state.updateTokens)
@@ -164,6 +164,7 @@ export const WithdrawForm = ({
   useEffect(() => {
     if (modalSelectAssetsData?.token) {
       const token = modalSelectAssetsData.token
+      modalSelectAssetsData.token = undefined // consume data, so it won't be triggered again
       let parsedAmount = 0n
       try {
         parsedAmount = parseUnits(amountIn, token.decimals)
@@ -177,7 +178,7 @@ export const WithdrawForm = ({
         },
       })
     }
-  }, [modalSelectAssetsData?.token, actorRef, amountIn])
+  }, [modalSelectAssetsData, actorRef, amountIn])
 
   useEffect(() => {
     const sub = watch(async (value, { name }) => {
