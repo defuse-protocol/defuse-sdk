@@ -7,6 +7,7 @@ import type {
   FieldErrors,
   FieldValues,
   Path,
+  RegisterOptions,
   UseFormRegister,
 } from "react-hook-form"
 import { formatUnits } from "viem"
@@ -23,6 +24,8 @@ interface Props<T extends FieldValues>
   fieldName: Path<T>
   register?: UseFormRegister<T>
   required?: boolean
+  min?: RegisterOptions["min"]
+  max?: RegisterOptions["max"]
   placeholder?: string
   label?: string | React.ReactNode
   price?: string
@@ -42,6 +45,8 @@ export const FieldComboInput = <T extends FieldValues>({
   fieldName,
   register,
   required,
+  min,
+  max,
   placeholder = "0",
   label,
   price,
@@ -89,18 +94,16 @@ export const FieldComboInput = <T extends FieldValues>({
     }
   }
 
-  const option = {
+  // react-hook-form specific props
+  const reactHookFormRegisterProps = register(fieldName, {
+    min,
+    max,
     pattern: {
-      value: /^[0-9]*[,.]?[0-9]*$/, // Valid result "100", "1.000", "0.000123", etc.
+      value: /^[0-9]*[,.]?[0-9]*$/, // Valid result "10", "1,0", "0.01", ".01"
       message: "Please enter a valid number",
     },
-  }
-  if (required) {
-    Object.assign(option, { required: "This field is required" })
-  }
-
-  // react-hook-form specific props
-  const reactHookFormRegisterProps = register(fieldName, option)
+    required: required ? "This field is required" : false,
+  })
 
   const allInputRefs = useMergedRef(inputRef, reactHookFormRegisterProps.ref)
 

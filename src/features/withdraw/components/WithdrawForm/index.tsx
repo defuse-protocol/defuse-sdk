@@ -261,6 +261,18 @@ export const WithdrawForm = ({
               }}
               className="border rounded-xl"
               required
+              min={{
+                value: formatTokenValue(1n, token.decimals),
+                message: "Amount is too low",
+              }}
+              max={
+                tokenInBalance != null
+                  ? {
+                      value: formatTokenValue(tokenInBalance, token.decimals),
+                      message: "Insufficient balance",
+                    }
+                  : undefined
+              }
               errors={errors}
               balance={tokenInBalance}
               register={register}
