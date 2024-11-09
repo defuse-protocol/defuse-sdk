@@ -1,4 +1,8 @@
-import { ExclamationTriangleIcon, PersonIcon } from "@radix-ui/react-icons"
+import {
+  ExclamationTriangleIcon,
+  InfoCircledIcon,
+  PersonIcon,
+} from "@radix-ui/react-icons"
 import {
   Box,
   Button,
@@ -31,7 +35,11 @@ import { formatTokenValue } from "../../../../utils/format"
 import { parseUnits } from "../../../../utils/parse"
 import { validateAddress } from "../../../../utils/validateAddress"
 import type { intentStatusMachine } from "../../../machines/intentStatusMachine"
-import type { withdrawUIMachine } from "../../../machines/withdrawUIMachine"
+import { getPOABridgeInfo } from "../../../machines/poaBridgeInfoActor"
+import type {
+  Context,
+  withdrawUIMachine,
+} from "../../../machines/withdrawUIMachine"
 import {
   balanceSelector,
   renderIntentCreationResult,
@@ -63,6 +71,7 @@ export const WithdrawForm = ({
   const {
     state,
     depositedBalanceRef,
+    poaBridgeInfoRef,
     intentCreationResult,
     intentRefs,
     nep141StorageRequired,
@@ -70,6 +79,7 @@ export const WithdrawForm = ({
     return {
       state,
       depositedBalanceRef: state.children.depositedBalanceRef,
+      poaBridgeInfoRef: state.context.poaBridgeInfoRef,
       intentCreationResult: state.context.intentCreationResult,
       intentRefs: state.context.intentRefs,
       nep141StorageRequired:
@@ -103,7 +113,7 @@ export const WithdrawForm = ({
     }
   }, [userAddress, actorRef])
 
-  const { token, blockchain, amountIn, recipient } = useSelector(
+  const { token, tokenOut, blockchain, amountIn, recipient } = useSelector(
     formRef,
     (state) => {
       const { tokenOut } = state.context
@@ -111,11 +121,17 @@ export const WithdrawForm = ({
       return {
         blockchain: tokenOut.chainName,
         token: state.context.tokenIn,
+        tokenOut: state.context.tokenOut,
         amountIn: state.context.amount,
         recipient: state.context.recipient,
       }
     }
   )
+
+  const minWithdrawalAmount = useSelector(poaBridgeInfoRef, (state) => {
+    const bridgedTokenInfo = getPOABridgeInfo(state, tokenOut)
+    return bridgedTokenInfo == null ? null : bridgedTokenInfo.minWithdrawal
+  })
 
   const tokenInBalance = useSelector(
     depositedBalanceRef,
@@ -269,10 +285,17 @@ export const WithdrawForm = ({
               }}
               className="border rounded-xl"
               required
-              min={{
-                value: formatTokenValue(1n, token.decimals),
-                message: "Amount is too low",
-              }}
+              min={
+                minWithdrawalAmount != null
+                  ? {
+                      value: formatTokenValue(
+                        minWithdrawalAmount,
+                        token.decimals
+                      ),
+                      message: "Amount is too low",
+                    }
+                  : undefined
+              }
               max={
                 tokenInBalance != null
                   ? {
@@ -285,6 +308,8 @@ export const WithdrawForm = ({
               balance={tokenInBalance}
               register={register}
             />
+
+            {renderMinWithdrawalAmount(minWithdrawalAmount, tokenOut)}
 
             <Flex direction={"column"} gap={"2"}>
               <Box px={"2"} asChild>
@@ -371,7 +396,7 @@ export const WithdrawForm = ({
                 ) : totalAmountReceived == null ? (
                   "–"
                 ) : (
-                  formatTokenValue(totalAmountReceived, token.decimals)
+                  formatTokenValue(totalAmountReceived, tokenOut.decimals)
                 )}{" "}
                 {token.symbol}
               </Text>
@@ -393,6 +418,7 @@ export const WithdrawForm = ({
           </Flex>
         </Form>
 
+        {renderPreparationResult(state.context.preparationOutput)}
         {renderIntentCreationResult(intentCreationResult)}
 
         <Intents intentRefs={intentRefs} />
@@ -454,13 +480,42 @@ const allBlockchains = [
   },
 ]
 
-function renderBlockchainLabel(chainName: string): string {
-  const blockchain = allBlockchains.find((a) => a.value === chainName)
-  if (blockchain != null) {
-    return blockchain.label
-  }
-  console.warn(`Unknown blockchain: ${chainName}`)
-  return chainName
+function renderMinWithdrawalAmount(
+  minWithdrawalAmount: bigint | null,
+  tokenOut: BaseTokenInfo
+) {
+  return (
+    minWithdrawalAmount != null &&
+    minWithdrawalAmount > 1n && (
+      <Callout.Root size={"1"} color="gray" variant="surface">
+        <Callout.Icon>
+          <InfoCircledIcon />
+        </Callout.Icon>
+        <Callout.Text>
+          Minimal amount to withdraw is{" "}
+          <Text size={"1"} weight={"bold"}>
+            {formatTokenValue(minWithdrawalAmount, tokenOut.decimals)}{" "}
+            {tokenOut.symbol}
+          </Text>
+        </Callout.Text>
+      </Callout.Root>
+    )
+  )
+}
+
+function renderPreparationResult(
+  preparationOutput: Context["preparationOutput"]
+) {
+  return (
+    preparationOutput?.tag === "err" && (
+      <Callout.Root size={"1"} color="red">
+        <Callout.Icon>
+          <ExclamationTriangleIcon />
+        </Callout.Icon>
+        <Callout.Text>{preparationOutput.value}</Callout.Text>
+      </Callout.Root>
+    )
+  )
 }
 
 function Intents({
