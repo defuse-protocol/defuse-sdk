@@ -1,4 +1,3 @@
-import { parseUnits } from "ethers"
 import type { providers } from "near-api-js"
 import {
   type ActorRefFrom,
@@ -18,6 +17,7 @@ import {
 import type { SwappableToken } from "../../types"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../types/base"
 import type { Transaction } from "../../types/deposit"
+import { parseUnits } from "../../utils/parse"
 import {
   type Events as BackgroundQuoterEvents,
   type ParentEvents as BackgroundQuoterParentEvents,

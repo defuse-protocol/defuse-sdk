@@ -10,7 +10,6 @@ import {
   TextField,
 } from "@radix-ui/themes"
 import { useSelector } from "@xstate/react"
-import { parseUnits } from "ethers"
 import { providers } from "near-api-js"
 import { Fragment, useEffect } from "react"
 import {
@@ -34,6 +33,7 @@ import type { WithdrawWidgetProps } from "../../../../types/withdraw"
 import { isBaseToken } from "../../../../utils"
 import { assert } from "../../../../utils/assert"
 import { formatTokenValue } from "../../../../utils/format"
+import { parseUnits } from "../../../../utils/parse"
 import { validateAddress } from "../../../../utils/validateAddress"
 import type { intentStatusMachine } from "../../../machines/intentStatusMachine"
 import type { withdrawUIMachine } from "../../../machines/withdrawUIMachine"

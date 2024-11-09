@@ -91,7 +91,7 @@ export const FieldComboInput = <T extends FieldValues>({
 
   const option = {
     pattern: {
-      value: /^(?!0(\.0+)?$)(\d+(\.\d+)?|\.\d+)$/, // Valid result "100", "1.000", "0.000123", etc.
+      value: /^[0-9]*[,.]?[0-9]*$/, // Valid result "100", "1.000", "0.000123", etc.
       message: "Please enter a valid number",
     },
   }
@@ -124,6 +124,8 @@ export const FieldComboInput = <T extends FieldValues>({
 
       <input
         type={"text"}
+        inputMode={"decimal"}
+        pattern={"[0-9]*[,.]?[0-9]*"}
         {...reactHookFormRegisterProps}
         ref={allInputRefs}
         placeholder={placeholder}
