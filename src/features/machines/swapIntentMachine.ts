@@ -1,3 +1,4 @@
+import { secp256k1 } from "@noble/curves/secp256k1"
 import type { providers } from "near-api-js"
 import { verifyMessage as verifyMessageViem } from "viem"
 import { assign, fromPromise, setup } from "xstate"
@@ -20,6 +21,9 @@ import {
   type SendNearTransaction,
   publicKeyVerifierMachine,
 } from "./publicKeyVerifierMachine"
+
+// No-op usage to prevent tree-shaking. sec256k1 is dynamically loaded by viem.
+const _noop = secp256k1.getPublicKey || null
 
 type IntentOperationParams =
   | {

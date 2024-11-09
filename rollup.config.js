@@ -34,6 +34,7 @@ const config = [
       // Subfolders are not excluded by default
       "zustand/vanilla",
       "react/jsx-runtime", // Implicitly required by React JSX transform
+      "@noble/curves/secp256k1",
     ],
   },
   {
