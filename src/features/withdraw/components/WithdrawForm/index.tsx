@@ -130,15 +130,19 @@ export const WithdrawForm = ({
     formState: { errors },
     setValue,
   } = useForm<WithdrawFormNearValues>({
-    mode: "onTouched",
+    mode: "onSubmit",
     reValidateMode: "onChange",
     values: {
       amountIn,
       recipient,
       blockchain,
     },
+    // `resetOptions` is needed exclusively for being able to use `values` option without bugs
     resetOptions: {
+      // Fixes: prevent all errors from being cleared when `values` change
       keepErrors: true,
+      // Fixes: `reValidateMode` is not working when `values` change
+      keepIsSubmitted: true,
     },
   })
 
