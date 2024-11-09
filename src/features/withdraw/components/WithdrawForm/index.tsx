@@ -137,6 +137,9 @@ export const WithdrawForm = ({
       recipient,
       blockchain,
     },
+    resetOptions: {
+      keepErrors: true,
+    },
   })
 
   const { setModalType, data: modalSelectAssetsData } = useModalController<{
