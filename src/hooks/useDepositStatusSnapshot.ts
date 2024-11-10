@@ -15,7 +15,7 @@ export const useDepositStatusSnapshot = (params: {
   const [isDepositReceived, setIsDepositReceived] = useState(false)
   const [initializedSnapshot, setInitializedSnapshot] = useState<boolean>(true)
   const [snapshot, setSnapshot] = useState<DepositSnapshot[]>([])
-  const { data, isLoading, refetch, isFetched } = useGetDepositStatus(
+  const { data, isLoading, refetch } = useGetDepositStatus(
     {
       account_id: params.accountId,
       chain: params.chain,
