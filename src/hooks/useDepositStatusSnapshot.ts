@@ -4,7 +4,7 @@ import { BlockchainEnum, type DepositSnapshot } from "src/types"
 import { useGetDepositStatus } from "./usePoABridge"
 
 const INTERVAL_TIME = 1000 // 1 second
-const INITIALIZATION_DEPOSIT_RECEIVED_TIMEOUT = 25000 // 25 seconds
+const TIME_TO_MAKE_INITIAL_SNAPSHOT = 3000 // 3 seconds
 const RESET_DEPOSIT_RECEIVED_TIME = 10000 // 10 seconds
 
 export const useDepositStatusSnapshot = (params: {
@@ -12,10 +12,8 @@ export const useDepositStatusSnapshot = (params: {
   chain: string
   generatedAddress: string
 }) => {
-  const [isDepositReceived, setIsDepositReceived] = useState<
-    boolean | undefined
-  >(undefined)
-  const [isInitialSnapshot, setIsInitialSnapshot] = useState<boolean>(true)
+  const [isDepositReceived, setIsDepositReceived] = useState(false)
+  const [initializedSnapshot, setInitializedSnapshot] = useState<boolean>(true)
   const [snapshot, setSnapshot] = useState<DepositSnapshot[]>([])
   const { data, isLoading, refetch } = useGetDepositStatus(
     {
@@ -23,7 +21,10 @@ export const useDepositStatusSnapshot = (params: {
       chain: params.chain,
     },
     {
-      enabled: !!params.generatedAddress,
+      enabled:
+        !!params.generatedAddress &&
+        params.chain !== BlockchainEnum.NEAR &&
+        !!params.accountId,
     }
   )
 
@@ -55,7 +56,7 @@ export const useDepositStatusSnapshot = (params: {
             newTxHashes.includes(depositStatus.txHash)
           ),
         ])
-        if (!isInitialSnapshot) {
+        if (!initializedSnapshot) {
           setIsDepositReceived(true)
           console.log("New transaction hashes found:", newTxHashes)
           setTimeout(() => {
@@ -66,30 +67,25 @@ export const useDepositStatusSnapshot = (params: {
         console.log("No new transaction hashes found.")
       }
     },
-    [snapshot, checkForNewTxHashes, isInitialSnapshot]
+    [snapshot, checkForNewTxHashes, initializedSnapshot]
   )
 
   useEffect(() => {
-    if (data?.deposits) {
+    if (data) {
       takeSnapshot(data.deposits)
-    } else {
-      console.warn("Query data is undefined or deposits are missing.")
     }
-    setTimeout(() => {
-      setIsInitialSnapshot(false)
-    }, INITIALIZATION_DEPOSIT_RECEIVED_TIMEOUT)
   }, [data, takeSnapshot])
 
   const intervalRef = useRef<NodeJS.Timeout | undefined>(undefined)
 
   useEffect(() => {
     intervalRef.current = setInterval(() => {
-      if (params.generatedAddress && params.chain !== BlockchainEnum.NEAR) {
+      if (params.generatedAddress && params.chain && !!params.accountId) {
         refetch()
       }
     }, INTERVAL_TIME)
     return () => clearInterval(intervalRef.current)
-  }, [params.generatedAddress, params.chain, refetch])
+  }, [params.generatedAddress, params.chain, refetch, params.accountId])
 
   useEffect(() => {
     if (
@@ -99,6 +95,18 @@ export const useDepositStatusSnapshot = (params: {
       clearInterval(intervalRef.current)
     }
   }, [params.chain])
+
+  useEffect(() => {
+    if (params.accountId && params.chain) {
+      setTimeout(() => {
+        setInitializedSnapshot(false)
+      }, TIME_TO_MAKE_INITIAL_SNAPSHOT)
+    } else {
+      setInitializedSnapshot(true)
+      setIsDepositReceived(false)
+      setSnapshot([])
+    }
+  }, [params.accountId, params.chain])
 
   return {
     isDepositReceived,

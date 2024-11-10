@@ -65,6 +65,7 @@ export const ModalDialog = ({
           // Focusing first input is annoying for mobile users
           e.preventDefault()
         }}
+        aria-describedby="dialog-description"
       >
         <VisuallyHidden>
           <Dialog.Title>null</Dialog.Title>
