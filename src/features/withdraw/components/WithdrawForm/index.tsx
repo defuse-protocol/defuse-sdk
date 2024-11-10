@@ -41,6 +41,7 @@ import {
   balanceSelector,
   renderIntentCreationResult,
 } from "../../../swap/components/SwapForm"
+import { usePublicKeyModalOpener } from "../../../swap/hooks/usePublicKeyModalOpener"
 import { WithdrawUIMachineContext } from "../../WithdrawUIMachineContext"
 import styles from "./styles.module.css"
 
@@ -93,6 +94,14 @@ export const WithdrawForm = ({
         state.context.nep141StorageOutput.value > 0n,
     }
   })
+
+  const swapRef = useSelector(actorRef, (state) => state.children.swapRef)
+  const publicKeyVerifierRef = useSelector(swapRef, (state) => {
+    if (state) {
+      return state.children.publicKeyVerifierRef
+    }
+  })
+  usePublicKeyModalOpener(publicKeyVerifierRef)
 
   const totalAmountReceived = WithdrawUIMachineContext.useSelector(
     totalAmountReceivedSelector
