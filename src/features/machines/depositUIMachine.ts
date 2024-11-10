@@ -1,8 +1,8 @@
-import { parseUnits } from "ethers"
 import { assetNetworkAdapter } from "src/utils/adapters"
 import { type ActorRefFrom, assertEvent, assign, setup } from "xstate"
 import type { SwappableToken } from "../../types"
 import { BlockchainEnum } from "../../types"
+import { parseUnits } from "../../utils/parse"
 import { isBaseToken } from "../../utils/token"
 import { backgroundBalanceActor } from "./backgroundBalanceActor"
 import {
