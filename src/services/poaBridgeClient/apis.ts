@@ -28,5 +28,5 @@ export async function getDepositStatus(
     "recent_deposits",
     params
   )
-  return json.result
+  return json.result ?? { deposits: [] }
 }

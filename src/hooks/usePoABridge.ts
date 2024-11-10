@@ -1,6 +1,5 @@
 import { useQuery } from "@tanstack/react-query"
 import { getDepositStatus } from "src/services/poaBridgeClient"
-import type { BlockchainEnum } from "src/types"
 
 const queryKey = "poa-bridge"
 
