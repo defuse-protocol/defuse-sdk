@@ -10,21 +10,21 @@ export const Deposits = ({
 }: {
   depositNearResult: Context["depositNearResult"]
 }) => {
-  if (depositNearResult?.status !== "DEPOSIT_COMPLETED") {
+  if (depositNearResult?.tag !== "ok") {
     return null
   }
 
   const txUrl =
-    depositNearResult.txHash != null
-      ? `${NEAR_EXPLORER}/txns/${depositNearResult.txHash}`
+    depositNearResult.value.txHash != null
+      ? `${NEAR_EXPLORER}/txns/${depositNearResult.value.txHash}`
       : null
 
   return (
     <Flex p={"2"} gap={"3"}>
       <Box pt={"2"}>
         <AssetComboIcon
-          icon={depositNearResult.asset.icon}
-          name={depositNearResult.asset.name}
+          icon={depositNearResult.value.depositDescription.asset.icon}
+          name={depositNearResult.value.depositDescription.asset.name}
         />
       </Box>
 
@@ -46,7 +46,10 @@ export const Deposits = ({
         <Flex align={"center"}>
           <Box flexGrow={"1"}>
             <Text size={"1"} weight={"medium"} color={"gray"}>
-              From {shortenText(depositNearResult.userAddressId)}
+              From{" "}
+              {shortenText(
+                depositNearResult.value.depositDescription.userAddressId
+              )}
             </Text>
           </Box>
 
@@ -54,26 +57,26 @@ export const Deposits = ({
             <Text size={"1"} weight={"medium"} color={"green"}>
               +
               {formatTokenValue(
-                depositNearResult.amount,
-                depositNearResult.asset.decimals,
+                depositNearResult.value.depositDescription.amount,
+                depositNearResult.value.depositDescription.asset.decimals,
                 {
                   min: 0.0001,
                   fractionDigits: 4,
                 }
               )}{" "}
-              {depositNearResult.asset.symbol}
+              {depositNearResult.value.depositDescription.asset.symbol}
             </Text>
           </Box>
         </Flex>
 
-        {depositNearResult.txHash != null && txUrl != null && (
+        {depositNearResult.value.txHash != null && txUrl != null && (
           <Box>
             <Text size={"1"} color={"gray"}>
               Transaction:
             </Text>{" "}
             <Text size={"1"}>
               <Link href={txUrl} target={"_blank"}>
-                {shortenText(depositNearResult.txHash)}
+                {shortenText(depositNearResult.value.txHash)}
               </Link>
             </Text>
           </Box>

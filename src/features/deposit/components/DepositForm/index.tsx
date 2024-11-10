@@ -29,6 +29,7 @@ import {
 } from "../../../../types"
 import { formatTokenValue } from "../../../../utils/format"
 import { isBaseToken, isUnifiedToken } from "../../../../utils/token"
+import type { Context } from "../../../machines/depositUIMachine"
 import { DepositUIMachineContext } from "../DepositUIMachineProvider"
 import { Deposits } from "../Deposits"
 import styles from "./styles.module.css"
@@ -56,6 +57,12 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
   const depositUIActorRef = DepositUIMachineContext.useActorRef()
   const snapshot = DepositUIMachineContext.useSelector((snapshot) => snapshot)
   const generatedAddressResult = snapshot.context.generatedAddressResult
+  const depositNearResult = snapshot.context.depositNearResult
+
+  const depositAddress =
+    generatedAddressResult?.tag === "ok"
+      ? generatedAddressResult.value.depositAddress
+      : ""
 
   const { token, network, amount, balance, nativeBalance, userAddress } =
     DepositUIMachineContext.useSelector((snapshot) => {
@@ -145,17 +152,10 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
 
   const amountInputRef = useRef<HTMLInputElement | null>(null)
 
-  // TODO: Move to DepositUIMachineProvider, example `updateUIAmountOut` or use emit action
-  useEffect(() => {
-    if (snapshot.context.depositNearResult?.status === "DEPOSIT_COMPLETED") {
-      setValue("amount", "")
-    }
-  }, [snapshot.context.depositNearResult, setValue])
-
   const { isDepositReceived } = useDepositStatusSnapshot({
     accountId: userAddress ?? "",
     chain: network ?? "",
-    generatedAddress: generatedAddressResult?.depositAddress ?? "",
+    generatedAddress: depositAddress,
   })
 
   return (
@@ -292,14 +292,14 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
                 </p>
                 <div className={styles.qrCodeWrapper}>
                   {generatedAddressResult ? (
-                    <QRCodeSVG value={generatedAddressResult.depositAddress} />
+                    <QRCodeSVG value={depositAddress} />
                   ) : (
                     <Spinner loading={true} />
                   )}
                 </div>
                 <Input
                   name="generatedAddress"
-                  value={generatedAddressResult?.depositAddress ?? ""}
+                  value={depositAddress}
                   disabled
                   className={styles.inputGeneratedAddress}
                   slotRight={
@@ -312,9 +312,7 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
                       className={styles.copyButton}
                       disabled={!generatedAddressResult}
                     >
-                      <CopyToClipboard
-                        text={generatedAddressResult?.depositAddress ?? ""}
-                      >
+                      <CopyToClipboard text={depositAddress}>
                         <Flex gap="2" align="center">
                           <Text color="orange">Copy</Text>
                           <CopyIcon height="14" width="14" color="orange" />
@@ -343,7 +341,7 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
           network &&
           network !== BlockchainEnum.NEAR &&
           !ENABLE_DEPOSIT_THROUGH_POA_BRIDGE && <UnderFeatureFlag />}
-        {token && !userAddress && renderDepositWarning(userAddress)}
+        {token && renderDepositWarning(userAddress, depositNearResult)}
         {userAddress && network === BlockchainEnum.NEAR && (
           <Deposits depositNearResult={snapshot.context.depositNearResult} />
         )}
@@ -480,10 +478,28 @@ function isInsufficientBalance(
   return false
 }
 
-function renderDepositWarning(userAddress: string | null) {
+function renderDepositWarning(
+  userAddress: string | null,
+  depositNearResult: Context["depositNearResult"]
+) {
   let content: ReactNode = null
   if (!userAddress) {
     content = "Please connect your wallet to continue"
+  }
+  if (depositNearResult !== null && depositNearResult.tag === "err") {
+    const status = depositNearResult.value.reason
+    switch (status) {
+      case "ERR_SUBMITTING_TRANSACTION":
+        content =
+          "It seems the transaction was rejected in your wallet. Please try again."
+        break
+      default:
+        content = "An error occurred. Please try again."
+    }
+  }
+
+  if (!content) {
+    return null
   }
 
   return (

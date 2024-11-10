@@ -1,10 +1,22 @@
 import type { BlockchainEnum } from "src/types"
 import { assign, fromPromise, setup } from "xstate"
 
+export type DepositGeneratedDescription = {
+  type: "depositAddressGenerated"
+  depositAddress: string
+}
+
 type Context = {
   accountId: string | null
   chain: BlockchainEnum | null
   depositAddress: string | null
+  error: null | {
+    tag: "err"
+    value: {
+      reason: "ERR_GENERATING_ADDRESS"
+      error: Error | null
+    }
+  }
 }
 
 type Events = {
@@ -18,10 +30,15 @@ type Input = {
   chain: BlockchainEnum
 }
 
-export type Output = {
-  status: "GENERATED"
-  depositAddress: string
-}
+export type Output =
+  | NonNullable<Context["error"]>
+  | {
+      tag: "ok"
+      value: {
+        depositAddress: string
+        depositDescription: DepositGeneratedDescription
+      }
+    }
 
 export const depositGenerateAddressMachine = setup({
   types: {
@@ -44,6 +61,7 @@ export const depositGenerateAddressMachine = setup({
       accountId: input.accountId,
       chain: input.chain,
       depositAddress: null,
+      error: null,
     }
   },
 
@@ -54,8 +72,14 @@ export const depositGenerateAddressMachine = setup({
   output: ({ context }): Output => {
     if (context.depositAddress != null) {
       return {
-        status: "GENERATED",
-        depositAddress: context.depositAddress,
+        tag: "ok",
+        value: {
+          depositAddress: context.depositAddress,
+          depositDescription: {
+            type: "depositAddressGenerated",
+            depositAddress: context.depositAddress,
+          },
+        },
       }
     }
 
