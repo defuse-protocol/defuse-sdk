@@ -4,6 +4,7 @@ import { BlockchainEnum, type DepositSnapshot } from "src/types"
 import { useGetDepositStatus } from "./usePoABridge"
 
 const INTERVAL_TIME = 1000 // 1 second
+const TIME_TO_MAKE_INITIAL_SNAPSHOT = 3000 // 3 seconds
 const RESET_DEPOSIT_RECEIVED_TIME = 10000 // 10 seconds
 
 export const useDepositStatusSnapshot = (params: {
@@ -11,9 +12,7 @@ export const useDepositStatusSnapshot = (params: {
   chain: string
   generatedAddress: string
 }) => {
-  const [isDepositReceived, setIsDepositReceived] = useState<
-    boolean | undefined
-  >(undefined)
+  const [isDepositReceived, setIsDepositReceived] = useState(false)
   const [initializedSnapshot, setInitializedSnapshot] = useState<boolean>(true)
   const [snapshot, setSnapshot] = useState<DepositSnapshot[]>([])
   const { data, isLoading, refetch, isFetched } = useGetDepositStatus(
@@ -72,13 +71,10 @@ export const useDepositStatusSnapshot = (params: {
   )
 
   useEffect(() => {
-    if (data?.deposits) {
+    if (data) {
       takeSnapshot(data.deposits)
     }
-    if (isFetched) {
-      setInitializedSnapshot(false)
-    }
-  }, [data, takeSnapshot, isFetched])
+  }, [data, takeSnapshot])
 
   const intervalRef = useRef<NodeJS.Timeout | undefined>(undefined)
 
@@ -99,6 +95,18 @@ export const useDepositStatusSnapshot = (params: {
       clearInterval(intervalRef.current)
     }
   }, [params.chain])
+
+  useEffect(() => {
+    if (params.accountId && params.chain) {
+      setTimeout(() => {
+        setInitializedSnapshot(false)
+      }, TIME_TO_MAKE_INITIAL_SNAPSHOT)
+    } else {
+      setInitializedSnapshot(true)
+      setIsDepositReceived(false)
+      setSnapshot([])
+    }
+  }, [params.accountId, params.chain])
 
   return {
     isDepositReceived,
