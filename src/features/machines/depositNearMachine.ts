@@ -1,6 +1,13 @@
 import { assign, emit, fromPromise, setup } from "xstate"
 import type { SwappableToken } from "../../types"
 
+export type DepositDescription = {
+  type: "depositNear"
+  userAddressId: string
+  amount: bigint
+  asset: SwappableToken
+}
+
 export type Context = {
   balance: bigint
   amount: bigint
@@ -8,24 +15,13 @@ export type Context = {
   accountId: string
   tokenAddress: string
   txHash: string | null
-  error:
-    | null
-    | {
-        status: "ERR_SUBMITTING_TRANSACTION"
-        error: Error
-      }
-    | {
-        status: "ERR_VERIFYING_TRANSACTION"
-        error: Error | null
-      }
-}
-
-type Events = {
-  type: "INPUT"
-  balance: bigint
-  amount: bigint
-  asset: SwappableToken
-  accountId: string
+  error: null | {
+    tag: "err"
+    value: {
+      reason: "ERR_SUBMITTING_TRANSACTION" | "ERR_VERIFYING_TRANSACTION"
+      error: Error | null
+    }
+  }
 }
 
 type Input = {
@@ -38,17 +34,16 @@ type Input = {
 export type Output =
   | NonNullable<Context["error"]>
   | {
-      status: "DEPOSIT_COMPLETED"
-      txHash: string
-      userAddressId: string
-      amount: bigint
-      asset: SwappableToken
+      tag: "ok"
+      value: {
+        txHash: string
+        depositDescription: DepositDescription
+      }
     }
 
 export const depositNearMachine = setup({
   types: {} as {
     context: Context
-    events: Events
     input: Input
     output: Output
   },
@@ -70,7 +65,10 @@ export const depositNearMachine = setup({
   },
   actions: {
     setError: assign({
-      error: (_, error: NonNullable<Context["error"]>) => error,
+      error: (_, error: NonNullable<Context["error"]>["value"]) => ({
+        tag: "err" as const,
+        value: error,
+      }),
     }),
     logError: (_, params: { error: unknown }) => {
       console.error(params.error)
@@ -90,24 +88,24 @@ export const depositNearMachine = setup({
     },
   },
 }).createMachine({
-  /** @xstate-layout N4IgpgJg5mDOIC5QTABwPawJYBcC0AdmAIYBOAdNlAVgVAMQTpHm0Bu6A1mOShtviJlKWarSgJ26AMbEcWZgG0ADAF0VqxKH64FBLSAAeiAOwAOACzkAbNYBMAVhPWnATguuAzAEYANCABPRDxvC2VyVxMHHzsTT1c7O2VvawBfVP8+TFxCEgoqGjp6MFJSdApUABs5ADNygFteNGzBPJExOkkCDll5JTUNAx0+-SQjUzMHck9PZWjXB0nlM3N-IIQ8B1cbewXvFIszbzMzdMzmgVzhNhKsGoDxRmYeKW4m4auKG9I7h86pXp6DSDMbDPQGYwIbyeOzWGwpZLKOwLCyeBx2NbBfYmCKuFYOZQWEzeWI+U4ZEBZS5CL63e6PEplCrVHB1UiNKk5Gnkb6-cRdHpyIEDNRDFrgsaQ6GxGxmSKuawWawmMKeMyYjaTcjKGb7TwWBz7OyTTxnSkXLltABGZWIEFksHkRRB2nFzAhiG8eLs5EsBNscWR3miGpC3hxrjxUUJxNJdm86QpBHQKHgY05rTIYoEEtAkNRVhMga8tg8qOsocSZnIRPRhx1K0JJzNGc+7UKUGzundksQhx9RZhJcV7k8FcCWK95GDSS9sW8y31rhbFsztJ+9LoXZGHqhyms2y8JIDJmUKuUrlD+3COp8PnRhOsZhhK4+3Jt6DtDqdndBbtGeaek+OJmDGJJHIsRLqhOGz7Nsc5JHYnhFgWDgWK+LRtgAcugOAAAQAGLoAArgQEB4eUeEAJLdMQlRYBA265uMUIwt4vo6he+r7geaIakqNZosqHjRDqXoOGkFKttyADC6D1FUYA4JATE9oBCBJHK5AOFsrhzHGcwOFeSTkCq+KLMSxLHOhUmrm2ACCVrlMpjF-jmaksSYeLTEcMISbE9johqC7sZptgIQ2diJqkQA */
+  /** @xstate-layout N4IgpgJg5mDOIC5QTABwPawJYBcC0AdmAIYBOAdNlAVgVAMQTpHm0Bu6A1mOShtviJlKWarSgJ26AMbEcWZgG0ADAF0VqxKH64FBLSAAeiAOwAOACzkAbNYBMAVhPWnATguuAzAEYANCABPRDxvC2VyVxMHHzsTT1c7O2VvawBfVP8+TFxCEgoqGjp6MFJSdApUABs5ADNygFteNGzBPJExOkkCDll5JTUNAx0+-SQjUzMHck9PZWjXB0nlM3N-IIQ8B1cbewXvFIszbzMzdMzmgVyyegBhABkAUQBBACUAfQeXl4B5F8Gx4Z6AzGBCWbzkZIOCzWVzKDz2aFrYKeDzkBzKOzxVyRMJmLwmM4gLKXIQUNglLA1ALiRjMHhSbhNYZXMkUqniLo9OR6DT-bQtIFjEHeTx2aw2FLJDELCyeBx2JEbfYmCKuFboiwmbyxHynDJEi45UnkcmkSnUoolMoVao4OqkRrEo1tU3mjlSXo8gZqIYC5jAxAi2I2PEmVzWaEmMKeMyKvCTCEzfYohz7OyTTyEp2tYQAIzKxAgslg8iKfJAgP9QsDars5Es6NscTsrm80TjytV6rhWp1dm86X1BHQKHgY2zLN9AkFoBBsqsJmbXlsHll1jjiTM5E10RbW0sKwH+onxoK4inuirs8Qhzri9Fy4j7k868CwX22zbSW8CS1yxRrhZoaOasma7J0BeIwBgg3jKDCEQxE2JjKFGyiuB2sGJj4PjynC1hmKKQHMsa+boIWxallAkEzuMMH4SqZg9tqRyLJqsZvkqP7kD+iQYp4i7zlCREtCy5AAHLoDgAAEABi6AAK4EBAUnlFJACS3TEJUWAQNRV60UG4KMbMXhhLYXgOIq0LbnK1hRgssw+AsaTHsBok3Og9RVGAOCQHpozXggSR4miWywvKzZzJZHEhEk5BRuqixalqxwWMJJJtE8ublL5ukAn6AW0WGW4xkGDj2M4jgKhxsHgsFtg8UkMZ2IOqRAA */
   id: "deposit-near",
 
   initial: "signing",
 
   output: ({ context }): Output => {
-    if (
-      context.txHash != null &&
-      context.accountId != null &&
-      context.amount != null &&
-      context.asset != null
-    ) {
+    if (context.txHash != null) {
       return {
-        status: "DEPOSIT_COMPLETED",
-        txHash: context.txHash,
-        userAddressId: context.accountId,
-        amount: context.amount,
-        asset: context.asset,
+        tag: "ok",
+        value: {
+          txHash: context.txHash,
+          depositDescription: {
+            type: "depositNear",
+            userAddressId: context.accountId,
+            amount: context.amount,
+            asset: context.asset,
+          },
+        },
       }
     }
 
@@ -129,6 +127,7 @@ export const depositNearMachine = setup({
       tokenAddress: "",
     }
   },
+
   states: {
     signing: {
       invoke: {
@@ -157,10 +156,13 @@ export const depositNearMachine = setup({
             },
             {
               type: "setError",
-              params: ({ event }) => ({
-                status: "ERR_SUBMITTING_TRANSACTION",
-                error: toError(event.error),
-              }),
+              params: ({ event }) => {
+                console.log("onError type: setError", event)
+                return {
+                  reason: "ERR_SUBMITTING_TRANSACTION",
+                  error: toError(event.error),
+                }
+              },
             },
           ],
         },
@@ -186,10 +188,10 @@ export const depositNearMachine = setup({
           target: "Not Found or Invalid",
           actions: {
             type: "setError",
-            params: {
-              status: "ERR_VERIFYING_TRANSACTION",
+            params: ({ event }) => ({
+              reason: "ERR_VERIFYING_TRANSACTION",
               error: null,
-            },
+            }),
           },
         },
         src: "validateTransaction",

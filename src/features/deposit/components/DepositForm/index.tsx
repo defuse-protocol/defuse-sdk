@@ -59,6 +59,11 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
   const generatedAddressResult = snapshot.context.generatedAddressResult
   const depositNearResult = snapshot.context.depositNearResult
 
+  const depositAddress =
+    generatedAddressResult?.tag === "ok"
+      ? generatedAddressResult.value.depositAddress
+      : ""
+
   const { token, network, amount, balance, nativeBalance, userAddress } =
     DepositUIMachineContext.useSelector((snapshot) => {
       const token = snapshot.context.formValues.token
@@ -147,17 +152,10 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
 
   const amountInputRef = useRef<HTMLInputElement | null>(null)
 
-  // TODO: Move to DepositUIMachineProvider, example `updateUIAmountOut` or use emit action
-  useEffect(() => {
-    if (snapshot.context.depositNearResult?.status === "DEPOSIT_COMPLETED") {
-      setValue("amount", "")
-    }
-  }, [snapshot.context.depositNearResult, setValue])
-
   const { isDepositReceived } = useDepositStatusSnapshot({
     accountId: userAddress ?? "",
     chain: network ?? "",
-    generatedAddress: generatedAddressResult?.depositAddress ?? "",
+    generatedAddress: depositAddress,
   })
 
   return (
@@ -294,14 +292,14 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
                 </p>
                 <div className={styles.qrCodeWrapper}>
                   {generatedAddressResult ? (
-                    <QRCodeSVG value={generatedAddressResult.depositAddress} />
+                    <QRCodeSVG value={depositAddress} />
                   ) : (
                     <Spinner loading={true} />
                   )}
                 </div>
                 <Input
                   name="generatedAddress"
-                  value={generatedAddressResult?.depositAddress ?? ""}
+                  value={depositAddress}
                   disabled
                   className={styles.inputGeneratedAddress}
                   slotRight={
@@ -314,9 +312,7 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
                       className={styles.copyButton}
                       disabled={!generatedAddressResult}
                     >
-                      <CopyToClipboard
-                        text={generatedAddressResult?.depositAddress ?? ""}
-                      >
+                      <CopyToClipboard text={depositAddress}>
                         <Flex gap="2" align="center">
                           <Text color="orange">Copy</Text>
                           <CopyIcon height="14" width="14" color="orange" />
@@ -490,8 +486,8 @@ function renderDepositWarning(
   if (!userAddress) {
     content = "Please connect your wallet to continue"
   }
-  if (depositNearResult !== null) {
-    const status = depositNearResult.status
+  if (depositNearResult !== null && depositNearResult.tag === "err") {
+    const status = depositNearResult.value.reason
     switch (status) {
       case "ERR_SUBMITTING_TRANSACTION":
         content =

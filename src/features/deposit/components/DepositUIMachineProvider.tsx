@@ -1,5 +1,6 @@
 import { createActorContext } from "@xstate/react"
 import type { PropsWithChildren, ReactElement, ReactNode } from "react"
+import { useFormContext } from "react-hook-form"
 import {
   type Actor,
   type ActorOptions,
@@ -15,6 +16,7 @@ import { depositGenerateAddressMachine } from "../../machines/depositGenerateAdd
 import { depositNearMachine } from "../../machines/depositNearMachine"
 import { depositUIMachine } from "../../machines/depositUIMachine"
 import { DepositService } from "../services/depositService"
+import type { DepositFormValues } from "./DepositForm"
 
 const depositNearService = new DepositService()
 
@@ -53,6 +55,7 @@ export function DepositUIMachineProvider({
   tokenList,
   sendTransactionNear,
 }: DepositUIMachineProviderProps) {
+  const { setValue } = useFormContext<DepositFormValues>()
   return (
     <DepositUIMachineContext.Provider
       options={{
@@ -155,6 +158,11 @@ export function DepositUIMachineProvider({
               }),
             },
           }),
+        },
+        actions: {
+          clearUIDepositAmount: () => {
+            setValue("amount", "")
+          },
         },
       })}
     >
