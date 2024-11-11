@@ -1,4 +1,8 @@
-import { ExclamationTriangleIcon, PersonIcon } from "@radix-ui/react-icons"
+import {
+  ExclamationTriangleIcon,
+  InfoCircledIcon,
+  PersonIcon,
+} from "@radix-ui/react-icons"
 import {
   Box,
   Button,
@@ -11,13 +15,8 @@ import {
 } from "@radix-ui/themes"
 import { useSelector } from "@xstate/react"
 import { providers } from "near-api-js"
-import { Fragment, useEffect } from "react"
-import {
-  Controller,
-  type FieldErrors,
-  type Resolver,
-  useForm,
-} from "react-hook-form"
+import { Fragment, type ReactNode, useEffect } from "react"
+import { Controller, useForm } from "react-hook-form"
 import type { ActorRefFrom, SnapshotFrom } from "xstate"
 import { EmptyIcon } from "../../../../components/EmptyIcon"
 import { Form } from "../../../../components/Form"
@@ -36,7 +35,11 @@ import { formatTokenValue } from "../../../../utils/format"
 import { parseUnits } from "../../../../utils/parse"
 import { validateAddress } from "../../../../utils/validateAddress"
 import type { intentStatusMachine } from "../../../machines/intentStatusMachine"
-import type { withdrawUIMachine } from "../../../machines/withdrawUIMachine"
+import { getPOABridgeInfo } from "../../../machines/poaBridgeInfoActor"
+import type {
+  Context,
+  withdrawUIMachine,
+} from "../../../machines/withdrawUIMachine"
 import {
   balanceSelector,
   renderIntentCreationResult,
@@ -53,18 +56,6 @@ export type WithdrawFormNearValues = {
 
 interface WithdrawFormProps extends WithdrawWidgetProps {}
 
-const resolver: Resolver<WithdrawFormNearValues> = (values) => {
-  const errors: FieldErrors<WithdrawFormNearValues> = {}
-
-  if (!validateAddress(values.recipient, values.blockchain)) {
-    errors.recipient = {
-      type: "manual",
-      message: "Invalid address for the selected blockchain",
-    }
-  }
-  return { values, errors }
-}
-
 export const WithdrawForm = ({
   userAddress,
   tokenList,
@@ -80,6 +71,7 @@ export const WithdrawForm = ({
   const {
     state,
     depositedBalanceRef,
+    poaBridgeInfoRef,
     intentCreationResult,
     intentRefs,
     nep141StorageRequired,
@@ -87,6 +79,7 @@ export const WithdrawForm = ({
     return {
       state,
       depositedBalanceRef: state.children.depositedBalanceRef,
+      poaBridgeInfoRef: state.context.poaBridgeInfoRef,
       intentCreationResult: state.context.intentCreationResult,
       intentRefs: state.context.intentRefs,
       nep141StorageRequired:
@@ -120,7 +113,7 @@ export const WithdrawForm = ({
     }
   }, [userAddress, actorRef])
 
-  const { token, blockchain, amountIn, recipient } = useSelector(
+  const { token, tokenOut, blockchain, amountIn, recipient } = useSelector(
     formRef,
     (state) => {
       const { tokenOut } = state.context
@@ -128,11 +121,17 @@ export const WithdrawForm = ({
       return {
         blockchain: tokenOut.chainName,
         token: state.context.tokenIn,
+        tokenOut: state.context.tokenOut,
         amountIn: state.context.amount,
         recipient: state.context.recipient,
       }
     }
   )
+
+  const minWithdrawalAmount = useSelector(poaBridgeInfoRef, (state) => {
+    const bridgedTokenInfo = getPOABridgeInfo(state, tokenOut)
+    return bridgedTokenInfo == null ? null : bridgedTokenInfo.minWithdrawal
+  })
 
   const tokenInBalance = useSelector(
     depositedBalanceRef,
@@ -147,19 +146,25 @@ export const WithdrawForm = ({
     formState: { errors },
     setValue,
   } = useForm<WithdrawFormNearValues>({
-    mode: "onTouched",
+    mode: "onSubmit",
     reValidateMode: "onChange",
     values: {
       amountIn,
       recipient,
       blockchain,
     },
-    resolver,
+    // `resetOptions` is needed exclusively for being able to use `values` option without bugs
+    resetOptions: {
+      // Fixes: prevent all errors from being cleared when `values` change
+      keepErrors: true,
+      // Fixes: `reValidateMode` is not working when `values` change
+      keepIsSubmitted: true,
+    },
   })
 
   const { setModalType, data: modalSelectAssetsData } = useModalController<{
     modalType: ModalType
-    token: BaseTokenInfo | UnifiedTokenInfo
+    token: BaseTokenInfo | UnifiedTokenInfo | undefined
   }>(ModalType.MODAL_SELECT_ASSETS, "token")
 
   const updateTokens = useTokensStore((state) => state.updateTokens)
@@ -179,6 +184,7 @@ export const WithdrawForm = ({
   useEffect(() => {
     if (modalSelectAssetsData?.token) {
       const token = modalSelectAssetsData.token
+      modalSelectAssetsData.token = undefined // consume data, so it won't be triggered again
       let parsedAmount = 0n
       try {
         parsedAmount = parseUnits(amountIn, token.decimals)
@@ -192,7 +198,7 @@ export const WithdrawForm = ({
         },
       })
     }
-  }, [modalSelectAssetsData?.token, actorRef, amountIn])
+  }, [modalSelectAssetsData, actorRef, amountIn])
 
   useEffect(() => {
     const sub = watch(async (value, { name }) => {
@@ -279,10 +285,31 @@ export const WithdrawForm = ({
               }}
               className="border rounded-xl"
               required
+              min={
+                minWithdrawalAmount != null
+                  ? {
+                      value: formatTokenValue(
+                        minWithdrawalAmount,
+                        token.decimals
+                      ),
+                      message: "Amount is too low",
+                    }
+                  : undefined
+              }
+              max={
+                tokenInBalance != null
+                  ? {
+                      value: formatTokenValue(tokenInBalance, token.decimals),
+                      message: "Insufficient balance",
+                    }
+                  : undefined
+              }
               errors={errors}
               balance={tokenInBalance}
               register={register}
             />
+
+            {renderMinWithdrawalAmount(minWithdrawalAmount, tokenOut)}
 
             <Flex direction={"column"} gap={"2"}>
               <Box px={"2"} asChild>
@@ -293,6 +320,10 @@ export const WithdrawForm = ({
               <Controller
                 name="blockchain"
                 control={control}
+                rules={{
+                  required: "This field is required",
+                  deps: "recipient",
+                }}
                 render={({ field }) => {
                   return (
                     <Select
@@ -314,7 +345,15 @@ export const WithdrawForm = ({
               <Flex direction={"column"} gap={"1"}>
                 <TextField.Root
                   size={"3"}
-                  {...register("recipient")}
+                  {...register("recipient", {
+                    validate: {
+                      pattern: (value, formValues) => {
+                        if (!validateAddress(value, formValues.blockchain)) {
+                          return "Invalid address for the selected blockchain"
+                        }
+                      },
+                    },
+                  })}
                   placeholder="Enter wallet address"
                 >
                   <TextField.Slot>
@@ -357,7 +396,7 @@ export const WithdrawForm = ({
                 ) : totalAmountReceived == null ? (
                   "–"
                 ) : (
-                  formatTokenValue(totalAmountReceived, token.decimals)
+                  formatTokenValue(totalAmountReceived, tokenOut.decimals)
                 )}{" "}
                 {token.symbol}
               </Text>
@@ -379,6 +418,7 @@ export const WithdrawForm = ({
           </Flex>
         </Form>
 
+        {renderPreparationResult(state.context.preparationOutput)}
         {renderIntentCreationResult(intentCreationResult)}
 
         <Intents intentRefs={intentRefs} />
@@ -440,13 +480,62 @@ const allBlockchains = [
   },
 ]
 
-function renderBlockchainLabel(chainName: string): string {
-  const blockchain = allBlockchains.find((a) => a.value === chainName)
-  if (blockchain != null) {
-    return blockchain.label
+function renderMinWithdrawalAmount(
+  minWithdrawalAmount: bigint | null,
+  tokenOut: BaseTokenInfo
+) {
+  return (
+    minWithdrawalAmount != null &&
+    minWithdrawalAmount > 1n && (
+      <Callout.Root size={"1"} color="gray" variant="surface">
+        <Callout.Icon>
+          <InfoCircledIcon />
+        </Callout.Icon>
+        <Callout.Text>
+          Minimal amount to withdraw is{" "}
+          <Text size={"1"} weight={"bold"}>
+            {formatTokenValue(minWithdrawalAmount, tokenOut.decimals)}{" "}
+            {tokenOut.symbol}
+          </Text>
+        </Callout.Text>
+      </Callout.Root>
+    )
+  )
+}
+
+function renderPreparationResult(
+  preparationOutput: Context["preparationOutput"]
+) {
+  if (preparationOutput?.tag !== "err") return null
+
+  let content: ReactNode = null
+  const val = preparationOutput.value
+  switch (val) {
+    case "ERR_NEP141_STORAGE":
+      content = val
+      break
+    case "ERR_CANNOT_FETCH_POA_BRIDGE_INFO":
+      content = "Cannot fetch POA Bridge info"
+      break
+    case "ERR_BALANCE_INSUFFICIENT":
+    case "ERR_AMOUNT_TOO_LOW":
+      // Don't duplicate error messages, this should be handled by input validation
+      break
+    default:
+      val satisfies never
+      content = val
   }
-  console.warn(`Unknown blockchain: ${chainName}`)
-  return chainName
+
+  if (content == null) return null
+
+  return (
+    <Callout.Root size={"1"} color="red">
+      <Callout.Icon>
+        <ExclamationTriangleIcon />
+      </Callout.Icon>
+      <Callout.Text>{content}</Callout.Text>
+    </Callout.Root>
+  )
 }
 
 function Intents({

@@ -20,6 +20,7 @@ import {
   type Output as DepositNearMachineOutput,
   depositNearMachine,
 } from "./depositNearMachine"
+import { poaBridgeInfoActor } from "./poaBridgeInfoActor"
 
 export type Context = {
   error: Error | null
@@ -36,6 +37,7 @@ export type Context = {
   depositGenerateAddressRef: ActorRefFrom<
     typeof depositGenerateAddressMachine
   > | null
+  poaBridgeInfoRef: ActorRefFrom<typeof poaBridgeInfoActor>
   tokenList: SwappableToken[]
   userAddress: string
   defuseAssetId: string | null
@@ -81,6 +83,7 @@ export const depositUIMachine = setup({
     formValidationBalanceActor: backgroundBalanceActor,
     depositNearActor: depositNearMachine,
     depositGenerateAddressActor: depositGenerateAddressMachine,
+    poaBridgeInfoActor: poaBridgeInfoActor,
   },
   actions: {
     setFormValues: assign({
@@ -161,6 +164,8 @@ export const depositUIMachine = setup({
     clearUIDepositAmount: () => {
       throw new Error("not implemented")
     },
+
+    fetchPOABridgeInfo: sendTo("poaBridgeInfoRef", { type: "FETCH" }),
   },
   guards: {
     isDepositNearRelevant: ({ context }) => {
@@ -191,7 +196,7 @@ export const depositUIMachine = setup({
   /** @xstate-layout N4IgpgJg5mDOIC5QTABwPawJYBcC0ArlgMQAyA8gOICSAcgNoAMAuoqBtjlugHZsgAPRIwB0ATjEAOAEwA2RtMYBGWQHZpAVmnSALABoQAT0R4ZGkUskqxSgMyqdSxo0kBfVwZQdchEhUrkAKoAKkysSCDeXLz8Qgh40rZK4hqykmKqsho6aUmyBsbxZhZWsjb2js5uHiBemD5EIpC4WDxQxADKgQBCALLUoSz8Udx8EXGytiVKStk2mRKSqgUmcqJqNjpiSduS2e6eaPX4jc1cbcR0AAohYcPHo7EmllO2GuqJSjrSStupK-E3qpxDNbLZvjMypYDrUjpxfE0IC02iIAG4AQwANlgIOjzu0ILwwCJWqj0ABrYl1eGnJH4tFYnF41pQBCk9AAY2ZvDCdwiIxi4xMsh0OhEOg0S2yYLUshUALwWmBjgcOwyWVUShh1IaWERyKgDOxuPxxEJPGJ7MpIh1Jz1ZxZRqZ+LZPDJXOiPF5SnC7AegtAcVMXxEaSUiW+MlUGnBCp09hE0jEGi+YkUQNUb21cN1IlgBAARgBbXCm82Wt0Uqk5nC0MDogBOACUwAAzPl+ziPIUIHR7ESa0VqWZSSSTfRGZ6yaQiSTxpaZ7KMb7L7NRBH54ullnEMANhvoBsiVCYvGtw9Fm01uuNlvtob8-1jQOIPvAmzyRhiFUyOX5SfxBo5g2JISQ5BIOTfKoa7HAiMAWg2zIXOWJKVtatqUGACF4mAACCEAQA2cCwHeHaRE+Ty9n2Ihgs4OguEkqjLrYcY5CIGgSEBMZlFkOgwTSerwXuSHtHuB5HieZ4XleUSYdhOB4QRRGwCRbZkQKz6CK+1ESKokgyL83FpP+hR4LYWSJr8qgOJofYvPxuYEKgJpgN0WLojwHJgMQAiwDgOEiOirYKQ2AAUijOAAlGaNYIk5LluaenlgOpFE9hZ35Jj8tn0dOJnPHINFiIwDiSqB2jOBo7g1Dw6AoPAES2r49xdgGWnxN+Yq-N88YlbI8iZAqTFTPMtjfsmqiLFqNRNbSBotS0bVBuksgWJlvWZAN+XxH+4pKA41iSpYYiyA5dr6vSOKYmAC2epRpjUd1ui2H1W0Klokggqq6SSrYVjTYc65zfSGLGiJt3di+8RJmK6TSJkK1-GBCojgOXwvZNmTvFIZ0boWJY4PiENLa+dgiC4zgzDMyaJMsAEJHKiYKEdjhWDGti440QmIUTj6tZpcR-WIoYldIY7OJNpTbYqDizmkk2pCdjBAZzerxThiUeV5xMC4g2gzlk5knSuDiTdL4bAukJVbJq1n2GI1WuEAA */
   id: "deposit-ui",
 
-  context: ({ input }) => ({
+  context: ({ input, spawn }) => ({
     error: null,
     balance: 0n,
     nativeBalance: 0n,
@@ -209,7 +214,12 @@ export const depositUIMachine = setup({
     userAddress: "",
     defuseAssetId: null,
     generatedAddressResult: null,
+    poaBridgeInfoRef: spawn("poaBridgeInfoActor", {
+      id: "poaBridgeInfoRef",
+    }),
   }),
+
+  entry: ["fetchPOABridgeInfo"],
 
   on: {
     LOGIN: {

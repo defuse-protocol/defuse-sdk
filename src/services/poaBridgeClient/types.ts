@@ -24,7 +24,9 @@ export type GetSupportedTokensResponse = JSONRPCResponse<{
     decimals: number
     asset_name: string
     near_token_id: string
-    min_deposit_amount: number
+    min_deposit_amount: string
+    min_withdrawal_amount: string
+    withdrawal_fee: string
   }[]
 }>
 

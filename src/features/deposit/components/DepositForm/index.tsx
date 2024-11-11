@@ -3,13 +3,15 @@ import {
   ExclamationTriangleIcon,
   InfoCircledIcon,
 } from "@radix-ui/react-icons"
-import { Box, Button, Callout, Flex, Spinner, Text } from "@radix-ui/themes"
+import { Button, Callout, Flex, Spinner, Text } from "@radix-ui/themes"
+import { useSelector } from "@xstate/react"
 import { QRCodeSVG } from "qrcode.react"
 import { type ReactNode, useEffect, useRef } from "react"
 import CopyToClipboard from "react-copy-to-clipboard"
 import { Controller, useFormContext } from "react-hook-form"
 import { TooltipInfo } from "src/components/TooltipInfo"
 import { RESERVED_NEAR_BALANCE } from "src/features/machines/getBalanceMachine"
+import { getPOABridgeInfo } from "src/features/machines/poaBridgeInfoActor"
 import { useDepositStatusSnapshot } from "src/hooks/useDepositStatusSnapshot"
 import { assetNetworkAdapter } from "src/utils/adapters"
 import { AssetComboIcon } from "../../../../components/Asset/AssetComboIcon"
@@ -23,6 +25,7 @@ import { Select } from "../../../../components/Select/Select"
 import { useModalStore } from "../../../../providers/ModalStoreProvider"
 import { ModalType } from "../../../../stores/modalStore"
 import {
+  type BaseTokenInfo,
   BlockchainEnum,
   ChainType,
   type SwappableToken,
@@ -64,23 +67,32 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
       ? generatedAddressResult.value.depositAddress
       : ""
 
-  const { token, network, amount, balance, nativeBalance, userAddress } =
-    DepositUIMachineContext.useSelector((snapshot) => {
-      const token = snapshot.context.formValues.token
-      const network = snapshot.context.formValues.network
-      const amount = snapshot.context.formValues.amount
-      const balance = snapshot.context.balance
-      const nativeBalance = snapshot.context.nativeBalance
-      const userAddress = snapshot.context.userAddress
-      return {
-        token,
-        network,
-        amount,
-        balance,
-        nativeBalance,
-        userAddress,
-      }
-    })
+  const {
+    token,
+    network,
+    amount,
+    balance,
+    nativeBalance,
+    userAddress,
+    poaBridgeInfoRef,
+  } = DepositUIMachineContext.useSelector((snapshot) => {
+    const token = snapshot.context.formValues.token
+    const network = snapshot.context.formValues.network
+    const amount = snapshot.context.formValues.amount
+    const balance = snapshot.context.balance
+    const nativeBalance = snapshot.context.nativeBalance
+    const userAddress = snapshot.context.userAddress
+    const poaBridgeInfoRef = snapshot.context.poaBridgeInfoRef
+    return {
+      token,
+      network,
+      amount,
+      balance,
+      nativeBalance,
+      userAddress,
+      poaBridgeInfoRef,
+    }
+  })
 
   const { setModalType, payload, onCloseModal } = useModalStore(
     (state) => state
@@ -156,6 +168,15 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
     accountId: userAddress ?? "",
     chain: network ?? "",
     generatedAddress: depositAddress,
+  })
+
+  const minDepositAmount = useSelector(poaBridgeInfoRef, (state) => {
+    if (token == null || !isBaseToken(token)) {
+      return null
+    }
+
+    const bridgedTokenInfo = getPOABridgeInfo(state, token)
+    return bridgedTokenInfo == null ? null : bridgedTokenInfo.minWithdrawal
   })
 
   return (
@@ -321,19 +342,8 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
                     </Button>
                   }
                 />
-                <Flex
-                  direction="row"
-                  gap="2"
-                  align="center"
-                  justify="center"
-                  className={styles.hintWrapper}
-                >
-                  <InfoCircledIcon />
-                  <p className={styles.hint}>
-                    Make sure to select {networkSelectToLabel[network]} as the
-                    deposit network
-                  </p>
-                </Flex>
+
+                {renderDepositHint(network, minDepositAmount, token)}
               </div>
             )}
         </Form>
@@ -550,9 +560,40 @@ function renderDepositButtonText(
   return !network && !token ? "Select asset first" : "Select network"
 }
 
-const networkSelectToLabel = {
+const networkSelectToLabel: Record<BlockchainEnum, string> = {
+  [BlockchainEnum.NEAR]: "NEAR",
   [BlockchainEnum.ETHEREUM]: "Ethereum",
   [BlockchainEnum.BASE]: "Base",
   [BlockchainEnum.ARBITRUM]: "Arbitrum",
   [BlockchainEnum.BITCOIN]: "Bitcoin",
+}
+
+function renderDepositHint(
+  network: BlockchainEnum | null,
+  minDepositAmount: bigint | null,
+  token: SwappableToken | null
+) {
+  return (
+    <Callout.Root size={"1"} color="indigo" variant="soft">
+      <Callout.Icon>
+        <InfoCircledIcon />
+      </Callout.Icon>
+
+      {network != null && (
+        <Callout.Text>
+          Make sure to select {networkSelectToLabel[network]} as the deposit
+          network
+        </Callout.Text>
+      )}
+
+      {minDepositAmount != null && minDepositAmount > 1n && token != null && (
+        <Callout.Text>
+          Minimal amount to deposit is{" "}
+          <Text size={"1"} weight={"bold"}>
+            {formatTokenValue(minDepositAmount, token.decimals)} {token.symbol}
+          </Text>
+        </Callout.Text>
+      )}
+    </Callout.Root>
+  )
 }
