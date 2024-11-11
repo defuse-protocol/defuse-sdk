@@ -119,12 +119,14 @@ export const waitPOABridgeInfoActor = fromPromise(
 
 export const getPOABridgeInfo = (
   state: SnapshotFrom<typeof poaBridgeInfoActor>,
-  token: BaseTokenInfo
+  token: BaseTokenInfo | BaseTokenInfo["defuseAssetId"]
 ) => {
   if (!state.matches("success")) return null
 
   return (
-    state.context.bridgeInfo[token.defuseAssetId] ?? {
+    state.context.bridgeInfo[
+      typeof token === "object" ? token.defuseAssetId : token
+    ] ?? {
       minDeposit: 1n,
       minWithdrawal: 1n,
       fee: 0,
