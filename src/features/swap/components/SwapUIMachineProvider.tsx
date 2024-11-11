@@ -77,7 +77,13 @@ export function SwapUIMachineProvider({
         actions: {
           updateUIAmountOut: ({ context }) => {
             const quote = context.quote
-            if (quote != null && !isAggregatedQuoteEmpty(quote)) {
+            if (quote == null) {
+              resetField("amountOut")
+            } else if (isAggregatedQuoteEmpty(quote)) {
+              setValue("amountOut", "–", {
+                shouldValidate: false,
+              })
+            } else {
               const amountOutFormatted = formatUnits(
                 quote.totalAmountOut,
                 context.formValues.tokenOut.decimals
@@ -85,8 +91,6 @@ export function SwapUIMachineProvider({
               setValue("amountOut", amountOutFormatted, {
                 shouldValidate: true,
               })
-            } else {
-              resetField("amountOut")
             }
           },
         },
