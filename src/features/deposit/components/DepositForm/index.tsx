@@ -176,7 +176,7 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
     }
 
     const bridgedTokenInfo = getPOABridgeInfo(state, token)
-    return bridgedTokenInfo == null ? null : bridgedTokenInfo.minWithdrawal
+    return bridgedTokenInfo == null ? null : bridgedTokenInfo.minDeposit
   })
 
   return (
