@@ -11,6 +11,7 @@ import type { AggregatedQuote } from "../../services/quoteService"
 import type { WalletMessage, WalletSignatureResult } from "../../types"
 import type { BaseTokenInfo } from "../../types/base"
 import type { Nep413DefuseMessageFor_DefuseIntents } from "../../types/defuse-contracts-types"
+import { assert } from "../../utils/assert"
 import { userAddressToDefuseUserId } from "../../utils/defuse"
 import {
   makeInnerSwapMessage,
@@ -529,12 +530,6 @@ export const swapIntentMachine = setup({
     },
   },
 })
-
-function assert(condition: unknown, msg?: string): asserts condition {
-  if (!condition) {
-    throw new Error(msg)
-  }
-}
 
 function toError(error: unknown): Error {
   return error instanceof Error ? error : new Error("unknown error")
