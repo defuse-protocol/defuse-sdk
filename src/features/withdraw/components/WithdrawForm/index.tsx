@@ -55,10 +55,11 @@ export type WithdrawFormNearValues = {
   blockchain: string
 }
 
-interface WithdrawFormProps extends WithdrawWidgetProps {}
+type WithdrawFormProps = WithdrawWidgetProps
 
 export const WithdrawForm = ({
   userAddress,
+  chainType,
   tokenList,
   sendNearTransaction,
 }: WithdrawFormProps) => {
