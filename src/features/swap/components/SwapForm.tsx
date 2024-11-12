@@ -143,7 +143,7 @@ export const SwapForm = () => {
   )
 
   const balanceInsufficient =
-    tokenInBalance != null
+    tokenInBalance != null && snapshot.context.parsedFormValues.amountIn != null
       ? tokenInBalance < snapshot.context.parsedFormValues.amountIn
       : null
 

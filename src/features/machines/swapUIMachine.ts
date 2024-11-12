@@ -17,6 +17,7 @@ import {
 import type { SwappableToken } from "../../types"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../types/base"
 import type { Transaction } from "../../types/deposit"
+import { assert } from "../../utils/assert"
 import { parseUnits } from "../../utils/parse"
 import {
   type Events as BackgroundQuoterEvents,
@@ -43,7 +44,7 @@ export type Context = {
     amountIn: string
   }
   parsedFormValues: {
-    amountIn: bigint
+    amountIn: bigint | null
   }
   intentCreationResult: SwapIntentMachineOutput | null
   intentRefs: ActorRefFrom<typeof intentStatusMachine>[]
@@ -109,14 +110,6 @@ export const swapUIMachine = setup({
   actors: {
     backgroundQuoterActor: backgroundQuoterMachine,
     depositedBalanceActor: depositedBalanceMachine,
-    formValidationActor: fromPromise(
-      async ({
-        input,
-      }: { input: Context["parsedFormValues"] }): Promise<boolean> => {
-        // todo: as it is a sync function, it should be a guard
-        return input.amountIn > 0n
-      }
-    ),
     swapActor: swapIntentMachine,
     intentStatusActor: intentStatusMachine,
   },
@@ -149,7 +142,7 @@ export const swapUIMachine = setup({
           }
         } catch {
           return {
-            amountIn: 0n,
+            amountIn: null,
           }
         }
       },
@@ -186,6 +179,8 @@ export const swapUIMachine = setup({
           | ActorRefFrom<typeof depositedBalanceMachine>
           | undefined = snapshot.children.depositedBalanceRef
         const balances = depositedBalanceRef?.getSnapshot().context.balances
+
+        assert(context.parsedFormValues.amountIn != null, "amountIn is not set")
 
         return {
           type: "NEW_QUOTE_INPUT",
@@ -262,6 +257,13 @@ export const swapUIMachine = setup({
       !isAggregatedQuoteEmpty(quote),
 
     isOk: (_, a: { tag: "err" | "ok" }) => a.tag === "ok",
+
+    isFormValid: ({ context }) => {
+      return (
+        context.parsedFormValues.amountIn != null &&
+        context.parsedFormValues.amountIn > 0n
+      )
+    },
   },
 }).createMachine({
   /** @xstate-layout N4IgpgJg5mDOIC5SwO4EMAOBaArgSwGIBJAOQBUBRcgfQGUKyyAZCgEQG0AGAXUVAwD2sPABc8AgHZ8QAD0RYArAoAcAOgCMAdgWcALJ04BOZZoBMCgDQgAnvMO7Nq5ac6b1B07oWfDAX19WqJi4hABCAIJM4SQAwhTUMQAS0QDibFy8SCCCwmKS0nIIAMxFCk5GygBsmpqGnJUKlZVWtghYhpWmqtWG6lWuupWcRer+gejY+ARMAPIppBnSOaLiUlmFlUVOvbqmlbpFulpGmi12uoaqRW7Kt-aaRfUKYyBBk4SzKTMAqmSLWcs8mtQIUsKZ1JUNPpDOZwcoFJomsozm17Jdrn07g5Hg0Xm8QqpICsJFACLAcAAjAC2on+-CEK3y60Q6i0qlq7lMhz6Sm0KKwRUMl06HSFpmURiafgCrwmBKJYhJBDwEgwOBEdOyDKBBXkezK4PUOgUEKM4uu-Oul3UB046iKm3tQsqeLl+EJEGJpJIFAA6tQAIrfGaUTWA1a6trY1RC0qCkx1fRFfn7MrqcxNLxwkyjGX490KlVQVQANzQABs8BA0IrSRBJGBVCqSwIANaN-N4D1e0sVqs1osIZsCADGA8kGTD2ojzLaKi2pkMCl0yncVWUu2aNnk2iuCKM6nsnCUxiKruCBc9td7lertYI9YkjeH7dUne717Lt4HJKHEhbY5ApO6iZPSuQziC8gqGUwzHnaK4SoM-I2l0drKEUhq6IMaEunmbpdoWJKqOgXrUAAjjgAgiGABA+v6QYhhQU7gUykGoq4qgKDCEpaFyJhFMi25tKU6iqEch6mtcIzeOe7xvpSNIiPej7Pv+bYdhMABKYAAGbMYywKyIg4mqIuq5YVh66sqcQkCpwXSDBu66HA6RyaLJBLktSoj3mAABOfkCH5qgYOWNY6UFVJvlpun6Tqs4HJchoKCMDRVPYpTIfs7K7PYJq7Hsmi7B57peYp950YGwahjwSzTqxRkIAcMG9Ky4p6Mcli2cujgOouDroZU9idP4MoSAIEBwNInZ1Sxhmgu4wycdxdpmAJDyCa0WASgaRWuJoG5JiMJUEVeRazQZkbtEoy3tbx60CfyJoLkuVpHEMiKmCdH5Fk2EDlmAF3xWxWBeI4Bzit4IwwrUNlbYunCmU6zjLvaWGGGeeEXqdPZfv2tZAxBjVgoKVxmC4CLrkKtz8jUTi1BjpgHXx9qY+M2M-URJG1uRlHUYTDWgoiiO3Me+7wrsEJPboYkNC4DSbJLvS4ezcllT550AvV82IAJZTvfZzistUCL8kcMGmOY6Zco8aO4f4QA */
@@ -276,7 +278,7 @@ export const swapUIMachine = setup({
       amountIn: "",
     },
     parsedFormValues: {
-      amountIn: 0n,
+      amountIn: null,
     },
     intentCreationResult: null,
     intentRefs: [],
@@ -297,6 +299,7 @@ export const swapUIMachine = setup({
     },
 
     BALANCE_CHANGED: {
+      guard: "isFormValid",
       actions: "sendToBackgroundQuoterRefNewQuoteInput",
     },
 
@@ -357,20 +360,14 @@ export const swapUIMachine = setup({
         idle: {},
 
         validating: {
-          invoke: {
-            src: "formValidationActor",
-            input: ({ context }) => context.parsedFormValues,
-
-            onDone: [
-              {
-                target: "waiting_quote",
-                guard: ({ event }) => event.output,
-                actions: "sendToBackgroundQuoterRefNewQuoteInput",
-                reenter: true,
-              },
-              "idle",
-            ],
-          },
+          always: [
+            {
+              target: "waiting_quote",
+              guard: "isFormValid",
+              actions: "sendToBackgroundQuoterRefNewQuoteInput",
+            },
+            "idle",
+          ],
         },
 
         waiting_quote: {
