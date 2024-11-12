@@ -1,14 +1,24 @@
 import type { SwappableToken } from "../types"
 
-export enum ChainType {
-  Near = "near",
-  EVM = "evm",
-}
+export type ChainType = "near" | "evm"
 
-export type DepositWidgetProps = {
+export const ChainType = {
+  Near: "near",
+  EVM: "evm",
+} as const
+
+export type UserInfo =
+  | {
+      userAddress: string
+      chainType: ChainType
+    }
+  | {
+      userAddress: undefined
+      chainType: undefined
+    }
+
+export type DepositWidgetProps = UserInfo & {
   tokenList: SwappableToken[]
-  userAddress?: string
-  chainType: ChainType
   sendTransactionNear: (transactions: Transaction[]) => Promise<string>
   onEmit?: (event: DepositEvent) => void
 }
