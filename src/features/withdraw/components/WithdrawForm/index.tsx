@@ -46,6 +46,7 @@ import {
 } from "../../../swap/components/SwapForm"
 import { usePublicKeyModalOpener } from "../../../swap/hooks/usePublicKeyModalOpener"
 import { WithdrawUIMachineContext } from "../../WithdrawUIMachineContext"
+import { isLiquidityUnavailable } from "./selectors"
 import styles from "./styles.module.css"
 
 export type WithdrawFormNearValues = {
@@ -75,6 +76,7 @@ export const WithdrawForm = ({
     intentCreationResult,
     intentRefs,
     nep141StorageRequired,
+    noLiquidity,
   } = WithdrawUIMachineContext.useSelector((state) => {
     return {
       state,
@@ -85,6 +87,7 @@ export const WithdrawForm = ({
       nep141StorageRequired:
         state.context.nep141StorageOutput?.tag === "ok" &&
         state.context.nep141StorageOutput.value > 0n,
+      noLiquidity: isLiquidityUnavailable(state),
     }
   })
 
@@ -408,12 +411,16 @@ export const WithdrawForm = ({
               radius="large"
               className={`${styles.button}`}
               color="orange"
-              disabled={state.matches("submitting")}
+              disabled={state.matches("submitting") || !!noLiquidity}
             >
-              <span className={styles.buttonContent}>
-                <Spinner loading={state.matches("submitting")} />
-                <Text size="6">Withdraw</Text>
-              </span>
+              {noLiquidity ? (
+                "No liquidity providers"
+              ) : (
+                <span className={styles.buttonContent}>
+                  <Spinner loading={state.matches("submitting")} />
+                  <Text size="6">Withdraw</Text>
+                </span>
+              )}
             </Button>
           </Flex>
         </Form>

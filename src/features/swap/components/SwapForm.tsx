@@ -16,6 +16,7 @@ import { FieldComboInput } from "../../../components/Form/FieldComboInput"
 import { SwapIntentCard } from "../../../components/IntentCard/SwapIntentCard"
 import type { ModalSelectAssetsPayload } from "../../../components/Modal/ModalSelectAssets"
 import { useModalStore } from "../../../providers/ModalStoreProvider"
+import { isAggregatedQuoteEmpty } from "../../../services/quoteService"
 import { ModalType } from "../../../stores/modalStore"
 import type { SwappableToken } from "../../../types"
 import { isBaseToken } from "../../../utils"
@@ -43,14 +44,20 @@ export const SwapForm = () => {
   const snapshot = SwapUIMachineContext.useSelector((snapshot) => snapshot)
   const intentCreationResult = snapshot.context.intentCreationResult
 
-  const { tokenIn, tokenOut } = SwapUIMachineContext.useSelector((snapshot) => {
-    const tokenIn = snapshot.context.formValues.tokenIn
+  const { tokenIn, tokenOut, noLiquidity } = SwapUIMachineContext.useSelector(
+    (snapshot) => {
+      const tokenIn = snapshot.context.formValues.tokenIn
+      const tokenOut = snapshot.context.formValues.tokenOut
+      const noLiquidity =
+        snapshot.context.quote && isAggregatedQuoteEmpty(snapshot.context.quote)
 
-    return {
-      tokenIn: tokenIn,
-      tokenOut: snapshot.context.formValues.tokenOut,
+      return {
+        tokenIn,
+        tokenOut,
+        noLiquidity,
+      }
     }
-  })
+  )
 
   // we need stable references to allow passing to useEffect
   const switchTokens = useCallback(() => {
@@ -136,7 +143,7 @@ export const SwapForm = () => {
   )
 
   const balanceInsufficient =
-    tokenInBalance != null
+    tokenInBalance != null && snapshot.context.parsedFormValues.amountIn != null
       ? tokenInBalance < snapshot.context.parsedFormValues.amountIn
       : null
 
@@ -184,9 +191,13 @@ export const SwapForm = () => {
           size="lg"
           fullWidth
           isLoading={snapshot.matches("submitting")}
-          disabled={!!balanceInsufficient}
+          disabled={!!balanceInsufficient || !!noLiquidity}
         >
-          {balanceInsufficient ? "Insufficient Balance" : "Swap"}
+          {noLiquidity
+            ? "No liquidity providers"
+            : balanceInsufficient
+              ? "Insufficient Balance"
+              : "Swap"}
         </ButtonCustom>
       </Form>
 
