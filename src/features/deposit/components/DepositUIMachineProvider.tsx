@@ -8,6 +8,14 @@ import {
   fromPromise,
 } from "xstate"
 import { settings } from "../../../config/settings"
+import {
+  checkNearTransactionValidity,
+  createBatchDepositNearNativeTransaction,
+  createBatchDepositNearNep141Transaction,
+  generateDepositAddress,
+  getMinimumStorageBalance,
+  isStorageDepositRequired,
+} from "../../../services/depositService"
 import type { SwappableToken, Transaction } from "../../../types"
 import { assert } from "../../../utils/assert"
 import { userAddressToDefuseUserId } from "../../../utils/defuse"
@@ -15,10 +23,7 @@ import { isBaseToken } from "../../../utils/token"
 import { depositGenerateAddressMachine } from "../../machines/depositGenerateAddressMachine"
 import { depositNearMachine } from "../../machines/depositNearMachine"
 import { depositUIMachine } from "../../machines/depositUIMachine"
-import { DepositService } from "../services/depositService"
 import type { DepositFormValues } from "./DepositForm"
-
-const depositNearService = new DepositService()
 
 /**
  * We explicitly define the type of `depositUIMachine` to avoid:
@@ -84,38 +89,31 @@ export function DepositUIMachineProvider({
                   const isWrapNearRequired =
                     Number(amount) > Number(balance || 0n)
                   const minStorageBalance =
-                    await depositNearService.getMinimumStorageBalance(
-                      tokenAddress
-                    )
-                  transactions =
-                    depositNearService.createBatchDepositNearNativeTransaction(
-                      tokenAddress,
-                      amount,
-                      amount - balance,
-                      isWrapNearRequired,
-                      minStorageBalance
-                    )
+                    await getMinimumStorageBalance(tokenAddress)
+                  transactions = createBatchDepositNearNativeTransaction(
+                    tokenAddress,
+                    amount,
+                    amount - balance,
+                    isWrapNearRequired,
+                    minStorageBalance
+                  )
                 } else {
-                  const isStorageDepositRequired =
-                    await depositNearService.isStorageDepositRequired(
-                      tokenAddress,
-                      settings.defuseContractId
-                    )
+                  const isStorageRequired = await isStorageDepositRequired(
+                    tokenAddress,
+                    settings.defuseContractId
+                  )
 
                   let minStorageBalance = 0n
-                  if (isStorageDepositRequired) {
+                  if (isStorageRequired) {
                     minStorageBalance =
-                      await depositNearService.getMinimumStorageBalance(
-                        tokenAddress
-                      )
+                      await getMinimumStorageBalance(tokenAddress)
                   }
-                  transactions =
-                    depositNearService.createBatchDepositNearNep141Transaction(
-                      tokenAddress,
-                      amount,
-                      isStorageDepositRequired,
-                      minStorageBalance
-                    )
+                  transactions = createBatchDepositNearNep141Transaction(
+                    tokenAddress,
+                    amount,
+                    isStorageRequired,
+                    minStorageBalance
+                  )
                 }
 
                 const txHash = await sendTransactionNear(transactions)
@@ -127,12 +125,11 @@ export function DepositUIMachineProvider({
                 assert(txHash != null, "Tx hash is not defined")
                 assert(accountId != null, "Account ID is not defined")
                 assert(amount != null, "Amount is not defined")
-                const isValid =
-                  await depositNearService.checkNearTransactionValidity(
-                    txHash,
-                    accountId,
-                    amount.toString()
-                  )
+                const isValid = await checkNearTransactionValidity(
+                  txHash,
+                  accountId,
+                  amount.toString()
+                )
                 return isValid
               }),
             },
@@ -149,7 +146,7 @@ export function DepositUIMachineProvider({
                 const { accountId, chain } = input
                 assert(accountId != null, "Account ID is not defined")
                 assert(chain != null, "Chain is not defined")
-                const address = await depositNearService.generateDepositAddress(
+                const address = await generateDepositAddress(
                   userAddressToDefuseUserId(accountId),
                   chain
                 )
