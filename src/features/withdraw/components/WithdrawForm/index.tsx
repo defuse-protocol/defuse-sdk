@@ -1,6 +1,7 @@
 import {
   ExclamationTriangleIcon,
   InfoCircledIcon,
+  MagicWandIcon,
   PersonIcon,
 } from "@radix-ui/react-icons"
 import {
@@ -8,6 +9,7 @@ import {
   Button,
   Callout,
   Flex,
+  IconButton,
   Skeleton,
   Spinner,
   Text,
@@ -27,7 +29,12 @@ import { Select } from "../../../../components/Select/Select"
 import { useModalController } from "../../../../hooks"
 import { useTokensStore } from "../../../../providers/TokensStoreProvider"
 import { ModalType } from "../../../../stores/modalStore"
-import type { BaseTokenInfo, UnifiedTokenInfo } from "../../../../types/base"
+import { ChainType } from "../../../../types"
+import type {
+  BaseTokenInfo,
+  SupportedChainName,
+  UnifiedTokenInfo,
+} from "../../../../types/base"
 import type { WithdrawWidgetProps } from "../../../../types/withdraw"
 import { isBaseToken } from "../../../../utils"
 import { assert } from "../../../../utils/assert"
@@ -257,6 +264,11 @@ export const WithdrawForm = ({
       .map((a) => [a.value, a])
   )
 
+  const isChainTypeSatisfiesChainName = chainTypeSatisfiesChainName(
+    chainType,
+    tokenOut.chainName
+  )
+
   return (
     <div className={styles.container}>
       <Flex direction={"column"} gap={"2"} className={styles.formWrapper}>
@@ -347,23 +359,48 @@ export const WithdrawForm = ({
               />
 
               <Flex direction={"column"} gap={"1"}>
-                <TextField.Root
-                  size={"3"}
-                  {...register("recipient", {
-                    validate: {
-                      pattern: (value, formValues) => {
-                        if (!validateAddress(value, formValues.blockchain)) {
-                          return "Invalid address for the selected blockchain"
-                        }
-                      },
-                    },
-                  })}
-                  placeholder="Enter wallet address"
-                >
-                  <TextField.Slot>
-                    <PersonIcon height="16" width="16" />
-                  </TextField.Slot>
-                </TextField.Root>
+                <Flex gap={"2"} align={"center"}>
+                  <Box asChild flexGrow={"1"}>
+                    <TextField.Root
+                      size={"3"}
+                      {...register("recipient", {
+                        validate: {
+                          pattern: (value, formValues) => {
+                            if (
+                              !validateAddress(value, formValues.blockchain)
+                            ) {
+                              return "Invalid address for the selected blockchain"
+                            }
+                          },
+                        },
+                      })}
+                      placeholder="Enter wallet address"
+                    >
+                      <TextField.Slot>
+                        <PersonIcon height="16" width="16" />
+                      </TextField.Slot>
+                    </TextField.Root>
+                  </Box>
+
+                  {isChainTypeSatisfiesChainName &&
+                    userAddress != null &&
+                    recipient !== userAddress && (
+                      <IconButton
+                        type={"button"}
+                        onClick={() => {
+                          setValue("recipient", userAddress, {
+                            shouldValidate: true,
+                          })
+                        }}
+                        variant={"outline"}
+                        size={"3"}
+                        title={`Autofill with your address ${truncateUserAddress(userAddress)}`}
+                        aria-label={`Autofill with your address ${truncateUserAddress(userAddress)}`}
+                      >
+                        <MagicWandIcon />
+                      </IconButton>
+                    )}
+                </Flex>
 
                 {errors.recipient && (
                   <Box px={"2"} asChild>
@@ -572,4 +609,25 @@ function totalAmountReceivedSelector(
     (state.context.quote?.totalAmountOut ?? 0n) +
     state.context.withdrawalSpec.directWithdrawalAmount
   )
+}
+
+function chainTypeSatisfiesChainName(
+  chainType: ChainType | undefined,
+  chainName: SupportedChainName
+) {
+  if (chainType == null) return false
+
+  switch (true) {
+    case chainType === ChainType.Near && chainName === "near":
+    case chainType === ChainType.EVM && chainName === "eth":
+    case chainType === ChainType.EVM && chainName === "arbitrum":
+    case chainType === ChainType.EVM && chainName === "base":
+      return true
+  }
+
+  return false
+}
+
+function truncateUserAddress(hash: string) {
+  return `${hash.slice(0, 6)}...${hash.slice(-4)}`
 }
