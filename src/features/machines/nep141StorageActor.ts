@@ -62,7 +62,7 @@ export const nep141StorageActor = fromPromise(
     if (userStorageBalance < minStorageBalance) {
       return {
         tag: "ok",
-        value: minStorageBalance,
+        value: minStorageBalance - userStorageBalance,
       }
     }
 
