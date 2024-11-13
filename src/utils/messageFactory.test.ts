@@ -8,8 +8,7 @@ import {
 
 describe("makeSwapMessage()", () => {
   const innerMessage = makeInnerSwapMessage({
-    amountsIn: {},
-    amountsOut: { "foo.near": 100n },
+    tokenDeltas: [["foo.near", 100n]],
     signerId: userAddressToDefuseUserId("user.near"),
     deadlineTimestamp: 1000000,
   })
@@ -61,15 +60,46 @@ describe("makeSwapMessage()", () => {
 
     expect(msg1.NEP413.nonce).not.toEqual(msg2.NEP413.nonce)
   })
+
+  it("should merge amounts in/out with same token", () => {
+    const innerMessage = makeInnerSwapMessage({
+      tokenDeltas: [
+        ["foo.near", -150n],
+        ["bar.near", -200n],
+        ["bar.near", 270n],
+        ["foo.near", 100n],
+      ],
+      signerId: userAddressToDefuseUserId("user.near"),
+      deadlineTimestamp: 1000000,
+    })
+
+    expect(innerMessage).toMatchInlineSnapshot(`
+      {
+        "deadline": {
+          "timestamp": 1000000,
+        },
+        "intents": [
+          {
+            "diff": {
+              "bar.near": "70",
+              "foo.near": "-50",
+            },
+            "intent": "token_diff",
+          },
+        ],
+        "signer_id": "user.near",
+      }
+    `)
+  })
 })
 
 describe("makeInnerSwapAndWithdrawMessage()", () => {
   it("generates message with swaps", () => {
     const innerMessage = makeInnerSwapAndWithdrawMessage({
-      swapParams: {
-        amountsIn: { "foo.near": 100n },
-        amountsOut: { "bar.near": 200n },
-      },
+      tokenDeltas: [
+        ["foo.near", -100n],
+        ["bar.near", 200n],
+      ],
       withdrawParams: {
         type: "to_near",
         amount: 200n,
@@ -109,7 +139,7 @@ describe("makeInnerSwapAndWithdrawMessage()", () => {
 
   it("generates message without swaps", () => {
     const innerMessage = makeInnerSwapAndWithdrawMessage({
-      swapParams: null,
+      tokenDeltas: null,
       withdrawParams: {
         type: "to_near",
         amount: 200n,
@@ -142,7 +172,7 @@ describe("makeInnerSwapAndWithdrawMessage()", () => {
 
   it("generates message for withdrawing via POA Bridge", () => {
     const innerMessage = makeInnerSwapAndWithdrawMessage({
-      swapParams: null,
+      tokenDeltas: null,
       withdrawParams: {
         type: "via_poa_bridge",
         amount: 200n,

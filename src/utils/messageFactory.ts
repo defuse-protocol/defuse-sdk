@@ -10,24 +10,22 @@ import { assert } from "./assert"
 import type { DefuseUserId } from "./defuse"
 
 export function makeInnerSwapMessage({
-  amountsIn,
-  amountsOut,
+  tokenDeltas,
   signerId,
   deadlineTimestamp,
 }: {
-  amountsIn: Record<string, bigint>
-  amountsOut: Record<string, bigint>
+  tokenDeltas: [string, bigint][]
   signerId: DefuseUserId
   deadlineTimestamp: number
 }): Nep413DefuseMessageFor_DefuseIntents {
   const tokenDiff: TokenAmountsForInt128 = {}
+  const tokenDiffNum: Record<string, bigint> = {}
 
-  for (const [token, amount] of Object.entries(amountsIn)) {
-    tokenDiff[token] = (-amount).toString()
-  }
-
-  for (const [token, amount] of Object.entries(amountsOut)) {
-    tokenDiff[token] = amount.toString()
+  for (const [token, amount] of tokenDeltas) {
+    tokenDiffNum[token] ??= 0n
+    tokenDiffNum[token] += amount
+    // biome-ignore lint/style/noNonNullAssertion: it is checked above
+    tokenDiff[token] = tokenDiffNum[token]!.toString()
   }
 
   if (Object.keys(tokenDiff).length === 0) {
@@ -52,15 +50,12 @@ export function makeInnerSwapMessage({
 }
 
 export function makeInnerSwapAndWithdrawMessage({
-  swapParams,
+  tokenDeltas,
   withdrawParams,
   signerId,
   deadlineTimestamp,
 }: {
-  swapParams: {
-    amountsIn: Record<string, bigint>
-    amountsOut: Record<string, bigint>
-  } | null
+  tokenDeltas: [string, bigint][] | null
   withdrawParams: WithdrawParams
   signerId: DefuseUserId
   deadlineTimestamp: number
@@ -68,10 +63,9 @@ export function makeInnerSwapAndWithdrawMessage({
   const intents: NonNullable<Nep413DefuseMessageFor_DefuseIntents["intents"]> =
     []
 
-  if (swapParams) {
+  if (tokenDeltas && tokenDeltas.length > 0) {
     const { intents: swapIntents } = makeInnerSwapMessage({
-      amountsIn: swapParams.amountsIn,
-      amountsOut: swapParams.amountsOut,
+      tokenDeltas,
       signerId,
       deadlineTimestamp,
     })
