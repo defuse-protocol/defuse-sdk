@@ -220,7 +220,8 @@ export function getAvailableDepositRoutes(
             passiveDeposit: true,
           }
         default:
-          return null
+          network satisfies never
+          throw new Error("exhaustive check failed")
       }
     case ChainType.EVM:
       switch (network) {
@@ -233,13 +234,20 @@ export function getAvailableDepositRoutes(
         case BlockchainEnum.BASE:
         case BlockchainEnum.ARBITRUM:
           return {
-            activeDeposit: true,
+            activeDeposit: false,
+            passiveDeposit: true,
+          }
+        case BlockchainEnum.BITCOIN:
+          return {
+            activeDeposit: false,
             passiveDeposit: true,
           }
         default:
-          return null
+          network satisfies never
+          throw new Error("exhaustive check failed")
       }
     default:
-      return null
+      chainTypeFromWallet satisfies never
+      throw new Error("exhaustive check failed")
   }
 }
