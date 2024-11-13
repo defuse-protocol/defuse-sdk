@@ -14,6 +14,7 @@ export const SwapWidget = ({
   sendNearTransaction,
   signMessage,
   onSuccessSwap,
+  onNavigateDeposit,
 }: SwapWidgetProps) => {
   const [initialTokenIn, initialTokenOut] = tokenList
   assert(
@@ -39,7 +40,7 @@ export const SwapWidget = ({
               userAddress={userAddress}
               sendNearTransaction={sendNearTransaction}
             >
-              <SwapForm />
+              <SwapForm onNavigateDeposit={onNavigateDeposit} />
             </SwapSubmitterProvider>
           </SwapUIMachineFormSyncProvider>
         </SwapUIMachineProvider>
