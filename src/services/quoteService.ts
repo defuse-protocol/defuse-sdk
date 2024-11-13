@@ -76,6 +76,60 @@ export async function queryQuote(
   return aggregateQuotes(quotes)
 }
 
+export async function queryQuoteExactOut(
+  input: {
+    tokenIn: BaseTokenInfo["defuseAssetId"]
+    tokenOut: BaseTokenInfo["defuseAssetId"]
+    exactAmountOut: bigint
+  },
+  { signal }: { signal?: AbortSignal } = {}
+): Promise<AggregatedQuote> {
+  const quotes = await quote(
+    {
+      defuse_asset_identifier_in: input.tokenIn,
+      defuse_asset_identifier_out: input.tokenOut,
+      exact_amount_out: input.exactAmountOut.toString(),
+      min_deadline_ms: settings.quoteMinDeadlineMs,
+    },
+    { signal }
+  )
+
+  if (quotes == null) {
+    return {
+      quoteHashes: [],
+      expirationTime: 0,
+      totalAmountIn: 0n,
+      totalAmountOut: 0n,
+      amountsIn: {},
+      amountsOut: {},
+      tokenDeltas: [],
+    }
+  }
+
+  quotes.sort((a, b) => {
+    // Sort by `amount_in` in ascending order, because backend does not sort
+    if (BigInt(a.amount_in) < BigInt(b.amount_in)) return -1
+    if (BigInt(a.amount_in) > BigInt(b.amount_in)) return 1
+    return 0
+  })
+
+  const bestQuote = quotes[0]
+  assert(bestQuote != null, "No valid quotes")
+
+  return {
+    quoteHashes: [bestQuote.quote_hash],
+    expirationTime: bestQuote.expiration_time,
+    totalAmountIn: BigInt(bestQuote.amount_in),
+    totalAmountOut: BigInt(bestQuote.amount_out),
+    amountsIn: { [input.tokenIn]: BigInt(bestQuote.amount_in) },
+    amountsOut: { [input.tokenOut]: BigInt(bestQuote.amount_out) },
+    tokenDeltas: [
+      [input.tokenIn, -BigInt(bestQuote.amount_in)],
+      [input.tokenOut, BigInt(bestQuote.amount_out)],
+    ],
+  }
+}
+
 function min(a: bigint, b: bigint): bigint {
   return a < b ? a : b
 }
