@@ -254,6 +254,11 @@ export const depositUIMachine = setup({
     LOGOUT: {
       actions: assign({
         userAddress: () => "",
+        formValues: {
+          token: null,
+          network: null,
+          amount: "",
+        },
       }),
     },
   },

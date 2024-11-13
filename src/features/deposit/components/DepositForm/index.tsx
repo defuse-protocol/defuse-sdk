@@ -325,7 +325,9 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
                 </div>
                 <Input
                   name="generatedAddress"
-                  value={depositAddress}
+                  value={
+                    depositAddress ? truncateUserAddress(depositAddress) : ""
+                  }
                   disabled
                   className={styles.inputGeneratedAddress}
                   slotRight={
@@ -435,7 +437,6 @@ function filterBlockchainsOptions(
   token: SwappableToken,
   chainType?: ChainType
 ): Record<string, { label: string; icon: React.ReactNode; value: string }> {
-  // TODO: use supportedTokensList
   if (isUnifiedToken(token)) {
     return token.groupedTokens.reduce(
       (
@@ -614,4 +615,8 @@ function renderDepositHint(
       )}
     </Callout.Root>
   )
+}
+
+function truncateUserAddress(hash: string) {
+  return `${hash.slice(0, 12)}...${hash.slice(-12)}`
 }

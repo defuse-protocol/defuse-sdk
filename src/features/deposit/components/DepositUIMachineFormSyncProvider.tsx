@@ -40,8 +40,7 @@ export function DepositUIMachineFormSyncProvider({
   useEffect(() => {
     if (!userAddress) {
       actorRef.send({
-        type: "LOGIN",
-        params: { userAddress: "", rpcUrl: undefined },
+        type: "LOGOUT",
       })
     } else {
       actorRef.send({

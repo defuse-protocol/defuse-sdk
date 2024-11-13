@@ -242,11 +242,6 @@ export function getAvailableDepositRoutes(
             activeDeposit: false,
             passiveDeposit: true,
           }
-        case BlockchainEnum.BITCOIN:
-          return {
-            activeDeposit: false,
-            passiveDeposit: true,
-          }
         default:
           network satisfies never
           throw new Error("exhaustive check failed")
