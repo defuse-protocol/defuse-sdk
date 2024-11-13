@@ -6,11 +6,13 @@ import { DepositUIMachineContext } from "./DepositUIMachineProvider"
 
 type DepositUIMachineFormSyncProviderProps = PropsWithChildren<{
   userAddress?: string
+  rpcUrl?: string
 }>
 
 export function DepositUIMachineFormSyncProvider({
   children,
   userAddress,
+  rpcUrl,
 }: DepositUIMachineFormSyncProviderProps) {
   const { watch } = useFormContext<DepositFormValues>()
   const actorRef = DepositUIMachineContext.useActorRef()
@@ -37,11 +39,17 @@ export function DepositUIMachineFormSyncProvider({
 
   useEffect(() => {
     if (!userAddress) {
-      actorRef.send({ type: "LOGIN", params: { userAddress: "" } })
+      actorRef.send({
+        type: "LOGIN",
+        params: { userAddress: "", rpcUrl: undefined },
+      })
     } else {
-      actorRef.send({ type: "LOGIN", params: { userAddress } })
+      actorRef.send({
+        type: "LOGIN",
+        params: { userAddress, rpcUrl },
+      })
     }
-  }, [actorRef, userAddress])
+  }, [actorRef, userAddress, rpcUrl])
 
   return <>{children}</>
 }

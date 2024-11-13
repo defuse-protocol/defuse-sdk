@@ -236,6 +236,11 @@ export function getAvailableDepositRoutes(
             activeDeposit: true,
             passiveDeposit: true,
           }
+        case BlockchainEnum.BITCOIN:
+          return {
+            activeDeposit: false,
+            passiveDeposit: true,
+          }
         default:
           return null
       }

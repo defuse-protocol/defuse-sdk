@@ -10,7 +10,9 @@ export type DepositWidgetProps = {
   userAddress?: string
   chainType: ChainType
   sendTransactionNear: (transactions: Transaction[]) => Promise<string>
+  sendTransactionEVM: (transactions: Transaction[]) => Promise<string>
   onEmit?: (event: DepositEvent) => void
+  rpcUrl?: string
 }
 
 export type DepositEvent = {

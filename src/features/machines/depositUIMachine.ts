@@ -41,8 +41,10 @@ export type Context = {
   tokenList: SwappableToken[]
   userAddress: string
   defuseAssetId: string | null
+  tokenAddress: string | null
   generatedAddressResult: DepositGenerateAddressMachineOutput | null
   depositNearResult: DepositNearMachineOutput | null
+  rpcUrl: string | undefined
 }
 
 export const depositUIMachine = setup({
@@ -70,6 +72,7 @@ export const depositUIMachine = setup({
           type: "LOGIN"
           params: {
             userAddress: string
+            rpcUrl: string | undefined
           }
         }
       | {
@@ -133,7 +136,7 @@ export const depositUIMachine = setup({
     }),
     clearDepositResult: assign({ depositNearResult: null }),
 
-    extractDefuseAssetId: assign({
+    extractAssetIds: assign({
       defuseAssetId: ({ context }) => {
         if (context.formValues.token == null) {
           return null
@@ -147,6 +150,21 @@ export const depositUIMachine = setup({
               assetNetworkAdapter[token.chainName] ===
               context.formValues.network
           )?.defuseAssetId ?? null
+        )
+      },
+      tokenAddress: ({ context }) => {
+        if (context.formValues.token == null) {
+          return null
+        }
+        if (isBaseToken(context.formValues.token)) {
+          return context.formValues.token.address
+        }
+        return (
+          context.formValues.token.groupedTokens.find(
+            (token) =>
+              assetNetworkAdapter[token.chainName] ===
+              context.formValues.network
+          )?.address ?? null
         )
       },
     }),
@@ -193,7 +211,7 @@ export const depositUIMachine = setup({
     isOk: (_, a: { tag: "err" | "ok" }) => a.tag === "ok",
   },
 }).createMachine({
-  /** @xstate-layout N4IgpgJg5mDOIC5QTABwPawJYBcC0ArlgMQAyA8gOICSAcgNoAMAuoqBtjlugHZsgAPRIwB0ATjEAOAEwA2RtMYBGWQHZpAVmnSALABoQAT0R4ZGkUskqxSgMyqdSxo0kBfVwZQdchEhUrkAKoAKkysSCDeXLz8Qgh40rZK4hqykmKqsho6aUmyBsbxZhZWsjb2js5uHiBemD5EIpC4WDxQxADKgQBCALLUoSz8Udx8EXGytiVKStk2mRKSqgUmcqJqNjpiSduS2e6eaPX4jc1cbcR0AAohYcPHo7EmllO2GuqJSjrSStupK-E3qpxDNbLZvjMypYDrUjpxfE0IC02iIAG4AQwANlgIOjzu0ILwwCJWqj0ABrYl1eGnJH4tFYnF41pQBCk9AAY2ZvDCdwiIxi4xMsh0OhEOg0S2yYLUshUALwWmBjgcOwyWVUShh1IaWERyKgDOxuPxxEJPGJ7MpIh1Jz1ZxZRqZ+LZPDJXOiPF5SnC7AegtAcVMXxEaSUiW+MlUGnBCp09hE0jEGi+YkUQNUb21cN1IlgBAARgBbXCm82Wt0Uqk5nC0MDogBOACUwAAzPl+ziPIUIHR7ESa0VqWZSSSTfRGZ6yaQiSTxpaZ7KMb7L7NRBH54ullnEMANhvoBsiVCYvGtw9Fm01uuNlvtob8-1jQOIPvAmzyRhiFUyOX5SfxBo5g2JISQ5BIOTfKoa7HAiMAWg2zIXOWJKVtatqUGACF4mAACCEAQA2cCwHeHaRE+Ty9n2Ihgs4OguEkqjLrYcY5CIGgSEBMZlFkOgwTSerwXuSHtHuB5HieZ4XleUSYdhOB4QRRGwCRbZkQKz6CK+1ESKokgyL83FpP+hR4LYWSJr8qgOJofYvPxuYEKgJpgN0WLojwHJgMQAiwDgOEiOirYKQ2AAUijOAAlGaNYIk5LluaenlgOpFE9hZ35Jj8tn0dOJnPHINFiIwDiSqB2jOBo7g1Dw6AoPAES2r49xdgGWnxN+Yq-N88YlbI8iZAqTFTPMtjfsmqiLFqNRNbSBotS0bVBuksgWJlvWZAN+XxH+4pKA41iSpYYiyA5dr6vSOKYmAC2epRpjUd1ui2H1W0Klokggqq6SSrYVjTYc65zfSGLGiJt3di+8RJmK6TSJkK1-GBCojgOXwvZNmTvFIZ0boWJY4PiENLa+dgiC4zgzDMyaJMsAEJHKiYKEdjhWDGti440QmIUTj6tZpcR-WIoYldIY7OJNpTbYqDizmkk2pCdjBAZzerxThiUeV5xMC4g2gzlk5knSuDiTdL4bAukJVbJq1n2GI1WuEAA */
+  /** @xstate-layout N4IgpgJg5mDOIC5QTABwPawJYBcC0ArlgMQAyA8gOICSAcgNoAMAuoqBtjlugHZsgAPRIwB0ATjEAOAEwA2RtMYBGWQHZpAVmnSALABoQAT0R4ZGkUskqxSgMyqdSxo0kBfVwZQdchEhUrkAKoAKkysSCDeXLz8Qgh40rZK4hqykmKqsho6aUmyBsbxZhZWsjb2js5uHiBemD5EIpC4WDxQxADKgQBCALLUoSz8Udx8EXGytiVKStk2mRKSqgUmcqJqNjpiSduS2e6eaPX4jc1cbcR0AAohYcPHo7EmllO2GuqJSjrSStupK-E3qpxDNbLZvjMypYDrUjpxfE0IC02iIAG4AQwANlgIOjzu0ILwwCJWqj0ABrYl1eGnJH4tFYnF41pQBCk9AAY2ZvDCdwiIxi4xMkmUFlUGjs2kkSVs0kkALwSnUIlkXyV7w0jFl0hsMOpDSwiORUAZ2Nx+OIfPYD0FoDieC0YhEWx0WzB0nFs3yRmeIpVEvKc0YYneerhBpEsAIACMALa4C2EnjE9mUkT6nC0MDogBOACUwAAzK2RG1jO2IHR7ESqL45WsaKSSSb6H3xFTSESSHS2JaqN46RjfIdhqIIqNxhMs4hJlM8MlpjNZ3MF4tKcLWziPCKFBKqkSKTRWRxWDRggxxPZOlSNquqkOJaqHMeNGDJnPMi6zknzilU8M4JQYDvniYAAIIQBAOZwLAq4lgK5aCJWVYiGCziDtKSpDrYCqurIIiNiGGhnmUWQ6KOxwIm+YAfhaNE5ugOYiKgmJ4oWjGxumAFASBODgZB0GwLBRbwWWTwIK6kjiBkkgyL8JFpN6u62FkB6-KoDiaFWLwUTShoEKg5pgN0WLojwHJgMQAiwDgoEiOihZ8TmAAUijOAAlDOAEIgZRkmax5lgKJW62khCCqWI3xiD8WmDrIcgKkocioWIjAOBosnas4GjuDUPDoCg8ARBmvj3CFiH2pFOgWJFui2GlsjyJkCriqI8xbJFQ5LLKukRmcLJlS0oX2uk+G-N8PYNU1SkmKq+GOA4jVglkEhKL1JyGv1KI4piYCDdEFXCih411VNDUKloUntb2IbSlYa01CVtLGqaTL4vt24VvEOrVekHppGIZRvEkra7rMTq1pNqgZFk0NPrCL6GhO8Y4O9-JiUKEl2CILjODMMwPvYCpyMkh4ZWqp5gutVHATRn5QB9w2IDdKppXK8hpVIKgzfE7y-Wk0OpIDjDEdTjS+aB-lmRZjOHQg2idlkKmA8ODjQzzioel2qUOBkSr9tDuWuEAA */
   id: "deposit-ui",
 
   context: ({ input, spawn }) => ({
@@ -213,10 +231,12 @@ export const depositUIMachine = setup({
     tokenList: input.tokenList,
     userAddress: "",
     defuseAssetId: null,
+    tokenAddress: null,
     generatedAddressResult: null,
     poaBridgeInfoRef: spawn("poaBridgeInfoActor", {
       id: "poaBridgeInfoRef",
     }),
+    rpcUrl: undefined,
   }),
 
   entry: ["fetchPOABridgeInfo"],
@@ -226,6 +246,7 @@ export const depositUIMachine = setup({
       actions: [
         assign({
           userAddress: ({ event }) => event.params.userAddress,
+          rpcUrl: ({ event }) => event.params.rpcUrl,
         }),
       ],
     },
@@ -250,7 +271,6 @@ export const depositUIMachine = setup({
           target: ".validating",
           actions: [
             "clearError",
-            // "sendToDepositNearRefClearError",
             {
               type: "setFormValues",
               params: ({ event }) => ({ data: event.params }),
@@ -264,7 +284,7 @@ export const depositUIMachine = setup({
         idle: {},
 
         validating: {
-          entry: "extractDefuseAssetId",
+          entry: "extractAssetIds",
 
           invoke: {
             src: "formValidationBalanceActor",
@@ -272,14 +292,21 @@ export const depositUIMachine = setup({
             input: ({ context }) => {
               return {
                 defuseAssetId: context.defuseAssetId,
+                tokenAddress: context.tokenAddress,
                 userAddress: context.userAddress,
                 network: context.formValues.network,
+                rpcUrl: context.rpcUrl,
               }
             },
 
             onDone: [
               {
                 target: "#deposit-ui.generating",
+
+                actions: assign({
+                  balance: ({ event }) => event.output.balance,
+                  nativeBalance: ({ event }) => event.output.nativeBalance,
+                }),
 
                 reenter: true,
                 guard: "isDepositNonNearRelevant",

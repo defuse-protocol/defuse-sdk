@@ -1,16 +1,23 @@
 import { BlockchainEnum } from "src/types"
 import { fromPromise } from "xstate"
 import { parseDefuseAsset } from "../../utils/parseDefuseAsset"
-import { getNearNativeBalance, getNearNep141Balance } from "./getBalanceMachine"
+import {
+  getEvmErc20Balance,
+  getEvmNativeBalance,
+  getNearNativeBalance,
+  getNearNep141Balance,
+} from "./getBalanceMachine"
 
 export const backgroundBalanceActor = fromPromise(
   async ({
-    input: { defuseAssetId, userAddress, network },
+    input: { defuseAssetId, tokenAddress, userAddress, network, rpcUrl },
   }: {
     input: {
       defuseAssetId: string | null
+      tokenAddress: string | null
       userAddress: string
       network: string | null
+      rpcUrl: string | undefined
     }
   }): Promise<{
     balance: bigint
@@ -43,6 +50,22 @@ export const backgroundBalanceActor = fromPromise(
             : 0n,
           nativeBalance:
             (await getNearNativeBalance({ accountId: userAddress })) ?? 0n,
+        }
+      case BlockchainEnum.ETHEREUM:
+      case BlockchainEnum.BASE:
+      case BlockchainEnum.ARBITRUM:
+        return {
+          balance:
+            rpcUrl && tokenAddress
+              ? ((await getEvmErc20Balance({
+                  tokenAddress,
+                  userAddress,
+                  rpcUrl,
+                })) ?? 0n)
+              : 0n,
+          nativeBalance: rpcUrl
+            ? ((await getEvmNativeBalance({ userAddress, rpcUrl })) ?? 0n)
+            : 0n,
         }
       default:
         return {
