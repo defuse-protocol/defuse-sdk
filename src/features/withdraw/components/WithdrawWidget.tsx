@@ -38,11 +38,6 @@ export const WithdrawWidget = (props: WithdrawWidgetProps) => {
           },
         }}
         logic={withdrawUIMachine.provide({
-          actions: {
-            updateUIAmountOut: () => {
-              // todo: implement this
-            },
-          },
           actors: {
             swapActor: swapIntentMachine.provide({
               actors: {
