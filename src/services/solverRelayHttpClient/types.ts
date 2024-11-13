@@ -25,7 +25,8 @@ export type QuoteRequest = JSONRPCRequest<
   {
     defuse_asset_identifier_in: string
     defuse_asset_identifier_out: string
-    amount_in: string
+    exact_amount_in?: string
+    exact_amount_out?: string
     min_deadline_ms?: number
   }
 >

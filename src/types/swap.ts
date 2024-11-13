@@ -76,6 +76,8 @@ export type SwapWidgetProps = {
     txHash: string
     intentHash: string
   }) => void
+
+  onNavigateDeposit?: () => void
 }
 
 export enum QueueTransactionsEnum {
