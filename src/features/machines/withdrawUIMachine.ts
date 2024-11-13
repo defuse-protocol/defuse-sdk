@@ -17,6 +17,7 @@ import {
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../types/base"
 import type { Transaction } from "../../types/deposit"
 import { isBaseToken } from "../../utils"
+import { assert } from "../../utils/assert"
 import {
   type Events as BackgroundQuoterEvents,
   type ParentEvents as BackgroundQuoterParentEvents,
@@ -852,12 +853,6 @@ export const withdrawUIMachine = setup({
 
   initial: "editing",
 })
-
-function assert(condition: unknown, msg?: string): asserts condition {
-  if (!condition) {
-    throw new Error(msg)
-  }
-}
 
 interface WithdrawalSpec {
   swapParams: null | {
