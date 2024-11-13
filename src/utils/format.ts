@@ -9,10 +9,14 @@ export function formatTokenValue(
     fractionDigits?: number
   } = {}
 ): string {
-  const numBigInt = BigInt(num)
+  let numBigInt = BigInt(num)
   if (numBigInt === 0n) {
     return "0"
   }
+
+  const sign = numBigInt < 0n ? -1n : 1n
+  numBigInt *= sign
+  const signStr = sign < 0n ? "-" : ""
 
   fractionDigits = Math.min(fractionDigits, decimals)
 
@@ -29,10 +33,10 @@ export function formatTokenValue(
       : `${integer}.${toFixed(roundedFraction.toString(), fractionDigits)}`
 
   if (min != null && Number(formatted) < min) {
-    return `< ${min}`
+    return `< ${signStr}${min}`
   }
 
-  return formatted
+  return `${signStr}${formatted}`
 }
 
 function toFixed(number: string, digits: number) {
