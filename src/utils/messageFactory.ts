@@ -94,6 +94,7 @@ type WithdrawParams =
       amount: bigint
       tokenAccountId: string
       receiverId: string
+      storageDeposit: bigint
     }
   | {
       type: "via_poa_bridge"
@@ -111,6 +112,10 @@ function makeInnerWithdrawMessage(params: WithdrawParams): Intent {
         token: params.tokenAccountId,
         receiver_id: params.receiverId,
         amount: params.amount.toString(),
+        storage_deposit:
+          params.storageDeposit > 0n
+            ? params.storageDeposit.toString()
+            : undefined,
       }
 
     case "via_poa_bridge":
