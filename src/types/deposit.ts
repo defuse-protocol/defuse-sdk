@@ -7,15 +7,10 @@ export const ChainType = {
   EVM: "evm",
 } as const
 
-export type UserInfo =
-  | {
-      userAddress: string
-      chainType: ChainType
-    }
-  | {
-      userAddress: undefined
-      chainType: undefined
-    }
+export type UserInfo = {
+  userAddress?: string
+  chainType?: ChainType
+}
 
 export type DepositWidgetProps = UserInfo & {
   tokenList: SwappableToken[]
