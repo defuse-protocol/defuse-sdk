@@ -71,7 +71,7 @@ export const WithdrawWidget = (props: WithdrawWidgetProps) => {
                     )
 
                     const innerMessage = makeInnerSwapAndWithdrawMessage({
-                      swapParams: quote,
+                      tokenDeltas: quote?.tokenDeltas ?? [],
                       withdrawParams:
                         tokenOut.chainName === "near"
                           ? {

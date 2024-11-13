@@ -144,8 +144,7 @@ export const swapIntentMachine = setup({
         )
 
         const innerMessage = makeInnerSwapMessage({
-          amountsIn: context.intentOperationParams.quote.amountsIn,
-          amountsOut: context.intentOperationParams.quote.amountsOut,
+          tokenDeltas: context.intentOperationParams.quote.tokenDeltas,
           signerId: userAddressToDefuseUserId(context.userAddress),
           deadlineTimestamp: Math.min(
             Math.floor(Date.now() / 1000) + settings.swapExpirySec,

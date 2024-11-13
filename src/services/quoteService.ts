@@ -1,10 +1,11 @@
 import { settings } from "../config/settings"
+import type { BaseTokenInfo } from "../types"
 import { quote } from "./solverRelayHttpClient"
 import type { QuoteResponse } from "./solverRelayHttpClient/types"
 
 export interface AggregatedQuoteParams {
-  tokensIn: string[] // set of close tokens, e.g. [USDC on Solana", USDC on Ethereum, USDC on Near]
-  tokensOut: string[] // set of close tokens, e.g. [USDC on Solana", USDC on Ethereum, USDC on Near]
+  tokensIn: string[] // set of close tokens, e.g. [USDC on Solana, USDC on Ethereum, USDC on Near]
+  tokensOut: string[] // set of close tokens, e.g. [USDC on Solana, USDC on Ethereum, USDC on Near]
   amountIn: bigint // total amount in
   balances: Record<string, bigint> // how many tokens of each type are available
 }
@@ -15,8 +16,11 @@ export interface AggregatedQuote {
   expirationTime: number
   totalAmountIn: bigint
   totalAmountOut: bigint
+  /** @deprecated */
   amountsIn: Record<string, bigint> // amount in for each token
+  /** @deprecated */
   amountsOut: Record<string, bigint> // amount out for each token
+  tokenDeltas: [string, bigint][]
 }
 
 type QuoteResults = QuoteResponse["result"]
@@ -117,6 +121,7 @@ export function aggregateQuotes(
   const amountsOut: Record<string, bigint> = {}
   const quoteHashes: string[] = []
   let expirationTime = Number.POSITIVE_INFINITY
+  const tokenDeltas: [string, bigint][] = []
 
   for (const qList of quotes) {
     qList.sort((a, b) => {
@@ -142,6 +147,9 @@ export function aggregateQuotes(
     amountsOut[q.defuse_asset_identifier_out] ??= 0n
     amountsOut[q.defuse_asset_identifier_out] += amountOut
 
+    tokenDeltas.push([q.defuse_asset_identifier_in, -amountIn])
+    tokenDeltas.push([q.defuse_asset_identifier_out, amountOut])
+
     quoteHashes.push(q.quote_hash)
   }
 
@@ -153,6 +161,7 @@ export function aggregateQuotes(
     totalAmountOut,
     amountsIn,
     amountsOut,
+    tokenDeltas,
   }
 }
 
