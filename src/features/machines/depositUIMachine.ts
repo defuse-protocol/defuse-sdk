@@ -13,7 +13,12 @@ import { parseUnits } from "../../utils/parse"
 import { isBaseToken } from "../../utils/token"
 import { backgroundBalanceActor } from "./backgroundBalanceActor"
 import {
+  type Output as DepositEVMMachineOutput,
+  depositEVMMachine,
+} from "./depositEVMMachine"
+import {
   type Output as DepositGenerateAddressMachineOutput,
+  DepositGeneratedDescription,
   depositGenerateAddressMachine,
 } from "./depositGenerateAddressMachine"
 import {
@@ -44,6 +49,7 @@ export type Context = {
   tokenAddress: string | null
   generatedAddressResult: DepositGenerateAddressMachineOutput | null
   depositNearResult: DepositNearMachineOutput | null
+  depositEVMResult: DepositEVMMachineOutput | null
   rpcUrl: string | undefined
 }
 
@@ -80,6 +86,7 @@ export const depositUIMachine = setup({
         },
     children: {} as {
       depositNearRef: "depositNearActor"
+      depositEVMRef: "depositEVMActor"
     },
   },
   actors: {
@@ -87,6 +94,7 @@ export const depositUIMachine = setup({
     depositNearActor: depositNearMachine,
     depositGenerateAddressActor: depositGenerateAddressMachine,
     poaBridgeInfoActor: poaBridgeInfoActor,
+    depositEVMActor: depositEVMMachine,
   },
   actions: {
     setFormValues: assign({
@@ -129,6 +137,9 @@ export const depositUIMachine = setup({
     clearError: assign({ error: null }),
     setDepositNearResult: assign({
       depositNearResult: (_, value: DepositNearMachineOutput) => value,
+    }),
+    setDepositEVMResult: assign({
+      depositEVMResult: (_, value: DepositEVMMachineOutput) => value,
     }),
     setDepositGenerateAddressResult: assign({
       generatedAddressResult: (_, value: DepositGenerateAddressMachineOutput) =>
@@ -179,6 +190,7 @@ export const depositUIMachine = setup({
         })
       },
     }),
+    // ToDo Add spawn actor which will propogate generated address to depositEVM once we fove got the generated address
     clearUIDepositAmount: () => {
       throw new Error("not implemented")
     },
@@ -189,7 +201,17 @@ export const depositUIMachine = setup({
     isDepositNearRelevant: ({ context }) => {
       return (
         context.balance + context.nativeBalance >=
-        context.parsedFormValues.amount
+          context.parsedFormValues.amount &&
+        context.formValues.network === BlockchainEnum.NEAR
+      )
+    },
+    isDepositEVMRelevant: ({ context }) => {
+      return (
+        context.balance + context.nativeBalance >=
+          context.parsedFormValues.amount &&
+        (context.formValues.network === BlockchainEnum.ETHEREUM ||
+          context.formValues.network === BlockchainEnum.BASE ||
+          context.formValues.network === BlockchainEnum.ARBITRUM)
       )
     },
     isBalanceSufficient: ({ event, context }) => {
@@ -211,7 +233,7 @@ export const depositUIMachine = setup({
     isOk: (_, a: { tag: "err" | "ok" }) => a.tag === "ok",
   },
 }).createMachine({
-  /** @xstate-layout N4IgpgJg5mDOIC5QTABwPawJYBcC0ArlgMQAyA8gOICSAcgNoAMAuoqBtjlugHZsgAPRIwB0ATjEAOAEwA2RtMYBGWQHZpAVmnSALABoQAT0R4ZGkUskqxSgMyqdSxo0kBfVwZQdchEhUrkAKoAKkysSCDeXLz8Qgh40rZK4hqykmKqsho6aUmyBsbxZhZWsjb2js5uHiBemD5EIpC4WDxQxADKgQBCALLUoSz8Udx8EXGytiVKStk2mRKSqgUmcqJqNjpiSduS2e6eaPX4jc1cbcR0AAohYcPHo7EmllO2GuqJSjrSStupK-E3qpxDNbLZvjMypYDrUjpxfE0IC02iIAG4AQwANlgIOjzu0ILwwCJWqj0ABrYl1eGnJH4tFYnF41pQBCk9AAY2ZvDCdwiIxi4xMkmUFlUGjs2kkSVs0kkALwSnUIlkXyV7w0jFl0hsMOpDSwiORUAZ2Nx+OIfPYD0FoDieC0YhEWx0WzB0nFs3yRmeIpVEvKc0YYneerhBpEsAIACMALa4C2EnjE9mUkT6nC0MDogBOACUwAAzK2RG1jO2IHR7ESqL45WsaKSSSb6H3xFTSESSHS2JaqN46RjfIdhqIIqNxhMs4hJlM8MlpjNZ3MF4tKcLWziPCKFBKqkSKTRWRxWDRggxxPZOlSNquqkOJaqHMeNGDJnPMi6zknzilU8M4JQYDvniYAAIIQBAOZwLAq4lgK5aCJWVYiGCziDtKSpDrYCqurIIiNiGGhnmUWQ6KOxwIm+YAfhaNE5ugOYiKgmJ4oWjGxumAFASBODgZB0GwLBRbwWWTwIK6kjiBkkgyL8JFpN6u62FkB6-KoDiaFWLwUTShoEKg5pgN0WLojwHJgMQAiwDgoEiOihZ8TmAAUijOAAlDOAEIgZRkmax5lgKJW62khCCqWI3xiD8WmDrIcgKkocioWIjAOBosnas4GjuDUPDoCg8ARBmvj3CFiH2pFOgWJFui2GlsjyJkCriqI8xbJFQ5LLKukRmcLJlS0oX2uk+G-N8PYNU1SkmKq+GOA4jVglkEhKL1JyGv1KI4piYCDdEFXCih411VNDUKloUntb2IbSlYa01CVtLGqaTL4vt24VvEOrVekHppGIZRvEkra7rMTq1pNqgZFk0NPrCL6GhO8Y4O9-JiUKEl2CILjODMMwPvYCpyMkh4ZWqp5gutVHATRn5QB9w2IDdKppXK8hpVIKgzfE7y-Wk0OpIDjDEdTjS+aB-lmRZjOHQg2idlkKmA8ODjQzzioel2qUOBkSr9tDuWuEAA */
+  /** @xstate-layout N4IgpgJg5mDOIC5QTABwPawJYBcC0ArlgMQAyA8gOICSAcgNoAMAuoqBtjlugHZsgAPRHgCMAZgDsAOgAsANgCsEuQA4FMsSoBMYuWIA0IAJ7CVKgJxTx2xWK0WVIlQF9nhlB1yESFSuQCqACpMrEggnly8-EIIMlJqKnIichISCuYKKhI6hiYIeGaW1lq29uaOLm4gHpheRFKQuFg8UMQAyv4AQgCy1MEs-BHcfGExclpS6mJKEnZi86mJucIlcrKMuloSjAqZ5jIiru5otfj1jVwt7V29wSKh7KfD0Yhya8mpIvZy+yq6Est8loFFJpuY5IxzGIRKlMocqjVON4GhAmlc6AAFIIhQZPKKjYROMSgpRaHQiGRaERQhRyQF4abScwicRiSksn5OI7VE5I86oy5QKQANwAhgAbLAQUWC4gQXhgKTNYXoADWisRdSwKLRQrFkulgoQyvQAGMZcMQjiwkN8aAYngUhM1Iw5BpyuZmV96QpoVJGIxxDIdl8xPsZNzNWdtRdmnqJVKLVd5TxFSb1VIo8jYy0RQnDXHjTwVebIjwrfdcZxngT8o4QTIDjCkj99iz6ZI4skLFoDsGJOZUpHeVqpLACAAjAC2uEFtDAooAToEBHKFUri2qNSOcPOlwAlMAAM2tj2rdsEiF2IPMOyUSR2zMU9OSzvdjBKGxblWOEWRMFTRck1aFM003DMo0oMBAJlMAAEEIAgRc4FgQ8TwGG08RGe1EGDEEPyhERGDUdJdAUekZChKQknvFlPVdSixGHP96gIVBDTAToJVFHhTTAYgBFgHBYKkUUjxwMBFwACi0ANGAASjlHdkTYjiuPFHi+NPcIsJeBAyS7QiYWheYiK0F8SlBW8JBkTI-jJAMfx5FjtXHadZzjABRAA1boVzXVMNxVCCdx87o0O021sOMFYQW2MwDgUYiNBkNJyMvBAiNdKQbMYGRtCDcZmVcKoeHQFB4DCLMiCrJoLwdcMrH2XsxEYZQIWUek0mJeRG3s1LMg2ZjTmzAU41qss9IKcEmspDQ2reBb6RbWQYQUXsNAkLJiOGvkYzG3MpXFMAJprHC63y2aWoWjq6Ri-J1pUKRmRszQMj+Rx4V-Eb+V1PMDWA076pWfZ4nMLZVHBGloRkF90hyilWoHZQlHKXbRzcmccDnBdlxiM86uimIkqe2k1HKdbEt9Ax7rwVZnq2NryjeeYMgkdHoykADJMBzDzyJxBJDWSlNBKCQnCI7rlqcZ63Xy-KCLyjmVPY2D1M0k6+cJvTdDWSQ2Xo5Q2umCzpAsNrfVSWTHFdZX6kxjyWjClcgYFhBaTiSkBwKtkipEelgRy4iVES5K2TSkrnCAA */
   id: "deposit-ui",
 
   context: ({ input, spawn }) => ({
@@ -227,6 +249,7 @@ export const depositUIMachine = setup({
       amount: 0n,
     },
     depositNearResult: null,
+    depositEVMResult: null,
     depositGenerateAddressRef: null,
     tokenList: input.tokenList,
     userAddress: "",
@@ -266,11 +289,18 @@ export const depositUIMachine = setup({
   states: {
     editing: {
       on: {
-        SUBMIT: {
-          target: "submitting",
-          guard: "isDepositNearRelevant",
-          actions: "clearDepositResult",
-        },
+        SUBMIT: [
+          {
+            target: "submittingNearTx",
+            guard: "isDepositNearRelevant",
+            actions: "clearDepositResult",
+          },
+          {
+            target: "submittingEVMTx",
+            reenter: true,
+            guard: "isDepositEVMRelevant",
+          },
+        ],
 
         INPUT: {
           target: ".validating",
@@ -334,7 +364,7 @@ export const depositUIMachine = setup({
       initial: "idle",
     },
 
-    submitting: {
+    submittingNearTx: {
       invoke: {
         id: "depositNearRef",
         src: "depositNearActor",
@@ -353,33 +383,20 @@ export const depositUIMachine = setup({
           }
         },
 
-        onDone: [
-          {
-            target: "updateBalance",
-            guard: { type: "isOk", params: ({ event }) => event.output },
+        onDone: {
+          target: "updateBalance",
+          guard: { type: "isOk", params: ({ event }) => event.output },
 
-            actions: [
-              {
-                type: "setDepositNearResult",
-                params: ({ event }) => event.output,
-              },
-              { type: "clearUIDepositAmount" },
-            ],
+          actions: [
+            {
+              type: "setDepositNearResult",
+              params: ({ event }) => event.output,
+            },
+            { type: "clearUIDepositAmount" },
+          ],
 
-            reenter: true,
-          },
-          {
-            target: "editing",
-
-            actions: [
-              {
-                type: "setDepositNearResult",
-                params: ({ event }) => event.output,
-              },
-              { type: "clearUIDepositAmount" },
-            ],
-          },
-        ],
+          reenter: true,
+        },
       },
     },
 
@@ -409,14 +426,6 @@ export const depositUIMachine = setup({
             },
           ],
         },
-
-        onError: {
-          target: "editing",
-
-          actions: ({ event }) => {
-            console.error(event.error)
-          },
-        },
       },
     },
 
@@ -425,6 +434,47 @@ export const depositUIMachine = setup({
       after: {
         "2000": {
           target: "editing.validating",
+          reenter: true,
+        },
+      },
+    },
+
+    submittingEVMTx: {
+      invoke: {
+        id: "depositEVMRef",
+        src: "depositEVMActor",
+
+        input: ({ context, event }) => {
+          assertEvent(event, "SUBMIT")
+
+          if (
+            context.formValues.token == null ||
+            !context.userAddress ||
+            context.tokenAddress == null
+          ) {
+            throw new Error("Token or account ID is missing")
+          }
+          return {
+            balance: context.balance,
+            amount: context.parsedFormValues.amount,
+            asset: context.formValues.token,
+            accountId: context.userAddress,
+            tokenAddress: context.tokenAddress,
+          }
+        },
+
+        onDone: {
+          target: "editing.validating",
+          guard: { type: "isOk", params: ({ event }) => event.output },
+
+          actions: [
+            {
+              type: "setDepositEVMResult",
+              params: ({ event }) => event.output,
+            },
+            { type: "clearUIDepositAmount" },
+          ],
+
           reenter: true,
         },
       },

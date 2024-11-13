@@ -13,7 +13,6 @@ export const Deposits = ({
   if (depositNearResult?.tag !== "ok") {
     return null
   }
-
   const txUrl =
     depositNearResult.value.txHash != null
       ? `${NEAR_EXPLORER}/txns/${depositNearResult.value.txHash}`

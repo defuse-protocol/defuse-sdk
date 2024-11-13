@@ -1,6 +1,8 @@
 import { createActorContext } from "@xstate/react"
 import type { PropsWithChildren, ReactElement, ReactNode } from "react"
 import { useFormContext } from "react-hook-form"
+import { depositEVMMachine } from "src/features/machines/depositEVMMachine"
+import type { Abi, SendTransactionParameters } from "viem"
 import {
   type Actor,
   type ActorOptions,
@@ -12,6 +14,8 @@ import {
   checkNearTransactionValidity,
   createBatchDepositNearNativeTransaction,
   createBatchDepositNearNep141Transaction,
+  createDepositEVMERC20Calldata,
+  createDepositEVMNativeCalldata,
   generateDepositAddress,
   getMinimumStorageBalance,
   isStorageDepositRequired,
@@ -19,7 +23,7 @@ import {
 import type { SwappableToken, Transaction } from "../../../types"
 import { assert } from "../../../utils/assert"
 import { userAddressToDefuseUserId } from "../../../utils/defuse"
-import { isBaseToken } from "../../../utils/token"
+import { isBaseToken, isUnifiedToken } from "../../../utils/token"
 import { depositGenerateAddressMachine } from "../../machines/depositGenerateAddressMachine"
 import { depositNearMachine } from "../../machines/depositNearMachine"
 import { depositUIMachine } from "../../machines/depositUIMachine"
@@ -53,12 +57,17 @@ export const DepositUIMachineContext: DepositUIMachineContextInterface =
 interface DepositUIMachineProviderProps extends PropsWithChildren {
   tokenList: SwappableToken[]
   sendTransactionNear: (transactions: Transaction[]) => Promise<string | null>
+  sendTransactionEVM: (calldata: {
+    to?: string
+    data?: string
+  }) => Promise<string | null>
 }
 
 export function DepositUIMachineProvider({
   children,
   tokenList,
   sendTransactionNear,
+  sendTransactionEVM,
 }: DepositUIMachineProviderProps) {
   const { setValue } = useFormContext<DepositFormValues>()
   return (
@@ -152,6 +161,39 @@ export function DepositUIMachineProvider({
                 )
                 console.log("generated address", address)
                 return address
+              }),
+            },
+          }),
+          depositEVMActor: depositEVMMachine.provide({
+            actors: {
+              sendTransaction: fromPromise(async ({ input }) => {
+                const { asset, amount, balance, tokenAddress } = input
+
+                const generatedAddress =
+                  "0xeF2EEC3F26A05c68AA4b25740477F3E998C10b55"
+
+                assert(
+                  generatedAddress != null,
+                  "Generated address is not defined"
+                )
+
+                let calldata: { to?: string; data?: string } = {}
+                if (isUnifiedToken(asset) && asset.unifiedAssetId === "eth") {
+                  calldata = createDepositEVMNativeCalldata(
+                    generatedAddress,
+                    amount
+                  )
+                } else {
+                  calldata = createDepositEVMERC20Calldata(
+                    tokenAddress,
+                    generatedAddress,
+                    amount
+                  )
+                }
+
+                const txHash = await sendTransactionEVM(calldata)
+
+                return txHash ?? "unknown"
               }),
             },
           }),

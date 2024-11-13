@@ -1,3 +1,5 @@
+import { Interface } from "ethers"
+import { type Abi, erc20Abi } from "viem"
 import { settings } from "../config/settings"
 import {
   getNearNep141MinStorageBalance,
@@ -117,6 +119,30 @@ export function createBatchDepositNearNativeTransaction(
   ]
 }
 
+export function createDepositEVMERC20Calldata(
+  assetAccountId: string,
+  generatedAddress: string,
+  amount: bigint
+): { to: string; data: string } {
+  const iface = new Interface(erc20Abi)
+  const data = iface.encodeFunctionData("transfer", [generatedAddress, amount])
+  return {
+    to: assetAccountId,
+    data,
+  }
+}
+
+export function createDepositEVMNativeCalldata(
+  generatedAddress: string,
+  amount: bigint
+): { to: string; value: bigint; data: string } {
+  return {
+    to: generatedAddress,
+    value: amount,
+    data: "0x",
+  }
+}
+
 /**
  * Generate a deposit address for the specified blockchain and asset through the POA bridge API call.
  *
@@ -234,7 +260,7 @@ export function getAvailableDepositRoutes(
         case BlockchainEnum.BASE:
         case BlockchainEnum.ARBITRUM:
           return {
-            activeDeposit: false,
+            activeDeposit: true,
             passiveDeposit: true,
           }
         case BlockchainEnum.BITCOIN:

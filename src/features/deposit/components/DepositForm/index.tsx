@@ -5,8 +5,9 @@ import {
 } from "@radix-ui/react-icons"
 import { Button, Callout, Flex, Spinner, Text } from "@radix-ui/themes"
 import { useSelector } from "@xstate/react"
+import { ethers } from "ethers"
 import { QRCodeSVG } from "qrcode.react"
-import { type ReactNode, useEffect, useRef } from "react"
+import { type ReactNode, useEffect, useRef, useState } from "react"
 import CopyToClipboard from "react-copy-to-clipboard"
 import { Controller, useFormContext } from "react-hook-form"
 import { TooltipInfo } from "src/components/TooltipInfo"
@@ -63,6 +64,7 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
   const snapshot = DepositUIMachineContext.useSelector((snapshot) => snapshot)
   const generatedAddressResult = snapshot.context.generatedAddressResult
   const depositNearResult = snapshot.context.depositNearResult
+  console.log("depositNearResult", depositNearResult)
 
   const depositAddress =
     generatedAddressResult?.tag === "ok"
@@ -77,6 +79,7 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
     nativeBalance,
     userAddress,
     poaBridgeInfoRef,
+    rpcUrl,
   } = DepositUIMachineContext.useSelector((snapshot) => {
     const token = snapshot.context.formValues.token
     const network = snapshot.context.formValues.network
@@ -85,6 +88,7 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
     const nativeBalance = snapshot.context.nativeBalance
     const userAddress = snapshot.context.userAddress
     const poaBridgeInfoRef = snapshot.context.poaBridgeInfoRef
+    const rpcUrl = snapshot.context.rpcUrl
     return {
       token,
       network,
@@ -93,6 +97,7 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
       nativeBalance,
       userAddress,
       poaBridgeInfoRef,
+      rpcUrl,
     }
   })
 
@@ -136,13 +141,17 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
     })
   }
 
-  const handleSetMaxValue = () => {
+  const handleSetMaxValue = async () => {
     if (!token) {
       return
     }
     let maxValue = 0n
     if (isBaseToken(token) && token?.address === "wrap.near") {
       maxValue = (nativeBalance || 0n) + (balance || 0n)
+    } else if (isUnifiedToken(token) && token.unifiedAssetId === "eth") {
+      if (!rpcUrl) maxValue = 0n
+      const transferCost = rpcUrl && (await estimateEthTransferCost(rpcUrl))
+      maxValue = nativeBalance - (transferCost || 0n)
     } else {
       maxValue = balance || 0n
     }
@@ -185,6 +194,8 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
     chainType && network && getAvailableDepositRoutes(chainType, network)
   const isActiveDeposit = availableDepositRoutes?.activeDeposit
   const isPassiveDeposit = availableDepositRoutes?.passiveDeposit
+
+  const [isCopied, setIsCopied] = useState(false)
 
   return (
     <div className={styles.container}>
@@ -239,7 +250,7 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
               onChange={(value) => setValue("amount", value)}
               type="number"
               ref={(ref) => {
-                if (network === BlockchainEnum.NEAR && ref) {
+                if (ref) {
                   ref.focus()
                 }
                 amountInputRef.current = ref
@@ -270,7 +281,11 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
                       isBaseToken(token) &&
                       token.address === "wrap.near"
                         ? balance + nativeBalance
-                        : balance
+                        : token &&
+                            isUnifiedToken(token) &&
+                            token.unifiedAssetId === "eth"
+                          ? nativeBalance
+                          : balance
                     }
                     decimals={token?.decimals ?? 0}
                     handleClick={() => handleSetMaxValue()}
@@ -340,9 +355,14 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
                       className={styles.copyButton}
                       disabled={!generatedAddressResult}
                     >
-                      <CopyToClipboard text={depositAddress}>
+                      <CopyToClipboard
+                        text={depositAddress}
+                        onCopy={() => setIsCopied(true)}
+                      >
                         <Flex gap="2" align="center">
-                          <Text color="orange">Copy</Text>
+                          <Text color="orange">
+                            {isCopied ? "Copied" : "Copy"}
+                          </Text>
                           <CopyIcon height="14" width="14" color="orange" />
                         </Flex>
                       </CopyToClipboard>
@@ -490,6 +510,10 @@ function isInsufficientBalance(
     )
     return Number.parseFloat(formAmount) > Number.parseFloat(balanceToFormat)
   }
+  if (isUnifiedToken(token) && token.unifiedAssetId === "eth") {
+    const balanceToFormat = formatTokenValue(nativeBalance, token.decimals)
+    return Number.parseFloat(formAmount) > Number.parseFloat(balanceToFormat)
+  }
   return Number.parseFloat(formAmount) > Number.parseFloat(balanceToFormat)
 }
 
@@ -619,4 +643,13 @@ function renderDepositHint(
 
 function truncateUserAddress(hash: string) {
   return `${hash.slice(0, 12)}...${hash.slice(-12)}`
+}
+
+async function estimateEthTransferCost(rpcUrl: string): Promise<bigint> {
+  const provider = new ethers.JsonRpcProvider(rpcUrl)
+  const feeData = await provider.getFeeData()
+  const gasPrice = feeData.gasPrice || 0n
+  const gasLimit = 21000n
+  const costInWei = gasPrice * gasLimit
+  return costInWei
 }
