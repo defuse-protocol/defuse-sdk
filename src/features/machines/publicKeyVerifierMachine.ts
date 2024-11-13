@@ -3,6 +3,10 @@ import type { CodeResult } from "near-api-js/lib/providers/provider"
 import { assign, fromPromise, setup } from "xstate"
 import { settings } from "../../config/settings"
 import type { Transaction } from "../../types/deposit"
+import {
+  type WalletErrorCode,
+  extractWalletErrorCode,
+} from "../../utils/walletErrorExtractor"
 
 export type SendNearTransaction = (
   tx: Transaction
@@ -14,10 +18,16 @@ type Input = {
   sendNearTransaction: SendNearTransaction
 }
 
-type Output = boolean
+export type ErrorCodes =
+  | "ERR_PUBKEY_CHECK_FAILED"
+  | "ERR_PUBKEY_ADDING_DECLINED"
+  | "ERR_PUBKEY_ADDING_FAILED"
+  | WalletErrorCode
+
+type Output = { tag: "ok" } | { tag: "err"; value: ErrorCodes }
 
 type Context = Input & {
-  error: string | null
+  error: ErrorCodes | null
 }
 
 export const publicKeyVerifierMachine = setup({
@@ -51,6 +61,8 @@ export const publicKeyVerifierMachine = setup({
   },
   output: ({ context }) => {
     return context.error == null
+      ? { tag: "ok" }
+      : { tag: "err", value: context.error }
   },
   states: {
     idle: {
@@ -98,7 +110,7 @@ export const publicKeyVerifierMachine = setup({
           actions: [
             ({ event }) => console.error("Failed to check pubKey", event.error),
             assign({
-              error: "FAILED_CHECK_PUBKEY",
+              error: "ERR_PUBKEY_CHECK_FAILED",
             }),
           ],
         },
@@ -112,7 +124,7 @@ export const publicKeyVerifierMachine = setup({
         },
         ABORT_ADD_PUBLIC_KEY: {
           target: "completed",
-          actions: assign({ error: "ABORTED_ADD_PUBKEY" }),
+          actions: assign({ error: "ERR_PUBKEY_ADDING_DECLINED" }),
         },
       },
     },
@@ -135,15 +147,23 @@ export const publicKeyVerifierMachine = setup({
           { target: "completed", guard: ({ event }) => event.output != null },
           {
             target: "completed",
-            actions: assign({ error: "DIDNT_ADD_PUBKEY" }),
+            actions: assign({ error: "ERR_PUBKEY_ADDING_FAILED" }),
           },
         ],
         onError: {
           target: "completed",
           actions: [
-            ({ event }) => console.error("Failed to add pubKey", event.error),
+            ({ event }) =>
+              console.error(
+                new Error("Failed to add public key", { cause: event.error })
+              ),
             assign({
-              error: "FAILED_ADD_PUBKEY",
+              error: ({ event }) => {
+                return extractWalletErrorCode(
+                  event.error,
+                  "ERR_PUBKEY_ADDING_FAILED"
+                )
+              },
             }),
           ],
         },

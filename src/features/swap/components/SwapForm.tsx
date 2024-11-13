@@ -252,9 +252,21 @@ export function renderIntentCreationResult(
         "The message was signed with a different wallet. Please try again."
       break
 
-    case "ERR_CANNOT_VERIFY_PUBLIC_KEY":
+    case "ERR_PUBKEY_ADDING_DECLINED":
+      content = null
+      break
+
+    case "ERR_PUBKEY_CHECK_FAILED":
       content =
         "We couldn’t verify your key, possibly due to a connection issue."
+      break
+
+    case "ERR_PUBKEY_ADDING_FAILED":
+      content = "Transaction for adding public key is failed. Please try again."
+      break
+
+    case "ERR_PUBKEY_EXCEPTION":
+      content = "An error occurred while adding public key. Please try again."
       break
 
     case "ERR_QUOTE_EXPIRED_RETURN_IS_LOWER":
@@ -267,9 +279,21 @@ export function renderIntentCreationResult(
         "We couldn’t send your request, possibly due to a network issue or server downtime. Please check your connection or try again later."
       break
 
+    case "ERR_WALLET_POPUP_BLOCKED":
+      content = "Please allow popups and try again."
+      break
+
+    case "ERR_WALLET_CANCEL_ACTION":
+      content = null
+      break
+
     default:
       status satisfies never
-      content = "An error occurred. Please try again."
+      content = `An error occurred. Please try again. ${status}`
+  }
+
+  if (content == null) {
+    return null
   }
 
   return (
