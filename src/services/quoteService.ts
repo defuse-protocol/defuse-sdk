@@ -47,7 +47,7 @@ export async function queryQuote(
       {
         defuse_asset_identifier_in: tokenIn,
         defuse_asset_identifier_out: tokenOut,
-        amount_in: input.amountIn.toString(),
+        exact_amount_in: input.amountIn.toString(),
         min_deadline_ms: settings.quoteMinDeadlineMs,
       },
       { signal }
@@ -171,7 +171,7 @@ export async function fetchQuotesForTokens(
         {
           defuse_asset_identifier_in: tokenIn,
           defuse_asset_identifier_out: tokenOut,
-          amount_in: amountIn.toString(),
+          exact_amount_in: amountIn.toString(),
           min_deadline_ms: settings.quoteMinDeadlineMs,
         },
         { signal }

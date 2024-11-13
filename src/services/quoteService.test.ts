@@ -40,7 +40,7 @@ describe("queryQuote()", () => {
       {
         defuse_asset_identifier_in: "token1",
         defuse_asset_identifier_out: "tokenOut",
-        amount_in: "150",
+        exact_amount_in: "150",
         min_deadline_ms: 120_000,
       },
       expect.any(Object)
@@ -92,7 +92,7 @@ describe("queryQuote()", () => {
       {
         defuse_asset_identifier_in: "token1",
         defuse_asset_identifier_out: "tokenOut",
-        amount_in: "100",
+        exact_amount_in: "100",
         min_deadline_ms: 120_000,
       },
       expect.any(Object)
@@ -101,7 +101,7 @@ describe("queryQuote()", () => {
       {
         defuse_asset_identifier_in: "token2",
         defuse_asset_identifier_out: "tokenOut",
-        amount_in: "50",
+        exact_amount_in: "50",
         min_deadline_ms: 120_000,
       },
       expect.any(Object)
