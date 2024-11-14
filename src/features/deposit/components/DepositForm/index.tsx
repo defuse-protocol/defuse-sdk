@@ -29,7 +29,7 @@ import { ModalType } from "../../../../stores/modalStore"
 import {
   type BaseTokenInfo,
   BlockchainEnum,
-  ChainType,
+  type ChainType,
   type SwappableToken,
 } from "../../../../types"
 import { formatTokenValue } from "../../../../utils/format"
@@ -452,9 +452,6 @@ function getBlockchainsOptions(
       value: BlockchainEnum.BITCOIN,
     },
   }
-  if (chainType !== ChainType.Near) {
-    delete (options as Partial<typeof options>)[BlockchainEnum.NEAR]
-  }
   return options
 }
 
@@ -490,7 +487,7 @@ function getDefaultBlockchainOptionValue(
   token: SwappableToken,
   chainType?: ChainType
 ): string | undefined {
-  if (!isUnifiedToken(token)) {
+  if (isBaseToken(token)) {
     const key = assetNetworkAdapter[token.chainName]
     return key ? getBlockchainsOptions(chainType)[key]?.value : undefined
   }
@@ -590,7 +587,8 @@ function NotSupportedDepositRoute() {
         <ExclamationTriangleIcon />
       </Callout.Icon>
       <Callout.Text>
-        Deposit is not supported for this network, please try another network
+        Deposit is not supported for this wallet connection, please try another
+        token or network
       </Callout.Text>
     </Callout.Root>
   )
