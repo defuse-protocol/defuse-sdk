@@ -1,9 +1,9 @@
-import type { BaseTokenInfo } from "../../types/base"
-import { isNativeToken } from "../../utils"
 import {
   getNearNep141MinStorageBalance,
   getNearNep141StorageBalance,
-} from "./getBalanceMachine"
+} from "../features/machines/getBalanceMachine"
+import type { BaseTokenInfo } from "../types/base"
+import { isNativeToken } from "../utils"
 
 export type Output =
   | {
