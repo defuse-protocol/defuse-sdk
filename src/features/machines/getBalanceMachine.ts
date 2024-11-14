@@ -1,4 +1,5 @@
 import { base64 } from "@scure/base"
+import { Contract, ethers } from "ethers"
 import {
   getNearBalance,
   getNearNep141BalanceAccount,
@@ -162,3 +163,53 @@ export const getNearNep141MinStorageBalance = async ({
   const parsed = JSON.parse(decoder.decode(uint8Array))
   return BigInt(parsed.min)
 }
+
+export const getEvmNativeBalance = async ({
+  userAddress,
+  rpcUrl,
+}: {
+  userAddress: string
+  rpcUrl: string
+}): Promise<bigint | null> => {
+  try {
+    const provider = ethers.getDefaultProvider(rpcUrl)
+    const balance = await provider.getBalance(userAddress)
+    console.log("userAddress", userAddress, "balance", balance)
+    return BigInt(balance)
+  } catch (err: unknown) {
+    throw new Error("Error fetching balances", { cause: err })
+  }
+}
+
+export const getEvmErc20Balance = async ({
+  tokenAddress,
+  userAddress,
+  rpcUrl,
+}: {
+  tokenAddress: string
+  userAddress: string
+  rpcUrl: string
+}): Promise<bigint | null> => {
+  try {
+    const provider = ethers.getDefaultProvider(rpcUrl)
+    const contract = new Contract(tokenAddress, Erc20Abi, provider)
+
+    if (!contract || typeof contract.balanceOf !== "function") {
+      throw new Error(
+        "Contract is not initialized or balanceOf method is missing"
+      )
+    }
+    const balance = await contract.balanceOf(userAddress)
+    console.log("tokenAddress", tokenAddress, "balance", balance)
+    return BigInt(balance)
+  } catch (err: unknown) {
+    console.warn(err, "error fetching evm erc20 balance")
+    return null
+  }
+}
+
+export const Erc20Abi = [
+  "function decimals() view returns (uint8)",
+  "function symbol() view returns (string)",
+  "function balanceOf(address a) view returns (uint)",
+]

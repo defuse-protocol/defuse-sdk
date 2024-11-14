@@ -5,14 +5,16 @@ import {
 } from "@radix-ui/react-icons"
 import { Button, Callout, Flex, Spinner, Text } from "@radix-ui/themes"
 import { useSelector } from "@xstate/react"
+import { ethers } from "ethers"
 import { QRCodeSVG } from "qrcode.react"
-import { type ReactNode, useEffect, useRef } from "react"
+import { type ReactNode, useEffect, useRef, useState } from "react"
 import CopyToClipboard from "react-copy-to-clipboard"
 import { Controller, useFormContext } from "react-hook-form"
 import { TooltipInfo } from "src/components/TooltipInfo"
 import { RESERVED_NEAR_BALANCE } from "src/features/machines/getBalanceMachine"
 import { getPOABridgeInfo } from "src/features/machines/poaBridgeInfoActor"
 import { useDepositStatusSnapshot } from "src/hooks/useDepositStatusSnapshot"
+import { getAvailableDepositRoutes } from "src/services/depositService"
 import { assetNetworkAdapter } from "src/utils/adapters"
 import { AssetComboIcon } from "../../../../components/Asset/AssetComboIcon"
 import { BlockMultiBalances } from "../../../../components/Block/BlockMultiBalances"
@@ -27,7 +29,7 @@ import { ModalType } from "../../../../stores/modalStore"
 import {
   type BaseTokenInfo,
   BlockchainEnum,
-  ChainType,
+  type ChainType,
   type SwappableToken,
 } from "../../../../types"
 import { formatTokenValue } from "../../../../utils/format"
@@ -45,6 +47,7 @@ export type DepositFormValues = {
   amount: string
   token: SwappableToken | null
   userAddress: string | null
+  rpcUrl: string | undefined
 }
 
 export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
@@ -61,6 +64,7 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
   const snapshot = DepositUIMachineContext.useSelector((snapshot) => snapshot)
   const generatedAddressResult = snapshot.context.generatedAddressResult
   const depositNearResult = snapshot.context.depositNearResult
+  const depositEVMResult = snapshot.context.depositEVMResult
 
   const depositAddress =
     generatedAddressResult?.tag === "ok"
@@ -75,6 +79,7 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
     nativeBalance,
     userAddress,
     poaBridgeInfoRef,
+    rpcUrl,
   } = DepositUIMachineContext.useSelector((snapshot) => {
     const token = snapshot.context.formValues.token
     const network = snapshot.context.formValues.network
@@ -83,6 +88,7 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
     const nativeBalance = snapshot.context.nativeBalance
     const userAddress = snapshot.context.userAddress
     const poaBridgeInfoRef = snapshot.context.poaBridgeInfoRef
+    const rpcUrl = snapshot.context.rpcUrl
     return {
       token,
       network,
@@ -91,6 +97,7 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
       nativeBalance,
       userAddress,
       poaBridgeInfoRef,
+      rpcUrl,
     }
   })
 
@@ -134,13 +141,17 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
     })
   }
 
-  const handleSetMaxValue = () => {
+  const handleSetMaxValue = async () => {
     if (!token) {
       return
     }
     let maxValue = 0n
     if (isBaseToken(token) && token?.address === "wrap.near") {
       maxValue = (nativeBalance || 0n) + (balance || 0n)
+    } else if (isUnifiedToken(token) && token.unifiedAssetId === "eth") {
+      if (!rpcUrl) maxValue = 0n
+      const transferCost = rpcUrl && (await estimateEthTransferCost(rpcUrl))
+      maxValue = nativeBalance - (transferCost || 0n)
     } else {
       maxValue = balance || 0n
     }
@@ -178,6 +189,13 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
     const bridgedTokenInfo = getPOABridgeInfo(state, token)
     return bridgedTokenInfo == null ? null : bridgedTokenInfo.minDeposit
   })
+
+  const availableDepositRoutes =
+    chainType && network && getAvailableDepositRoutes(chainType, network)
+  const isActiveDeposit = availableDepositRoutes?.activeDeposit
+  const isPassiveDeposit = availableDepositRoutes?.passiveDeposit
+
+  const [isCopied, setIsCopied] = useState(false)
 
   return (
     <div className={styles.container}>
@@ -225,58 +243,60 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
               />
             </div>
           )}
-          {chainType === ChainType.Near &&
-            network === BlockchainEnum.NEAR &&
-            userAddress && (
-              <Input
-                name="amount"
-                value={watch("amount")}
-                onChange={(value) => setValue("amount", value)}
-                type="number"
-                ref={(ref) => {
-                  if (network === BlockchainEnum.NEAR && ref) {
-                    ref.focus()
-                  }
-                  amountInputRef.current = ref
-                }}
-                className={styles.amountInput}
-                slotRight={
-                  <div className={styles.balanceBoxWrapper}>
-                    {token &&
-                      isBaseToken(token) &&
-                      token.address === "wrap.near" && (
-                        <TooltipInfo icon={<InfoCircledIcon color="orange" />}>
-                          Combined balance of NEAR and wNEAR.
-                          <br /> NEAR will be automatically wrapped to wNEAR
-                          <br /> if your wNEAR balance isn't sufficient for the
-                          swap.
-                          <br />
-                          Note that to cover network fees, we reserve
-                          {` ${formatTokenValue(
-                            RESERVED_NEAR_BALANCE,
-                            token.decimals
-                          )} NEAR`}
-                          <br /> in your wallet.
-                        </TooltipInfo>
-                      )}
-                    <BlockMultiBalances
-                      balance={
-                        token &&
-                        isBaseToken(token) &&
-                        token.address === "wrap.near"
-                          ? balance + nativeBalance
-                          : balance
-                      }
-                      decimals={token?.decimals ?? 0}
-                      handleClick={() => handleSetMaxValue()}
-                      disabled={false}
-                      className={styles.blockMultiBalances}
-                    />
-                  </div>
+          {isActiveDeposit && (
+            <Input
+              name="amount"
+              value={watch("amount")}
+              onChange={(value) => setValue("amount", value)}
+              type="number"
+              ref={(ref) => {
+                if (ref) {
+                  ref.focus()
                 }
-              />
-            )}
-          {(network === BlockchainEnum.NEAR || !network) && (
+                amountInputRef.current = ref
+              }}
+              className={styles.amountInput}
+              slotRight={
+                <div className={styles.balanceBoxWrapper}>
+                  {token &&
+                    isBaseToken(token) &&
+                    token.address === "wrap.near" && (
+                      <TooltipInfo icon={<InfoCircledIcon color="orange" />}>
+                        Combined balance of NEAR and wNEAR.
+                        <br /> NEAR will be automatically wrapped to wNEAR
+                        <br /> if your wNEAR balance isn't sufficient for the
+                        swap.
+                        <br />
+                        Note that to cover network fees, we reserve
+                        {` ${formatTokenValue(
+                          RESERVED_NEAR_BALANCE,
+                          token.decimals
+                        )} NEAR`}
+                        <br /> in your wallet.
+                      </TooltipInfo>
+                    )}
+                  <BlockMultiBalances
+                    balance={
+                      token &&
+                      isBaseToken(token) &&
+                      token.address === "wrap.near"
+                        ? balance + nativeBalance
+                        : token &&
+                            isUnifiedToken(token) &&
+                            token.unifiedAssetId === "eth"
+                          ? nativeBalance
+                          : balance
+                    }
+                    decimals={token?.decimals ?? 0}
+                    handleClick={() => handleSetMaxValue()}
+                    disabled={false}
+                    className={styles.blockMultiBalances}
+                  />
+                </div>
+              }
+            />
+          )}
+          {(isActiveDeposit || !network) && (
             <div className={styles.buttonGroup}>
               <Button
                 variant="classic"
@@ -299,9 +319,9 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
               </Button>
             </div>
           )}
-          {ENABLE_DEPOSIT_THROUGH_POA_BRIDGE &&
+          {isPassiveDeposit &&
+            ENABLE_DEPOSIT_THROUGH_POA_BRIDGE &&
             network &&
-            network !== BlockchainEnum.NEAR &&
             userAddress && (
               <div className={styles.containerQr}>
                 <h2 className={styles.title}>Deposit to the address below</h2>
@@ -320,7 +340,9 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
                 </div>
                 <Input
                   name="generatedAddress"
-                  value={depositAddress}
+                  value={
+                    depositAddress ? truncateUserAddress(depositAddress) : ""
+                  }
                   disabled
                   className={styles.inputGeneratedAddress}
                   slotRight={
@@ -333,16 +355,20 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
                       className={styles.copyButton}
                       disabled={!generatedAddressResult}
                     >
-                      <CopyToClipboard text={depositAddress}>
+                      <CopyToClipboard
+                        text={depositAddress}
+                        onCopy={() => setIsCopied(true)}
+                      >
                         <Flex gap="2" align="center">
-                          <Text color="orange">Copy</Text>
+                          <Text color="orange">
+                            {isCopied ? "Copied" : "Copy"}
+                          </Text>
                           <CopyIcon height="14" width="14" color="orange" />
                         </Flex>
                       </CopyToClipboard>
                     </Button>
                   }
                 />
-
                 {renderDepositHint(network, minDepositAmount, token)}
               </div>
             )}
@@ -351,12 +377,20 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
           network &&
           network !== BlockchainEnum.NEAR &&
           !ENABLE_DEPOSIT_THROUGH_POA_BRIDGE && <UnderFeatureFlag />}
-        {token && renderDepositWarning(userAddress, depositNearResult)}
+        {token &&
+          renderDepositWarning(
+            userAddress,
+            depositNearResult,
+            depositEVMResult
+          )}
         {userAddress && network === BlockchainEnum.NEAR && (
           <Deposits depositNearResult={snapshot.context.depositNearResult} />
         )}
         {network !== BlockchainEnum.NEAR && isDepositReceived && (
           <DepositSuccess />
+        )}
+        {userAddress && network && !isActiveDeposit && !isPassiveDeposit && (
+          <NotSupportedDepositRoute />
         )}
       </div>
     </div>
@@ -418,9 +452,6 @@ function getBlockchainsOptions(
       value: BlockchainEnum.BITCOIN,
     },
   }
-  if (chainType !== ChainType.Near) {
-    delete (options as Partial<typeof options>)[BlockchainEnum.NEAR]
-  }
   return options
 }
 
@@ -428,7 +459,6 @@ function filterBlockchainsOptions(
   token: SwappableToken,
   chainType?: ChainType
 ): Record<string, { label: string; icon: React.ReactNode; value: string }> {
-  // TODO: use supportedTokensList
   if (isUnifiedToken(token)) {
     return token.groupedTokens.reduce(
       (
@@ -457,7 +487,7 @@ function getDefaultBlockchainOptionValue(
   token: SwappableToken,
   chainType?: ChainType
 ): string | undefined {
-  if (!isUnifiedToken(token)) {
+  if (isBaseToken(token)) {
     const key = assetNetworkAdapter[token.chainName]
     return key ? getBlockchainsOptions(chainType)[key]?.value : undefined
   }
@@ -475,29 +505,44 @@ function isInsufficientBalance(
     return false
   }
   const balanceToFormat = formatTokenValue(balance, token.decimals)
-  if (network === BlockchainEnum.NEAR) {
-    if (isBaseToken(token) && token.address === "wrap.near") {
-      const balanceToFormat = formatTokenValue(
-        balance + nativeBalance,
-        token.decimals
-      )
-      return Number.parseFloat(formAmount) > Number.parseFloat(balanceToFormat)
-    }
+  if (isBaseToken(token) && token.address === "wrap.near") {
+    const balanceToFormat = formatTokenValue(
+      balance + nativeBalance,
+      token.decimals
+    )
     return Number.parseFloat(formAmount) > Number.parseFloat(balanceToFormat)
   }
-  return false
+  if (isUnifiedToken(token) && token.unifiedAssetId === "eth") {
+    const balanceToFormat = formatTokenValue(nativeBalance, token.decimals)
+    return Number.parseFloat(formAmount) > Number.parseFloat(balanceToFormat)
+  }
+  return Number.parseFloat(formAmount) > Number.parseFloat(balanceToFormat)
 }
 
 function renderDepositWarning(
   userAddress: string | null,
-  depositNearResult: Context["depositNearResult"]
+  depositNearResult: Context["depositNearResult"],
+  depositEVMResult: Context["depositEVMResult"]
 ) {
   let content: ReactNode = null
   if (!userAddress) {
     content = "Please connect your wallet to continue"
   }
+
   if (depositNearResult !== null && depositNearResult.tag === "err") {
     const status = depositNearResult.value.reason
+    switch (status) {
+      case "ERR_SUBMITTING_TRANSACTION":
+        content =
+          "It seems the transaction was rejected in your wallet. Please try again."
+        break
+      default:
+        content = "An error occurred. Please try again."
+    }
+  }
+
+  if (depositEVMResult !== null && depositEVMResult.tag === "err") {
+    const status = depositEVMResult.value.reason
     switch (status) {
       case "ERR_SUBMITTING_TRANSACTION":
         content =
@@ -524,7 +569,7 @@ function renderDepositWarning(
 
 function UnderFeatureFlag() {
   return (
-    <Callout.Root size={"1"} color="yellow">
+    <Callout.Root size={"1"} color="yellow" mt="4">
       <Callout.Icon>
         <ExclamationTriangleIcon />
       </Callout.Icon>
@@ -535,9 +580,23 @@ function UnderFeatureFlag() {
   )
 }
 
+function NotSupportedDepositRoute() {
+  return (
+    <Callout.Root size={"1"} color="yellow" mt="4">
+      <Callout.Icon>
+        <ExclamationTriangleIcon />
+      </Callout.Icon>
+      <Callout.Text>
+        Deposit is not supported for this wallet connection, please try another
+        token or network
+      </Callout.Text>
+    </Callout.Root>
+  )
+}
+
 function DepositSuccess() {
   return (
-    <Callout.Root size={"1"} color="green">
+    <Callout.Root size={"1"} color="green" mt="4">
       <Callout.Icon>
         <ExclamationTriangleIcon />
       </Callout.Icon>
@@ -554,7 +613,7 @@ function renderDepositButtonText(
   if (isBalanceInsufficient) {
     return "Insufficient Balance"
   }
-  if (network === BlockchainEnum.NEAR && !!token) {
+  if (!!network && !!token) {
     return "Deposit"
   }
   return !network && !token ? "Select asset first" : "Select network"
@@ -596,4 +655,17 @@ function renderDepositHint(
       )}
     </Callout.Root>
   )
+}
+
+function truncateUserAddress(hash: string) {
+  return `${hash.slice(0, 12)}...${hash.slice(-12)}`
+}
+
+async function estimateEthTransferCost(rpcUrl: string): Promise<bigint> {
+  const provider = new ethers.JsonRpcProvider(rpcUrl)
+  const feeData = await provider.getFeeData()
+  const gasPrice = feeData.gasPrice || 0n
+  const gasLimit = 21000n
+  const costInWei = gasPrice * gasLimit
+  return costInWei
 }

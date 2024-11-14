@@ -13,7 +13,8 @@ export const DepositWidget = ({
   userAddress,
   chainType,
   sendTransactionNear,
-  onEmit,
+  sendTransactionEVM,
+  rpcUrl,
 }: DepositWidgetProps) => {
   return (
     <DepositWidgetProvider>
@@ -22,8 +23,12 @@ export const DepositWidget = ({
         <DepositUIMachineProvider
           tokenList={tokenList}
           sendTransactionNear={sendTransactionNear}
+          sendTransactionEVM={sendTransactionEVM}
         >
-          <DepositUIMachineFormSyncProvider userAddress={userAddress}>
+          <DepositUIMachineFormSyncProvider
+            userAddress={userAddress}
+            rpcUrl={rpcUrl}
+          >
             <DepositForm chainType={chainType} />
           </DepositUIMachineFormSyncProvider>
         </DepositUIMachineProvider>
