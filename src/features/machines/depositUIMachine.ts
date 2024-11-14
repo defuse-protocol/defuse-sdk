@@ -146,6 +146,7 @@ export const depositUIMachine = setup({
         value,
     }),
     clearDepositResult: assign({ depositNearResult: null }),
+    clearDepositEVMResult: assign({ depositEVMResult: null }),
 
     extractAssetIds: assign({
       defuseAssetId: ({ context }) => {
@@ -233,7 +234,7 @@ export const depositUIMachine = setup({
     isOk: (_, a: { tag: "err" | "ok" }) => a.tag === "ok",
   },
 }).createMachine({
-  /** @xstate-layout N4IgpgJg5mDOIC5QTABwPawJYBcC0ArlgMQAyA8gOICSAcgNoAMAuoqBtjlugHZsgAPRHgCMAZgDsAOgAsANgCsEuQA4FMsSoBMYuWIA0IAJ7CVKgJxTx2xWK0WVIlQF9nhlB1yESFSuQCqACpMrEggnly8-EIIMlJqKnIichISCuYKKhI6hiYIeGaW1lq29uaOLm4gHpheRFKQuFg8UMQAyv4AQgCy1MEs-BHcfGExclpS6mJKEnZi86mJucIlcrKMuloSjAqZ5jIiru5otfj1jVwt7V29wSKh7KfD0Yhya8mpIvZy+yq6Est8loFFJpuY5IxzGIRKlMocqjVON4GhAmlc6AAFIIhQZPKKjYROMSgpRaHQiGRaERQhRyQF4abScwicRiSksn5OI7VE5I86oy5QKQANwAhgAbLAQUWC4gQXhgKTNYXoADWisRdSwKLRQrFkulgoQyvQAGMZcMQjiwkN8aAYngUhM1Iw5BpyuZmV96QpoVJGIxxDIdl8xPsZNzNWdtRdmnqJVKLVd5TxFSb1VIo8jYy0RQnDXHjTwVebIjwrfdcZxngT8o4QTIDjCkj99iz6ZI4skLFoDsGJOZUpHeVqpLACAAjAC2uEFtDAooAToEBHKFUri2qNSOcPOlwAlMAAM2tj2rdsEiF2IPMOyUSR2zMU9OSzvdjBKGxblWOEWRMFTRck1aFM003DMo0oMBAJlMAAEEIAgRc4FgQ8TwGG08RGe1EGDEEPyhERGDUdJdAUekZChKQknvFlPVdSixGHP96gIVBDTAToJVFHhTTAYgBFgHBYKkUUjxwMBFwACi0ANGAASjlHdkTYjiuPFHi+NPcIsJeBAyS7QiYWheYiK0F8SlBW8JBkTI-jJAMfx5FjtXHadZzjABRAA1boVzXVMNxVCCdx87o0O021sOMFYQW2MwDgUYiNBkNJyMvBAiNdKQbMYGRtCDcZmVcKoeHQFB4DCLMiCrJoLwdcMrH2XsxEYZQIWUek0mJeRG3s1LMg2ZjTmzAU41qss9IKcEmspDQ2reBb6RbWQYQUXsNAkLJiOGvkYzG3MpXFMAJprHC63y2aWoWjq6Ri-J1pUKRmRszQMj+Rx4V-Eb+V1PMDWA076pWfZ4nMLZVHBGloRkF90hyilWoHZQlHKXbRzcmccDnBdlxiM86uimIkqe2k1HKdbEt9Ax7rwVZnq2NryjeeYMgkdHoykADJMBzDzyJxBJDWSlNBKCQnCI7rlqcZ63Xy-KCLyjmVPY2D1M0k6+cJvTdDWSQ2Xo5Q2umCzpAsNrfVSWTHFdZX6kxjyWjClcgYFhBaTiSkBwKtkipEelgRy4iVES5K2TSkrnCAA */
+  /** @xstate-layout N4IgpgJg5mDOIC5QTABwPawJYBcC0ArlgMQAyA8gOICSAcgNoAMAuoqBtjlugHZsgAPRHgCMAZgDsAOgAsANgCsEuQA4FMsSoBMYuWIA0IAJ7CVKgJxTx2xWK0WVIlQF9nhlB1yESFSuQCqACpMrEggnly8-EIIMlJqKnIichISCuYKKhI6hiYIeGaW1lq29uaOLm4gHpheRFKQuFg8UMQAyv4AQgCy1MEs-BHcfGExclpS6mJKEnZi86mJucIlcrKMuloSjAqZ5jIiru5otfj1jVwt7V29wSKh7KfD0YhyjFLmjNpaTm9bIhJ9st8iIZAp1hkJFlGCUtLsZEdqidON4GhAmlc6AAFIIhQZPKKjYROMRSabZHSgn7maZyYF4ckfETiMQyH7JcxORE1FHndGXKBSABuAEMADZYCAigXECC8MBSZpC9AAawVPLqWDRGMFoolUoFCCV6AAxtLhiE8WEhoTQDE8CkJmpGHINOVzJyRFp6QoxCIpIxGOIZDsvWJ9giqhqzlqLs1deLJearnKeArjWqpNHUXGWsLEwb40aeMqzZEeJb7vjOM8iflHOCZAcAUk5B7m-TJHFkhYtAcQ4DUtzkZqpLACAAjAC2uAFtDAIoAToEBLL5YqS6r1SOcPOlwAlMAAMytjxrtsEiAs7xk2h2jEBOlZdOMKyhZJUQbbvpZCmHEVRGA00XZNWlTdNN0zaNKDAYDpTAABBCAIEXOBYEPE8BmtAkRjtRAQ3BGEaREL5dhpRR6RkGkpCSJQkhED0XSosR-1OVECFQA0wE6cURR4E0wGIARYBweCpBFI8cDARcAAotEDRgAEpZR3djOPgnixT4gTT3CHCXgQLZpE-dQzHkSRMhkTtMg+WiXRKcwJAY1jeS1cdp1neMAFEADVuhXNc0w3ZUoJ3Xzugw3SbVwy8EAsf0nAUBinB+GRshEekRCSmjEnJB82TS8RXCqHh0BQeAwmzIhqyaC97QjKx9j7MQHzkN5lHpNJSXkJtXTBLKVF0FzR1zKAavLAyCnMNYGIKlrlHal88gdZJZABNKfhUKivUqY4AL5HVFQgMUwHG2s8PrW9Grm1rFp9ewmQkDQLEyTRmWGmNtQFfN9VAs66pWfZ4nMLZVGmmkfys18QXSKQnI0B9HMUQFdqRfa3MnGccDnBdlxiM9apimIFC+SZVHSNQ+yy30DGhvBVg+LZEcSPRwyUD7ANg6S-uw88icQSQ1jZTQSicxwH19ekkhUWymy2z8tE+SM9rY+oOK4zTtNO3nCYMmlLAUV1GA9dIoUyb06d0G8klvB8SJbFio1U+p3KxgVwpXf7+YQEnLCcv1A0HNq4UykMpCfVLVDZBi-2KoA */
   id: "deposit-ui",
 
   context: ({ input, spawn }) => ({
@@ -385,7 +386,6 @@ export const depositUIMachine = setup({
 
         onDone: {
           target: "updateBalance",
-          guard: { type: "isOk", params: ({ event }) => event.output },
 
           actions: [
             {
@@ -446,7 +446,13 @@ export const depositUIMachine = setup({
 
         input: ({ context, event }) => {
           assertEvent(event, "SUBMIT")
-
+          const depositAddress =
+            context.generatedAddressResult?.tag === "ok"
+              ? context.generatedAddressResult.value.depositAddress
+              : null
+          if (!depositAddress) {
+            throw new Error("Deposit address is missing")
+          }
           if (
             context.formValues.token == null ||
             !context.userAddress ||
@@ -460,12 +466,12 @@ export const depositUIMachine = setup({
             asset: context.formValues.token,
             accountId: context.userAddress,
             tokenAddress: context.tokenAddress,
+            depositAddress,
           }
         },
 
         onDone: {
-          target: "editing.validating",
-          guard: { type: "isOk", params: ({ event }) => event.output },
+          target: "updateBalance",
 
           actions: [
             {

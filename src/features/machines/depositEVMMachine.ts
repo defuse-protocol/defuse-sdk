@@ -15,7 +15,7 @@ export type Context = {
   accountId: string
   tokenAddress: string
   txHash: string | null
-  generatedAddress: string | null
+  depositAddress: string
   error: null | {
     tag: "err"
     value: {
@@ -31,6 +31,7 @@ type Input = {
   asset: SwappableToken
   accountId: string
   tokenAddress: string
+  depositAddress: string
 }
 
 export type Output =
@@ -61,7 +62,8 @@ export const depositEVMMachine = setup({
       }: {
         input: { txHash: string; accountId: string; amount: bigint }
       }): Promise<boolean> => {
-        throw new Error("not implemented")
+        // TODO: implement
+        return true
       }
     ),
   },
@@ -125,7 +127,7 @@ export const depositEVMMachine = setup({
       asset: input.asset,
       accountId: input.accountId,
       tokenAddress: input.tokenAddress,
-      generatedAddress: null,
+      depositAddress: input.depositAddress,
       txHash: null,
       error: null,
     }
@@ -143,6 +145,7 @@ export const depositEVMMachine = setup({
             accountId: context.accountId,
             asset: context.asset,
             tokenAddress: context.tokenAddress,
+            depositAddress: context.depositAddress,
           }
         },
         onDone: {

@@ -64,7 +64,7 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
   const snapshot = DepositUIMachineContext.useSelector((snapshot) => snapshot)
   const generatedAddressResult = snapshot.context.generatedAddressResult
   const depositNearResult = snapshot.context.depositNearResult
-  console.log("depositNearResult", depositNearResult)
+  const depositEVMResult = snapshot.context.depositEVMResult
 
   const depositAddress =
     generatedAddressResult?.tag === "ok"
@@ -377,7 +377,12 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
           network &&
           network !== BlockchainEnum.NEAR &&
           !ENABLE_DEPOSIT_THROUGH_POA_BRIDGE && <UnderFeatureFlag />}
-        {token && renderDepositWarning(userAddress, depositNearResult)}
+        {token &&
+          renderDepositWarning(
+            userAddress,
+            depositNearResult,
+            depositEVMResult
+          )}
         {userAddress && network === BlockchainEnum.NEAR && (
           <Deposits depositNearResult={snapshot.context.depositNearResult} />
         )}
@@ -519,7 +524,8 @@ function isInsufficientBalance(
 
 function renderDepositWarning(
   userAddress: string | null,
-  depositNearResult: Context["depositNearResult"]
+  depositNearResult: Context["depositNearResult"],
+  depositEVMResult: Context["depositEVMResult"]
 ) {
   let content: ReactNode = null
   if (!userAddress) {
@@ -528,6 +534,18 @@ function renderDepositWarning(
 
   if (depositNearResult !== null && depositNearResult.tag === "err") {
     const status = depositNearResult.value.reason
+    switch (status) {
+      case "ERR_SUBMITTING_TRANSACTION":
+        content =
+          "It seems the transaction was rejected in your wallet. Please try again."
+        break
+      default:
+        content = "An error occurred. Please try again."
+    }
+  }
+
+  if (depositEVMResult !== null && depositEVMResult.tag === "err") {
+    const status = depositEVMResult.value.reason
     switch (status) {
       case "ERR_SUBMITTING_TRANSACTION":
         content =
@@ -580,7 +598,7 @@ function NotSupportedDepositRoute() {
 
 function DepositSuccess() {
   return (
-    <Callout.Root size={"1"} color="green">
+    <Callout.Root size={"1"} color="green" mt="4">
       <Callout.Icon>
         <ExclamationTriangleIcon />
       </Callout.Icon>

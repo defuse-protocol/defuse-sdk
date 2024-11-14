@@ -167,26 +167,20 @@ export function DepositUIMachineProvider({
           depositEVMActor: depositEVMMachine.provide({
             actors: {
               sendTransaction: fromPromise(async ({ input }) => {
-                const { asset, amount, balance, tokenAddress } = input
+                const { asset, amount, tokenAddress, depositAddress } = input
 
-                const generatedAddress =
-                  "0xeF2EEC3F26A05c68AA4b25740477F3E998C10b55"
-
-                assert(
-                  generatedAddress != null,
-                  "Generated address is not defined"
-                )
+                assert(depositAddress != null, "Deposit address is not defined")
 
                 let calldata: { to?: string; data?: string } = {}
                 if (isUnifiedToken(asset) && asset.unifiedAssetId === "eth") {
                   calldata = createDepositEVMNativeCalldata(
-                    generatedAddress,
+                    depositAddress,
                     amount
                   )
                 } else {
                   calldata = createDepositEVMERC20Calldata(
                     tokenAddress,
-                    generatedAddress,
+                    depositAddress,
                     amount
                   )
                 }
@@ -195,6 +189,12 @@ export function DepositUIMachineProvider({
 
                 return txHash ?? "unknown"
               }),
+            },
+            guards: {
+              isDepositValid: ({ context }) => {
+                if (!context.txHash) return false
+                return true
+              },
             },
           }),
         },
