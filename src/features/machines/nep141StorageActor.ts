@@ -1,4 +1,3 @@
-import { fromPromise } from "xstate"
 import type { BaseTokenInfo } from "../../types/base"
 import { isNativeToken } from "../../utils"
 import {
@@ -13,62 +12,65 @@ export type Output =
     }
   | {
       tag: "err"
-      value: "ERR_NEP141_STORAGE_CANNOT_FETCH"
+      value: { reason: "ERR_NEP141_STORAGE_CANNOT_FETCH" }
     }
 
-export const nep141StorageActor = fromPromise(
-  async ({
-    input,
-  }: {
-    input: {
-      token: BaseTokenInfo
-      userAccountId: string
-    }
-  }): Promise<Output> => {
-    if (input.token.chainName !== "near" || isNativeToken(input.token)) {
-      return { tag: "ok", value: 0n }
-    }
+/**
+ * Get the amount of NEP-141 storage required for the user to store the token.
+ * @param token The token to check.
+ * @param userAccountId The user's NEAR account ID.
+ * @returns The amount of NEAR required for the user to store the token; 0 means no storage required.
+ */
+export async function getNEP141StorageRequired({
+  token,
+  userAccountId,
+}: {
+  token: BaseTokenInfo
+  userAccountId: string
+}): Promise<Output> {
+  if (token.chainName !== "near" || isNativeToken(token)) {
+    return { tag: "ok", value: 0n }
+  }
 
-    const [minStorageBalanceResult, userStorageBalanceResult] =
-      await Promise.allSettled([
-        getNearNep141MinStorageBalance({
-          contractId: input.token.address,
-        }),
-        getNearNep141StorageBalance({
-          contractId: input.token.address,
-          accountId: input.userAccountId,
-        }),
-      ])
+  const [minStorageBalanceResult, userStorageBalanceResult] =
+    await Promise.allSettled([
+      getNearNep141MinStorageBalance({
+        contractId: token.address,
+      }),
+      getNearNep141StorageBalance({
+        contractId: token.address,
+        accountId: userAccountId,
+      }),
+    ])
 
-    if (minStorageBalanceResult.status === "rejected") {
-      console.error(new Error(minStorageBalanceResult.reason))
-      return {
-        tag: "err",
-        value: "ERR_NEP141_STORAGE_CANNOT_FETCH",
-      }
-    }
-
-    if (userStorageBalanceResult.status === "rejected") {
-      console.error(userStorageBalanceResult.reason)
-      return {
-        tag: "err",
-        value: "ERR_NEP141_STORAGE_CANNOT_FETCH",
-      }
-    }
-
-    const minStorageBalance = minStorageBalanceResult.value
-    const userStorageBalance = userStorageBalanceResult.value
-
-    if (userStorageBalance < minStorageBalance) {
-      return {
-        tag: "ok",
-        value: minStorageBalance - userStorageBalance,
-      }
-    }
-
+  if (minStorageBalanceResult.status === "rejected") {
+    console.error(minStorageBalanceResult.reason)
     return {
-      tag: "ok",
-      value: 0n,
+      tag: "err",
+      value: { reason: "ERR_NEP141_STORAGE_CANNOT_FETCH" },
     }
   }
-)
+
+  if (userStorageBalanceResult.status === "rejected") {
+    console.error(userStorageBalanceResult.reason)
+    return {
+      tag: "err",
+      value: { reason: "ERR_NEP141_STORAGE_CANNOT_FETCH" },
+    }
+  }
+
+  const minStorageBalance = minStorageBalanceResult.value
+  const userStorageBalance = userStorageBalanceResult.value
+
+  if (userStorageBalance < minStorageBalance) {
+    return {
+      tag: "ok",
+      value: minStorageBalance - userStorageBalance,
+    }
+  }
+
+  return {
+    tag: "ok",
+    value: 0n,
+  }
+}
