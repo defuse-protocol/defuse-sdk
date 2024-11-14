@@ -27,6 +27,14 @@ export type Events =
       type: "PAUSE"
     }
 
+export type EmittedEvents = {
+  type: "NEW_QUOTE"
+  params: {
+    quoteInput: QuoteInput
+    quote: AggregatedQuote
+  }
+}
+
 export type ParentEvents = {
   type: "NEW_QUOTE"
   params: {
@@ -41,54 +49,60 @@ type Input = {
   delayMs: number
 }
 
-export const backgroundQuoterMachine = fromCallback<Events, Input>(
-  ({ receive, input }) => {
-    let abortController = new AbortController()
+export const backgroundQuoterMachine = fromCallback<
+  Events,
+  Input,
+  EmittedEvents
+>(({ receive, input, emit }) => {
+  let abortController = new AbortController()
 
-    receive((event) => {
-      abortController.abort()
-      abortController = new AbortController()
+  receive((event) => {
+    abortController.abort()
+    abortController = new AbortController()
 
-      const eventType = event.type
-      switch (eventType) {
-        case "PAUSE":
+    const eventType = event.type
+    switch (eventType) {
+      case "PAUSE":
+        return
+      case "NEW_QUOTE_INPUT": {
+        const quoteInput = event.params
+
+        // todo: `NEW_QUOTE_INPUT` should not be emitted for 0 amounts, this is temporary fix
+        if (
+          quoteInput.amountIn === 0n ||
+          ("tokensIn" in quoteInput && !quoteInput.tokensIn.length)
+        ) {
+          console.warn("Ignoring quote input with empty input")
           return
-        case "NEW_QUOTE_INPUT": {
-          const quoteInput = event.params
-
-          // todo: `NEW_QUOTE_INPUT` should not be emitted for 0 amounts, this is temporary fix
-          if (
-            quoteInput.amountIn === 0n ||
-            ("tokensIn" in quoteInput && !quoteInput.tokensIn.length)
-          ) {
-            console.warn("Ignoring quote input with empty input")
-            return
-          }
-
-          pollQuote(
-            abortController.signal,
-            quoteInput,
-            input.delayMs,
-            (quote) => {
-              input.parentRef.send({
-                type: "NEW_QUOTE",
-                params: { quoteInput, quote },
-              })
-            }
-          )
-          break
         }
-        default:
-          eventType satisfies never
-          console.warn("Unhandled event type", { eventType })
-      }
-    })
 
-    return () => {
-      abortController.abort()
+        pollQuote(
+          abortController.signal,
+          quoteInput,
+          input.delayMs,
+          (quote) => {
+            input.parentRef.send({
+              type: "NEW_QUOTE",
+              params: { quoteInput, quote },
+            })
+            emit({
+              type: "NEW_QUOTE",
+              params: { quoteInput, quote },
+            })
+          }
+        )
+        break
+      }
+      default:
+        eventType satisfies never
+        console.warn("Unhandled event type", { eventType })
     }
+  })
+
+  return () => {
+    abortController.abort()
   }
-)
+})
 
 function pollQuote(
   signal: AbortSignal,
