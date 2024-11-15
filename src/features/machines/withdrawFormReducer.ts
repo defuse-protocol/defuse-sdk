@@ -56,7 +56,7 @@ export type Events =
       }
     }
 
-type State = {
+export type State = {
   parentRef: ParentActor
   tokenIn: BaseTokenInfo | UnifiedTokenInfo
   tokenOut: BaseTokenInfo

@@ -52,6 +52,10 @@ describe("queryQuote()", () => {
       quoteHashes: ["q1"],
       totalAmountIn: 150n,
       totalAmountOut: 200n,
+      tokenDeltas: [
+        ["token1", -150n],
+        ["tokenOut", 200n],
+      ],
     })
   })
 
@@ -113,6 +117,12 @@ describe("queryQuote()", () => {
       quoteHashes: ["q1", "q2"],
       totalAmountIn: 150n,
       totalAmountOut: 30n,
+      tokenDeltas: [
+        ["token1", -100n],
+        ["tokenOut", 20n],
+        ["token2", -50n],
+        ["tokenOut", 10n],
+      ],
     })
   })
 
@@ -152,6 +162,10 @@ describe("queryQuote()", () => {
       quoteHashes: ["q1"],
       totalAmountIn: 150n,
       totalAmountOut: 200n,
+      tokenDeltas: [
+        ["token1", -150n],
+        ["tokenOut", 200n],
+      ],
     })
   })
 
@@ -174,6 +188,7 @@ describe("queryQuote()", () => {
       quoteHashes: [],
       totalAmountIn: 0n,
       totalAmountOut: 0n,
+      tokenDeltas: [],
     })
 
     await expect(queryQuote(input)).resolves.toEqual({
@@ -183,6 +198,7 @@ describe("queryQuote()", () => {
       quoteHashes: [],
       totalAmountIn: 0n,
       totalAmountOut: 0n,
+      tokenDeltas: [],
     })
   })
 })
@@ -236,5 +252,11 @@ it("aggregateQuotes(): aggregates quotes correctly", () => {
     quoteHashes: ["q1", "q2"],
     totalAmountIn: 150n,
     totalAmountOut: 300n,
+    tokenDeltas: [
+      ["token1", -100n],
+      ["tokenOut", 200n],
+      ["token2", -50n],
+      ["tokenOut", 100n],
+    ],
   })
 })

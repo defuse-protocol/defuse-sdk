@@ -31,6 +31,18 @@ import {
 // No-op usage to prevent tree-shaking. sec256k1 is dynamically loaded by viem.
 const _noop = secp256k1.getPublicKey || null
 
+export type NEP141StorageRequirement =
+  | {
+      type: "swap_needed"
+      requiredStorageNEAR: bigint
+      quote: AggregatedQuote
+    }
+  | {
+      type: "no_swap_needed"
+      requiredStorageNEAR: bigint
+      quote: null
+    }
+
 type IntentOperationParams =
   | {
       type: "swap"
@@ -40,6 +52,7 @@ type IntentOperationParams =
       type: "withdraw"
       tokenOut: BaseTokenInfo
       quote: AggregatedQuote | null
+      nep141Storage: NEP141StorageRequirement | null
       directWithdrawalAmount: bigint
       recipient: string
     }
@@ -144,8 +157,7 @@ export const swapIntentMachine = setup({
         )
 
         const innerMessage = makeInnerSwapMessage({
-          amountsIn: context.intentOperationParams.quote.amountsIn,
-          amountsOut: context.intentOperationParams.quote.amountsOut,
+          tokenDeltas: context.intentOperationParams.quote.tokenDeltas,
           signerId: userAddressToDefuseUserId(context.userAddress),
           deadlineTimestamp: Math.min(
             Math.floor(Date.now() / 1000) + settings.swapExpirySec,
@@ -258,19 +270,15 @@ export const swapIntentMachine = setup({
             },
           }
         case "withdraw": {
-          const { quote, directWithdrawalAmount } =
-            context.intentOperationParams
-
-          const totalAmountWithdrawn =
-            directWithdrawalAmount + (quote?.totalAmountOut ?? 0n)
-
           return {
             tag: "ok",
             value: {
               intentHash: context.intentHash,
               intentDescription: {
                 type: "withdraw",
-                amountWithdrawn: totalAmountWithdrawn,
+                amountWithdrawn: calcOperationAmountOut(
+                  context.intentOperationParams
+                ),
               },
             },
           }
@@ -475,6 +483,15 @@ export const swapIntentMachine = setup({
           if (context.intentOperationParams.quote) {
             quoteHashes = context.intentOperationParams.quote.quoteHashes
           }
+          if (
+            context.intentOperationParams.type === "withdraw" &&
+            context.intentOperationParams.nep141Storage &&
+            context.intentOperationParams.nep141Storage.quote
+          ) {
+            quoteHashes.push(
+              ...context.intentOperationParams.nep141Storage.quote.quoteHashes
+            )
+          }
 
           return {
             quoteHashes,
@@ -587,4 +604,38 @@ async function verifyWalletSignature(
       signatureType satisfies never
       throw new Error("exhaustive check failed")
   }
+}
+
+export function calcOperationAmountOut(
+  operation: IntentOperationParams
+): bigint {
+  if (operation.type === "swap") {
+    return operation.quote.totalAmountOut
+  }
+
+  return calcWithdrawAmount(
+    operation.quote,
+    operation.nep141Storage,
+    operation.directWithdrawalAmount
+  )
+}
+
+export function calcWithdrawAmount(
+  swapQuote: AggregatedQuote | null,
+  nep141Storage: NEP141StorageRequirement | null,
+  directWithdrawalAmount: bigint
+): bigint {
+  const gotFromSwap = swapQuote?.totalAmountOut ?? 0n
+
+  let spentOnStorage = 0n
+  if (nep141Storage != null) {
+    if (nep141Storage.type === "no_swap_needed") {
+      // Assume that token out is NEAR/wNEAR, so we can just use the required storage
+      spentOnStorage = nep141Storage.requiredStorageNEAR
+    } else {
+      spentOnStorage = nep141Storage.quote.totalAmountIn
+    }
+  }
+
+  return directWithdrawalAmount + gotFromSwap - spentOnStorage
 }

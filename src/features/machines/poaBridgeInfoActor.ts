@@ -129,7 +129,7 @@ export const getPOABridgeInfo = (
     ] ?? {
       minDeposit: 1n,
       minWithdrawal: 1n,
-      fee: 0,
+      withdrawalFee: 0,
     }
   )
 }

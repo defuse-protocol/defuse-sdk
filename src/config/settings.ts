@@ -14,6 +14,11 @@ export let settings: Settings = {
    * The server will return quotes with at least this much time remaining.
    */
   quoteMinDeadlineMs: 120_000,
+  /**
+   * Max value of minimum deadline for a quote.
+   * The server will return quotes with at least this much time remaining.
+   */
+  maxQuoteMinDeadlineMs: 600_000,
   queries: {
     staleTime: 2000 * 60, // 2 minutes
   },
