@@ -207,7 +207,7 @@ export const WithdrawForm = ({
       if (name === "amountIn") {
         const amount = value[name] ?? ""
 
-        let parsedAmount = 0n
+        let parsedAmount: bigint | null = null
         try {
           parsedAmount = parseUnits(amount, token.decimals)
         } catch {}
