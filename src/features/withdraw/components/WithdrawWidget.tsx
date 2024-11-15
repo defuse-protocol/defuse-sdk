@@ -9,7 +9,10 @@ import {
   makeInnerSwapAndWithdrawMessage,
   makeSwapMessage,
 } from "../../../utils/messageFactory"
-import { swapIntentMachine } from "../../machines/swapIntentMachine"
+import {
+  calcOperationAmountOut,
+  swapIntentMachine,
+} from "../../machines/swapIntentMachine"
 import { withdrawUIMachine } from "../../machines/withdrawUIMachine"
 import { WithdrawUIMachineContext } from "../WithdrawUIMachineContext"
 import { WithdrawForm } from "./WithdrawForm"
@@ -53,15 +56,12 @@ export const WithdrawWidget = (props: WithdrawWidgetProps) => {
                       "Type must be withdraw"
                     )
 
-                    const {
-                      tokenOut,
-                      quote,
-                      directWithdrawalAmount,
-                      recipient,
-                    } = context.intentOperationParams
+                    const { tokenOut, quote, nep141Storage, recipient } =
+                      context.intentOperationParams
 
-                    const totalAmountWithdrawn =
-                      directWithdrawalAmount + (quote?.totalAmountOut ?? 0n)
+                    const totalAmountWithdrawn = calcOperationAmountOut(
+                      context.intentOperationParams
+                    )
 
                     const tokenOutAccountId =
                       tokenOut.defuseAssetId.split(":")[1]
@@ -71,7 +71,10 @@ export const WithdrawWidget = (props: WithdrawWidgetProps) => {
                     )
 
                     const innerMessage = makeInnerSwapAndWithdrawMessage({
-                      tokenDeltas: quote?.tokenDeltas ?? [],
+                      tokenDeltas: [
+                        ...(quote?.tokenDeltas ?? []),
+                        ...(nep141Storage?.quote?.tokenDeltas ?? []),
+                      ],
                       withdrawParams:
                         tokenOut.chainName === "near"
                           ? {
@@ -79,6 +82,8 @@ export const WithdrawWidget = (props: WithdrawWidgetProps) => {
                               amount: totalAmountWithdrawn,
                               receiverId: recipient,
                               tokenAccountId: tokenOutAccountId,
+                              storageDeposit:
+                                nep141Storage?.requiredStorageNEAR ?? 0n,
                             }
                           : {
                               type: "via_poa_bridge",
