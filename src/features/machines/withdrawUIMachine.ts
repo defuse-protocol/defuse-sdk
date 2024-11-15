@@ -103,9 +103,7 @@ export const withdrawUIMachine = setup({
 
     children: {} as {
       backgroundQuoterRef: "backgroundQuoterActor"
-      depositedBalanceRef: "depositedBalanceActor"
       swapRef: "swapActor"
-      withdrawFormRef: "withdrawFormActor"
     },
   },
   actors: {
