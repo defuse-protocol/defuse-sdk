@@ -126,14 +126,6 @@ export async function prepareWithdraw(
     }
   }
 
-  const nep141StorageRequired = await checkNEP141StorageRequirements(
-    { formValues },
-    { signal }
-  )
-  if (nep141StorageRequired.tag === "err") {
-    return nep141StorageRequired
-  }
-
   const nep141Storage = await determineNEP141StorageRequirement(
     { formValues },
     { signal }
