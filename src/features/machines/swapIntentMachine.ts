@@ -483,6 +483,15 @@ export const swapIntentMachine = setup({
           if (context.intentOperationParams.quote) {
             quoteHashes = context.intentOperationParams.quote.quoteHashes
           }
+          if (
+            context.intentOperationParams.type === "withdraw" &&
+            context.intentOperationParams.nep141Storage &&
+            context.intentOperationParams.nep141Storage.quote
+          ) {
+            quoteHashes.push(
+              ...context.intentOperationParams.nep141Storage.quote.quoteHashes
+            )
+          }
 
           return {
             quoteHashes,
