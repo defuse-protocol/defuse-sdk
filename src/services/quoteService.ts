@@ -81,6 +81,7 @@ export async function queryQuoteExactOut(
     tokenIn: BaseTokenInfo["defuseAssetId"]
     tokenOut: BaseTokenInfo["defuseAssetId"]
     exactAmountOut: bigint
+    minDeadlineMs?: number
   },
   { signal }: { signal?: AbortSignal } = {}
 ): Promise<AggregatedQuote> {
@@ -89,7 +90,7 @@ export async function queryQuoteExactOut(
       defuse_asset_identifier_in: input.tokenIn,
       defuse_asset_identifier_out: input.tokenOut,
       exact_amount_out: input.exactAmountOut.toString(),
-      min_deadline_ms: settings.quoteMinDeadlineMs,
+      min_deadline_ms: input.minDeadlineMs ?? settings.quoteMinDeadlineMs,
     },
     { signal }
   )

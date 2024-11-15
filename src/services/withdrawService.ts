@@ -1,4 +1,5 @@
 import { type ActorRefFrom, waitFor } from "xstate"
+import { settings } from "../config/settings"
 import { NEP141_STORAGE_TOKEN } from "../constants"
 import type {
   QuoteInput,
@@ -232,6 +233,11 @@ async function determineNEP141StorageRequirement(
         tokenIn: formValues.tokenOut.defuseAssetId,
         tokenOut: NEP141_STORAGE_TOKEN.defuseAssetId,
         exactAmountOut: nep141StorageRequired.value,
+        /**
+         * We expect user to finish the transaction in specific timeframe and
+         * don't want to update the storage quote, as adds more complexity to code.
+         */
+        minDeadlineMs: settings.maxQuoteMinDeadlineMs,
       },
       { signal }
     )

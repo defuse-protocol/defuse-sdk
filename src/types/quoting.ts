@@ -27,6 +27,7 @@ export interface Settings {
   quoteQueryTimeoutMs: number
   quotePollingIntervalMs: number
   quoteMinDeadlineMs: number
+  maxQuoteMinDeadlineMs: number
   queries: {
     staleTime: number
   }
