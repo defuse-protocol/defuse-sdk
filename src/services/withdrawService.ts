@@ -1,29 +1,29 @@
-import { type ActorRefFrom, fromPromise, waitFor } from "xstate"
-import { NEP141_STORAGE_TOKEN } from "../../constants"
-import { getNEP141StorageRequired } from "../../services/nep141StorageService"
+import { type ActorRefFrom, waitFor } from "xstate"
+import { NEP141_STORAGE_TOKEN } from "../constants"
+import type {
+  QuoteInput,
+  backgroundQuoterMachine,
+} from "../features/machines/backgroundQuoterMachine"
+import type {
+  BalanceMapping,
+  depositedBalanceMachine,
+} from "../features/machines/depositedBalanceMachine"
+import type { poaBridgeInfoActor } from "../features/machines/poaBridgeInfoActor"
+import { getPOABridgeInfo } from "../features/machines/poaBridgeInfoActor"
+import {
+  type NEP141StorageRequirement,
+  calcWithdrawAmount,
+} from "../features/machines/swapIntentMachine"
+import type { State as WithdrawFormContext } from "../features/machines/withdrawFormReducer"
+import type { BaseTokenInfo, UnifiedTokenInfo } from "../types/base"
+import { assert } from "../utils/assert"
+import { isBaseToken } from "../utils/token"
+import { getNEP141StorageRequired } from "./nep141StorageService"
 import {
   type AggregatedQuote,
   isAggregatedQuoteEmpty,
   queryQuoteExactOut,
-} from "../../services/quoteService"
-import type { BaseTokenInfo, UnifiedTokenInfo } from "../../types/base"
-import { assert } from "../../utils/assert"
-import { isBaseToken } from "../../utils/token"
-import type {
-  QuoteInput,
-  backgroundQuoterMachine,
-} from "./backgroundQuoterMachine"
-import type {
-  BalanceMapping,
-  depositedBalanceMachine,
-} from "./depositedBalanceMachine"
-import type { poaBridgeInfoActor } from "./poaBridgeInfoActor"
-import { getPOABridgeInfo } from "./poaBridgeInfoActor"
-import {
-  type NEP141StorageRequirement,
-  calcWithdrawAmount,
-} from "./swapIntentMachine"
-import type { State as WithdrawFormContext } from "./withdrawFormReducer"
+} from "./quoteService"
 
 interface SwapRequirement {
   swapParams: QuoteInput
@@ -60,18 +60,6 @@ export type PreparationOutput =
             token: BaseTokenInfo
           }
     }
-
-export const prepareWithdrawActor = fromPromise(
-  ({
-    input,
-    signal,
-  }: {
-    input: Parameters<typeof prepareWithdraw>[0]
-    signal: AbortSignal
-  }) => {
-    return prepareWithdraw(input, { signal })
-  }
-)
 
 export async function prepareWithdraw(
   {

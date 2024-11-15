@@ -31,7 +31,10 @@ import {
   poaBridgeInfoActor,
   waitPOABridgeInfoActor,
 } from "./poaBridgeInfoActor"
-import { type PreparationOutput, prepareWithdrawActor } from "./preparation"
+import {
+  type PreparationOutput,
+  prepareWithdrawActor,
+} from "./prepareWithdrawActor"
 import {
   type Output as SwapIntentMachineOutput,
   swapIntentMachine,

@@ -42,7 +42,7 @@ import { parseUnits } from "../../../../utils/parse"
 import { validateAddress } from "../../../../utils/validateAddress"
 import type { intentStatusMachine } from "../../../machines/intentStatusMachine"
 import { getPOABridgeInfo } from "../../../machines/poaBridgeInfoActor"
-import type { PreparationOutput } from "../../../machines/preparation"
+import type { PreparationOutput } from "../../../machines/prepareWithdrawActor"
 import {
   balanceSelector,
   renderIntentCreationResult,
