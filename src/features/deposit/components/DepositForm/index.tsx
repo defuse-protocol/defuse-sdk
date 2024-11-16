@@ -5,7 +5,6 @@ import {
 } from "@radix-ui/react-icons"
 import { Button, Callout, Flex, Spinner, Text } from "@radix-ui/themes"
 import { useSelector } from "@xstate/react"
-import { ethers } from "ethers"
 import { QRCodeSVG } from "qrcode.react"
 import { type ReactNode, useEffect, useRef, useState } from "react"
 import CopyToClipboard from "react-copy-to-clipboard"
@@ -16,6 +15,7 @@ import { getPOABridgeInfo } from "src/features/machines/poaBridgeInfoActor"
 import { useDepositStatusSnapshot } from "src/hooks/useDepositStatusSnapshot"
 import { getAvailableDepositRoutes } from "src/services/depositService"
 import { assetNetworkAdapter } from "src/utils/adapters"
+import { http, createPublicClient } from "viem"
 import { AssetComboIcon } from "../../../../components/Asset/AssetComboIcon"
 import { BlockMultiBalances } from "../../../../components/Block/BlockMultiBalances"
 import { EmptyIcon } from "../../../../components/EmptyIcon"
@@ -27,7 +27,6 @@ import { Select } from "../../../../components/Select/Select"
 import { useModalStore } from "../../../../providers/ModalStoreProvider"
 import { ModalType } from "../../../../stores/modalStore"
 import {
-  type BaseTokenInfo,
   BlockchainEnum,
   type ChainType,
   type SwappableToken,
@@ -43,7 +42,7 @@ import styles from "./styles.module.css"
 const ENABLE_DEPOSIT_THROUGH_POA_BRIDGE = true
 
 export type DepositFormValues = {
-  network: string
+  network: BlockchainEnum | null
   amount: string
   token: SwappableToken | null
   userAddress: string | null
@@ -79,7 +78,7 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
     nativeBalance,
     userAddress,
     poaBridgeInfoRef,
-    rpcUrl,
+    maxDepositValue,
   } = DepositUIMachineContext.useSelector((snapshot) => {
     const token = snapshot.context.formValues.token
     const network = snapshot.context.formValues.network
@@ -88,7 +87,8 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
     const nativeBalance = snapshot.context.nativeBalance
     const userAddress = snapshot.context.userAddress
     const poaBridgeInfoRef = snapshot.context.poaBridgeInfoRef
-    const rpcUrl = snapshot.context.rpcUrl
+    const maxDepositValue = snapshot.context.maxDepositValue
+
     return {
       token,
       network,
@@ -97,7 +97,7 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
       nativeBalance,
       userAddress,
       poaBridgeInfoRef,
-      rpcUrl,
+      maxDepositValue,
     }
   })
 
@@ -129,7 +129,7 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
         params: { token, network: undefined },
       })
       // We have to clean up network because it could be not a valid value for the previous token
-      setValue("network", "")
+      setValue("network", null)
       setValue("amount", "")
       onCloseModal(undefined)
     }
@@ -142,26 +142,14 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
   }
 
   const handleSetMaxValue = async () => {
-    if (!token) {
-      return
-    }
-    let maxValue = 0n
-    if (isBaseToken(token) && token?.address === "wrap.near") {
-      maxValue = (nativeBalance || 0n) + (balance || 0n)
-    } else if (isUnifiedToken(token) && token.unifiedAssetId === "eth") {
-      if (!rpcUrl) maxValue = 0n
-      const transferCost = rpcUrl && (await estimateEthTransferCost(rpcUrl))
-      maxValue = nativeBalance - (transferCost || 0n)
-    } else {
-      maxValue = balance || 0n
-    }
-    setValue("amount", formatTokenValue(maxValue, token.decimals))
+    token &&
+      setValue("amount", formatTokenValue(maxDepositValue, token.decimals))
   }
 
   useEffect(() => {
     if (token && getDefaultBlockchainOptionValue(token, chainType)) {
       const networkOption = getDefaultBlockchainOptionValue(token, chainType)
-      setValue("network", networkOption ?? "")
+      setValue("network", networkOption)
     }
   }, [token, setValue, chainType])
 
@@ -289,7 +277,7 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
                     }
                     decimals={token?.decimals ?? 0}
                     handleClick={() => handleSetMaxValue()}
-                    disabled={false}
+                    disabled={Boolean(token && maxDepositValue === 0n)}
                     className={styles.blockMultiBalances}
                   />
                 </div>
@@ -397,9 +385,10 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
   )
 }
 
-function getBlockchainsOptions(
-  chainType?: ChainType
-): Record<string, { label: string; icon: React.ReactNode; value: string }> {
+function getBlockchainsOptions(): Record<
+  string,
+  { label: string; icon: React.ReactNode; value: string }
+> {
   const options = {
     [BlockchainEnum.NEAR]: {
       label: "Near",
@@ -470,7 +459,7 @@ function filterBlockchainsOptions(
       ) => {
         const key = assetNetworkAdapter[token.chainName]
         if (key) {
-          const option = getBlockchainsOptions(chainType)[key]
+          const option = getBlockchainsOptions()[key]
           if (option) {
             acc[key] = option
           }
@@ -480,18 +469,20 @@ function filterBlockchainsOptions(
       {}
     )
   }
-  return getBlockchainsOptions(chainType)
+  return getBlockchainsOptions()
 }
 
 function getDefaultBlockchainOptionValue(
   token: SwappableToken,
   chainType?: ChainType
-): string | undefined {
+): BlockchainEnum | null {
   if (isBaseToken(token)) {
     const key = assetNetworkAdapter[token.chainName]
-    return key ? getBlockchainsOptions(chainType)[key]?.value : undefined
+    return key
+      ? (getBlockchainsOptions()[key]?.value as BlockchainEnum | null)
+      : null
   }
-  return undefined
+  return null
 }
 
 function isInsufficientBalance(
@@ -659,13 +650,4 @@ function renderDepositHint(
 
 function truncateUserAddress(hash: string) {
   return `${hash.slice(0, 12)}...${hash.slice(-12)}`
-}
-
-async function estimateEthTransferCost(rpcUrl: string): Promise<bigint> {
-  const provider = new ethers.JsonRpcProvider(rpcUrl)
-  const feeData = await provider.getFeeData()
-  const gasPrice = feeData.gasPrice || 0n
-  const gasLimit = 21000n
-  const costInWei = gasPrice * gasLimit
-  return costInWei
 }

@@ -6,23 +6,21 @@ import { DepositUIMachineContext } from "./DepositUIMachineProvider"
 
 type DepositUIMachineFormSyncProviderProps = PropsWithChildren<{
   userAddress?: string
-  rpcUrl?: string
 }>
 
 export function DepositUIMachineFormSyncProvider({
   children,
   userAddress,
-  rpcUrl,
 }: DepositUIMachineFormSyncProviderProps) {
   const { watch } = useFormContext<DepositFormValues>()
   const actorRef = DepositUIMachineContext.useActorRef()
 
   useEffect(() => {
-    const sub = watch(async (value, { type, name }) => {
+    const sub = watch(async (value, { name }) => {
       if (name === "network") {
         actorRef.send({
           type: "INPUT",
-          params: { [name]: value[name] as BlockchainEnum },
+          params: { [name]: value[name] },
         })
       }
       if (name === "amount") {
@@ -45,10 +43,10 @@ export function DepositUIMachineFormSyncProvider({
     } else {
       actorRef.send({
         type: "LOGIN",
-        params: { userAddress, rpcUrl },
+        params: { userAddress },
       })
     }
-  }, [actorRef, userAddress, rpcUrl])
+  }, [actorRef, userAddress])
 
   return <>{children}</>
 }

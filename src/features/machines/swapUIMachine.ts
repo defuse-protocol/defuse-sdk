@@ -86,7 +86,7 @@ export const swapUIMachine = setup({
             userAddress: string
             nearClient: providers.Provider
             sendNearTransaction: (
-              tx: Transaction
+              tx: Transaction["NEAR"]
             ) => Promise<{ txHash: string } | null>
           }
         }

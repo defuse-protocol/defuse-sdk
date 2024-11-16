@@ -8,7 +8,7 @@ export function DepositFormProvider({ children }: DepositFormProps) {
   const methods = useForm<DepositFormValues>({
     defaultValues: {
       token: null,
-      network: "",
+      network: null,
       amount: "",
       userAddress: "",
     },

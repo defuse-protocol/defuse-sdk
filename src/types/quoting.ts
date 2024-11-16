@@ -1,3 +1,5 @@
+import type { RpcUrl } from "src/utils/defuse"
+
 export interface SwapEstimateBotResult {
   bestOut: string | null
   allEstimates?: SwapEstimateProviderResponse[]
@@ -29,5 +31,13 @@ export interface Settings {
   quoteMinDeadlineMs: number
   queries: {
     staleTime: number
+  }
+  rpcUrls: {
+    near: RpcUrl
+    ethereum: RpcUrl
+    base: RpcUrl
+    arbitrum: RpcUrl
+    bitcoin: RpcUrl
+    solana: RpcUrl
   }
 }

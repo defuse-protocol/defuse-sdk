@@ -1,5 +1,5 @@
 import { base64 } from "@scure/base"
-import { Contract, ethers } from "ethers"
+import { http, type Address, createPublicClient, erc20Abi } from "viem"
 import {
   getNearBalance,
   getNearNep141BalanceAccount,
@@ -7,9 +7,9 @@ import {
   getNearNep141StorageBalanceOf,
 } from "../../services/nearHttpClient"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../types/base"
+import type { RpcUrl } from "../../utils/defuse"
 import { Semaphore } from "../../utils/semaphore"
 import { isBaseToken, isUnifiedToken } from "../../utils/token"
-
 export const RESERVED_NEAR_BALANCE = 1n * 10n ** 24n // 1 NEAR reserved for transaction fees and storage, using yoctoNEAR precision
 const semaphore = new Semaphore(5, 500) // 5 concurrent request, 0.5 second delay (adjust maxConcurrent and delayMs as needed)
 
@@ -168,13 +168,14 @@ export const getEvmNativeBalance = async ({
   userAddress,
   rpcUrl,
 }: {
-  userAddress: string
-  rpcUrl: string
+  userAddress: Address
+  rpcUrl: RpcUrl
 }): Promise<bigint | null> => {
   try {
-    const provider = ethers.getDefaultProvider(rpcUrl)
-    const balance = await provider.getBalance(userAddress)
-    console.log("userAddress", userAddress, "balance", balance)
+    const client = createPublicClient({
+      transport: http(rpcUrl),
+    })
+    const balance = await client.getBalance({ address: userAddress })
     return BigInt(balance)
   } catch (err: unknown) {
     throw new Error("Error fetching balances", { cause: err })
@@ -186,30 +187,23 @@ export const getEvmErc20Balance = async ({
   userAddress,
   rpcUrl,
 }: {
-  tokenAddress: string
-  userAddress: string
-  rpcUrl: string
+  tokenAddress: Address
+  userAddress: Address
+  rpcUrl: RpcUrl
 }): Promise<bigint | null> => {
   try {
-    const provider = ethers.getDefaultProvider(rpcUrl)
-    const contract = new Contract(tokenAddress, Erc20Abi, provider)
-
-    if (!contract || typeof contract.balanceOf !== "function") {
-      throw new Error(
-        "Contract is not initialized or balanceOf method is missing"
-      )
-    }
-    const balance = await contract.balanceOf(userAddress)
-    console.log("tokenAddress", tokenAddress, "balance", balance)
-    return BigInt(balance)
+    const client = createPublicClient({
+      transport: http(rpcUrl),
+    })
+    const data = await client.readContract({
+      address: tokenAddress,
+      abi: erc20Abi,
+      functionName: "balanceOf",
+      args: [userAddress],
+    })
+    return BigInt(data)
   } catch (err: unknown) {
     console.warn(err, "error fetching evm erc20 balance")
     return null
   }
 }
-
-export const Erc20Abi = [
-  "function decimals() view returns (uint8)",
-  "function symbol() view returns (string)",
-  "function balanceOf(address a) view returns (uint)",
-]

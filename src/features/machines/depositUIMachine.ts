@@ -1,6 +1,7 @@
 import { assetNetworkAdapter } from "src/utils/adapters"
 import {
   type ActorRefFrom,
+  and,
   assertEvent,
   assign,
   sendTo,
@@ -10,12 +11,13 @@ import {
 import type { SwappableToken } from "../../types"
 import { BlockchainEnum } from "../../types"
 import { parseUnits } from "../../utils/parse"
-import { isBaseToken } from "../../utils/token"
+import { isBaseToken, isUnifiedToken } from "../../utils/token"
 import { backgroundBalanceActor } from "./backgroundBalanceActor"
 import {
   type Output as DepositEVMMachineOutput,
   depositEVMMachine,
 } from "./depositEVMMachine"
+import { depositEstimateMaxValueActor } from "./depositEstimationActor"
 import {
   type Output as DepositGenerateAddressMachineOutput,
   DepositGeneratedDescription,
@@ -31,6 +33,10 @@ export type Context = {
   error: Error | null
   balance: bigint
   nativeBalance: bigint
+  /**
+   * The maximum amount that available on the user's balance minus the cost of the gas.
+   */
+  maxDepositValue: bigint
   formValues: {
     token: SwappableToken | null
     network: BlockchainEnum | null
@@ -50,7 +56,6 @@ export type Context = {
   generatedAddressResult: DepositGenerateAddressMachineOutput | null
   depositNearResult: DepositNearMachineOutput | null
   depositEVMResult: DepositEVMMachineOutput | null
-  rpcUrl: string | undefined
 }
 
 export const depositUIMachine = setup({
@@ -64,7 +69,7 @@ export const depositUIMachine = setup({
           type: "INPUT"
           params: Partial<{
             token: SwappableToken
-            network: BlockchainEnum
+            network: BlockchainEnum | null
             amount: string
           }>
         }
@@ -78,7 +83,6 @@ export const depositUIMachine = setup({
           type: "LOGIN"
           params: {
             userAddress: string
-            rpcUrl: string | undefined
           }
         }
       | {
@@ -90,7 +94,7 @@ export const depositUIMachine = setup({
     },
   },
   actors: {
-    formValidationBalanceActor: backgroundBalanceActor,
+    fetchWalletAddressBalanceActor: backgroundBalanceActor,
     depositNearActor: depositNearMachine,
     depositGenerateAddressActor: depositGenerateAddressMachine,
     poaBridgeInfoActor: poaBridgeInfoActor,
@@ -105,7 +109,7 @@ export const depositUIMachine = setup({
         }: {
           data: Partial<{
             token: SwappableToken
-            network: BlockchainEnum
+            network: BlockchainEnum | null
             amount: string
           }>
         }
@@ -199,6 +203,12 @@ export const depositUIMachine = setup({
     fetchPOABridgeInfo: sendTo("poaBridgeInfoRef", { type: "FETCH" }),
   },
   guards: {
+    isTokenValid: ({ context }) => {
+      return context.formValues.token != null
+    },
+    isNetworkValid: ({ context }) => {
+      return context.formValues.network != null
+    },
     isDepositNearRelevant: ({ context }) => {
       return (
         context.balance + context.nativeBalance >=
@@ -215,15 +225,18 @@ export const depositUIMachine = setup({
           context.formValues.network === BlockchainEnum.ARBITRUM)
       )
     },
-    isBalanceSufficient: ({ event, context }) => {
-      if (event.type === "SUBMIT") {
-        return context.formValues.network === BlockchainEnum.NEAR
-          ? context.balance > context.parsedFormValues.amount
-          : true
+    isBalanceSufficientForEstimate: ({ context }) => {
+      if (context.formValues.token == null) {
+        return false
       }
-      return true
+      const token = context.formValues.token
+      // For all Native tokens, we should validate wallet native balance
+      if (isUnifiedToken(token) && token.unifiedAssetId === "eth") {
+        return context.nativeBalance > 0n
+      }
+      return context.balance > 0n
     },
-    isDepositNonNearRelevant: ({ context }) => {
+    isDepositNotNearRelevant: ({ context }) => {
       return (
         context.formValues.network != null &&
         context.formValues.network !== BlockchainEnum.NEAR &&
@@ -234,13 +247,14 @@ export const depositUIMachine = setup({
     isOk: (_, a: { tag: "err" | "ok" }) => a.tag === "ok",
   },
 }).createMachine({
-  /** @xstate-layout N4IgpgJg5mDOIC5QTABwPawJYBcC0ArlgMQAyA8gOICSAcgNoAMAuoqBtjlugHZsgAPRHgCMAZgDsAOgAsANgCsEuQA4FMsSoBMYuWIA0IAJ7CVKgJxTx2xWK0WVIlQF9nhlB1yESFSuQCqACpMrEggnly8-EIIMlJqKnIichISCuYKKhI6hiYIeGaW1lq29uaOLm4gHpheRFKQuFg8UMQAyv4AQgCy1MEs-BHcfGExclpS6mJKEnZi86mJucIlcrKMuloSjAqZ5jIiru5otfj1jVwt7V29wSKh7KfD0YhyjFLmjNpaTm9bIhJ9st8iIZAp1hkJFlGCUtLsZEdqidON4GhAmlc6AAFIIhQZPKKjYROMRSabZHSgn7maZyYF4ckfETiMQyH7JcxORE1FHndGXKBSABuAEMADZYCAigXECC8MBSZpC9AAawVPLqWDRGMFoolUoFCCV6AAxtLhiE8WEhoTQDE8CkJmpGHINOVzJyRFp6QoxCIpIxGOIZDsvWJ9giqhqzlqLs1deLJearnKeArjWqpNHUXGWsLEwb40aeMqzZEeJb7vjOM8iflHOCZAcAUk5B7m-TJHFkhYtAcQ4DUtzkZqpLACAAjAC2uAFtDAIoAToEBLL5YqS6r1SOcPOlwAlMAAMytjxrtsEiAs7xk2h2jEBOlZdOMKyhZJUQbbvpZCmHEVRGA00XZNWlTdNN0zaNKDAYDpTAABBCAIEXOBYEPE8BmtAkRjtRAQ3BGEaREL5dhpRR6RkGkpCSJQkhED0XSosR-1OVECFQA0wE6cURR4E0wGIARYBweCpBFI8cDARcAAotEDRgAEpZR3djOPgnixT4gTT3CHCXgQLZpE-dQzHkSRMhkTtMg+WiXRKcwJAY1jeS1cdp1neMAFEADVuhXNc0w3ZUoJ3Xzugw3SbVwy8EAsf0nAUBinB+GRshEekRCSmjEnJB82TS8RXCqHh0BQeAwmzIhqyaC97QjKx9j7MQHzkN5lHpNJSXkJtXTBLKVF0FzR1zKAavLAyCnMNYGIKlrlHal88gdZJZABNKfhUKivUqY4AL5HVFQgMUwHG2s8PrW9Grm1rFp9ewmQkDQLEyTRmWGmNtQFfN9VAs66pWfZ4nMLZVGmmkfys18QXSKQnI0B9HMUQFdqRfa3MnGccDnBdlxiM9apimIFC+SZVHSNQ+yy30DGhvBVg+LZEcSPRwyUD7ANg6S-uw88icQSQ1jZTQSicxwH19ekkhUWymy2z8tE+SM9rY+oOK4zTtNO3nCYMmlLAUV1GA9dIoUyb06d0G8klvB8SJbFio1U+p3KxgVwpXf7+YQEnLCcv1A0HNq4UykMpCfVLVDZBi-2KoA */
+  /** @xstate-layout N4IgpgJg5mDOIC5QTABwPawJYBcC0ArlgMQAyA8gOICSAcgNoAMAuoqBtjlugHZsgAPRHgCMAZgDsAOgAsANgCsEuQA4FMsSoBMYuWIA0IAJ7CVKgJxTx2xWK0WVIlQF9nhlB1yESFSuQCqACpMrEggnly8-EIIMlJqKnIichISCuYKKhI6hiYIeGaW1lq29uaOLm4gHpheRFKQuFg8UMQAyv4AQgCy1MEs-BHcfGExclpS6mJKEnZi86mJucIlcrKMuloSjAqZ5jIiru5otfj1jVwt7V29wSKh7KfD0YhyjFLmjNpaTm9bIhJ9st8iIZAp1hkJFlGCUtLsZEdqidON4GhAmlc6AAFIIhQZPKKjYROMRSabZHSgn7maZyYF4ckfETiMQyH7JcxORE1FHndGXKBSVAAJzQAENhWLIjxiHiwkNCaAYgytBNGNsRFoZOrtOYtPTxBMoV8wU4lFpygpuci6lg0RjBQA3MUAGywEClzVaEF4YCkzUd6AA1n6ebb7QKpM63R6BQgA+gAMae3ghOWPTjPIn5WakuFiHZpRjMrIyekycqyckF8ycnYqBFVMNnO0XL1R13uz1XH08P0JkNSZuotstDsx7tQeM8QPJ6Vp+74zOKwSmETgmQHAFJOS1rf0yRxZIWLWg9XmVLWiKo2AEABGAFtcALaGAJYEBMRe-2Z8HQzacFfCUACUwAAM3TcICRGJVEAsd4ZG0HZzx0Vk6WMFYoTJFRi13BQxBZK0mwA1EYD7SUBS-X1-V-Qdm0oMByKlMAAEEIAgUVYFgUCIIGeVoJeWIdikGEaREL5dhpRRyxpKQkiUJIRFrRg5ArMQr1OVECFQWMwE6V0xR4RMwGIARYBwZipDFMCcDAYUAAotEYZyAEovxI+ptN0-SXUM4zIIVGDVwQLZpBw9QzHkSRMjLDD8mmFQPnklSSgvJSNN5O1b0fZ8vQAUQANW6D8qL7GjAzogDCu6HiAoE7MLBEKw1CUpwfhkbIRANBQmtUPQlHVNkOvEVwqh4dAUHgMJhyIJcmhXZV9iPfYtQLZQ3mUek0lJeRN00cpd0cIjjmvPkHTm6VBIKcw1iUoa1rkDb0LyPAd1kAEDh6xhENUCQMvDUdBXdF0wAurNYPyBtEru1b1UeuH6QUewmQkDQLEyTRmX+lsI3bEVxQo8GoOXILlWSOIDvXcYFG+6wJANaYRILMxGCkwFlGxkd+XbaMuwFMGFuEbZpB0C8bp+alzANRwPlZhRVM0dJws5+psqfHAXzfYUPwF0nEBpxL5bUS1T12eZ6VWD4tnPRI9DESEVbtMi7MnXXBMkNY2U0EoJCccTtvpJJEpuzcodE77HakLzmJ8vzQf4knBJpSx5e1Wt0ihTJ9Tihk3lkJJEPVcTt3U4jTqy+91YFaqdYT+a9YQGnLF9gjnPZx64QNbUpFQ9rVDZJSiNcIA */
   id: "deposit-ui",
 
   context: ({ input, spawn }) => ({
     error: null,
     balance: 0n,
     nativeBalance: 0n,
+    maxDepositValue: 0n,
     formValues: {
       token: null,
       network: null,
@@ -260,7 +274,6 @@ export const depositUIMachine = setup({
     poaBridgeInfoRef: spawn("poaBridgeInfoActor", {
       id: "poaBridgeInfoRef",
     }),
-    rpcUrl: undefined,
   }),
 
   entry: ["fetchPOABridgeInfo"],
@@ -270,7 +283,6 @@ export const depositUIMachine = setup({
       actions: [
         assign({
           userAddress: ({ event }) => event.params.userAddress,
-          rpcUrl: ({ event }) => event.params.rpcUrl,
         }),
       ],
     },
@@ -304,7 +316,7 @@ export const depositUIMachine = setup({
         ],
 
         INPUT: {
-          target: ".validating",
+          target: ".preparation",
           actions: [
             "clearError",
             {
@@ -319,19 +331,31 @@ export const depositUIMachine = setup({
       states: {
         idle: {},
 
+        preparation: {
+          always: [
+            {
+              target: "validating",
+              guard: and(["isTokenValid", "isNetworkValid"]),
+            },
+          ],
+        },
+
         validating: {
           entry: "extractAssetIds",
 
           invoke: {
-            src: "formValidationBalanceActor",
+            src: "fetchWalletAddressBalanceActor",
 
             input: ({ context }) => {
+              assert(context.formValues.network, "network is null")
+              assert(context.defuseAssetId, "defuseAssetId is null")
+              assert(context.tokenAddress, "tokenAddress is null")
+
               return {
                 defuseAssetId: context.defuseAssetId,
                 tokenAddress: context.tokenAddress,
                 userAddress: context.userAddress,
                 network: context.formValues.network,
-                rpcUrl: context.rpcUrl,
               }
             },
 
@@ -340,19 +364,21 @@ export const depositUIMachine = setup({
                 target: "#deposit-ui.generating",
 
                 actions: assign({
-                  balance: ({ event }) => event.output.balance,
-                  nativeBalance: ({ event }) => event.output.nativeBalance,
+                  balance: ({ event }) => event.output?.balance ?? 0n,
+                  nativeBalance: ({ event }) =>
+                    event.output?.nativeBalance ?? 0n,
                 }),
 
                 reenter: true,
-                guard: "isDepositNonNearRelevant",
+                guard: "isDepositNotNearRelevant",
               },
               {
                 target: "idle",
 
                 actions: assign({
-                  balance: ({ event }) => event.output.balance,
-                  nativeBalance: ({ event }) => event.output.nativeBalance,
+                  balance: ({ event }) => event.output?.balance ?? 0n,
+                  nativeBalance: ({ event }) =>
+                    event.output?.nativeBalance ?? 0n,
                 }),
 
                 reenter: true,
@@ -370,12 +396,10 @@ export const depositUIMachine = setup({
         id: "depositNearRef",
         src: "depositNearActor",
 
-        input: ({ context, event }) => {
-          assertEvent(event, "SUBMIT")
+        input: ({ context }) => {
+          assert(context.formValues.token, "token is null")
+          assert(context.userAddress, "userAddress is null")
 
-          if (context.formValues.token == null || !context.userAddress) {
-            throw new Error("Token or account ID is missing")
-          }
           return {
             balance: context.balance,
             amount: context.parsedFormValues.amount,
@@ -405,10 +429,9 @@ export const depositUIMachine = setup({
         id: "depositGenerateAddressRef",
         src: "depositGenerateAddressActor",
 
-        input: ({ context, event }) => {
-          if (context.formValues.network == null || !context.userAddress) {
-            throw new Error("Chain or account ID is missing")
-          }
+        input: ({ context }) => {
+          assert(context.formValues.network, "network is null")
+
           return {
             accountId: context.userAddress,
             chain: context.formValues.network,
@@ -450,16 +473,13 @@ export const depositUIMachine = setup({
             context.generatedAddressResult?.tag === "ok"
               ? context.generatedAddressResult.value.depositAddress
               : null
-          if (!depositAddress) {
-            throw new Error("Deposit address is missing")
-          }
-          if (
-            context.formValues.token == null ||
-            !context.userAddress ||
-            context.tokenAddress == null
-          ) {
-            throw new Error("Token or account ID is missing")
-          }
+
+          assert(context.formValues.network, "network is null")
+          assert(context.userAddress, "userAddress is null")
+          assert(context.tokenAddress, "tokenAddress is null")
+          assert(depositAddress, "depositAddress is null")
+          assert(context.formValues.token, "token is null")
+
           return {
             balance: context.balance,
             amount: context.parsedFormValues.amount,

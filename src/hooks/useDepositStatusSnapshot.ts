@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react"
 import type { DepositStatus } from "src/services/poaBridgeClient/types"
 import { BlockchainEnum, type DepositSnapshot } from "src/types"
+import type { Hash } from "viem"
 import { useGetDepositStatus } from "./usePoABridge"
 
 const INTERVAL_TIME = 1000 // 1 second
@@ -29,7 +30,10 @@ export const useDepositStatusSnapshot = (params: {
   )
 
   const checkForNewTxHashes = useCallback(
-    (currentSnapshot: DepositSnapshot[], newSnapshot: DepositSnapshot[]) => {
+    (
+      currentSnapshot: DepositSnapshot[],
+      newSnapshot: DepositSnapshot[]
+    ): Hash[] => {
       const currentTxHashes = new Set(
         currentSnapshot.map((depositStatus) => depositStatus.txHash)
       )
@@ -44,7 +48,7 @@ export const useDepositStatusSnapshot = (params: {
     (deposits: DepositStatus[]) => {
       const currentSnapshot = snapshot ?? []
       const newSnapshot = deposits.map((deposit) => ({
-        txHash: deposit.tx_hash,
+        txHash: deposit.tx_hash as Hash,
       }))
       const newTxHashes = checkForNewTxHashes(currentSnapshot, newSnapshot)
 
