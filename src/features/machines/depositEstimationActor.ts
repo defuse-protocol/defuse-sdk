@@ -1,44 +1,84 @@
-import { getWalletRpcUrl } from "src/services/depositService"
-import { estimateEthTransferCost } from "src/services/estimateService"
+import {
+  createDepositEVMERC20Transaction,
+  getWalletRpcUrl,
+} from "src/services/depositService"
+import {
+  estimateEVMErc20TransferCost,
+  estimateEVMEtnTransferCost,
+} from "src/services/estimateService"
 import { BlockchainEnum, type SwappableToken } from "src/types"
 import { isBaseToken, isUnifiedToken } from "src/utils"
-import type { RpcUrl } from "src/utils/defuse"
+import { reverseAssetNetworkAdapter } from "src/utils/adapters"
+import { validateAddress } from "src/utils/validateAddress"
+import type { Address } from "viem"
 import { fromPromise } from "xstate"
 
+// Estimate the gas cost for transferring the maximum balance
+// Calculate the maximum transferable balance after accounting for gas cost
 export const depositEstimateMaxValueActor = fromPromise(
   async ({
-    input: { token, network, balance, nativeBalance },
+    input: {
+      network,
+      tokenAddress,
+      userAddress,
+      balance,
+      nativeBalance,
+      token,
+      generateAddress,
+    },
   }: {
     input: {
-      token: SwappableToken
       network: BlockchainEnum
+      tokenAddress: string
+      userAddress: string
       balance: bigint
       nativeBalance: bigint
+      token: SwappableToken
+      generateAddress: string
     }
   }) => {
-    const rpcUrl = getWalletRpcUrl(network)
     switch (network) {
       case BlockchainEnum.NEAR:
         // Max value for NEAR is the sum of the native balance and the balance
         if (isBaseToken(token) && token?.address === "wrap.near") {
           return (nativeBalance || 0n) + (balance || 0n)
         }
-        break
+        return balance
       case BlockchainEnum.ETHEREUM:
       case BlockchainEnum.BASE:
       case BlockchainEnum.ARBITRUM:
-        if (isUnifiedToken(token) && token.unifiedAssetId === "eth") {
-          if (!rpcUrl) return 0n
-          const transferCost =
-            rpcUrl &&
-            (await estimateEthTransferCost({
-              rpcUrl: rpcUrl as RpcUrl,
-              to: "0x0000000000000000000000000000000000000000",
-              data: "0x",
-            }))
-          return nativeBalance - (transferCost || 0n)
+        if (
+          !validateAddress(userAddress, reverseAssetNetworkAdapter[network])
+        ) {
+          return 0n
         }
-        break
+        if (isUnifiedToken(token) && token.unifiedAssetId === "eth") {
+          const gasCost = await estimateEVMEtnTransferCost({
+            rpcUrl: getWalletRpcUrl(network),
+            from: userAddress as Address,
+            to: generateAddress as Address,
+            value: nativeBalance,
+          })
+          const maxTransferableBalance = nativeBalance - gasCost
+          return maxTransferableBalance > 0n ? maxTransferableBalance : 0n
+        }
+        // Wrappping to braces {} in order to create block scope for gasCost variable
+        {
+          const gasCost = await estimateEVMErc20TransferCost({
+            rpcUrl: getWalletRpcUrl(network),
+            from: userAddress as Address,
+            to: tokenAddress as Address,
+            data: createDepositEVMERC20Transaction(
+              tokenAddress,
+              generateAddress,
+              balance
+            ).data,
+          })
+          if (nativeBalance < gasCost) {
+            return 0n
+          }
+          return balance
+        }
       // Exception `case BlockchainEnum.BITCOIN:`
       // We don't do checks for Bitcoin as we don't support direct deposits to Bitcoin
       default:

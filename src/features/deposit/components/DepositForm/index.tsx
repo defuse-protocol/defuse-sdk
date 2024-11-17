@@ -142,8 +142,9 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
   }
 
   const handleSetMaxValue = async () => {
-    token &&
-      setValue("amount", formatTokenValue(maxDepositValue, token.decimals))
+    if (!token) return
+    const amountToFormat = formatTokenValue(maxDepositValue, token.decimals)
+    setValue("amount", amountToFormat)
   }
 
   useEffect(() => {
