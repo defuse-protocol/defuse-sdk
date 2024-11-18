@@ -14,7 +14,7 @@ import type { WalletMessage, WalletSignatureResult } from "../../types"
 import type { BaseTokenInfo } from "../../types/base"
 import type { Nep413DefuseMessageFor_DefuseIntents } from "../../types/defuse-contracts-types"
 import { assert } from "../../utils/assert"
-import { userAddressToDefuseUserId } from "../../utils/defuse"
+import type { DefuseUserId } from "../../utils/defuse"
 import {
   makeInnerSwapMessage,
   makeSwapMessage,
@@ -71,6 +71,7 @@ export type IntentDescription =
 
 type Context = {
   userAddress: string
+  defuseUserId: DefuseUserId
   nearClient: providers.Provider
   sendNearTransaction: SendNearTransaction
   intentOperationParams: IntentOperationParams
@@ -99,6 +100,7 @@ type Context = {
 
 type Input = {
   userAddress: string
+  defuseUserId: DefuseUserId
   nearClient: providers.Provider
   sendNearTransaction: SendNearTransaction
   intentOperationParams: IntentOperationParams
@@ -160,7 +162,7 @@ export const swapIntentMachine = setup({
 
         const innerMessage = makeInnerSwapMessage({
           tokenDeltas: context.intentOperationParams.quote.tokenDeltas,
-          signerId: userAddressToDefuseUserId(context.userAddress),
+          signerId: context.defuseUserId,
           deadlineTimestamp: Math.min(
             Math.floor(Date.now() / 1000) + settings.swapExpirySec,
             context.intentOperationParams.quote.expirationTime

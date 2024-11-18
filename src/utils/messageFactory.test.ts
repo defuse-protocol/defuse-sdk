@@ -9,7 +9,7 @@ import {
 describe("makeSwapMessage()", () => {
   const innerMessage = makeInnerSwapMessage({
     tokenDeltas: [["foo.near", 100n]],
-    signerId: userAddressToDefuseUserId("user.near"),
+    signerId: userAddressToDefuseUserId("user.near", "near"),
     deadlineTimestamp: 1000000,
   })
 
@@ -83,7 +83,7 @@ describe("makeSwapMessage()", () => {
         ["bar.near", 270n],
         ["foo.near", 100n],
       ],
-      signerId: userAddressToDefuseUserId("user.near"),
+      signerId: userAddressToDefuseUserId("user.near", "near"),
       deadlineTimestamp: 1000000,
     })
 
@@ -121,7 +121,7 @@ describe("makeInnerSwapAndWithdrawMessage()", () => {
         receiverId: "receiver.near",
         storageDeposit: 0n,
       },
-      signerId: userAddressToDefuseUserId("user.near"),
+      signerId: userAddressToDefuseUserId("user.near", "near"),
       deadlineTimestamp: 1000000,
     })
 
@@ -161,7 +161,7 @@ describe("makeInnerSwapAndWithdrawMessage()", () => {
         receiverId: "receiver.near",
         storageDeposit: 100n,
       },
-      signerId: userAddressToDefuseUserId("user.near"),
+      signerId: userAddressToDefuseUserId("user.near", "near"),
       deadlineTimestamp: 1000000,
     })
 
@@ -193,7 +193,7 @@ describe("makeInnerSwapAndWithdrawMessage()", () => {
         tokenAccountId: "bar-poa-bridge-token.near",
         destinationAddress: "0xdead",
       },
-      signerId: userAddressToDefuseUserId("user.near"),
+      signerId: userAddressToDefuseUserId("user.near", "near"),
       deadlineTimestamp: 1000000,
     })
 

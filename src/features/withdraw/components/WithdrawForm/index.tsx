@@ -103,17 +103,17 @@ export const WithdrawForm = ({
   usePublicKeyModalOpener(publicKeyVerifierRef)
 
   useEffect(() => {
-    if (userAddress != null) {
+    if (userAddress != null && chainType != null) {
       actorRef.send({
         type: "LOGIN",
-        params: { accountId: userAddress },
+        params: { userAddress, userChainType: chainType },
       })
     } else {
       actorRef.send({
         type: "LOGOUT",
       })
     }
-  }, [userAddress, actorRef])
+  }, [userAddress, actorRef, chainType])
 
   const { token, tokenOut, blockchain, amountIn, recipient } = useSelector(
     formRef,
@@ -265,7 +265,7 @@ export const WithdrawForm = ({
       <Flex direction={"column"} gap={"2"} className={styles.formWrapper}>
         <Form<WithdrawFormNearValues>
           handleSubmit={handleSubmit(() => {
-            if (userAddress == null) {
+            if (userAddress == null || chainType == null) {
               console.warn("No user address provided")
               return
             }
@@ -274,6 +274,7 @@ export const WithdrawForm = ({
               type: "submit",
               params: {
                 userAddress,
+                userChainType: chainType,
                 nearClient: new providers.JsonRpcProvider({
                   url: "https://nearrpc.aurora.dev",
                 }),

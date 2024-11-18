@@ -13,9 +13,10 @@ import {
   isAggregatedQuoteEmpty,
 } from "../../services/quoteService"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../types/base"
-import type { Transaction } from "../../types/deposit"
+import type { ChainType, Transaction } from "../../types/deposit"
 import { isBaseToken } from "../../utils"
 import { assert } from "../../utils/assert"
+import { userAddressToDefuseUserId } from "../../utils/defuse"
 import {
   type Events as BackgroundQuoterEvents,
   type ParentEvents as BackgroundQuoterParentEvents,
@@ -55,6 +56,7 @@ export type Context = {
   poaBridgeInfoRef: ActorRefFrom<typeof poaBridgeInfoActor>
   submitDeps: {
     userAddress: string
+    userChainType: ChainType
     nearClient: providers.Provider
     sendNearTransaction: (
       tx: Transaction["NEAR"]
@@ -557,6 +559,10 @@ export const withdrawUIMachine = setup({
 
           return {
             userAddress: context.submitDeps.userAddress,
+            defuseUserId: userAddressToDefuseUserId(
+              context.submitDeps.userAddress,
+              context.submitDeps.userChainType
+            ),
             nearClient: context.submitDeps.nearClient,
             sendNearTransaction: context.submitDeps.sendNearTransaction,
             intentOperationParams: {

@@ -1,5 +1,6 @@
 import type { SendNearTransaction } from "../features/machines/publicKeyVerifierMachine"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "./base"
+import type { ChainType } from "./deposit"
 
 // Message for EVM wallets
 export type ERC191Message = {
@@ -75,10 +76,11 @@ export type SwapWidgetProps = {
   onEmit?: (event: SwapEvent) => void
 
   /**
-   * The address (address for EVM, accountId for NEAR) of the user performing the swap.
+   * The address (address for EVM, accountId for NEAR, etc) of the user performing the swap.
    * `null` if the user is not authenticated.
    */
   userAddress: string | null
+  userChainType: ChainType | null
 
   sendNearTransaction: SendNearTransaction
 
