@@ -1,10 +1,8 @@
 import type { providers } from "near-api-js"
 import {
   type ActorRefFrom,
-  and,
   assign,
   emit,
-  not,
   sendTo,
   setup,
   spawnChild,
@@ -17,6 +15,7 @@ import {
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../types/base"
 import type { Transaction } from "../../types/deposit"
 import { isBaseToken } from "../../utils"
+import { assert } from "../../utils/assert"
 import {
   type Events as BackgroundQuoterEvents,
   type ParentEvents as BackgroundQuoterParentEvents,
@@ -29,14 +28,13 @@ import {
 } from "./depositedBalanceMachine"
 import { intentStatusMachine } from "./intentStatusMachine"
 import {
-  type Output as NEP141StorageOutput,
-  nep141StorageActor,
-} from "./nep141StorageActor"
-import {
-  getPOABridgeInfo,
   poaBridgeInfoActor,
   waitPOABridgeInfoActor,
 } from "./poaBridgeInfoActor"
+import {
+  type PreparationOutput,
+  prepareWithdrawActor,
+} from "./prepareWithdrawActor"
 import {
   type Output as SwapIntentMachineOutput,
   swapIntentMachine,
@@ -49,11 +47,9 @@ import {
 
 export type Context = {
   error: Error | null
-  quote: AggregatedQuote | null
   intentCreationResult: SwapIntentMachineOutput | null
   intentRefs: ActorRefFrom<typeof intentStatusMachine>[]
   tokenList: (BaseTokenInfo | UnifiedTokenInfo)[]
-  withdrawalSpec: WithdrawalSpec | null
   depositedBalanceRef: ActorRefFrom<typeof depositedBalanceMachine>
   withdrawFormRef: ActorRefFrom<typeof withdrawFormReducer>
   poaBridgeInfoRef: ActorRefFrom<typeof poaBridgeInfoActor>
@@ -64,19 +60,7 @@ export type Context = {
       tx: Transaction["NEAR"]
     ) => Promise<{ txHash: string } | null>
   } | null
-  nep141StorageOutput: NEP141StorageOutput | null
-  nep141StorageQuote: AggregatedQuote | null
-  preparationOutput:
-    | null
-    | { tag: "ok" }
-    | {
-        tag: "err"
-        value:
-          | "ERR_BALANCE_INSUFFICIENT"
-          | "ERR_NEP141_STORAGE"
-          | "ERR_CANNOT_FETCH_POA_BRIDGE_INFO"
-          | "ERR_AMOUNT_TOO_LOW"
-      }
+  preparationOutput: PreparationOutput | null
 }
 
 type PassthroughEvent = {
@@ -123,9 +107,8 @@ export const withdrawUIMachine = setup({
     emitted: {} as EmittedEvents,
 
     children: {} as {
-      depositedBalanceRef: "depositedBalanceActor"
+      backgroundQuoterRef: "backgroundQuoterActor"
       swapRef: "swapActor"
-      withdrawFormRef: "withdrawFormActor"
     },
   },
   actors: {
@@ -134,70 +117,78 @@ export const withdrawUIMachine = setup({
     swapActor: swapIntentMachine,
     intentStatusActor: intentStatusMachine,
     withdrawFormActor: withdrawFormReducer,
-    nep141StorageActor: nep141StorageActor,
     poaBridgeInfoActor: poaBridgeInfoActor,
     waitPOABridgeInfoActor: waitPOABridgeInfoActor,
+    prepareWithdrawActor: prepareWithdrawActor,
   },
   actions: {
-    updateUIAmountOut: () => {
-      throw new Error("not implemented")
+    logError: (_, event: { error: unknown }) => {
+      console.error(event.error)
     },
+
     setQuote: assign({
-      quote: (_, value: AggregatedQuote) => value,
+      preparationOutput: ({ context }, value: AggregatedQuote) => {
+        if (
+          context.preparationOutput == null ||
+          context.preparationOutput.tag === "err" ||
+          context.preparationOutput.value.swap == null
+        ) {
+          return context.preparationOutput
+        }
+
+        return {
+          ...context.preparationOutput,
+          value: {
+            ...context.preparationOutput.value,
+            swap: {
+              ...context.preparationOutput.value.swap,
+              swapQuote: value,
+            },
+          },
+        }
+      },
     }),
-    clearQuote: assign({ quote: null }),
-    clearError: assign({ error: null }),
+    updateSwapParams: assign({
+      preparationOutput: (
+        { context },
+        { balances }: { balances: BalanceMapping }
+      ) => {
+        if (
+          context.preparationOutput == null ||
+          context.preparationOutput.tag === "err" ||
+          context.preparationOutput.value.swap == null
+        ) {
+          return context.preparationOutput
+        }
+
+        return {
+          ...context.preparationOutput,
+          value: {
+            ...context.preparationOutput.value,
+            swap: {
+              ...context.preparationOutput.value.swap,
+              balances,
+            },
+          },
+        }
+      },
+    }),
+
     setIntentCreationResult: assign({
       intentCreationResult: (_, value: SwapIntentMachineOutput) => value,
     }),
     clearIntentCreationResult: assign({ intentCreationResult: null }),
+
     passthroughEvent: emit((_, event: PassthroughEvent) => event),
 
     setSubmitDeps: assign({
       submitDeps: (_, value: Context["submitDeps"]) => value,
-    }),
-    setNEP141StorageOutput: assign({
-      nep141StorageOutput: (_, result: Context["nep141StorageOutput"]) =>
-        result,
-    }),
-    clearNEP141StorageOutput: assign({
-      nep141StorageOutput: null,
     }),
     setPreparationOutput: assign({
       preparationOutput: (_, val: Context["preparationOutput"]) => val,
     }),
     clearPreparationOutput: assign({
       preparationOutput: null,
-    }),
-
-    clearWithdrawalSpec: assign({
-      withdrawalSpec: null,
-    }),
-    updateWithdrawalSpec: assign({
-      withdrawalSpec: ({ context }) => {
-        const balances =
-          context.depositedBalanceRef.getSnapshot().context.balances
-        const formValues = context.withdrawFormRef.getSnapshot().context
-
-        if (formValues.parsedAmount == null) {
-          return null
-        }
-
-        if (
-          context.nep141StorageOutput == null ||
-          context.nep141StorageOutput.tag === "err"
-        ) {
-          return null
-        }
-
-        return getWithdrawalSpec(
-          formValues.tokenIn,
-          formValues.tokenOut,
-          formValues.parsedAmount,
-          context.nep141StorageOutput.value,
-          balances
-        )
-      },
     }),
 
     spawnBackgroundQuoterRef: spawnChild("backgroundQuoterActor", {
@@ -210,15 +201,23 @@ export const withdrawUIMachine = setup({
     sendToBackgroundQuoterRefNewQuoteInput: sendTo(
       "backgroundQuoterRef",
       ({ context }): BackgroundQuoterEvents => {
-        const withdrawalSpec = context.withdrawalSpec
+        const preparationOutput = context.preparationOutput
 
-        if (withdrawalSpec == null || withdrawalSpec.swapParams == null) {
+        if (
+          preparationOutput == null ||
+          preparationOutput.tag === "err" ||
+          preparationOutput.value.swap == null
+        ) {
           return { type: "PAUSE" }
         }
 
         return {
           type: "NEW_QUOTE_INPUT",
-          params: withdrawalSpec.swapParams,
+          params: {
+            ...preparationOutput.value.swap.swapParams,
+            balances:
+              context.depositedBalanceRef.getSnapshot().context.balances,
+          },
         }
       }
     ),
@@ -277,37 +276,8 @@ export const withdrawUIMachine = setup({
     fetchPOABridgeInfo: sendTo("poaBridgeInfoRef", { type: "FETCH" }),
   },
   guards: {
-    satisfiesWithdrawalSpec: ({ context }) => {
-      if (context.withdrawalSpec == null) return false
-
-      let isValid = true
-
-      const swapRequired = context.withdrawalSpec.swapParams != null
-      if (swapRequired) {
-        isValid =
-          isValid &&
-          context.quote != null &&
-          !isAggregatedQuoteEmpty(context.quote)
-      }
-
-      const nep141StorageRequired =
-        context.withdrawalSpec.nep141StorageAcquireParams != null
-      if (nep141StorageRequired) {
-        isValid = isValid && context.nep141StorageQuote != null
-      }
-
-      return isValid
-    },
-    isSwapNotNeeded: ({ context }) => {
-      assert(context.withdrawalSpec != null, "withdrawalSpec is null")
-      return context.withdrawalSpec.swapParams == null
-    },
     isTrue: (_, value: boolean) => value,
     isFalse: (_, value: boolean) => !value,
-    isBalanceReady: ({ context }) => {
-      const snapshot = context.depositedBalanceRef.getSnapshot()
-      return Object.keys(snapshot.context.balances).length > 0
-    },
 
     isBalanceSufficientForQuote: (
       _,
@@ -352,30 +322,6 @@ export const withdrawUIMachine = setup({
       return formContext.parsedAmount <= totalBalance
     },
 
-    isBelowMinWithdrawal: ({ context }) => {
-      const formContext = context.withdrawFormRef.getSnapshot().context
-      const poaBridgeInfo = getPOABridgeInfo(
-        context.poaBridgeInfoRef.getSnapshot(),
-        formContext.tokenOut
-      )
-      assert(poaBridgeInfo != null, "poaBridgeInfo is null")
-      const minAmount = poaBridgeInfo.minWithdrawal
-
-      const withdrawalSpec = context.withdrawalSpec
-      assert(withdrawalSpec != null, "withdrawalSpec is null")
-
-      const totalAmountOut = calcTotalAmountOut(
-        context.quote,
-        withdrawalSpec.directWithdrawalAmount
-      )
-
-      return totalAmountOut < minAmount
-    },
-
-    isNEP141StorageFetched: ({ context }) => {
-      return context.nep141StorageOutput?.tag === "ok"
-    },
-
     isWithdrawParamsComplete: ({ context }) => {
       const formContext = context.withdrawFormRef.getSnapshot().context
       return (
@@ -386,9 +332,6 @@ export const withdrawUIMachine = setup({
     isPreparationOk: ({ context }) => {
       return context.preparationOutput?.tag === "ok"
     },
-    isPreparationOutputSet: ({ context }) => {
-      return context.preparationOutput != null
-    },
 
     isQuoteNotEmpty: (_, quote: AggregatedQuote) =>
       !isAggregatedQuoteEmpty(quote),
@@ -396,7 +339,7 @@ export const withdrawUIMachine = setup({
     isOk: (_, a: { tag: "err" | "ok" }) => a.tag === "ok",
   },
 }).createMachine({
-  /** @xstate-layout N4IgpgJg5mDOIC5QHcCWAXAFhATgQ2QFoBXVAYgEkA5AFQFFaB9AZTppoBk6ARAbQAYAuolAAHAPawMqcQDsRIAB6JCAVlUAWAHQAOAOwA2AEwBOEwf4BGfUYA0IAJ4q9ey1oN71rjZaMBmHT8jAF9g+zQsXAIScg4AeQBxagFhJBAJKXQZeTTlBA8tSxMrAwMTP0t+Iw0reycEQhc-LSMjD1V+Pz9VSwMNHVDwjGx8IlIyeIS4gFUaFIUM6TkFPMIjX10NdZ0NPXW9vz665z1m1vbO7t7+wZAIkejSLUhpWSgyCDkwLVh0PHRvvcomNUM8IK8oPM0ossstcogNF0tHoTKo9p5+qpAh5jg1rM0zJZdusfHodJY9LcgaMYmCIWQAOoUGgACW4ACUAIIMxgAMTi7IAsloAFRQsSSJY5UCrDTmdx+Ew6KxmAJFU64wiHPRaXa7Pz8YpBSxU4bA2kvLJvMgAIU5HE5VAAwnRGE6WY6EjxxelJbDpUoVESzp0TJYOvp+GVypqAvwtFG-BoykYdIFwyEwnczTSnpbUNa7Q7na73Z7vZZUhLMtkVoh-AmzKoDX1+DoTIY2prrG4An0Anpkx2iQZTZFc6D89amayOdy+QLBXyKHQONxmG6PVQvXwhAs-bX4Q0Om5NFUkwFDmjAt2jKpdcYijpVBZPM-M0Nx49J+Cre8qHQPIAIrTHE9A+jCh4ykGUYmFohz8D0YZyjoqYGJqphwVibbNr0BiWBSGgaGODwgnSf5aKgEAADZgGQsDEAARgAthgEEHnC0ENGSRgJuoNT8FYRj8P0GixhsabkgY+jFESYaUlm1LfuRBZQFoog4GAoh4Pg-ofF8Px-ACWhKWRU5qRpWk6f82TsTWnGBtxd7uK45TSWSLgGKomryh4vjlFU5JFCaik5sp5nqZp2m6dkkVgIwYCKGAADGxD+owmkAI6kJpzFgLI6CwPpsjfL8-yAmFZm-qpcXRTZchxQlSWpelWU5WAeUFbAdlSnWx6Dsicq7JoqqpmJjiIARBqFARIlBaopghZ+pEWtVby1dZ-qNYlKVpdkGVgNlqC5flhXFaVRkVV+VUQhtMUNZZTW7a1h3tZ1hW8JW+72QGqxdDqbZJlYBE1B0431FN8YEZU-QEQtYYkeaeZrRZUWbbFj07S1+1tcdHWnUVnwlYZ5UmZVq23ZZdVbZjzV7XIB1HSdXW8EYVa+j9fVat0CY7HsZ6CYYRK4r4-SFFGRh6FGvQiViiMTip61U+jD2aU92MM7jzOFVojF4NReCyMlgJ4BCjAAGbiDgjB6wbRt0UWjoupu5a7uzkEOaspjNLsZRYgEGgvsYuI7PeZT8Ci6x+Ci57y+FKN3fVsjbXTL1M-jXW6-rhvG5RNF0T1-pc4HOpEa0gdGqmPS4sY2jJqmrTtqcEcDKF10UxRyv3cntPPTjr14+9sBZ3budUbRZCfe7HG-Sokv3oDSpopcImWDXZS6vogciYqxSIXHN2d2j3cp33msD9rw8laIRKWIwvxW3gMA29n9taBAYAAjgrGyKpjNvQTc6lFZAADdxAAGsrorWRpTY+SdT4a1kP-QeBMtDX1vvfdAj9n62xzt8D+X8f5-y1hnQqCACxgOSknFIhcoKOUIDsbQ6oXBg3RCiXE-NdQmFJARVwVhyQHw7jVLu8Csb0yQSQoeQCyrGVMkIpWcCtpiLTgAlme5oQzz6uGHUHYvBNnbDoDw4NJrly0D0QSJhvbBlUIImBR8rIn2Uf3dOUiiYXVJnIuxwjFGxScefFxBMp7fV6keIkdchyuHWIaRU3QRbQ3FuYCoZJFQ+D8LYn8sCHGiNTs41RZ03Ek1keTLxCislKJyf4vJ3U2bBKLqE+Uhi0zCWYdYMkItBIGF0Icck5gdiVENOkxWqMym+IqRIi+pDh6wGQHgUQjBsriGMuPOiAFgKgXAuo6sISuKECKPeboEdo5FGTFeEWfQAaB00J4fCpxPCDIiiI8pZ9xkBMztM2Z8ziCLO+MsyemyObbPoesXi3QsR7FTFGU4a8JoIHDJYloRzdhpm3kEe5CdHmjOecgy+uscBUWfgWS2WhqLiDwOCa0BSKEQKgUjDJ9jqaYsQdiyZuL8XxUJeIYlpLyVQHIaA8QVD-Q0P+R7We3E2zwWjkhfwUs5Qiz2PGHoWxEK8M0OoNFmSGUNT8S8qprLoDstkESklZLVJkDADgHAVt1IG3QJbb+ZN24lOGVq5OOrmVD31QSo1nKTU8r5ZQ6hQhaGe2cBHFyVRgq+Gjv4eVUstB71UEqaGFIdgavsYQDFcg-nT05keNYfQEyDmfKiQSsFqi4n8J0iOLc+gUgjmUNJbdoF0u8WATNPjs1BI0XmnZuw3CWNQqUckWxeGVsOEWiOrgDAGisFiVuy1aU-CYqxdAf4gFUsgT8GZoh2RgHNiGsVFh7zlBGvWuUlj0IwoYW4KM8MjQvj2EqQZDEWIYHXZS-lW73m7v3d2rZdSuJYjgpYIIbZEIvkNL4EO95DDSW6JLbhphmwvpXe+s1FqrU4Btf8e1zFt2zL3QekVmijx9E6VLMoLhJaVHxCLbhuok1SV6HsreqG31rrNasxgIEwJ0EPX1GdUMOhklHZoVCxiGjdMGlYUkHZgWhCzLIcQH94BpE8agWpdDVgEX0LoTCrhQM9FMHoTUxh7zVAqNHKMqE7xNsXQrcyWnQ14lA3BVCZhDNXBM5qZMC9uFS2VFUQWS1sxOtbetZZzmxWNFAwmcM8HG3Nj8N2VwCbEUdhRJ4fi6a22uui1zSoYZ9OeamsZjsuIKi8TknsFMBoXAmFy6U11CDxEeoJgV-NHZ4zVCsIaDsgdj24h8DoBMnRXC3I8FUUczal0PM7T3NW7rJGoNwfbTrOyOj3jLtUJNnQq7QvqFt9Lfs3MUiMU1l1KtFvxWWxMz1a3c4zLNval+o8wAbaBXpoT6goweDDHeDhZJCjcMDsJALWxiKzcc+ihbrWVEoMzo9-BXxPtex6IUVCgUWzFCTXYGF5Q3CNJVJY9EgdLuJxpktsZ7WkevzHvnNHc9TDIkqOZjowkiJeVxEms4TGPB7FA8+Gx0P46auu-D3JiOdboJ8Jg7B8VkdM4aJY3ivWisDcg95GFx2gilH+omYSXkKdZpu+rNrK3M6y7vg-fAOD6f4M-haohbxaeFWVwwga6v+uDi1zz+FfRUQdE6Lz-QJu4e9yZZbmXWkMG26forh379Uc9sBasGOuhEKNJHYEMwIdFSFCOYaQciIkwKQc2L+lEu7uvPd6nwD9CYbNA88OIz-lTMwtA+sdLUttTJd2OXsLLahmU8ZRb+7qCf2fO+R7xU8YyTWH15UQx5wRYnl5qYLYtn53h5Gdqmn0epk7un8ZNxyvWi6GkuSMkXlhJG7X2mXUiEXBNyVJYqHFfD55erwfifbzj8LJLKM717aYqBJi8QL6GIzrL7GBdid7AbuALTqCSypjhgUi74tY156qMR4oGqMAcoe4uBQxKjrDWA4SLRr4iRmLNiaBoEBDPgYE-5YqH5eqGrGrcqqSEEX5PikHKjvhhhr7Fb6BeQHLJj9of5D5zaw575uq-617Dw4Fsr4E+rJ4lQe59D3gRiGBdBbApJXoQz6AnooiWK47ibk6i5f7NZMFR5-4x43xy7x7PyAEfYgEuaEBNglat7eaoiUHba6JTZYgaGMGOJyF6rW7y527xTOGqEuEAagEq67CeFeblba4Qx476aITHoA5JLBHwKm6MBn6uFiqzS6igq57+BKiuCVZmC6i1ZFBdBtjnIi6f7yJqSFFxFuGnB1yRjDQtg6GxguDIgTYWAUitIfiSEw6ZIdoyEe6mDxhKg1Dhyg6BCSbuZ7ZtioRogWCSwSEabLocZ-jK5ojaD4RgbGYzrVzXrg4IppiDjnhhhBBQ6hBAA */
+  /** @xstate-layout N4IgpgJg5mDOIC5QHcCWAXAFhATgQ2QFoBXVAYgEkA5AFQFFaB9AZTppoBk6ARAbQAYAuolAAHAPawMqcQDsRIAB6JCAVlUAWAHQAOAOwA2AEwBOEwf4BGfUYA0IAJ4q9ey1oN71rjZaMBmHT8jAF9g+zQsXAIScg4AeQBxagFhJBAJKXQZeTTlBA8tSxMrAwMTP0t+Iw0reycEQhc-LSMjD1V+Pz9VSwMNHVDwjGx8IlIyeIS4gFUaFIUM6TkFPMIjX10NdZ0NPXW9vz665z1m1vbO7t7+wZAIkejSLUhpWSgyCDkwLVh0PHRvvcomNUM8IK8oPM0ossstcogNEEtJ5LAEioj2jpjg0-PwDMiTKiTHoTDodFZWrcgaMYmCIWQAOoUGgACW4ACUAIIMxgAMTi7IAsloAFRQsSSJY5UCrIwuFpbDRlEzVHQGHSabGEAL8LR4vyI3p6LZtIyqKnDYG0l5ZN5kABCnI4nKoAGE6IxXSyXQkeOL0pLYdKlCp1C0-HoNTsDJZXL4tTq9QYDWUjGSKqoQmE7paaU8bag7Y7nW6PV6fX7LKkJZlsitENVkerTFVyjYAn4tf4dIVdoq1ToiuVzdnqY9QQW7VQ6DyAIrTOL0f0wuvwhqqVxaYppirbiw+BPkpMGoydHRmMx9C2RPMT8G295M1kc7l8gWCvkUOgcbjMT3eqhfT4IQFkDVcZRUap8X4fgal8VRm0qfQtUsTN3A8EwNFUfRVEObo-GvB4QTpB8tFQCAABswDIWBiAAIwAWwwZcwLhCCGkjIw9XUGoYN8WCdgTDYyUHdUSSsDRCT0QirXze9CygLQcDgMB0EYURlIANxkYhYHU5TRDwfAgzIFjazYkMGkwrR+xcAxsLTcwDGxHQuLxCxPBg9oTBk28SIUpSVLUjSwG08RdP0sBDOM7JTKrUDzODWVPGRU4qlRPFNDaZzHEQVykxjXE2hqPZPF88d-LeLQQui-5Ys+WRvkLTTxAAa0BXMKsnRSaqMuq5AQZrxAAY362QUjMqV6waYw9F0YxYLxPR+FOVxsSKXVcVjLDI1ccSsyGG8uvkqrepiuQyDAHAcHEHBqoo-4ADNboYrQx2I7rqoMvqg0G2QWtGoMJpA6FWKSlREzNSwlREpV1CxXKEA2rQtuNDd9FjYoNHK4jaMYjAHw+L4yP+trvlgZA8FEdkwEeyag2mixVC3fDim6U81UsLsVvDSoVT4io5QMHHaTxpj0EJhqmtJ9qfkp6nad4eLQcS6bsJMQogn4cl1AsQk7ERwhJMKPiyWhk1oYOnMjtx+jxcJq6bru0QHvQZ6cFeimqZpumQZrKa1z6fFlrEg1EX8LnEdwmz1QjM8XHPFURaeMWCYUshpznBclz9gNVcDtMWlPUkOjVAITC1XY5tMYp+FwmxygI25ZHECA4AUd6YgSgP2MIfQezrzQYIpASNC1ZM5o0PtcUF4kk9HTqPpOqBu4Ztc+9xbih7409+jHw24b1TCPDxMwyUjbGF5t61l7IyiwFX8DLMaVE9VQ2OynwztDdjNxym8YkJJPA8WTneCEgVYCqUimFCKZ0xqPwsqsSw0NCiJ0CMmDc2FVDj20BJawklCS+A1NJK+REb7gLgWvf2VDn5EL1LsBCPhNDWA8HodaMZkSuWKKieypcBikNkmA0iUsEHgw4gaGy+hYKeFxMmA0CZ5QuFjBYX+NhQE-DtmnN4oi1bGhRoSHY21cKwRyvUbUSJ457BVKoFUyDQihCAA */
   id: "withdraw-ui",
 
   context: ({ input, spawn, self }) => ({
@@ -462,7 +405,6 @@ export const withdrawUIMachine = setup({
         "WITHDRAW_FORM.*": {
           target: "editing",
           actions: [
-            "clearError",
             {
               type: "relayToWithdrawFormRef",
               params: ({ event }) => event,
@@ -475,22 +417,38 @@ export const withdrawUIMachine = setup({
             guard: {
               type: "isBalanceSufficientForQuote",
               params: ({ context }) => {
+                const balances =
+                  context.depositedBalanceRef.getSnapshot().context.balances
+
+                if (
+                  context.preparationOutput == null ||
+                  context.preparationOutput.tag === "err" ||
+                  context.preparationOutput.value.swap == null
+                ) {
+                  return {
+                    balances,
+                    quote: null,
+                  }
+                }
+
                 return {
-                  balances:
-                    context.depositedBalanceRef.getSnapshot().context.balances,
-                  quote: context.quote,
+                  balances,
+                  quote: context.preparationOutput.value.swap.swapQuote,
                 }
               },
             },
             actions: [
-              "updateWithdrawalSpec",
+              {
+                type: "updateSwapParams",
+                params: ({ event }) => ({
+                  balances: event.params.changedBalanceMapping,
+                }),
+              },
               "sendToBackgroundQuoterRefNewQuoteInput",
             ],
           },
-          ".pre-preparation",
+          ".reset_previous_preparation",
         ],
-
-        WITHDRAW_FORM_FIELDS_CHANGED: ".pre-preparation",
 
         NEW_QUOTE: {
           guard: {
@@ -502,6 +460,8 @@ export const withdrawUIMachine = setup({
             params: ({ event }) => event.params.quote,
           },
         },
+
+        WITHDRAW_FORM_FIELDS_CHANGED: ".reset_previous_preparation",
       },
 
       states: {
@@ -509,7 +469,7 @@ export const withdrawUIMachine = setup({
           on: {
             submit: {
               target: "done",
-              guard: and(["satisfiesWithdrawalSpec", "isPreparationOk"]),
+              guard: "isPreparationOk",
               actions: [
                 "clearIntentCreationResult",
                 { type: "setSubmitDeps", params: ({ event }) => event.params },
@@ -518,233 +478,7 @@ export const withdrawUIMachine = setup({
           },
         },
 
-        preparation: {
-          initial: "pre_execution_requirements",
-
-          states: {
-            pre_execution_requirements: {
-              type: "parallel",
-
-              states: {
-                balance: {
-                  initial: "idle",
-                  states: {
-                    waiting_for_balance: {
-                      on: {
-                        BALANCE_CHANGED: {
-                          target: "done",
-                        },
-                      },
-                    },
-
-                    done: {
-                      type: "final",
-                    },
-
-                    idle: {
-                      always: [
-                        {
-                          target: "done",
-                          guard: "isBalanceReady",
-                        },
-                        {
-                          target: "waiting_for_balance",
-                          actions: "sendToDepositedBalanceRefRefresh",
-                        },
-                      ],
-                    },
-                  },
-                },
-
-                nep141_storage_balance: {
-                  initial: "determining_requirements",
-                  states: {
-                    determining_requirements: {
-                      invoke: {
-                        src: "nep141StorageActor",
-
-                        input: ({ context }) => {
-                          const formContext =
-                            context.withdrawFormRef.getSnapshot().context
-
-                          assert(
-                            formContext.parsedRecipient != null,
-                            "parsedRecipient is null"
-                          )
-
-                          return {
-                            token: formContext.tokenOut,
-                            userAccountId: formContext.parsedRecipient,
-                          }
-                        },
-
-                        onDone: {
-                          target: "done",
-
-                          actions: {
-                            type: "setNEP141StorageOutput",
-                            params: ({ event }) => event.output,
-                          },
-                        },
-                      },
-
-                      entry: "clearNEP141StorageOutput",
-                    },
-
-                    done: {
-                      type: "final",
-                    },
-                  },
-                },
-              },
-
-              onDone: [
-                {
-                  target: "preparation_done",
-                  guard: not("isNEP141StorageFetched"),
-                  actions: {
-                    type: "setPreparationOutput",
-                    params: { tag: "err", value: "ERR_NEP141_STORAGE" },
-                  },
-                },
-                {
-                  target: "preparation_done",
-                  guard: not("isBalanceSufficientForAmountIn"),
-                  actions: {
-                    type: "setPreparationOutput",
-                    params: { tag: "err", value: "ERR_BALANCE_INSUFFICIENT" },
-                  },
-                },
-                {
-                  target: "execution_requirements",
-                },
-              ],
-            },
-
-            execution_requirements: {
-              type: "parallel",
-
-              states: {
-                swap_quote: {
-                  initial: "idle",
-                  states: {
-                    done: {
-                      type: "final",
-                    },
-
-                    idle: {
-                      on: {
-                        NEW_QUOTE: {
-                          target: "done",
-
-                          actions: {
-                            type: "setQuote",
-                            params: ({ event }) => event.params.quote,
-                          },
-                        },
-                      },
-
-                      always: {
-                        target: "done",
-                        guard: "isSwapNotNeeded",
-                        reenter: true,
-                      },
-                    },
-                  },
-                },
-
-                poa_bridge_info: {
-                  initial: "loading",
-                  states: {
-                    loading: {
-                      invoke: {
-                        src: "waitPOABridgeInfoActor",
-                        input: ({ context }) => ({
-                          actorRef: context.poaBridgeInfoRef,
-                        }),
-
-                        onDone: {
-                          target: "done",
-                        },
-
-                        onError: {
-                          target: "done",
-                          actions: {
-                            type: "setPreparationOutput",
-                            params: {
-                              tag: "err",
-                              value: "ERR_CANNOT_FETCH_POA_BRIDGE_INFO",
-                            },
-                          },
-                        },
-                      },
-                    },
-
-                    done: {
-                      type: "final",
-                    },
-                  },
-                },
-
-                nep141_storage_quote: {
-                  states: {
-                    done: {
-                      type: "final",
-                    },
-                  },
-
-                  initial: "done",
-                },
-              },
-
-              entry: [
-                "updateWithdrawalSpec",
-                "sendToBackgroundQuoterRefNewQuoteInput",
-              ],
-
-              onDone: [
-                {
-                  target: "preparation_done",
-                  guard: "isPreparationOutputSet",
-                },
-                {
-                  target: "preparation_done",
-                  guard: "isBelowMinWithdrawal",
-                  actions: {
-                    type: "setPreparationOutput",
-                    params: { tag: "err", value: "ERR_AMOUNT_TOO_LOW" },
-                  },
-                },
-                {
-                  target: "preparation_done",
-                  actions: {
-                    type: "setPreparationOutput",
-                    params: { tag: "ok" },
-                  },
-                },
-              ],
-            },
-
-            preparation_done: {
-              type: "final",
-            },
-          },
-
-          onDone: "idle",
-        },
-
-        done: {
-          type: "final",
-        },
-
-        "pre-preparation": {
-          entry: [
-            "clearWithdrawalSpec",
-            "clearQuote",
-            "sendToBackgroundQuoterRefPause",
-            "clearPreparationOutput",
-            "clearNEP141StorageOutput",
-          ],
+        reset_previous_preparation: {
           always: [
             {
               target: "preparation",
@@ -754,6 +488,47 @@ export const withdrawUIMachine = setup({
               target: "idle",
             },
           ],
+
+          entry: ["sendToBackgroundQuoterRefPause", "clearPreparationOutput"],
+        },
+
+        preparation: {
+          invoke: {
+            src: "prepareWithdrawActor",
+            input: ({ context, self }) => {
+              const backgroundQuoteRef:
+                | ActorRefFrom<typeof backgroundQuoterMachine>
+                | undefined = self.getSnapshot().children.backgroundQuoterRef
+              assert(backgroundQuoteRef != null, "backgroundQuoteRef is null")
+
+              return {
+                formValues: context.withdrawFormRef.getSnapshot().context,
+                depositedBalanceRef: context.depositedBalanceRef,
+                poaBridgeInfoRef: context.poaBridgeInfoRef,
+                backgroundQuoteRef: backgroundQuoteRef,
+              }
+            },
+            onDone: {
+              target: "idle",
+              actions: {
+                type: "setPreparationOutput",
+                params: ({ event }) => event.output,
+              },
+            },
+            onError: {
+              target: "idle",
+              actions: {
+                type: "logError",
+                params: ({ event }) => event,
+              },
+            },
+          },
+
+          entry: ["sendToBackgroundQuoterRefPause", "clearPreparationOutput"],
+        },
+
+        done: {
+          type: "final",
         },
       },
 
@@ -769,15 +544,15 @@ export const withdrawUIMachine = setup({
 
         input: ({ context }) => {
           assert(context.submitDeps, "submitDeps is null")
-          assert(context.withdrawalSpec, "withdrawalSpec is null")
 
-          const quote = context.quote
-          if (context.withdrawalSpec.swapParams) {
-            assert(quote, "quote is null")
-          }
+          assert(
+            context.preparationOutput != null &&
+              context.preparationOutput.tag === "ok",
+            "not prepared"
+          )
 
-          const recipient =
-            context.withdrawFormRef.getSnapshot().context.parsedRecipient
+          const formValues = context.withdrawFormRef.getSnapshot().context
+          const recipient = formValues.parsedRecipient
           assert(recipient, "recipient is null")
 
           return {
@@ -786,10 +561,11 @@ export const withdrawUIMachine = setup({
             sendNearTransaction: context.submitDeps.sendNearTransaction,
             intentOperationParams: {
               type: "withdraw",
-              quote,
+              tokenOut: formValues.tokenOut,
+              quote: context.preparationOutput.value.swap?.swapQuote ?? null,
+              nep141Storage: context.preparationOutput.value.nep141Storage,
               directWithdrawalAmount:
-                context.withdrawalSpec.directWithdrawalAmount,
-              tokenOut: context.withdrawalSpec.tokenOut,
+                context.preparationOutput.value.directWithdrawAvailable,
               recipient: recipient,
             },
           }
@@ -825,8 +601,9 @@ export const withdrawUIMachine = setup({
         onError: {
           target: "editing",
 
-          actions: ({ event }) => {
-            console.error(event.error)
+          actions: {
+            type: "logError",
+            params: ({ event }) => event,
           },
         },
       },
@@ -854,146 +631,3 @@ export const withdrawUIMachine = setup({
 
   initial: "editing",
 })
-
-function assert(condition: unknown, msg?: string): asserts condition {
-  if (!condition) {
-    throw new Error(msg)
-  }
-}
-
-interface WithdrawalSpec {
-  swapParams: null | {
-    tokensIn: BaseTokenInfo[]
-    tokenOut: BaseTokenInfo
-    amountIn: bigint
-    balances: Record<BaseTokenInfo["defuseAssetId"], bigint>
-  }
-  nep141StorageAcquireParams: null | {
-    tokenIn: BaseTokenInfo
-    tokenOut: BaseTokenInfo
-    exactAmountOut: bigint
-  }
-  directWithdrawalAmount: bigint
-  tokenOut: BaseTokenInfo
-}
-
-const STORAGE_BALANCE_TOKEN: BaseTokenInfo = {
-  defuseAssetId: "nep141:wrap.near",
-  address: "wrap.near",
-  decimals: 24,
-  icon: "https://assets.coingecko.com/coins/images/10365/standard/near.jpg",
-  chainId: "mainnet",
-  chainIcon: "/static/icons/network/near.svg",
-  chainName: "near",
-  routes: [],
-  symbol: "NEAR",
-  name: "Near",
-}
-
-function getWithdrawalSpec(
-  tokenIn: UnifiedTokenInfo | BaseTokenInfo,
-  tokenOut: BaseTokenInfo,
-  totalAmountIn: bigint,
-  nep141StorageBalanceNeeded: bigint,
-  balances: Record<BaseTokenInfo["defuseAssetId"], bigint>
-): null | WithdrawalSpec {
-  const requiredSwap = getRequiredSwapAmount(
-    tokenIn,
-    tokenOut,
-    totalAmountIn,
-    balances
-  )
-
-  if (!requiredSwap) return null
-
-  return {
-    swapParams: requiredSwap.swapParams,
-    nep141StorageAcquireParams:
-      nep141StorageBalanceNeeded === 0n
-        ? null
-        : {
-            // We sell output token to tiny bit of wNEAR to cover storage
-            tokenIn: tokenOut,
-            tokenOut: STORAGE_BALANCE_TOKEN,
-            exactAmountOut: nep141StorageBalanceNeeded,
-          },
-    directWithdrawalAmount: requiredSwap.directWithdrawalAmount,
-    tokenOut: tokenOut,
-  }
-}
-
-function getRequiredSwapAmount(
-  tokenIn: UnifiedTokenInfo | BaseTokenInfo,
-  tokenOut: BaseTokenInfo,
-  totalAmountIn: bigint,
-  balances: Record<BaseTokenInfo["defuseAssetId"], bigint>
-) {
-  const underlyingTokensIn = isBaseToken(tokenIn)
-    ? [tokenIn]
-    : tokenIn.groupedTokens
-
-  /**
-   * It is crucial to know balances of involved tokens, otherwise we can't
-   * make informed decisions.
-   */
-  if (
-    underlyingTokensIn.some((t) => balances[t.defuseAssetId] == null) ||
-    balances[tokenOut.defuseAssetId] == null
-  ) {
-    return null
-  }
-
-  /**
-   * We want to swap only tokens that are not `tokenOut`.
-   *
-   * For example, user wants to swap USDC to USDC@Solana, we will quote for:
-   * - USDC@Near → USDC@Solana
-   * - USDC@Base → USDC@Solana
-   * - USDC@Ethereum → USDC@Solana
-   * We skip from quote:
-   * - USDC@Solana → USDC@Solana
-   */
-  const tokensIn = underlyingTokensIn.filter(
-    (t) => tokenOut.defuseAssetId !== t.defuseAssetId
-  )
-
-  /**
-   * Some portion of the `tokenOut` balance is already available and doesn’t
-   * require swapping.
-   *
-   * For example, in a swap USDC → USDC@Solana, any existing USDC@Solana
-   * balance is directly counted towards the total output, reducing the amount
-   * we need to quote for.
-   */
-  let swapAmount = totalAmountIn
-  if (underlyingTokensIn.length !== tokensIn.length) {
-    const tokenOutBalance = balances[tokenOut.defuseAssetId]
-    // Help Typescript
-    assert(tokenOutBalance != null, "Token out balance is missing")
-    swapAmount -= min(tokenOutBalance, swapAmount)
-  }
-
-  return {
-    swapParams:
-      swapAmount > 0n
-        ? { tokensIn, tokenOut, amountIn: swapAmount, balances }
-        : null,
-    directWithdrawalAmount: totalAmountIn - swapAmount,
-    tokenOut,
-  }
-}
-
-function min(a: bigint, b: bigint): bigint {
-  return a < b ? a : b
-}
-
-function calcTotalAmountOut(
-  swapQuote: AggregatedQuote | null,
-  directWithdrawalAmount: bigint
-): bigint {
-  if (swapQuote == null) {
-    return directWithdrawalAmount
-  }
-
-  return swapQuote.totalAmountOut + directWithdrawalAmount
-}

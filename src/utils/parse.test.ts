@@ -7,4 +7,6 @@ it("should parse number with decimals", () => {
   expect(() => parseUnits("1..000", 3)).toThrow()
   expect(() => parseUnits("1.,000", 3)).toThrow()
   expect(() => parseUnits("1,,000", 3)).toThrow()
+  expect(() => parseUnits("", 1)).toThrow()
+  expect(() => parseUnits(" ", 1)).toThrow()
 })

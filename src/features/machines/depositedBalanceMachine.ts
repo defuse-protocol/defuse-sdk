@@ -166,6 +166,7 @@ export const depositedBalanceMachine = setup({
               }
             },
             onDone: "idle",
+            // todo: handle error
           },
 
           on: {

@@ -19,7 +19,7 @@ import { useSelector } from "@xstate/react"
 import { providers } from "near-api-js"
 import { Fragment, type ReactNode, useEffect } from "react"
 import { Controller, useForm } from "react-hook-form"
-import type { ActorRefFrom, SnapshotFrom } from "xstate"
+import type { ActorRefFrom } from "xstate"
 import { EmptyIcon } from "../../../../components/EmptyIcon"
 import { Form } from "../../../../components/Form"
 import { FieldComboInput } from "../../../../components/Form/FieldComboInput"
@@ -37,23 +37,22 @@ import type {
 } from "../../../../types/base"
 import type { WithdrawWidgetProps } from "../../../../types/withdraw"
 import { isBaseToken } from "../../../../utils"
-import { assert } from "../../../../utils/assert"
 import { formatTokenValue } from "../../../../utils/format"
 import { parseUnits } from "../../../../utils/parse"
 import { validateAddress } from "../../../../utils/validateAddress"
 import type { intentStatusMachine } from "../../../machines/intentStatusMachine"
 import { getPOABridgeInfo } from "../../../machines/poaBridgeInfoActor"
-import type {
-  Context,
-  withdrawUIMachine,
-} from "../../../machines/withdrawUIMachine"
+import type { PreparationOutput } from "../../../machines/prepareWithdrawActor"
 import {
   balanceSelector,
   renderIntentCreationResult,
 } from "../../../swap/components/SwapForm"
 import { usePublicKeyModalOpener } from "../../../swap/hooks/usePublicKeyModalOpener"
 import { WithdrawUIMachineContext } from "../../WithdrawUIMachineContext"
-import { isLiquidityUnavailable } from "./selectors"
+import {
+  isLiquidityUnavailableSelector,
+  totalAmountReceivedSelector,
+} from "./selectors"
 import styles from "./styles.module.css"
 
 export type WithdrawFormNearValues = {
@@ -72,44 +71,36 @@ export const WithdrawForm = ({
 }: WithdrawFormProps) => {
   const actorRef = WithdrawUIMachineContext.useActorRef()
 
-  const formRef = WithdrawUIMachineContext.useSelector(
-    (state) => state.children.withdrawFormRef
-  )
-  assert(formRef != null, "Form ref must be defined")
-
   const {
     state,
+    formRef,
+    swapRef,
     depositedBalanceRef,
     poaBridgeInfoRef,
     intentCreationResult,
     intentRefs,
-    nep141StorageRequired,
     noLiquidity,
+    totalAmountReceived,
   } = WithdrawUIMachineContext.useSelector((state) => {
     return {
       state,
-      depositedBalanceRef: state.children.depositedBalanceRef,
+      formRef: state.context.withdrawFormRef,
+      swapRef: state.children.swapRef,
+      depositedBalanceRef: state.context.depositedBalanceRef,
       poaBridgeInfoRef: state.context.poaBridgeInfoRef,
       intentCreationResult: state.context.intentCreationResult,
       intentRefs: state.context.intentRefs,
-      nep141StorageRequired:
-        state.context.nep141StorageOutput?.tag === "ok" &&
-        state.context.nep141StorageOutput.value > 0n,
-      noLiquidity: isLiquidityUnavailable(state),
+      noLiquidity: isLiquidityUnavailableSelector(state),
+      totalAmountReceived: totalAmountReceivedSelector(state),
     }
   })
 
-  const swapRef = useSelector(actorRef, (state) => state.children.swapRef)
   const publicKeyVerifierRef = useSelector(swapRef, (state) => {
     if (state) {
       return state.children.publicKeyVerifierRef
     }
   })
   usePublicKeyModalOpener(publicKeyVerifierRef)
-
-  const totalAmountReceived = WithdrawUIMachineContext.useSelector(
-    totalAmountReceivedSelector
-  )
 
   useEffect(() => {
     if (userAddress != null) {
@@ -216,7 +207,7 @@ export const WithdrawForm = ({
       if (name === "amountIn") {
         const amount = value[name] ?? ""
 
-        let parsedAmount = 0n
+        let parsedAmount: bigint | null = null
         try {
           parsedAmount = parseUnits(amount, token.decimals)
         } catch {}
@@ -409,20 +400,6 @@ export const WithdrawForm = ({
                     </Text>
                   </Box>
                 )}
-
-                {nep141StorageRequired && (
-                  <Callout.Root size={"1"} color="red">
-                    <Callout.Icon>
-                      <ExclamationTriangleIcon />
-                    </Callout.Icon>
-                    <Callout.Text>
-                      You need a small amount of this token in the withdrawal
-                      address to complete the transaction. Please send a small
-                      amount to the withdrawal address to proceed. We're working
-                      on a permanent fix.
-                    </Callout.Text>
-                  </Callout.Root>
-                )}
               </Flex>
             </Flex>
 
@@ -548,13 +525,13 @@ function renderMinWithdrawalAmount(
   )
 }
 
-function renderPreparationResult(
-  preparationOutput: Context["preparationOutput"]
-) {
+function renderPreparationResult(preparationOutput: PreparationOutput | null) {
   if (preparationOutput?.tag !== "err") return null
 
   let content: ReactNode = null
-  const val = preparationOutput.value
+  const err = preparationOutput.value
+  const val = err.reason
+
   switch (val) {
     case "ERR_NEP141_STORAGE":
       content = val
@@ -563,8 +540,18 @@ function renderPreparationResult(
       content = "Cannot fetch POA Bridge info"
       break
     case "ERR_BALANCE_INSUFFICIENT":
-    case "ERR_AMOUNT_TOO_LOW":
       // Don't duplicate error messages, this should be handled by input validation
+      break
+    case "ERR_AMOUNT_TOO_LOW":
+      content = `Need ${formatTokenValue(err.minWithdrawalAmount - err.receivedAmount, err.token.decimals)} ${err.token.symbol} more to withdraw`
+      break
+    case "ERR_CANNOT_FETCH_QUOTE":
+    case "ERR_EMPTY_QUOTE":
+      content = "Cannot fetch quote"
+      break
+    case "ERR_BALANCE_FETCH":
+    case "ERR_BALANCE_MISSING":
+      content = "Cannot fetch balance"
       break
     default:
       val satisfies never
@@ -596,18 +583,6 @@ function Intents({
         )
       })}
     </div>
-  )
-}
-
-function totalAmountReceivedSelector(
-  state: SnapshotFrom<typeof withdrawUIMachine>
-): bigint | null {
-  if (state.context.withdrawalSpec == null) {
-    return null
-  }
-  return (
-    (state.context.quote?.totalAmountOut ?? 0n) +
-    state.context.withdrawalSpec.directWithdrawalAmount
   )
 }
 
