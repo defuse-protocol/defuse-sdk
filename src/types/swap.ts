@@ -39,12 +39,27 @@ export type NEP413SignatureData = {
   signedData: NEP413Message
 }
 
+// Message for Solana wallets
+export type SolanaMessage = {
+  message: Uint8Array
+}
+
+export type SolanaSignatureData = {
+  type: "SOLANA"
+  signatureData: Uint8Array
+  signedData: SolanaMessage
+}
+
 export type WalletMessage = {
   ERC191: ERC191Message
   NEP413: NEP413Message
+  SOLANA: SolanaMessage
 }
 
-export type WalletSignatureResult = ERC191SignatureData | NEP413SignatureData
+export type WalletSignatureResult =
+  | ERC191SignatureData
+  | NEP413SignatureData
+  | SolanaSignatureData
 
 export type SwapEvent = {
   type: string

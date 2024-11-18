@@ -44,6 +44,20 @@ describe("makeSwapMessage()", () => {
   ]
 }`,
       },
+      SOLANA: {
+        message: Uint8Array.from(
+          Buffer.from(
+            JSON.stringify({
+              signer_id: "user.near",
+              verifying_contract: "intents.near",
+              deadline: { timestamp: 1000000 },
+              nonce: "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+              intents: [{ intent: "token_diff", diff: { "foo.near": "100" } }],
+            }),
+            "utf-8"
+          )
+        ),
+      },
     })
   })
 
