@@ -17,6 +17,7 @@ export type SupportedChainName =
   | "base"
   | "arbitrum"
   | "bitcoin"
+  | "solana"
 
 export interface FungibleTokenInfo extends Partial<BaseTokenBalance> {
   defuseAssetId: string

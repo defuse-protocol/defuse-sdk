@@ -9,7 +9,7 @@ import {
 } from "../../utils/walletErrorExtractor"
 
 export type SendNearTransaction = (
-  tx: Transaction
+  tx: Transaction["NEAR"]
 ) => Promise<{ txHash: string } | null>
 
 type Input = {
@@ -227,7 +227,7 @@ async function addPublicKeyToContract({
   pubKey: string
   sendNearTransaction: SendNearTransaction
 }): Promise<boolean> {
-  const tx: Transaction = {
+  const tx: Transaction["NEAR"] = {
     receiverId: settings.defuseContractId,
     actions: [
       {

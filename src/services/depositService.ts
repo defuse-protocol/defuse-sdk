@@ -1,5 +1,4 @@
-import { Interface } from "ethers"
-import { type Abi, erc20Abi } from "viem"
+import { type Address, type Hash, encodeFunctionData, erc20Abi } from "viem"
 import { settings } from "../config/settings"
 import {
   getNearNep141MinStorageBalance,
@@ -38,7 +37,7 @@ export function createBatchDepositNearNep141Transaction(
   amount: bigint,
   isStorageDepositRequired: boolean,
   minStorageBalance: bigint
-): Transaction[] {
+): Transaction["NEAR"][] {
   return [
     {
       receiverId: assetAccountId,
@@ -83,7 +82,7 @@ export function createBatchDepositNearNativeTransaction(
   wrapAmount: bigint,
   isWrapNearRequired: boolean,
   minStorageBalance: bigint
-): Transaction[] {
+): Transaction["NEAR"][] {
   return [
     {
       receiverId: assetAccountId,
@@ -119,25 +118,28 @@ export function createBatchDepositNearNativeTransaction(
   ]
 }
 
-export function createDepositEVMERC20Calldata(
+export function createDepositEVMERC20Transaction(
   assetAccountId: string,
   generatedAddress: string,
   amount: bigint
-): { to: string; data: string } {
-  const iface = new Interface(erc20Abi)
-  const data = iface.encodeFunctionData("transfer", [generatedAddress, amount])
+): { to: Address; data: Hash } {
+  const data = encodeFunctionData({
+    abi: erc20Abi,
+    functionName: "transfer",
+    args: [generatedAddress as Address, amount],
+  })
   return {
-    to: assetAccountId,
+    to: assetAccountId as Address,
     data,
   }
 }
 
-export function createDepositEVMNativeCalldata(
+export function createDepositEVMNativeTransaction(
   generatedAddress: string,
   amount: bigint
-): { to: string; value: bigint; data: string } {
+): { to: Address; value: bigint; data: Hash } {
   return {
-    to: generatedAddress,
+    to: generatedAddress as Address,
     value: amount,
     data: "0x",
   }
@@ -253,7 +255,7 @@ export function getAvailableDepositRoutes(
       switch (network) {
         case BlockchainEnum.NEAR:
           return {
-            activeDeposit: false, // TODO: Implement
+            activeDeposit: false,
             passiveDeposit: false,
           }
         case BlockchainEnum.ETHEREUM:
@@ -274,6 +276,25 @@ export function getAvailableDepositRoutes(
       }
     default:
       chainTypeFromWallet satisfies never
+      throw new Error("exhaustive check failed")
+  }
+}
+
+// Use this function to get strong typing for RPC URLs
+export function getWalletRpcUrl(network: BlockchainEnum): string {
+  switch (network) {
+    case BlockchainEnum.NEAR:
+      return settings.rpcUrls.near
+    case BlockchainEnum.ETHEREUM:
+      return settings.rpcUrls.eth
+    case BlockchainEnum.BASE:
+      return settings.rpcUrls.base
+    case BlockchainEnum.ARBITRUM:
+      return settings.rpcUrls.arbitrum
+    case BlockchainEnum.BITCOIN:
+      return settings.rpcUrls.bitcoin
+    default:
+      network satisfies never
       throw new Error("exhaustive check failed")
   }
 }

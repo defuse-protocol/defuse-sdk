@@ -1,3 +1,5 @@
+import type { SupportedChainName } from "./base"
+
 export interface SwapEstimateBotResult {
   bestOut: string | null
   allEstimates?: SwapEstimateProviderResponse[]
@@ -30,5 +32,8 @@ export interface Settings {
   maxQuoteMinDeadlineMs: number
   queries: {
     staleTime: number
+  }
+  rpcUrls: {
+    [key in SupportedChainName]: string
   }
 }

@@ -1,4 +1,4 @@
-import type { Abi } from "viem"
+import type { Address, Hash } from "viem"
 import type { SwappableToken } from "../types"
 
 export type ChainType = "near" | "evm"
@@ -15,12 +15,13 @@ export type UserInfo = {
 
 export type DepositWidgetProps = UserInfo & {
   tokenList: SwappableToken[]
-  sendTransactionNear: (transactions: Transaction[]) => Promise<string>
-  sendTransactionEVM: (calldata: {
-    to?: string
-    data?: string
-  }) => Promise<string | null>
-  rpcUrl?: string
+  sendTransactionNear: (tx: Transaction["NEAR"][]) => Promise<string | null>
+  sendTransactionEVM: (tx: Transaction["EVM"]) => Promise<Hash | null>
+}
+
+export type Transaction = {
+  NEAR: SendTransactionNearParams
+  EVM: SendTransactionEVMParams
 }
 
 export type DepositEvent = {
@@ -41,9 +42,15 @@ export interface FunctionCallAction {
 
 export type Action = FunctionCallAction
 
-export interface Transaction {
+export interface SendTransactionNearParams {
   receiverId: string
   actions: Array<Action>
+}
+
+export interface SendTransactionEVMParams {
+  to: Address
+  data: Hash
+  value?: bigint
 }
 
 export interface BaseAssetInfo {
@@ -54,5 +61,5 @@ export interface BaseAssetInfo {
 }
 
 export type DepositSnapshot = {
-  txHash: string
+  txHash: Hash
 }

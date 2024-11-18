@@ -1,8 +1,7 @@
 import { createActorContext } from "@xstate/react"
 import type { PropsWithChildren, ReactElement, ReactNode } from "react"
 import { useFormContext } from "react-hook-form"
-import { depositEVMMachine } from "src/features/machines/depositEVMMachine"
-import type { Abi, SendTransactionParameters } from "viem"
+import type { Hash } from "viem"
 import {
   type Actor,
   type ActorOptions,
@@ -10,12 +9,13 @@ import {
   fromPromise,
 } from "xstate"
 import { settings } from "../../../config/settings"
+import { depositEVMMachine } from "../../../features/machines/depositEVMMachine"
 import {
   checkNearTransactionValidity,
   createBatchDepositNearNativeTransaction,
   createBatchDepositNearNep141Transaction,
-  createDepositEVMERC20Calldata,
-  createDepositEVMNativeCalldata,
+  createDepositEVMERC20Transaction,
+  createDepositEVMNativeTransaction,
   generateDepositAddress,
   getMinimumStorageBalance,
   isStorageDepositRequired,
@@ -56,11 +56,8 @@ export const DepositUIMachineContext: DepositUIMachineContextInterface =
 
 interface DepositUIMachineProviderProps extends PropsWithChildren {
   tokenList: SwappableToken[]
-  sendTransactionNear: (transactions: Transaction[]) => Promise<string | null>
-  sendTransactionEVM: (calldata: {
-    to?: string
-    data?: string
-  }) => Promise<string | null>
+  sendTransactionNear: (tx: Transaction["NEAR"][]) => Promise<string | null>
+  sendTransactionEVM: (tx: Transaction["EVM"]) => Promise<Hash | null>
 }
 
 export function DepositUIMachineProvider({
@@ -92,14 +89,14 @@ export function DepositUIMachineProvider({
 
                 assert(tokenAddress != null, "Token address is not defined")
 
-                let transactions: Transaction[] = []
+                let tx: Transaction["NEAR"][] = []
 
                 if (tokenAddress === "wrap.near") {
                   const isWrapNearRequired =
                     Number(amount) > Number(balance || 0n)
                   const minStorageBalance =
                     await getMinimumStorageBalance(tokenAddress)
-                  transactions = createBatchDepositNearNativeTransaction(
+                  tx = createBatchDepositNearNativeTransaction(
                     tokenAddress,
                     amount,
                     amount - balance,
@@ -117,7 +114,7 @@ export function DepositUIMachineProvider({
                     minStorageBalance =
                       await getMinimumStorageBalance(tokenAddress)
                   }
-                  transactions = createBatchDepositNearNep141Transaction(
+                  tx = createBatchDepositNearNep141Transaction(
                     tokenAddress,
                     amount,
                     isStorageRequired,
@@ -125,7 +122,7 @@ export function DepositUIMachineProvider({
                   )
                 }
 
-                const txHash = await sendTransactionNear(transactions)
+                const txHash = await sendTransactionNear(tx)
                 assert(txHash != null, "Transaction failed")
                 return txHash
               }),
@@ -134,6 +131,7 @@ export function DepositUIMachineProvider({
                 assert(txHash != null, "Tx hash is not defined")
                 assert(accountId != null, "Account ID is not defined")
                 assert(amount != null, "Amount is not defined")
+
                 const isValid = await checkNearTransactionValidity(
                   txHash,
                   accountId,
@@ -155,11 +153,12 @@ export function DepositUIMachineProvider({
                 const { accountId, chain } = input
                 assert(accountId != null, "Account ID is not defined")
                 assert(chain != null, "Chain is not defined")
+
                 const address = await generateDepositAddress(
                   userAddressToDefuseUserId(accountId),
                   chain
                 )
-                console.log("generated address", address)
+
                 return address
               }),
             },
@@ -171,23 +170,22 @@ export function DepositUIMachineProvider({
 
                 assert(depositAddress != null, "Deposit address is not defined")
 
-                let calldata: { to?: string; data?: string } = {}
+                let tx: Transaction["EVM"] | null = null
                 if (isUnifiedToken(asset) && asset.unifiedAssetId === "eth") {
-                  calldata = createDepositEVMNativeCalldata(
-                    depositAddress,
-                    amount
-                  )
+                  tx = createDepositEVMNativeTransaction(depositAddress, amount)
                 } else {
-                  calldata = createDepositEVMERC20Calldata(
+                  tx = createDepositEVMERC20Transaction(
                     tokenAddress,
                     depositAddress,
                     amount
                   )
                 }
+                assert(tx != null, "Transaction is not defined")
 
-                const txHash = await sendTransactionEVM(calldata)
+                const txHash = await sendTransactionEVM(tx)
+                assert(txHash != null, "Transaction failed")
 
-                return txHash ?? "unknown"
+                return txHash
               }),
             },
             guards: {

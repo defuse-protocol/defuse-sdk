@@ -56,7 +56,9 @@ export type Context = {
   submitDeps: {
     userAddress: string
     nearClient: providers.Provider
-    sendNearTransaction: (tx: Transaction) => Promise<{ txHash: string } | null>
+    sendNearTransaction: (
+      tx: Transaction["NEAR"]
+    ) => Promise<{ txHash: string } | null>
   } | null
   preparationOutput: PreparationOutput | null
 }

@@ -1,4 +1,5 @@
 import type { Settings } from "../types"
+import { SupportedChainName } from "../types/base"
 
 export let settings: Settings = {
   providerIds: [],
@@ -21,6 +22,18 @@ export let settings: Settings = {
   maxQuoteMinDeadlineMs: 600_000,
   queries: {
     staleTime: 2000 * 60, // 2 minutes
+  },
+  /**
+   * RPC URLs for different blockchains.
+   * Ensure these URLs are valid and accessible.
+   */
+  rpcUrls: {
+    near: "https://nearrpc.aurora.dev",
+    eth: "https://cloudflare-eth.com",
+    base: "https://mainnet.base.org",
+    arbitrum: "https://arb1.arbitrum.io/rpc",
+    bitcoin: "https://mainnet.bitcoin.org",
+    solana: "https://api.mainnet-beta.solana.com",
   },
 }
 
