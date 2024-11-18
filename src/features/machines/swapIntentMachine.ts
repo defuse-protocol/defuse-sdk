@@ -1,5 +1,7 @@
 import { secp256k1 } from "@noble/curves/secp256k1"
+import { base58 } from "@scure/base"
 import type { providers } from "near-api-js"
+import { sign } from "tweetnacl"
 import { verifyMessage as verifyMessageViem } from "viem"
 import { assign, fromPromise, setup } from "xstate"
 import { settings } from "../../config/settings"
@@ -599,6 +601,13 @@ async function verifyWalletSignature(
         message: signature.signedData.message,
         signature: signature.signatureData as "0x${string}",
       })
+    }
+    case "SOLANA": {
+      return sign.detached.verify(
+        signature.signedData.message,
+        signature.signatureData,
+        base58.decode(userAddress)
+      )
     }
     default:
       signatureType satisfies never
