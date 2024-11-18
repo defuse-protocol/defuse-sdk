@@ -1,4 +1,4 @@
-import type { RpcUrl } from "src/utils/defuse"
+import type { SupportedChainName } from "./base"
 
 export interface SwapEstimateBotResult {
   bestOut: string | null
@@ -34,11 +34,6 @@ export interface Settings {
     staleTime: number
   }
   rpcUrls: {
-    near: RpcUrl
-    ethereum: RpcUrl
-    base: RpcUrl
-    arbitrum: RpcUrl
-    bitcoin: RpcUrl
-    solana: RpcUrl
+    [key in SupportedChainName]: string
   }
 }

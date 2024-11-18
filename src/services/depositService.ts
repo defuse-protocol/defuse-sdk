@@ -8,7 +8,7 @@ import { getNearTxSuccessValue } from "../features/machines/getTxMachine"
 import { BlockchainEnum } from "../types"
 import { ChainType } from "../types"
 import type { Transaction } from "../types/deposit"
-import type { DefuseUserId, RpcUrl } from "../utils/defuse"
+import type { DefuseUserId } from "../utils/defuse"
 import { getDepositAddress, getSupportedTokens } from "./poaBridgeClient"
 
 const FT_DEPOSIT_GAS = `30${"0".repeat(12)}` // 30 TGAS
@@ -281,12 +281,12 @@ export function getAvailableDepositRoutes(
 }
 
 // Use this function to get strong typing for RPC URLs
-export function getWalletRpcUrl(network: string): RpcUrl {
+export function getWalletRpcUrl(network: BlockchainEnum): string {
   switch (network) {
     case BlockchainEnum.NEAR:
       return settings.rpcUrls.near
     case BlockchainEnum.ETHEREUM:
-      return settings.rpcUrls.ethereum
+      return settings.rpcUrls.eth
     case BlockchainEnum.BASE:
       return settings.rpcUrls.base
     case BlockchainEnum.ARBITRUM:
@@ -294,6 +294,7 @@ export function getWalletRpcUrl(network: string): RpcUrl {
     case BlockchainEnum.BITCOIN:
       return settings.rpcUrls.bitcoin
     default:
+      network satisfies never
       throw new Error("exhaustive check failed")
   }
 }

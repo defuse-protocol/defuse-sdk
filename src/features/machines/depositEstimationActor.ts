@@ -2,10 +2,7 @@ import {
   createDepositEVMERC20Transaction,
   getWalletRpcUrl,
 } from "src/services/depositService"
-import {
-  estimateEVMErc20TransferCost,
-  estimateEVMEtnTransferCost,
-} from "src/services/estimateService"
+import { estimateEVMTransferCost } from "src/services/estimateService"
 import { BlockchainEnum, type SwappableToken } from "src/types"
 import { isBaseToken, isUnifiedToken } from "src/utils"
 import { reverseAssetNetworkAdapter } from "src/utils/adapters"
@@ -54,7 +51,7 @@ export const depositEstimateMaxValueActor = fromPromise(
           return 0n
         }
         if (isUnifiedToken(token) && token.unifiedAssetId === "eth") {
-          const gasCost = await estimateEVMEtnTransferCost({
+          const gasCost = await estimateEVMTransferCost({
             rpcUrl: getWalletRpcUrl(network),
             from: userAddress as Address,
             to: generateAddress as Address,
@@ -65,7 +62,7 @@ export const depositEstimateMaxValueActor = fromPromise(
         }
         // Wrappping to braces {} in order to create block scope for gasCost variable
         {
-          const gasCost = await estimateEVMErc20TransferCost({
+          const gasCost = await estimateEVMTransferCost({
             rpcUrl: getWalletRpcUrl(network),
             from: userAddress as Address,
             to: tokenAddress as Address,

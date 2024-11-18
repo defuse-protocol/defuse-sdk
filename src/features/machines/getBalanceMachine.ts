@@ -7,7 +7,6 @@ import {
   getNearNep141StorageBalanceOf,
 } from "../../services/nearHttpClient"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../types/base"
-import type { RpcUrl } from "../../utils/defuse"
 import { Semaphore } from "../../utils/semaphore"
 import { isBaseToken, isUnifiedToken } from "../../utils/token"
 export const RESERVED_NEAR_BALANCE = 1n * 10n ** 24n // 1 NEAR reserved for transaction fees and storage, using yoctoNEAR precision
@@ -169,7 +168,7 @@ export const getEvmNativeBalance = async ({
   rpcUrl,
 }: {
   userAddress: Address
-  rpcUrl: RpcUrl
+  rpcUrl: string
 }): Promise<bigint | null> => {
   try {
     const client = createPublicClient({
@@ -189,7 +188,7 @@ export const getEvmErc20Balance = async ({
 }: {
   tokenAddress: Address
   userAddress: Address
-  rpcUrl: RpcUrl
+  rpcUrl: string
 }): Promise<bigint | null> => {
   try {
     const client = createPublicClient({

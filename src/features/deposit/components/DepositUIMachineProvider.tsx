@@ -56,7 +56,7 @@ export const DepositUIMachineContext: DepositUIMachineContextInterface =
 
 interface DepositUIMachineProviderProps extends PropsWithChildren {
   tokenList: SwappableToken[]
-  sendTransactionNear: (tx: Transaction["NEAR"][]) => Promise<Hash | null>
+  sendTransactionNear: (tx: Transaction["NEAR"][]) => Promise<string | null>
   sendTransactionEVM: (tx: Transaction["EVM"]) => Promise<Hash | null>
 }
 

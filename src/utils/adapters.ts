@@ -1,4 +1,4 @@
-import { BlockchainEnum } from "src/types"
+import { BlockchainEnum, type SupportedChainName } from "src/types"
 
 export const assetNetworkAdapter: Record<string, BlockchainEnum> = {
   near: BlockchainEnum.NEAR,
@@ -8,7 +8,10 @@ export const assetNetworkAdapter: Record<string, BlockchainEnum> = {
   bitcoin: BlockchainEnum.BITCOIN,
 }
 
-export const reverseAssetNetworkAdapter: Record<BlockchainEnum, string> = {
+export const reverseAssetNetworkAdapter: Record<
+  BlockchainEnum,
+  SupportedChainName
+> = {
   [BlockchainEnum.NEAR]: "near",
   [BlockchainEnum.ETHEREUM]: "eth",
   [BlockchainEnum.BASE]: "base",

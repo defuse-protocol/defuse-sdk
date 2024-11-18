@@ -1,5 +1,5 @@
-import type { RpcUrl } from "src/utils/defuse"
 import type { Settings } from "../types"
+import { SupportedChainName } from "../types/base"
 
 export let settings: Settings = {
   providerIds: [],
@@ -28,12 +28,12 @@ export let settings: Settings = {
    * Ensure these URLs are valid and accessible.
    */
   rpcUrls: {
-    near: "https://nearrpc.aurora.dev" as RpcUrl,
-    ethereum: "https://cloudflare-eth.com" as RpcUrl,
-    base: "https://mainnet.base.org" as RpcUrl,
-    arbitrum: "https://arb1.arbitrum.io/rpc" as RpcUrl,
-    bitcoin: "https://mainnet.bitcoin.org" as RpcUrl,
-    solana: "https://api.mainnet-beta.solana.com" as RpcUrl,
+    near: "https://nearrpc.aurora.dev",
+    eth: "https://cloudflare-eth.com",
+    base: "https://mainnet.base.org",
+    arbitrum: "https://arb1.arbitrum.io/rpc",
+    bitcoin: "https://mainnet.bitcoin.org",
+    solana: "https://api.mainnet-beta.solana.com",
   },
 }
 

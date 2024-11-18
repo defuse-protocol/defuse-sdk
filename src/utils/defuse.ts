@@ -12,8 +12,3 @@ export type DefuseUserId = string & { __brand: "DefuseAccountId" }
 export function userAddressToDefuseUserId(userAddress: string): DefuseUserId {
   return userAddress.toLowerCase() as DefuseUserId
 }
-
-// Branding a string type with a unique symbol to prevent accidental misuse.
-// Used in settings.ts to ensure RPC URLs are properly typed and validated.
-// See settings.ts for example usage with different blockchain networks.
-export type RpcUrl = string & { __brand: "RpcUrl" }
