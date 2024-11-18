@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest"
 import type {
   ERC191SignatureData,
   NEP413SignatureData,
+  SolanaSignatureData,
   WalletMessage,
 } from "../types"
 import { prepareSwapSignedData } from "./prepareBroadcastRequest"
@@ -18,6 +19,11 @@ describe("prepareSwapSignedData()", () => {
     },
     ERC191: {
       message: JSON.stringify({ foo: "bar" }),
+    },
+    SOLANA: {
+      message: Uint8Array.from(
+        Buffer.from(JSON.stringify({ foo: "bar" }), "utf8")
+      ),
     },
   }
 
@@ -40,6 +46,16 @@ describe("prepareSwapSignedData()", () => {
       type: "ERC191",
       signatureData: "0xdeadbeef1c",
       signedData: walletMessage.ERC191,
+    }
+
+    expect(prepareSwapSignedData(signature)).toMatchSnapshot()
+  })
+
+  it("should return the correct signed data for a Solana signature", () => {
+    const signature: SolanaSignatureData = {
+      type: "SOLANA",
+      signatureData: Buffer.from("deadbeef1c", "hex"),
+      signedData: walletMessage.SOLANA,
     }
 
     expect(prepareSwapSignedData(signature)).toMatchSnapshot()

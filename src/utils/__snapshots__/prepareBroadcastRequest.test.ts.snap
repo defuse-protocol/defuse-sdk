@@ -14,6 +14,14 @@ exports[`prepareSwapSignedData() > should return the correct signed data for a N
 }
 `;
 
+exports[`prepareSwapSignedData() > should return the correct signed data for a Solana signature 1`] = `
+{
+  "payload": "{"foo":"bar"}",
+  "signature": "ed25519:S88bG8B",
+  "standard": "solana",
+}
+`;
+
 exports[`prepareSwapSignedData() > should return the correct signed data for an ERC191 signature 1`] = `
 {
   "payload": "{"foo":"bar"}",

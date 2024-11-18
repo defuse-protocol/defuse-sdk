@@ -1,4 +1,4 @@
-import { base58, base64 } from "@scure/base"
+import { base58, base64, hex } from "@scure/base"
 import { hexToBytes } from "viem"
 import type {
   Params,
@@ -9,7 +9,8 @@ import type { WalletSignatureResult } from "../types"
 export function prepareSwapSignedData(
   signature: WalletSignatureResult
 ): Params<PublishIntentRequest>["signed_data"] {
-  switch (signature.type) {
+  const signatureType = signature.type
+  switch (signatureType) {
     case "NEP413": {
       return {
         standard: "nep413",
@@ -30,7 +31,15 @@ export function prepareSwapSignedData(
         signature: transformERC191Signature(signature.signatureData),
       }
     }
+    case "SOLANA":
+      return {
+        // @ts-expect-error: `solana` is not a valid standard yet
+        standard: "solana",
+        payload: new TextDecoder().decode(signature.signedData.message),
+        signature: transformSolanaSignature(signature.signatureData),
+      }
     default:
+      signatureType satisfies never
       throw new Error("exhaustive check failed")
   }
 }
@@ -66,4 +75,8 @@ function toRecoveryBit(yParityOrV: number) {
   if (yParityOrV === 27) return 0
   if (yParityOrV === 28) return 1
   throw new Error("Invalid yParityOrV value")
+}
+
+function transformSolanaSignature(signature: Uint8Array) {
+  return `ed25519:${base58.encode(signature)}`
 }
