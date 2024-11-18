@@ -58,7 +58,7 @@ import styles from "./styles.module.css"
 export type WithdrawFormNearValues = {
   amountIn: string
   recipient: string
-  blockchain: string
+  blockchain: SupportedChainName
 }
 
 type WithdrawFormProps = WithdrawWidgetProps
@@ -450,7 +450,11 @@ export const WithdrawForm = ({
   )
 }
 
-const allBlockchains = [
+const allBlockchains: Array<{
+  label: string
+  icon: ReactNode
+  value: SupportedChainName
+}> = [
   {
     label: "Near",
     icon: (
@@ -459,7 +463,7 @@ const allBlockchains = [
         chainName="Near"
       />
     ),
-    value: "near" as const,
+    value: "near",
   },
   {
     label: "Ethereum",
@@ -469,7 +473,7 @@ const allBlockchains = [
         chainName="Ethereum"
       />
     ),
-    value: "eth" as const,
+    value: "eth",
   },
   {
     label: "Base",
@@ -479,7 +483,7 @@ const allBlockchains = [
         chainName="Base"
       />
     ),
-    value: "base" as const,
+    value: "base",
   },
   {
     label: "Arbitrum",
@@ -489,7 +493,7 @@ const allBlockchains = [
         chainName="Arbitrum"
       />
     ),
-    value: "arbitrum" as const,
+    value: "arbitrum",
   },
   {
     label: "Bitcoin",
@@ -499,7 +503,17 @@ const allBlockchains = [
         chainName="Bitcoin"
       />
     ),
-    value: "bitcoin" as const,
+    value: "bitcoin",
+  },
+  {
+    label: "Solana",
+    icon: (
+      <NetworkIcon
+        chainIcon="/static/icons/network/solana.svg"
+        chainName="Solana"
+      />
+    ),
+    value: "solana",
   },
 ]
 
@@ -598,6 +612,7 @@ function chainTypeSatisfiesChainName(
     case chainType === ChainType.EVM && chainName === "eth":
     case chainType === ChainType.EVM && chainName === "arbitrum":
     case chainType === ChainType.EVM && chainName === "base":
+    case chainType === ChainType.Solana && chainType === "solana":
       return true
   }
 
