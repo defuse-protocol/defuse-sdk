@@ -126,7 +126,7 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
     if (modalType === ModalType.MODAL_SELECT_ASSETS && fieldName && token) {
       depositUIActorRef.send({
         type: "INPUT",
-        params: { token, network: undefined },
+        params: { token, network: null },
       })
       // We have to clean up network because it could be not a valid value for the previous token
       setValue("network", null)

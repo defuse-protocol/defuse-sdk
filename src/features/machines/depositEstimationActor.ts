@@ -34,7 +34,7 @@ export const depositEstimateMaxValueActor = fromPromise(
       balance: bigint
       nativeBalance: bigint
       token: SwappableToken
-      generateAddress: string
+      generateAddress: string | null
     }
   }) => {
     switch (network) {
@@ -48,7 +48,8 @@ export const depositEstimateMaxValueActor = fromPromise(
       case BlockchainEnum.BASE:
       case BlockchainEnum.ARBITRUM:
         if (
-          !validateAddress(userAddress, reverseAssetNetworkAdapter[network])
+          !validateAddress(userAddress, reverseAssetNetworkAdapter[network]) ||
+          generateAddress == null
         ) {
           return 0n
         }

@@ -209,10 +209,10 @@ export const depositUIMachine = setup({
   },
   guards: {
     isTokenValid: ({ context }) => {
-      return context.formValues.token != null
+      return !!context.formValues.token
     },
     isNetworkValid: ({ context }) => {
-      return context.formValues.network != null
+      return !!context.formValues.network
     },
     isLoggedIn: ({ context }) => {
       return !!context.userAddress
@@ -296,14 +296,19 @@ export const depositUIMachine = setup({
     },
 
     LOGOUT: {
-      actions: assign({
-        userAddress: () => "",
-        formValues: {
-          token: null,
-          network: null,
-          amount: "",
-        },
-      }),
+      actions: [
+        "clearDepositResult",
+        "clearDepositEVMResult",
+        "clearBalances",
+        assign({
+          userAddress: () => "",
+          formValues: {
+            token: null,
+            network: null,
+            amount: "",
+          },
+        }),
+      ],
     },
   },
 
@@ -402,10 +407,15 @@ export const depositUIMachine = setup({
 
                   states: {
                     idle: {
-                      always: {
-                        target: "execution_generating",
-                        guard: "isDepositNotNearRelevant",
-                      },
+                      always: [
+                        {
+                          target: "execution_generating",
+                          guard: "isDepositNotNearRelevant",
+                        },
+                        {
+                          target: "done",
+                        },
+                      ],
                     },
                     execution_generating: {
                       invoke: {
@@ -445,72 +455,60 @@ export const depositUIMachine = setup({
                 },
               },
 
-              onDone: [
-                {
-                  target: "direct_deposit_requirements",
-                  guard: "isDepositNotNearRelevant",
-                },
-                {
-                  target: "preparation_done",
-                },
-              ],
+              onDone: "direct_deposit_requirements",
             },
 
             direct_deposit_requirements: {
-              initial: "amount",
+              initial: "idle",
+
               states: {
+                idle: {
+                  always: [
+                    {
+                      target: "amount",
+                      guard: "isBalanceSufficientForEstimate",
+                    },
+                    {
+                      target: "done",
+                    },
+                  ],
+                },
                 amount: {
-                  initial: "idle",
-                  states: {
-                    idle: {
-                      guard: [
-                        {
-                          type: "isBalanceSufficientForEstimate",
-                        },
-                        {
-                          target: "done",
-                        },
-                      ],
+                  invoke: {
+                    id: "depositEstimateMaxValueRef",
+                    src: "depositEstimateMaxValueActor",
 
-                      invoke: {
-                        id: "depositEstimateMaxValueRef",
-                        src: "depositEstimateMaxValueActor",
+                    input: ({ context }: { context: Context }) => {
+                      assert(context.formValues.token, "token is null")
+                      assert(context.formValues.network, "network is null")
+                      assert(context.tokenAddress, "tokenAddress is null")
 
-                        input: ({ context }: { context: Context }) => {
-                          assert(context.formValues.token, "token is null")
-                          assert(context.formValues.network, "network is null")
-                          assert(context.tokenAddress, "tokenAddress is null")
-                          assert(
-                            context.generatedAddressResult?.tag === "ok",
-                            "generatedAddressResult is null"
-                          )
-
-                          return {
-                            token: context.formValues.token,
-                            network: context.formValues.network,
-                            balance: context.balance,
-                            nativeBalance: context.nativeBalance,
-                            tokenAddress: context.tokenAddress as string,
-                            userAddress: context.userAddress,
-                            generateAddress:
-                              context.generatedAddressResult.value
-                                .depositAddress,
-                          }
-                        },
-
-                        onDone: {
-                          target: "done",
-                          actions: assign({
-                            maxDepositValue: ({ event }) => event.output,
-                          }),
-                        },
-                      },
+                      return {
+                        token: context.formValues.token,
+                        network: context.formValues.network,
+                        balance: context.balance,
+                        nativeBalance: context.nativeBalance,
+                        tokenAddress: context.tokenAddress as string,
+                        userAddress: context.userAddress,
+                        // It is optional cause for NEAR estimation we don't need to generate an address
+                        generateAddress:
+                          context.generatedAddressResult?.tag === "ok"
+                            ? context.generatedAddressResult.value
+                                .depositAddress
+                            : null,
+                      }
                     },
 
-                    done: {
-                      type: "final",
+                    onDone: {
+                      target: "done",
+                      actions: assign({
+                        maxDepositValue: ({ event }) => event.output,
+                      }),
                     },
                   },
+                },
+                done: {
+                  type: "final",
                 },
               },
             },
