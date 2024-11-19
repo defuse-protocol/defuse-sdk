@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest"
+import type { SupportedChainName } from "../types"
 import { validateAddress } from "./validateAddress"
 
 describe("validateAddress", () => {
@@ -7,7 +8,7 @@ describe("validateAddress", () => {
     expect(validateAddress("invalid_near-", "near")).toBe(false)
   })
 
-  it.each(["eth", "base", "arbitrum"])(
+  it.each(["eth", "base", "arbitrum"] as SupportedChainName[])(
     "should validate %s addresses",
     (chainName) => {
       expect(
@@ -40,6 +41,18 @@ describe("validateAddress", () => {
   })
 
   it("should return false for unsupported blockchains", () => {
-    expect(validateAddress("someAddress", "unsupportedBlockchain")).toBe(false)
+    expect(
+      validateAddress(
+        "someAddress",
+        "unsupportedBlockchain" as SupportedChainName
+      )
+    ).toBe(false)
+  })
+
+  it("should validate Solana addresses", () => {
+    expect(
+      validateAddress("6iTpVEx7Ye6wvvrnXBLf6FPhENrCu8mKGswzhem2pJ1m", "solana")
+    ).toBe(true)
+    expect(validateAddress("invalidSolanaAddress", "solana")).toBe(false)
   })
 })

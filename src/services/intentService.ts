@@ -1,15 +1,16 @@
-import type { WalletSignatureResult } from "../types"
+import type { ChainType, WalletSignatureResult } from "../types"
 import { prepareSwapSignedData } from "../utils/prepareBroadcastRequest"
 import * as solverRelayClient from "./solverRelayHttpClient"
 import type * as types from "./solverRelayHttpClient/types"
 
 export async function submitIntent(
   signatureData: WalletSignatureResult,
+  userInfo: { userAddress: string; userChainType: ChainType },
   quoteHashes: string[]
 ) {
   // todo: retry on network error
   const result = await solverRelayClient.publishIntent({
-    signed_data: prepareSwapSignedData(signatureData),
+    signed_data: prepareSwapSignedData(signatureData, userInfo),
     quote_hashes: quoteHashes,
   })
   // todo: check status, it may be "FAILED"

@@ -11,6 +11,7 @@ import { SwapUIMachineProvider } from "./SwapUIMachineProvider"
 export const SwapWidget = ({
   tokenList,
   userAddress,
+  userChainType,
   sendNearTransaction,
   signMessage,
   onSuccessSwap,
@@ -34,10 +35,12 @@ export const SwapWidget = ({
         >
           <SwapUIMachineFormSyncProvider
             userAddress={userAddress}
+            userChainType={userChainType}
             onSuccessSwap={onSuccessSwap}
           >
             <SwapSubmitterProvider
               userAddress={userAddress}
+              userChainType={userChainType}
               sendNearTransaction={sendNearTransaction}
             >
               <SwapForm onNavigateDeposit={onNavigateDeposit} />

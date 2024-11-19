@@ -387,8 +387,8 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
 }
 
 function getBlockchainsOptions(): Record<
-  string,
-  { label: string; icon: React.ReactNode; value: string }
+  BlockchainEnum,
+  { label: string; icon: React.ReactNode; value: BlockchainEnum }
 > {
   const options = {
     [BlockchainEnum.NEAR]: {
@@ -440,6 +440,16 @@ function getBlockchainsOptions(): Record<
         />
       ),
       value: BlockchainEnum.BITCOIN,
+    },
+    [BlockchainEnum.SOLANA]: {
+      label: "Solana",
+      icon: (
+        <NetworkIcon
+          chainIcon="/static/icons/network/solana.svg"
+          chainName="solana"
+        />
+      ),
+      value: BlockchainEnum.SOLANA,
     },
   }
   return options
@@ -617,6 +627,7 @@ const networkSelectToLabel: Record<BlockchainEnum, string> = {
   [BlockchainEnum.BASE]: "Base",
   [BlockchainEnum.ARBITRUM]: "Arbitrum",
   [BlockchainEnum.BITCOIN]: "Bitcoin",
+  [BlockchainEnum.SOLANA]: "Solana",
 }
 
 function renderDepositHint(
