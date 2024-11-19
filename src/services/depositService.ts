@@ -311,6 +311,8 @@ export function getWalletRpcUrl(network: BlockchainEnum): string {
       return settings.rpcUrls.arbitrum
     case BlockchainEnum.BITCOIN:
       return settings.rpcUrls.bitcoin
+    case BlockchainEnum.SOLANA:
+      return settings.rpcUrls.solana
     default:
       network satisfies never
       throw new Error("exhaustive check failed")
