@@ -559,6 +559,7 @@ export const withdrawUIMachine = setup({
 
           return {
             userAddress: context.submitDeps.userAddress,
+            userChainType: context.submitDeps.userChainType,
             defuseUserId: userAddressToDefuseUserId(
               context.submitDeps.userAddress,
               context.submitDeps.userChainType

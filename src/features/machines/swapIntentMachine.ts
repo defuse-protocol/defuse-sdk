@@ -10,9 +10,10 @@ import {
   waitForIntentSettlement,
 } from "../../services/intentService"
 import type { AggregatedQuote } from "../../services/quoteService"
-import type { WalletMessage, WalletSignatureResult } from "../../types"
 import type { BaseTokenInfo } from "../../types/base"
 import type { Nep413DefuseMessageFor_DefuseIntents } from "../../types/defuse-contracts-types"
+import type { ChainType } from "../../types/deposit"
+import type { WalletMessage, WalletSignatureResult } from "../../types/swap"
 import { assert } from "../../utils/assert"
 import type { DefuseUserId } from "../../utils/defuse"
 import {
@@ -71,6 +72,7 @@ export type IntentDescription =
 
 type Context = {
   userAddress: string
+  userChainType: ChainType
   defuseUserId: DefuseUserId
   nearClient: providers.Provider
   sendNearTransaction: SendNearTransaction
@@ -100,6 +102,7 @@ type Context = {
 
 type Input = {
   userAddress: string
+  userChainType: ChainType
   defuseUserId: DefuseUserId
   nearClient: providers.Provider
   sendNearTransaction: SendNearTransaction
@@ -209,9 +212,10 @@ export const swapIntentMachine = setup({
       }: {
         input: {
           signatureData: WalletSignatureResult
+          userInfo: { userAddress: string; userChainType: ChainType }
           quoteHashes: string[]
         }
-      }) => submitIntent(input.signatureData, input.quoteHashes)
+      }) => submitIntent(input.signatureData, input.userInfo, input.quoteHashes)
     ),
     pollIntentStatus: fromPromise(
       ({
@@ -498,8 +502,12 @@ export const swapIntentMachine = setup({
           }
 
           return {
-            quoteHashes,
             signatureData: context.signature,
+            userInfo: {
+              userAddress: context.userAddress,
+              userChainType: context.userChainType,
+            },
+            quoteHashes,
           }
         },
 

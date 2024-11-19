@@ -407,6 +407,7 @@ export const swapUIMachine = setup({
 
           return {
             userAddress: event.params.userAddress,
+            userChainType: event.params.userChainType,
             defuseUserId: userAddressToDefuseUserId(
               event.params.userAddress,
               event.params.userChainType
