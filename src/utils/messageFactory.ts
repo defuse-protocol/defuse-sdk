@@ -155,6 +155,17 @@ export function makeSwapMessage({
         2
       ),
     },
+    SOLANA: {
+      message: new TextEncoder().encode(
+        JSON.stringify({
+          signer_id: innerMessage.signer_id,
+          verifying_contract: settings.defuseContractId,
+          deadline: innerMessage.deadline,
+          nonce: base64.encode(nonce),
+          intents: innerMessage.intents,
+        })
+      ),
+    },
   }
 }
 

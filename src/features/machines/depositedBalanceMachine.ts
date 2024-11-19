@@ -8,10 +8,14 @@ import {
   setup,
 } from "xstate"
 import { getDepositedBalances } from "../../services/defuseBalanceService"
+import type { ChainType } from "../../types"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../types/base"
 import { isBaseToken } from "../../utils"
 import { assert } from "../../utils/assert"
-import { userAddressToDefuseUserId } from "../../utils/defuse"
+import {
+  type DefuseUserId,
+  userAddressToDefuseUserId,
+} from "../../utils/defuse"
 
 export interface Input {
   parentRef: ParentActor
@@ -38,14 +42,14 @@ type ThisActor = ActorRef<Snapshot<unknown>, SharedEvents>
 
 export type Events =
   | { type: "LOGOUT" | "REQUEST_BALANCE_REFRESH" }
-  | { type: "LOGIN"; params: { accountId: string } }
+  | { type: "LOGIN"; params: { userAddress: string; userChainType: ChainType } }
 
 export const depositedBalanceMachine = setup({
   types: {
     context: {} as {
       parentRef: ParentActor
       defuseTokenIds: string[]
-      userAccountId: string | null
+      userAccountId: DefuseUserId | null
       balances: BalanceMapping
     },
     events: {} as Events | SharedEvents,
@@ -58,7 +62,7 @@ export const depositedBalanceMachine = setup({
       }: {
         input: {
           parentRef: ThisActor
-          userAccountId: string
+          userAccountId: DefuseUserId
           defuseTokenIds: string[]
         }
       }) => {
@@ -67,7 +71,7 @@ export const depositedBalanceMachine = setup({
         // If the token list is too large (>100 tokens) we should split it into multiple requests
         // and `UPDATE_BALANCE_SLICE` on receiving each response
         const balance = await getDepositedBalances(
-          userAddressToDefuseUserId(userAccountId),
+          userAccountId,
           input.defuseTokenIds,
           new providers.JsonRpcProvider({
             url: "https://nearrpc.aurora.dev",
@@ -83,7 +87,7 @@ export const depositedBalanceMachine = setup({
   },
   actions: {
     setUserAccountId: assign({
-      userAccountId: (_, accountId: string) => accountId,
+      userAccountId: (_, accountId: DefuseUserId) => accountId,
     }),
     clearUserAccountId: assign({
       userAccountId: null,
@@ -209,7 +213,11 @@ export const depositedBalanceMachine = setup({
         "clearBalance",
         {
           type: "setUserAccountId",
-          params: ({ event }) => event.params.accountId,
+          params: ({ event }) =>
+            userAddressToDefuseUserId(
+              event.params.userAddress,
+              event.params.userChainType
+            ),
         },
       ],
       reenter: true,

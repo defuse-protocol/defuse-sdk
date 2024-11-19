@@ -8,7 +8,7 @@ import {
   setup,
   spawnChild,
 } from "xstate"
-import type { SwappableToken } from "../../types"
+import type { ChainType, SwappableToken } from "../../types"
 import { BlockchainEnum } from "../../types"
 import { parseUnits } from "../../utils/parse"
 import { isBaseToken, isUnifiedToken } from "../../utils/token"
@@ -50,7 +50,8 @@ export type Context = {
   > | null
   poaBridgeInfoRef: ActorRefFrom<typeof poaBridgeInfoActor>
   tokenList: SwappableToken[]
-  userAddress: string
+  userAddress: string | null
+  userChainType: ChainType | null
   defuseAssetId: string | null
   tokenAddress: string | null
   generatedAddressResult: DepositGenerateAddressMachineOutput | null
@@ -83,6 +84,7 @@ export const depositUIMachine = setup({
           type: "LOGIN"
           params: {
             userAddress: string
+            userChainType: ChainType
           }
         }
       | {
@@ -188,7 +190,11 @@ export const depositUIMachine = setup({
     spawnGeneratedAddressActor: assign({
       depositGenerateAddressRef: (
         { spawn },
-        output: { accountId: string; chain: BlockchainEnum }
+        output: {
+          userAddress: string
+          userChainType: ChainType
+          chain: BlockchainEnum
+        }
       ) => {
         return spawn("depositGenerateAddressActor", {
           id: "deposit-generate-address",
@@ -275,7 +281,8 @@ export const depositUIMachine = setup({
     depositEVMResult: null,
     depositGenerateAddressRef: null,
     tokenList: input.tokenList,
-    userAddress: "",
+    userAddress: null,
+    userChainType: null,
     defuseAssetId: null,
     tokenAddress: null,
     generatedAddressResult: null,
@@ -291,6 +298,7 @@ export const depositUIMachine = setup({
       actions: [
         assign({
           userAddress: ({ event }) => event.params.userAddress,
+          userChainType: ({ event }) => event.params.userChainType,
         }),
       ],
     },
@@ -423,10 +431,19 @@ export const depositUIMachine = setup({
                         src: "depositGenerateAddressActor",
 
                         input: ({ context }) => {
+                          assert(
+                            context.userAddress != null,
+                            "userAddress is null"
+                          )
+                          assert(
+                            context.userChainType != null,
+                            "userChainType is null"
+                          )
                           assert(context.formValues.network, "network is null")
 
                           return {
-                            accountId: context.userAddress,
+                            userAddress: context.userAddress,
+                            userChainType: context.userChainType,
                             chain: context.formValues.network,
                           }
                         },
@@ -482,6 +499,7 @@ export const depositUIMachine = setup({
                       assert(context.formValues.token, "token is null")
                       assert(context.formValues.network, "network is null")
                       assert(context.tokenAddress, "tokenAddress is null")
+                      assert(context.userAddress, "userAddress is null")
 
                       return {
                         token: context.formValues.token,

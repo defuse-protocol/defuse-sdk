@@ -1,15 +1,17 @@
-import { base58, base64 } from "@scure/base"
-import { hexToBytes } from "viem"
+import { base58, base64, hex } from "@scure/base"
 import type {
   Params,
   PublishIntentRequest,
 } from "../services/solverRelayHttpClient/types"
-import type { WalletSignatureResult } from "../types"
+import type { ChainType, WalletSignatureResult } from "../types"
+import { assert } from "./assert"
 
 export function prepareSwapSignedData(
-  signature: WalletSignatureResult
+  signature: WalletSignatureResult,
+  userInfo: { userAddress: string; userChainType: ChainType }
 ): Params<PublishIntentRequest>["signed_data"] {
-  switch (signature.type) {
+  const signatureType = signature.type
+  switch (signatureType) {
     case "NEP413": {
       return {
         standard: "nep413",
@@ -30,7 +32,21 @@ export function prepareSwapSignedData(
         signature: transformERC191Signature(signature.signatureData),
       }
     }
+    case "SOLANA":
+      assert(
+        userInfo.userChainType === "solana",
+        "User chain and signature chain must match"
+      )
+      return {
+        // @ts-expect-error: `raw_ed25519` is not a valid standard yet
+        standard: "raw_ed25519",
+        payload: new TextDecoder().decode(signature.signedData.message),
+        // Solana address is its public key encoded in base58
+        public_key: `ed25519:${userInfo.userAddress}`,
+        signature: transformSolanaSignature(signature.signatureData),
+      }
     default:
+      signatureType satisfies never
       throw new Error("exhaustive check failed")
   }
 }
@@ -42,7 +58,11 @@ function transformNEP141Signature(signature: string) {
 
 function transformERC191Signature(signature: string) {
   const normalizedSignature = normalizeERC191Signature(signature)
-  const bytes = hexToBytes(normalizedSignature as "0x${string}")
+  const bytes = hex.decode(
+    normalizedSignature.startsWith("0x")
+      ? normalizedSignature.slice(2)
+      : normalizedSignature
+  )
   return `secp256k1:${base58.encode(bytes)}`
 }
 
@@ -66,4 +86,8 @@ function toRecoveryBit(yParityOrV: number) {
   if (yParityOrV === 27) return 0
   if (yParityOrV === 28) return 1
   throw new Error("Invalid yParityOrV value")
+}
+
+function transformSolanaSignature(signature: Uint8Array) {
+  return `ed25519:${base58.encode(signature)}`
 }

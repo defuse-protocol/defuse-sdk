@@ -1,4 +1,4 @@
-import type { BlockchainEnum } from "src/types"
+import type { BlockchainEnum, ChainType } from "src/types"
 import { assign, fromPromise, setup } from "xstate"
 
 export type DepositGeneratedDescription = {
@@ -7,7 +7,8 @@ export type DepositGeneratedDescription = {
 }
 
 type Context = {
-  accountId: string | null
+  userAddress: string
+  userChainType: ChainType
   chain: BlockchainEnum | null
   depositAddress: string | null
   error: null | {
@@ -21,12 +22,13 @@ type Context = {
 
 type Events = {
   type: "INPUT"
-  accountId: string
+  userAddress: string
   defuseAssetId: string
 }
 
 type Input = {
-  accountId: string
+  userAddress: string
+  userChainType: ChainType
   chain: BlockchainEnum
 }
 
@@ -58,7 +60,8 @@ export const depositGenerateAddressMachine = setup({
   /** @xstate-layout N4IgpgJg5mDOIC5QTABwPawJYBcC0MAdmAE4CGOYeZEEJcsAdFhADZgDEAkgHIAKAVQAqAbQAMAXUSgM2HFnSFpIAB6IAjAGYALIzEA2ABz7NAdgBMO-WM3qANCACeiTWMb6tpgJznD500Y2vgC+wQ4osrgEYMTklNS09LBMRKQUWIRQHBCKYMyEAG7oANZ5EZhRqXFUNHQMjFXpmQgZRQDG6YriEt3KkfKKymoI+tqGjNpill76XgCstgb2Toj6jF5i6luGfl6GYvNjoeFoFfiN8bVJKTFp8pkcpCToJIyorBQAZi8AtozlcmisQoNUS9QuGSgLUK6A6A0I3V6SBA-QUSmRw1GXj0phshjGcyM+M0DmcCC8mkYhlM6jEc0sk3MXj2oTCIEI6BQ8GRAMqt2qCTqyT6ZzRQ0QeHMazEpjmhgphNM+3lAVJEvUzMYcz2xgpMwMpmOIF5535IMF12YbDAIrkYoxiHM6nW5m0tNGmidXlprrVCHUpnczOpPlcmk0s3DRpNQLuoKFN2B9ygttw9tAwyZunp0y82m9vh2pj96l0OiCcv8AVmsujp0BF3jloA4vywJQIKn4eLyTT1tpZh4A6M5V4-f5GOp-PoLGJtJo9upqXM6-1YwKrvUAGJkLDsTvI1GDB29uaMLPeb2ejUmP3eydOunTinacz+VnBIA */
   context: ({ input }) => {
     return {
-      accountId: input.accountId,
+      userAddress: input.userAddress,
+      userChainType: input.userChainType,
       chain: input.chain,
       depositAddress: null,
       error: null,
@@ -93,11 +96,12 @@ export const depositGenerateAddressMachine = setup({
     generating: {
       invoke: {
         input: ({ context }) => {
-          if (!context.chain || !context.accountId) {
+          if (!context.chain || !context.userAddress) {
             throw new Error("Asset address or account ID is missing")
           }
           return {
-            accountId: context.accountId as string,
+            userAddress: context.userAddress,
+            userChainType: context.userChainType,
             chain: context.chain,
           }
         },

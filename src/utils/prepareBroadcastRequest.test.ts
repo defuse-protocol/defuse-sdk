@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest"
 import type {
   ERC191SignatureData,
   NEP413SignatureData,
+  SolanaSignatureData,
   WalletMessage,
 } from "../types"
 import { prepareSwapSignedData } from "./prepareBroadcastRequest"
@@ -19,6 +20,11 @@ describe("prepareSwapSignedData()", () => {
     ERC191: {
       message: JSON.stringify({ foo: "bar" }),
     },
+    SOLANA: {
+      message: Uint8Array.from(
+        Buffer.from(JSON.stringify({ foo: "bar" }), "utf8")
+      ),
+    },
   }
 
   it("should return the correct signed data for a NEP141 signature", () => {
@@ -32,7 +38,12 @@ describe("prepareSwapSignedData()", () => {
       signedData: walletMessage.NEP413,
     }
 
-    expect(prepareSwapSignedData(signature)).toMatchSnapshot()
+    expect(
+      prepareSwapSignedData(signature, {
+        userAddress: "user.near",
+        userChainType: "near",
+      })
+    ).toMatchSnapshot()
   })
 
   it("should return the correct signed data for an ERC191 signature", () => {
@@ -42,6 +53,26 @@ describe("prepareSwapSignedData()", () => {
       signedData: walletMessage.ERC191,
     }
 
-    expect(prepareSwapSignedData(signature)).toMatchSnapshot()
+    expect(
+      prepareSwapSignedData(signature, {
+        userAddress: "0xabcd",
+        userChainType: "evm",
+      })
+    ).toMatchSnapshot()
+  })
+
+  it("should return the correct signed data for a Solana signature", () => {
+    const signature: SolanaSignatureData = {
+      type: "SOLANA",
+      signatureData: Buffer.from("deadbeef1c", "hex"),
+      signedData: walletMessage.SOLANA,
+    }
+
+    expect(
+      prepareSwapSignedData(signature, {
+        userAddress: "DRpbCBMxVnDK7maPM5tGv6MvB3v1sRMC86PZ8okm21hy",
+        userChainType: "solana",
+      })
+    ).toMatchSnapshot()
   })
 })

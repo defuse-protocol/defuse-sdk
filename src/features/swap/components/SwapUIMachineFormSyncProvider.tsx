@@ -1,19 +1,21 @@
 import { useSelector } from "@xstate/react"
 import { type PropsWithChildren, useEffect, useRef } from "react"
 import { useFormContext } from "react-hook-form"
-import type { SwapWidgetProps } from "../../../types"
+import type { ChainType, SwapWidgetProps } from "../../../types"
 import { usePublicKeyModalOpener } from "../hooks/usePublicKeyModalOpener"
 import type { SwapFormValues } from "./SwapForm"
 import { SwapUIMachineContext } from "./SwapUIMachineProvider"
 
 type SwapUIMachineFormSyncProviderProps = PropsWithChildren<{
   userAddress: string | null
+  userChainType: ChainType | null
   onSuccessSwap: SwapWidgetProps["onSuccessSwap"]
 }>
 
 export function SwapUIMachineFormSyncProvider({
   children,
   userAddress,
+  userChainType,
   onSuccessSwap,
 }: SwapUIMachineFormSyncProviderProps) {
   const { watch, setValue } = useFormContext<SwapFormValues>()
@@ -38,12 +40,12 @@ export function SwapUIMachineFormSyncProvider({
   }, [watch, actorRef])
 
   useEffect(() => {
-    if (userAddress == null) {
+    if (userAddress == null || userChainType == null) {
       actorRef.send({ type: "LOGOUT" })
     } else {
-      actorRef.send({ type: "LOGIN", params: { accountId: userAddress } })
+      actorRef.send({ type: "LOGIN", params: { userAddress, userChainType } })
     }
-  }, [actorRef, userAddress])
+  }, [actorRef, userAddress, userChainType])
 
   useEffect(() => {
     const sub = actorRef.on("*", (event) => {

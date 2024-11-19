@@ -243,6 +243,7 @@ export function getAvailableDepositRoutes(
         case BlockchainEnum.BASE:
         case BlockchainEnum.ARBITRUM:
         case BlockchainEnum.BITCOIN:
+        case BlockchainEnum.SOLANA:
           return {
             activeDeposit: false,
             passiveDeposit: true,
@@ -265,6 +266,23 @@ export function getAvailableDepositRoutes(
             activeDeposit: true,
             passiveDeposit: true,
           }
+        case BlockchainEnum.BITCOIN:
+        case BlockchainEnum.SOLANA:
+          return {
+            activeDeposit: false,
+            passiveDeposit: true,
+          }
+        default:
+          network satisfies never
+          throw new Error("exhaustive check failed")
+      }
+    case ChainType.Solana:
+      switch (network) {
+        case BlockchainEnum.SOLANA:
+        case BlockchainEnum.NEAR:
+        case BlockchainEnum.ETHEREUM:
+        case BlockchainEnum.BASE:
+        case BlockchainEnum.ARBITRUM:
         case BlockchainEnum.BITCOIN:
           return {
             activeDeposit: false,
@@ -293,6 +311,8 @@ export function getWalletRpcUrl(network: BlockchainEnum): string {
       return settings.rpcUrls.arbitrum
     case BlockchainEnum.BITCOIN:
       return settings.rpcUrls.bitcoin
+    case BlockchainEnum.SOLANA:
+      return settings.rpcUrls.solana
     default:
       network satisfies never
       throw new Error("exhaustive check failed")

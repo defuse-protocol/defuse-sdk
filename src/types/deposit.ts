@@ -1,11 +1,12 @@
 import type { Address, Hash } from "viem"
 import type { SwappableToken } from "../types"
 
-export type ChainType = "near" | "evm"
+export type ChainType = "near" | "evm" | "solana"
 
 export const ChainType = {
   Near: "near",
   EVM: "evm",
+  Solana: "solana",
 } as const
 
 export type UserInfo = {

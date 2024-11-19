@@ -4,7 +4,6 @@ import {
   assertEvent,
   assign,
   emit,
-  fromPromise,
   sendTo,
   setup,
   spawnChild,
@@ -14,10 +13,11 @@ import {
   type AggregatedQuote,
   isAggregatedQuoteEmpty,
 } from "../../services/quoteService"
-import type { SwappableToken } from "../../types"
+import type { ChainType, SwappableToken } from "../../types"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../types/base"
 import type { Transaction } from "../../types/deposit"
 import { assert } from "../../utils/assert"
+import { userAddressToDefuseUserId } from "../../utils/defuse"
 import { parseUnits } from "../../utils/parse"
 import {
   type Events as BackgroundQuoterEvents,
@@ -84,6 +84,7 @@ export const swapUIMachine = setup({
           type: "submit"
           params: {
             userAddress: string
+            userChainType: ChainType
             nearClient: providers.Provider
             sendNearTransaction: (
               tx: Transaction["NEAR"]
@@ -406,6 +407,11 @@ export const swapUIMachine = setup({
 
           return {
             userAddress: event.params.userAddress,
+            userChainType: event.params.userChainType,
+            defuseUserId: userAddressToDefuseUserId(
+              event.params.userAddress,
+              event.params.userChainType
+            ),
             nearClient: event.params.nearClient,
             sendNearTransaction: event.params.sendNearTransaction,
             intentOperationParams: { type: "swap" as const, quote },
