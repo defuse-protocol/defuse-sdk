@@ -2525,13 +2525,6 @@ bs58@^4.0.0, bs58@^4.0.1:
   dependencies:
     base-x "^3.0.2"
 
-bs58@^6.0.0:
-  version "6.0.0"
-  resolved "https://registry.yarnpkg.com/bs58/-/bs58-6.0.0.tgz#a2cda0130558535dd281a2f8697df79caaf425d8"
-  integrity sha512-PD0wEnEYg6ijszw/u8s+iI3H17cTymlrwkKhDhPZq+Sokl3AU4htyBFTjAeNAlCCmg0f53g6ih3jATyCKftTfw==
-  dependencies:
-    base-x "^5.0.0"
-
 buffer@6.0.3, buffer@^6.0.3, buffer@~6.0.3:
   version "6.0.3"
   resolved "https://registry.yarnpkg.com/buffer/-/buffer-6.0.3.tgz#2ace578459cc8fbe2a70aaa8f52ee63b6a74c6c6"
@@ -4845,9 +4838,9 @@ node-fetch@^2.6.1, node-fetch@^2.7.0:
     whatwg-url "^5.0.0"
 
 node-gyp-build@^4.3.0:
-  version "4.8.3"
-  resolved "https://registry.yarnpkg.com/node-gyp-build/-/node-gyp-build-4.8.3.tgz#9187216d24dbee29e44eb20d2ebf62a296bbea1a"
-  integrity sha512-EMS95CMJzdoSKoIiXo8pxKoL8DYxwIZXYlLmgPb8KUv794abpnLK6ynsCAWNliOjREKruYKdzbh76HHYUHX7nw==
+  version "4.8.4"
+  resolved "https://registry.yarnpkg.com/node-gyp-build/-/node-gyp-build-4.8.4.tgz#8a70ee85464ae52327772a90d66c6077a900cfc8"
+  integrity sha512-LA4ZjwlnUblHVgq0oBF3Jl/6h/Nvs5fzBLwdEF4nuxnFdsfajde4WfxtJr3CaiH+F6ewcIB/q4jQ4UzPyid+CQ==
 
 node-gyp@^10.0.0, node-gyp@^10.2.0:
   version "10.2.0"
@@ -6855,7 +6848,7 @@ tuf-js@^2.2.1:
     debug "^4.3.4"
     make-fetch-happen "^13.0.1"
 
-tweetnacl@^1.0.1:
+tweetnacl@^1.0.1, tweetnacl@^1.0.3:
   version "1.0.3"
   resolved "https://registry.yarnpkg.com/tweetnacl/-/tweetnacl-1.0.3.tgz#ac0af71680458d8a6378d0d0d050ab1407d35596"
   integrity sha512-6rt+RN7aOi1nGMyC4Xa5DdYiukl2UWCbcJft7YhxReBGQD7OAM8Pbxw6YMo4r2diNEA8FEmu32YOn9rhaiE5yw==

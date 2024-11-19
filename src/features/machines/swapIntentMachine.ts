@@ -1,5 +1,7 @@
 import { secp256k1 } from "@noble/curves/secp256k1"
+import { base58 } from "@scure/base"
 import type { providers } from "near-api-js"
+import { sign } from "tweetnacl"
 import { verifyMessage as verifyMessageViem } from "viem"
 import { assign, fromPromise, setup } from "xstate"
 import { settings } from "../../config/settings"
@@ -8,11 +10,12 @@ import {
   waitForIntentSettlement,
 } from "../../services/intentService"
 import type { AggregatedQuote } from "../../services/quoteService"
-import type { WalletMessage, WalletSignatureResult } from "../../types"
 import type { BaseTokenInfo } from "../../types/base"
 import type { Nep413DefuseMessageFor_DefuseIntents } from "../../types/defuse-contracts-types"
+import type { ChainType } from "../../types/deposit"
+import type { WalletMessage, WalletSignatureResult } from "../../types/swap"
 import { assert } from "../../utils/assert"
-import { userAddressToDefuseUserId } from "../../utils/defuse"
+import type { DefuseUserId } from "../../utils/defuse"
 import {
   makeInnerSwapMessage,
   makeSwapMessage,
@@ -69,6 +72,8 @@ export type IntentDescription =
 
 type Context = {
   userAddress: string
+  userChainType: ChainType
+  defuseUserId: DefuseUserId
   nearClient: providers.Provider
   sendNearTransaction: SendNearTransaction
   intentOperationParams: IntentOperationParams
@@ -97,6 +102,8 @@ type Context = {
 
 type Input = {
   userAddress: string
+  userChainType: ChainType
+  defuseUserId: DefuseUserId
   nearClient: providers.Provider
   sendNearTransaction: SendNearTransaction
   intentOperationParams: IntentOperationParams
@@ -158,7 +165,7 @@ export const swapIntentMachine = setup({
 
         const innerMessage = makeInnerSwapMessage({
           tokenDeltas: context.intentOperationParams.quote.tokenDeltas,
-          signerId: userAddressToDefuseUserId(context.userAddress),
+          signerId: context.defuseUserId,
           deadlineTimestamp: Math.min(
             Math.floor(Date.now() / 1000) + settings.swapExpirySec,
             context.intentOperationParams.quote.expirationTime
@@ -205,9 +212,10 @@ export const swapIntentMachine = setup({
       }: {
         input: {
           signatureData: WalletSignatureResult
+          userInfo: { userAddress: string; userChainType: ChainType }
           quoteHashes: string[]
         }
-      }) => submitIntent(input.signatureData, input.quoteHashes)
+      }) => submitIntent(input.signatureData, input.userInfo, input.quoteHashes)
     ),
     pollIntentStatus: fromPromise(
       ({
@@ -494,8 +502,12 @@ export const swapIntentMachine = setup({
           }
 
           return {
-            quoteHashes,
             signatureData: context.signature,
+            userInfo: {
+              userAddress: context.userAddress,
+              userChainType: context.userChainType,
+            },
+            quoteHashes,
           }
         },
 
@@ -599,6 +611,13 @@ async function verifyWalletSignature(
         message: signature.signedData.message,
         signature: signature.signatureData as "0x${string}",
       })
+    }
+    case "SOLANA": {
+      return sign.detached.verify(
+        signature.signedData.message,
+        signature.signatureData,
+        base58.decode(userAddress)
+      )
     }
     default:
       signatureType satisfies never

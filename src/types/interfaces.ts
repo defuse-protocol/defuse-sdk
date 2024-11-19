@@ -240,6 +240,10 @@ export interface BitcoinPriceInUsdEntity {
   }
 }
 
+/**
+ * Values are POA Bridge specific
+ * todo: use SupportedChainName as keys
+ */
 export enum BlockchainEnum {
   NEAR = "near:mainnet",
   ETHEREUM = "eth:1",

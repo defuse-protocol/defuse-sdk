@@ -9,7 +9,7 @@ import {
 describe("makeSwapMessage()", () => {
   const innerMessage = makeInnerSwapMessage({
     tokenDeltas: [["foo.near", 100n]],
-    signerId: userAddressToDefuseUserId("user.near"),
+    signerId: userAddressToDefuseUserId("user.near", "near"),
     deadlineTimestamp: 1000000,
   })
 
@@ -44,6 +44,20 @@ describe("makeSwapMessage()", () => {
   ]
 }`,
       },
+      SOLANA: {
+        message: Uint8Array.from(
+          Buffer.from(
+            JSON.stringify({
+              signer_id: "user.near",
+              verifying_contract: "intents.near",
+              deadline: { timestamp: 1000000 },
+              nonce: "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+              intents: [{ intent: "token_diff", diff: { "foo.near": "100" } }],
+            }),
+            "utf-8"
+          )
+        ),
+      },
     })
   })
 
@@ -69,7 +83,7 @@ describe("makeSwapMessage()", () => {
         ["bar.near", 270n],
         ["foo.near", 100n],
       ],
-      signerId: userAddressToDefuseUserId("user.near"),
+      signerId: userAddressToDefuseUserId("user.near", "near"),
       deadlineTimestamp: 1000000,
     })
 
@@ -107,7 +121,7 @@ describe("makeInnerSwapAndWithdrawMessage()", () => {
         receiverId: "receiver.near",
         storageDeposit: 0n,
       },
-      signerId: userAddressToDefuseUserId("user.near"),
+      signerId: userAddressToDefuseUserId("user.near", "near"),
       deadlineTimestamp: 1000000,
     })
 
@@ -147,7 +161,7 @@ describe("makeInnerSwapAndWithdrawMessage()", () => {
         receiverId: "receiver.near",
         storageDeposit: 100n,
       },
-      signerId: userAddressToDefuseUserId("user.near"),
+      signerId: userAddressToDefuseUserId("user.near", "near"),
       deadlineTimestamp: 1000000,
     })
 
@@ -179,7 +193,7 @@ describe("makeInnerSwapAndWithdrawMessage()", () => {
         tokenAccountId: "bar-poa-bridge-token.near",
         destinationAddress: "0xdead",
       },
-      signerId: userAddressToDefuseUserId("user.near"),
+      signerId: userAddressToDefuseUserId("user.near", "near"),
       deadlineTimestamp: 1000000,
     })
 

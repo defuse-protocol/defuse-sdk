@@ -1,6 +1,11 @@
+import { PublicKey } from "@solana/web3.js"
+import type { SupportedChainName } from "../types"
 import { isLegitAccountId } from "./near"
 
-export function validateAddress(address: string, blockchain: string): boolean {
+export function validateAddress(
+  address: string,
+  blockchain: SupportedChainName
+): boolean {
   switch (blockchain) {
     case "near":
       return isLegitAccountId(address)
@@ -17,8 +22,14 @@ export function validateAddress(address: string, blockchain: string): boolean {
         /^bc1p[02-9ac-hj-np-z]{42,87}$/.test(address)
       )
     case "solana":
-      return /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(address)
+      try {
+        return PublicKey.isOnCurve(address)
+      } catch {
+        return false
+      }
+
     default:
+      blockchain satisfies never
       return false
   }
 }

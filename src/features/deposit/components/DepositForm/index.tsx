@@ -383,8 +383,8 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
 }
 
 function getBlockchainsOptions(): Record<
-  string,
-  { label: string; icon: React.ReactNode; value: string }
+  BlockchainEnum,
+  { label: string; icon: React.ReactNode; value: BlockchainEnum }
 > {
   const options = {
     [BlockchainEnum.NEAR]: {

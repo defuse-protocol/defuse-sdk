@@ -1,5 +1,6 @@
 import type { SendNearTransaction } from "../features/machines/publicKeyVerifierMachine"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "./base"
+import type { ChainType } from "./deposit"
 
 // Message for EVM wallets
 export type ERC191Message = {
@@ -39,12 +40,27 @@ export type NEP413SignatureData = {
   signedData: NEP413Message
 }
 
+// Message for Solana wallets
+export type SolanaMessage = {
+  message: Uint8Array
+}
+
+export type SolanaSignatureData = {
+  type: "SOLANA"
+  signatureData: Uint8Array
+  signedData: SolanaMessage
+}
+
 export type WalletMessage = {
   ERC191: ERC191Message
   NEP413: NEP413Message
+  SOLANA: SolanaMessage
 }
 
-export type WalletSignatureResult = ERC191SignatureData | NEP413SignatureData
+export type WalletSignatureResult =
+  | ERC191SignatureData
+  | NEP413SignatureData
+  | SolanaSignatureData
 
 export type SwapEvent = {
   type: string
@@ -60,10 +76,11 @@ export type SwapWidgetProps = {
   onEmit?: (event: SwapEvent) => void
 
   /**
-   * The address (address for EVM, accountId for NEAR) of the user performing the swap.
+   * The address (address for EVM, accountId for NEAR, etc) of the user performing the swap.
    * `null` if the user is not authenticated.
    */
   userAddress: string | null
+  userChainType: ChainType | null
 
   sendNearTransaction: SendNearTransaction
 

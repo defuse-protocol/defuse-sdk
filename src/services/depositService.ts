@@ -289,10 +289,6 @@ export function getAvailableDepositRoutes(
             passiveDeposit: true,
           }
         case BlockchainEnum.BITCOIN:
-          return {
-            activeDeposit: false,
-            passiveDeposit: true,
-          }
         case BlockchainEnum.SOLANA:
           return {
             activeDeposit: false,
@@ -304,11 +300,6 @@ export function getAvailableDepositRoutes(
       }
     case ChainType.Solana:
       switch (network) {
-        case BlockchainEnum.SOLANA:
-          return {
-            activeDeposit: true,
-            passiveDeposit: true,
-          }
         case BlockchainEnum.NEAR:
         case BlockchainEnum.ETHEREUM:
         case BlockchainEnum.BASE:
@@ -316,6 +307,11 @@ export function getAvailableDepositRoutes(
         case BlockchainEnum.BITCOIN:
           return {
             activeDeposit: false,
+            passiveDeposit: true,
+          }
+        case BlockchainEnum.SOLANA:
+          return {
+            activeDeposit: true,
             passiveDeposit: true,
           }
         default:
