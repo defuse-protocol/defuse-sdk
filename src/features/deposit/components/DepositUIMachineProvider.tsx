@@ -215,6 +215,12 @@ export function DepositUIMachineProvider({
                 return txHash
               }),
             },
+            guards: {
+              isDepositValid: ({ context }) => {
+                if (!context.txHash) return false
+                return true
+              },
+            },
           }),
         },
         actions: {
