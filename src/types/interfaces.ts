@@ -246,4 +246,5 @@ export enum BlockchainEnum {
   BASE = "eth:8453",
   ARBITRUM = "eth:42161",
   BITCOIN = "btc:mainnet",
+  SOLANA = "sol:mainnet",
 }

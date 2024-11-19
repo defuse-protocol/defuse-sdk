@@ -1,6 +1,7 @@
 import { createActorContext } from "@xstate/react"
 import type { PropsWithChildren, ReactElement, ReactNode } from "react"
 import { useFormContext } from "react-hook-form"
+import { depositSolanaMachine } from "src/features/machines/depositSolanaMachine"
 import type { Hash } from "viem"
 import {
   type Actor,
@@ -16,6 +17,7 @@ import {
   createBatchDepositNearNep141Transaction,
   createDepositEVMERC20Transaction,
   createDepositEVMNativeTransaction,
+  createDepositSolanaTransaction,
   generateDepositAddress,
   getMinimumStorageBalance,
   isStorageDepositRequired,
@@ -58,6 +60,7 @@ interface DepositUIMachineProviderProps extends PropsWithChildren {
   tokenList: SwappableToken[]
   sendTransactionNear: (tx: Transaction["NEAR"][]) => Promise<string | null>
   sendTransactionEVM: (tx: Transaction["EVM"]) => Promise<Hash | null>
+  sendTransactionSolana: (tx: Transaction["Solana"]) => Promise<string | null>
 }
 
 export function DepositUIMachineProvider({
@@ -65,6 +68,7 @@ export function DepositUIMachineProvider({
   tokenList,
   sendTransactionNear,
   sendTransactionEVM,
+  sendTransactionSolana,
 }: DepositUIMachineProviderProps) {
   const { setValue } = useFormContext<DepositFormValues>()
   return (
@@ -193,6 +197,25 @@ export function DepositUIMachineProvider({
                 if (!context.txHash) return false
                 return true
               },
+            },
+          }),
+          depositSolanaActor: depositSolanaMachine.provide({
+            actors: {
+              signAndSendTransactions: fromPromise(async ({ input }) => {
+                const { amount, depositAddress, accountId } = input
+
+                assert(depositAddress != null, "Deposit address is not defined")
+
+                const tx = createDepositSolanaTransaction(
+                  accountId,
+                  depositAddress,
+                  amount
+                )
+                const txHash = await sendTransactionSolana(tx)
+                assert(txHash != null, "Transaction failed")
+
+                return txHash
+              }),
             },
           }),
         },

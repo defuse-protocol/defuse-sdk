@@ -16,6 +16,8 @@ export function validateAddress(address: string, blockchain: string): boolean {
         /^bc1[02-9ac-hj-np-z]{11,87}$/.test(address) ||
         /^bc1p[02-9ac-hj-np-z]{42,87}$/.test(address)
       )
+    case "solana":
+      return /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(address)
     default:
       return false
   }

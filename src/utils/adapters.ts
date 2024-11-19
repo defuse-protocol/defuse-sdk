@@ -6,6 +6,7 @@ export const assetNetworkAdapter: Record<string, BlockchainEnum> = {
   base: BlockchainEnum.BASE,
   arbitrum: BlockchainEnum.ARBITRUM,
   bitcoin: BlockchainEnum.BITCOIN,
+  solana: BlockchainEnum.SOLANA,
 }
 
 export const reverseAssetNetworkAdapter: Record<
@@ -17,4 +18,5 @@ export const reverseAssetNetworkAdapter: Record<
   [BlockchainEnum.BASE]: "base",
   [BlockchainEnum.ARBITRUM]: "arbitrum",
   [BlockchainEnum.BITCOIN]: "bitcoin",
+  [BlockchainEnum.SOLANA]: "solana",
 }
