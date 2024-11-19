@@ -531,6 +531,9 @@ function renderDepositWarning(
     content = "Please connect your wallet to continue"
   }
 
+  // Because all deposit results have the same statuses, we can use a single pattern to check for errors.
+  // To improve readability, we abbreviate deposit result names:
+  // 'depositNearResult' becomes 'r1', 'depositEVMResult' becomes 'r2', etc.
   const r1 = depositNearResult !== null && depositNearResult.tag === "err"
   const r2 = depositEVMResult !== null && depositEVMResult.tag === "err"
   const r3 = depositSolanaResult !== null && depositSolanaResult.tag === "err"
