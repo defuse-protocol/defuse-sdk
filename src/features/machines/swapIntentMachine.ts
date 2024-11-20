@@ -99,6 +99,7 @@ type Context = {
           error: Error | null
         }
       | {
+          reason: "ERR_CANNOT_PUBLISH_INTENT"
           server_reason: string
         }
   }
