@@ -6,7 +6,6 @@ import {
   assign,
   sendTo,
   setup,
-  spawnChild,
 } from "xstate"
 import type { ChainType, SwappableToken } from "../../types"
 import { BlockchainEnum } from "../../types"
@@ -27,6 +26,10 @@ import {
   type Output as DepositNearMachineOutput,
   depositNearMachine,
 } from "./depositNearMachine"
+import {
+  type Output as DepositSolanaMachineOutput,
+  depositSolanaMachine,
+} from "./depositSolanaMachine"
 import { poaBridgeInfoActor } from "./poaBridgeInfoActor"
 
 export type Context = {
@@ -57,6 +60,7 @@ export type Context = {
   generatedAddressResult: DepositGenerateAddressMachineOutput | null
   depositNearResult: DepositNearMachineOutput | null
   depositEVMResult: DepositEVMMachineOutput | null
+  depositSolanaResult: DepositSolanaMachineOutput | null
 }
 
 export const depositUIMachine = setup({
@@ -93,6 +97,7 @@ export const depositUIMachine = setup({
     children: {} as {
       depositNearRef: "depositNearActor"
       depositEVMRef: "depositEVMActor"
+      depositSolanaRef: "depositSolanaActor"
     },
   },
   actors: {
@@ -101,6 +106,7 @@ export const depositUIMachine = setup({
     depositGenerateAddressActor: depositGenerateAddressMachine,
     poaBridgeInfoActor: poaBridgeInfoActor,
     depositEVMActor: depositEVMMachine,
+    depositSolanaActor: depositSolanaMachine,
     depositEstimateMaxValueActor: depositEstimateMaxValueActor,
   },
   actions: {
@@ -147,6 +153,9 @@ export const depositUIMachine = setup({
     }),
     setDepositEVMResult: assign({
       depositEVMResult: (_, value: DepositEVMMachineOutput) => value,
+    }),
+    setDepositSolanaResult: assign({
+      depositSolanaResult: (_, value: DepositSolanaMachineOutput) => value,
     }),
     setDepositGenerateAddressResult: assign({
       generatedAddressResult: (_, value: DepositGenerateAddressMachineOutput) =>
@@ -239,13 +248,23 @@ export const depositUIMachine = setup({
           context.formValues.network === BlockchainEnum.ARBITRUM)
       )
     },
+    isDepositSolanaRelevant: ({ context }) => {
+      return (
+        context.balance + context.nativeBalance >=
+          context.parsedFormValues.amount &&
+        context.formValues.network === BlockchainEnum.SOLANA
+      )
+    },
     isBalanceSufficientForEstimate: ({ context }) => {
       if (context.formValues.token == null) {
         return false
       }
       const token = context.formValues.token
       // For all Native tokens, we should validate wallet native balance
-      if (isUnifiedToken(token) && token.unifiedAssetId === "eth") {
+      if (
+        (isUnifiedToken(token) && token.unifiedAssetId === "eth") ||
+        (isBaseToken(token) && token.address === "native")
+      ) {
         return context.nativeBalance > 0n
       }
       return context.balance > 0n
@@ -261,7 +280,7 @@ export const depositUIMachine = setup({
     isOk: (_, a: { tag: "err" | "ok" }) => a.tag === "ok",
   },
 }).createMachine({
-  /** @xstate-layout N4IgpgJg5mDOIC5QTABwPawJYBcC0ArlgMQAyA8gOICSAcgNoAMAuoqBtjlugHZsgAPRHgAcIgEwA6AGziALHMbiAjI0UjZAGhABPYcuUBmRjLkBOAKzTDygOxLGtkQF9n2lB1yESFSuQCqACpMrEggnly8-EIIeLLKMhZJ0nbiFvaGttp6sQbGppbWdg5Oru5omF5EkpC4WDxQxADK-gBCALLUwSz8Edx8YTGykhZyhum2huKGM7ZO0tnC4tLSkoqGsvZJImZyymUgHpX41bVcDc1tncHKoezH-dGI0iZmjBIqGkq2druLuXILGtGJYnPZlmlRgcjpxvDUIHULnQAApBEK9B5RQb6ESGSTjWziRiMQzqSzKBa6JbiERrUbWMziMy2N42MzQiqw04I85QSSoABOYDwgrQAEMBWLIjxiOiwn0saAYnhlBYTLYLHYNiozNIxBZxP8dpJlprbNIksTSekORE4Wd6nzRagJVL+sQILwwJJYDgpd6YVUsPDEU6hS7JdK5fdOI9sbk3qsDOaRMoaaq9v84vZJKovizNcpmey3IdOUGQ7z+eHXdKagIwABjAjSgD6QoAjkQhQBbMA8HCwD1en1+nAB8snYMOhrV8WR-r1pst-rtsBdrC9-uD6PhTEDJXCCy4yQ-ClmN7EorKf7TPHvVKOCzGTa2W3He08x1ziNu3hL5s207bswD7Ach09HhvV9f1JEDKdK2-Z1a0XMAG0A1dgM3UDt1gehbgxWNFUEYQ5BEV4NEmZYLwMNJ-jZSQRDVNMdhmV9DHfLlpy-WdkIXf80OXID1xAsDB0kAAjMUABsxR4RtvSwCBpLAYcoMkeoADd0AAa29AAzMAcEbAALAB1GSVJwABBCAICFWBYFaGS5IUgAlMB9N3BUDxI3JlA0U8VGsZ9IRpCws0UORJEYaQL12AlxDmfZS3gz9Qx-FCBPQldeDXDct3AyQYCghdZyUlTZR6eV9yeAEbDWFZCUsQEVlJf4yM4isZzDec-x4ADcp4fLRNw4r+zAMq+UEjC8pKya3QuSDFJ4bS9LgydKAmyMwFs+y4FgDyvOqmM6mInJdW0ZUDACyRdWkZrRisaw5C6hCesy-iBoRIVGxwVt4JG7CxNgSQxR7dACAHDTlNU5aNNW3SJwiABRX0sB7f12jFAQADUZIIMAju82r4xVOxbFzMilBeAxrEMMx-jVWkfiS5kxDMNNJjeuFYAICSe1wXlaDACVAgENSVrW5HjhFiViZOvciN8mIdhMMiiTVFk7zkSkcjwJLaUMcjz2fIxxh56oCFQCB-Wc2T5NUgQYPHMH9PHAUAAoiWJABKD1Jzha3bfHe3XLAEnlbqpLKfI0YxF1zJjzkLNxlpXVVVi6ifhLco7WqPmBaFx0Udx9pxclhHpY21Gy4Vu4lbOlXEB2BIAs1TmJGUORCRvKlck1GQNAJRw5HkH4OIOHh0BQeAwjSohCKbuqDeJKRkz1FiMz7-XVCUU8L0ccjmSo17UsD7lQyX6UV6LUZczsTf01GHfhA0WkmTeMwmPNaZc7LfO3EMoVTANfOMh5cisRiuMFYnxvjdyzE4dUNFYrSHMElC259AGIV4kKEUNYvpgOItdCwZh8QGgvLMCQjBnwiEipTcY7w0GjHMJzZ6lsgFVj4v1IhzdcganTk1JkT02op37ngOYUgQQzBJKoA0ywUp5w-JfLhBD+qDWEgVHC4FeG3x+K8IRLVnrtXEdYSmpCZhGEYEWWwYxxAcJwb1X8dYZpDSBoVcSUkHYKV0WTCkwwxhKC1FMbu38syWhimYGYKgQQxzmA4j63CXE5U0aNIqXjw4wxUr4iBKoUjRUCSoSYITzB0PEXsIEFiKlMg2FMN8WDlGcKQmo5JQlMIiWBmNDJjs4JehyX5UQgJTw3V2BIH4WRxHGzxCIMYexTSTGPNIBJPEnFZQGq41JnSirzSmv066sC7qGJES9LM0xKZODGA9axMxmRnyUVxRxn11EbPaVokG41SqLT5CAvZ+h8mHIesI1qJzxGZxNDMpOTCxhFiWQ0h5iSWmoRSa8tJ4kdlfI0audFvJfm5H+fdR6wKTEXVhfc7qKynmtNmsNLCHjQbYu-MtXFEiZkyAtLchwpJGagtus+MYhJATWPSDsZZGUkmLh+k2f6gNaXaMHMy4oZCTYBXugyQk9FxDr1YjTeQcUAqitUX1Oskq-oA0nO4uVoNwaQwHAqlYCRlU7BWGqw0-dFBkL1IyXYSQKTpHsXC8lYrEX-hNdK81sr3nWqhjgLJoCapRz8SkaZ1iVXOoZuqt1zJcw7BpGg+YmqLQGuaUaiV2FTUyo6XSsGENo29Kgsy3EeJVBkW-iSOYbwJk5ANOnBmmRLBq1akW3BJb-ziryky+Ny8yY91pEYIwepkhqj1ogMeeJNXjLUC-XW0wHGF0FjgYWosBTi1xczEYC7v4Ggqc+QwpyVh3SSo4b+bUGY2gDQhYOdsXKO1xVEshVh3WWHZseV1+sNjq3yeRfRj9J5koQnu4uDRS7lxiKdG+8Y1RkInnvFk5pZARVBYoE00Tu56jHnfVwrggA */
+  /** @xstate-layout N4IgpgJg5mDOIC5QTABwPawJYBcC0ArlgMQAyA8gOICSAcgNoAMAuoqBtjlugHZsgAPRHgAcIgEwA6AGziALHMbiAjI0UjZAGhABPYcuUBmRjLkBOAKzTDygOxLGtkQF9n2lB1yESFSuQCqACpMrEggnly8-EIIeLLKMhZJ0nbiFvaGttp6sQbGppbWdg5Oru5omF5EkpC4WDxQxADK-gBCALLUwSz8Edx8YTF4BiKSVoyMFiopqspm0tnCKVJmZoZmYiKG4rYWq2UgHpX41bVcDc1tncHKoezH-dH64iZzFoq2snLK0rbzi7EFGZJLZbHILKpDLJpN8XG5DhVON4ahA6hcWh0uvRxHdwg8ooNntJJIY9nIRONGGYjAoAXhScDlOCXvYLGIgQcjkjTqjzo06AAFIIhXr4gagIaZCyScQbOS2daMVS2ZR08TiUZ2NZiMyTaSMETkzmIqpYFFoqCSVAAJzAeBtaAAhtbHZEeMQRWE+gSJcJDHIpNI1kplBYqUGVIYAX8xvLjBTDDYE4ZjRFkWd6paHahna7+sQILwwJJYDhXcWuabzXyrbacy63Z77pxHoTcrriQZPiJlBrQ986b9Xgb9X8IXM-qnjuneZna06G-0agIwABjAhugD6toAjkRbQBbMA8HCwAtFktlnAVk0nM0Zhrz+t53jLtcb-rbsB7rCH4+nps8RbH1BH0OYpBeTJDX9DZ4wBUNRi+NQNU2eYjCnbl71nR9s1zN033XLdd33MAjxPWBJAAI0dAAbR0eFXYssAgGiwHPHgmJ4AA3dAAGtiwAMzAHBVwACwAdVo1icAAQQgCBbVgWBWlo+jGIAJTAATAO9cVQNyZQNBBaZSW2JINQsOlFDkSRGCDVY5FJWwdhVDCqwfLM6zwpcwBXQjP2I39SP-CiYA4xdH2Y1iPR6L0xSeXJ3ikBRDJ7CYjDmBZdGEExHF1OQgwsKFZDSGxxDcu9qznXDF1fXz3yI78SLI09JDCsAIstKK2PoW5RWAvShl7FJbLDAM7HSJQtjpXK-jUQrivVMaLAqmcLSfby6r8j9eC-H8-3Itrjw6vNH3q-zdvazr2M4nj+MkSscEoY6GzAOSFLgWBNO02LmzqECht7KQtREeYRD+aR3ijbLckMUZPipYbZF2BRpFWnl1pql8eAeoLVxwTdHr25qQskbqYtxXSEuGaRZDGQ0RDs8HabDcQAQKmy4csAqNUYMrrHRrDMa82qcdRW18cJ29iaClqKPJ3rKfitthm2WxJADP5FDsGwfjkdmYRJUH3lkRn+ZTeFHrWmssfw8W1wJonAoO1rHQPdACBPG6ye4vibwiABRUssAPct2kdAQADVaIIMBvp05XfVyJVRkcBQwUhtD5ABYxDBkCkjCsVk9lsQWSwISiD1wPlaDAZ1AgEb36ju-3jlr5149+oD-sGxAFXVyZvghxyzBeMxB3kSQzFZdZNkyRyy4IVAIHLFS6IYtiBFLctJEdATr2tAAKF4JgASgLW9kSXlfrzXtSwATgaEvmEEU7Zae1kM346VZMYIQ0RmBU2RGktpfaosAK5VxwHyAOkd2gNybr7e6j1YHtE7krJ+bZ+6jQDEVIeY06RhhMNSQ0hl5CTB2GXCBldq6ZiaOgdejoEGFg4j7FuD1bz0MYeg-qPcEoKjzgVNQ8oDQTiUHSTIwJQb2HJGocGqwtiuHhDwdAKB4BhCtkQXhbpqYn2BnYaQPY+zvFVDDYYEwpB-HylDOyoILblDTBjPk2jWxJ2GNzSQXZDG9h7CYukACZSrERhMIuiYy4eTJixMALiAb6FBnnPmVh4iMx2EyH+jMQSrFULTcwOxSThOwp5O0ttXHdx0SrTIUhTJGAVLIVmaSzHfBkEqQyYNKmORWqAxxQsbYi2xjE3uuRdijHmL8WU7wkn+h-mkWyaxMi2LWOIKEBThYLmxgRHaPAZYu3UX9cpbi7CqCnrTZy3NJn6zMXsEwex-TiBSAaRwmQVm9LWfhc6mztnBUOtRdejEBnUx+HTRyIYBEqHMCIQhfNZn+iZBDKYo9nnVT6W87ajV9pfNaj8++kTWL-JVj8JkGtjAqFBUyDYVlQxjDWN8eFUI1aIpwsinyqKApNVlqTLFG8HpFjxW4w00oVQGDMOSVJWQzFwzztBb4dz0ikg0Ayopz4UUNVZeiuWR1wqnSgLy-SNM6ajNORM2mUyzFLPVk4RyGh1h-E+BqBVG1RYbLRSTQ6V0tU4uiXFTBByUg2QNeM8ExqLk5GGGGGU0Fdgjkcple1JStoqt2s7DFoUXruveVuN1zivV8Pxf-RIYgJi0x2NSSyZjQwmA1I5AqUIgnzFjUy+NF0tlJvVZmucLDPV7NKUMflIIDChi1nzJw0MQ1GEkIAjQ5JPjCrBN8etrylz20lk7NlOydVDRVNchmTNPiQ3ETDFQyUkihkTHIvW86lWLrxo7aWLbSbdXXfoPYUhwZWENKsSwKgIUHtWFPcyBgR5zSsBezaYtr1SwiJ89VbsPYnkfbkAq6tyFKnBHDcGFIc4vFsk4eYahR5TCmCBx1S6b2QbvYdDt8G8BrGBBK5UI9aQw3BNKH4bJZh8xeCkIj6y41bMo9m-ZurfjEiWdrCYo8gyGPZsKwJbIln6neAocqXTpzgMgbQho7drQN3g7KdWvxLCmQDIzDsg4x0QjBPGcwcY0YqcwpIa+q9VIb3g8MjW+oRF5FhKWkN9gB7-wDFO5CVD1PQMzKgnTAnu2IFlKMCQig2QqhrZ8YNwhzDSkhj8XUkwJDqnlCFmhYWGhcPokwmIXbYkIGMCYP4UJZ1knBODCRhiNYjxeEksM9KlFAA */
   id: "deposit-ui",
 
   context: ({ input, spawn }) => ({
@@ -279,6 +298,7 @@ export const depositUIMachine = setup({
     },
     depositNearResult: null,
     depositEVMResult: null,
+    depositSolanaResult: null,
     depositGenerateAddressRef: null,
     tokenList: input.tokenList,
     userAddress: null,
@@ -335,6 +355,11 @@ export const depositUIMachine = setup({
             target: "submittingEVMTx",
             reenter: true,
             guard: "isDepositEVMRelevant",
+          },
+          {
+            target: "submittingSolanaTx",
+            reenter: true,
+            guard: "isDepositSolanaRelevant",
           },
         ],
 
@@ -618,6 +643,50 @@ export const depositUIMachine = setup({
           actions: [
             {
               type: "setDepositEVMResult",
+              params: ({ event }) => event.output,
+            },
+            { type: "clearUIDepositAmount" },
+          ],
+
+          reenter: true,
+        },
+      },
+    },
+
+    submittingSolanaTx: {
+      invoke: {
+        id: "depositSolanaRef",
+        src: "depositSolanaActor",
+
+        input: ({ context, event }) => {
+          assertEvent(event, "SUBMIT")
+          const depositAddress =
+            context.generatedAddressResult?.tag === "ok"
+              ? context.generatedAddressResult.value.depositAddress
+              : null
+
+          assert(context.formValues.network, "network is null")
+          assert(context.userAddress, "userAddress is null")
+          assert(context.tokenAddress, "tokenAddress is null")
+          assert(depositAddress, "depositAddress is null")
+          assert(context.formValues.token, "token is null")
+
+          return {
+            balance: context.balance,
+            amount: context.parsedFormValues.amount,
+            asset: context.formValues.token,
+            accountId: context.userAddress,
+            tokenAddress: context.tokenAddress,
+            depositAddress,
+          }
+        },
+
+        onDone: {
+          target: "updateBalance",
+
+          actions: [
+            {
+              type: "setDepositSolanaResult",
               params: ({ event }) => event.output,
             },
             { type: "clearUIDepositAmount" },

@@ -1,3 +1,9 @@
+import {
+  LAMPORTS_PER_SOL,
+  PublicKey as PublicKeySolana,
+  SystemProgram,
+  Transaction as TransactionSolana,
+} from "@solana/web3.js"
 import { type Address, type Hash, encodeFunctionData, erc20Abi } from "viem"
 import { settings } from "../config/settings"
 import {
@@ -9,6 +15,7 @@ import { BlockchainEnum } from "../types"
 import { ChainType } from "../types"
 import type { Transaction } from "../types/deposit"
 import type { DefuseUserId } from "../utils/defuse"
+import { estimateSolanaTransferCost } from "./estimateService"
 import { getDepositAddress, getSupportedTokens } from "./poaBridgeClient"
 
 const FT_DEPOSIT_GAS = `30${"0".repeat(12)}` // 30 TGAS
@@ -145,6 +152,21 @@ export function createDepositEVMNativeTransaction(
   }
 }
 
+export function createDepositSolanaTransaction(
+  from: string,
+  to: string,
+  amount: bigint
+): TransactionSolana {
+  const transaction = new TransactionSolana().add(
+    SystemProgram.transfer({
+      fromPubkey: new PublicKeySolana(from),
+      toPubkey: new PublicKeySolana(to),
+      lamports: amount,
+    })
+  )
+  return transaction
+}
+
 /**
  * Generate a deposit address for the specified blockchain and asset through the POA bridge API call.
  *
@@ -278,7 +300,6 @@ export function getAvailableDepositRoutes(
       }
     case ChainType.Solana:
       switch (network) {
-        case BlockchainEnum.SOLANA:
         case BlockchainEnum.NEAR:
         case BlockchainEnum.ETHEREUM:
         case BlockchainEnum.BASE:
@@ -286,6 +307,11 @@ export function getAvailableDepositRoutes(
         case BlockchainEnum.BITCOIN:
           return {
             activeDeposit: false,
+            passiveDeposit: true,
+          }
+        case BlockchainEnum.SOLANA:
+          return {
+            activeDeposit: true,
             passiveDeposit: true,
           }
         default:

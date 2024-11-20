@@ -1,4 +1,5 @@
 import { base64 } from "@scure/base"
+import { Connection, PublicKey } from "@solana/web3.js"
 import { http, type Address, createPublicClient, erc20Abi } from "viem"
 import {
   getNearBalance,
@@ -9,6 +10,7 @@ import {
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../types/base"
 import { Semaphore } from "../../utils/semaphore"
 import { isBaseToken, isUnifiedToken } from "../../utils/token"
+
 export const RESERVED_NEAR_BALANCE = 1n * 10n ** 24n // 1 NEAR reserved for transaction fees and storage, using yoctoNEAR precision
 const semaphore = new Semaphore(5, 500) // 5 concurrent request, 0.5 second delay (adjust maxConcurrent and delayMs as needed)
 
@@ -203,6 +205,24 @@ export const getEvmErc20Balance = async ({
     return BigInt(data)
   } catch (err: unknown) {
     console.warn(err, "error fetching evm erc20 balance")
+    return null
+  }
+}
+
+export const getSolanaNativeBalance = async ({
+  userAddress,
+  rpcUrl,
+}: {
+  userAddress: string
+  rpcUrl: string
+}): Promise<bigint | null> => {
+  try {
+    const connection = new Connection(rpcUrl, "confirmed")
+    const publicKey = new PublicKey(userAddress)
+    const balance = await connection.getBalance(publicKey)
+    return BigInt(balance)
+  } catch (err: unknown) {
+    console.warn(err, "error fetching Solana native balance")
     return null
   }
 }

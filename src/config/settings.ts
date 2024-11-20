@@ -33,7 +33,8 @@ export let settings: Settings = {
     base: "https://mainnet.base.org",
     arbitrum: "https://arb1.arbitrum.io/rpc",
     bitcoin: "https://mainnet.bitcoin.org",
-    solana: "https://api.mainnet-beta.solana.com",
+    solana:
+      "https://quiet-solemn-asphalt.solana-mainnet.quiknode.pro/91aa5918df65520d47a54d88590f1503a4e804b1",
   },
 }
 

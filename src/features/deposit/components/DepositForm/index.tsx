@@ -64,6 +64,7 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
   const generatedAddressResult = snapshot.context.generatedAddressResult
   const depositNearResult = snapshot.context.depositNearResult
   const depositEVMResult = snapshot.context.depositEVMResult
+  const depositSolanaResult = snapshot.context.depositSolanaResult
 
   const depositAddress =
     generatedAddressResult?.tag === "ok"
@@ -266,15 +267,9 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
                     )}
                   <BlockMultiBalances
                     balance={
-                      token &&
-                      isBaseToken(token) &&
-                      token.address === "wrap.near"
-                        ? balance + nativeBalance
-                        : token &&
-                            isUnifiedToken(token) &&
-                            token.unifiedAssetId === "eth"
-                          ? nativeBalance
-                          : balance
+                      token && nativeBalance
+                        ? renderBalance(token, balance, nativeBalance)
+                        : 0n
                     }
                     decimals={token?.decimals ?? 0}
                     handleClick={() => handleSetMaxValue()}
@@ -370,7 +365,8 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
           renderDepositWarning(
             userAddress,
             depositNearResult,
-            depositEVMResult
+            depositEVMResult,
+            depositSolanaResult
           )}
         {userAddress && network === BlockchainEnum.NEAR && (
           <Deposits depositNearResult={snapshot.context.depositNearResult} />
@@ -514,7 +510,10 @@ function isInsufficientBalance(
     )
     return Number.parseFloat(formAmount) > Number.parseFloat(balanceToFormat)
   }
-  if (isUnifiedToken(token) && token.unifiedAssetId === "eth") {
+  if (
+    (isUnifiedToken(token) && token.unifiedAssetId === "eth") ||
+    (isBaseToken(token) && token.address === "native")
+  ) {
     const balanceToFormat = formatTokenValue(nativeBalance, token.decimals)
     return Number.parseFloat(formAmount) > Number.parseFloat(balanceToFormat)
   }
@@ -524,27 +523,26 @@ function isInsufficientBalance(
 function renderDepositWarning(
   userAddress: string | null,
   depositNearResult: Context["depositNearResult"],
-  depositEVMResult: Context["depositEVMResult"]
+  depositEVMResult: Context["depositEVMResult"],
+  depositSolanaResult: Context["depositSolanaResult"]
 ) {
   let content: ReactNode = null
   if (!userAddress) {
     content = "Please connect your wallet to continue"
   }
 
-  if (depositNearResult !== null && depositNearResult.tag === "err") {
-    const status = depositNearResult.value.reason
-    switch (status) {
-      case "ERR_SUBMITTING_TRANSACTION":
-        content =
-          "It seems the transaction was rejected in your wallet. Please try again."
-        break
-      default:
-        content = "An error occurred. Please try again."
-    }
-  }
+  // Because all deposit results have the same statuses, we can use a single pattern to check for errors.
+  // To improve readability, we abbreviate deposit result names:
+  // 'depositNearResult' becomes 'r1', 'depositEVMResult' becomes 'r2', etc.
+  const r1 = depositNearResult !== null && depositNearResult.tag === "err"
+  const r2 = depositEVMResult !== null && depositEVMResult.tag === "err"
+  const r3 = depositSolanaResult !== null && depositSolanaResult.tag === "err"
 
-  if (depositEVMResult !== null && depositEVMResult.tag === "err") {
-    const status = depositEVMResult.value.reason
+  if (r1 || r2 || r3) {
+    const status =
+      (r1 && depositNearResult.value.reason) ||
+      (r2 && depositEVMResult.value.reason) ||
+      (r3 && depositSolanaResult.value.reason)
     switch (status) {
       case "ERR_SUBMITTING_TRANSACTION":
         content =
@@ -662,4 +660,24 @@ function renderDepositHint(
 
 function truncateUserAddress(hash: string) {
   return `${hash.slice(0, 12)}...${hash.slice(-12)}`
+}
+
+function renderBalance(
+  token: SwappableToken,
+  balance: bigint,
+  nativeBalance: bigint
+) {
+  if (isBaseToken(token)) {
+    if (token.address === "wrap.near") {
+      return balance + nativeBalance
+    }
+    if (token.address === "native") {
+      return nativeBalance
+    }
+    return balance
+  }
+  if (isUnifiedToken(token) && token.unifiedAssetId === "eth") {
+    return nativeBalance
+  }
+  return balance
 }

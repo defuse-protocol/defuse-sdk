@@ -2,7 +2,10 @@ import {
   createDepositEVMERC20Transaction,
   getWalletRpcUrl,
 } from "src/services/depositService"
-import { estimateEVMTransferCost } from "src/services/estimateService"
+import {
+  estimateEVMTransferCost,
+  estimateSolanaTransferCost,
+} from "src/services/estimateService"
 import { BlockchainEnum, type SwappableToken } from "src/types"
 import { isBaseToken, isUnifiedToken } from "src/utils"
 import { reverseAssetNetworkAdapter } from "src/utils/adapters"
@@ -77,10 +80,21 @@ export const depositEstimateMaxValueActor = fromPromise(
           }
           return balance
         }
+      case BlockchainEnum.SOLANA: {
+        const fee = estimateSolanaTransferCost()
+        if (nativeBalance < fee) {
+          return 0n
+        }
+        const maxTransferableBalance = nativeBalance - fee
+        return maxTransferableBalance > 0n ? maxTransferableBalance : 0n
+      }
       // Exception `case BlockchainEnum.BITCOIN:`
       // We don't do checks for Bitcoin as we don't support direct deposits to Bitcoin
+      case BlockchainEnum.BITCOIN:
+        return 0n
       default:
-        throw new Error("Unsupported network")
+        network satisfies never
+        throw new Error("exhaustive check failed")
     }
   }
 )

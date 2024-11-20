@@ -9,6 +9,7 @@ import {
   getEvmNativeBalance,
   getNearNativeBalance,
   getNearNep141Balance,
+  getSolanaNativeBalance,
 } from "./getBalanceMachine"
 
 export const backgroundBalanceActor = fromPromise(
@@ -62,7 +63,11 @@ export const backgroundBalanceActor = fromPromise(
       case BlockchainEnum.SOLANA:
         return {
           balance: 0n,
-          nativeBalance: 0n,
+          nativeBalance:
+            (await getSolanaNativeBalance({
+              userAddress: userAddress,
+              rpcUrl: getWalletRpcUrl(network),
+            })) ?? 0n,
         }
       default:
         network satisfies never

@@ -1,3 +1,4 @@
+import type { Transaction as TransactionSolana } from "@solana/web3.js"
 import type { Address, Hash } from "viem"
 import type { SwappableToken } from "../types"
 
@@ -18,11 +19,13 @@ export type DepositWidgetProps = UserInfo & {
   tokenList: SwappableToken[]
   sendTransactionNear: (tx: Transaction["NEAR"][]) => Promise<string | null>
   sendTransactionEVM: (tx: Transaction["EVM"]) => Promise<Hash | null>
+  sendTransactionSolana: (tx: Transaction["Solana"]) => Promise<string | null>
 }
 
 export type Transaction = {
   NEAR: SendTransactionNearParams
   EVM: SendTransactionEVMParams
+  Solana: SendTransactionSolanaParams
 }
 
 export type DepositEvent = {
@@ -53,6 +56,8 @@ export interface SendTransactionEVMParams {
   data: Hash
   value?: bigint
 }
+
+export interface SendTransactionSolanaParams extends TransactionSolana {}
 
 export interface BaseAssetInfo {
   address: string
