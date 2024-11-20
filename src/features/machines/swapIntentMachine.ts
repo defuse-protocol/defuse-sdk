@@ -1,7 +1,6 @@
 import { secp256k1 } from "@noble/curves/secp256k1"
 import { base58 } from "@scure/base"
 import type { providers } from "near-api-js"
-import extractPublishIntentError from "src/utils/extractPublishIntentError"
 import { sign } from "tweetnacl"
 import { verifyMessage as verifyMessageViem } from "viem"
 import { assign, fromPromise, setup } from "xstate"
@@ -86,18 +85,23 @@ type Context = {
   intentHash: string | null
   error: null | {
     tag: "err"
-    value: {
-      reason:
-        | "ERR_USER_DIDNT_SIGN"
-        | "ERR_CANNOT_VERIFY_SIGNATURE"
-        | "ERR_SIGNED_DIFFERENT_ACCOUNT"
-        | "ERR_PUBKEY_EXCEPTION"
-        | "ERR_CANNOT_PUBLISH_INTENT"
-        | "ERR_QUOTE_EXPIRED_RETURN_IS_LOWER"
-        | WalletErrorCode
-        | PublicKeyVerifierErrorCodes
-      error: Error | null
-    }
+    value:
+      | {
+          reason:
+            | "ERR_USER_DIDNT_SIGN"
+            | "ERR_CANNOT_VERIFY_SIGNATURE"
+            | "ERR_SIGNED_DIFFERENT_ACCOUNT"
+            | "ERR_PUBKEY_EXCEPTION"
+            | "ERR_CANNOT_PUBLISH_INTENT"
+            | "ERR_QUOTE_EXPIRED_RETURN_IS_LOWER"
+            | WalletErrorCode
+            | PublicKeyVerifierErrorCodes
+          error: Error | null
+        }
+      | {
+          reason: "ERR_CANNOT_PUBLISH_INTENT"
+          server_reason: string
+        }
   }
 }
 
@@ -541,26 +545,24 @@ export const swapIntentMachine = setup({
             },
             actions: {
               type: "setIntentHash",
-              params: ({ event }) => event.output.value as string,
+              params: ({ event }) => {
+                assert(event.output.tag === "ok")
+                return event.output.value
+              },
             },
           },
           {
             target: "Generic Error",
-            actions: [
-              {
-                type: "logError",
-                params: ({ event }) => ({
-                  error: extractPublishIntentError(event.output),
-                }),
-              },
-              {
-                type: "setError",
-                params: ({ event }) => ({
+            actions: {
+              type: "setError",
+              params: ({ event }) => {
+                assert(event.output.tag === "err")
+                return {
                   reason: "ERR_CANNOT_PUBLISH_INTENT",
-                  error: extractPublishIntentError(event.output),
-                }),
+                  server_reason: event.output.value.reason,
+                }
               },
-            ],
+            },
           },
         ],
       },
