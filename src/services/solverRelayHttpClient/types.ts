@@ -52,16 +52,18 @@ export type PublishIntentRequest = JSONRPCRequest<
 >
 
 export type PublishIntentResponse = JSONRPCResponse<
-  | {
-      intent_hash: string
-      status: "OK"
-    }
-  | {
-      intent_hash: string
-      status: "FAILED"
-      reason: string | "expired" | "internal"
-    }
+  PublishIntentResponseSuccess | PublishIntentResponseFailure
 >
+
+export type PublishIntentResponseSuccess = {
+  intent_hash: string
+  status: "OK"
+}
+export type PublishIntentResponseFailure = {
+  intent_hash: string
+  status: "FAILED"
+  reason: string | "expired" | "internal"
+}
 
 export type GetStatusRequest = JSONRPCRequest<
   "get_status",

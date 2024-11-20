@@ -2,19 +2,29 @@ import type { ChainType, WalletSignatureResult } from "../types"
 import { prepareSwapSignedData } from "../utils/prepareBroadcastRequest"
 import * as solverRelayClient from "./solverRelayHttpClient"
 import type * as types from "./solverRelayHttpClient/types"
+export type PublishIntentFailureReason = "expired" | "internal"
 
-export async function submitIntent(
+export type PublishIntentResult =
+  | { tag: "ok"; value: string }
+  | {
+      tag: "err"
+      value: { reason: types.PublishIntentResponseFailure["reason"] }
+    }
+
+export async function publishIntent(
   signatureData: WalletSignatureResult,
   userInfo: { userAddress: string; userChainType: ChainType },
   quoteHashes: string[]
-) {
+): Promise<PublishIntentResult> {
   // todo: retry on network error
   const result = await solverRelayClient.publishIntent({
     signed_data: prepareSwapSignedData(signatureData, userInfo),
     quote_hashes: quoteHashes,
   })
-  // todo: check status, it may be "FAILED"
-  return result.intent_hash
+
+  if (result.status === "OK") return { tag: "ok", value: result.intent_hash }
+
+  return { tag: "err", value: { reason: result.status } }
 }
 
 export type IntentSettlementResult = Awaited<

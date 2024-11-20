@@ -6,7 +6,7 @@ import { verifyMessage as verifyMessageViem } from "viem"
 import { assign, fromPromise, setup } from "xstate"
 import { settings } from "../../config/settings"
 import {
-  submitIntent,
+  publishIntent,
   waitForIntentSettlement,
 } from "../../services/intentService"
 import type { AggregatedQuote } from "../../services/quoteService"
@@ -85,18 +85,23 @@ type Context = {
   intentHash: string | null
   error: null | {
     tag: "err"
-    value: {
-      reason:
-        | "ERR_USER_DIDNT_SIGN"
-        | "ERR_CANNOT_VERIFY_SIGNATURE"
-        | "ERR_SIGNED_DIFFERENT_ACCOUNT"
-        | "ERR_PUBKEY_EXCEPTION"
-        | "ERR_CANNOT_PUBLISH_INTENT"
-        | "ERR_QUOTE_EXPIRED_RETURN_IS_LOWER"
-        | WalletErrorCode
-        | PublicKeyVerifierErrorCodes
-      error: Error | null
-    }
+    value:
+      | {
+          reason:
+            | "ERR_USER_DIDNT_SIGN"
+            | "ERR_CANNOT_VERIFY_SIGNATURE"
+            | "ERR_SIGNED_DIFFERENT_ACCOUNT"
+            | "ERR_PUBKEY_EXCEPTION"
+            | "ERR_CANNOT_PUBLISH_INTENT"
+            | "ERR_QUOTE_EXPIRED_RETURN_IS_LOWER"
+            | WalletErrorCode
+            | PublicKeyVerifierErrorCodes
+          error: Error | null
+        }
+      | {
+          reason: "ERR_CANNOT_PUBLISH_INTENT"
+          server_reason: string
+        }
   }
 }
 
@@ -215,7 +220,8 @@ export const swapIntentMachine = setup({
           userInfo: { userAddress: string; userChainType: ChainType }
           quoteHashes: string[]
         }
-      }) => submitIntent(input.signatureData, input.userInfo, input.quoteHashes)
+      }) =>
+        publishIntent(input.signatureData, input.userInfo, input.quoteHashes)
     ),
     pollIntentStatus: fromPromise(
       ({
@@ -530,14 +536,35 @@ export const swapIntentMachine = setup({
           ],
         },
 
-        onDone: {
-          target: "Completed",
-
-          actions: {
-            type: "setIntentHash",
-            params: ({ event }) => event.output,
+        onDone: [
+          {
+            target: "Completed",
+            guard: {
+              type: "isOk",
+              params: ({ event }) => event.output,
+            },
+            actions: {
+              type: "setIntentHash",
+              params: ({ event }) => {
+                assert(event.output.tag === "ok")
+                return event.output.value
+              },
+            },
           },
-        },
+          {
+            target: "Generic Error",
+            actions: {
+              type: "setError",
+              params: ({ event }) => {
+                assert(event.output.tag === "err")
+                return {
+                  reason: "ERR_CANNOT_PUBLISH_INTENT",
+                  server_reason: event.output.value.reason,
+                }
+              },
+            },
+          },
+        ],
       },
     },
 
