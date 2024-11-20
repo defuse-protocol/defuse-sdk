@@ -1,12 +1,13 @@
 import { secp256k1 } from "@noble/curves/secp256k1"
 import { base58 } from "@scure/base"
 import type { providers } from "near-api-js"
+import extractPublishIntentError from "src/utils/extractPublishIntentError"
 import { sign } from "tweetnacl"
 import { verifyMessage as verifyMessageViem } from "viem"
 import { assign, fromPromise, setup } from "xstate"
 import { settings } from "../../config/settings"
 import {
-  submitIntent,
+  publishIntent,
   waitForIntentSettlement,
 } from "../../services/intentService"
 import type { AggregatedQuote } from "../../services/quoteService"
@@ -215,7 +216,8 @@ export const swapIntentMachine = setup({
           userInfo: { userAddress: string; userChainType: ChainType }
           quoteHashes: string[]
         }
-      }) => submitIntent(input.signatureData, input.userInfo, input.quoteHashes)
+      }) =>
+        publishIntent(input.signatureData, input.userInfo, input.quoteHashes)
     ),
     pollIntentStatus: fromPromise(
       ({
@@ -530,14 +532,37 @@ export const swapIntentMachine = setup({
           ],
         },
 
-        onDone: {
-          target: "Completed",
-
-          actions: {
-            type: "setIntentHash",
-            params: ({ event }) => event.output,
+        onDone: [
+          {
+            target: "Completed",
+            guard: {
+              type: "isOk",
+              params: ({ event }) => event.output,
+            },
+            actions: {
+              type: "setIntentHash",
+              params: ({ event }) => event.output.value as string,
+            },
           },
-        },
+          {
+            target: "Generic Error",
+            actions: [
+              {
+                type: "logError",
+                params: ({ event }) => ({
+                  error: extractPublishIntentError(event.output),
+                }),
+              },
+              {
+                type: "setError",
+                params: ({ event }) => ({
+                  reason: "ERR_CANNOT_PUBLISH_INTENT",
+                  error: extractPublishIntentError(event.output),
+                }),
+              },
+            ],
+          },
+        ],
       },
     },
 
