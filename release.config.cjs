@@ -1,3 +1,4 @@
+/** @type {import('semantic-release').Options} */
 const config = {
   branches: ["main"],
   plugins: [
