@@ -58,8 +58,6 @@ export const backgroundBalanceActor = fromPromise(
               rpcUrl: getWalletRpcUrl(network),
             })) ?? 0n,
         }
-      // Direct deposits through Bitcoin, Solana are not supported, so we don't need to check balances
-      case BlockchainEnum.BITCOIN:
       case BlockchainEnum.SOLANA:
         return {
           balance: 0n,
@@ -68,6 +66,13 @@ export const backgroundBalanceActor = fromPromise(
               userAddress: userAddress,
               rpcUrl: getWalletRpcUrl(network),
             })) ?? 0n,
+        }
+      // Active deposits through Bitcoin, Dogecoin are not supported, so we don't need to check balances
+      case BlockchainEnum.BITCOIN:
+      case BlockchainEnum.DOGECOIN:
+        return {
+          balance: 0n,
+          nativeBalance: 0n,
         }
       default:
         network satisfies never
