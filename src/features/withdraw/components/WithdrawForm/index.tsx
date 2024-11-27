@@ -515,6 +515,16 @@ const allBlockchains: Array<{
     ),
     value: "solana",
   },
+  {
+    label: "Dogecoin",
+    icon: (
+      <NetworkIcon
+        chainIcon="/static/icons/network/dogecoin.svg"
+        chainName="Dogecoin"
+      />
+    ),
+    value: "dogecoin",
+  },
 ]
 
 function renderMinWithdrawalAmount(
