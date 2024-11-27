@@ -29,8 +29,7 @@ export function validateAddress(
       }
 
     case "dogecoin":
-      // todo: add dogecoin address validation
-      return true
+      return /^[DA][1-9A-HJ-NP-Za-km-z]{25,33}$/.test(address)
 
     default:
       blockchain satisfies never
