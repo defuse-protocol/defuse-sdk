@@ -450,11 +450,7 @@ export const WithdrawForm = ({
   )
 }
 
-const allBlockchains: Array<{
-  label: string
-  icon: ReactNode
-  value: SupportedChainName
-}> = [
+const allBlockchains = [
   {
     label: "Near",
     icon: (
@@ -515,7 +511,29 @@ const allBlockchains: Array<{
     ),
     value: "solana",
   },
-]
+  {
+    label: "Dogecoin",
+    icon: (
+      <NetworkIcon
+        chainIcon="/static/icons/network/dogecoin.svg"
+        chainName="Dogecoin"
+      />
+    ),
+    value: "dogecoin",
+  },
+] as const satisfies Array<{
+  label: string
+  icon: ReactNode
+  value: SupportedChainName
+}>
+
+type TypeEqualityGuard<A, B> = Exclude<A, B> | Exclude<B, A> extends never
+  ? true
+  : never
+const typeCheck: TypeEqualityGuard<
+  SupportedChainName,
+  (typeof allBlockchains)[number]["value"]
+> = true
 
 function renderMinWithdrawalAmount(
   minWithdrawalAmount: bigint | null,

@@ -55,4 +55,32 @@ describe("validateAddress", () => {
     ).toBe(true)
     expect(validateAddress("invalidSolanaAddress", "solana")).toBe(false)
   })
+
+  it("should validate Dogecoin addresses", () => {
+    // Valid addresses
+    expect(
+      validateAddress("DPvG6Dk8cQRX7VauYbYHTxStD3kHZGBSda", "dogecoin")
+    ).toBe(true)
+    expect(
+      validateAddress("A7c8eJJPkXYwHShzXRuBwpnnfwEcUSkdB4", "dogecoin")
+    ).toBe(true)
+
+    // Invalid addresses
+    expect(
+      // too long
+      validateAddress("DPvG6Dk8cQRX7VauYbYHTxStD3kHZGBSdaXXX", "dogecoin")
+    ).toBe(false)
+    expect(
+      // too short
+      validateAddress("DPvG6", "dogecoin")
+    ).toBe(false)
+    expect(
+      // wrong prefix
+      validateAddress("9PvG6Dk8cQRX7VauYbYHTxStD3kHZGBSda", "dogecoin")
+    ).toBe(false)
+    expect(
+      // invalid character
+      validateAddress("DPvG6Dk8cQRX7VauYbYHTxStD3kHZGBS.a", "dogecoin")
+    ).toBe(false)
+  })
 })
