@@ -28,6 +28,10 @@ export function validateAddress(
         return false
       }
 
+    case "dogecoin":
+      // todo: add dogecoin address validation
+      return true
+
     default:
       blockchain satisfies never
       return false

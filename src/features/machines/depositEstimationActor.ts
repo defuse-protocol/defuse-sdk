@@ -88,9 +88,9 @@ export const depositEstimateMaxValueActor = fromPromise(
         const maxTransferableBalance = nativeBalance - fee
         return maxTransferableBalance > 0n ? maxTransferableBalance : 0n
       }
-      // Exception `case BlockchainEnum.BITCOIN:`
-      // We don't do checks for Bitcoin as we don't support direct deposits to Bitcoin
+      // Active deposits through Bitcoin, Dogecoin are not supported, so no network fees
       case BlockchainEnum.BITCOIN:
+      case BlockchainEnum.DOGECOIN:
         return 0n
       default:
         network satisfies never

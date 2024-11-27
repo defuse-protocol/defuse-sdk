@@ -447,6 +447,16 @@ function getBlockchainsOptions(): Record<
       ),
       value: BlockchainEnum.SOLANA,
     },
+    [BlockchainEnum.DOGECOIN]: {
+      label: "Dogecoin",
+      icon: (
+        <NetworkIcon
+          chainIcon="/static/icons/network/dogecoin.svg"
+          chainName="dogecoin"
+        />
+      ),
+      value: BlockchainEnum.DOGECOIN,
+    },
   }
   return options
 }
@@ -626,6 +636,7 @@ const networkSelectToLabel: Record<BlockchainEnum, string> = {
   [BlockchainEnum.ARBITRUM]: "Arbitrum",
   [BlockchainEnum.BITCOIN]: "Bitcoin",
   [BlockchainEnum.SOLANA]: "Solana",
+  [BlockchainEnum.DOGECOIN]: "Dogecoin",
 }
 
 function renderDepositHint(

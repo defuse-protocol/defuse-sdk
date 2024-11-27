@@ -251,4 +251,5 @@ export enum BlockchainEnum {
   ARBITRUM = "eth:42161",
   BITCOIN = "btc:mainnet",
   SOLANA = "sol:mainnet",
+  DOGECOIN = "doge:mainnet",
 }
