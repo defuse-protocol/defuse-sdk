@@ -553,6 +553,11 @@ export const withdrawUIMachine = setup({
             "not prepared"
           )
 
+          const quote = context.preparationOutput.value.swap?.swapQuote
+          if (!quote) {
+            throw new Error("quote not available")
+          }
+
           const formValues = context.withdrawFormRef.getSnapshot().context
           const recipient = formValues.parsedRecipient
           assert(recipient, "recipient is null")
@@ -569,7 +574,7 @@ export const withdrawUIMachine = setup({
             intentOperationParams: {
               type: "withdraw",
               tokenOut: formValues.tokenOut,
-              quote: context.preparationOutput.value.swap?.swapQuote ?? null,
+              quote,
               nep141Storage: context.preparationOutput.value.nep141Storage,
               directWithdrawalAmount:
                 context.preparationOutput.value.directWithdrawAvailable,
