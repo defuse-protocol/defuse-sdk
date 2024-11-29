@@ -54,7 +54,7 @@ type IntentOperationParams =
   | {
       type: "withdraw"
       tokenOut: BaseTokenInfo
-      quote: AggregatedQuote
+      quote: AggregatedQuote | null
       nep141Storage: NEP141StorageRequirement | null
       directWithdrawalAmount: bigint
       recipient: string
@@ -148,13 +148,31 @@ export const swapIntentMachine = setup({
     },
     proposeQuote: assign({
       intentOperationParams: ({ context }, proposedQuote: AggregatedQuote) => {
-        return {
-          ...context.intentOperationParams,
-          quote: determineNewestValidQuote(
-            context.intentOperationParams.quote,
-            proposedQuote
-          ),
+        if (context.intentOperationParams.type === "swap") {
+          return {
+            ...context.intentOperationParams,
+            quote: determineNewestValidQuote(
+              context.intentOperationParams.quote,
+              proposedQuote
+            ),
+          }
         }
+
+        // Quote needs to be updated for withdraw only in case of crosschain withdrawal
+        if (
+          context.intentOperationParams.type === "withdraw" &&
+          context.intentOperationParams.quote !== null
+        ) {
+          return {
+            ...context.intentOperationParams,
+            quote: determineNewestValidQuote(
+              context.intentOperationParams.quote,
+              proposedQuote
+            ),
+          }
+        }
+
+        return context.intentOperationParams
       },
     }),
     assembleSignMessages: assign({
