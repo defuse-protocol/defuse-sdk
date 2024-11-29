@@ -303,6 +303,10 @@ export function getAvailableDepositRoutes(
     case ChainType.Solana:
       switch (network) {
         case BlockchainEnum.NEAR:
+          return {
+            activeDeposit: false,
+            passiveDeposit: false,
+          }
         case BlockchainEnum.ETHEREUM:
         case BlockchainEnum.BASE:
         case BlockchainEnum.ARBITRUM:
