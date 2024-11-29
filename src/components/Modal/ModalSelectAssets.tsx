@@ -43,15 +43,14 @@ export const ModalSelectAssets = () => {
 
   const handleSearchClear = () => setSearchValue("")
 
-  const filterPattern = (asset: SelectItemToken) =>
-    asset.token.name
-      .toLocaleUpperCase()
-      .includes(deferredQuery.toLocaleUpperCase()) ||
-    (isBaseToken(asset.token)
-      ? asset.token.chainName
-          .toLocaleUpperCase()
-          .includes(deferredQuery.toLocaleUpperCase())
-      : true)
+  const filterPattern = (asset: SelectItemToken) => {
+    const formattedQuery = deferredQuery.toLocaleUpperCase()
+
+    return (
+      asset.token.symbol.toLocaleUpperCase().includes(formattedQuery) ||
+      asset.token.name.toLocaleUpperCase().includes(formattedQuery)
+    )
+  }
 
   const handleSelectToken = (selectedItem: SelectItemToken) => {
     if (modalType !== ModalType.MODAL_SELECT_ASSETS) {
@@ -70,7 +69,7 @@ export const ModalSelectAssets = () => {
     if (!data.size && !isLoading) {
       return
     }
-    const { selectToken, fieldName } = payload as {
+    const { selectToken } = payload as {
       selectToken: Token | undefined
       fieldName: string
       balances?: BalanceMapping
