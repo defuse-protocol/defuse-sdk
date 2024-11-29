@@ -44,12 +44,17 @@ export const ModalSelectAssets = () => {
   const handleSearchClear = () => setSearchValue("")
 
   const filterPattern = (asset: SelectItemToken) => {
-    const formattedQuery = deferredQuery.toLocaleUpperCase()
+    try {
+      const formattedQuery = deferredQuery.toLocaleUpperCase()
 
-    return (
-      asset.token.symbol.toLocaleUpperCase().includes(formattedQuery) ||
-      asset.token.name.toLocaleUpperCase().includes(formattedQuery)
-    )
+      return (
+        asset.token.symbol.toLocaleUpperCase().includes(formattedQuery) ||
+        asset.token.name.toLocaleUpperCase().includes(formattedQuery)
+      )
+    } catch (e) {
+      console.error("Failed to filter tokens", e)
+      return false
+    }
   }
 
   const handleSelectToken = (selectedItem: SelectItemToken) => {
