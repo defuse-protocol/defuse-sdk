@@ -158,6 +158,20 @@ export const swapIntentMachine = setup({
           }
         }
 
+        // Quote needs to be updated for withdraw only in case of crosschain withdrawal
+        if (
+          context.intentOperationParams.type === "withdraw" &&
+          context.intentOperationParams.quote !== null
+        ) {
+          return {
+            ...context.intentOperationParams,
+            quote: determineNewestValidQuote(
+              context.intentOperationParams.quote,
+              proposedQuote
+            ),
+          }
+        }
+
         return context.intentOperationParams
       },
     }),
@@ -227,8 +241,10 @@ export const swapIntentMachine = setup({
       ({
         input,
         signal,
-      }: { input: { intentHash: string }; signal: AbortSignal }) =>
-        waitForIntentSettlement(signal, input.intentHash)
+      }: {
+        input: { intentHash: string }
+        signal: AbortSignal
+      }) => waitForIntentSettlement(signal, input.intentHash)
     ),
   },
   guards: {

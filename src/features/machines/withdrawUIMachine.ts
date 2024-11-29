@@ -569,7 +569,7 @@ export const withdrawUIMachine = setup({
             intentOperationParams: {
               type: "withdraw",
               tokenOut: formValues.tokenOut,
-              quote: context.preparationOutput.value.swap?.swapQuote ?? null,
+              quote: context.preparationOutput.value.swap?.swapQuote || null,
               nep141Storage: context.preparationOutput.value.nep141Storage,
               directWithdrawalAmount:
                 context.preparationOutput.value.directWithdrawAvailable,
