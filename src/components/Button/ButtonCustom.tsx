@@ -7,9 +7,8 @@ import {
 } from "@radix-ui/themes"
 import clsx from "clsx"
 import React, { type ReactNode, type ButtonHTMLAttributes } from "react"
-import type { FieldValues } from "react-hook-form"
 
-interface Props<T extends FieldValues>
+interface ButtonCustomProps
   extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, "color"> {
   children?: ReactNode
   variant?: "primary" | "secondary" | "base" | "soft" | "solid"
@@ -18,7 +17,7 @@ interface Props<T extends FieldValues>
   isLoading?: boolean
 }
 
-export const ButtonCustom = <T extends FieldValues>({
+export const ButtonCustom = ({
   children,
   variant = "primary",
   size = "base",
@@ -26,7 +25,7 @@ export const ButtonCustom = <T extends FieldValues>({
   disabled,
   isLoading = false,
   ...rest
-}: Props<T>) => {
+}: ButtonCustomProps) => {
   const buttonBaseStyle = "cursor-pointer whitespace-nowrap"
 
   let buttonVariantStyle: ButtonProps["variant"]
@@ -34,7 +33,6 @@ export const ButtonCustom = <T extends FieldValues>({
   switch (variant) {
     case "primary":
       buttonVariantStyle = "classic"
-      buttonColorStyle = "orange"
       break
     case "secondary":
       buttonVariantStyle = "outline"

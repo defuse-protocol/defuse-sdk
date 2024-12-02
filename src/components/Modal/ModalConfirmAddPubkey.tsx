@@ -44,7 +44,6 @@ export const ModalConfirmAddPubkey = () => {
           </Button>
 
           <Button
-            color={"orange"}
             onClick={() => {
               onConfirm()
             }}

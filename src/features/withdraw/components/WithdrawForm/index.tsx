@@ -425,8 +425,7 @@ export const WithdrawForm = ({
               variant="classic"
               size="3"
               radius="large"
-              className={`${styles.button}`}
-              color="orange"
+              className={styles.button}
               disabled={state.matches("submitting") || !!noLiquidity}
             >
               {noLiquidity ? (
