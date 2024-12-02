@@ -10,7 +10,7 @@ import {
 import type { ChainType, SwappableToken } from "../../types"
 import { BlockchainEnum } from "../../types"
 import { parseUnits } from "../../utils/parse"
-import { isBaseToken, isUnifiedToken } from "../../utils/token"
+import { isBaseToken, isNativeToken, isUnifiedToken } from "../../utils/token"
 import { backgroundBalanceActor } from "./backgroundBalanceActor"
 import {
   type Output as DepositEVMMachineOutput,
@@ -262,8 +262,11 @@ export const depositUIMachine = setup({
       const token = context.formValues.token
       // For all Native tokens, we should validate wallet native balance
       if (
-        (isUnifiedToken(token) && token.unifiedAssetId === "eth") ||
-        (isBaseToken(token) && token.address === "native")
+        (isUnifiedToken(token) &&
+          token.groupedTokens.some(
+            (t) => "type" in t && t.type === "native"
+          )) ||
+        (isBaseToken(token) && isNativeToken(token))
       ) {
         return context.nativeBalance > 0n
       }

@@ -32,7 +32,11 @@ import {
   type SwappableToken,
 } from "../../../../types"
 import { formatTokenValue } from "../../../../utils/format"
-import { isBaseToken, isUnifiedToken } from "../../../../utils/token"
+import {
+  isBaseToken,
+  isNativeToken,
+  isUnifiedToken,
+} from "../../../../utils/token"
 import type { Context } from "../../../machines/depositUIMachine"
 import { DepositUIMachineContext } from "../DepositUIMachineProvider"
 import { Deposits } from "../Deposits"
@@ -678,17 +682,19 @@ function renderBalance(
   balance: bigint,
   nativeBalance: bigint
 ) {
-  if (isBaseToken(token)) {
-    if (token.address === "wrap.near") {
-      return balance + nativeBalance
-    }
-    if (token.address === "native") {
-      return nativeBalance
-    }
-    return balance
+  // If the token is base and is wNEAR, return the combined balance of NEAR and wNEAR
+  if (isBaseToken(token) && token.address === "wrap.near") {
+    return balance + nativeBalance
   }
-  if (isUnifiedToken(token) && token.unifiedAssetId === "eth") {
+
+  // If the token is base and is native or it is unified and contains a native token, return the native balance
+  if (
+    (isBaseToken(token) && isNativeToken(token)) ||
+    (isUnifiedToken(token) &&
+      token.groupedTokens.some((t) => "type" in t && t.type === "native"))
+  ) {
     return nativeBalance
   }
+
   return balance
 }

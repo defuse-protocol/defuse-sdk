@@ -85,8 +85,7 @@ export const depositEstimateMaxValueActor = fromPromise(
         if (nativeBalance < fee) {
           return 0n
         }
-        const maxTransferableBalance = nativeBalance - fee
-        return maxTransferableBalance > 0n ? maxTransferableBalance : 0n
+        return nativeBalance - fee
       }
       // Active deposits through Bitcoin, Dogecoin are not supported, so no network fees
       case BlockchainEnum.BITCOIN:
