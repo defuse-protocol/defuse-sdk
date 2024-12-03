@@ -2,6 +2,7 @@ import { base64 } from "@scure/base"
 import { settings } from "../config/settings"
 import type { WalletMessage } from "../types"
 import type {
+  AccountId,
   Intent,
   Nep413DefuseMessageFor_DefuseIntents,
   TokenAmountsForInt128,
@@ -101,6 +102,13 @@ function makeInnerWithdrawMessage(params: WithdrawParams): Intent {
   const paramsType = params.type
   switch (paramsType) {
     case "to_near":
+      if (params.tokenAccountId === "wrap.near") {
+        return {
+          intent: "native_withdraw",
+          receiver_id: params.receiverId,
+          amount: params.amount.toString(),
+        }
+      }
       return {
         intent: "ft_withdraw",
         token: params.tokenAccountId,
