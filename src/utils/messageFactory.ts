@@ -74,7 +74,7 @@ export function makeInnerSwapAndWithdrawMessage({
     intents.push(...swapIntents)
   }
 
-  intents.push(makeInnerWithdrawMessage(withdrawParams) as Intent)
+  intents.push(makeInnerWithdrawMessage(withdrawParams))
 
   return {
     deadline: { timestamp: deadlineTimestamp },
@@ -98,15 +98,7 @@ type WithdrawParams =
       destinationAddress: string
     }
 
-type NativeWithdrawIntent = {
-  intent: "native_withdraw"
-  amount: string
-  receiver_id: AccountId
-}
-
-function makeInnerWithdrawMessage(
-  params: WithdrawParams
-): Intent | NativeWithdrawIntent {
+function makeInnerWithdrawMessage(params: WithdrawParams): Intent {
   const paramsType = params.type
   switch (paramsType) {
     case "to_near":
