@@ -3,3 +3,46 @@
   bottom: 1rem;
   right: 1.25rem;
 }
+
+.icon {
+  width: 16px;
+  height: 16px;
+  background-color: var(--gray-11);
+  mask-image: url("/static/icons/wallet_no_active.svg");
+  mask-repeat: no-repeat;
+  mask-size: contain;
+}
+
+.activeIcon {
+  background-color: var(--accent-9);
+}
+
+.balanceValue {
+  padding: 0.125rem 0.5rem;
+  border-radius: 9999px;
+}
+
+.balanceValueActive {
+  background-color: var(--accent-3);
+  color: var(--accent-9);
+}
+
+.balanceValueInactive {
+  background-color: var(--gray-4);
+  color: var(--gray-11);
+}
+
+.nativeSupport {
+  position: absolute;
+  top: -74px;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.nativeSupportText {
+  color: var(--gray-9);
+  white-space: nowrap;
+}
