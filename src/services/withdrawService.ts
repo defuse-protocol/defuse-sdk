@@ -194,6 +194,11 @@ async function determineNEP141StorageRequirement(
       }
     }
 > {
+  // We withdraw unwrapped near so no storage deposit is required for withdrawal of NEAR
+  if (formValues.tokenOut.address === "wrap.near") {
+    return { tag: "ok", value: null }
+  }
+
   const nep141StorageRequired = await checkNEP141StorageRequirements(
     { formValues },
     { signal }
