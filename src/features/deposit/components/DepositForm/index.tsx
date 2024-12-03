@@ -682,7 +682,10 @@ function renderBalance(
   balance: bigint,
   nativeBalance: bigint
 ) {
-  // If the token is base and is wNEAR, return the combined balance of NEAR and wNEAR
+  // For user experience, both NEAR and wNEAR are treated as equivalent during the deposit process.
+  // This allows users to deposit either token seamlessly.
+  // When the balance is checked, it considers the total of both NEAR and wNEAR,
+  // ensuring that users can deposit without needing to convert between the two.
   if (isBaseToken(token) && token.address === "wrap.near") {
     return balance + nativeBalance
   }
