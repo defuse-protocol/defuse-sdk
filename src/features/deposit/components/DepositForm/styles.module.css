@@ -11,7 +11,7 @@
 .formWrapper {
   border-radius: 1rem;
   padding: 1.25rem;
-  background-color: white;
+  background-color: var(--gray-surface);
   box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
 }
 
@@ -49,7 +49,6 @@
 .button {
   width: 100%;
   height: 56px;
-  border-radius: 0.5rem;
 }
 
 .buttonContent {
@@ -103,7 +102,7 @@
 
 .copyButton {
   padding: 0 12px;
-  background-color: #ff9c0029;
+  background-color: var(--accent-3);
   cursor: pointer;
 }
 
@@ -118,19 +117,19 @@
   height: 56px;
   padding: 0px 16px;
   gap: 12px;
-  background-color: #f9f9f8;
+  background-color: var(--gray-2);
   color: #63635e;
   max-width: 100%;
   box-sizing: border-box;
   flex-shrink: 0;
   border-radius: 8px;
-  border: 1px solid #cfceca;
+  border: 1px solid var(--gray-7);
   opacity: 0.92;
   margin-bottom: 1rem;
 }
 
 .assetWrapper:hover {
-  background-color: var(--mauve-3);
+  background-color: var(--gray-3);
 }
 
 .containerQr {
