@@ -693,8 +693,7 @@ function renderBalance(
   // If the token is base and is native or it is unified and contains a native token, return the native balance
   if (
     (isBaseToken(token) && isNativeToken(token)) ||
-    (isUnifiedToken(token) &&
-      token.groupedTokens.some((t) => "type" in t && t.type === "native"))
+    (isUnifiedToken(token) && token.groupedTokens.some(isNativeToken))
   ) {
     return nativeBalance
   }
