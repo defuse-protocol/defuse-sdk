@@ -45,6 +45,7 @@ export const backgroundBalanceActor = fromPromise(
       case BlockchainEnum.ETHEREUM:
       case BlockchainEnum.BASE:
       case BlockchainEnum.ARBITRUM:
+      case BlockchainEnum.TURBOCHAIN:
         return {
           balance:
             (await getEvmErc20Balance({
