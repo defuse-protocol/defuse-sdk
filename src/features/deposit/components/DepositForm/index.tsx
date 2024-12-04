@@ -25,6 +25,7 @@ import { assetNetworkAdapter } from "src/utils/adapters"
 import { http, createPublicClient } from "viem"
 import { AssetComboIcon } from "../../../../components/Asset/AssetComboIcon"
 import { BlockMultiBalances } from "../../../../components/Block/BlockMultiBalances"
+import { ButtonCustom } from "../../../../components/Button"
 import { EmptyIcon } from "../../../../components/EmptyIcon"
 import { Form } from "../../../../components/Form"
 import { Input } from "../../../../components/Input"
@@ -297,24 +298,16 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
           )}
           {(isActiveDeposit || !network) && (
             <div className={styles.buttonGroup}>
-              <Button
-                variant="classic"
-                size="3"
-                radius="large"
-                className={styles.button}
+              <ButtonCustom
+                size={"lg"}
                 disabled={!watch("amount") || balanceInsufficient}
               >
-                <span className={styles.buttonContent}>
-                  <Spinner loading={false} />
-                  <Text size="6">
-                    {renderDepositButtonText(
-                      watch("amount") >= "0" && balanceInsufficient,
-                      network,
-                      token
-                    )}
-                  </Text>
-                </span>
-              </Button>
+                {renderDepositButtonText(
+                  watch("amount") >= "0" && balanceInsufficient,
+                  network,
+                  token
+                )}
+              </ButtonCustom>
             </div>
           )}
           {isPassiveDeposit &&

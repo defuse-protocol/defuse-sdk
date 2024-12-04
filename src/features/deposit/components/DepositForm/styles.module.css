@@ -46,18 +46,6 @@
   margin-top: 1rem;
 }
 
-.button {
-  width: 100%;
-  height: 56px;
-}
-
-.buttonContent {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 0.5rem;
-}
-
 .orangeButton {
   background-color: orange;
   color: white;
