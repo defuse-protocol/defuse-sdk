@@ -193,32 +193,34 @@ export const SwapForm = ({ onNavigateDeposit }: SwapFormProps) => {
           balance={tokenOutBalance}
         />
 
-        {showDepositButton ? (
-          <ButtonCustom
-            type={"button"}
-            size="lg"
-            fullWidth
-            onClick={() => {
-              onNavigateDeposit()
-            }}
-          >
-            Go to Deposit
-          </ButtonCustom>
-        ) : (
-          <ButtonCustom
-            type="submit"
-            size="lg"
-            fullWidth
-            isLoading={snapshot.matches("submitting")}
-            disabled={!!balanceInsufficient || !!noLiquidity}
-          >
-            {noLiquidity
-              ? "No liquidity providers"
-              : balanceInsufficient
-                ? "Insufficient Balance"
-                : "Swap"}
-          </ButtonCustom>
-        )}
+        <Flex align={"stretch"} direction={"column"}>
+          {showDepositButton ? (
+            <ButtonCustom
+              type={"button"}
+              size="lg"
+              fullWidth
+              onClick={() => {
+                onNavigateDeposit()
+              }}
+            >
+              Go to Deposit
+            </ButtonCustom>
+          ) : (
+            <ButtonCustom
+              type="submit"
+              size="lg"
+              fullWidth
+              isLoading={snapshot.matches("submitting")}
+              disabled={!!balanceInsufficient || !!noLiquidity}
+            >
+              {noLiquidity
+                ? "No liquidity providers"
+                : balanceInsufficient
+                  ? "Insufficient Balance"
+                  : "Swap"}
+            </ButtonCustom>
+          )}
+        </Flex>
       </Form>
 
       {renderIntentCreationResult(intentCreationResult)}
