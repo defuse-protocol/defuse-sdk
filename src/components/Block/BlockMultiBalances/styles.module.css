@@ -14,21 +14,22 @@
 }
 
 .activeIcon {
-  background-color: var(--accent-9);
+  background-color: var(--accent-10);
 }
 
 .balanceValue {
   padding: 0.125rem 0.5rem;
   border-radius: 9999px;
+  font-weight: bold;
 }
 
 .balanceValueActive {
-  background-color: var(--accent-3);
-  color: var(--accent-9);
+  background-color: var(--accent-a3);
+  color: var(--accent-11);
 }
 
 .balanceValueInactive {
-  background-color: var(--gray-4);
+  background-color: var(--gray-a3);
   color: var(--gray-11);
 }
 
