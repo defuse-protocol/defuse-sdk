@@ -28,18 +28,18 @@ export const ButtonCustom = ({
   ...rest
 }: ButtonCustomProps) => {
   let radixButtonVariant: ButtonProps["variant"]
-  let buttonColorStyle: ButtonProps["color"]
+  let radixButtonColor: ButtonProps["color"]
   switch (variant) {
     case "primary":
       radixButtonVariant = "classic"
       break
     case "secondary":
       radixButtonVariant = "outline"
-      buttonColorStyle = "gray"
+      radixButtonColor = "gray"
       break
     case "base":
       radixButtonVariant = "solid"
-      buttonColorStyle = "gray"
+      radixButtonColor = "gray"
       break
   }
 
@@ -56,19 +56,18 @@ export const ButtonCustom = ({
   }
 
   return (
-    <Theme accentColor={buttonColorStyle} asChild>
-      <Flex align={"center"} gap={"2"} asChild>
-        <Button
-          variant={radixButtonVariant}
-          size={radixButtonSize}
-          disabled={disabled || isLoading}
-          className={styles[size]}
-          {...rest}
-        >
-          <Spinner loading={isLoading as boolean} />
-          <Text weight={"bold"}>{children}</Text>
-        </Button>
-      </Flex>
-    </Theme>
+    <Flex align={"center"} gap={"2"} asChild>
+      <Button
+        color={radixButtonColor}
+        variant={radixButtonVariant}
+        size={radixButtonSize}
+        disabled={disabled || isLoading}
+        className={styles[size]}
+        {...rest}
+      >
+        <Spinner loading={isLoading as boolean} />
+        <Text weight={"bold"}>{children}</Text>
+      </Button>
+    </Flex>
   )
 }
