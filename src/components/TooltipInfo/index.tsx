@@ -12,7 +12,7 @@ export const TooltipInfo = ({
       <Tooltip.Root>
         <Tooltip.Trigger asChild>{icon}</Tooltip.Trigger>
         <Tooltip.Portal>
-          <Theme>
+          <Theme asChild>
             <Tooltip.Content className="TooltipContent" sideOffset={5}>
               <div className={styles.tooltipInfo}>{children}</div>
             </Tooltip.Content>

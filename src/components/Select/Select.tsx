@@ -78,7 +78,7 @@ export const Select = forwardRef(function Select<
         </Flex>
       </RadixSelect.Trigger>
       <RadixSelect.Portal>
-        <Theme>
+        <Theme asChild>
           <RadixSelect.Content
             className={styles.selectContent}
             position="popper"
