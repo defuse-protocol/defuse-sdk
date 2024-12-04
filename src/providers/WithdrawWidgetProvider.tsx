@@ -1,16 +1,19 @@
-import type { PropsWithChildren } from "react"
+import type { ReactNode } from "react"
 import { ModalContainer } from "../components/Modal/ModalContainer"
 import { ModalStoreProvider } from "./ModalStoreProvider"
 import { QueryClientProvider } from "./QueryClientProvider"
+import { TokensStoreProvider } from "./TokensStoreProvider"
 
-export const WithdrawWidgetProvider: React.FC<PropsWithChildren> = ({
+export const WithdrawWidgetProvider = ({
   children,
-}) => {
+}: { children: ReactNode }) => {
   return (
     <QueryClientProvider>
       <ModalStoreProvider>
-        {children}
-        <ModalContainer />
+        <TokensStoreProvider>
+          {children}
+          <ModalContainer />
+        </TokensStoreProvider>
       </ModalStoreProvider>
     </QueryClientProvider>
   )

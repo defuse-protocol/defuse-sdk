@@ -9,7 +9,7 @@
       "import": "./dist/index.esm.js",
       "types": "./dist/index.d.ts"
     },
-    "./styles": "./dist/index.css"
+    "./styles.css": "./dist/index.css"
   },
   "module": "./dist/index.esm.js",
   "types": "./dist/index.d.ts",

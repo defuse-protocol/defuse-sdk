@@ -1,6 +1,6 @@
 import { ChevronDownIcon, ChevronUpIcon } from "@radix-ui/react-icons"
 import * as RadixSelect from "@radix-ui/react-select"
-import { Flex } from "@radix-ui/themes"
+import { Flex, Theme } from "@radix-ui/themes"
 import clsx from "clsx"
 import type React from "react"
 import { forwardRef } from "react"
@@ -78,38 +78,40 @@ export const Select = forwardRef(function Select<
         </Flex>
       </RadixSelect.Trigger>
       <RadixSelect.Portal>
-        <RadixSelect.Content
-          className={styles.selectContent}
-          position="popper"
-          side="bottom"
-          sideOffset={8}
-        >
-          <RadixSelect.Viewport className={styles.selectViewport}>
-            {Object.keys(options).map((key: string) => (
-              <SelectItem
-                key={key}
-                value={options[key as keyof typeof options].value}
-              >
-                <Flex
-                  as="span"
-                  align="center"
-                  justify="between"
-                  gap="2"
-                  width="100%"
+        <Theme>
+          <RadixSelect.Content
+            className={styles.selectContent}
+            position="popper"
+            side="bottom"
+            sideOffset={8}
+          >
+            <RadixSelect.Viewport className={styles.selectViewport}>
+              {Object.keys(options).map((key: string) => (
+                <SelectItem
+                  key={key}
+                  value={options[key as keyof typeof options].value}
                 >
-                  {options[key as keyof typeof options]?.icon && (
-                    <Flex as="span" className={styles.selectItemIcon}>
-                      {options[key as keyof typeof options].icon}
+                  <Flex
+                    as="span"
+                    align="center"
+                    justify="between"
+                    gap="2"
+                    width="100%"
+                  >
+                    {options[key as keyof typeof options]?.icon && (
+                      <Flex as="span" className={styles.selectItemIcon}>
+                        {options[key as keyof typeof options].icon}
+                      </Flex>
+                    )}
+                    <Flex as="span">
+                      {options[key as keyof typeof options].label}
                     </Flex>
-                  )}
-                  <Flex as="span">
-                    {options[key as keyof typeof options].label}
                   </Flex>
-                </Flex>
-              </SelectItem>
-            ))}
-          </RadixSelect.Viewport>
-        </RadixSelect.Content>
+                </SelectItem>
+              ))}
+            </RadixSelect.Viewport>
+          </RadixSelect.Content>
+        </Theme>
       </RadixSelect.Portal>
     </RadixSelect.Root>
   )

@@ -3,7 +3,14 @@ import {
   ExclamationTriangleIcon,
   InfoCircledIcon,
 } from "@radix-ui/react-icons"
-import { Button, Callout, Flex, Spinner, Text } from "@radix-ui/themes"
+import {
+  Button,
+  Callout,
+  Flex,
+  Spinner,
+  Text,
+  useThemeContext,
+} from "@radix-ui/themes"
 import { useSelector } from "@xstate/react"
 import { QRCodeSVG } from "qrcode.react"
 import { type ReactNode, useEffect, useRef, useState } from "react"
@@ -18,6 +25,7 @@ import { assetNetworkAdapter } from "src/utils/adapters"
 import { http, createPublicClient } from "viem"
 import { AssetComboIcon } from "../../../../components/Asset/AssetComboIcon"
 import { BlockMultiBalances } from "../../../../components/Block/BlockMultiBalances"
+import { ButtonCustom } from "../../../../components/Button"
 import { EmptyIcon } from "../../../../components/EmptyIcon"
 import { Form } from "../../../../components/Form"
 import { Input } from "../../../../components/Input"
@@ -187,6 +195,8 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
 
   const [isCopied, setIsCopied] = useState(false)
 
+  const { accentColor } = useThemeContext()
+
   return (
     <div className={styles.container}>
       <div className={styles.formWrapper}>
@@ -251,7 +261,13 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
                   {token &&
                     isBaseToken(token) &&
                     token.address === "wrap.near" && (
-                      <TooltipInfo icon={<InfoCircledIcon color="orange" />}>
+                      <TooltipInfo
+                        icon={
+                          <Text asChild color={accentColor}>
+                            <InfoCircledIcon />
+                          </Text>
+                        }
+                      >
                         Combined balance of NEAR and wNEAR.
                         <br /> NEAR will be automatically wrapped to wNEAR
                         <br /> if your wNEAR balance isn't sufficient for the
@@ -282,25 +298,16 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
           )}
           {(isActiveDeposit || !network) && (
             <div className={styles.buttonGroup}>
-              <Button
-                variant="classic"
-                size="3"
-                radius="large"
-                className={`${styles.button}`}
-                color="orange"
+              <ButtonCustom
+                size={"lg"}
                 disabled={!watch("amount") || balanceInsufficient}
               >
-                <span className={styles.buttonContent}>
-                  <Spinner loading={false} />
-                  <Text size="6">
-                    {renderDepositButtonText(
-                      watch("amount") >= "0" && balanceInsufficient,
-                      network,
-                      token
-                    )}
-                  </Text>
-                </span>
-              </Button>
+                {renderDepositButtonText(
+                  watch("amount") >= "0" && balanceInsufficient,
+                  network,
+                  token
+                )}
+              </ButtonCustom>
             </div>
           )}
           {isPassiveDeposit &&
@@ -344,10 +351,12 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
                         onCopy={() => setIsCopied(true)}
                       >
                         <Flex gap="2" align="center">
-                          <Text color="orange">
+                          <Text color={accentColor}>
                             {isCopied ? "Copied" : "Copy"}
                           </Text>
-                          <CopyIcon height="14" width="14" color="orange" />
+                          <Text color={accentColor} asChild>
+                            <CopyIcon height="14" width="14" />
+                          </Text>
                         </Flex>
                       </CopyToClipboard>
                     </Button>

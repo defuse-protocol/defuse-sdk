@@ -1,16 +1,10 @@
-import type React from "react"
-import type { PropsWithChildren } from "react"
-
+import type { ReactNode } from "react"
 import { ModalContainer } from "../components/Modal/ModalContainer"
-
 import { ModalStoreProvider } from "./ModalStoreProvider"
-import { TokensStoreProvider } from "./TokensStoreProvider"
-import "../styles/main.css"
 import { QueryClientProvider } from "./QueryClientProvider"
+import { TokensStoreProvider } from "./TokensStoreProvider"
 
-export const SwapWidgetProvider: React.FC<PropsWithChildren> = ({
-  children,
-}) => {
+export const SwapWidgetProvider = ({ children }: { children: ReactNode }) => {
   return (
     <QueryClientProvider>
       <ModalStoreProvider>

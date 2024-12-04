@@ -1,6 +1,12 @@
 import type { CheckedState } from "@radix-ui/react-checkbox"
 import { InfoCircledIcon } from "@radix-ui/react-icons"
-import { Checkbox, Flex, Text, Tooltip } from "@radix-ui/themes"
+import {
+  Checkbox,
+  Flex,
+  Text,
+  Tooltip,
+  useThemeContext,
+} from "@radix-ui/themes"
 import clsx from "clsx"
 import { formatTokenValue } from "../../../utils/format"
 import styles from "./styles.module.css"
@@ -27,6 +33,7 @@ export const BlockMultiBalances = ({
   className,
 }: BlockMultiBalancesProps) => {
   const active = balance > 0n && !disabled
+  const { accentColor } = useThemeContext()
 
   return (
     <Flex
@@ -34,54 +41,39 @@ export const BlockMultiBalances = ({
       asChild
       className={clsx(styles.balanceContainer, className)}
     >
-      <button type={"button"} onClick={handleClick} disabled={!active}>
-        {active ? (
-          <img
-            src="/static/icons/wallet_active.svg"
-            alt="Balance"
-            width={16}
-            height={16}
-          />
-        ) : (
-          <img
-            src="/static/icons/wallet_no_active.svg"
-            alt={"Balance"}
-            width={16}
-            height={16}
-          />
-        )}
-        <span
-          className={clsx(
-            "text-xs px-2 py-0.5 rounded-full",
-            active
-              ? "bg-red-100 text-red-400 dark:bg-red-200 dark:text-primary-400"
-              : "bg-white-200 text-gray-600"
+      <Flex asChild align={"center"} gap={"1"}>
+        <button type={"button"} onClick={handleClick} disabled={!active}>
+          <div className={clsx(styles.icon, active && styles.activeIcon)} />
+          <Text
+            size={"1"}
+            className={clsx(
+              styles.balanceValue,
+              active ? styles.balanceValueActive : styles.balanceValueInactive
+            )}
+          >
+            {formatTokenValue(balance, decimals, {
+              min: 0.0001,
+              fractionDigits: 4,
+            })}
+          </Text>
+          {withNativeSupport && (
+            <div className={styles.nativeSupport}>
+              <Checkbox
+                size="1"
+                checked={nativeSupportChecked ?? false}
+                onCheckedChange={handleIncludeNativeToSwap ?? (() => {})}
+                color={accentColor}
+              />
+              <Text size="1" className={styles.nativeSupportText}>
+                Use Native
+              </Text>
+              <Tooltip content="Your NEAR balance will be automatically wrapped to wNEAR if your wNEAR balance isn't sufficient for the swap">
+                <InfoCircledIcon />
+              </Tooltip>
+            </div>
           )}
-        >
-          {formatTokenValue(balance, decimals, {
-            min: 0.0001,
-            fractionDigits: 4,
-          })}
-        </span>
-        {withNativeSupport && (
-          <div className="absolute -top-[74px] right-0 flex justify-center items-center gap-1">
-            <Checkbox
-              size="1"
-              checked={nativeSupportChecked ?? false}
-              onCheckedChange={
-                handleIncludeNativeToSwap ? handleIncludeNativeToSwap : () => {}
-              }
-              color="orange"
-            />
-            <Text size="1" className="text-gray-600 text-nowrap">
-              Use Native
-            </Text>
-            <Tooltip content="Your NEAR balance will be automatically wrapped to wNEAR if your wNEAR balance isn't sufficient for the swap">
-              <InfoCircledIcon />
-            </Tooltip>
-          </div>
-        )}
-      </button>
+        </button>
+      </Flex>
     </Flex>
   )
 }
