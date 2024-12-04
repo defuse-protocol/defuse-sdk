@@ -466,6 +466,16 @@ function getBlockchainsOptions(): Record<
       ),
       value: BlockchainEnum.DOGECOIN,
     },
+    [BlockchainEnum.TURBOCHAIN]: {
+      label: "Turbochain",
+      icon: (
+        <NetworkIcon
+          chainIcon="/static/icons/network/turbochain.png"
+          chainName="turbochain"
+        />
+      ),
+      value: BlockchainEnum.TURBOCHAIN,
+    },
   }
   return options
 }
@@ -646,6 +656,7 @@ const networkSelectToLabel: Record<BlockchainEnum, string> = {
   [BlockchainEnum.BITCOIN]: "Bitcoin",
   [BlockchainEnum.SOLANA]: "Solana",
   [BlockchainEnum.DOGECOIN]: "Dogecoin",
+  [BlockchainEnum.TURBOCHAIN]: "Turbochain",
 }
 
 function renderDepositHint(
