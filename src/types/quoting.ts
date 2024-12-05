@@ -36,4 +36,7 @@ export interface Settings {
   rpcUrls: {
     [key in SupportedChainName]: string
   }
+  silo: {
+    turbochain: string
+  }
 }
