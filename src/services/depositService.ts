@@ -141,6 +141,30 @@ export function createDepositEVMERC20Transaction(
   }
 }
 
+export function createDepositSiloToSiloTransaction(
+  assetAccountId: string,
+  userAddress: string,
+  amount: bigint,
+  depositAddress: string,
+  siloAddress: string
+): { to: Address; data: Hash } {
+  // TODO check chain type for userAddress as a rule, pass through the user chainType
+  const data = encodeFunctionData({
+    abi: siloAbi,
+    functionName: "safeFtTransferCallToNear",
+    args: [
+      assetAccountId as Address,
+      amount,
+      depositAddress,
+      userAddressToDefuseUserId(userAddress, ChainType.EVM),
+    ],
+  })
+  return {
+    to: siloAddress as Address,
+    data,
+  }
+}
+
 export function createDepositEVMNativeTransaction(
   generatedAddress: string,
   amount: bigint
@@ -362,3 +386,34 @@ export function getWalletRpcUrl(network: BlockchainEnum): string {
       throw new Error("exhaustive check failed")
   }
 }
+
+const siloAbi = [
+  {
+    inputs: [
+      {
+        internalType: "contract IEvmErc20",
+        name: "token",
+        type: "address",
+      },
+      {
+        internalType: "uint128",
+        name: "amount",
+        type: "uint128",
+      },
+      {
+        internalType: "string",
+        name: "receiverId",
+        type: "string",
+      },
+      {
+        internalType: "string",
+        name: "message",
+        type: "string",
+      },
+    ],
+    name: "safeFtTransferCallToNear",
+    outputs: [],
+    stateMutability: "payable",
+    type: "function",
+  },
+]
