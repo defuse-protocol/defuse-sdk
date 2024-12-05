@@ -1,3 +1,4 @@
+import { settings } from "src/config/settings"
 import { assetNetworkAdapter } from "src/utils/adapters"
 import {
   type ActorRefFrom,
@@ -30,6 +31,10 @@ import {
   type Output as DepositSolanaMachineOutput,
   depositSolanaMachine,
 } from "./depositSolanaMachine"
+import {
+  type Output as DepositTurboMachineOutput,
+  depositTurboMachine,
+} from "./depositTurboMachine"
 import { poaBridgeInfoActor } from "./poaBridgeInfoActor"
 
 export type Context = {
@@ -61,6 +66,7 @@ export type Context = {
   depositNearResult: DepositNearMachineOutput | null
   depositEVMResult: DepositEVMMachineOutput | null
   depositSolanaResult: DepositSolanaMachineOutput | null
+  depositTurboResult: DepositTurboMachineOutput | null
 }
 
 export const depositUIMachine = setup({
@@ -98,6 +104,7 @@ export const depositUIMachine = setup({
       depositNearRef: "depositNearActor"
       depositEVMRef: "depositEVMActor"
       depositSolanaRef: "depositSolanaActor"
+      depositTurboRef: "depositTurboActor"
     },
   },
   actors: {
@@ -108,6 +115,7 @@ export const depositUIMachine = setup({
     depositEVMActor: depositEVMMachine,
     depositSolanaActor: depositSolanaMachine,
     depositEstimateMaxValueActor: depositEstimateMaxValueActor,
+    depositTurboActor: depositTurboMachine,
   },
   actions: {
     setFormValues: assign({
@@ -157,12 +165,17 @@ export const depositUIMachine = setup({
     setDepositSolanaResult: assign({
       depositSolanaResult: (_, value: DepositSolanaMachineOutput) => value,
     }),
+    setDepositTurboResult: assign({
+      depositTurboResult: (_, value: DepositTurboMachineOutput) => value,
+    }),
     setDepositGenerateAddressResult: assign({
       generatedAddressResult: (_, value: DepositGenerateAddressMachineOutput) =>
         value,
     }),
     clearDepositResult: assign({ depositNearResult: null }),
     clearDepositEVMResult: assign({ depositEVMResult: null }),
+    clearDepositSolanaResult: assign({ depositSolanaResult: null }),
+    clearDepositTurboResult: assign({ depositTurboResult: null }),
 
     extractAssetIds: assign({
       defuseAssetId: ({ context }) => {
@@ -255,6 +268,13 @@ export const depositUIMachine = setup({
         context.formValues.network === BlockchainEnum.SOLANA
       )
     },
+    isDepositTurbochainRelevant: ({ context }) => {
+      return (
+        context.balance + context.nativeBalance >=
+          context.parsedFormValues.amount &&
+        context.formValues.network === BlockchainEnum.TURBOCHAIN
+      )
+    },
     isBalanceSufficientForEstimate: ({ context }) => {
       if (context.formValues.token == null) {
         return false
@@ -273,6 +293,7 @@ export const depositUIMachine = setup({
       return (
         context.formValues.network != null &&
         context.formValues.network !== BlockchainEnum.NEAR &&
+        context.formValues.network !== BlockchainEnum.TURBOCHAIN &&
         !!context.userAddress &&
         !!context.defuseAssetId
       )
@@ -280,7 +301,7 @@ export const depositUIMachine = setup({
     isOk: (_, a: { tag: "err" | "ok" }) => a.tag === "ok",
   },
 }).createMachine({
-  /** @xstate-layout N4IgpgJg5mDOIC5QTABwPawJYBcC0ArlgMQAyA8gOICSAcgNoAMAuoqBtjlugHZsgAPRHgAcIgEwA6AGziALHMbiAjI0UjZAGhABPYcuUBmRjLkBOAKzTDygOxLGtkQF9n2lB1yESFSuQCqACpMrEggnly8-EIIeLLKMhZJ0nbiFvaGttp6sQbGppbWdg5Oru5omF5EkpC4WDxQxADK-gBCALLUwSz8Edx8YTF4BiKSVoyMFiopqspm0tnCKVJmZoZmYiKG4rYWq2UgHpX41bVcDc1tncHKoezH-dH64iZzFoq2snLK0rbzi7EFGZJLZbHILKpDLJpN8XG5DhVON4ahA6hcWh0uvRxHdwg8ooNntJJIY9nIRONGGYjAoAXhScDlOCXvYLGIgQcjkjTqjzo06AAFIIhXr4gagIaZCyScQbOS2daMVS2ZR08TiUZ2NZiMyTaSMETkzmIqpYFFoqCSVAAJzAeBtaAAhtbHZEeMQRWE+gSJcJDHIpNI1kplBYqUGVIYAX8xvLjBTDDYE4ZjRFkWd6paHahna7+sQILwwJJYDhXcWuabzXyrbacy63Z77pxHoTcrriQZPiJlBrQ986b9Xgb9X8IXM-qnjuneZna06G-0agIwABjAhugD6toAjkRbQBbMA8HCwAtFktlnAVk0nM0Zhrz+t53jLtcb-rbsB7rCH4+nps8RbH1BH0OYpBeTJDX9DZ4wBUNRi+NQNU2eYjCnbl71nR9s1zN033XLdd33MAjxPWBJAAI0dAAbR0eFXYssAgGiwHPHgmJ4AA3dAAGtiwAMzAHBVwACwAdVo1icAAQQgCBbVgWBWlo+jGIAJTAATAO9cVQNyZQNBBaZSW2JINQsOlFDkSRGCDVY5FJWwdhVDCqwfLM6zwpcwBXQjP2I39SP-CiYA4xdH2Y1iPR6L0xSeXJ3ikBRDJ7CYjDmBZdGEExHF1OQgwsKFZDSGxxDcu9qznXDF1fXz3yI78SLI09JDCsAIstKK2PoW5RWAvShl7FJbLDAM7HSJQtjpXK-jUQrivVMaLAqmcLSfby6r8j9eC-H8-3Itrjw6vNH3q-zdvazr2M4nj+MkSscEoY6GzAOSFLgWBNO02LmzqECht7KQtREeYRD+aR3ijbLckMUZPipYbZF2BRpFWnl1pql8eAeoLVxwTdHr25qQskbqYtxXSEuGaRZDGQ0RDs8HabDcQAQKmy4csAqNUYMrrHRrDMa82qcdRW18cJ29iaClqKPJ3rKfitthm2WxJADP5FDsGwfjkdmYRJUH3lkRn+ZTeFHrWmssfw8W1wJonAoO1rHQPdACBPG6ye4vibwiABRUssAPct2kdAQADVaIIMBvp05XfVyJVRkcBQwUhtD5ABYxDBkCkjCsVk9lsQWSwISiD1wPlaDAZ1AgEb36ju-3jlr5149+oD-sGxAFXVyZvghxyzBeMxB3kSQzFZdZNkyRyy4IVAIHLFS6IYtiBFLctJEdATr2tAAKF4JgASgLW9kSXlfrzXtSwATgaEvmEEU7Zae1kM346VZMYIQ0RmBU2RGktpfaosAK5VxwHyAOkd2gNybr7e6j1YHtE7krJ+bZ+6jQDEVIeY06RhhMNSQ0hl5CTB2GXCBldq6ZiaOgdejoEGFg4j7FuD1bz0MYeg-qPcEoKjzgVNQ8oDQTiUHSTIwJQb2HJGocGqwtiuHhDwdAKB4BhCtkQXhbpqYn2BnYaQPY+zvFVDDYYEwpB-HylDOyoILblDTBjPk2jWxJ2GNzSQXZDG9h7CYukACZSrERhMIuiYy4eTJixMALiAb6FBnnPmVh4iMx2EyH+jMQSrFULTcwOxSThOwp5O0ttXHdx0SrTIUhTJGAVLIVmaSzHfBkEqQyYNKmORWqAxxQsbYi2xjE3uuRdijHmL8WU7wkn+h-mkWyaxMi2LWOIKEBThYLmxgRHaPAZYu3UX9cpbi7CqCnrTZy3NJn6zMXsEwex-TiBSAaRwmQVm9LWfhc6mztnBUOtRdejEBnUx+HTRyIYBEqHMCIQhfNZn+iZBDKYo9nnVT6W87ajV9pfNaj8++kTWL-JVj8JkGtjAqFBUyDYVlQxjDWN8eFUI1aIpwsinyqKApNVlqTLFG8HpFjxW4w00oVQGDMOSVJWQzFwzztBb4dz0ikg0Ayopz4UUNVZeiuWR1wqnSgLy-SNM6ajNORM2mUyzFLPVk4RyGh1h-E+BqBVG1RYbLRSTQ6V0tU4uiXFTBByUg2QNeM8ExqLk5GGGGGU0Fdgjkcple1JStoqt2s7DFoUXruveVuN1zivV8Pxf-RIYgJi0x2NSSyZjQwmA1I5AqUIgnzFjUy+NF0tlJvVZmucLDPV7NKUMflIIDChi1nzJw0MQ1GEkIAjQ5JPjCrBN8etrylz20lk7NlOydVDRVNchmTNPiQ3ETDFQyUkihkTHIvW86lWLrxo7aWLbSbdXXfoPYUhwZWENKsSwKgIUHtWFPcyBgR5zSsBezaYtr1SwiJ89VbsPYnkfbkAq6tyFKnBHDcGFIc4vFsk4eYahR5TCmCBx1S6b2QbvYdDt8G8BrGBBK5UI9aQw3BNKH4bJZh8xeCkIj6y41bMo9m-ZurfjEiWdrCYo8gyGPZsKwJbIln6neAocqXTpzgMgbQho7drQN3g7KdWvxLCmQDIzDsg4x0QjBPGcwcY0YqcwpIa+q9VIb3g8MjW+oRF5FhKWkN9gB7-wDFO5CVD1PQMzKgnTAnu2IFlKMCQig2QqhrZ8YNwhzDSkhj8XUkwJDqnlCFmhYWGhcPokwmIXbYkIGMCYP4UJZ1knBODCRhiNYjxeEksM9KlFAA */
+  /** @xstate-layout N4IgpgJg5mDOIC5QTABwPawJYBcC0ArlgMQAyA8gOICSAcgNoAMAuoqBtjlugHZsgAPRHgAcIgEwA6AGziALHMbiAjI0UjZAGhABPYcuUBmRjLkBOAKzTDygOxLGtkQF9n2lB1yESFSuQCqACpMrEggnly8-EIIeLLKMhZJ0nbiFvaGttp6sQbGppbWdg5Oru5omF5EkpC4WDxQxADK-gBCALLUwSz8Edx8YTF4BiKSVoyMFiopqspm0tnCKVJmZoZmYiKG4rYWq2UgHpX41bVcDc1tncHKoezH-dH64iZzFoq2snLK0rbzi7EFGZJLZbHILKpDLJpN8XG5DhVON4ahA6hcWh0uvRxHdwg8ooNntJJIY9nIRONGGYjAoAXhScDlOCXvYLGIgQcjkjTqjzo0Mdd6IZcX0CaAhkZgeIREYXoxlHtGCJyXTxNJicoKYxjGY5OIVHJDJzEVUsCi0Y06AAFIIhXr4gbi4SZCyScQbOS2dbyxzKVXSyR2NZiMyTaRK8nGiLIs71KCSVAAJzAeCTaAAhon05EeMQ7WFRY7BM69TI1koFVTpGYVIYAX8xp7jBTDDYW0b4VzTea+Qnk6hM9n+sQILwwJJYDhs+OuyczbGGn2M1mc-n7pxHoTcqGNXZpDLpQrvnTfq8leG-hC5n8o8cY7y40uByv+jUBGAAMYEHMAfWTAEciGTABbMAeBwWARzHCcpxwGcTTnHtHzTZ8h14N9P2-fo-zAQCsBAsCILXPENzFYtcjmKQXkyZVDHMLYlQBBVRi+NRpU2eYjFvbl5wfRcUMHHMMK-X8AKAsBQPA2BJAAI3TAAbdMeA-ccsAgeSwCgnhVJ4AA3dAAGtxwAMzAHAPwACwAdQUjScAAQQgCBk1gWBWgUpSVIAJTAYziMLJ4KI0EFplJbYkmlCw6UUORJEYatVkNdIdlsZRuO7Bd4wEl90LAd8ROwsT8IkwjpJgbSX0XNSNLzHoCwdQLhneKQFE1GUJiMOYFl0YQTEcUM5GrCwoVkNIbHEdLEMyp9BNfPLMNE3DxMkiDJHKsBKvjarNPoW57VIosJTVBJJjYux0iULY6T6v41CGkb9QsNQLEm+8LRmnKeGErDeBwvCCKktawI2odF3mgrfvWzatJ0-SjMkWdKGBlcwEc5y4FgHy-Lq9c6jIiVlH1QM-hEeYRD+aR3jrHrckMUZPipQn1R2d5Btenl3uytCvtRZMPxwH9Zz+5bSskbbapFBqt2GZmxmVER4vJ9UnvEAFBtiunLEG6VtSZjtymjDney5oTec-AWhaKgHVvF3bJYOxrZVsSQ9T+RQ7BsH45DVmESVJ95ZAV8brHZ3jOf7Wb0LN-nBYQ4XipW6T02A9ACHAmGxb0wz4IiABRScsGA6d2nTAQADUFIIMAsf8qWnVyeVRkcBQwUpzj5ABYxDBkCkjCsVk9lsUOJwIGTgNwPlaDATNAgEDP6jhnPjinzMa5xki8cOxAvWdyZvgpw0aypE95EkMxWXWTZMkNYeCFQCBp3cxTlM0gRJ2nSR02MuDEwACjlRgABKEcCFkR3wfnBJ+nkwC1wdlueYIJG5snPmsTUvw6SsjGBCDQCtBpskjJ2UB1RYCj3HjgPkucy7tFnvPLO8NZyUPaGve2m9Ao7zis1Ya+8nrexpngJ6JhqTKk1PISYOxh4kLHhPOMTR0DP3TDQ0c2lM6LwRghWR8jmH7VYVuL03dBpqE9Eqa8Sg6SZGBKTew5I1Dk1WFsCRpDpENECAQRMMl0CKOggvbOaiIguLcegLR9U4H1z0S7cM6xJQKBmKqckbplgQnlF6A80hXDwh4OgFA8Awizm8NonMjU5RSAMJ8A8Mp3h+j4aoJQIJVjxVbHMS+Q9CGGzDnyfJm567DC1oGPcZSjyVJyKIfcbo6lglWGqeYzSDZ3iNo+baHT8b6FJt3bUVh4gKx2EyDBCtanUnijCGsXoXotNmW05CyZUwR0+osresRMhSDCkYL0sgVbbL4d8GQ8pNRkweUlYe00TadI3gU6W51RjzF+O6d46y6IYLSHFNYsJz6URUACviWVrnc2+otf6JUpK3MdqlQR6pbDQvBOqOFfDFRjDWHTYaLJrATVOTxJC-EsVCXBj9Hg8drbSTks-FShKwWy0NBWPRBoNh0ieqspFPxz5endui8Oy5sVctxSLQGAroFi3UmAYVXSfhMhdsYFQEqmRSo+QqWldEFTuihNsaZCJWlssxaqzl+VuW8vxatbVL8EZjgNeRUQ4IQQGDmOSLZWQ+F027rRb4ap0ikg0Mq42HK5qeo1QnUWUNQZQCDRKWWkKyVa1hbwoZ4hMggnjXRd0FIIROtyXM9l7qM0LUKktbNgNc29gWcEnRhqUixWLeSstdJKxulorsc8houqpoua23KmaO14sTkDCqeacXYR7XGAt+hsGJDEBMZmfwFTjqepOw0g0oR1PmPOltqEPXtt+lbH1ZVkabqUfq-toKunKldKlAw6RdTaicNTIZRhJC4I0OST4uowTfHvW6x9r5o4Wzjq+xOe7cjErltY-cnxKamJpioFqSQ9zfGA2YJDH1sVodjhEb1a6+241-cGhUNYoO7H3OYVYUxNQAndMCSw-GmTrFulYGjQKo7FRjpbTtfLP4pzTjgbDwxBrO1EfKcEdNyYUk7i8OKTh5hqBrFMKYUn00yb5uhxjmHRZfrU2sYEsbVBgnWLSGm4JXQ-DZLMbULwUiWcXV9aTPLHM-uBUMX4xJK3uwmDWas+41a6lGWySt4ZWZ6gcVI8hcYV6Jlnth90ztfiWDCnqBWO4TyQYbWK5U8GoS33vo-DyL9sO7FGAYoxeRYRRT4fYXe2C9SwbYjlshFCqFFci0shAdaoOiLZKlG9nxy3CHMK6Sm8qJjpf1J6cbTioAaKUgomIrGouIGMCYP4UIENknBOTMxIyFDrBeOsmV4iWXdkkRNuM-j3HTfO7N4wmn8H6krXK95FaoRQeMUJl4NYFByDSc4IAA */
   id: "deposit-ui",
 
   context: ({ input, spawn }) => ({
@@ -299,6 +320,7 @@ export const depositUIMachine = setup({
     depositNearResult: null,
     depositEVMResult: null,
     depositSolanaResult: null,
+    depositTurboResult: null,
     depositGenerateAddressRef: null,
     tokenList: input.tokenList,
     userAddress: null,
@@ -360,6 +382,11 @@ export const depositUIMachine = setup({
             target: "submittingSolanaTx",
             reenter: true,
             guard: "isDepositSolanaRelevant",
+          },
+          {
+            target: "submittingTurboTx",
+            reenter: true,
+            guard: "isDepositTurbochainRelevant",
           },
         ],
 
@@ -687,6 +714,45 @@ export const depositUIMachine = setup({
           actions: [
             {
               type: "setDepositSolanaResult",
+              params: ({ event }) => event.output,
+            },
+            { type: "clearUIDepositAmount" },
+          ],
+
+          reenter: true,
+        },
+      },
+    },
+
+    submittingTurboTx: {
+      invoke: {
+        id: "depositTurboRef",
+        src: "depositTurboActor",
+
+        input: ({ context, event }) => {
+          assertEvent(event, "SUBMIT")
+
+          assert(context.formValues.network, "network is null")
+          assert(context.userAddress, "userAddress is null")
+          assert(context.tokenAddress, "tokenAddress is null")
+          assert(context.formValues.token, "token is null")
+
+          return {
+            balance: context.balance,
+            amount: context.parsedFormValues.amount,
+            asset: context.formValues.token,
+            accountId: context.userAddress,
+            tokenAddress: context.tokenAddress,
+            depositAddress: settings.defuseContractId,
+          }
+        },
+
+        onDone: {
+          target: "updateBalance",
+
+          actions: [
+            {
+              type: "setDepositTurboResult",
               params: ({ event }) => event.output,
             },
             { type: "clearUIDepositAmount" },

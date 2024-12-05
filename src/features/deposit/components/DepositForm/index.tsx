@@ -73,6 +73,7 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
   const depositNearResult = snapshot.context.depositNearResult
   const depositEVMResult = snapshot.context.depositEVMResult
   const depositSolanaResult = snapshot.context.depositSolanaResult
+  const depositTurboResult = snapshot.context.depositTurboResult
 
   const depositAddress =
     generatedAddressResult?.tag === "ok"
@@ -157,11 +158,11 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
   }
 
   useEffect(() => {
-    if (token && getDefaultBlockchainOptionValue(token, chainType)) {
-      const networkOption = getDefaultBlockchainOptionValue(token, chainType)
+    if (token && getDefaultBlockchainOptionValue(token)) {
+      const networkOption = getDefaultBlockchainOptionValue(token)
       setValue("network", networkOption)
     }
-  }, [token, setValue, chainType])
+  }, [token, setValue])
 
   const balanceInsufficient = isInsufficientBalance(
     amount,
@@ -223,16 +224,14 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
                 control={control}
                 render={({ field }) => (
                   <Select
-                    options={filterBlockchainsOptions(token, chainType)}
+                    options={filterBlockchainsOptions(token)}
                     placeholder={{
                       label: "Select network",
                       icon: <EmptyIcon />,
                     }}
                     fullWidth
                     value={
-                      getDefaultBlockchainOptionValue(token, chainType) ||
-                      network ||
-                      ""
+                      getDefaultBlockchainOptionValue(token) || network || ""
                     }
                     disabled={!isUnifiedToken(token)}
                     onChange={field.onChange}
@@ -375,11 +374,23 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
             userAddress,
             depositNearResult,
             depositEVMResult,
-            depositSolanaResult
+            depositSolanaResult,
+            depositTurboResult
           )}
-        {userAddress && network === BlockchainEnum.NEAR && (
-          <Deposits depositNearResult={snapshot.context.depositNearResult} />
-        )}
+        {userAddress &&
+          (network === BlockchainEnum.NEAR ||
+            network === BlockchainEnum.TURBOCHAIN) && (
+            <Deposits
+              chainName={
+                network === BlockchainEnum.NEAR
+                  ? "near"
+                  : network === BlockchainEnum.TURBOCHAIN
+                    ? "turbochain"
+                    : null
+              }
+              depositResult={depositNearResult ?? depositTurboResult}
+            />
+          )}
         {network !== BlockchainEnum.NEAR && isDepositReceived && (
           <DepositSuccess />
         )}
@@ -481,8 +492,7 @@ function getBlockchainsOptions(): Record<
 }
 
 function filterBlockchainsOptions(
-  token: SwappableToken,
-  chainType?: ChainType
+  token: SwappableToken
 ): Record<string, { label: string; icon: React.ReactNode; value: string }> {
   if (isUnifiedToken(token)) {
     return token.groupedTokens.reduce(
@@ -509,8 +519,7 @@ function filterBlockchainsOptions(
 }
 
 function getDefaultBlockchainOptionValue(
-  token: SwappableToken,
-  chainType?: ChainType
+  token: SwappableToken
 ): BlockchainEnum | null {
   if (isBaseToken(token)) {
     const key = assetNetworkAdapter[token.chainName]
@@ -553,7 +562,8 @@ function renderDepositWarning(
   userAddress: string | null,
   depositNearResult: Context["depositNearResult"],
   depositEVMResult: Context["depositEVMResult"],
-  depositSolanaResult: Context["depositSolanaResult"]
+  depositSolanaResult: Context["depositSolanaResult"],
+  depositTurboResult: Context["depositTurboResult"]
 ) {
   let content: ReactNode = null
   if (!userAddress) {
@@ -566,12 +576,14 @@ function renderDepositWarning(
   const r1 = depositNearResult !== null && depositNearResult.tag === "err"
   const r2 = depositEVMResult !== null && depositEVMResult.tag === "err"
   const r3 = depositSolanaResult !== null && depositSolanaResult.tag === "err"
+  const r4 = depositTurboResult !== null && depositTurboResult.tag === "err"
 
-  if (r1 || r2 || r3) {
+  if (r1 || r2 || r3 || r4) {
     const status =
       (r1 && depositNearResult.value.reason) ||
       (r2 && depositEVMResult.value.reason) ||
-      (r3 && depositSolanaResult.value.reason)
+      (r3 && depositSolanaResult.value.reason) ||
+      (r4 && depositTurboResult.value.reason)
     switch (status) {
       case "ERR_SUBMITTING_TRANSACTION":
         content =

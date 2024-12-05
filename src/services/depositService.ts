@@ -14,8 +14,7 @@ import { getNearTxSuccessValue } from "../features/machines/getTxMachine"
 import { BlockchainEnum } from "../types"
 import { ChainType } from "../types"
 import type { Transaction } from "../types/deposit"
-import type { DefuseUserId } from "../utils/defuse"
-import { estimateSolanaTransferCost } from "./estimateService"
+import { type DefuseUserId, userAddressToDefuseUserId } from "../utils/defuse"
 import { getDepositAddress, getSupportedTokens } from "./poaBridgeClient"
 
 const FT_DEPOSIT_GAS = `30${"0".repeat(12)}` // 30 TGAS
@@ -307,9 +306,13 @@ export function getAvailableDepositRoutes(
     case ChainType.EVM:
       switch (network) {
         case BlockchainEnum.NEAR:
-        case BlockchainEnum.TURBOCHAIN:
           return {
             activeDeposit: false,
+            passiveDeposit: false,
+          }
+        case BlockchainEnum.TURBOCHAIN:
+          return {
+            activeDeposit: true,
             passiveDeposit: false,
           }
         case BlockchainEnum.ETHEREUM:

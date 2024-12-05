@@ -1,29 +1,31 @@
 import { Box, Flex, Link, Text } from "@radix-ui/themes"
 import { AssetComboIcon } from "src/components/Asset/AssetComboIcon"
+import type { SupportedChainName } from "src/types"
+import { chainTxExplorer } from "src/utils/chainTxExplorer"
 import { formatTokenValue } from "src/utils/format"
 import type { Context } from "../../../machines/depositUIMachine"
 
-const NEAR_EXPLORER = "https://nearblocks.io"
-
 export const Deposits = ({
-  depositNearResult,
+  chainName,
+  depositResult,
 }: {
-  depositNearResult: Context["depositNearResult"]
+  chainName: SupportedChainName | null
+  depositResult: Context["depositNearResult"] | Context["depositTurboResult"]
 }) => {
-  if (depositNearResult?.tag !== "ok") {
+  if (depositResult?.tag !== "ok") {
     return null
   }
   const txUrl =
-    depositNearResult.value.txHash != null
-      ? `${NEAR_EXPLORER}/txns/${depositNearResult.value.txHash}`
+    chainName != null && depositResult.value.txHash != null
+      ? chainTxExplorer(chainName) + depositResult.value.txHash
       : null
 
   return (
     <Flex p={"2"} gap={"3"}>
       <Box pt={"2"}>
         <AssetComboIcon
-          icon={depositNearResult.value.depositDescription.asset.icon}
-          name={depositNearResult.value.depositDescription.asset.name}
+          icon={depositResult.value.depositDescription.asset.icon}
+          name={depositResult.value.depositDescription.asset.name}
         />
       </Box>
 
@@ -47,7 +49,7 @@ export const Deposits = ({
             <Text size={"1"} weight={"medium"} color={"gray"}>
               From{" "}
               {shortenText(
-                depositNearResult.value.depositDescription.userAddressId
+                depositResult.value.depositDescription.userAddressId
               )}
             </Text>
           </Box>
@@ -56,26 +58,26 @@ export const Deposits = ({
             <Text size={"1"} weight={"medium"} color={"green"}>
               +
               {formatTokenValue(
-                depositNearResult.value.depositDescription.amount,
-                depositNearResult.value.depositDescription.asset.decimals,
+                depositResult.value.depositDescription.amount,
+                depositResult.value.depositDescription.asset.decimals,
                 {
                   min: 0.0001,
                   fractionDigits: 4,
                 }
               )}{" "}
-              {depositNearResult.value.depositDescription.asset.symbol}
+              {depositResult.value.depositDescription.asset.symbol}
             </Text>
           </Box>
         </Flex>
 
-        {depositNearResult.value.txHash != null && txUrl != null && (
+        {depositResult.value.txHash != null && txUrl != null && (
           <Box>
             <Text size={"1"} color={"gray"}>
               Transaction:
             </Text>{" "}
             <Text size={"1"}>
               <Link href={txUrl} target={"_blank"}>
-                {shortenText(depositNearResult.value.txHash)}
+                {shortenText(depositResult.value.txHash)}
               </Link>
             </Text>
           </Box>
