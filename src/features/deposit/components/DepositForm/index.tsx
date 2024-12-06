@@ -544,8 +544,8 @@ function isInsufficientBalance(
     return Number.parseFloat(formAmount) > Number.parseFloat(balanceToFormat)
   }
   if (
-    (isUnifiedToken(token) && token.unifiedAssetId === "eth") ||
-    (isBaseToken(token) && token.address === "native")
+    (isUnifiedToken(token) && token.groupedTokens.some(isNativeToken)) ||
+    (isBaseToken(token) && isNativeToken(token))
   ) {
     const balanceToFormat = formatTokenValue(nativeBalance, token.decimals)
     return Number.parseFloat(formAmount) > Number.parseFloat(balanceToFormat)

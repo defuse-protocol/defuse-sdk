@@ -7,7 +7,7 @@ import {
   estimateSolanaTransferCost,
 } from "src/services/estimateService"
 import { BlockchainEnum, type SwappableToken } from "src/types"
-import { isBaseToken, isUnifiedToken } from "src/utils"
+import { isBaseToken, isNativeToken, isUnifiedToken } from "src/utils"
 import { reverseAssetNetworkAdapter } from "src/utils/adapters"
 import { validateAddress } from "src/utils/validateAddress"
 import type { Address } from "viem"
@@ -54,7 +54,7 @@ export const depositEstimateMaxValueActor = fromPromise(
         ) {
           return 0n
         }
-        if (isUnifiedToken(token) && token.unifiedAssetId === "eth") {
+        if (isUnifiedToken(token) && token.groupedTokens.some(isNativeToken)) {
           const gasCost = await estimateEVMTransferCost({
             rpcUrl: getWalletRpcUrl(network),
             from: userAddress as Address,
