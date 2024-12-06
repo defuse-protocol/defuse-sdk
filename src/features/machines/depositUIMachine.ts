@@ -163,6 +163,7 @@ export const depositUIMachine = setup({
     }),
     clearDepositResult: assign({ depositNearResult: null }),
     clearDepositEVMResult: assign({ depositEVMResult: null }),
+    clearGeneratedAddressResult: assign({ generatedAddressResult: null }),
 
     extractAssetIds: assign({
       defuseAssetId: ({ context }) => {
@@ -328,6 +329,7 @@ export const depositUIMachine = setup({
         "clearDepositResult",
         "clearDepositEVMResult",
         "clearBalances",
+        "clearGeneratedAddressResult",
         assign({
           userAddress: () => "",
           formValues: {
