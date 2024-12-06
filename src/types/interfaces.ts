@@ -252,4 +252,5 @@ export enum BlockchainEnum {
   BITCOIN = "btc:mainnet",
   SOLANA = "sol:mainnet",
   DOGECOIN = "doge:mainnet",
+  TURBOCHAIN = "eth:1313161567",
 }

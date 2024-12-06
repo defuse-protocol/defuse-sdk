@@ -1,6 +1,6 @@
 {
   "name": "@defuse-protocol/defuse-sdk",
-  "version": "2.15.1",
+  "version": "2.17.2",
   "author": "Defuse Protocol",
   "license": "MIT",
   "type": "module",
@@ -9,7 +9,7 @@
       "import": "./dist/index.esm.js",
       "types": "./dist/index.d.ts"
     },
-    "./styles": "./dist/index.css"
+    "./styles.css": "./dist/index.css"
   },
   "module": "./dist/index.esm.js",
   "types": "./dist/index.d.ts",
@@ -68,7 +68,6 @@
     "@semantic-release/npm": "^12.0.1",
     "@semantic-release/release-notes-generator": "^14.0.1",
     "@tailwindcss/forms": "^0.5.9",
-    "@tailwindcss/line-clamp": "^0.4.4",
     "@tailwindcss/typography": "^0.5.15",
     "@tanstack/react-query-devtools": "^5.59.16",
     "@types/react": "^18.3.3",

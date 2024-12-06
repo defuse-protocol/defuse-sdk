@@ -954,6 +954,36 @@
         }
       },
       {
+        "name": "native_withdraw",
+        "kind": "call",
+        "modifiers": [
+          "payable"
+        ],
+        "params": {
+          "serialization_type": "json",
+          "args": [
+            {
+              "name": "receiver_id",
+              "type_schema": {
+                "$ref": "#/definitions/AccountId"
+              }
+            },
+            {
+              "name": "amount",
+              "type_schema": {
+                "type": "string"
+              }
+            }
+          ]
+        },
+        "result": {
+          "serialization_type": "json",
+          "type_schema": {
+            "$ref": "#/definitions/PromiseOrValueBoolean"
+          }
+        }
+      },
+      {
         "name": "has_public_key",
         "kind": "view",
         "params": {
@@ -2557,6 +2587,27 @@
                   ]
                 },
                 "token": {
+                  "$ref": "#/definitions/AccountId"
+                }
+              }
+            },
+            {
+              "type": "object",
+              "required": [
+                "amount",
+                "receiver_id"
+              ],
+              "properties": {
+                "amount": {
+                  "type": "string"
+                },
+                "intent": {
+                  "type": "string",
+                  "enum": [
+                    "native_withdraw"
+                  ]
+                },
+                "receiver_id": {
                   "$ref": "#/definitions/AccountId"
                 }
               }

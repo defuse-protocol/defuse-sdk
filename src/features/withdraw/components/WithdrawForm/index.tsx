@@ -6,12 +6,10 @@ import {
 } from "@radix-ui/react-icons"
 import {
   Box,
-  Button,
   Callout,
   Flex,
   IconButton,
   Skeleton,
-  Spinner,
   Text,
   TextField,
 } from "@radix-ui/themes"
@@ -20,6 +18,7 @@ import { providers } from "near-api-js"
 import { Fragment, type ReactNode, useEffect } from "react"
 import { Controller, useForm } from "react-hook-form"
 import type { ActorRefFrom } from "xstate"
+import { ButtonCustom } from "../../../../components/Button"
 import { EmptyIcon } from "../../../../components/EmptyIcon"
 import { Form } from "../../../../components/Form"
 import { FieldComboInput } from "../../../../components/Form/FieldComboInput"
@@ -421,23 +420,13 @@ export const WithdrawForm = ({
               </Text>
             </Flex>
 
-            <Button
-              variant="classic"
-              size="3"
-              radius="large"
-              className={`${styles.button}`}
-              color="orange"
+            <ButtonCustom
+              size={"lg"}
               disabled={state.matches("submitting") || !!noLiquidity}
+              isLoading={state.matches("submitting")}
             >
-              {noLiquidity ? (
-                "No liquidity providers"
-              ) : (
-                <span className={styles.buttonContent}>
-                  <Spinner loading={state.matches("submitting")} />
-                  <Text size="6">Withdraw</Text>
-                </span>
-              )}
-            </Button>
+              {noLiquidity ? "No liquidity providers" : "Withdraw"}
+            </ButtonCustom>
           </Flex>
         </Form>
 
@@ -520,6 +509,16 @@ const allBlockchains = [
       />
     ),
     value: "dogecoin",
+  },
+  {
+    label: "Turbochain",
+    icon: (
+      <NetworkIcon
+        chainIcon="/static/icons/network/turbochain.png"
+        chainName="Turbochain"
+      />
+    ),
+    value: "turbochain",
   },
 ] as const satisfies Array<{
   label: string
@@ -630,6 +629,7 @@ function chainTypeSatisfiesChainName(
     case chainType === ChainType.EVM && chainName === "eth":
     case chainType === ChainType.EVM && chainName === "arbitrum":
     case chainType === ChainType.EVM && chainName === "base":
+    case chainType === ChainType.EVM && chainName === "turbochain":
     case chainType === ChainType.Solana && chainName === "solana":
       return true
   }

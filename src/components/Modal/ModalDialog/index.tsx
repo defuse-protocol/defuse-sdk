@@ -7,11 +7,9 @@ import React, {
   useRef,
   useState,
 } from "react"
-
 import { useResize } from "../../../hooks/useResize"
 import { useModalStore } from "../../../providers/ModalStoreProvider"
-
-import "./styles.css"
+import styles from "./styles.module.css"
 
 export const ModalDialog = ({
   children,
@@ -50,9 +48,9 @@ export const ModalDialog = ({
 
   return (
     <Dialog.Root open={open} onOpenChange={setOpen}>
-      <DialogOverlay className="DialogOverlay" />
+      <DialogOverlay className={styles.DialogOverlay} />
       <Dialog.Content
-        className="DialogContent p-0 dark:bg-black-800"
+        className={`${styles.DialogContent} p-0 dark:bg-black-800`}
         maxWidth={
           containerWidth
             ? containerWidth < 768
