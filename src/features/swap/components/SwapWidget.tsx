@@ -16,13 +16,9 @@ export const SwapWidget = ({
   signMessage,
   onSuccessSwap,
   onNavigateDeposit,
+  initialTokenIn,
+  initialTokenOut,
 }: SwapWidgetProps) => {
-  const [initialTokenIn, initialTokenOut] = tokenList
-  assert(
-    initialTokenIn && initialTokenOut,
-    "Token list must have at least 2 tokens"
-  )
-
   return (
     <SwapWidgetProvider>
       <TokenListUpdater tokenList={tokenList} />

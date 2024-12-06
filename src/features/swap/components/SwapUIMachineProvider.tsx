@@ -49,8 +49,8 @@ export const SwapUIMachineContext: SwapUIMachineContextInterface =
   createActorContext(swapUIMachine)
 
 interface SwapUIMachineProviderProps extends PropsWithChildren {
-  initialTokenIn: SwappableToken
-  initialTokenOut: SwappableToken
+  initialTokenIn?: SwappableToken
+  initialTokenOut?: SwappableToken
   tokenList: SwappableToken[]
   signMessage: (params: WalletMessage) => Promise<WalletSignatureResult | null>
 }
@@ -63,13 +63,17 @@ export function SwapUIMachineProvider({
   signMessage,
 }: SwapUIMachineProviderProps) {
   const { setValue, resetField } = useFormContext<SwapFormValues>()
+  const tokenIn = initialTokenIn || tokenList[0]
+  const tokenOut = initialTokenOut || tokenList[1]
+  if (!tokenIn || !tokenOut)
+    throw new Error("Token list must have at least 2 tokens")
 
   return (
     <SwapUIMachineContext.Provider
       options={{
         input: {
-          tokenIn: initialTokenIn,
-          tokenOut: initialTokenOut,
+          tokenIn,
+          tokenOut,
           tokenList,
         },
       }}
