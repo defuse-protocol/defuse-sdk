@@ -2,6 +2,7 @@ import { createActorContext } from "@xstate/react"
 import type { PropsWithChildren, ReactElement, ReactNode } from "react"
 import { useFormContext } from "react-hook-form"
 import { depositSolanaMachine } from "src/features/machines/depositSolanaMachine"
+import { depositTurboMachine } from "src/features/machines/depositTurboMachine"
 import type { Hash } from "viem"
 import {
   type Actor,
@@ -17,6 +18,7 @@ import {
   createBatchDepositNearNep141Transaction,
   createDepositEVMERC20Transaction,
   createDepositEVMNativeTransaction,
+  createDepositSiloToSiloTransaction,
   createDepositSolanaTransaction,
   generateDepositAddress,
   getMinimumStorageBalance,
@@ -210,6 +212,32 @@ export function DepositUIMachineProvider({
                   amount
                 )
                 const txHash = await sendTransactionSolana(tx)
+                assert(txHash != null, "Transaction failed")
+
+                return txHash
+              }),
+            },
+            guards: {
+              isDepositValid: ({ context }) => {
+                if (!context.txHash) return false
+                return true
+              },
+            },
+          }),
+          depositTurboActor: depositTurboMachine.provide({
+            actors: {
+              signAndSendTransactions: fromPromise(async ({ input }) => {
+                const { amount, accountId, tokenAddress, depositAddress } =
+                  input
+
+                const tx = createDepositSiloToSiloTransaction(
+                  tokenAddress,
+                  accountId,
+                  amount,
+                  depositAddress,
+                  settings.silo.turbochain
+                )
+                const txHash = await sendTransactionEVM(tx)
                 assert(txHash != null, "Transaction failed")
 
                 return txHash
