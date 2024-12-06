@@ -40,7 +40,11 @@ import {
   type SwappableToken,
 } from "../../../../types"
 import { formatTokenValue } from "../../../../utils/format"
-import { isBaseToken, isUnifiedToken } from "../../../../utils/token"
+import {
+  isBaseToken,
+  isNativeToken,
+  isUnifiedToken,
+} from "../../../../utils/token"
 import type { Context } from "../../../machines/depositUIMachine"
 import { DepositUIMachineContext } from "../DepositUIMachineProvider"
 import { Deposits } from "../Deposits"
@@ -284,7 +288,7 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
                   <BlockMultiBalances
                     balance={
                       token && nativeBalance
-                        ? renderBalance(token, balance, nativeBalance)
+                        ? renderBalance(token, balance, nativeBalance, network)
                         : 0n
                     }
                     decimals={token?.decimals ?? 0}
@@ -540,8 +544,8 @@ function isInsufficientBalance(
     return Number.parseFloat(formAmount) > Number.parseFloat(balanceToFormat)
   }
   if (
-    (isUnifiedToken(token) && token.unifiedAssetId === "eth") ||
-    (isBaseToken(token) && token.address === "native")
+    (isUnifiedToken(token) && token.groupedTokens.some(isNativeToken)) ||
+    (isBaseToken(token) && isNativeToken(token))
   ) {
     const balanceToFormat = formatTokenValue(nativeBalance, token.decimals)
     return Number.parseFloat(formAmount) > Number.parseFloat(balanceToFormat)
@@ -696,19 +700,29 @@ function truncateUserAddress(hash: string) {
 function renderBalance(
   token: SwappableToken,
   balance: bigint,
-  nativeBalance: bigint
+  nativeBalance: bigint,
+  network: BlockchainEnum | null
 ) {
-  if (isBaseToken(token)) {
-    if (token.address === "wrap.near") {
-      return balance + nativeBalance
-    }
-    if (token.address === "native") {
-      return nativeBalance
-    }
-    return balance
+  // For user experience, both NEAR and wNEAR are treated as equivalent during the deposit process.
+  // This allows users to deposit either token seamlessly.
+  // When the balance is checked, it considers the total of both NEAR and wNEAR,
+  // ensuring that users can deposit without needing to convert between the two.
+  if (isBaseToken(token) && token.address === "wrap.near") {
+    return balance + nativeBalance
   }
-  if (isUnifiedToken(token) && token.unifiedAssetId === "eth") {
+
+  // If the token is a base token and is native, or if it is a unified token that includes a native token,
+  // return the native balance.
+  // Note: Use network !== BlockchainEnum.NEAR check for the `aurora` token as we cannot use nativeBalance with it,
+  // as it is an Ethereum token on the NEAR network, which is not classified as a native token.
+  if (
+    (isBaseToken(token) && isNativeToken(token)) ||
+    (isUnifiedToken(token) &&
+      token.groupedTokens.some(isNativeToken) &&
+      network !== BlockchainEnum.NEAR)
+  ) {
     return nativeBalance
   }
+
   return balance
 }
