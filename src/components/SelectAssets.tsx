@@ -25,7 +25,7 @@ export const SelectAssets = ({ selected, handleSelect }: Props) => {
     <button
       type={"button"}
       onClick={handleAssetsSelect}
-      className="bg-white shadow-select-token rounded-full flex justify-between items-center p-1 gap-2.5 dark:bg-black-800 dark:shadow-select-token-dark"
+      className="max-w-[148px] md:max-w-[210px] bg-white shadow-select-token rounded-full flex justify-between items-center p-1 gap-2.5 dark:bg-black-800 dark:shadow-select-token-dark"
     >
       {selected?.icon ? (
         <AssetComboIcon
