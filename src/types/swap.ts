@@ -95,6 +95,8 @@ export type SwapWidgetProps = {
   }) => void
 
   onNavigateDeposit?: () => void
+  initialTokenIn?: SwappableToken
+  initialTokenOut?: SwappableToken
 }
 
 export enum QueueTransactionsEnum {

@@ -34,7 +34,6 @@ interface Props<T extends FieldValues>
   handleSelect?: () => void
   className?: string
   errors?: FieldErrors
-  errorSelect?: string
   disabled?: boolean
   isLoading?: boolean
 }
@@ -58,7 +57,6 @@ export const FieldComboInput = <T extends FieldValues>({
   withNativeSupport,
   handleIncludeNativeToSwap,
   nativeSupportChecked,
-  errorSelect,
   disabled,
   isLoading,
 }: Props<T>) => {
@@ -110,57 +108,51 @@ export const FieldComboInput = <T extends FieldValues>({
   return (
     <div
       className={clsx(
-        "relative flex justify-between items-center px-5 py-[2.375rem] w-full bg-gray-50 dark:bg-black-900 dark:border-black-950",
+        "relative flex flex-col px-5 py-[2.375rem] w-full bg-gray-50 dark:bg-black-900 dark:border-black-950",
         !label && "pt-5",
         !price && balance == null && errors && !errors[fieldName] && "pb-5",
         className
       )}
     >
-      {isLoading && (
-        // 56px is a size of the input field, it is required to keep the layout stable
-        <Flex align={"center"} style={{ height: "56px" }}>
-          <Text size={"7"}>
-            <Skeleton>100.000000</Skeleton>
-          </Text>
-        </Flex>
-      )}
+      <div className="w-full flex justify-between items-center gap-2 h-15">
+        {isLoading && <Skeleton className="w-full" height="40px" />}
 
-      <input
-        type={"text"}
-        inputMode={"decimal"}
-        pattern={"[0-9]*[,.]?[0-9]*"}
-        {...reactHookFormRegisterProps}
-        ref={allInputRefs}
-        placeholder={placeholder}
-        disabled={disabled}
-        autoComplete={"off"}
-        className={clsx(
-          "grow flex-1 bg-gray-50 max-w-[140px] md:max-w-[none] md:min-w-[calc(100%-210px)] text-3xl font-medium placeholder-black border-transparent focus:border-transparent focus:ring-0 dark:bg-black-900 dark:placeholder-white",
-          disabled &&
-            "text-black-200 pointer-events-none placeholder-black-200",
-          {
-            hidden: isLoading,
-          }
-        )}
-      />
+        <input
+          type={"text"}
+          inputMode={"decimal"}
+          pattern={"[0-9]*[,.]?[0-9]*"}
+          {...reactHookFormRegisterProps}
+          ref={allInputRefs}
+          placeholder={placeholder}
+          disabled={disabled}
+          autoComplete={"off"}
+          className={clsx(
+            "bg-gray-50 max-w-[140px] md:max-w-[none] md:min-w-[calc(100%-210px)] text-3xl font-medium placeholder-black border-transparent focus:border-transparent focus:ring-0 dark:bg-black-900 dark:placeholder-white",
+            disabled &&
+              "text-black-200 pointer-events-none placeholder-black-200",
+            {
+              hidden: isLoading,
+            }
+          )}
+        />
 
-      {errors?.[fieldName] ? (
-        <span className="absolute bottom-4 left-5 text-sm font-medium text-red-400">
-          {(errors[fieldName] as FieldError).message}
-        </span>
-      ) : null}
-      {price && price !== "0" && errors && !errors[fieldName] ? (
-        <span className="absolute flex flex-nowrap items-center gap-2 bottom-4 left-5 text-sm font-medium text-secondary">
-          ~${Number.parseFloat(price).toFixed(2)}
-          {label && label}
-        </span>
-      ) : null}
-      <div className="flex justify-end items-center">
         {selected && (
           <SelectAssets selected={selected} handleSelect={handleSelect} />
         )}
       </div>
-      {balance != null && !errorSelect && (
+
+      {errors?.[fieldName] ? (
+        <span className="absolute bottom-4 left-5 text-xs sm:text-sm font-medium text-red-400">
+          {(errors[fieldName] as FieldError).message}
+        </span>
+      ) : null}
+      {price && price !== "0" && errors && !errors[fieldName] ? (
+        <span className="absolute flex flex-nowrap items-center gap-2 bottom-4 left-5 text-xs sm:text-sm font-medium text-secondary">
+          ~${Number.parseFloat(price).toFixed(2)}
+          {label && label}
+        </span>
+      ) : null}
+      {balance != null && (
         <BlockMultiBalances
           balance={balance}
           decimals={selected?.decimals ?? 0}
@@ -172,11 +164,6 @@ export const FieldComboInput = <T extends FieldValues>({
           handleClick={handleSetMaxValue}
           disabled={disabled}
         />
-      )}
-      {errorSelect && (
-        <div className="absolute bottom-4 right-5 flex justify-center items-center gap-2">
-          <span className="text-sm text-red-400">{errorSelect}</span>
-        </div>
       )}
     </div>
   )

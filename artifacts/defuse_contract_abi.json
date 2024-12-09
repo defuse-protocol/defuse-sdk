@@ -1,26 +1,26 @@
 {
   "schema_version": "0.4.0",
   "metadata": {
-    "name": "defuse-contract",
+    "name": "defuse",
     "version": "0.1.0",
     "build": {
       "compiler": "rustc 1.82.0",
-      "builder": "cargo-near cargo-near-build 0.3.0"
+      "builder": "cargo-near cargo-near-build 0.3.2"
     },
-    "wasm_hash": "5ua1YFQLixUTgZYGcgqg1KkAhyVnmsHm5FkvC9HT127m"
+    "wasm_hash": "2QLSTWx4W4aXhd8raRMuA4m1FYSZETpLU7YcvLVXohTE"
   },
   "body": {
     "functions": [
       {
-        "name": "abi",
+        "name": "__abi_helper",
         "kind": "view",
         "params": {
           "serialization_type": "json",
           "args": [
             {
-              "name": "abi",
+              "name": "types",
               "type_schema": {
-                "$ref": "#/definitions/Abi"
+                "$ref": "#/definitions/AbiHelper"
               }
             }
           ]
@@ -577,7 +577,12 @@
             {
               "name": "public_key",
               "type_schema": {
-                "$ref": "#/definitions/PublicKey"
+                "examples": [
+                  "ed25519:5TagutioHgKLh7KZ1VEFBYfgRkPtqnKm9LoMnJMJugxm",
+                  "secp256k1:3aMVMxsoAnHUbweXMtdKaN1uJaNwsfKv7wnc97SDGjXhyK62VyJwhPUPLZefKVthcoUcuWK6cqkSU4M542ipNxS3"
+                ],
+                "type": "string",
+                "contentEncoding": "base58"
               }
             }
           ]
@@ -726,6 +731,30 @@
         }
       },
       {
+        "name": "do_native_withdraw",
+        "kind": "call",
+        "modifiers": [
+          "private"
+        ],
+        "params": {
+          "serialization_type": "json",
+          "args": [
+            {
+              "name": "withdraw",
+              "type_schema": {
+                "$ref": "#/definitions/NativeWithdraw"
+              }
+            }
+          ]
+        },
+        "result": {
+          "serialization_type": "json",
+          "type_schema": {
+            "$ref": "#/definitions/Promise"
+          }
+        }
+      },
+      {
         "name": "do_nft_withdraw",
         "kind": "view",
         "modifiers": [
@@ -756,11 +785,11 @@
           "serialization_type": "json",
           "args": [
             {
-              "name": "intents",
+              "name": "signed",
               "type_schema": {
                 "type": "array",
                 "items": {
-                  "$ref": "#/definitions/SignedPayload_for_MultiStandardPayload"
+                  "$ref": "#/definitions/MultiPayload"
                 }
               }
             }
@@ -828,13 +857,22 @@
                   "null"
                 ]
               }
+            },
+            {
+              "name": "msg",
+              "type_schema": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
             }
           ]
         },
         "result": {
           "serialization_type": "json",
           "type_schema": {
-            "$ref": "#/definitions/PromiseOrValueBoolean"
+            "$ref": "#/definitions/PromiseOrValueString"
           }
         }
       },
@@ -898,13 +936,19 @@
               "type_schema": {
                 "type": "string"
               }
+            },
+            {
+              "name": "is_call",
+              "type_schema": {
+                "type": "boolean"
+              }
             }
           ]
         },
         "result": {
           "serialization_type": "json",
           "type_schema": {
-            "type": "boolean"
+            "type": "string"
           }
         }
       },
@@ -943,35 +987,14 @@
                   "null"
                 ]
               }
-            }
-          ]
-        },
-        "result": {
-          "serialization_type": "json",
-          "type_schema": {
-            "$ref": "#/definitions/PromiseOrValueBoolean"
-          }
-        }
-      },
-      {
-        "name": "native_withdraw",
-        "kind": "call",
-        "modifiers": [
-          "payable"
-        ],
-        "params": {
-          "serialization_type": "json",
-          "args": [
-            {
-              "name": "receiver_id",
-              "type_schema": {
-                "$ref": "#/definitions/AccountId"
-              }
             },
             {
-              "name": "amount",
+              "name": "msg",
               "type_schema": {
-                "type": "string"
+                "type": [
+                  "string",
+                  "null"
+                ]
               }
             }
           ]
@@ -979,7 +1002,7 @@
         "result": {
           "serialization_type": "json",
           "type_schema": {
-            "$ref": "#/definitions/PromiseOrValueBoolean"
+            "$ref": "#/definitions/PromiseOrValueString"
           }
         }
       },
@@ -998,7 +1021,12 @@
             {
               "name": "public_key",
               "type_schema": {
-                "$ref": "#/definitions/PublicKey"
+                "examples": [
+                  "ed25519:5TagutioHgKLh7KZ1VEFBYfgRkPtqnKm9LoMnJMJugxm",
+                  "secp256k1:3aMVMxsoAnHUbweXMtdKaN1uJaNwsfKv7wnc97SDGjXhyK62VyJwhPUPLZefKVthcoUcuWK6cqkSU4M542ipNxS3"
+                ],
+                "type": "string",
+                "contentEncoding": "base58"
               }
             }
           ]
@@ -1359,13 +1387,22 @@
                   "null"
                 ]
               }
+            },
+            {
+              "name": "msg",
+              "type_schema": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
             }
           ]
         },
         "result": {
           "serialization_type": "json",
           "type_schema": {
-            "$ref": "#/definitions/PromiseOrValueBoolean"
+            "$ref": "#/definitions/PromiseOrValueArray_of_String"
           }
         }
       },
@@ -1549,13 +1586,22 @@
                   "type": "string"
                 }
               }
+            },
+            {
+              "name": "is_call",
+              "type_schema": {
+                "type": "boolean"
+              }
             }
           ]
         },
         "result": {
           "serialization_type": "json",
           "type_schema": {
-            "type": "boolean"
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           }
         }
       },
@@ -1796,13 +1842,22 @@
                   "null"
                 ]
               }
+            },
+            {
+              "name": "msg",
+              "type_schema": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
             }
           ]
         },
         "result": {
           "serialization_type": "json",
           "type_schema": {
-            "$ref": "#/definitions/PromiseOrValueBoolean"
+            "$ref": "#/definitions/PromiseOrValueArray_of_String"
           }
         }
       },
@@ -1859,6 +1914,15 @@
             },
             {
               "name": "memo",
+              "type_schema": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            },
+            {
+              "name": "msg",
               "type_schema": {
                 "type": [
                   "string",
@@ -1941,6 +2005,12 @@
               "type_schema": {
                 "type": "string"
               }
+            },
+            {
+              "name": "is_call",
+              "type_schema": {
+                "type": "boolean"
+              }
             }
           ]
         },
@@ -1980,6 +2050,15 @@
             },
             {
               "name": "memo",
+              "type_schema": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            },
+            {
+              "name": "msg",
               "type_schema": {
                 "type": [
                   "string",
@@ -2110,7 +2189,12 @@
           "type_schema": {
             "type": "array",
             "items": {
-              "$ref": "#/definitions/PublicKey"
+              "examples": [
+                "ed25519:5TagutioHgKLh7KZ1VEFBYfgRkPtqnKm9LoMnJMJugxm",
+                "secp256k1:3aMVMxsoAnHUbweXMtdKaN1uJaNwsfKv7wnc97SDGjXhyK62VyJwhPUPLZefKVthcoUcuWK6cqkSU4M542ipNxS3"
+              ],
+              "type": "string",
+              "contentEncoding": "base58"
             },
             "uniqueItems": true
           }
@@ -2128,7 +2212,12 @@
             {
               "name": "public_key",
               "type_schema": {
-                "$ref": "#/definitions/PublicKey"
+                "examples": [
+                  "ed25519:5TagutioHgKLh7KZ1VEFBYfgRkPtqnKm9LoMnJMJugxm",
+                  "secp256k1:3aMVMxsoAnHUbweXMtdKaN1uJaNwsfKv7wnc97SDGjXhyK62VyJwhPUPLZefKVthcoUcuWK6cqkSU4M542ipNxS3"
+                ],
+                "type": "string",
+                "contentEncoding": "base58"
               }
             }
           ]
@@ -2162,6 +2251,30 @@
               }
             }
           ]
+        }
+      },
+      {
+        "name": "simulate_intents",
+        "kind": "view",
+        "params": {
+          "serialization_type": "json",
+          "args": [
+            {
+              "name": "signed",
+              "type_schema": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/definitions/MultiPayload"
+                }
+              }
+            }
+          ]
+        },
+        "result": {
+          "serialization_type": "json",
+          "type_schema": {
+            "$ref": "#/definitions/SimulationOutput"
+          }
         }
       },
       {
@@ -2255,17 +2368,32 @@
       "title": "String",
       "type": "string",
       "definitions": {
-        "Abi": {
+        "AbiHelper": {
           "type": "object",
           "required": [
-            "erc191_payload",
-            "nep413_payload"
+            "intent",
+            "payload"
           ],
           "properties": {
-            "erc191_payload": {
+            "intent": {
+              "$ref": "#/definitions/Intent"
+            },
+            "payload": {
+              "$ref": "#/definitions/AbiPayloadHelper"
+            }
+          }
+        },
+        "AbiPayloadHelper": {
+          "type": "object",
+          "required": [
+            "defuse",
+            "nep413"
+          ],
+          "properties": {
+            "defuse": {
               "$ref": "#/definitions/DefusePayload_for_DefuseIntents"
             },
-            "nep413_payload": {
+            "nep413": {
               "$ref": "#/definitions/Nep413DefuseMessage_for_DefuseIntents"
             }
           }
@@ -2274,39 +2402,12 @@
           "description": "NEAR Account Identifier.\n\nThis is a unique, syntactically valid, human-readable account identifier on the NEAR network.\n\n[See the crate-level docs for information about validation.](index.html#account-id-rules)\n\nAlso see [Error kind precedence](AccountId#error-kind-precedence).\n\n## Examples\n\n``` use near_account_id::AccountId;\n\nlet alice: AccountId = \"alice.near\".parse().unwrap();\n\nassert!(\"ƒelicia.near\".parse::<AccountId>().is_err()); // (ƒ is not f) ```",
           "type": "string"
         },
+        "AccountIdRef": {
+          "description": "Account identifier. This is the human readable UTF-8 string which is used internally to index accounts on the network and their respective state.\n\nThis is the \"referenced\" version of the account ID. It is to [`AccountId`] what [`str`] is to [`String`], and works quite similarly to [`Path`]. Like with [`str`] and [`Path`], you can't have a value of type `AccountIdRef`, but you can have a reference like `&AccountIdRef` or `&mut AccountIdRef`.\n\nThis type supports zero-copy deserialization offered by [`serde`](https://docs.rs/serde/), but cannot do the same for [`borsh`](https://docs.rs/borsh/) since the latter does not support zero-copy.\n\n# Examples ``` use near_account_id::{AccountId, AccountIdRef}; use std::convert::{TryFrom, TryInto};\n\n// Construction let alice = AccountIdRef::new(\"alice.near\").unwrap(); assert!(AccountIdRef::new(\"invalid.\").is_err()); ```\n\n[`FromStr`]: std::str::FromStr [`Path`]: std::path::Path",
+          "type": "string"
+        },
         "Deadline": {
-          "oneOf": [
-            {
-              "description": "UNIX Timestamp in seconds",
-              "type": "object",
-              "required": [
-                "timestamp"
-              ],
-              "properties": {
-                "timestamp": {
-                  "type": "integer",
-                  "format": "uint64",
-                  "minimum": 0.0
-                }
-              },
-              "additionalProperties": false
-            },
-            {
-              "description": "Block number",
-              "type": "object",
-              "required": [
-                "block_number"
-              ],
-              "properties": {
-                "block_number": {
-                  "type": "integer",
-                  "format": "uint64",
-                  "minimum": 0.0
-                }
-              },
-              "additionalProperties": false
-            }
-          ]
+          "type": "string"
         },
         "DefuseConfig": {
           "type": "object",
@@ -2340,7 +2441,7 @@
               "$ref": "#/definitions/Deadline"
             },
             "intents": {
-              "description": "Sequence of intents to execute in given order. Empty list is also a valid sequence, i.e. it doesn't do anything, but still invalidates the [`nonce`](crate::defuse::DefusePayload::nonce) for the signer",
+              "description": "Sequence of intents to execute in given order. Empty list is also a valid sequence, i.e. it doesn't do anything, but still invalidates the `nonce` for the signer",
               "type": "array",
               "items": {
                 "$ref": "#/definitions/Intent"
@@ -2360,6 +2461,10 @@
               "$ref": "#/definitions/AccountId"
             }
           }
+        },
+        "Erc191Payload": {
+          "description": "See [ERC-191](https://github.com/ethereum/ercs/blob/master/ERCS/erc-191.md)",
+          "type": "string"
         },
         "FeesConfig": {
           "type": "object",
@@ -2393,11 +2498,18 @@
                 "null"
               ]
             },
+            "msg": {
+              "description": "Message to pass to `ft_transfer_call`. Otherwise, `ft_transfer` will be used. NOTE: No refund will be made in case of insufficient `storage_deposit` on `token` for `receiver_id`",
+              "type": [
+                "string",
+                "null"
+              ]
+            },
             "receiver_id": {
               "$ref": "#/definitions/AccountId"
             },
             "storage_deposit": {
-              "description": "Optionally make `storage_deposit` for `receiver_id` on `token`. The amount will be subtracted from user's NEP-141 `wNEAR` balance.",
+              "description": "Optionally make `storage_deposit` for `receiver_id` on `token`. The amount will be subtracted from user's NEP-141 `wNEAR` balance. NOTE: the `wNEAR` will not be refunded in case of fail",
               "type": [
                 "string",
                 "null"
@@ -2425,7 +2537,12 @@
                   ]
                 },
                 "public_key": {
-                  "$ref": "#/definitions/PublicKey"
+                  "examples": [
+                    "ed25519:5TagutioHgKLh7KZ1VEFBYfgRkPtqnKm9LoMnJMJugxm",
+                    "secp256k1:3aMVMxsoAnHUbweXMtdKaN1uJaNwsfKv7wnc97SDGjXhyK62VyJwhPUPLZefKVthcoUcuWK6cqkSU4M542ipNxS3"
+                  ],
+                  "type": "string",
+                  "contentEncoding": "base58"
                 }
               }
             },
@@ -2444,7 +2561,12 @@
                   ]
                 },
                 "public_key": {
-                  "$ref": "#/definitions/PublicKey"
+                  "examples": [
+                    "ed25519:5TagutioHgKLh7KZ1VEFBYfgRkPtqnKm9LoMnJMJugxm",
+                    "secp256k1:3aMVMxsoAnHUbweXMtdKaN1uJaNwsfKv7wnc97SDGjXhyK62VyJwhPUPLZefKVthcoUcuWK6cqkSU4M542ipNxS3"
+                  ],
+                  "type": "string",
+                  "contentEncoding": "base58"
                 }
               }
             },
@@ -2474,22 +2596,15 @@
             {
               "type": "object",
               "required": [
-                "amounts",
                 "intent",
                 "receiver_id",
-                "token_ids"
+                "tokens"
               ],
               "properties": {
-                "amounts": {
-                  "type": "array",
-                  "items": {
-                    "type": "string"
-                  }
-                },
                 "intent": {
                   "type": "string",
                   "enum": [
-                    "mt_batch_transfer"
+                    "transfer"
                   ]
                 },
                 "memo": {
@@ -2501,53 +2616,10 @@
                 "receiver_id": {
                   "$ref": "#/definitions/AccountId"
                 },
-                "token_ids": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/definitions/TokenId"
-                  }
-                }
-              }
-            },
-            {
-              "type": "object",
-              "required": [
-                "amounts",
-                "intent",
-                "msg",
-                "receiver_id",
-                "token_ids"
-              ],
-              "properties": {
-                "amounts": {
-                  "type": "array",
-                  "items": {
+                "tokens": {
+                  "type": "object",
+                  "additionalProperties": {
                     "type": "string"
-                  }
-                },
-                "intent": {
-                  "type": "string",
-                  "enum": [
-                    "mt_batch_transfer_call"
-                  ]
-                },
-                "memo": {
-                  "type": [
-                    "string",
-                    "null"
-                  ]
-                },
-                "msg": {
-                  "description": "`msg` to pass in `mt_on_transfer`",
-                  "type": "string"
-                },
-                "receiver_id": {
-                  "$ref": "#/definitions/AccountId"
-                },
-                "token_ids": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/definitions/TokenId"
                   }
                 }
               }
@@ -2576,38 +2648,24 @@
                     "null"
                   ]
                 },
+                "msg": {
+                  "description": "Message to pass to `ft_transfer_call`. Otherwise, `ft_transfer` will be used. NOTE: No refund will be made in case of insufficient `storage_deposit` on `token` for `receiver_id`",
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
                 "receiver_id": {
                   "$ref": "#/definitions/AccountId"
                 },
                 "storage_deposit": {
-                  "description": "Optionally make `storage_deposit` for `receiver_id` on `token`. The amount will be subtracted from user's NEP-141 `wNEAR` balance.",
+                  "description": "Optionally make `storage_deposit` for `receiver_id` on `token`. The amount will be subtracted from user's NEP-141 `wNEAR` balance. NOTE: the `wNEAR` will not be refunded in case of fail",
                   "type": [
                     "string",
                     "null"
                   ]
                 },
                 "token": {
-                  "$ref": "#/definitions/AccountId"
-                }
-              }
-            },
-            {
-              "type": "object",
-              "required": [
-                "amount",
-                "receiver_id"
-              ],
-              "properties": {
-                "amount": {
-                  "type": "string"
-                },
-                "intent": {
-                  "type": "string",
-                  "enum": [
-                    "native_withdraw"
-                  ]
-                },
-                "receiver_id": {
                   "$ref": "#/definitions/AccountId"
                 }
               }
@@ -2633,11 +2691,18 @@
                     "null"
                   ]
                 },
+                "msg": {
+                  "description": "Message to pass to `nft_transfer_call`. Otherwise, `nft_transfer` will be used. NOTE: No refund will be made in case of insufficient `storage_deposit` on `token` for `receiver_id`",
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
                 "receiver_id": {
                   "$ref": "#/definitions/AccountId"
                 },
                 "storage_deposit": {
-                  "description": "Optionally make `storage_deposit` for `receiver_id` on `token`. The amount will be subtracted from user's NEP-141 `wNEAR` balance.",
+                  "description": "Optionally make `storage_deposit` for `receiver_id` on `token`. The amount will be subtracted from user's NEP-141 `wNEAR` balance. NOTE: the `wNEAR` will not be refunded in case of fail",
                   "type": [
                     "string",
                     "null"
@@ -2679,11 +2744,18 @@
                     "null"
                   ]
                 },
+                "msg": {
+                  "description": "Message to pass to `mt_batch_transfer_call`. Otherwise, `mt_batch_transfer` will be used. NOTE: No refund will be made in case of insufficient `storage_deposit` on `token` for `receiver_id`",
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
                 "receiver_id": {
                   "$ref": "#/definitions/AccountId"
                 },
                 "storage_deposit": {
-                  "description": "Optionally make `storage_deposit` for `receiver_id` on `token`. The amount will be subtracted from user's NEP-141 `wNEAR` balance.",
+                  "description": "Optionally make `storage_deposit` for `receiver_id` on `token`. The amount will be subtracted from user's NEP-141 `wNEAR` balance. NOTE: the `wNEAR` will not be refunded in case of fail",
                   "type": [
                     "string",
                     "null"
@@ -2701,6 +2773,29 @@
               }
             },
             {
+              "description": "Withdraw native NEAR to `receiver_id`. The amount will be subtracted from user's NEP-141 `wNEAR` balance. NOTE: the `wNEAR` will not be refunded in case of fail (e.g. `receiver_id` account does not exist).",
+              "type": "object",
+              "required": [
+                "amount",
+                "intent",
+                "receiver_id"
+              ],
+              "properties": {
+                "amount": {
+                  "type": "string"
+                },
+                "intent": {
+                  "type": "string",
+                  "enum": [
+                    "native_withdraw"
+                  ]
+                },
+                "receiver_id": {
+                  "$ref": "#/definitions/AccountId"
+                }
+              }
+            },
+            {
               "type": "object",
               "required": [
                 "diff",
@@ -2708,12 +2803,70 @@
               ],
               "properties": {
                 "diff": {
-                  "$ref": "#/definitions/TokenAmounts_for_int128"
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "string"
+                  }
                 },
                 "intent": {
                   "type": "string",
                   "enum": [
                     "token_diff"
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        "IntentEvent_for_AccountEvent_for_Null": {
+          "type": "object",
+          "required": [
+            "account_id",
+            "intent_hash"
+          ],
+          "properties": {
+            "account_id": {
+              "$ref": "#/definitions/AccountIdRef"
+            },
+            "intent_hash": {
+              "type": "string",
+              "contentEncoding": "base58"
+            }
+          }
+        },
+        "InvariantViolated": {
+          "oneOf": [
+            {
+              "type": "object",
+              "required": [
+                "error",
+                "unmatched_deltas"
+              ],
+              "properties": {
+                "error": {
+                  "type": "string",
+                  "enum": [
+                    "unmatched_deltas"
+                  ]
+                },
+                "unmatched_deltas": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "string"
+                  }
+                }
+              }
+            },
+            {
+              "type": "object",
+              "required": [
+                "error"
+              ],
+              "properties": {
+                "error": {
+                  "type": "string",
+                  "enum": [
+                    "overflow"
                   ]
                 }
               }
@@ -2741,11 +2894,18 @@
                 "null"
               ]
             },
+            "msg": {
+              "description": "Message to pass to `mt_batch_transfer_call`. Otherwise, `mt_batch_transfer` will be used. NOTE: No refund will be made in case of insufficient `storage_deposit` on `token` for `receiver_id`",
+              "type": [
+                "string",
+                "null"
+              ]
+            },
             "receiver_id": {
               "$ref": "#/definitions/AccountId"
             },
             "storage_deposit": {
-              "description": "Optionally make `storage_deposit` for `receiver_id` on `token`. The amount will be subtracted from user's NEP-141 `wNEAR` balance.",
+              "description": "Optionally make `storage_deposit` for `receiver_id` on `token`. The amount will be subtracted from user's NEP-141 `wNEAR` balance. NOTE: the `wNEAR` will not be refunded in case of fail",
               "type": [
                 "string",
                 "null"
@@ -2762,6 +2922,110 @@
             }
           }
         },
+        "MultiPayload": {
+          "oneOf": [
+            {
+              "type": "object",
+              "required": [
+                "payload",
+                "public_key",
+                "signature",
+                "standard"
+              ],
+              "properties": {
+                "payload": {
+                  "$ref": "#/definitions/Nep413Payload"
+                },
+                "public_key": {
+                  "type": "string",
+                  "pattern": "^ed25519:",
+                  "contentEncoding": "base58"
+                },
+                "signature": {
+                  "type": "string",
+                  "pattern": "^ed25519:",
+                  "contentEncoding": "base58"
+                },
+                "standard": {
+                  "type": "string",
+                  "enum": [
+                    "nep413"
+                  ]
+                }
+              }
+            },
+            {
+              "type": "object",
+              "required": [
+                "payload",
+                "signature",
+                "standard"
+              ],
+              "properties": {
+                "payload": {
+                  "$ref": "#/definitions/Erc191Payload"
+                },
+                "signature": {
+                  "type": "string",
+                  "pattern": "^secp256k1:",
+                  "contentEncoding": "base58"
+                },
+                "standard": {
+                  "type": "string",
+                  "enum": [
+                    "erc191"
+                  ]
+                }
+              }
+            },
+            {
+              "type": "object",
+              "required": [
+                "payload",
+                "public_key",
+                "signature",
+                "standard"
+              ],
+              "properties": {
+                "payload": {
+                  "type": "string"
+                },
+                "public_key": {
+                  "type": "string",
+                  "pattern": "^ed25519:",
+                  "contentEncoding": "base58"
+                },
+                "signature": {
+                  "type": "string",
+                  "pattern": "^ed25519:",
+                  "contentEncoding": "base58"
+                },
+                "standard": {
+                  "type": "string",
+                  "enum": [
+                    "raw_ed25519"
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        "NativeWithdraw": {
+          "description": "Withdraw native NEAR to `receiver_id`. The amount will be subtracted from user's NEP-141 `wNEAR` balance. NOTE: the `wNEAR` will not be refunded in case of fail (e.g. `receiver_id` account does not exist).",
+          "type": "object",
+          "required": [
+            "amount",
+            "receiver_id"
+          ],
+          "properties": {
+            "amount": {
+              "type": "string"
+            },
+            "receiver_id": {
+              "$ref": "#/definitions/AccountId"
+            }
+          }
+        },
         "Nep413DefuseMessage_for_DefuseIntents": {
           "type": "object",
           "required": [
@@ -2773,7 +3037,7 @@
               "$ref": "#/definitions/Deadline"
             },
             "intents": {
-              "description": "Sequence of intents to execute in given order. Empty list is also a valid sequence, i.e. it doesn't do anything, but still invalidates the [`nonce`](crate::defuse::DefusePayload::nonce) for the signer",
+              "description": "Sequence of intents to execute in given order. Empty list is also a valid sequence, i.e. it doesn't do anything, but still invalidates the `nonce` for the signer",
               "type": "array",
               "items": {
                 "$ref": "#/definitions/Intent"
@@ -2785,6 +3049,7 @@
           }
         },
         "Nep413Payload": {
+          "description": "See [NEP-413](https://github.com/near/NEPs/blob/master/neps/nep-0413.md)",
           "type": "object",
           "required": [
             "message",
@@ -2802,9 +3067,6 @@
               "type": "string"
             },
             "nonce": {
-              "examples": [
-                "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
-              ],
               "type": "string",
               "contentEncoding": "base64"
             },
@@ -2827,11 +3089,18 @@
                 "null"
               ]
             },
+            "msg": {
+              "description": "Message to pass to `nft_transfer_call`. Otherwise, `nft_transfer` will be used. NOTE: No refund will be made in case of insufficient `storage_deposit` on `token` for `receiver_id`",
+              "type": [
+                "string",
+                "null"
+              ]
+            },
             "receiver_id": {
               "$ref": "#/definitions/AccountId"
             },
             "storage_deposit": {
-              "description": "Optionally make `storage_deposit` for `receiver_id` on `token`. The amount will be subtracted from user's NEP-141 `wNEAR` balance.",
+              "description": "Optionally make `storage_deposit` for `receiver_id` on `token`. The amount will be subtracted from user's NEP-141 `wNEAR` balance. NOTE: the `wNEAR` will not be refunded in case of fail",
               "type": [
                 "string",
                 "null"
@@ -2912,24 +3181,6 @@
         "PromiseOrValueString": {
           "type": "string"
         },
-        "PublicKey": {
-          "examples": [
-            "ed25519:5TagutioHgKLh7KZ1VEFBYfgRkPtqnKm9LoMnJMJugxm",
-            "secp256k1:3aMVMxsoAnHUbweXMtdKaN1uJaNwsfKv7wnc97SDGjXhyK62VyJwhPUPLZefKVthcoUcuWK6cqkSU4M542ipNxS3"
-          ],
-          "anyOf": [
-            {
-              "type": "string",
-              "pattern": "^ed25519:",
-              "contentEncoding": "base58"
-            },
-            {
-              "type": "string",
-              "pattern": "^secp256k1:",
-              "contentEncoding": "base58"
-            }
-          ]
-        },
         "RolesConfig": {
           "type": "object",
           "required": [
@@ -2967,93 +3218,60 @@
             }
           }
         },
-        "SignedPayload_for_MultiStandardPayload": {
-          "examples": [
-            {
-              "public_key": "ed25519:5TagutioHgKLh7KZ1VEFBYfgRkPtqnKm9LoMnJMJugxm",
-              "signature": "ed25519:DNxoVu7L7sHr9pcHGWQoJtPsrwheB8akht1JxaGpc9hGrpehdycXBMLJg4ph1bQ9bXdfoxJCbbwxj3Bdrda52eF"
-            },
-            {
-              "signature": "secp256k1:7huDZxNnibusy6wFkbUBQ9Rqq2VmCKgTWYdJwcPj8VnciHjZKPa41rn5n6WZnMqSUCGRHWMAsMjKGtMVVmpETCeCs"
-            }
-          ],
+        "SimulationOutput": {
           "type": "object",
-          "anyOf": [
-            {
-              "description": "Ed25519",
-              "type": "object",
-              "required": [
-                "public_key",
-                "signature"
-              ],
-              "properties": {
-                "public_key": {
-                  "type": "string",
-                  "pattern": "^ed25519:",
-                  "contentEncoding": "base58"
-                },
-                "signature": {
-                  "type": "string",
-                  "pattern": "^ed25519:",
-                  "contentEncoding": "base58"
-                }
-              }
-            },
-            {
-              "description": "Secp256k1",
-              "type": "object",
-              "required": [
-                "signature"
-              ],
-              "properties": {
-                "signature": {
-                  "type": "string",
-                  "pattern": "^secp256k1:",
-                  "contentEncoding": "base58"
-                }
-              }
-            }
+          "required": [
+            "intents_executed",
+            "min_deadline",
+            "state"
           ],
-          "oneOf": [
-            {
-              "description": "See [NEP-413](https://github.com/near/NEPs/blob/master/neps/nep-0413.md)",
-              "type": "object",
-              "required": [
-                "payload",
-                "standard"
-              ],
-              "properties": {
-                "payload": {
-                  "$ref": "#/definitions/Nep413Payload"
-                },
-                "standard": {
-                  "type": "string",
-                  "enum": [
-                    "nep413"
-                  ]
-                }
+          "properties": {
+            "intents_executed": {
+              "description": "Intent hashes along with corresponding signers",
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/IntentEvent_for_AccountEvent_for_Null"
               }
             },
-            {
-              "description": "See [ERC-191](https://github.com/ethereum/ercs/blob/master/ERCS/erc-191.md), [personal_sign](https://docs.metamask.io/wallet/reference/json-rpc-methods/personal_sign)",
-              "type": "object",
-              "required": [
-                "payload",
-                "standard"
-              ],
-              "properties": {
-                "payload": {
-                  "type": "string"
+            "invariant_violated": {
+              "description": "Unmatched token deltas needed to keep the invariant. If not empty, can be used along with fee to calculate `token_diff` closure.",
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/InvariantViolated"
                 },
-                "standard": {
-                  "type": "string",
-                  "enum": [
-                    "erc191"
-                  ]
+                {
+                  "type": "null"
                 }
-              }
+              ]
+            },
+            "min_deadline": {
+              "description": "Minimum deadline among all simulated intents",
+              "allOf": [
+                {
+                  "$ref": "#/definitions/Deadline"
+                }
+              ]
+            },
+            "state": {
+              "description": "Additional info about current state",
+              "allOf": [
+                {
+                  "$ref": "#/definitions/StateOutput"
+                }
+              ]
             }
-          ]
+          }
+        },
+        "StateOutput": {
+          "type": "object",
+          "required": [
+            "fee"
+          ],
+          "properties": {
+            "fee": {
+              "$ref": "#/definitions/Pips"
+            }
+          }
         },
         "Token": {
           "type": "object",
@@ -3075,20 +3293,6 @@
               "type": "string"
             }
           }
-        },
-        "TokenAmounts_for_int128": {
-          "type": "object",
-          "additionalProperties": {
-            "type": "string"
-          }
-        },
-        "TokenId": {
-          "examples": [
-            "nep141:ft.near",
-            "nep171:nft.near:token_id1",
-            "nep245:mt.near:token_id1"
-          ],
-          "type": "string"
         }
       }
     }

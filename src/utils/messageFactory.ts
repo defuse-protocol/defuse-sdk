@@ -2,10 +2,8 @@ import { base64 } from "@scure/base"
 import { settings } from "../config/settings"
 import type { WalletMessage } from "../types"
 import type {
-  AccountId,
   Intent,
   Nep413DefuseMessageFor_DefuseIntents,
-  TokenAmountsForInt128,
 } from "../types/defuse-contracts-types"
 import { assert } from "./assert"
 import type { DefuseUserId } from "./defuse"
@@ -19,7 +17,7 @@ export function makeInnerSwapMessage({
   signerId: DefuseUserId
   deadlineTimestamp: number
 }): Nep413DefuseMessageFor_DefuseIntents {
-  const tokenDiff: TokenAmountsForInt128 = {}
+  const tokenDiff: Record<string, string> = {}
   const tokenDiffNum: Record<string, bigint> = {}
 
   for (const [token, amount] of tokenDeltas) {
@@ -32,14 +30,14 @@ export function makeInnerSwapMessage({
   if (Object.keys(tokenDiff).length === 0) {
     console.warn("Empty diff")
     return {
-      deadline: { timestamp: deadlineTimestamp },
+      deadline: new Date(deadlineTimestamp).toISOString(),
       intents: [],
       signer_id: signerId,
     }
   }
 
   return {
-    deadline: { timestamp: deadlineTimestamp },
+    deadline: new Date(deadlineTimestamp).toISOString(),
     intents: [
       {
         intent: "token_diff",
@@ -77,7 +75,7 @@ export function makeInnerSwapAndWithdrawMessage({
   intents.push(makeInnerWithdrawMessage(withdrawParams))
 
   return {
-    deadline: { timestamp: deadlineTimestamp },
+    deadline: new Date(deadlineTimestamp).toISOString(),
     intents: intents,
     signer_id: signerId,
   }
