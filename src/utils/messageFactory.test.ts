@@ -22,7 +22,7 @@ describe("makeSwapMessage()", () => {
 
     expect(message).toEqual({
       NEP413: {
-        message: `{"deadline":{"timestamp":1000000},"intents":[{"intent":"token_diff","diff":{"foo.near":"100"}}],"signer_id":"user.near"}`,
+        message: `{"deadline":"1970-01-01T00:16:40.000Z","intents":[{"intent":"token_diff","diff":{"foo.near":"100"}}],"signer_id":"user.near"}`,
         recipient: "recipient.near",
         nonce: new Uint8Array(32),
       },
@@ -30,9 +30,7 @@ describe("makeSwapMessage()", () => {
         message: `{
   "signer_id": "user.near",
   "verifying_contract": "intents.near",
-  "deadline": {
-    "timestamp": 1000000
-  },
+  "deadline": "1970-01-01T00:16:40.000Z",
   "nonce": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
   "intents": [
     {
@@ -50,7 +48,7 @@ describe("makeSwapMessage()", () => {
             JSON.stringify({
               signer_id: "user.near",
               verifying_contract: "intents.near",
-              deadline: { timestamp: 1000000 },
+              deadline: "1970-01-01T00:16:40.000Z",
               nonce: "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
               intents: [{ intent: "token_diff", diff: { "foo.near": "100" } }],
             }),
@@ -89,9 +87,7 @@ describe("makeSwapMessage()", () => {
 
     expect(innerMessage).toMatchInlineSnapshot(`
       {
-        "deadline": {
-          "timestamp": 1000000,
-        },
+        "deadline": "1970-01-01T00:16:40.000Z",
         "intents": [
           {
             "diff": {
@@ -127,9 +123,7 @@ describe("makeInnerSwapAndWithdrawMessage()", () => {
 
     expect(innerMessage).toMatchInlineSnapshot(`
       {
-        "deadline": {
-          "timestamp": 1000000,
-        },
+        "deadline": "1970-01-01T00:16:40.000Z",
         "intents": [
           {
             "diff": {
@@ -167,9 +161,7 @@ describe("makeInnerSwapAndWithdrawMessage()", () => {
 
     expect(innerMessage).toMatchInlineSnapshot(`
       {
-        "deadline": {
-          "timestamp": 1000000,
-        },
+        "deadline": "1970-01-01T00:16:40.000Z",
         "intents": [
           {
             "amount": "200",
@@ -199,9 +191,7 @@ describe("makeInnerSwapAndWithdrawMessage()", () => {
 
     expect(innerMessage).toMatchInlineSnapshot(`
       {
-        "deadline": {
-          "timestamp": 1000000,
-        },
+        "deadline": "1970-01-01T00:16:40.000Z",
         "intents": [
           {
             "amount": "200",

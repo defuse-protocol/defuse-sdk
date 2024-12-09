@@ -38,7 +38,6 @@ export function prepareSwapSignedData(
         "User chain and signature chain must match"
       )
       return {
-        // @ts-expect-error: `raw_ed25519` is not a valid standard yet
         standard: "raw_ed25519",
         payload: new TextDecoder().decode(signature.signedData.message),
         // Solana address is its public key encoded in base58
