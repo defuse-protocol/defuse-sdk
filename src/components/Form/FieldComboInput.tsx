@@ -34,7 +34,6 @@ interface Props<T extends FieldValues>
   handleSelect?: () => void
   className?: string
   errors?: FieldErrors
-  errorSelect?: string
   disabled?: boolean
   isLoading?: boolean
 }
@@ -58,7 +57,6 @@ export const FieldComboInput = <T extends FieldValues>({
   withNativeSupport,
   handleIncludeNativeToSwap,
   nativeSupportChecked,
-  errorSelect,
   disabled,
   isLoading,
 }: Props<T>) => {
@@ -154,7 +152,7 @@ export const FieldComboInput = <T extends FieldValues>({
           {label && label}
         </span>
       ) : null}
-      {balance != null && !errorSelect && (
+      {balance != null && (
         <BlockMultiBalances
           balance={balance}
           decimals={selected?.decimals ?? 0}
@@ -166,11 +164,6 @@ export const FieldComboInput = <T extends FieldValues>({
           handleClick={handleSetMaxValue}
           disabled={disabled}
         />
-      )}
-      {errorSelect && (
-        <div className="absolute bottom-4 right-5 flex justify-center items-center gap-2">
-          <span className="text-sm text-red-400">{errorSelect}</span>
-        </div>
       )}
     </div>
   )
