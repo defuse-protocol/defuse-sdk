@@ -2,12 +2,6 @@
   width: 100%;
 }
 
-@media (min-width: 768px) {
-  .container {
-    max-width: 472px;
-  }
-}
-
 .formWrapper {
   border-radius: 1rem;
   padding: 1.25rem;

@@ -127,7 +127,7 @@ export const FieldComboInput = <T extends FieldValues>({
           disabled={disabled}
           autoComplete={"off"}
           className={clsx(
-            "bg-gray-50 max-w-[140px] md:max-w-[none] md:min-w-[calc(100%-210px)] text-3xl font-medium placeholder-black border-transparent focus:border-transparent focus:ring-0 dark:bg-black-900 dark:placeholder-white",
+            "bg-gray-50 w-full text-3xl font-medium placeholder-black border-transparent focus:border-transparent focus:ring-0 dark:bg-black-900 dark:placeholder-white",
             disabled &&
               "text-black-200 pointer-events-none placeholder-black-200",
             {
