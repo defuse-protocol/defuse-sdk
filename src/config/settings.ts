@@ -38,12 +38,6 @@ export let settings: Settings = {
     dogecoin: "https://go.getblock.io/5f7f5fba970e4f7a907fcd2c5f4c38a2",
     turbochain: "https://rpc-0x4e45415f.aurora-cloud.dev",
   },
-  /**
-   * SiloToSilo addresses on blockchains within Aurora Engine
-   */
-  silo: {
-    turbochain: "", // TODO: add address to deployed contract at turbochain
-  },
 }
 
 export const getSettings = (): Settings => settings

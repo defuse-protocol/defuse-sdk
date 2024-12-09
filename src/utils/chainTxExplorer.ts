@@ -1,6 +1,6 @@
 import type { SupportedChainName } from "src/types"
 
-export function chainTxExplorer(blockchain: SupportedChainName): string {
+export function chainTxExplorer(blockchain: SupportedChainName): string | null {
   switch (blockchain) {
     case "near":
       return "https://nearblocks.io/txns/"
@@ -20,6 +20,6 @@ export function chainTxExplorer(blockchain: SupportedChainName): string {
       return "https://dogechain.info/tx/"
     default:
       blockchain satisfies never
-      return ""
+      return null
   }
 }

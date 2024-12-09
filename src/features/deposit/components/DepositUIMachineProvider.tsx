@@ -1,6 +1,7 @@
 import { createActorContext } from "@xstate/react"
 import type { PropsWithChildren, ReactElement, ReactNode } from "react"
 import { useFormContext } from "react-hook-form"
+import { siloToSiloAddress } from "src/constants"
 import { depositSolanaMachine } from "src/features/machines/depositSolanaMachine"
 import { depositTurboMachine } from "src/features/machines/depositTurboMachine"
 import type { Hash } from "viem"
@@ -18,13 +19,13 @@ import {
   createBatchDepositNearNep141Transaction,
   createDepositEVMERC20Transaction,
   createDepositEVMNativeTransaction,
-  createDepositSiloToSiloTransaction,
+  createDepositFromSiloTransaction,
   createDepositSolanaTransaction,
   generateDepositAddress,
   getMinimumStorageBalance,
   isStorageDepositRequired,
 } from "../../../services/depositService"
-import type { SwappableToken, Transaction } from "../../../types"
+import type { ChainType, SwappableToken, Transaction } from "../../../types"
 import { assert } from "../../../utils/assert"
 import { userAddressToDefuseUserId } from "../../../utils/defuse"
 import { isBaseToken, isUnifiedToken } from "../../../utils/token"
@@ -63,6 +64,7 @@ interface DepositUIMachineProviderProps extends PropsWithChildren {
   sendTransactionNear: (tx: Transaction["NEAR"][]) => Promise<string | null>
   sendTransactionEVM: (tx: Transaction["EVM"]) => Promise<Hash | null>
   sendTransactionSolana: (tx: Transaction["Solana"]) => Promise<string | null>
+  chainType: ChainType
 }
 
 export function DepositUIMachineProvider({
@@ -71,6 +73,7 @@ export function DepositUIMachineProvider({
   sendTransactionNear,
   sendTransactionEVM,
   sendTransactionSolana,
+  chainType,
 }: DepositUIMachineProviderProps) {
   const { setValue } = useFormContext<DepositFormValues>()
   return (
@@ -230,12 +233,13 @@ export function DepositUIMachineProvider({
                 const { amount, accountId, tokenAddress, depositAddress } =
                   input
 
-                const tx = createDepositSiloToSiloTransaction(
+                const tx = createDepositFromSiloTransaction(
                   tokenAddress,
                   accountId,
                   amount,
                   depositAddress,
-                  settings.silo.turbochain
+                  siloToSiloAddress.turbochain,
+                  chainType
                 )
                 const txHash = await sendTransactionEVM(tx)
                 assert(txHash != null, "Transaction failed")

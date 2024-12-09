@@ -4,7 +4,14 @@ import {
   SystemProgram,
   Transaction as TransactionSolana,
 } from "@solana/web3.js"
-import { type Address, type Hash, encodeFunctionData, erc20Abi } from "viem"
+import { assert } from "src/utils/assert"
+import {
+  type Address,
+  type Hash,
+  encodeFunctionData,
+  erc20Abi,
+  getAddress,
+} from "viem"
 import { settings } from "../config/settings"
 import {
   getNearNep141MinStorageBalance,
@@ -140,19 +147,21 @@ export function createDepositEVMERC20Transaction(
   }
 }
 
-export function createDepositSiloToSiloTransaction(
-  assetAccountId: string,
+export function createDepositFromSiloTransaction(
+  tokenAddress: string,
   userAddress: string,
   amount: bigint,
   depositAddress: string,
-  siloAddress: string
+  siloAddress: string,
+  chainType: ChainType
 ): { to: Address; data: Hash } {
-  // TODO check chain type for userAddress as a rule, pass through the user chainType
+  assert(chainType === ChainType.EVM, "chainType should be EVM")
+
   const data = encodeFunctionData({
-    abi: siloAbi,
+    abi: siloToSiloABI,
     functionName: "safeFtTransferCallToNear",
     args: [
-      assetAccountId as Address,
+      getAddress(tokenAddress),
       amount,
       depositAddress,
       userAddressToDefuseUserId(userAddress, ChainType.EVM),
@@ -390,7 +399,7 @@ export function getWalletRpcUrl(network: BlockchainEnum): string {
   }
 }
 
-const siloAbi = [
+const siloToSiloABI = [
   {
     inputs: [
       {

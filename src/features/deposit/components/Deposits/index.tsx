@@ -1,6 +1,7 @@
 import { Box, Flex, Link, Text } from "@radix-ui/themes"
 import { AssetComboIcon } from "src/components/Asset/AssetComboIcon"
 import type { SupportedChainName } from "src/types"
+import { assert } from "src/utils/assert"
 import { chainTxExplorer } from "src/utils/chainTxExplorer"
 import { formatTokenValue } from "src/utils/format"
 import type { Context } from "../../../machines/depositUIMachine"
@@ -15,10 +16,13 @@ export const Deposits = ({
   if (depositResult?.tag !== "ok") {
     return null
   }
-  const txUrl =
-    chainName != null && depositResult.value.txHash != null
-      ? chainTxExplorer(chainName) + depositResult.value.txHash
-      : null
+  const explorerUrl = chainName != null && chainTxExplorer(chainName)
+  const txHash = depositResult.value.txHash
+
+  assert(txHash != null, "txHash should not be null")
+  assert(explorerUrl != null, "explorerUrl should not be null")
+
+  const txUrl = explorerUrl + txHash
 
   return (
     <Flex p={"2"} gap={"3"}>

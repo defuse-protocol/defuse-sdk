@@ -377,20 +377,16 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
             depositSolanaResult,
             depositTurboResult
           )}
-        {userAddress &&
-          (network === BlockchainEnum.NEAR ||
-            network === BlockchainEnum.TURBOCHAIN) && (
-            <Deposits
-              chainName={
-                network === BlockchainEnum.NEAR
-                  ? "near"
-                  : network === BlockchainEnum.TURBOCHAIN
-                    ? "turbochain"
-                    : null
-              }
-              depositResult={depositNearResult ?? depositTurboResult}
-            />
-          )}
+        <Deposits
+          chainName={
+            network === BlockchainEnum.NEAR
+              ? "near"
+              : network === BlockchainEnum.TURBOCHAIN
+                ? "turbochain"
+                : null
+          }
+          depositResult={depositNearResult ?? depositTurboResult}
+        />
         {network !== BlockchainEnum.NEAR && isDepositReceived && (
           <DepositSuccess />
         )}
