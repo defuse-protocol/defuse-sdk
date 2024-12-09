@@ -1,6 +1,7 @@
 import { createActorContext } from "@xstate/react"
 import type { PropsWithChildren, ReactElement, ReactNode } from "react"
 import { useFormContext } from "react-hook-form"
+import { assert } from "src/utils/assert"
 import { formatUnits } from "viem"
 import {
   type Actor,
@@ -65,8 +66,7 @@ export function SwapUIMachineProvider({
   const { setValue, resetField } = useFormContext<SwapFormValues>()
   const tokenIn = initialTokenIn || tokenList[0]
   const tokenOut = initialTokenOut || tokenList[1]
-  if (!tokenIn || !tokenOut)
-    throw new Error("Token list must have at least 2 tokens")
+  assert(tokenIn && tokenOut, "TokenIn and TokenOut must be defined")
 
   return (
     <SwapUIMachineContext.Provider
