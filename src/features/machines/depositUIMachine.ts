@@ -246,34 +246,20 @@ export const depositUIMachine = setup({
       return !!context.userAddress
     },
     isDepositNearRelevant: ({ context }) => {
-      return (
-        context.balance + context.nativeBalance >=
-          context.parsedFormValues.amount &&
-        context.formValues.network === BlockchainEnum.NEAR
-      )
+      return context.formValues.network === BlockchainEnum.NEAR
     },
     isDepositEVMRelevant: ({ context }) => {
       return (
-        context.balance + context.nativeBalance >=
-          context.parsedFormValues.amount &&
-        (context.formValues.network === BlockchainEnum.ETHEREUM ||
-          context.formValues.network === BlockchainEnum.BASE ||
-          context.formValues.network === BlockchainEnum.ARBITRUM)
+        context.formValues.network === BlockchainEnum.ETHEREUM ||
+        context.formValues.network === BlockchainEnum.BASE ||
+        context.formValues.network === BlockchainEnum.ARBITRUM
       )
     },
     isDepositSolanaRelevant: ({ context }) => {
-      return (
-        context.balance + context.nativeBalance >=
-          context.parsedFormValues.amount &&
-        context.formValues.network === BlockchainEnum.SOLANA
-      )
+      return context.formValues.network === BlockchainEnum.SOLANA
     },
     isDepositTurbochainRelevant: ({ context }) => {
-      return (
-        context.balance + context.nativeBalance >=
-          context.parsedFormValues.amount &&
-        context.formValues.network === BlockchainEnum.TURBOCHAIN
-      )
+      return context.formValues.network === BlockchainEnum.TURBOCHAIN
     },
     isBalanceSufficientForEstimate: ({ context }) => {
       if (context.formValues.token == null) {
