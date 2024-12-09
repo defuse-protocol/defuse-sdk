@@ -20,6 +20,7 @@ export type DepositWidgetProps = UserInfo & {
   sendTransactionNear: (tx: Transaction["NEAR"][]) => Promise<string | null>
   sendTransactionEVM: (tx: Transaction["EVM"]) => Promise<Hash | null>
   sendTransactionSolana: (tx: Transaction["Solana"]) => Promise<string | null>
+  chainType: ChainType
 }
 
 export type Transaction = {
