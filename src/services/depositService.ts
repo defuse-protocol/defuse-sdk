@@ -4,7 +4,6 @@ import {
   SystemProgram,
   Transaction as TransactionSolana,
 } from "@solana/web3.js"
-import { assert } from "src/utils/assert"
 import {
   type Address,
   type Hash,
@@ -155,8 +154,6 @@ export function createDepositFromSiloTransaction(
   siloAddress: string,
   chainType: ChainType
 ): { to: Address; data: Hash } {
-  assert(chainType === ChainType.EVM, "chainType should be EVM")
-
   const data = encodeFunctionData({
     abi: siloToSiloABI,
     functionName: "safeFtTransferCallToNear",
