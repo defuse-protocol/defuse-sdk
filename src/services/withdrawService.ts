@@ -199,6 +199,14 @@ async function determineNEP141StorageRequirement(
     return { tag: "ok", value: null }
   }
 
+  // For withdrawing ETH to NEAR no storage_deposit is required. (P.S. aurora is ETH address on Near network)
+  if (
+    formValues.tokenOut.chainName === "near" &&
+    formValues.tokenOut.address === "aurora"
+  ) {
+    return { tag: "ok", value: null }
+  }
+
   const nep141StorageRequired = await checkNEP141StorageRequirements(
     { formValues },
     { signal }
