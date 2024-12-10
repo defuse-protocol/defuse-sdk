@@ -10,7 +10,7 @@ describe("makeSwapMessage()", () => {
   const innerMessage = makeInnerSwapMessage({
     tokenDeltas: [["foo.near", 100n]],
     signerId: userAddressToDefuseUserId("user.near", "near"),
-    deadlineTimestamp: 1000000,
+    deadlineTimestamp: 1704110400, // 2024-01-01T12:00:00.000Z
   })
 
   it("should return a WalletMessage object", () => {
@@ -22,7 +22,7 @@ describe("makeSwapMessage()", () => {
 
     expect(message).toEqual({
       NEP413: {
-        message: `{"deadline":"1970-01-01T00:16:40.000Z","intents":[{"intent":"token_diff","diff":{"foo.near":"100"}}],"signer_id":"user.near"}`,
+        message: `{"deadline":"2024-01-01T12:00:00.000Z","intents":[{"intent":"token_diff","diff":{"foo.near":"100"}}],"signer_id":"user.near"}`,
         recipient: "recipient.near",
         nonce: new Uint8Array(32),
       },
@@ -30,7 +30,7 @@ describe("makeSwapMessage()", () => {
         message: `{
   "signer_id": "user.near",
   "verifying_contract": "intents.near",
-  "deadline": "1970-01-01T00:16:40.000Z",
+  "deadline": "2024-01-01T12:00:00.000Z",
   "nonce": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
   "intents": [
     {
@@ -48,7 +48,7 @@ describe("makeSwapMessage()", () => {
             JSON.stringify({
               signer_id: "user.near",
               verifying_contract: "intents.near",
-              deadline: "1970-01-01T00:16:40.000Z",
+              deadline: "2024-01-01T12:00:00.000Z",
               nonce: "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
               intents: [{ intent: "token_diff", diff: { "foo.near": "100" } }],
             }),
@@ -82,12 +82,12 @@ describe("makeSwapMessage()", () => {
         ["foo.near", 100n],
       ],
       signerId: userAddressToDefuseUserId("user.near", "near"),
-      deadlineTimestamp: 1000000,
+      deadlineTimestamp: 1704110400,
     })
 
     expect(innerMessage).toMatchInlineSnapshot(`
       {
-        "deadline": "1970-01-01T00:16:40.000Z",
+        "deadline": "2024-01-01T12:00:00.000Z",
         "intents": [
           {
             "diff": {
@@ -104,6 +104,8 @@ describe("makeSwapMessage()", () => {
 })
 
 describe("makeInnerSwapAndWithdrawMessage()", () => {
+  const DEADLINE = 1704110400 // 2024-01-01T12:00:00.000Z
+
   it("generates message with swaps", () => {
     const innerMessage = makeInnerSwapAndWithdrawMessage({
       tokenDeltas: [
@@ -118,12 +120,12 @@ describe("makeInnerSwapAndWithdrawMessage()", () => {
         storageDeposit: 0n,
       },
       signerId: userAddressToDefuseUserId("user.near", "near"),
-      deadlineTimestamp: 1000000,
+      deadlineTimestamp: DEADLINE,
     })
 
     expect(innerMessage).toMatchInlineSnapshot(`
       {
-        "deadline": "1970-01-01T00:16:40.000Z",
+        "deadline": "2024-01-01T12:00:00.000Z",
         "intents": [
           {
             "diff": {
@@ -156,12 +158,12 @@ describe("makeInnerSwapAndWithdrawMessage()", () => {
         storageDeposit: 100n,
       },
       signerId: userAddressToDefuseUserId("user.near", "near"),
-      deadlineTimestamp: 1000000,
+      deadlineTimestamp: DEADLINE,
     })
 
     expect(innerMessage).toMatchInlineSnapshot(`
       {
-        "deadline": "1970-01-01T00:16:40.000Z",
+        "deadline": "2024-01-01T12:00:00.000Z",
         "intents": [
           {
             "amount": "200",
@@ -186,12 +188,12 @@ describe("makeInnerSwapAndWithdrawMessage()", () => {
         destinationAddress: "0xdead",
       },
       signerId: userAddressToDefuseUserId("user.near", "near"),
-      deadlineTimestamp: 1000000,
+      deadlineTimestamp: DEADLINE,
     })
 
     expect(innerMessage).toMatchInlineSnapshot(`
       {
-        "deadline": "1970-01-01T00:16:40.000Z",
+        "deadline": "2024-01-01T12:00:00.000Z",
         "intents": [
           {
             "amount": "200",

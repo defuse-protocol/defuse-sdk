@@ -8,6 +8,11 @@ import type {
 import { assert } from "./assert"
 import type { DefuseUserId } from "./defuse"
 
+/**
+ * @param tokenDeltas
+ * @param signerId
+ * @param deadlineTimestamp Unix timestamp in seconds
+ */
 export function makeInnerSwapMessage({
   tokenDeltas,
   signerId,
@@ -30,14 +35,14 @@ export function makeInnerSwapMessage({
   if (Object.keys(tokenDiff).length === 0) {
     console.warn("Empty diff")
     return {
-      deadline: new Date(deadlineTimestamp).toISOString(),
+      deadline: new Date(deadlineTimestamp * 1000).toISOString(),
       intents: [],
       signer_id: signerId,
     }
   }
 
   return {
-    deadline: new Date(deadlineTimestamp).toISOString(),
+    deadline: new Date(deadlineTimestamp * 1000).toISOString(),
     intents: [
       {
         intent: "token_diff",
@@ -48,6 +53,12 @@ export function makeInnerSwapMessage({
   }
 }
 
+/**
+ * @param tokenDeltas
+ * @param withdrawParams
+ * @param signerId
+ * @param deadlineTimestamp Unix timestamp in seconds
+ */
 export function makeInnerSwapAndWithdrawMessage({
   tokenDeltas,
   withdrawParams,
@@ -75,7 +86,7 @@ export function makeInnerSwapAndWithdrawMessage({
   intents.push(makeInnerWithdrawMessage(withdrawParams))
 
   return {
-    deadline: new Date(deadlineTimestamp).toISOString(),
+    deadline: new Date(deadlineTimestamp * 1000).toISOString(),
     intents: intents,
     signer_id: signerId,
   }
