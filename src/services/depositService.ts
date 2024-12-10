@@ -4,7 +4,14 @@ import {
   SystemProgram,
   Transaction as TransactionSolana,
 } from "@solana/web3.js"
-import { type Address, type Hash, encodeFunctionData, erc20Abi } from "viem"
+import { assert } from "src/utils/assert"
+import {
+  type Address,
+  type Hash,
+  encodeFunctionData,
+  erc20Abi,
+  getAddress,
+} from "viem"
 import { settings } from "../config/settings"
 import {
   getNearNep141MinStorageBalance,
@@ -14,8 +21,7 @@ import { getNearTxSuccessValue } from "../features/machines/getTxMachine"
 import { BlockchainEnum } from "../types"
 import { ChainType } from "../types"
 import type { Transaction } from "../types/deposit"
-import type { DefuseUserId } from "../utils/defuse"
-import { estimateSolanaTransferCost } from "./estimateService"
+import { type DefuseUserId, userAddressToDefuseUserId } from "../utils/defuse"
 import { getDepositAddress, getSupportedTokens } from "./poaBridgeClient"
 
 const FT_DEPOSIT_GAS = `30${"0".repeat(12)}` // 30 TGAS
@@ -137,6 +143,32 @@ export function createDepositEVMERC20Transaction(
   })
   return {
     to: assetAccountId as Address,
+    data,
+  }
+}
+
+export function createDepositFromSiloTransaction(
+  tokenAddress: string,
+  userAddress: string,
+  amount: bigint,
+  depositAddress: string,
+  siloAddress: string,
+  chainType: ChainType
+): { to: Address; data: Hash } {
+  assert(chainType === ChainType.EVM, "chainType should be EVM")
+
+  const data = encodeFunctionData({
+    abi: siloToSiloABI,
+    functionName: "safeFtTransferCallToNear",
+    args: [
+      getAddress(tokenAddress),
+      amount,
+      depositAddress,
+      userAddressToDefuseUserId(userAddress, ChainType.EVM),
+    ],
+  })
+  return {
+    to: siloAddress as Address,
     data,
   }
 }
@@ -283,9 +315,13 @@ export function getAvailableDepositRoutes(
     case ChainType.EVM:
       switch (network) {
         case BlockchainEnum.NEAR:
-        case BlockchainEnum.TURBOCHAIN:
           return {
             activeDeposit: false,
+            passiveDeposit: false,
+          }
+        case BlockchainEnum.TURBOCHAIN:
+          return {
+            activeDeposit: true,
             passiveDeposit: false,
           }
         case BlockchainEnum.ETHEREUM:
@@ -362,3 +398,34 @@ export function getWalletRpcUrl(network: BlockchainEnum): string {
       throw new Error("exhaustive check failed")
   }
 }
+
+const siloToSiloABI = [
+  {
+    inputs: [
+      {
+        internalType: "contract IEvmErc20",
+        name: "token",
+        type: "address",
+      },
+      {
+        internalType: "uint128",
+        name: "amount",
+        type: "uint128",
+      },
+      {
+        internalType: "string",
+        name: "receiverId",
+        type: "string",
+      },
+      {
+        internalType: "string",
+        name: "message",
+        type: "string",
+      },
+    ],
+    name: "safeFtTransferCallToNear",
+    outputs: [],
+    stateMutability: "payable",
+    type: "function",
+  },
+]
