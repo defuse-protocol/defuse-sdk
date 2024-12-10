@@ -80,12 +80,9 @@ export async function queryQuote(
     input.balances
   )
 
-  const quotes = await fetchQuotesForTokens(
-    input.tokensIn,
-    tokenOut,
-    amountsToQuote,
-    { signal }
-  )
+  const quotes = await fetchQuotesForTokens(tokenOut, amountsToQuote, {
+    signal,
+  })
 
   if (quotes == null) {
     return BLANK_AGGREGATED_QUOTE
@@ -235,16 +232,12 @@ export function aggregateQuotes(
 }
 
 export async function fetchQuotesForTokens(
-  tokensIn: string[],
   tokenOut: string,
   amountsToQuote: Record<string, bigint>,
   { signal }: { signal?: AbortSignal } = {}
 ): Promise<null | NonNullable<QuoteResults>[]> {
   const quotes = await Promise.all(
-    tokensIn.map(async (tokenIn) => {
-      const amountIn = amountsToQuote[tokenIn]
-      if (amountIn === undefined || amountIn === 0n) return null
-
+    Object.entries(amountsToQuote).map(async ([tokenIn, amountIn]) => {
       return quote(
         {
           defuse_asset_identifier_in: tokenIn,

@@ -61,10 +61,10 @@ describe("queryQuote()", () => {
 
   it("splits amount across tokens if user has enough funds", async () => {
     const input = {
-      tokensIn: ["token1", "token2"],
+      tokensIn: ["token1", "token2", "token3"],
       tokensOut: ["tokenOut"],
       amountIn: 150n,
-      balances: { token1: 100n, token2: 100n },
+      balances: { token1: 100n, token2: 100n, token3: 100n },
     }
 
     vi.mocked(relayClient.quote)
