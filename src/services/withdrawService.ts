@@ -126,6 +126,10 @@ export async function prepareWithdraw(
     }
   }
 
+  if (swapRequirement && isAggregatedQuoteEmpty(swapRequirement.swapQuote)) {
+    return { tag: "err", value: { reason: "ERR_EMPTY_QUOTE" } }
+  }
+
   const nep141Storage = await determineNEP141StorageRequirement(
     { formValues },
     { signal }
