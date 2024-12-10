@@ -25,6 +25,16 @@ export interface AggregatedQuote {
 
 type QuoteResults = QuoteResponse["result"]
 
+const BLANK_AGGREGATED_QUOTE: AggregatedQuote = Object.freeze({
+  quoteHashes: [],
+  expirationTime: new Date(0).toISOString(),
+  totalAmountIn: 0n,
+  totalAmountOut: 0n,
+  amountsIn: {},
+  amountsOut: {},
+  tokenDeltas: [],
+})
+
 export async function queryQuote(
   input: AggregatedQuoteParams,
   {
@@ -57,7 +67,11 @@ export async function queryQuote(
       { signal }
     )
 
-    return aggregateQuotes([onlyValidQuotes(q)])
+    if (q == null) {
+      return BLANK_AGGREGATED_QUOTE
+    }
+
+    return aggregateQuotes([q])
   }
 
   const amountsToQuote = calculateSplitAmounts(
@@ -72,6 +86,10 @@ export async function queryQuote(
     amountsToQuote,
     { signal }
   )
+
+  if (quotes == null) {
+    return BLANK_AGGREGATED_QUOTE
+  }
 
   return aggregateQuotes(quotes)
 }
@@ -96,15 +114,7 @@ export async function queryQuoteExactOut(
   )
 
   if (quotes == null) {
-    return {
-      quoteHashes: [],
-      expirationTime: new Date(0).toISOString(),
-      totalAmountIn: 0n,
-      totalAmountOut: 0n,
-      amountsIn: {},
-      amountsOut: {},
-      tokenDeltas: [],
-    }
+    return BLANK_AGGREGATED_QUOTE
   }
 
   quotes.sort((a, b) => {
@@ -229,7 +239,7 @@ export async function fetchQuotesForTokens(
   tokenOut: string,
   amountsToQuote: Record<string, bigint>,
   { signal }: { signal?: AbortSignal } = {}
-): Promise<NonNullable<QuoteResults>[]> {
+): Promise<null | NonNullable<QuoteResults>[]> {
   const quotes = await Promise.all(
     tokensIn.map(async (tokenIn) => {
       const amountIn = amountsToQuote[tokenIn]
@@ -247,14 +257,14 @@ export async function fetchQuotesForTokens(
     })
   )
 
-  return quotes.map(onlyValidQuotes)
-}
-
-function onlyValidQuotes(quotes: QuoteResults): NonNullable<QuoteResults> {
-  if (quotes === null) return []
-  return quotes.filter((q): q is NonNullable<typeof q> => q !== null)
+  return ensureAllNonNull(quotes)
 }
 
 export function isAggregatedQuoteEmpty(a: AggregatedQuote): boolean {
   return !a.quoteHashes.length || a.totalAmountOut === 0n
+}
+
+function ensureAllNonNull<T>(array: (T | null)[]): T[] | null {
+  const filtered = array.filter((x): x is T => x !== null)
+  return filtered.length === array.length ? filtered : null
 }

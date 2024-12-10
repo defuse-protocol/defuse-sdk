@@ -209,6 +209,38 @@ describe("queryQuote()", () => {
       tokenDeltas: [],
     })
   })
+
+  it("returns empty result if any quote is null", async () => {
+    const input = {
+      tokensIn: ["token1", "token2"],
+      tokensOut: ["tokenOut"],
+      amountIn: 150n,
+      balances: { token1: 100n, token2: 100n },
+    }
+
+    vi.mocked(relayClient.quote)
+      .mockImplementationOnce(async () => [
+        {
+          quote_hash: "q1",
+          defuse_asset_identifier_in: "token1",
+          defuse_asset_identifier_out: "tokenOut",
+          amount_in: "100",
+          amount_out: "20",
+          expiration_time: "2024-01-15T12:02:00.000Z",
+        },
+      ])
+      .mockImplementationOnce(async () => null)
+
+    await expect(queryQuote(input)).resolves.toEqual({
+      amountsIn: {},
+      amountsOut: {},
+      expirationTime: "1970-01-01T00:00:00.000Z",
+      quoteHashes: [],
+      totalAmountIn: 0n,
+      totalAmountOut: 0n,
+      tokenDeltas: [],
+    })
+  })
 })
 
 it("calculateSplitAmounts(): splits amounts correctly", () => {
