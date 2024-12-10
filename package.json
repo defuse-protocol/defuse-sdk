@@ -18,6 +18,7 @@
   ],
   "scripts": {
     "test": "vitest --passWithNoTests",
+    "coverage": "vitest run --coverage",
     "build": "rollup -c",
     "typecheck": "tsc --noEmit",
     "check": "biome check",
