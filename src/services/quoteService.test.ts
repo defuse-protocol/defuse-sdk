@@ -14,7 +14,7 @@ describe("queryQuote()", () => {
     vi.clearAllMocks()
   })
 
-  it("quotes full amount if total available is less than requested", async () => {
+  it("quotes full amount even if user has less funds than requested", async () => {
     const input = {
       tokensIn: ["token1"],
       tokensOut: ["tokenOut"],
@@ -59,7 +59,7 @@ describe("queryQuote()", () => {
     })
   })
 
-  it("splits amount across tokens if available balance is sufficient", async () => {
+  it("splits amount across tokens if user has enough funds", async () => {
     const input = {
       tokensIn: ["token1", "token2"],
       tokensOut: ["tokenOut"],
@@ -126,7 +126,7 @@ describe("queryQuote()", () => {
     })
   })
 
-  it("takes only first quote", async () => {
+  it("takes a quote with the best return", async () => {
     const input = {
       tokensIn: ["token1"],
       tokensOut: ["tokenOut"],
@@ -140,15 +140,23 @@ describe("queryQuote()", () => {
         defuse_asset_identifier_in: "token1",
         defuse_asset_identifier_out: "tokenOut",
         amount_in: "150",
-        amount_out: "200",
-        expiration_time: "2024-01-15T12:02:00.000Z",
+        amount_out: "180",
+        expiration_time: "2024-01-15T12:00:00.000Z",
       },
       {
         quote_hash: "q2",
         defuse_asset_identifier_in: "token1",
         defuse_asset_identifier_out: "tokenOut",
         amount_in: "150",
-        amount_out: "180",
+        amount_out: "200",
+        expiration_time: "2024-01-15T12:02:00.000Z",
+      },
+      {
+        quote_hash: "q3",
+        defuse_asset_identifier_in: "token1",
+        defuse_asset_identifier_out: "tokenOut",
+        amount_in: "150",
+        amount_out: "100",
         expiration_time: "2024-01-15T12:01:30.000Z",
       },
     ])
@@ -159,7 +167,7 @@ describe("queryQuote()", () => {
       amountsIn: { token1: 150n },
       amountsOut: { tokenOut: 200n },
       expirationTime: "2024-01-15T12:02:00.000Z",
-      quoteHashes: ["q1"],
+      quoteHashes: ["q2"],
       totalAmountIn: 150n,
       totalAmountOut: 200n,
       tokenDeltas: [
