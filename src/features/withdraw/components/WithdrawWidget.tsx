@@ -93,7 +93,7 @@ export const WithdrawWidget = (props: WithdrawWidgetProps) => {
                       signerId: context.defuseUserId,
                       deadlineTimestamp:
                         // Expiry time maybe zero if nothing to swap, so let's just fallback to the default
-                        Math.floor(Date.now() / 1000) + 10 * 60,
+                        Date.now() + 10 * 60 * 1000,
                     })
 
                     return {
