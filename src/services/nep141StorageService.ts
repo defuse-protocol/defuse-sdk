@@ -32,6 +32,11 @@ export async function getNEP141StorageRequired({
     return { tag: "ok", value: 0n }
   }
 
+  // For withdrawing ETH to NEAR no storage_deposit is required. (P.S. aurora is ETH address on Near network)
+  if (token.chainName === "near" && token.address === "aurora") {
+    return { tag: "ok", value: 0n }
+  }
+
   const [minStorageBalanceResult, userStorageBalanceResult] =
     await Promise.allSettled([
       getNearNep141MinStorageBalance({
