@@ -25,7 +25,8 @@ import {
   getMinimumStorageBalance,
   isStorageDepositRequired,
 } from "../../../services/depositService"
-import type { ChainType, SwappableToken, Transaction } from "../../../types"
+import { ChainType } from "../../../types"
+import type { SwappableToken, Transaction } from "../../../types"
 import { assert } from "../../../utils/assert"
 import { userAddressToDefuseUserId } from "../../../utils/defuse"
 import { isBaseToken, isUnifiedToken } from "../../../utils/token"
@@ -64,7 +65,7 @@ interface DepositUIMachineProviderProps extends PropsWithChildren {
   sendTransactionNear: (tx: Transaction["NEAR"][]) => Promise<string | null>
   sendTransactionEVM: (tx: Transaction["EVM"]) => Promise<Hash | null>
   sendTransactionSolana: (tx: Transaction["Solana"]) => Promise<string | null>
-  chainType: ChainType
+  chainType?: ChainType
 }
 
 export function DepositUIMachineProvider({
@@ -232,6 +233,11 @@ export function DepositUIMachineProvider({
               signAndSendTransactions: fromPromise(async ({ input }) => {
                 const { amount, accountId, tokenAddress, depositAddress } =
                   input
+
+                assert(
+                  chainType !== null && chainType === ChainType.EVM,
+                  "chainType should be EVM"
+                )
 
                 const tx = createDepositFromSiloTransaction(
                   tokenAddress,
