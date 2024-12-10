@@ -1,6 +1,7 @@
 import { createActorContext } from "@xstate/react"
 import type { PropsWithChildren, ReactElement, ReactNode } from "react"
 import { useFormContext } from "react-hook-form"
+import { assert } from "src/utils/assert"
 import { formatUnits } from "viem"
 import {
   type Actor,
@@ -49,8 +50,8 @@ export const SwapUIMachineContext: SwapUIMachineContextInterface =
   createActorContext(swapUIMachine)
 
 interface SwapUIMachineProviderProps extends PropsWithChildren {
-  initialTokenIn: SwappableToken
-  initialTokenOut: SwappableToken
+  initialTokenIn?: SwappableToken
+  initialTokenOut?: SwappableToken
   tokenList: SwappableToken[]
   signMessage: (params: WalletMessage) => Promise<WalletSignatureResult | null>
 }
@@ -63,13 +64,16 @@ export function SwapUIMachineProvider({
   signMessage,
 }: SwapUIMachineProviderProps) {
   const { setValue, resetField } = useFormContext<SwapFormValues>()
+  const tokenIn = initialTokenIn || tokenList[0]
+  const tokenOut = initialTokenOut || tokenList[1]
+  assert(tokenIn && tokenOut, "TokenIn and TokenOut must be defined")
 
   return (
     <SwapUIMachineContext.Provider
       options={{
         input: {
-          tokenIn: initialTokenIn,
-          tokenOut: initialTokenOut,
+          tokenIn,
+          tokenOut,
           tokenList,
         },
       }}

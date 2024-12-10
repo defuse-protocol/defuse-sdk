@@ -1,7 +1,4 @@
-import type {
-  SignedPayloadFor_MultiStandardPayload,
-  SignedPayloadFor_MultiStandardPayload1,
-} from "../../types/defuse-contracts-types"
+import type { MultiPayload } from "../../types/defuse-contracts-types"
 
 export type RequestConfig = {
   signal?: AbortSignal
@@ -46,8 +43,7 @@ export type PublishIntentRequest = JSONRPCRequest<
   "publish_intent",
   {
     quote_hashes: string[]
-    signed_data: SignedPayloadFor_MultiStandardPayload1 &
-      SignedPayloadFor_MultiStandardPayload
+    signed_data: MultiPayload
   }
 >
 

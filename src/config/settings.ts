@@ -36,7 +36,7 @@ export let settings: Settings = {
     solana:
       "https://quiet-solemn-asphalt.solana-mainnet.quiknode.pro/91aa5918df65520d47a54d88590f1503a4e804b1",
     dogecoin: "https://go.getblock.io/5f7f5fba970e4f7a907fcd2c5f4c38a2",
-    turbochain: "https://rpc-0x4e45415f.aurora-cloud.dev ",
+    turbochain: "https://rpc-0x4e45415f.aurora-cloud.dev",
   },
 }
 
