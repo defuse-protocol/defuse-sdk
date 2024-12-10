@@ -12,8 +12,8 @@ export interface AggregatedQuoteParams {
 
 export interface AggregatedQuote {
   quoteHashes: string[]
-  /** Earliest expiration time in seconds */
-  expirationTime: number
+  /** Earliest expiration time in ISO-8601 format */
+  expirationTime: string
   totalAmountIn: bigint
   totalAmountOut: bigint
   /** @deprecated */
@@ -98,7 +98,7 @@ export async function queryQuoteExactOut(
   if (quotes == null) {
     return {
       quoteHashes: [],
-      expirationTime: 0,
+      expirationTime: new Date(0).toISOString(),
       totalAmountIn: 0n,
       totalAmountOut: 0n,
       amountsIn: {},
@@ -195,7 +195,10 @@ export function aggregateQuotes(
     totalAmountIn += amountIn
     totalAmountOut += amountOut
 
-    expirationTime = Math.min(expirationTime, q.expiration_time)
+    expirationTime = Math.min(
+      expirationTime,
+      new Date(q.expiration_time).getTime()
+    )
 
     amountsIn[q.defuse_asset_identifier_in] ??= 0n
     amountsIn[q.defuse_asset_identifier_in] += amountIn
@@ -210,8 +213,9 @@ export function aggregateQuotes(
 
   return {
     quoteHashes,
-    expirationTime:
-      expirationTime === Number.POSITIVE_INFINITY ? 0 : expirationTime,
+    expirationTime: new Date(
+      expirationTime === Number.POSITIVE_INFINITY ? 0 : expirationTime
+    ).toISOString(),
     totalAmountIn,
     totalAmountOut,
     amountsIn,

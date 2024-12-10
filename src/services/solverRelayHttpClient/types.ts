@@ -36,7 +36,8 @@ export type QuoteResponse = JSONRPCResponse<null | Array<{
   defuse_asset_identifier_out: string
   amount_in: string
   amount_out: string
-  expiration_time: number
+  // ISO-8601 date string
+  expiration_time: string
 }>>
 
 export type PublishIntentRequest = JSONRPCRequest<

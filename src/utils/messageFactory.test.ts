@@ -10,7 +10,7 @@ describe("makeSwapMessage()", () => {
   const innerMessage = makeInnerSwapMessage({
     tokenDeltas: [["foo.near", 100n]],
     signerId: userAddressToDefuseUserId("user.near", "near"),
-    deadlineTimestamp: 1704110400, // 2024-01-01T12:00:00.000Z
+    deadlineTimestamp: 1704110400000, // 2024-01-01T12:00:00.000Z
   })
 
   it("should return a WalletMessage object", () => {
@@ -82,7 +82,7 @@ describe("makeSwapMessage()", () => {
         ["foo.near", 100n],
       ],
       signerId: userAddressToDefuseUserId("user.near", "near"),
-      deadlineTimestamp: 1704110400,
+      deadlineTimestamp: 1704110400000,
     })
 
     expect(innerMessage).toMatchInlineSnapshot(`
@@ -104,7 +104,7 @@ describe("makeSwapMessage()", () => {
 })
 
 describe("makeInnerSwapAndWithdrawMessage()", () => {
-  const DEADLINE = 1704110400 // 2024-01-01T12:00:00.000Z
+  const DEADLINE = 1704110400000 // 2024-01-01T12:00:00.000Z
 
   it("generates message with swaps", () => {
     const innerMessage = makeInnerSwapAndWithdrawMessage({

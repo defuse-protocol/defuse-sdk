@@ -11,7 +11,7 @@ import type { DefuseUserId } from "./defuse"
 /**
  * @param tokenDeltas
  * @param signerId
- * @param deadlineTimestamp Unix timestamp in seconds
+ * @param deadlineTimestamp Unix timestamp in milliseconds
  */
 export function makeInnerSwapMessage({
   tokenDeltas,
@@ -35,14 +35,14 @@ export function makeInnerSwapMessage({
   if (Object.keys(tokenDiff).length === 0) {
     console.warn("Empty diff")
     return {
-      deadline: new Date(deadlineTimestamp * 1000).toISOString(),
+      deadline: new Date(deadlineTimestamp).toISOString(),
       intents: [],
       signer_id: signerId,
     }
   }
 
   return {
-    deadline: new Date(deadlineTimestamp * 1000).toISOString(),
+    deadline: new Date(deadlineTimestamp).toISOString(),
     intents: [
       {
         intent: "token_diff",
@@ -86,7 +86,7 @@ export function makeInnerSwapAndWithdrawMessage({
   intents.push(makeInnerWithdrawMessage(withdrawParams))
 
   return {
-    deadline: new Date(deadlineTimestamp * 1000).toISOString(),
+    deadline: new Date(deadlineTimestamp).toISOString(),
     intents: intents,
     signer_id: signerId,
   }

@@ -29,7 +29,7 @@ describe("queryQuote()", () => {
         defuse_asset_identifier_out: "tokenOut",
         amount_in: "150",
         amount_out: "200",
-        expiration_time: 500,
+        expiration_time: "2024-01-15T12:02:00.000Z",
       },
     ])
 
@@ -48,7 +48,7 @@ describe("queryQuote()", () => {
     expect(result).toEqual({
       amountsIn: { token1: 150n },
       amountsOut: { tokenOut: 200n },
-      expirationTime: 500,
+      expirationTime: "2024-01-15T12:02:00.000Z",
       quoteHashes: ["q1"],
       totalAmountIn: 150n,
       totalAmountOut: 200n,
@@ -75,7 +75,7 @@ describe("queryQuote()", () => {
           defuse_asset_identifier_out: "tokenOut",
           amount_in: "100",
           amount_out: "20",
-          expiration_time: 500,
+          expiration_time: "2024-01-15T12:02:00.000Z",
         },
       ])
       .mockImplementationOnce(async () => [
@@ -85,7 +85,7 @@ describe("queryQuote()", () => {
           defuse_asset_identifier_out: "tokenOut",
           amount_in: "50",
           amount_out: "10",
-          expiration_time: 500,
+          expiration_time: "2024-01-15T12:01:30.000Z",
         },
       ])
 
@@ -113,7 +113,7 @@ describe("queryQuote()", () => {
     expect(result).toEqual({
       amountsIn: { token1: 100n, token2: 50n },
       amountsOut: { tokenOut: 30n },
-      expirationTime: 500,
+      expirationTime: "2024-01-15T12:01:30.000Z",
       quoteHashes: ["q1", "q2"],
       totalAmountIn: 150n,
       totalAmountOut: 30n,
@@ -141,7 +141,7 @@ describe("queryQuote()", () => {
         defuse_asset_identifier_out: "tokenOut",
         amount_in: "150",
         amount_out: "200",
-        expiration_time: 500,
+        expiration_time: "2024-01-15T12:02:00.000Z",
       },
       {
         quote_hash: "q2",
@@ -149,7 +149,7 @@ describe("queryQuote()", () => {
         defuse_asset_identifier_out: "tokenOut",
         amount_in: "150",
         amount_out: "180",
-        expiration_time: 500,
+        expiration_time: "2024-01-15T12:01:30.000Z",
       },
     ])
 
@@ -158,7 +158,7 @@ describe("queryQuote()", () => {
     expect(result).toEqual({
       amountsIn: { token1: 150n },
       amountsOut: { tokenOut: 200n },
-      expirationTime: 500,
+      expirationTime: "2024-01-15T12:02:00.000Z",
       quoteHashes: ["q1"],
       totalAmountIn: 150n,
       totalAmountOut: 200n,
@@ -184,7 +184,7 @@ describe("queryQuote()", () => {
     await expect(queryQuote(input)).resolves.toEqual({
       amountsIn: {},
       amountsOut: {},
-      expirationTime: 0,
+      expirationTime: "1970-01-01T00:00:00.000Z",
       quoteHashes: [],
       totalAmountIn: 0n,
       totalAmountOut: 0n,
@@ -194,7 +194,7 @@ describe("queryQuote()", () => {
     await expect(queryQuote(input)).resolves.toEqual({
       amountsIn: {},
       amountsOut: {},
-      expirationTime: 0,
+      expirationTime: "1970-01-01T00:00:00.000Z",
       quoteHashes: [],
       totalAmountIn: 0n,
       totalAmountOut: 0n,
@@ -228,7 +228,7 @@ it("aggregateQuotes(): aggregates quotes correctly", () => {
         defuse_asset_identifier_out: "tokenOut",
         amount_in: "100",
         amount_out: "200",
-        expiration_time: 5000,
+        expiration_time: "2024-01-15T12:05:00.000Z",
       },
     ],
     [
@@ -238,7 +238,7 @@ it("aggregateQuotes(): aggregates quotes correctly", () => {
         defuse_asset_identifier_out: "tokenOut",
         amount_in: "50",
         amount_out: "100",
-        expiration_time: 4000,
+        expiration_time: "2024-01-15T12:04:00.000Z",
       },
     ],
   ]
@@ -248,7 +248,7 @@ it("aggregateQuotes(): aggregates quotes correctly", () => {
   expect(result).toEqual({
     amountsIn: { token1: 100n, token2: 50n },
     amountsOut: { tokenOut: 300n },
-    expirationTime: 4000,
+    expirationTime: "2024-01-15T12:04:00.000Z",
     quoteHashes: ["q1", "q2"],
     totalAmountIn: 150n,
     totalAmountOut: 300n,

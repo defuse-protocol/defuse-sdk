@@ -186,8 +186,10 @@ export const swapIntentMachine = setup({
           tokenDeltas: context.intentOperationParams.quote.tokenDeltas,
           signerId: context.defuseUserId,
           deadlineTimestamp: Math.min(
-            Math.floor(Date.now() / 1000) + settings.swapExpirySec,
-            context.intentOperationParams.quote.expirationTime
+            Date.now() + settings.swapExpirySec * 1000,
+            new Date(
+              context.intentOperationParams.quote.expirationTime
+            ).getTime()
           ),
         })
 
@@ -258,7 +260,9 @@ export const swapIntentMachine = setup({
       if (context.intentOperationParams.quote != null) {
         // Naively assume that the quote is still relevant if the expiration time is in the future
         return (
-          context.intentOperationParams.quote.expirationTime * 1000 > Date.now()
+          new Date(
+            context.intentOperationParams.quote.expirationTime
+          ).getTime() > Date.now()
         )
       }
 
