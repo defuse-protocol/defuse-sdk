@@ -1,11 +1,6 @@
 .container {
   width: 100%;
-}
-
-@media (min-width: 768px) {
-  .container {
-    max-width: 472px;
-  }
+  max-width: 472px;
 }
 
 .formWrapper {
