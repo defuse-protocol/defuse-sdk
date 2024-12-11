@@ -3,6 +3,7 @@ import { InfoCircledIcon } from "@radix-ui/react-icons"
 import {
   Checkbox,
   Flex,
+  Skeleton,
   Text,
   Tooltip,
   useThemeContext,
@@ -12,7 +13,7 @@ import { formatTokenValue } from "../../../utils/format"
 import styles from "./styles.module.css"
 
 export interface BlockMultiBalancesProps {
-  balance: bigint
+  balance?: bigint
   decimals: number
   withNativeSupport?: boolean
   nativeSupportChecked?: CheckedState
@@ -32,7 +33,8 @@ export const BlockMultiBalances = ({
   disabled,
   className,
 }: BlockMultiBalancesProps) => {
-  const active = balance > 0n && !disabled
+  const isBalanceBigInt = typeof balance === "bigint"
+  const active = isBalanceBigInt && balance > 0n && !disabled
   const { accentColor } = useThemeContext()
 
   return (
@@ -44,18 +46,24 @@ export const BlockMultiBalances = ({
       <Flex asChild align={"center"} gap={"1"}>
         <button type={"button"} onClick={handleClick} disabled={!active}>
           <div className={clsx(styles.icon, active && styles.activeIcon)} />
-          <Text
-            size={"1"}
-            className={clsx(
-              styles.balanceValue,
-              active ? styles.balanceValueActive : styles.balanceValueInactive
-            )}
-          >
-            {formatTokenValue(balance, decimals, {
-              min: 0.0001,
-              fractionDigits: 4,
-            })}
-          </Text>
+          {isBalanceBigInt ? (
+            <Text
+              size={"1"}
+              className={clsx(
+                styles.balanceValue,
+                active ? styles.balanceValueActive : styles.balanceValueInactive
+              )}
+            >
+              {formatTokenValue(balance, decimals, {
+                min: 0.0001,
+                fractionDigits: 4,
+              })}
+            </Text>
+          ) : (
+            <Skeleton className={clsx(styles.balanceValue)}>
+              <Text size={"1"}>0</Text>
+            </Skeleton>
+          )}
           {withNativeSupport && (
             <div className={styles.nativeSupport}>
               <Checkbox

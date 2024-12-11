@@ -152,7 +152,7 @@ export const FieldComboInput = <T extends FieldValues>({
       ) : null}
 
       <BlockMultiBalances
-        balance={balance || 0n}
+        balance={balance}
         decimals={selected?.decimals ?? 0}
         withNativeSupport={withNativeSupport ?? false}
         handleIncludeNativeToSwap={
