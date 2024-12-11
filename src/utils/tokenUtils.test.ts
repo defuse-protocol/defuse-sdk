@@ -3,7 +3,36 @@ import type { BaseTokenInfo, UnifiedTokenInfo } from "../types/base"
 import { computeTotalBalance } from "./tokenUtils"
 
 describe("computeTotalBalance", () => {
-  it("should return balance for base token", () => {
+  const balances = {
+    token1: 100n,
+    token2: 200n,
+  }
+
+  describe("with token ID array", () => {
+    it("should sum balances for token array", () => {
+      expect(computeTotalBalance(["token1", "token2"], balances)).toBe(300n)
+    })
+
+    it("should handle duplicate tokens in array", () => {
+      expect(
+        computeTotalBalance(["token1", "token1", "token2"], balances)
+      ).toBe(300n)
+    })
+
+    it("should return undefined if any balance is missing", () => {
+      expect(
+        computeTotalBalance(["token1", "missing"], balances)
+      ).toBeUndefined()
+    })
+
+    it("should return undefined if all balances are missing", () => {
+      expect(
+        computeTotalBalance(["missing1", "missing2"], balances)
+      ).toBeUndefined()
+    })
+  })
+
+  describe("with base token", () => {
     const baseToken: BaseTokenInfo = {
       defuseAssetId: "token1",
       address: "0x123",
@@ -17,15 +46,17 @@ describe("computeTotalBalance", () => {
       routes: [],
     }
 
-    const balances = {
-      token1: 100n,
-    }
+    it("should return balance for base token", () => {
+      expect(computeTotalBalance(baseToken, balances)).toBe(100n)
+    })
 
-    expect(computeTotalBalance(baseToken, balances)).toBe(100n)
-    expect(computeTotalBalance(baseToken, {})).toBeUndefined()
+    it("should return undefined if balance missing", () => {
+      const missingToken = { ...baseToken, defuseAssetId: "missing" }
+      expect(computeTotalBalance(missingToken, balances)).toBeUndefined()
+    })
   })
 
-  it("should sum balances for unified token", () => {
+  describe("with unified token", () => {
     const unifiedToken: UnifiedTokenInfo = {
       unifiedAssetId: "unified1",
       symbol: "UTKN",
@@ -60,61 +91,35 @@ describe("computeTotalBalance", () => {
       ],
     }
 
-    expect(
-      computeTotalBalance(unifiedToken, {
-        token1: 100n,
-        token2: 200n,
-      })
-    ).toBe(300n)
+    it("should sum all available balances", () => {
+      expect(computeTotalBalance(unifiedToken, balances)).toBe(300n)
+    })
 
-    expect(
-      computeTotalBalance(unifiedToken, {
-        token1: 100n,
-      })
-    ).toBe(100n)
+    it("should return undefined if any balance is missing", () => {
+      const tokenWithMissing = {
+        ...unifiedToken,
+        groupedTokens: [
+          ...unifiedToken.groupedTokens,
+          {
+            // biome-ignore lint/style/noNonNullAssertion: It exists
+            ...unifiedToken.groupedTokens[0]!, // Duplicate token1
+            defuseAssetId: "missing",
+          },
+        ],
+      }
+      expect(computeTotalBalance(tokenWithMissing, balances)).toBeUndefined()
+    })
 
-    expect(computeTotalBalance(unifiedToken, {})).toBeUndefined()
-  })
-
-  it("should prevent double counting for unified token with duplicates", () => {
-    const unifiedToken: UnifiedTokenInfo = {
-      unifiedAssetId: "unified1",
-      symbol: "UTKN",
-      name: "Unified Token",
-      decimals: 18,
-      icon: "icon.png",
-      groupedTokens: [
-        {
-          defuseAssetId: "token1",
-          address: "0x123",
-          symbol: "TKN1",
-          name: "Token1",
-          decimals: 18,
-          icon: "icon1.png",
-          chainId: "",
-          chainIcon: "chain1.png",
-          chainName: "eth",
-          routes: [],
-        },
-        {
-          defuseAssetId: "token1", // Duplicate defuseAssetId
-          address: "0x789",
-          symbol: "TKN1",
-          name: "Token1 Duplicate",
-          decimals: 18,
-          icon: "icon3.png",
-          chainId: "3",
-          chainIcon: "chain3.png",
-          chainName: "arbitrum",
-          routes: [],
-        },
-      ],
-    }
-
-    expect(
-      computeTotalBalance(unifiedToken, {
-        token1: 100n,
-      })
-    ).toBe(100n) // Should only count token1 once
+    it("should handle duplicate tokens in unified token", () => {
+      const tokenWithDuplicates = {
+        ...unifiedToken,
+        groupedTokens: [
+          ...unifiedToken.groupedTokens,
+          // biome-ignore lint/style/noNonNullAssertion: It exists
+          unifiedToken.groupedTokens[0]!, // Duplicate token1
+        ],
+      }
+      expect(computeTotalBalance(tokenWithDuplicates, balances)).toBe(300n)
+    })
   })
 })
