@@ -241,7 +241,7 @@ export function DepositUIMachineProvider({
 
                 const tx = createDepositFromSiloTransaction(
                   tokenAddress === "native"
-                    ? NATIVE_TOKEN_ADDRESS
+                    ? "0x0000000000000000000000000000000000000000"
                     : tokenAddress,
                   accountId,
                   amount,

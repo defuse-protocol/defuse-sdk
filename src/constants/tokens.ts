@@ -1,7 +1,5 @@
 import type { BaseTokenInfo } from "../types/base"
 
-export const NATIVE_TOKEN_ADDRESS = "0x0000000000000000000000000000000000000000"
-
 export const NEAR_TOKEN_META = {
   defuseAssetId: "near:mainnet:native",
   blockchain: "near",
