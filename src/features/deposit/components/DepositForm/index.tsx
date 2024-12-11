@@ -286,7 +286,7 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
                     )}
                   <BlockMultiBalances
                     balance={
-                      token && nativeBalance
+                      token
                         ? renderBalance(token, balance, nativeBalance, network)
                         : 0n
                     }
