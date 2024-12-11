@@ -284,6 +284,22 @@ it("calculateSplitAmounts(): splits amounts correctly", () => {
   })
 })
 
+it("calculateSplitAmounts(): only considers each token's balance once when duplicated", () => {
+  const tokensIn = ["token1", "token1", "token2", "token2", "token3"]
+  const amountIn = 150n
+  const balances = {
+    token1: 100n,
+    token2: 50n,
+    token3: 200n,
+  }
+
+  const result = calculateSplitAmounts(tokensIn, amountIn, balances)
+  expect(result).toEqual({
+    token1: 100n,
+    token2: 50n,
+  })
+})
+
 it("aggregateQuotes(): aggregates quotes correctly", () => {
   const quotes = [
     [

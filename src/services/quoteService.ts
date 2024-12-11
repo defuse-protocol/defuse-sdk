@@ -147,7 +147,8 @@ function assert(condition: unknown, msg?: string): asserts condition {
 }
 
 /**
- * Function to calculate how to split the input amounts based on available balances
+ * Function to calculate how to split the input amounts based on available balances.
+ * Duplicate tokens are processed only once and their balances are considered only once.
  */
 export function calculateSplitAmounts(
   tokensIn: string[],
@@ -157,7 +158,10 @@ export function calculateSplitAmounts(
   let remainingAmountIn = amountIn
   const amountsToQuote: Record<string, bigint> = {}
 
-  for (const tokenIn of tokensIn) {
+  // Deduplicate tokens
+  const uniqueTokensIn = new Set(tokensIn)
+
+  for (const tokenIn of uniqueTokensIn) {
     const availableIn = balances[tokenIn] ?? 0n
     const amountToQuote = min(availableIn, remainingAmountIn)
 
