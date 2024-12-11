@@ -74,9 +74,10 @@ export const WithdrawWidget = (props: WithdrawWidgetProps) => {
                         ...(quote?.tokenDeltas ?? []),
                         ...(nep141Storage?.quote?.tokenDeltas ?? []),
                       ],
-                      withdrawParams:
-                        tokenOut.chainName === "near"
-                          ? {
+                      withdrawParams: (() => {
+                        switch (tokenOut.chainName) {
+                          case "near":
+                            return {
                               type: "to_near",
                               amount: totalAmountWithdrawn,
                               receiverId: recipient,
@@ -84,12 +85,27 @@ export const WithdrawWidget = (props: WithdrawWidgetProps) => {
                               storageDeposit:
                                 nep141Storage?.requiredStorageNEAR ?? 0n,
                             }
-                          : {
+                          case "turbochain":
+                            return {
+                              type: "to_aurora_engine",
+                              amount: totalAmountWithdrawn,
+                              tokenAccountId: tokenOutAccountId,
+                              // todo: move account ids mapping to somewhere else (maybe they can be placed to token object itself?)
+                              auroraEngineContractId: {
+                                turbochain: "0x4e45415f.c.aurora",
+                                aurora: "aurora",
+                              }[tokenOut.chainName],
+                              destinationAddress: recipient,
+                            }
+                          default:
+                            return {
                               type: "via_poa_bridge",
                               amount: totalAmountWithdrawn,
                               tokenAccountId: tokenOutAccountId,
                               destinationAddress: recipient,
-                            },
+                            }
+                        }
+                      })(),
                       signerId: context.defuseUserId,
                       deadlineTimestamp:
                         // Expiry time maybe zero if nothing to swap, so let's just fallback to the default
