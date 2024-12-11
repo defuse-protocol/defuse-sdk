@@ -1,7 +1,7 @@
 import { createActorContext } from "@xstate/react"
 import type { PropsWithChildren, ReactElement, ReactNode } from "react"
 import { useFormContext } from "react-hook-form"
-import { siloToSiloAddress } from "src/constants"
+import { NATIVE_TOKEN_ADDRESS, siloToSiloAddress } from "src/constants"
 import { depositSolanaMachine } from "src/features/machines/depositSolanaMachine"
 import { depositTurboMachine } from "src/features/machines/depositTurboMachine"
 import type { Hash } from "viem"
@@ -240,12 +240,14 @@ export function DepositUIMachineProvider({
                 )
 
                 const tx = createDepositFromSiloTransaction(
-                  tokenAddress,
+                  tokenAddress === "native"
+                    ? NATIVE_TOKEN_ADDRESS
+                    : tokenAddress,
                   accountId,
                   amount,
                   depositAddress,
                   siloToSiloAddress.turbochain,
-                  chainType
+                  tokenAddress === "native" ? amount : 0n
                 )
                 const txHash = await sendTransactionEVM(tx)
                 assert(txHash != null, "Transaction failed")

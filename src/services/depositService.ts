@@ -152,8 +152,8 @@ export function createDepositFromSiloTransaction(
   amount: bigint,
   depositAddress: string,
   siloAddress: string,
-  chainType: ChainType
-): { to: Address; data: Hash } {
+  value: bigint
+): { to: Address; data: Hash; value: bigint } {
   const data = encodeFunctionData({
     abi: siloToSiloABI,
     functionName: "safeFtTransferCallToNear",
@@ -167,6 +167,7 @@ export function createDepositFromSiloTransaction(
   return {
     to: siloAddress as Address,
     data,
+    value,
   }
 }
 
