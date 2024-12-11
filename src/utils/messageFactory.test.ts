@@ -207,4 +207,35 @@ describe("makeInnerSwapAndWithdrawMessage()", () => {
       }
     `)
   })
+
+  it("generates message for withdrawing to AuroraEngine powered blockchains", () => {
+    const innerMessage = makeInnerSwapAndWithdrawMessage({
+      tokenDeltas: null,
+      withdrawParams: {
+        type: "to_aurora_engine",
+        amount: 200n,
+        tokenAccountId: "usdt.near",
+        auroraEngineContractId: "foo.cloud.aurora",
+        destinationAddress: "0xDeAdBeEf00000000000000000000000000000001",
+      },
+      signerId: userAddressToDefuseUserId("user.near", "near"),
+      deadlineTimestamp: DEADLINE,
+    })
+
+    expect(innerMessage).toMatchInlineSnapshot(`
+      {
+        "deadline": "2024-01-01T12:00:00.000Z",
+        "intents": [
+          {
+            "amount": "200",
+            "intent": "ft_withdraw",
+            "msg": "deadbeef00000000000000000000000000000001",
+            "receiver_id": "foo.cloud.aurora",
+            "token": "usdt.near",
+          },
+        ],
+        "signer_id": "user.near",
+      }
+    `)
+  })
 })
