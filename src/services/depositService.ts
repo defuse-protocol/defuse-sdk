@@ -153,7 +153,7 @@ export function createDepositFromSiloTransaction(
   depositAddress: string,
   siloAddress: string,
   value: bigint
-): { to: Address; data: Hash; value: bigint } {
+): { to: Address; data: Hash; value: bigint; gasPrice: bigint } {
   const data = encodeFunctionData({
     abi: siloToSiloABI,
     functionName: "safeFtTransferCallToNear",
@@ -168,6 +168,7 @@ export function createDepositFromSiloTransaction(
     to: siloAddress as Address,
     data,
     value,
+    gasPrice: 1n, // Fake gas price for EVM wallets as relayer doesn't take fee on relaing transaction to siloToSilo
   }
 }
 
