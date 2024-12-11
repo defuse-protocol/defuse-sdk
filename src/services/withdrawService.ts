@@ -19,6 +19,7 @@ import type { State as WithdrawFormContext } from "../features/machines/withdraw
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../types/base"
 import { assert } from "../utils/assert"
 import { isBaseToken } from "../utils/token"
+import { computeTotalBalance } from "../utils/tokenUtils"
 import { getNEP141StorageRequired } from "./nep141StorageService"
 import {
   type AggregatedQuote,
@@ -305,18 +306,10 @@ function checkBalanceSufficiency({
     } {
   assert(formValues.parsedAmount != null, "parsedAmount is null")
 
-  const underlyingTokensIn = isBaseToken(formValues.tokenIn)
-    ? [formValues.tokenIn]
-    : formValues.tokenIn.groupedTokens
+  const totalBalance = computeTotalBalance(formValues.tokenIn, balances)
 
-  let totalBalance = 0n
-  for (const token of underlyingTokensIn) {
-    const balance = balances[token.defuseAssetId]
-    if (balance != null) {
-      totalBalance += balance
-    } else {
-      return { tag: "err", value: { reason: "ERR_BALANCE_MISSING" } }
-    }
+  if (totalBalance == null) {
+    return { tag: "err", value: { reason: "ERR_BALANCE_MISSING" } }
   }
 
   if (formValues.parsedAmount > totalBalance) {
