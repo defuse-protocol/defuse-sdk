@@ -1,5 +1,6 @@
 import { assign, fromPromise } from "xstate"
 import { settings } from "../../../config/settings"
+import { auroraEngineContractId } from "../../../constants/aurora"
 import { WithdrawWidgetProvider } from "../../../providers/WithdrawWidgetProvider"
 import type { WithdrawWidgetProps } from "../../../types/withdraw"
 import { isBaseToken } from "../../../utils"
@@ -90,11 +91,8 @@ export const WithdrawWidget = (props: WithdrawWidgetProps) => {
                               type: "to_aurora_engine",
                               amount: totalAmountWithdrawn,
                               tokenAccountId: tokenOutAccountId,
-                              // todo: move account ids mapping to somewhere else (maybe they can be placed to token object itself?)
-                              auroraEngineContractId: {
-                                turbochain: "0x4e45415f.c.aurora",
-                                aurora: "aurora",
-                              }[tokenOut.chainName],
+                              auroraEngineContractId:
+                                auroraEngineContractId[tokenOut.chainName],
                               destinationAddress: recipient,
                             }
                           default:
