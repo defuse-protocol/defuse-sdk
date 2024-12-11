@@ -436,7 +436,10 @@ function getRequiredSwapAmount(
 ) {
   const underlyingTokensIn = isBaseToken(tokenIn)
     ? [tokenIn]
-    : tokenIn.groupedTokens
+    : // Deduplicate tokens by defuseAssetId
+      Array.from(
+        new Map(tokenIn.groupedTokens.map((t) => [t.defuseAssetId, t])).values()
+      )
 
   /**
    * It is crucial to know balances of involved tokens, otherwise we can't
