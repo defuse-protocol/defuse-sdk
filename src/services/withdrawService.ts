@@ -82,6 +82,14 @@ export async function prepareWithdraw(
     return balances
   }
 
+  const balanceSufficiency = checkBalanceSufficiency({
+    formValues,
+    balances: balances.value,
+  })
+  if (balanceSufficiency.tag === "err") {
+    return balanceSufficiency
+  }
+
   const breakdown = getWithdrawBreakdown({
     formValues,
     balances: balances.value,
@@ -91,14 +99,6 @@ export async function prepareWithdraw(
   }
 
   const { directWithdrawAvailable, swapNeeded } = breakdown.value
-
-  const balanceSufficiency = checkBalanceSufficiency({
-    formValues,
-    balances: balances.value,
-  })
-  if (balanceSufficiency.tag === "err") {
-    return balanceSufficiency
-  }
 
   let swapRequirement: null | SwapRequirement = null
   if (swapNeeded.amount > 0n) {
