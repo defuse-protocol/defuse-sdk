@@ -1,4 +1,5 @@
 import { base64 } from "@scure/base"
+import { getAddress } from "viem"
 import { settings } from "../config/settings"
 import type { WalletMessage } from "../types"
 import type {
@@ -106,6 +107,13 @@ type WithdrawParams =
       tokenAccountId: string
       destinationAddress: string
     }
+  | {
+      type: "to_aurora_engine"
+      amount: bigint
+      tokenAccountId: string
+      auroraEngineContractId: string
+      destinationAddress: string
+    }
 
 function makeInnerWithdrawMessage(params: WithdrawParams): Intent {
   const paramsType = params.type
@@ -136,6 +144,15 @@ function makeInnerWithdrawMessage(params: WithdrawParams): Intent {
         receiver_id: params.tokenAccountId,
         amount: params.amount.toString(),
         memo: `WITHDRAW_TO:${params.destinationAddress}`,
+      }
+
+    case "to_aurora_engine":
+      return {
+        intent: "ft_withdraw",
+        token: params.tokenAccountId,
+        receiver_id: params.auroraEngineContractId,
+        amount: params.amount.toString(),
+        msg: makeAuroraEngineDepositMsg(params.destinationAddress),
       }
 
     default:
@@ -192,4 +209,13 @@ function randomDefuseNonce(): Uint8Array {
 
 function randomBytes(length: number): Uint8Array {
   return crypto.getRandomValues(new Uint8Array(length))
+}
+
+/**
+ * In order to deposit to AuroraEngine powered chain, we need to have a `msg`
+ * with the destination address in special format (lower case + without 0x).
+ */
+function makeAuroraEngineDepositMsg(recipientAddress: string): string {
+  const parsedRecipientAddress = getAddress(recipientAddress)
+  return parsedRecipientAddress.slice(2).toLowerCase()
 }

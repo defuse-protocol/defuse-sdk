@@ -577,8 +577,10 @@ function renderPreparationResult(preparationOutput: PreparationOutput | null) {
     case "ERR_AMOUNT_TOO_LOW":
       content = `Need ${formatTokenValue(err.minWithdrawalAmount - err.receivedAmount, err.token.decimals)} ${err.token.symbol} more to withdraw`
       break
-    case "ERR_CANNOT_FETCH_QUOTE":
     case "ERR_EMPTY_QUOTE":
+      // Don't duplicate error messages, message should be displayed in the submit button
+      break
+    case "ERR_CANNOT_FETCH_QUOTE":
       content = "Cannot fetch quote"
       break
     case "ERR_BALANCE_FETCH":

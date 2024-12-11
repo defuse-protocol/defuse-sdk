@@ -240,12 +240,14 @@ export function DepositUIMachineProvider({
                 )
 
                 const tx = createDepositFromSiloTransaction(
-                  tokenAddress,
+                  tokenAddress === "native"
+                    ? "0x0000000000000000000000000000000000000000"
+                    : tokenAddress,
                   accountId,
                   amount,
                   depositAddress,
                   siloToSiloAddress.turbochain,
-                  chainType
+                  tokenAddress === "native" ? amount : 0n
                 )
                 const txHash = await sendTransactionEVM(tx)
                 assert(txHash != null, "Transaction failed")

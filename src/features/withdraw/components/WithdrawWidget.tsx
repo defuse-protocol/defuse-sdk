@@ -1,5 +1,6 @@
 import { assign, fromPromise } from "xstate"
 import { settings } from "../../../config/settings"
+import { auroraEngineContractId } from "../../../constants/aurora"
 import { WithdrawWidgetProvider } from "../../../providers/WithdrawWidgetProvider"
 import type { WithdrawWidgetProps } from "../../../types/withdraw"
 import { isBaseToken } from "../../../utils"
@@ -74,9 +75,10 @@ export const WithdrawWidget = (props: WithdrawWidgetProps) => {
                         ...(quote?.tokenDeltas ?? []),
                         ...(nep141Storage?.quote?.tokenDeltas ?? []),
                       ],
-                      withdrawParams:
-                        tokenOut.chainName === "near"
-                          ? {
+                      withdrawParams: (() => {
+                        switch (tokenOut.chainName) {
+                          case "near":
+                            return {
                               type: "to_near",
                               amount: totalAmountWithdrawn,
                               receiverId: recipient,
@@ -84,12 +86,24 @@ export const WithdrawWidget = (props: WithdrawWidgetProps) => {
                               storageDeposit:
                                 nep141Storage?.requiredStorageNEAR ?? 0n,
                             }
-                          : {
+                          case "turbochain":
+                            return {
+                              type: "to_aurora_engine",
+                              amount: totalAmountWithdrawn,
+                              tokenAccountId: tokenOutAccountId,
+                              auroraEngineContractId:
+                                auroraEngineContractId[tokenOut.chainName],
+                              destinationAddress: recipient,
+                            }
+                          default:
+                            return {
                               type: "via_poa_bridge",
                               amount: totalAmountWithdrawn,
                               tokenAccountId: tokenOutAccountId,
                               destinationAddress: recipient,
-                            },
+                            }
+                        }
+                      })(),
                       signerId: context.defuseUserId,
                       deadlineTimestamp:
                         // Expiry time maybe zero if nothing to swap, so let's just fallback to the default

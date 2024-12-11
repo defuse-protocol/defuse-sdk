@@ -158,7 +158,7 @@ export const SwapForm = ({ onNavigateDeposit }: SwapFormProps) => {
     <Flex
       direction={"column"}
       gap={"2"}
-      className="md:max-w-[472px] rounded-[1rem] p-5 shadow-paper bg-white dark:shadow-paper-dark dark:bg-black-800"
+      className="max-w-[472px] rounded-[1rem] p-5 shadow-paper bg-white dark:shadow-paper-dark dark:bg-black-800"
     >
       <Form<SwapFormValues>
         handleSubmit={handleSubmit(onSubmit)}
