@@ -241,6 +241,31 @@ describe("queryQuote()", () => {
       tokenDeltas: [],
     })
   })
+
+  it("correctly handles duplicate input tokens", async () => {
+    const input = {
+      tokensIn: ["token1", "token1"], // Duplicate token
+      tokensOut: ["tokenOut"],
+      amountIn: 150n,
+      balances: { token1: 100n },
+    }
+
+    vi.mocked(relayClient.quote).mockImplementationOnce(async () => [
+      {
+        quote_hash: "q1",
+        defuse_asset_identifier_in: "token1",
+        defuse_asset_identifier_out: "tokenOut",
+        amount_in: "150",
+        amount_out: "200",
+        expiration_time: "2024-01-15T12:02:00.000Z",
+      },
+    ])
+
+    const result = await queryQuote(input)
+
+    expect(relayClient.quote).toHaveBeenCalledTimes(1)
+    expect(result.totalAmountIn).toBe(150n)
+  })
 })
 
 it("calculateSplitAmounts(): splits amounts correctly", () => {

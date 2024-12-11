@@ -1,5 +1,6 @@
 import { settings } from "../config/settings"
 import type { BaseTokenInfo } from "../types"
+import { computeTotalBalance } from "../utils/tokenUtils"
 import { quote } from "./solverRelayHttpClient"
 import type { QuoteResponse } from "./solverRelayHttpClient/types"
 
@@ -50,13 +51,10 @@ export async function queryQuote(
   const tokenIn = input.tokensIn[0]
   assert(tokenIn != null, "tokensIn is empty")
 
-  // Calculate the total amount available across all input tokens
-  const totalAvailableIn = input.tokensIn.reduce((sum, token) => {
-    return sum + (input.balances[token] ?? 0n)
-  }, 0n)
+  const totalAvailableIn = computeTotalBalance(input.tokensIn, input.balances)
 
   // If total available is less than requested, just quote the full amount from one token
-  if (totalAvailableIn < input.amountIn) {
+  if (totalAvailableIn == null || totalAvailableIn < input.amountIn) {
     const q = await quote(
       {
         defuse_asset_identifier_in: tokenIn,
