@@ -75,4 +75,46 @@ describe("computeTotalBalance", () => {
 
     expect(computeTotalBalance(unifiedToken, {})).toBeUndefined()
   })
+
+  it("should prevent double counting for unified token with duplicates", () => {
+    const unifiedToken: UnifiedTokenInfo = {
+      unifiedAssetId: "unified1",
+      symbol: "UTKN",
+      name: "Unified Token",
+      decimals: 18,
+      icon: "icon.png",
+      groupedTokens: [
+        {
+          defuseAssetId: "token1",
+          address: "0x123",
+          symbol: "TKN1",
+          name: "Token1",
+          decimals: 18,
+          icon: "icon1.png",
+          chainId: "",
+          chainIcon: "chain1.png",
+          chainName: "eth",
+          routes: [],
+        },
+        {
+          defuseAssetId: "token1", // Duplicate defuseAssetId
+          address: "0x789",
+          symbol: "TKN1",
+          name: "Token1 Duplicate",
+          decimals: 18,
+          icon: "icon3.png",
+          chainId: "3",
+          chainIcon: "chain3.png",
+          chainName: "arbitrum",
+          routes: [],
+        },
+      ],
+    }
+
+    expect(
+      computeTotalBalance(unifiedToken, {
+        token1: 100n,
+      })
+    ).toBe(100n) // Should only count token1 once
+  })
 })

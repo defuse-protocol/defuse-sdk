@@ -12,7 +12,15 @@ export function computeTotalBalance(
 
   let total: bigint | undefined
 
+  /** Prevent double counting of the same token */
+  const counted = new Set<string>()
+
   for (const innerToken of token.groupedTokens) {
+    if (counted.has(innerToken.defuseAssetId)) {
+      continue
+    }
+    counted.add(innerToken.defuseAssetId)
+
     const balance = balances[innerToken.defuseAssetId]
     if (balance != null) {
       total = (total ?? 0n) + balance
