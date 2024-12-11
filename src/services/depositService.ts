@@ -5,8 +5,10 @@ import {
   Transaction as TransactionSolana,
 } from "@solana/web3.js"
 import {
+  http,
   type Address,
   type Hash,
+  createPublicClient,
   encodeFunctionData,
   erc20Abi,
   getAddress,
@@ -265,6 +267,30 @@ export async function getMinimumStorageBalance(
   return getNearNep141MinStorageBalance({
     contractId,
   })
+}
+
+export async function isApproveDepositRequired(
+  tokenAddress: string,
+  owner: string,
+  spender: string,
+  amount: bigint,
+  network: BlockchainEnum
+): Promise<boolean | null> {
+  try {
+    const client = createPublicClient({
+      transport: http(getWalletRpcUrl(network)),
+    })
+    const result = await client.readContract({
+      address: getAddress(tokenAddress),
+      abi: erc20Abi,
+      functionName: "allowance",
+      args: [getAddress(owner), getAddress(spender)],
+    })
+    return result < amount
+  } catch (error) {
+    console.error("Error checking allowance:", error)
+    return null
+  }
 }
 
 /**
