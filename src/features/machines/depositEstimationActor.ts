@@ -12,6 +12,7 @@ import { reverseAssetNetworkAdapter } from "src/utils/adapters"
 import { validateAddress } from "src/utils/validateAddress"
 import type { Address } from "viem"
 import { fromPromise } from "xstate"
+import { getEVMChainId } from "../../utils/evmChainId"
 
 // Estimate the gas cost for transferring the maximum balance
 // Calculate the maximum transferable balance after accounting for gas cost
@@ -47,7 +48,9 @@ export const depositEstimateMaxValueActor = fromPromise(
       case BlockchainEnum.ETHEREUM:
       case BlockchainEnum.BASE:
       case BlockchainEnum.ARBITRUM:
-      case BlockchainEnum.TURBOCHAIN:
+      case BlockchainEnum.TURBOCHAIN: {
+        const chainId = getEVMChainId(reverseAssetNetworkAdapter[network])
+
         if (
           !validateAddress(userAddress, reverseAssetNetworkAdapter[network]) ||
           generateAddress == null
@@ -64,23 +67,24 @@ export const depositEstimateMaxValueActor = fromPromise(
           const maxTransferableBalance = nativeBalance - gasCost
           return maxTransferableBalance > 0n ? maxTransferableBalance : 0n
         }
-        // Wrappping to braces {} in order to create block scope for gasCost variable
-        {
-          const gasCost = await estimateEVMTransferCost({
-            rpcUrl: getWalletRpcUrl(network),
-            from: userAddress as Address,
-            to: tokenAddress as Address,
-            data: createDepositEVMERC20Transaction(
-              tokenAddress,
-              generateAddress,
-              balance
-            ).data,
-          })
-          if (nativeBalance < gasCost) {
-            return 0n
-          }
-          return balance
+
+        const gasCost = await estimateEVMTransferCost({
+          rpcUrl: getWalletRpcUrl(network),
+          from: userAddress as Address,
+          to: tokenAddress as Address,
+          data: createDepositEVMERC20Transaction(
+            userAddress,
+            tokenAddress,
+            generateAddress,
+            balance,
+            chainId
+          ).data,
+        })
+        if (nativeBalance < gasCost) {
+          return 0n
         }
+        return balance
+      }
       case BlockchainEnum.SOLANA: {
         const fee = estimateSolanaTransferCost()
         if (nativeBalance < fee) {
