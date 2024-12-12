@@ -44,7 +44,6 @@ export const BlockMultiBalances = ({
       <Flex asChild align={"center"} gap={"1"}>
         <button type={"button"} onClick={handleClick} disabled={!active}>
           <div className={clsx(styles.icon, active && styles.activeIcon)} />
-
           <Text
             size={"1"}
             className={clsx(

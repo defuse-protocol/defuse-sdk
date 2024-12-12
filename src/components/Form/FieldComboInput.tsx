@@ -150,7 +150,6 @@ export const FieldComboInput = <T extends FieldValues>({
           {label && label}
         </span>
       ) : null}
-
       {balance != null && (
         <BlockMultiBalances
           balance={balance}
