@@ -78,11 +78,10 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
   const depositEVMResult = snapshot.context.depositEVMResult
   const depositSolanaResult = snapshot.context.depositSolanaResult
   const depositTurboResult = snapshot.context.depositTurboResult
-
   const depositAddress =
     generatedAddressResult?.tag === "ok"
       ? generatedAddressResult.value.depositAddress
-      : ""
+      : null
 
   const {
     token,
@@ -184,7 +183,7 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
   const { isDepositReceived } = useDepositStatusSnapshot({
     accountId: userAddress ?? "",
     chain: network ?? "",
-    generatedAddress: depositAddress,
+    generatedAddress: depositAddress ?? "",
   })
 
   const minDepositAmount = useSelector(poaBridgeInfoRef, (state) => {
@@ -335,45 +334,47 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
                   minutes.
                 </p>
                 <div className={styles.qrCodeWrapper}>
-                  {generatedAddressResult ? (
+                  {depositAddress ? (
                     <QRCodeSVG value={depositAddress} />
                   ) : (
                     <Spinner loading={true} />
                   )}
                 </div>
-                <Input
-                  name="generatedAddress"
-                  value={
-                    depositAddress ? truncateUserAddress(depositAddress) : ""
-                  }
-                  disabled
-                  className={styles.inputGeneratedAddress}
-                  slotRight={
-                    <Button
-                      size="2"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        e.preventDefault()
-                      }}
-                      className={styles.copyButton}
-                      disabled={!generatedAddressResult}
-                    >
-                      <CopyToClipboard
-                        text={depositAddress}
-                        onCopy={() => setIsCopied(true)}
+                {depositAddress && (
+                  <Input
+                    name="generatedAddress"
+                    value={
+                      depositAddress ? truncateUserAddress(depositAddress) : ""
+                    }
+                    disabled
+                    className={styles.inputGeneratedAddress}
+                    slotRight={
+                      <Button
+                        size="2"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          e.preventDefault()
+                        }}
+                        className={styles.copyButton}
+                        disabled={!generatedAddressResult}
                       >
-                        <Flex gap="2" align="center">
-                          <Text color={accentColor}>
-                            {isCopied ? "Copied" : "Copy"}
-                          </Text>
-                          <Text color={accentColor} asChild>
-                            <CopyIcon height="14" width="14" />
-                          </Text>
-                        </Flex>
-                      </CopyToClipboard>
-                    </Button>
-                  }
-                />
+                        <CopyToClipboard
+                          text={depositAddress}
+                          onCopy={() => setIsCopied(true)}
+                        >
+                          <Flex gap="2" align="center">
+                            <Text color={accentColor}>
+                              {isCopied ? "Copied" : "Copy"}
+                            </Text>
+                            <Text color={accentColor} asChild>
+                              <CopyIcon height="14" width="14" />
+                            </Text>
+                          </Flex>
+                        </CopyToClipboard>
+                      </Button>
+                    }
+                  />
+                )}
                 {renderDepositHint(network, minDepositAmount, token)}
               </div>
             )}
@@ -388,7 +389,8 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
             depositNearResult,
             depositEVMResult,
             depositSolanaResult,
-            depositTurboResult
+            depositTurboResult,
+            generatedAddressResult
           )}
         <Deposits
           chainName={
@@ -572,7 +574,8 @@ function renderDepositWarning(
   depositNearResult: Context["depositNearResult"],
   depositEVMResult: Context["depositEVMResult"],
   depositSolanaResult: Context["depositSolanaResult"],
-  depositTurboResult: Context["depositTurboResult"]
+  depositTurboResult: Context["depositTurboResult"],
+  generatedAddressResult: Context["generatedAddressResult"]
 ) {
   let content: ReactNode = null
   if (!userAddress) {
@@ -586,17 +589,25 @@ function renderDepositWarning(
   const r2 = depositEVMResult !== null && depositEVMResult.tag === "err"
   const r3 = depositSolanaResult !== null && depositSolanaResult.tag === "err"
   const r4 = depositTurboResult !== null && depositTurboResult.tag === "err"
+  const r5 =
+    generatedAddressResult !== null && generatedAddressResult.tag === "err"
 
-  if (r1 || r2 || r3 || r4) {
+  if (r1 || r2 || r3 || r4 || r5) {
     const status =
       (r1 && depositNearResult.value.reason) ||
       (r2 && depositEVMResult.value.reason) ||
       (r3 && depositSolanaResult.value.reason) ||
-      (r4 && depositTurboResult.value.reason)
+      (r4 && depositTurboResult.value.reason) ||
+      (r5 && generatedAddressResult.value.reason)
+
     switch (status) {
       case "ERR_SUBMITTING_TRANSACTION":
         content =
           "It seems the transaction was rejected in your wallet. Please try again."
+        break
+      case "ERR_GENERATING_ADDRESS":
+        content =
+          "It seems the deposit address was not generated. Please try re-selecting the token and network."
         break
       default:
         content = "An error occurred. Please try again."
