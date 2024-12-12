@@ -26,7 +26,6 @@
     "prepare": "husky && ./scripts/gen-defuse-types.sh"
   },
   "dependencies": {
-    "@defuse-protocol/swap-facade": "^1.0.3",
     "@noble/curves": "1.4.0",
     "@radix-ui/react-checkbox": "^1.1.1",
     "@radix-ui/react-dialog": "1.1.1",
