@@ -1,6 +1,5 @@
-import { Flex, Skeleton, Text } from "@radix-ui/themes"
+import { Skeleton } from "@radix-ui/themes"
 import clsx from "clsx"
-import type React from "react"
 import { useRef } from "react"
 import type {
   FieldError,
@@ -27,8 +26,6 @@ interface Props<T extends FieldValues>
   min?: RegisterOptions["min"]
   max?: RegisterOptions["max"]
   placeholder?: string
-  label?: string | React.ReactNode
-  price?: string
   balance?: bigint
   selected?: BaseTokenInfo | UnifiedTokenInfo
   handleSelect?: () => void
@@ -47,16 +44,11 @@ export const FieldComboInput = <T extends FieldValues>({
   min,
   max,
   placeholder = "0",
-  label,
-  price,
   balance,
   selected,
   handleSelect,
   className,
   errors,
-  withNativeSupport,
-  handleIncludeNativeToSwap,
-  nativeSupportChecked,
   disabled,
   isLoading,
 }: Props<T>) => {
@@ -144,21 +136,10 @@ export const FieldComboInput = <T extends FieldValues>({
           {(errors[fieldName] as FieldError).message}
         </span>
       ) : null}
-      {price && price !== "0" && errors && !errors[fieldName] ? (
-        <span className="absolute flex flex-nowrap items-center gap-2 bottom-4 left-5 text-xs sm:text-sm font-medium text-secondary">
-          ~${Number.parseFloat(price).toFixed(2)}
-          {label && label}
-        </span>
-      ) : null}
       {balance != null && (
         <BlockMultiBalances
           balance={balance}
           decimals={selected?.decimals ?? 0}
-          withNativeSupport={withNativeSupport ?? false}
-          handleIncludeNativeToSwap={
-            handleIncludeNativeToSwap ? handleIncludeNativeToSwap : () => {}
-          }
-          nativeSupportChecked={nativeSupportChecked ?? false}
           handleClick={handleSetMaxValue}
           disabled={disabled}
         />
