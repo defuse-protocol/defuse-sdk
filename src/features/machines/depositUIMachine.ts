@@ -1,5 +1,8 @@
 import { settings } from "src/config/settings"
-import { assetNetworkAdapter } from "src/utils/adapters"
+import {
+  assetNetworkAdapter,
+  reverseAssetNetworkAdapter,
+} from "src/utils/adapters"
 import {
   type ActorRefFrom,
   and,
@@ -649,6 +652,7 @@ export const depositUIMachine = setup({
             accountId: context.userAddress,
             tokenAddress: context.tokenAddress,
             depositAddress,
+            chainName: reverseAssetNetworkAdapter[context.formValues.network],
           }
         },
 
@@ -732,6 +736,7 @@ export const depositUIMachine = setup({
             accountId: context.userAddress,
             tokenAddress: context.tokenAddress,
             depositAddress: settings.defuseContractId,
+            chainName: reverseAssetNetworkAdapter[context.formValues.network],
           }
         },
 

@@ -53,9 +53,13 @@ export interface SendTransactionNearParams {
 }
 
 export interface SendTransactionEVMParams {
+  from: Address
   to: Address
+  chainId: number
   data: Hash
   value?: bigint
+  gasPrice?: bigint
+  gas?: bigint
 }
 
 export interface SendTransactionSolanaParams extends TransactionSolana {}
