@@ -93,6 +93,7 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
     userAddress,
     poaBridgeInfoRef,
     maxDepositValue,
+    defuseAssetId,
   } = DepositUIMachineContext.useSelector((snapshot) => {
     const token = snapshot.context.formValues.token
     const network = snapshot.context.formValues.network
@@ -102,6 +103,7 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
     const userAddress = snapshot.context.userAddress
     const poaBridgeInfoRef = snapshot.context.poaBridgeInfoRef
     const maxDepositValue = snapshot.context.maxDepositValue
+    const defuseAssetId = snapshot.context.defuseAssetId
 
     return {
       token,
@@ -112,6 +114,7 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
       userAddress,
       poaBridgeInfoRef,
       maxDepositValue,
+      defuseAssetId,
     }
   })
 
@@ -287,7 +290,12 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
                   <BlockMultiBalances
                     balance={
                       token
-                        ? renderBalance(token, balance, nativeBalance, network)
+                        ? renderBalance(
+                            token,
+                            balance,
+                            nativeBalance,
+                            defuseAssetId
+                          )
                         : 0n
                     }
                     decimals={token?.decimals ?? 0}
@@ -705,11 +713,13 @@ function truncateUserAddress(hash: string) {
   return `${hash.slice(0, 12)}...${hash.slice(-12)}`
 }
 
+// TODO: When Aurora network will be added we should cover a special case for Aurora token on Aurora network
+//       network === BlockchainEnum.AURORA && defuseAssetId === "nep141:aurora"
 function renderBalance(
   token: SwappableToken,
   balance: bigint,
   nativeBalance: bigint,
-  network: BlockchainEnum | null
+  defuseAssetId: string | null
 ) {
   // For user experience, both NEAR and wNEAR are treated as equivalent during the deposit process.
   // This allows users to deposit either token seamlessly.
@@ -719,15 +729,17 @@ function renderBalance(
     return balance + nativeBalance
   }
 
-  // If the token is a base token and is native, or if it is a unified token that includes a native token,
-  // return the native balance.
-  // Note: Use network !== BlockchainEnum.NEAR check for the `aurora` token as we cannot use nativeBalance with it,
-  // as it is an Ethereum token on the NEAR network, which is not classified as a native token.
+  if (isNativeToken(token)) {
+    return nativeBalance
+  }
+
+  const getSelectedToken =
+    isUnifiedToken(token) &&
+    token.groupedTokens.find((t) => t.defuseAssetId === defuseAssetId)
   if (
-    (isBaseToken(token) && isNativeToken(token)) ||
-    (isUnifiedToken(token) &&
-      token.groupedTokens.some(isNativeToken) &&
-      network !== BlockchainEnum.NEAR)
+    getSelectedToken &&
+    "type" in getSelectedToken &&
+    getSelectedToken.type === "native"
   ) {
     return nativeBalance
   }
