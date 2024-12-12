@@ -649,6 +649,7 @@ export const depositUIMachine = setup({
             accountId: context.userAddress,
             tokenAddress: context.tokenAddress,
             depositAddress,
+            network: context.formValues.network,
           }
         },
 
@@ -693,6 +694,7 @@ export const depositUIMachine = setup({
             accountId: context.userAddress,
             tokenAddress: context.tokenAddress,
             depositAddress,
+            network: context.formValues.network,
           }
         },
 
@@ -732,6 +734,7 @@ export const depositUIMachine = setup({
             accountId: context.userAddress,
             tokenAddress: context.tokenAddress,
             depositAddress: settings.defuseContractId,
+            network: context.formValues.network,
           }
         },
 

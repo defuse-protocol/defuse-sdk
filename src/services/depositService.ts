@@ -133,8 +133,9 @@ export function createBatchDepositNearNativeTransaction(
 export function createDepositEVMERC20Transaction(
   assetAccountId: string,
   generatedAddress: string,
-  amount: bigint
-): { to: Address; data: Hash } {
+  amount: bigint,
+  network: BlockchainEnum
+): { to: Address; data: Hash; chainId: number } {
   const data = encodeFunctionData({
     abi: erc20Abi,
     functionName: "transfer",
@@ -143,6 +144,7 @@ export function createDepositEVMERC20Transaction(
   return {
     to: assetAccountId as Address,
     data,
+    chainId: extractEvmChainIdFromNetwork(network) ?? 0,
   }
 }
 
@@ -176,12 +178,14 @@ export function createDepositFromSiloTransaction(
 
 export function createDepositEVMNativeTransaction(
   generatedAddress: string,
-  amount: bigint
-): { to: Address; value: bigint; data: Hash } {
+  amount: bigint,
+  network: BlockchainEnum
+): { to: Address; value: bigint; data: Hash; chainId: number } {
   return {
     to: generatedAddress as Address,
     value: amount,
     data: "0x",
+    chainId: extractEvmChainIdFromNetwork(network) ?? 0,
   }
 }
 
@@ -375,7 +379,6 @@ export function getAvailableDepositRoutes(
   }
 }
 
-// Use this function to get strong typing for RPC URLs
 export function getWalletRpcUrl(network: BlockchainEnum): string {
   switch (network) {
     case BlockchainEnum.NEAR:
@@ -396,6 +399,27 @@ export function getWalletRpcUrl(network: BlockchainEnum): string {
       return settings.rpcUrls.turbochain
     default:
       network satisfies never
+      throw new Error("exhaustive check failed")
+  }
+}
+
+function extractEvmChainIdFromNetwork(chain: BlockchainEnum): number | null {
+  switch (chain) {
+    case BlockchainEnum.ETHEREUM:
+      return 1
+    case BlockchainEnum.BASE:
+      return 8453
+    case BlockchainEnum.ARBITRUM:
+      return 42161
+    case BlockchainEnum.TURBOCHAIN:
+      return 1313161567
+    case BlockchainEnum.BITCOIN:
+    case BlockchainEnum.SOLANA:
+    case BlockchainEnum.DOGECOIN:
+    case BlockchainEnum.NEAR:
+      return null
+    default:
+      chain satisfies never
       throw new Error("exhaustive check failed")
   }
 }

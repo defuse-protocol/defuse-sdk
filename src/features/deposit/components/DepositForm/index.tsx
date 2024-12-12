@@ -589,6 +589,10 @@ function renderDepositWarning(
         content =
           "It seems the transaction was rejected in your wallet. Please try again."
         break
+      case "ERR_WALLET_CHAIN_MISMATCH":
+        content =
+          "Please switch your wallet to the correct network and try again."
+        break
       default:
         content = "An error occurred. Please try again."
     }

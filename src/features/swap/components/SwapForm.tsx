@@ -309,6 +309,10 @@ export function renderIntentCreationResult(
       content = null
       break
 
+    case "ERR_WALLET_CHAIN_MISMATCH":
+      content = null
+      break
+
     default:
       status satisfies never
       content = `An error occurred. Please try again. ${status}`

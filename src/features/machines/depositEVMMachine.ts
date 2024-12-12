@@ -1,5 +1,9 @@
+import {
+  type WalletErrorCode,
+  extractWalletErrorCode,
+} from "src/utils/walletErrorExtractor"
 import { assign, emit, fromPromise, setup } from "xstate"
-import type { SwappableToken } from "../../types"
+import type { BlockchainEnum, SwappableToken } from "../../types"
 
 export type DepositDescription = {
   type: "depositEVM"
@@ -19,10 +23,14 @@ export type Context = {
   error: null | {
     tag: "err"
     value: {
-      reason: "ERR_SUBMITTING_TRANSACTION" | "ERR_VERIFYING_TRANSACTION"
+      reason:
+        | "ERR_SUBMITTING_TRANSACTION"
+        | "ERR_VERIFYING_TRANSACTION"
+        | WalletErrorCode
       error: Error | null
     }
   }
+  network: BlockchainEnum
 }
 
 type Input = {
@@ -32,6 +40,7 @@ type Input = {
   accountId: string
   tokenAddress: string
   depositAddress: string
+  network: BlockchainEnum
 }
 
 export type Output =
@@ -130,6 +139,7 @@ export const depositEVMMachine = setup({
       depositAddress: input.depositAddress,
       txHash: null,
       error: null,
+      network: input.network,
     }
   },
 
@@ -146,6 +156,7 @@ export const depositEVMMachine = setup({
             asset: context.asset,
             tokenAddress: context.tokenAddress,
             depositAddress: context.depositAddress,
+            network: context.network,
           }
         },
         onDone: {
@@ -164,10 +175,12 @@ export const depositEVMMachine = setup({
             {
               type: "setError",
               params: ({ event }) => {
-                console.log("onError type: setError", event)
                 return {
-                  reason: "ERR_SUBMITTING_TRANSACTION",
-                  error: toError(event.error),
+                  reason: extractWalletErrorCode(
+                    event.error,
+                    "ERR_SUBMITTING_TRANSACTION"
+                  ),
+                  error: null,
                 }
               },
             },

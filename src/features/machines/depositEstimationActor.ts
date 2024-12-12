@@ -73,7 +73,8 @@ export const depositEstimateMaxValueActor = fromPromise(
             data: createDepositEVMERC20Transaction(
               tokenAddress,
               generateAddress,
-              balance
+              balance,
+              network
             ).data,
           })
           if (nativeBalance < gasCost) {

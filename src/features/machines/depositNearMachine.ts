@@ -1,3 +1,7 @@
+import {
+  type WalletErrorCode,
+  extractWalletErrorCode,
+} from "src/utils/walletErrorExtractor"
 import { assign, emit, fromPromise, setup } from "xstate"
 import type { SwappableToken } from "../../types"
 
@@ -18,7 +22,10 @@ export type Context = {
   error: null | {
     tag: "err"
     value: {
-      reason: "ERR_SUBMITTING_TRANSACTION" | "ERR_VERIFYING_TRANSACTION"
+      reason:
+        | "ERR_SUBMITTING_TRANSACTION"
+        | "ERR_VERIFYING_TRANSACTION"
+        | WalletErrorCode
       error: Error | null
     }
   }
@@ -157,10 +164,12 @@ export const depositNearMachine = setup({
             {
               type: "setError",
               params: ({ event }) => {
-                console.log("onError type: setError", event)
                 return {
-                  reason: "ERR_SUBMITTING_TRANSACTION",
-                  error: toError(event.error),
+                  reason: extractWalletErrorCode(
+                    event.error,
+                    "ERR_SUBMITTING_TRANSACTION"
+                  ),
+                  error: null,
                 }
               },
             },

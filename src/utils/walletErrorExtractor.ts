@@ -1,12 +1,20 @@
 export type WalletErrorCode =
   | "ERR_WALLET_POPUP_BLOCKED"
   | "ERR_WALLET_CANCEL_ACTION"
+  | "ERR_WALLET_CHAIN_MISMATCH"
 
 const walletErrorMapping: Record<string, Record<string, WalletErrorCode>> = {
   MeteorActionError: {
     "Couldn't open popup window to complete wallet action":
       "ERR_WALLET_POPUP_BLOCKED",
     "User cancelled the action": "ERR_WALLET_CANCEL_ACTION",
+  },
+  ChainMismatchError: {
+    /**
+     * The error message for this type isn't generic, includes chain ids and so on, while
+     * for us it is enough to knowe that this is chain mismatch error.
+     */
+    generic: "ERR_WALLET_CHAIN_MISMATCH",
   },
 }
 
@@ -21,7 +29,8 @@ export function extractWalletErrorCode<T>(
   fallback: T
 ): T | WalletErrorCode {
   if (error instanceof Error) {
-    const code = walletErrorMapping[error.name]?.[error.message]
+    const code = walletErrorMapping[error.name]?.["generic" || error.message]
+
     if (code !== undefined) {
       return code
     }

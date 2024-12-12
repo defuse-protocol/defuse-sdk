@@ -174,18 +174,23 @@ export function DepositUIMachineProvider({
           depositEVMActor: depositEVMMachine.provide({
             actors: {
               sendTransaction: fromPromise(async ({ input }) => {
-                const { asset, amount, tokenAddress, depositAddress } = input
-
+                const { asset, amount, tokenAddress, depositAddress, network } =
+                  input
                 assert(depositAddress != null, "Deposit address is not defined")
 
                 let tx: Transaction["EVM"] | null = null
                 if (isUnifiedToken(asset) && asset.unifiedAssetId === "eth") {
-                  tx = createDepositEVMNativeTransaction(depositAddress, amount)
+                  tx = createDepositEVMNativeTransaction(
+                    depositAddress,
+                    amount,
+                    network
+                  )
                 } else {
                   tx = createDepositEVMERC20Transaction(
                     tokenAddress,
                     depositAddress,
-                    amount
+                    amount,
+                    network
                   )
                 }
                 assert(tx != null, "Transaction is not defined")
