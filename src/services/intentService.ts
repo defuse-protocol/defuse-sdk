@@ -16,13 +16,21 @@ export async function publishIntent(
   userInfo: { userAddress: string; userChainType: ChainType },
   quoteHashes: string[]
 ): Promise<PublishIntentResult> {
-  // todo: retry on network error
-  const result = await solverRelayClient.publishIntent({
-    signed_data: prepareSwapSignedData(signatureData, userInfo),
-    quote_hashes: quoteHashes,
-  })
+  let retryCount = 0
+  let result: types.PublishIntentResponse["result"] | null = null
+  while (retryCount < 7) {
+    result = await solverRelayClient.publishIntent({
+      signed_data: prepareSwapSignedData(signatureData, userInfo),
+      quote_hashes: quoteHashes,
+    })
+    if (result.status === "OK") return { tag: "ok", value: result.intent_hash }
+    if (result.status === "FAILED" && result.reason === "already processed")
+      return { tag: "ok", value: result.intent_hash }
 
-  if (result.status === "OK") return { tag: "ok", value: result.intent_hash }
+    retryCount++
+  }
+
+  if (result === null) throw new Error("Failed to publish intent")
 
   return { tag: "err", value: { reason: result.status } }
 }
