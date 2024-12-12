@@ -384,14 +384,13 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
           network !== BlockchainEnum.NEAR &&
           !ENABLE_DEPOSIT_THROUGH_POA_BRIDGE && <UnderFeatureFlag />}
         {token &&
-          renderDepositWarning(
-            userAddress,
+          renderDepositWarning(userAddress, {
             depositNearResult,
             depositEVMResult,
             depositSolanaResult,
             depositTurboResult,
-            generatedAddressResult
-          )}
+            generatedAddressResult,
+          })}
         <Deposits
           chainName={
             network === BlockchainEnum.NEAR
@@ -571,34 +570,38 @@ function isInsufficientBalance(
 
 function renderDepositWarning(
   userAddress: string | null,
-  depositNearResult: Context["depositNearResult"],
-  depositEVMResult: Context["depositEVMResult"],
-  depositSolanaResult: Context["depositSolanaResult"],
-  depositTurboResult: Context["depositTurboResult"],
-  generatedAddressResult: Context["generatedAddressResult"]
+  depositResults: {
+    depositNearResult: Context["depositNearResult"]
+    depositEVMResult: Context["depositEVMResult"]
+    depositSolanaResult: Context["depositSolanaResult"]
+    depositTurboResult: Context["depositTurboResult"]
+    generatedAddressResult: Context["generatedAddressResult"]
+  }
 ) {
   let content: ReactNode = null
   if (!userAddress) {
     content = "Please connect your wallet to continue"
   }
 
-  // Because all deposit results have the same statuses, we can use a single pattern to check for errors.
-  // To improve readability, we abbreviate deposit result names:
-  // 'depositNearResult' becomes 'r1', 'depositEVMResult' becomes 'r2', etc.
-  const r1 = depositNearResult !== null && depositNearResult.tag === "err"
-  const r2 = depositEVMResult !== null && depositEVMResult.tag === "err"
-  const r3 = depositSolanaResult !== null && depositSolanaResult.tag === "err"
-  const r4 = depositTurboResult !== null && depositTurboResult.tag === "err"
-  const r5 =
-    generatedAddressResult !== null && generatedAddressResult.tag === "err"
+  // Check for errors in deposit results
+  const results = [
+    depositResults.depositNearResult,
+    depositResults.depositEVMResult,
+    depositResults.depositSolanaResult,
+    depositResults.depositTurboResult,
+    depositResults.generatedAddressResult,
+  ]
 
-  if (r1 || r2 || r3 || r4 || r5) {
+  const errorResult = results.find(
+    (result) => result !== null && result.tag === "err"
+  )
+
+  if (errorResult) {
+    // Check if the errorResult has a 'reason' property
     const status =
-      (r1 && depositNearResult.value.reason) ||
-      (r2 && depositEVMResult.value.reason) ||
-      (r3 && depositSolanaResult.value.reason) ||
-      (r4 && depositTurboResult.value.reason) ||
-      (r5 && generatedAddressResult.value.reason)
+      "reason" in errorResult.value
+        ? errorResult.value.reason
+        : "An error occurred. Please try again."
 
     switch (status) {
       case "ERR_SUBMITTING_TRANSACTION":
