@@ -273,13 +273,12 @@ export async function getMinimumStorageBalance(
   })
 }
 
-export async function isApproveDepositRequired(
+export async function getAllowance(
   tokenAddress: string,
   owner: string,
   spender: string,
-  amount: bigint,
   network: BlockchainEnum
-): Promise<boolean | null> {
+): Promise<bigint | null> {
   try {
     const client = createPublicClient({
       transport: http(getWalletRpcUrl(network)),
@@ -290,10 +289,26 @@ export async function isApproveDepositRequired(
       functionName: "allowance",
       args: [getAddress(owner), getAddress(spender)],
     })
-    return result < amount
+    return result
   } catch (error) {
     console.error("Error checking allowance:", error)
     return null
+  }
+}
+
+export function createApproveTransaction(
+  tokenAddress: string,
+  spender: string,
+  amount: bigint
+): { to: Address; data: Hash } {
+  const data = encodeFunctionData({
+    abi: erc20Abi,
+    functionName: "approve",
+    args: [getAddress(spender), amount],
+  })
+  return {
+    to: getAddress(tokenAddress),
+    data,
   }
 }
 
