@@ -294,7 +294,8 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
                             token,
                             balance,
                             nativeBalance,
-                            defuseAssetId
+                            defuseAssetId,
+                            network
                           )
                         : 0n
                     }
@@ -719,7 +720,8 @@ function renderBalance(
   token: SwappableToken,
   balance: bigint,
   nativeBalance: bigint,
-  defuseAssetId: string | null
+  defuseAssetId: string | null,
+  network: BlockchainEnum | null
 ) {
   // For user experience, both NEAR and wNEAR are treated as equivalent during the deposit process.
   // This allows users to deposit either token seamlessly.
@@ -733,15 +735,26 @@ function renderBalance(
     return nativeBalance
   }
 
-  const getSelectedToken =
-    isUnifiedToken(token) &&
-    token.groupedTokens.find((t) => t.defuseAssetId === defuseAssetId)
-  if (
-    getSelectedToken &&
-    "type" in getSelectedToken &&
-    getSelectedToken.type === "native"
-  ) {
-    return nativeBalance
+  if (network && isUnifiedToken(token)) {
+    const tokenAddress =
+      isUnifiedToken(token) &&
+      token.groupedTokens.find((t) => t.defuseAssetId === defuseAssetId)
+        ?.address
+    switch (network) {
+      case BlockchainEnum.NEAR:
+        return balance
+      case BlockchainEnum.ETHEREUM:
+      case BlockchainEnum.BASE:
+      case BlockchainEnum.ARBITRUM:
+      case BlockchainEnum.BITCOIN:
+      case BlockchainEnum.SOLANA:
+      case BlockchainEnum.DOGECOIN:
+      case BlockchainEnum.TURBOCHAIN:
+        return tokenAddress === "native" ? nativeBalance : balance
+      default:
+        network satisfies never
+        throw new Error("exhaustive check failed")
+    }
   }
 
   return balance
