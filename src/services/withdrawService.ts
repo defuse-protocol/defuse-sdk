@@ -19,6 +19,7 @@ import type { State as WithdrawFormContext } from "../features/machines/withdraw
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../types/base"
 import { assert } from "../utils/assert"
 import { isBaseToken } from "../utils/token"
+import { computeTotalBalance } from "../utils/tokenUtils"
 import { getNEP141StorageRequired } from "./nep141StorageService"
 import {
   type AggregatedQuote,
@@ -81,6 +82,14 @@ export async function prepareWithdraw(
     return balances
   }
 
+  const balanceSufficiency = checkBalanceSufficiency({
+    formValues,
+    balances: balances.value,
+  })
+  if (balanceSufficiency.tag === "err") {
+    return balanceSufficiency
+  }
+
   const breakdown = getWithdrawBreakdown({
     formValues,
     balances: balances.value,
@@ -90,14 +99,6 @@ export async function prepareWithdraw(
   }
 
   const { directWithdrawAvailable, swapNeeded } = breakdown.value
-
-  const balanceSufficiency = checkBalanceSufficiency({
-    formValues,
-    balances: balances.value,
-  })
-  if (balanceSufficiency.tag === "err") {
-    return balanceSufficiency
-  }
 
   let swapRequirement: null | SwapRequirement = null
   if (swapNeeded.amount > 0n) {
@@ -305,18 +306,10 @@ function checkBalanceSufficiency({
     } {
   assert(formValues.parsedAmount != null, "parsedAmount is null")
 
-  const underlyingTokensIn = isBaseToken(formValues.tokenIn)
-    ? [formValues.tokenIn]
-    : formValues.tokenIn.groupedTokens
+  const totalBalance = computeTotalBalance(formValues.tokenIn, balances)
 
-  let totalBalance = 0n
-  for (const token of underlyingTokensIn) {
-    const balance = balances[token.defuseAssetId]
-    if (balance != null) {
-      totalBalance += balance
-    } else {
-      return { tag: "err", value: { reason: "ERR_BALANCE_MISSING" } }
-    }
+  if (totalBalance == null) {
+    return { tag: "err", value: { reason: "ERR_BALANCE_MISSING" } }
   }
 
   if (formValues.parsedAmount > totalBalance) {
@@ -443,7 +436,10 @@ function getRequiredSwapAmount(
 ) {
   const underlyingTokensIn = isBaseToken(tokenIn)
     ? [tokenIn]
-    : tokenIn.groupedTokens
+    : // Deduplicate tokens by defuseAssetId
+      Array.from(
+        new Map(tokenIn.groupedTokens.map((t) => [t.defuseAssetId, t])).values()
+      )
 
   /**
    * It is crucial to know balances of involved tokens, otherwise we can't

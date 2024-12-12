@@ -20,6 +20,7 @@ import { isAggregatedQuoteEmpty } from "../../../services/quoteService"
 import { ModalType } from "../../../stores/modalStore"
 import type { SwappableToken } from "../../../types"
 import { isBaseToken } from "../../../utils"
+import { computeTotalBalance } from "../../../utils/tokenUtils"
 import type { depositedBalanceMachine } from "../../machines/depositedBalanceMachine"
 import type { intentStatusMachine } from "../../machines/intentStatusMachine"
 import type { Context } from "../../machines/swapUIMachine"
@@ -335,18 +336,6 @@ export function renderIntentCreationResult(
 export function balanceSelector(token: SwappableToken) {
   return (state: undefined | SnapshotFrom<typeof depositedBalanceMachine>) => {
     if (!state) return
-
-    if (isBaseToken(token)) {
-      return state.context.balances[token.defuseAssetId]
-    }
-    let total: undefined | bigint
-    for (const innerToken of token.groupedTokens) {
-      const v = state.context.balances[innerToken.defuseAssetId]
-      if (v != null) {
-        total ??= 0n
-        total += v
-      }
-    }
-    return total
+    return computeTotalBalance(token, state.context.balances)
   }
 }
