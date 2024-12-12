@@ -151,17 +151,19 @@ export const FieldComboInput = <T extends FieldValues>({
         </span>
       ) : null}
 
-      <BlockMultiBalances
-        balance={balance}
-        decimals={selected?.decimals ?? 0}
-        withNativeSupport={withNativeSupport ?? false}
-        handleIncludeNativeToSwap={
-          handleIncludeNativeToSwap ? handleIncludeNativeToSwap : () => {}
-        }
-        nativeSupportChecked={nativeSupportChecked ?? false}
-        handleClick={handleSetMaxValue}
-        disabled={disabled}
-      />
+      {balance != null && (
+        <BlockMultiBalances
+          balance={balance}
+          decimals={selected?.decimals ?? 0}
+          withNativeSupport={withNativeSupport ?? false}
+          handleIncludeNativeToSwap={
+            handleIncludeNativeToSwap ? handleIncludeNativeToSwap : () => {}
+          }
+          nativeSupportChecked={nativeSupportChecked ?? false}
+          handleClick={handleSetMaxValue}
+          disabled={disabled}
+        />
+      )}
     </div>
   )
 }
