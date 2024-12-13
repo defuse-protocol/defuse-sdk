@@ -26,6 +26,7 @@
     "prepare": "husky && ./scripts/gen-defuse-types.sh"
   },
   "dependencies": {
+    "@lifeomic/attempt": "^3.1.0",
     "@noble/curves": "1.4.0",
     "@radix-ui/react-checkbox": "^1.1.1",
     "@radix-ui/react-dialog": "1.1.1",
@@ -52,8 +53,7 @@
     "uuid": "^10.0.0",
     "viem": "^2.18.1",
     "xstate": "^5.18.2",
-    "zustand": "^5.0.0-rc.2",
-    "@lifeomic/attempt" : "3.1.0"
+    "zustand": "^5.0.0-rc.2"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.3",

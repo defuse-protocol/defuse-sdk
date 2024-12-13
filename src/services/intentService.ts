@@ -17,18 +17,12 @@ export async function publishIntent(
   userInfo: { userAddress: string; userChainType: ChainType },
   quoteHashes: string[]
 ): Promise<PublishIntentResult> {
-  return retry<PublishIntentResult>(
-    async () => {
-      const result = await solverRelayClient.publishIntent({
+  const result = await retry<types.PublishIntentResponse["result"]>(
+    () =>
+      solverRelayClient.publishIntent({
         signed_data: prepareSwapSignedData(signatureData, userInfo),
         quote_hashes: quoteHashes,
-      })
-      if (result.status === "OK")
-        return { tag: "ok", value: result.intent_hash }
-      if (result.status === "FAILED" && result.reason === "already processed")
-        return { tag: "ok", value: result.intent_hash }
-      return { tag: "err", value: { reason: result.status } }
-    },
+      }),
     {
       delay: 1000,
       factor: 1.5,
@@ -37,6 +31,12 @@ export async function publishIntent(
       minDelay: 1000,
     }
   )
+  if (result.status === "OK") return { tag: "ok", value: result.intent_hash }
+
+  if (result.status === "FAILED" && result.reason === "already processed")
+    return { tag: "ok", value: result.intent_hash }
+
+  return { tag: "err", value: { reason: result.status } }
 }
 
 export type IntentSettlementResult = Awaited<
