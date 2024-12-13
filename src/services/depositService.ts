@@ -177,7 +177,7 @@ export function createDepositFromSiloTransaction(
     value,
     // Fake gas price for EVM wallets as relayer doesn't take fee on relaing transaction to siloToSilo
     gasPrice: 1n,
-    gas: BigInt(23000000),
+    gas: 2_300_000n,
     chainId,
   }
 }
