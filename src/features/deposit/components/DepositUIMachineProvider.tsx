@@ -4,7 +4,7 @@ import { useFormContext } from "react-hook-form"
 import { siloToSiloAddress } from "src/constants"
 import { depositSolanaMachine } from "src/features/machines/depositSolanaMachine"
 import { depositTurboMachine } from "src/features/machines/depositTurboMachine"
-import type { Hash } from "viem"
+import { type Hash, getAddress } from "viem"
 import {
   type Actor,
   type ActorOptions,
@@ -279,7 +279,11 @@ export function DepositUIMachineProvider({
                       siloToSiloAddress.turbochain,
                       amount
                     )
-                    const approveTxHash = await sendTransactionEVM(approveTx)
+                    const approveTxHash = await sendTransactionEVM({
+                      ...approveTx,
+                      from: getAddress(accountId),
+                      chainId,
+                    })
                     assert(approveTxHash != null, "Transaction failed")
                   }
                 }
