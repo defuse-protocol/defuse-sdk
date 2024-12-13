@@ -1,11 +1,9 @@
 import { TextField } from "@radix-ui/themes"
 import clsx from "clsx"
-import type { ReactNode } from "react"
-import { forwardRef } from "react"
-import type { FieldValues } from "react-hook-form"
+import { type ReactNode, type Ref, forwardRef } from "react"
 import styles from "./styles.module.css"
 
-type Props<T, TFieldValues extends FieldValues> = {
+interface InputProps extends Omit<TextField.RootProps, "onChange"> {
   name: string
   placeholder?: string
   value?: string
@@ -18,8 +16,8 @@ type Props<T, TFieldValues extends FieldValues> = {
   type?: "text" | "number"
 }
 
-export const Input = forwardRef<HTMLInputElement, Props<string, FieldValues>>(
-  <T extends string, TFieldValues extends FieldValues>(
+export const Input = forwardRef<HTMLInputElement, InputProps>(
+  (
     {
       name,
       value = "",
@@ -31,11 +29,13 @@ export const Input = forwardRef<HTMLInputElement, Props<string, FieldValues>>(
       slotLeft = null,
       slotRight = null,
       type = "text",
-    }: Props<T, TFieldValues>,
-    ref: React.Ref<HTMLInputElement>
+      ...rest
+    }: InputProps,
+    ref: Ref<HTMLInputElement>
   ) => {
     return (
       <TextField.Root
+        {...rest}
         name={name}
         className={clsx(styles.inputTrigger, className, {
           [styles.inputTriggerFullWidth || ""]: fullWidth,
