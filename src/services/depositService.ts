@@ -18,7 +18,11 @@ import {
   getNearNep141StorageBalance,
 } from "../features/machines/getBalanceMachine"
 import { getNearTxSuccessValue } from "../features/machines/getTxMachine"
-import { BlockchainEnum, type SendTransactionEVMParams } from "../types"
+import {
+  BlockchainEnum,
+  type SendTransactionEVMParams,
+  type SupportedChainName,
+} from "../types"
 import { ChainType } from "../types"
 import type { Transaction } from "../types/deposit"
 import { type DefuseUserId, userAddressToDefuseUserId } from "../utils/defuse"
@@ -311,7 +315,7 @@ export function createApproveTransaction(
   amount: bigint,
   from: string,
   chainId: number
-): { to: Address; data: Hash; from: Address; chainId: number } {
+): SendTransactionEVMParams {
   const data = encodeFunctionData({
     abi: erc20Abi,
     functionName: "approve",
@@ -323,6 +327,16 @@ export function createApproveTransaction(
     from: getAddress(from),
     chainId,
   }
+}
+
+export function waitEVMTransaction({
+  chainName,
+  txHash,
+}: { chainName: SupportedChainName; txHash: Hash }) {
+  const client = createPublicClient({
+    transport: http(settings.rpcUrls[chainName]),
+  })
+  return client.waitForTransactionReceipt({ hash: txHash })
 }
 
 /**
