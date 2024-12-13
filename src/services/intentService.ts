@@ -18,7 +18,7 @@ export async function publishIntent(
   quoteHashes: string[]
 ): Promise<PublishIntentResult> {
   const result = await retry<types.PublishIntentResponse["result"]>(
-    () =>
+    async () =>
       solverRelayClient.publishIntent({
         signed_data: prepareSwapSignedData(signatureData, userInfo),
         quote_hashes: quoteHashes,
