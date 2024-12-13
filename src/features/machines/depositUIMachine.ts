@@ -46,6 +46,7 @@ export type Context = {
   nativeBalance: bigint
   /**
    * The maximum amount that available on the user's balance minus the cost of the gas.
+   * todo: either remove this, or make it work, now it is 0n for native tokens
    */
   maxDepositValue: bigint
   formValues: {
