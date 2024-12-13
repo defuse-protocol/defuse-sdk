@@ -301,7 +301,6 @@ export async function getAllowance(
     })
     return result
   } catch (error) {
-    console.error("Error checking allowance:", error)
     return null
   }
 }
