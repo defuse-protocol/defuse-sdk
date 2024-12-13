@@ -179,8 +179,6 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
     defuseAssetId
   )
 
-  const amountInputRef = useRef<HTMLInputElement | null>(null)
-
   const { isDepositReceived } = useDepositStatusSnapshot({
     accountId: userAddress ?? "",
     chain: network ?? "",
@@ -254,12 +252,13 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
               name="amount"
               value={watch("amount")}
               onChange={(value) => setValue("amount", value)}
-              type="number"
+              type={"text"}
+              inputMode={"decimal"}
+              pattern={"[0-9]*[.]?[0-9]*"}
               ref={(ref) => {
                 if (ref) {
                   ref.focus()
                 }
-                amountInputRef.current = ref
               }}
               className={styles.amountInput}
               slotRight={
