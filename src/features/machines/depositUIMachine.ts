@@ -493,15 +493,13 @@ export const depositUIMachine = setup({
 
                         onDone: {
                           target: "done",
-                          guard: {
-                            type: "isOk",
-                            params: ({ event }) => event.output,
-                          },
 
                           actions: [
                             {
                               type: "setDepositGenerateAddressResult",
-                              params: ({ event }) => event.output,
+                              params: ({ event }) => {
+                                return event.output
+                              },
                             },
                           ],
                         },

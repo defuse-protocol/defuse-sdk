@@ -56,6 +56,17 @@ export const depositGenerateAddressMachine = setup({
       }
     ),
   },
+  actions: {
+    setError: assign({
+      error: (_, error: NonNullable<Context["error"]>["value"]) => ({
+        tag: "err" as const,
+        value: error,
+      }),
+    }),
+    logError: (_, params: { error: unknown }) => {
+      console.error(params.error)
+    },
+  },
 }).createMachine({
   /** @xstate-layout N4IgpgJg5mDOIC5QTABwPawJYBcC0MAdmAE4CGOYeZEEJcsAdFhADZgDEAkgHIAKAVQAqAbQAMAXUSgM2HFnSFpIAB6IAjAGYALIzEA2ABz7NAdgBMO-WM3qANCACeiTWMb6tpgJznD500Y2vgC+wQ4osrgEYMTklNS09LBMRKQUWIRQHBCKYMyEAG7oANZ5EZhRqXFUNHQMjFXpmQgZRQDG6YriEt3KkfKKymoI+tqGjNpill76XgCstgb2Toj6jF5i6luGfl6GYvNjoeFoFfiN8bVJKTFp8pkcpCToJIyorBQAZi8AtozlcmisQoNUS9QuGSgLUK6A6A0I3V6SBA-QUSmRw1GXj0phshjGcyM+M0DmcCC8mkYhlM6jEc0sk3MXj2oTCIEI6BQ8GRAMqt2qCTqyT6ZzRQ0QeHMazEpjmhgphNM+3lAVJEvUzMYcz2xgpMwMpmOIF5535IMF12YbDAIrkYoxiHM6nW5m0tNGmidXlprrVCHUpnczOpPlcmk0s3DRpNQLuoKFN2B9ygttw9tAwyZunp0y82m9vh2pj96l0OiCcv8AVmsujp0BF3jloA4vywJQIKn4eLyTT1tpZh4A6M5V4-f5GOp-PoLGJtJo9upqXM6-1YwKrvUAGJkLDsTvI1GDB29uaMLPeb2ejUmP3eydOunTinacz+VnBIA */
   context: ({ input }) => {
@@ -86,6 +97,10 @@ export const depositGenerateAddressMachine = setup({
       }
     }
 
+    if (context.error != null) {
+      return context.error
+    }
+
     throw new Error("Unexpected output")
   },
 
@@ -113,6 +128,22 @@ export const depositGenerateAddressMachine = setup({
         },
         onError: {
           target: "Failed",
+          actions: [
+            {
+              type: "logError",
+              params: ({ event }) => event,
+            },
+            {
+              type: "setError",
+              params: ({ event }) => {
+                console.log("onError type: setError", event)
+                return {
+                  reason: "ERR_GENERATING_ADDRESS",
+                  error: toError(event.error),
+                }
+              },
+            },
+          ],
         },
         src: "generateDepositAddress",
       },
@@ -126,3 +157,7 @@ export const depositGenerateAddressMachine = setup({
     },
   },
 })
+
+function toError(error: unknown): Error {
+  return error instanceof Error ? error : new Error("unknown error")
+}
