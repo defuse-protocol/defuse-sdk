@@ -256,6 +256,7 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
               type={"text"}
               inputMode={"decimal"}
               pattern={"[0-9]*[.]?[0-9]*"}
+              autoComplete={"off"}
               ref={(ref) => {
                 if (ref) {
                   ref.focus()
