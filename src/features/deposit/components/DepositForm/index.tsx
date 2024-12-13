@@ -256,6 +256,7 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
               type={"text"}
               inputMode={"decimal"}
               pattern={"[0-9]*[.]?[0-9]*"}
+              autoComplete={"off"}
               ref={(ref) => {
                 if (ref) {
                   ref.focus()
@@ -305,6 +306,12 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
               <ButtonCustom
                 size={"lg"}
                 disabled={!watch("amount") || balanceInsufficient}
+                isLoading={
+                  snapshot.matches("submittingNearTx") ||
+                  snapshot.matches("submittingEVMTx") ||
+                  snapshot.matches("submittingSolanaTx") ||
+                  snapshot.matches("submittingTurboTx")
+                }
               >
                 {renderDepositButtonText(
                   watch("amount") >= "0" && balanceInsufficient,
