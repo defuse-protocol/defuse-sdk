@@ -15,6 +15,7 @@ export const Deposits = ({
     | Context["depositNearResult"]
     | Context["depositTurboResult"]
     | Context["depositEVMResult"]
+    | Context["depositSolanaResult"]
 }) => {
   if (depositResult?.tag !== "ok") {
     return null

@@ -324,10 +324,15 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
                     ? "eth"
                     : network === BlockchainEnum.BASE
                       ? "base"
-                      : null
+                      : network === BlockchainEnum.SOLANA
+                        ? "solana"
+                        : null
             }
             depositResult={
-              depositNearResult ?? depositTurboResult ?? depositEVMResult
+              depositNearResult ??
+              depositTurboResult ??
+              depositEVMResult ??
+              depositSolanaResult
             }
           />
           {isPassiveDeposit &&
