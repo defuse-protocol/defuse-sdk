@@ -314,6 +314,27 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
               </ButtonCustom>
             </div>
           )}
+          <Deposits
+            chainName={
+              network === BlockchainEnum.NEAR
+                ? "near"
+                : network === BlockchainEnum.TURBOCHAIN
+                  ? "turbochain"
+                  : network === BlockchainEnum.ETHEREUM
+                    ? "eth"
+                    : network === BlockchainEnum.BASE
+                      ? "base"
+                      : network === BlockchainEnum.SOLANA
+                        ? "solana"
+                        : null
+            }
+            depositResult={
+              depositNearResult ??
+              depositTurboResult ??
+              depositEVMResult ??
+              depositSolanaResult
+            }
+          />
           {isPassiveDeposit &&
             ENABLE_DEPOSIT_THROUGH_POA_BRIDGE &&
             network &&
@@ -384,16 +405,6 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
             depositTurboResult,
             generatedAddressResult,
           })}
-        <Deposits
-          chainName={
-            network === BlockchainEnum.NEAR
-              ? "near"
-              : network === BlockchainEnum.TURBOCHAIN
-                ? "turbochain"
-                : null
-          }
-          depositResult={depositNearResult ?? depositTurboResult}
-        />
         {network !== BlockchainEnum.NEAR && isDepositReceived && (
           <DepositSuccess />
         )}
