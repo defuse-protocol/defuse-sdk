@@ -118,15 +118,15 @@ export const ModalSelectAssets = () => {
 
   return (
     <ModalDialog>
-      <div className="flex flex-col min-h-[680px] max-h-[680px] h-full">
-        <div className="flex-none p-5 border-b border-gray-100 dark:border-black-950">
+      <div className="flex flex-col min-h-[680px] md:max-h-[680px] h-full">
+        <div className="z-20 h-auto flex-none p-5 border-b border-gray-100 dark:border-black-950 sticky top-0 bg-white dark:bg-black-800 z-10">
           <SearchBar
             query={searchValue}
             setQuery={setSearchValue}
             handleOverrideCancel={onCloseModal}
           />
         </div>
-        <div className="flex-1 flex flex-col justify-between border-b border-gray-100 px-2.5 overflow-y-auto dark:border-black-950">
+        <div className="z-10 flex-1 overflow-y-auto border-b border-gray-100 px-2.5 dark:border-black-950">
           {assetList.length ? (
             <AssetList
               assets={
