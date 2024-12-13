@@ -91,7 +91,6 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
     nativeBalance,
     userAddress,
     poaBridgeInfoRef,
-    maxDepositValue,
     defuseAssetId,
   } = DepositUIMachineContext.useSelector((snapshot) => {
     const token = snapshot.context.formValues.token
@@ -101,7 +100,6 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
     const nativeBalance = snapshot.context.nativeBalance
     const userAddress = snapshot.context.userAddress
     const poaBridgeInfoRef = snapshot.context.poaBridgeInfoRef
-    const maxDepositValue = snapshot.context.maxDepositValue
     const defuseAssetId = snapshot.context.defuseAssetId
 
     return {
@@ -112,7 +110,6 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
       nativeBalance,
       userAddress,
       poaBridgeInfoRef,
-      maxDepositValue,
       defuseAssetId,
     }
   })
@@ -158,8 +155,8 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
   }
 
   const handleSetMaxValue = async () => {
-    if (!token) return
-    const amountToFormat = formatTokenValue(maxDepositValue, token.decimals)
+    if (token == null || tokenBalance == null) return
+    const amountToFormat = formatTokenValue(tokenBalance, token.decimals)
     setValue("amount", amountToFormat)
   }
 
@@ -202,6 +199,10 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
   const [isCopied, setIsCopied] = useState(false)
 
   const { accentColor } = useThemeContext()
+
+  const tokenBalance = token
+    ? getBalance(token, balance, nativeBalance, defuseAssetId, network)
+    : null
 
   return (
     <div className={styles.container}>
@@ -286,23 +287,15 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
                         <br /> in your wallet.
                       </TooltipInfo>
                     )}
-                  <BlockMultiBalances
-                    balance={
-                      token
-                        ? getBalance(
-                            token,
-                            balance,
-                            nativeBalance,
-                            defuseAssetId,
-                            network
-                          )
-                        : 0n
-                    }
-                    decimals={token?.decimals ?? 0}
-                    handleClick={() => handleSetMaxValue()}
-                    disabled={Boolean(token && maxDepositValue === 0n)}
-                    className={styles.blockMultiBalances}
-                  />
+                  {tokenBalance != null && token != null && (
+                    <BlockMultiBalances
+                      balance={tokenBalance}
+                      decimals={token.decimals}
+                      handleClick={() => handleSetMaxValue()}
+                      disabled={tokenBalance === 0n}
+                      className={styles.blockMultiBalances}
+                    />
+                  )}
                 </div>
               }
             />
