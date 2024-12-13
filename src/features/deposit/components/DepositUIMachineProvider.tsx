@@ -277,13 +277,11 @@ export function DepositUIMachineProvider({
                     const approveTx = createApproveTransaction(
                       tokenAddress,
                       siloToSiloAddress.turbochain,
-                      amount
+                      amount,
+                      getAddress(accountId),
+                      chainId
                     )
-                    const approveTxHash = await sendTransactionEVM({
-                      ...approveTx,
-                      from: getAddress(accountId),
-                      chainId,
-                    })
+                    const approveTxHash = await sendTransactionEVM(approveTx)
                     assert(approveTxHash != null, "Transaction failed")
                   }
                 }

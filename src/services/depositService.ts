@@ -308,8 +308,10 @@ export async function getAllowance(
 export function createApproveTransaction(
   tokenAddress: string,
   spender: string,
-  amount: bigint
-): { to: Address; data: Hash } {
+  amount: bigint,
+  from: string,
+  chainId: number
+): { to: Address; data: Hash; from: Address; chainId: number } {
   const data = encodeFunctionData({
     abi: erc20Abi,
     functionName: "approve",
@@ -318,6 +320,8 @@ export function createApproveTransaction(
   return {
     to: getAddress(tokenAddress),
     data,
+    from: getAddress(from),
+    chainId,
   }
 }
 
