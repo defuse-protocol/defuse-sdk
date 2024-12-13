@@ -175,7 +175,8 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
     balance,
     nativeBalance,
     token,
-    network
+    network,
+    defuseAssetId
   )
 
   const amountInputRef = useRef<HTMLInputElement | null>(null)
@@ -289,7 +290,7 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
                   <BlockMultiBalances
                     balance={
                       token
-                        ? renderBalance(
+                        ? getBalance(
                             token,
                             balance,
                             nativeBalance,
@@ -545,26 +546,16 @@ function isInsufficientBalance(
   balance: bigint,
   nativeBalance: bigint,
   token: SwappableToken | null,
-  network: BlockchainEnum | null
+  network: BlockchainEnum | null,
+  defuseAssetId: string | null
 ) {
   if (!token || !network) {
     return false
   }
-  const balanceToFormat = formatTokenValue(balance, token.decimals)
-  if (isBaseToken(token) && token.address === "wrap.near") {
-    const balanceToFormat = formatTokenValue(
-      balance + nativeBalance,
-      token.decimals
-    )
-    return Number.parseFloat(formAmount) > Number.parseFloat(balanceToFormat)
-  }
-  if (
-    (isUnifiedToken(token) && token.groupedTokens.some(isNativeToken)) ||
-    (isBaseToken(token) && isNativeToken(token))
-  ) {
-    const balanceToFormat = formatTokenValue(nativeBalance, token.decimals)
-    return Number.parseFloat(formAmount) > Number.parseFloat(balanceToFormat)
-  }
+  const balanceToFormat = formatTokenValue(
+    getBalance(token, balance, nativeBalance, defuseAssetId, network),
+    token.decimals
+  )
   return Number.parseFloat(formAmount) > Number.parseFloat(balanceToFormat)
 }
 
@@ -730,7 +721,7 @@ function truncateUserAddress(hash: string) {
 
 // TODO: When Aurora network will be added we should cover a special case for Aurora token on Aurora network
 //       network === BlockchainEnum.AURORA && defuseAssetId === "nep141:aurora"
-function renderBalance(
+function getBalance(
   token: SwappableToken,
   balance: bigint,
   nativeBalance: bigint,
