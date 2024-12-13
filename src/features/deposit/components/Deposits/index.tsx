@@ -11,7 +11,10 @@ export const Deposits = ({
   depositResult,
 }: {
   chainName: SupportedChainName | null
-  depositResult: Context["depositNearResult"] | Context["depositTurboResult"]
+  depositResult:
+    | Context["depositNearResult"]
+    | Context["depositTurboResult"]
+    | Context["depositEVMResult"]
 }) => {
   if (depositResult?.tag !== "ok") {
     return null
@@ -86,6 +89,12 @@ export const Deposits = ({
             </Text>
           </Box>
         )}
+
+        <Box>
+          <Text size={"1"} color={"gray"}>
+            Settlement in flight!
+          </Text>
+        </Box>
       </Flex>
     </Flex>
   )
