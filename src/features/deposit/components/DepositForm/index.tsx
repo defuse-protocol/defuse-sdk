@@ -305,6 +305,12 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
               <ButtonCustom
                 size={"lg"}
                 disabled={!watch("amount") || balanceInsufficient}
+                isLoading={
+                  snapshot.matches("submittingNearTx") ||
+                  snapshot.matches("submittingEVMTx") ||
+                  snapshot.matches("submittingSolanaTx") ||
+                  snapshot.matches("submittingTurboTx")
+                }
               >
                 {renderDepositButtonText(
                   watch("amount") >= "0" && balanceInsufficient,
