@@ -3,7 +3,15 @@ import {
   SystemProgram,
   Transaction as TransactionSolana,
 } from "@solana/web3.js"
-import { type Address, encodeFunctionData, erc20Abi, getAddress } from "viem"
+import {
+  http,
+  type Address,
+  type Hash,
+  createPublicClient,
+  encodeFunctionData,
+  erc20Abi,
+  getAddress,
+} from "viem"
 import { settings } from "../config/settings"
 import {
   getNearNep141MinStorageBalance,
@@ -273,6 +281,44 @@ export async function getMinimumStorageBalance(
   return getNearNep141MinStorageBalance({
     contractId,
   })
+}
+
+export async function getAllowance(
+  tokenAddress: string,
+  owner: string,
+  spender: string,
+  network: BlockchainEnum
+): Promise<bigint | null> {
+  try {
+    const client = createPublicClient({
+      transport: http(getWalletRpcUrl(network)),
+    })
+    const result = await client.readContract({
+      address: getAddress(tokenAddress),
+      abi: erc20Abi,
+      functionName: "allowance",
+      args: [getAddress(owner), getAddress(spender)],
+    })
+    return result
+  } catch (error) {
+    return null
+  }
+}
+
+export function createApproveTransaction(
+  tokenAddress: string,
+  spender: string,
+  amount: bigint
+): { to: Address; data: Hash } {
+  const data = encodeFunctionData({
+    abi: erc20Abi,
+    functionName: "approve",
+    args: [getAddress(spender), amount],
+  })
+  return {
+    to: getAddress(tokenAddress),
+    data,
+  }
 }
 
 /**

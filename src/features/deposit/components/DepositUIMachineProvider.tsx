@@ -4,7 +4,7 @@ import { useFormContext } from "react-hook-form"
 import { siloToSiloAddress } from "src/constants"
 import { depositSolanaMachine } from "src/features/machines/depositSolanaMachine"
 import { depositTurboMachine } from "src/features/machines/depositTurboMachine"
-import type { Hash } from "viem"
+import { type Hash, getAddress } from "viem"
 import {
   type Actor,
   type ActorOptions,
@@ -15,6 +15,7 @@ import { settings } from "../../../config/settings"
 import { depositEVMMachine } from "../../../features/machines/depositEVMMachine"
 import {
   checkNearTransactionValidity,
+  createApproveTransaction,
   createBatchDepositNearNativeTransaction,
   createBatchDepositNearNep141Transaction,
   createDepositEVMERC20Transaction,
@@ -22,10 +23,11 @@ import {
   createDepositFromSiloTransaction,
   createDepositSolanaTransaction,
   generateDepositAddress,
+  getAllowance,
   getMinimumStorageBalance,
   isStorageDepositRequired,
 } from "../../../services/depositService"
-import { ChainType } from "../../../types"
+import { BlockchainEnum, ChainType } from "../../../types"
 import type { SwappableToken, Transaction } from "../../../types"
 import { assert } from "../../../utils/assert"
 import { userAddressToDefuseUserId } from "../../../utils/defuse"
@@ -261,6 +263,30 @@ export function DepositUIMachineProvider({
                   chainType !== null && chainType === ChainType.EVM,
                   "chainType should be EVM"
                 )
+
+                if (tokenAddress !== "native") {
+                  const allowance = await getAllowance(
+                    tokenAddress,
+                    accountId,
+                    siloToSiloAddress.turbochain,
+                    BlockchainEnum.TURBOCHAIN
+                  )
+                  assert(allowance != null, "Allowance is not defined")
+
+                  if (allowance < amount) {
+                    const approveTx = createApproveTransaction(
+                      tokenAddress,
+                      siloToSiloAddress.turbochain,
+                      amount
+                    )
+                    const approveTxHash = await sendTransactionEVM({
+                      ...approveTx,
+                      from: getAddress(accountId),
+                      chainId,
+                    })
+                    assert(approveTxHash != null, "Transaction failed")
+                  }
+                }
 
                 const tx = createDepositFromSiloTransaction(
                   tokenAddress === "native"
