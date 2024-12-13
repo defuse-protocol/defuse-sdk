@@ -4,7 +4,7 @@ import { useFormContext } from "react-hook-form"
 import { siloToSiloAddress } from "src/constants"
 import { depositSolanaMachine } from "src/features/machines/depositSolanaMachine"
 import { depositTurboMachine } from "src/features/machines/depositTurboMachine"
-import { type Hash, getAddress } from "viem"
+import { type Hash, getAddress, stringify } from "viem"
 import {
   type Actor,
   type ActorOptions,
@@ -26,6 +26,7 @@ import {
   getAllowance,
   getMinimumStorageBalance,
   isStorageDepositRequired,
+  waitEVMTransaction,
 } from "../../../services/depositService"
 import { BlockchainEnum, ChainType } from "../../../types"
 import type { SwappableToken, Transaction } from "../../../types"
@@ -189,7 +190,7 @@ export function DepositUIMachineProvider({
 
                 assert(depositAddress != null, "Deposit address is not defined")
 
-                let tx: Transaction["EVM"] | null = null
+                let tx: Transaction["EVM"]
                 if (isUnifiedToken(asset) && asset.unifiedAssetId === "eth") {
                   tx = createDepositEVMNativeTransaction(
                     accountId,
@@ -206,10 +207,19 @@ export function DepositUIMachineProvider({
                     chainId
                   )
                 }
-                assert(tx != null, "Transaction is not defined")
 
+                console.log("Sending transfer EVM transaction")
                 const txHash = await sendTransactionEVM(tx)
                 assert(txHash != null, "Transaction failed")
+
+                console.log(
+                  "Waiting for transfer EVM transaction",
+                  stringify({ txHash })
+                )
+                const receipt = await waitEVMTransaction({ txHash, chainName })
+                if (receipt.status === "reverted") {
+                  throw new Error("Transfer EVM transaction reverted")
+                }
 
                 return txHash
               }),
@@ -281,8 +291,21 @@ export function DepositUIMachineProvider({
                       getAddress(accountId),
                       chainId
                     )
+                    console.log("Sending approve EVM transaction")
                     const approveTxHash = await sendTransactionEVM(approveTx)
                     assert(approveTxHash != null, "Transaction failed")
+
+                    console.log(
+                      "Waiting for approve EVM transaction",
+                      stringify({ txHash: approveTxHash })
+                    )
+                    const receipt = await waitEVMTransaction({
+                      txHash: approveTxHash,
+                      chainName,
+                    })
+                    if (receipt.status === "reverted") {
+                      throw new Error("Approve transaction reverted")
+                    }
                   }
                 }
 
@@ -297,8 +320,18 @@ export function DepositUIMachineProvider({
                   tokenAddress === "native" ? amount : 0n,
                   chainId
                 )
+                console.log("Sending deposit from Silo EVM transaction")
                 const txHash = await sendTransactionEVM(tx)
                 assert(txHash != null, "Transaction failed")
+
+                console.log(
+                  "Waiting for deposit from Silo EVM transaction",
+                  stringify({ txHash })
+                )
+                const receipt = await waitEVMTransaction({ txHash, chainName })
+                if (receipt.status === "reverted") {
+                  throw new Error("Deposit from Silo transaction reverted")
+                }
 
                 return txHash
               }),
