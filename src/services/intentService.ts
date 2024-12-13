@@ -1,3 +1,4 @@
+import { retry } from "@lifeomic/attempt"
 import type { ChainType, WalletSignatureResult } from "../types"
 import { prepareSwapSignedData } from "../utils/prepareBroadcastRequest"
 import * as solverRelayClient from "./solverRelayHttpClient"
@@ -16,13 +17,24 @@ export async function publishIntent(
   userInfo: { userAddress: string; userChainType: ChainType },
   quoteHashes: string[]
 ): Promise<PublishIntentResult> {
-  // todo: retry on network error
-  const result = await solverRelayClient.publishIntent({
-    signed_data: prepareSwapSignedData(signatureData, userInfo),
-    quote_hashes: quoteHashes,
-  })
-
+  const result = await retry<types.PublishIntentResponse["result"]>(
+    async () =>
+      solverRelayClient.publishIntent({
+        signed_data: prepareSwapSignedData(signatureData, userInfo),
+        quote_hashes: quoteHashes,
+      }),
+    {
+      delay: 1000,
+      factor: 1.5,
+      maxAttempts: 7,
+      jitter: true,
+      minDelay: 1000,
+    }
+  )
   if (result.status === "OK") return { tag: "ok", value: result.intent_hash }
+
+  if (result.status === "FAILED" && result.reason === "already processed")
+    return { tag: "ok", value: result.intent_hash }
 
   return { tag: "err", value: { reason: result.status } }
 }

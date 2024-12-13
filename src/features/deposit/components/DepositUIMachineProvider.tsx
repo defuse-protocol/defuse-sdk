@@ -31,6 +31,7 @@ import { BlockchainEnum, ChainType } from "../../../types"
 import type { SwappableToken, Transaction } from "../../../types"
 import { assert } from "../../../utils/assert"
 import { userAddressToDefuseUserId } from "../../../utils/defuse"
+import { getEVMChainId } from "../../../utils/evmChainId"
 import { isBaseToken, isUnifiedToken } from "../../../utils/token"
 import { depositGenerateAddressMachine } from "../../machines/depositGenerateAddressMachine"
 import { depositNearMachine } from "../../machines/depositNearMachine"
@@ -176,18 +177,33 @@ export function DepositUIMachineProvider({
           depositEVMActor: depositEVMMachine.provide({
             actors: {
               sendTransaction: fromPromise(async ({ input }) => {
-                const { asset, amount, tokenAddress, depositAddress } = input
+                const {
+                  asset,
+                  amount,
+                  tokenAddress,
+                  depositAddress,
+                  accountId,
+                  chainName,
+                } = input
+                const chainId = getEVMChainId(chainName)
 
                 assert(depositAddress != null, "Deposit address is not defined")
 
                 let tx: Transaction["EVM"] | null = null
                 if (isUnifiedToken(asset) && asset.unifiedAssetId === "eth") {
-                  tx = createDepositEVMNativeTransaction(depositAddress, amount)
+                  tx = createDepositEVMNativeTransaction(
+                    accountId,
+                    depositAddress,
+                    amount,
+                    chainId
+                  )
                 } else {
                   tx = createDepositEVMERC20Transaction(
+                    accountId,
                     tokenAddress,
                     depositAddress,
-                    amount
+                    amount,
+                    chainId
                   )
                 }
                 assert(tx != null, "Transaction is not defined")
@@ -233,8 +249,15 @@ export function DepositUIMachineProvider({
           depositTurboActor: depositTurboMachine.provide({
             actors: {
               signAndSendTransactions: fromPromise(async ({ input }) => {
-                const { amount, accountId, tokenAddress, depositAddress } =
-                  input
+                const {
+                  amount,
+                  accountId,
+                  tokenAddress,
+                  depositAddress,
+                  chainName,
+                } = input
+
+                const chainId = getEVMChainId(chainName)
 
                 assert(
                   chainType !== null && chainType === ChainType.EVM,
@@ -269,7 +292,8 @@ export function DepositUIMachineProvider({
                   amount,
                   depositAddress,
                   siloToSiloAddress.turbochain,
-                  tokenAddress === "native" ? amount : 0n
+                  tokenAddress === "native" ? amount : 0n,
+                  chainId
                 )
                 const txHash = await sendTransactionEVM(tx)
                 assert(txHash != null, "Transaction failed")

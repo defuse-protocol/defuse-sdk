@@ -78,11 +78,10 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
   const depositEVMResult = snapshot.context.depositEVMResult
   const depositSolanaResult = snapshot.context.depositSolanaResult
   const depositTurboResult = snapshot.context.depositTurboResult
-
   const depositAddress =
     generatedAddressResult?.tag === "ok"
       ? generatedAddressResult.value.depositAddress
-      : ""
+      : null
 
   const {
     token,
@@ -93,6 +92,7 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
     userAddress,
     poaBridgeInfoRef,
     maxDepositValue,
+    defuseAssetId,
   } = DepositUIMachineContext.useSelector((snapshot) => {
     const token = snapshot.context.formValues.token
     const network = snapshot.context.formValues.network
@@ -102,6 +102,7 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
     const userAddress = snapshot.context.userAddress
     const poaBridgeInfoRef = snapshot.context.poaBridgeInfoRef
     const maxDepositValue = snapshot.context.maxDepositValue
+    const defuseAssetId = snapshot.context.defuseAssetId
 
     return {
       token,
@@ -112,6 +113,7 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
       userAddress,
       poaBridgeInfoRef,
       maxDepositValue,
+      defuseAssetId,
     }
   })
 
@@ -181,7 +183,7 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
   const { isDepositReceived } = useDepositStatusSnapshot({
     accountId: userAddress ?? "",
     chain: network ?? "",
-    generatedAddress: depositAddress,
+    generatedAddress: depositAddress ?? "",
   })
 
   const minDepositAmount = useSelector(poaBridgeInfoRef, (state) => {
@@ -287,7 +289,13 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
                   <BlockMultiBalances
                     balance={
                       token
-                        ? renderBalance(token, balance, nativeBalance, network)
+                        ? renderBalance(
+                            token,
+                            balance,
+                            nativeBalance,
+                            defuseAssetId,
+                            network
+                          )
                         : 0n
                     }
                     decimals={token?.decimals ?? 0}
@@ -326,45 +334,47 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
                   minutes.
                 </p>
                 <div className={styles.qrCodeWrapper}>
-                  {generatedAddressResult ? (
+                  {depositAddress ? (
                     <QRCodeSVG value={depositAddress} />
                   ) : (
                     <Spinner loading={true} />
                   )}
                 </div>
-                <Input
-                  name="generatedAddress"
-                  value={
-                    depositAddress ? truncateUserAddress(depositAddress) : ""
-                  }
-                  disabled
-                  className={styles.inputGeneratedAddress}
-                  slotRight={
-                    <Button
-                      size="2"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        e.preventDefault()
-                      }}
-                      className={styles.copyButton}
-                      disabled={!generatedAddressResult}
-                    >
-                      <CopyToClipboard
-                        text={depositAddress}
-                        onCopy={() => setIsCopied(true)}
+                {depositAddress && (
+                  <Input
+                    name="generatedAddress"
+                    value={
+                      depositAddress ? truncateUserAddress(depositAddress) : ""
+                    }
+                    disabled
+                    className={styles.inputGeneratedAddress}
+                    slotRight={
+                      <Button
+                        size="2"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          e.preventDefault()
+                        }}
+                        className={styles.copyButton}
+                        disabled={!generatedAddressResult}
                       >
-                        <Flex gap="2" align="center">
-                          <Text color={accentColor}>
-                            {isCopied ? "Copied" : "Copy"}
-                          </Text>
-                          <Text color={accentColor} asChild>
-                            <CopyIcon height="14" width="14" />
-                          </Text>
-                        </Flex>
-                      </CopyToClipboard>
-                    </Button>
-                  }
-                />
+                        <CopyToClipboard
+                          text={depositAddress}
+                          onCopy={() => setIsCopied(true)}
+                        >
+                          <Flex gap="2" align="center">
+                            <Text color={accentColor}>
+                              {isCopied ? "Copied" : "Copy"}
+                            </Text>
+                            <Text color={accentColor} asChild>
+                              <CopyIcon height="14" width="14" />
+                            </Text>
+                          </Flex>
+                        </CopyToClipboard>
+                      </Button>
+                    }
+                  />
+                )}
                 {renderDepositHint(network, minDepositAmount, token)}
               </div>
             )}
@@ -374,13 +384,13 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
           network !== BlockchainEnum.NEAR &&
           !ENABLE_DEPOSIT_THROUGH_POA_BRIDGE && <UnderFeatureFlag />}
         {token &&
-          renderDepositWarning(
-            userAddress,
+          renderDepositWarning(userAddress, {
             depositNearResult,
             depositEVMResult,
             depositSolanaResult,
-            depositTurboResult
-          )}
+            depositTurboResult,
+            generatedAddressResult,
+          })}
         <Deposits
           chainName={
             network === BlockchainEnum.NEAR
@@ -560,34 +570,47 @@ function isInsufficientBalance(
 
 function renderDepositWarning(
   userAddress: string | null,
-  depositNearResult: Context["depositNearResult"],
-  depositEVMResult: Context["depositEVMResult"],
-  depositSolanaResult: Context["depositSolanaResult"],
-  depositTurboResult: Context["depositTurboResult"]
+  depositResults: {
+    depositNearResult: Context["depositNearResult"]
+    depositEVMResult: Context["depositEVMResult"]
+    depositSolanaResult: Context["depositSolanaResult"]
+    depositTurboResult: Context["depositTurboResult"]
+    generatedAddressResult: Context["generatedAddressResult"]
+  }
 ) {
   let content: ReactNode = null
   if (!userAddress) {
     content = "Please connect your wallet to continue"
   }
 
-  // Because all deposit results have the same statuses, we can use a single pattern to check for errors.
-  // To improve readability, we abbreviate deposit result names:
-  // 'depositNearResult' becomes 'r1', 'depositEVMResult' becomes 'r2', etc.
-  const r1 = depositNearResult !== null && depositNearResult.tag === "err"
-  const r2 = depositEVMResult !== null && depositEVMResult.tag === "err"
-  const r3 = depositSolanaResult !== null && depositSolanaResult.tag === "err"
-  const r4 = depositTurboResult !== null && depositTurboResult.tag === "err"
+  // Check for errors in deposit results
+  const results = [
+    depositResults.depositNearResult,
+    depositResults.depositEVMResult,
+    depositResults.depositSolanaResult,
+    depositResults.depositTurboResult,
+    depositResults.generatedAddressResult,
+  ]
 
-  if (r1 || r2 || r3 || r4) {
+  const errorResult = results.find(
+    (result) => result !== null && result.tag === "err"
+  )
+
+  if (errorResult) {
+    // Check if the errorResult has a 'reason' property
     const status =
-      (r1 && depositNearResult.value.reason) ||
-      (r2 && depositEVMResult.value.reason) ||
-      (r3 && depositSolanaResult.value.reason) ||
-      (r4 && depositTurboResult.value.reason)
+      "reason" in errorResult.value
+        ? errorResult.value.reason
+        : "An error occurred. Please try again."
+
     switch (status) {
       case "ERR_SUBMITTING_TRANSACTION":
         content =
           "It seems the transaction was rejected in your wallet. Please try again."
+        break
+      case "ERR_GENERATING_ADDRESS":
+        content =
+          "It seems the deposit address was not generated. Please try re-selecting the token and network."
         break
       default:
         content = "An error occurred. Please try again."
@@ -705,10 +728,13 @@ function truncateUserAddress(hash: string) {
   return `${hash.slice(0, 12)}...${hash.slice(-12)}`
 }
 
+// TODO: When Aurora network will be added we should cover a special case for Aurora token on Aurora network
+//       network === BlockchainEnum.AURORA && defuseAssetId === "nep141:aurora"
 function renderBalance(
   token: SwappableToken,
   balance: bigint,
   nativeBalance: bigint,
+  defuseAssetId: string | null,
   network: BlockchainEnum | null
 ) {
   // For user experience, both NEAR and wNEAR are treated as equivalent during the deposit process.
@@ -719,17 +745,30 @@ function renderBalance(
     return balance + nativeBalance
   }
 
-  // If the token is a base token and is native, or if it is a unified token that includes a native token,
-  // return the native balance.
-  // Note: Use network !== BlockchainEnum.NEAR check for the `aurora` token as we cannot use nativeBalance with it,
-  // as it is an Ethereum token on the NEAR network, which is not classified as a native token.
-  if (
-    (isBaseToken(token) && isNativeToken(token)) ||
-    (isUnifiedToken(token) &&
-      token.groupedTokens.some(isNativeToken) &&
-      network !== BlockchainEnum.NEAR)
-  ) {
+  if (isNativeToken(token)) {
     return nativeBalance
+  }
+
+  if (network && isUnifiedToken(token)) {
+    const tokenAddress =
+      isUnifiedToken(token) &&
+      token.groupedTokens.find((t) => t.defuseAssetId === defuseAssetId)
+        ?.address
+    switch (network) {
+      case BlockchainEnum.NEAR:
+        return balance
+      case BlockchainEnum.ETHEREUM:
+      case BlockchainEnum.BASE:
+      case BlockchainEnum.ARBITRUM:
+      case BlockchainEnum.BITCOIN:
+      case BlockchainEnum.SOLANA:
+      case BlockchainEnum.DOGECOIN:
+      case BlockchainEnum.TURBOCHAIN:
+        return tokenAddress === "native" ? nativeBalance : balance
+      default:
+        network satisfies never
+        throw new Error("exhaustive check failed")
+    }
   }
 
   return balance

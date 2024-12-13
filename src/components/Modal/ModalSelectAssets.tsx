@@ -10,6 +10,7 @@ import type {
   UnifiedTokenInfo,
 } from "../../types/base"
 import { isBaseToken, isUnifiedToken } from "../../utils"
+import { computeTotalBalance } from "../../utils/tokenUtils"
 import { AssetList } from "../Asset/AssetList"
 import { EmptyAssetList } from "../Asset/EmptyAssetList"
 import { SearchBar } from "../SearchBar"
@@ -88,58 +89,21 @@ export const ModalSelectAssets = () => {
 
     for (const [tokenId, token] of data) {
       const disabled = selectedTokenId != null && tokenId === selectedTokenId
-      if (isUnifiedToken(token)) {
-        // We join defuseAssetId of all grouped tokens to get a single string
-        // to simplify search balances and not mutate token object
-        const defuseAssetId = token.groupedTokens.reduce(
-          (acc, innerToken) =>
-            innerToken.defuseAssetId != null
-              ? [acc, innerToken.defuseAssetId].join(",")
-              : acc,
-          ""
-        )
+      const totalBalance = computeTotalBalance(token, balances)
 
-        const totalBalance = token.groupedTokens.reduce<undefined | bigint>(
-          (acc, innerToken) => {
-            const balance = balances[innerToken.defuseAssetId]
-            if (balance != null) {
-              return (acc ?? 0n) + balance
-            }
-            return acc
-          },
-          undefined
-        )
-
-        getAssetList.push({
-          itemId: tokenId,
-          token,
-          disabled,
-          defuseAssetId,
-          balance:
-            totalBalance == null
-              ? undefined
-              : {
-                  balance: totalBalance.toString(),
-                  balanceUsd: undefined,
-                  convertedLast: undefined,
-                },
-        })
-      } else if (isBaseToken(token)) {
-        const balance = balances[token.defuseAssetId]
-        getAssetList.push({
-          itemId: tokenId,
-          token,
-          disabled,
-          balance:
-            balance == null
-              ? undefined
-              : {
-                  balance: balance.toString(),
-                  balanceUsd: undefined,
-                  convertedLast: undefined,
-                },
-        })
-      }
+      getAssetList.push({
+        itemId: tokenId,
+        token,
+        disabled,
+        balance:
+          totalBalance == null
+            ? undefined
+            : {
+                balance: totalBalance.toString(),
+                balanceUsd: undefined,
+                convertedLast: undefined,
+              },
+      })
     }
 
     // Put tokens with balance on top
@@ -154,15 +118,15 @@ export const ModalSelectAssets = () => {
 
   return (
     <ModalDialog>
-      <div className="flex flex-col min-h-[680px] max-h-[680px] h-full">
-        <div className="flex-none p-5 border-b border-gray-100 dark:border-black-950">
+      <div className="flex flex-col min-h-[680px] md:max-h-[680px] h-full">
+        <div className="z-20 h-auto flex-none p-5 border-b border-gray-100 dark:border-black-950 sticky top-0 bg-white dark:bg-black-800 z-10">
           <SearchBar
             query={searchValue}
             setQuery={setSearchValue}
             handleOverrideCancel={onCloseModal}
           />
         </div>
-        <div className="flex-1 flex flex-col justify-between border-b border-gray-100 px-2.5 overflow-y-auto dark:border-black-950">
+        <div className="z-10 flex-1 overflow-y-auto border-b border-gray-100 px-2.5 dark:border-black-950">
           {assetList.length ? (
             <AssetList
               assets={

@@ -1,5 +1,5 @@
 import { assign, emit, fromPromise, setup } from "xstate"
-import type { SwappableToken } from "../../types"
+import type { SupportedChainName, SwappableToken } from "../../types"
 
 export type DepositDescription = {
   type: "depositTurbo"
@@ -16,6 +16,7 @@ export type Context = {
   tokenAddress: string
   txHash: string | null
   depositAddress: string
+  chainName: SupportedChainName
   error: null | {
     tag: "err"
     value: {
@@ -32,6 +33,7 @@ type Input = {
   accountId: string
   tokenAddress: string
   depositAddress: string
+  chainName: SupportedChainName
 }
 
 export type Output =
@@ -128,6 +130,7 @@ export const depositTurboMachine = setup({
       accountId: input.accountId,
       tokenAddress: input.tokenAddress,
       depositAddress: input.depositAddress,
+      chainName: input.chainName,
       txHash: null,
       error: null,
     }
@@ -146,6 +149,7 @@ export const depositTurboMachine = setup({
             asset: context.asset,
             tokenAddress: context.tokenAddress,
             depositAddress: context.depositAddress,
+            chainName: context.chainName,
           }
         },
         onDone: {

@@ -1,5 +1,4 @@
 import {
-  LAMPORTS_PER_SOL,
   PublicKey as PublicKeySolana,
   SystemProgram,
   Transaction as TransactionSolana,
@@ -19,7 +18,7 @@ import {
   getNearNep141StorageBalance,
 } from "../features/machines/getBalanceMachine"
 import { getNearTxSuccessValue } from "../features/machines/getTxMachine"
-import { BlockchainEnum } from "../types"
+import { BlockchainEnum, type SendTransactionEVMParams } from "../types"
 import { ChainType } from "../types"
 import type { Transaction } from "../types/deposit"
 import { type DefuseUserId, userAddressToDefuseUserId } from "../utils/defuse"
@@ -133,18 +132,22 @@ export function createBatchDepositNearNativeTransaction(
 }
 
 export function createDepositEVMERC20Transaction(
+  userAddress: string,
   assetAccountId: string,
   generatedAddress: string,
-  amount: bigint
-): { to: Address; data: Hash } {
+  amount: bigint,
+  chainId: number
+): SendTransactionEVMParams {
   const data = encodeFunctionData({
     abi: erc20Abi,
     functionName: "transfer",
     args: [generatedAddress as Address, amount],
   })
   return {
-    to: assetAccountId as Address,
+    from: getAddress(userAddress),
+    to: getAddress(assetAccountId),
     data,
+    chainId,
   }
 }
 
@@ -154,8 +157,9 @@ export function createDepositFromSiloTransaction(
   amount: bigint,
   depositAddress: string,
   siloAddress: string,
-  value: bigint
-): { to: Address; data: Hash; value: bigint; gasPrice: bigint; gas: bigint } {
+  value: bigint,
+  chainId: number
+): SendTransactionEVMParams {
   const data = encodeFunctionData({
     abi: siloToSiloABI,
     functionName: "safeFtTransferCallToNear",
@@ -167,23 +171,29 @@ export function createDepositFromSiloTransaction(
     ],
   })
   return {
-    to: siloAddress as Address,
+    from: getAddress(userAddress),
+    to: getAddress(siloAddress),
     data,
     value,
     // Fake gas price for EVM wallets as relayer doesn't take fee on relaing transaction to siloToSilo
     gasPrice: 1n,
     gas: BigInt(23000000),
+    chainId,
   }
 }
 
 export function createDepositEVMNativeTransaction(
+  userAddress: string,
   generatedAddress: string,
-  amount: bigint
-): { to: Address; value: bigint; data: Hash } {
+  amount: bigint,
+  chainId: number
+): SendTransactionEVMParams {
   return {
-    to: generatedAddress as Address,
+    from: getAddress(userAddress),
+    to: getAddress(generatedAddress),
     value: amount,
     data: "0x",
+    chainId,
   }
 }
 
