@@ -411,6 +411,7 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
             depositSolanaResult,
             depositTurboResult,
             generatedAddressResult,
+            snapshot: snapshot.context,
           })}
         {network !== BlockchainEnum.NEAR && isDepositReceived && (
           <DepositSuccess />
@@ -577,6 +578,7 @@ function renderDepositWarning(
     depositSolanaResult: Context["depositSolanaResult"]
     depositTurboResult: Context["depositTurboResult"]
     generatedAddressResult: Context["generatedAddressResult"]
+    snapshot: Context
   }
 ) {
   let content: ReactNode = null
@@ -591,6 +593,7 @@ function renderDepositWarning(
     depositResults.depositSolanaResult,
     depositResults.depositTurboResult,
     depositResults.generatedAddressResult,
+    depositResults.snapshot.error,
   ]
 
   const errorResult = results.find(
@@ -612,6 +615,9 @@ function renderDepositWarning(
       case "ERR_GENERATING_ADDRESS":
         content =
           "It seems the deposit address was not generated. Please try re-selecting the token and network."
+        break
+      case "ERR_GET_BALANCE":
+        content = "It seems the balance is not available. Please try again."
         break
       default:
         content = "An error occurred. Please try again."
