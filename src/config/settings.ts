@@ -6,7 +6,7 @@ export let settings: Settings = {
   defuseContractId: "intents.near",
   swapExpirySec: 600, // 10 minutes
   /**
-   * Quote query lasts 1.4 seconds in good network conditions
+   * Quote query lasts 1.4 seconds in good network conditions.
    */
   quoteQueryTimeoutMs: 4000,
   quotePollingIntervalMs: 3000,
