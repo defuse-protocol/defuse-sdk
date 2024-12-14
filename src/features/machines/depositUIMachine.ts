@@ -41,7 +41,13 @@ import {
 import { poaBridgeInfoActor } from "./poaBridgeInfoActor"
 
 export type Context = {
-  error: Error | null
+  error: null | {
+    tag: "err"
+    value: {
+      reason: "ERR_GET_BALANCE"
+      error: Error | null
+    }
+  }
   balance: bigint
   nativeBalance: bigint
   /**
@@ -122,6 +128,16 @@ export const depositUIMachine = setup({
     depositTurboActor: depositTurboMachine,
   },
   actions: {
+    logError: (_, event: { error: unknown }) => {
+      console.error(event.error)
+    },
+    setError: assign({
+      error: (_, error: NonNullable<Context["error"]>["value"]) => ({
+        tag: "err" as const,
+        value: error,
+      }),
+    }),
+
     setFormValues: assign({
       formValues: (
         { context },
@@ -444,6 +460,26 @@ export const depositUIMachine = setup({
                             nativeBalance: ({ event }) =>
                               event.output?.nativeBalance ?? 0n,
                           }),
+                        },
+
+                        onError: {
+                          target: "done",
+                          actions: [
+                            {
+                              type: "logError",
+                              params: ({ event }) => event,
+                            },
+                            {
+                              type: "setError",
+                              params: ({ event }) => {
+                                console.log("onError type: setError", event)
+                                return {
+                                  reason: "ERR_GET_BALANCE",
+                                  error: null,
+                                }
+                              },
+                            },
+                          ],
                         },
                       },
                     },
