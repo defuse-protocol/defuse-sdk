@@ -748,7 +748,11 @@ function getBalance(
   // This allows users to deposit either token seamlessly.
   // When the balance is checked, it considers the total of both NEAR and wNEAR,
   // ensuring that users can deposit without needing to convert between the two.
-  if (isBaseToken(token) && token.address === "wrap.near") {
+  if (
+    isUnifiedToken(token) &&
+    token.unifiedAssetId === "near" &&
+    network === BlockchainEnum.NEAR
+  ) {
     return balance + nativeBalance
   }
 
