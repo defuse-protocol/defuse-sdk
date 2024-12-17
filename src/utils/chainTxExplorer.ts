@@ -18,6 +18,8 @@ export function chainTxExplorer(blockchain: SupportedChainName): string | null {
       return "https://solscan.io/tx/"
     case "dogecoin":
       return "https://dogechain.info/tx/"
+    case "aurora":
+      return "https://explorer.aurora.dev/tx/"
     default:
       blockchain satisfies never
       return null

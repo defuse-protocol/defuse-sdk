@@ -511,14 +511,24 @@ const allBlockchains = [
     value: "dogecoin",
   },
   {
-    label: "Turbochain",
+    label: "TurboChain",
     icon: (
       <NetworkIcon
         chainIcon="/static/icons/network/turbochain.png"
-        chainName="Turbochain"
+        chainName="TurboChain"
       />
     ),
     value: "turbochain",
+  },
+  {
+    label: "Aurora",
+    icon: (
+      <NetworkIcon
+        chainIcon="/static/icons/network/aurora.svg"
+        chainName="Aurora"
+      />
+    ),
+    value: "aurora",
   },
 ] as const satisfies Array<{
   label: string
@@ -632,6 +642,7 @@ function chainTypeSatisfiesChainName(
     case chainType === ChainType.EVM && chainName === "arbitrum":
     case chainType === ChainType.EVM && chainName === "base":
     case chainType === ChainType.EVM && chainName === "turbochain":
+    case chainType === ChainType.EVM && chainName === "aurora":
     case chainType === ChainType.Solana && chainName === "solana":
       return true
   }

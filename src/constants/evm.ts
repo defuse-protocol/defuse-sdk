@@ -13,4 +13,5 @@ export const CHAIN_IDS: Record<SupportedChainName, number | undefined> = {
   solana: undefined,
   dogecoin: undefined,
   turbochain: 1313161567,
+  aurora: 1313161554,
 }

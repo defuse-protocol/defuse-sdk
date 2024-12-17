@@ -333,7 +333,9 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
                       ? "base"
                       : network === BlockchainEnum.SOLANA
                         ? "solana"
-                        : null
+                        : network === BlockchainEnum.AURORA
+                          ? "solana"
+                          : null
             }
             depositResult={
               depositNearResult ??
@@ -500,7 +502,7 @@ function getBlockchainsOptions(): Record<
       value: BlockchainEnum.DOGECOIN,
     },
     [BlockchainEnum.TURBOCHAIN]: {
-      label: "Turbochain",
+      label: "TurboChain",
       icon: (
         <NetworkIcon
           chainIcon="/static/icons/network/turbochain.png"
@@ -508,6 +510,16 @@ function getBlockchainsOptions(): Record<
         />
       ),
       value: BlockchainEnum.TURBOCHAIN,
+    },
+    [BlockchainEnum.AURORA]: {
+      label: "Aurora",
+      icon: (
+        <NetworkIcon
+          chainIcon="/static/icons/network/aurora.svg"
+          chainName="aurora"
+        />
+      ),
+      value: BlockchainEnum.AURORA,
     },
   }
   return options
@@ -698,7 +710,8 @@ const networkSelectToLabel: Record<BlockchainEnum, string> = {
   [BlockchainEnum.BITCOIN]: "Bitcoin",
   [BlockchainEnum.SOLANA]: "Solana",
   [BlockchainEnum.DOGECOIN]: "Dogecoin",
-  [BlockchainEnum.TURBOCHAIN]: "Turbochain",
+  [BlockchainEnum.TURBOCHAIN]: "TurboChain",
+  [BlockchainEnum.AURORA]: "Aurora",
 }
 
 function renderDepositHint(
@@ -775,6 +788,7 @@ function getBalance(
       case BlockchainEnum.SOLANA:
       case BlockchainEnum.DOGECOIN:
       case BlockchainEnum.TURBOCHAIN:
+      case BlockchainEnum.AURORA:
         return tokenAddress === "native" ? nativeBalance : balance
       default:
         network satisfies never

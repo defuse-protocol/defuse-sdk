@@ -280,7 +280,10 @@ export const depositUIMachine = setup({
       return context.formValues.network === BlockchainEnum.SOLANA
     },
     isDepositTurbochainRelevant: ({ context }) => {
-      return context.formValues.network === BlockchainEnum.TURBOCHAIN
+      return (
+        context.formValues.network === BlockchainEnum.TURBOCHAIN ||
+        context.formValues.network === BlockchainEnum.AURORA
+      )
     },
     isBalanceSufficientForEstimate: ({ context }) => {
       if (context.formValues.token == null) {
@@ -301,6 +304,7 @@ export const depositUIMachine = setup({
         context.formValues.network != null &&
         context.formValues.network !== BlockchainEnum.NEAR &&
         context.formValues.network !== BlockchainEnum.TURBOCHAIN &&
+        context.formValues.network !== BlockchainEnum.AURORA &&
         !!context.userAddress &&
         !!context.defuseAssetId
       )

@@ -373,6 +373,7 @@ export function getAvailableDepositRoutes(
             passiveDeposit: true,
           }
         case BlockchainEnum.TURBOCHAIN:
+        case BlockchainEnum.AURORA:
           return {
             activeDeposit: false,
             passiveDeposit: false,
@@ -389,6 +390,7 @@ export function getAvailableDepositRoutes(
             passiveDeposit: false,
           }
         case BlockchainEnum.TURBOCHAIN:
+        case BlockchainEnum.AURORA:
           return {
             activeDeposit: true,
             passiveDeposit: false,
@@ -415,6 +417,7 @@ export function getAvailableDepositRoutes(
       switch (network) {
         case BlockchainEnum.NEAR:
         case BlockchainEnum.TURBOCHAIN:
+        case BlockchainEnum.AURORA:
           return {
             activeDeposit: false,
             passiveDeposit: false,
@@ -462,6 +465,8 @@ export function getWalletRpcUrl(network: BlockchainEnum): string {
       return settings.rpcUrls.dogecoin
     case BlockchainEnum.TURBOCHAIN:
       return settings.rpcUrls.turbochain
+    case BlockchainEnum.AURORA:
+      return settings.rpcUrls.aurora
     default:
       network satisfies never
       throw new Error("exhaustive check failed")
