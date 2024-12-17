@@ -1,3 +1,4 @@
+import { computeTotalBalance } from "src/utils/tokenUtils"
 import { type ActorRefFrom, waitFor } from "xstate"
 import { settings } from "../config/settings"
 import { NEP141_STORAGE_TOKEN } from "../constants"
@@ -18,8 +19,7 @@ import {
 import type { State as WithdrawFormContext } from "../features/machines/withdrawFormReducer"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../types/base"
 import { assert } from "../utils/assert"
-import { isBaseToken } from "../utils/token"
-import { computeTotalBalance } from "../utils/tokenUtils"
+import { isBaseToken, isNativeToken } from "../utils/token"
 import { getNEP141StorageRequired } from "./nep141StorageService"
 import {
   type AggregatedQuote,
@@ -204,10 +204,9 @@ async function determineNEP141StorageRequirement(
     return { tag: "ok", value: null }
   }
 
-  const nep141StorageRequired = await checkNEP141StorageRequirements(
-    { formValues },
-    { signal }
-  )
+  const nep141StorageRequired = await checkNEP141StorageRequirements({
+    formValues,
+  })
   if (nep141StorageRequired.tag === "err") {
     return nep141StorageRequired
   }
@@ -347,21 +346,25 @@ async function getBalances(
   }
 }
 
-async function checkNEP141StorageRequirements(
-  {
-    formValues,
-  }: {
-    formValues: WithdrawFormContext
-  },
-  { signal }: { signal: AbortSignal }
-): Promise<
+async function checkNEP141StorageRequirements({
+  formValues,
+}: {
+  formValues: WithdrawFormContext
+}): Promise<
   | { tag: "ok"; value: bigint }
   | { tag: "err"; value: { reason: "ERR_NEP141_STORAGE" } }
 > {
   assert(formValues.parsedRecipient != null, "parsedRecipient is null")
 
+  if (
+    formValues.tokenOut.chainName !== "near" ||
+    isNativeToken(formValues.tokenOut)
+  ) {
+    return { tag: "ok", value: 0n }
+  }
+
   const nep141StorageRequired = await getNEP141StorageRequired({
-    token: formValues.tokenOut,
+    tokenAddress: formValues.tokenOut.address,
     userAccountId: formValues.parsedRecipient,
   })
 
