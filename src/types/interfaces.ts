@@ -254,4 +254,5 @@ export enum BlockchainEnum {
   DOGECOIN = "doge:mainnet",
   TURBOCHAIN = "eth:1313161567",
   AURORA = "eth:1313161554",
+  XRPLEDGER = "xrp:mainnet",
 }

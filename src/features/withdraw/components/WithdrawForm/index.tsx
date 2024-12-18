@@ -530,6 +530,16 @@ const allBlockchains = [
     ),
     value: "aurora",
   },
+  {
+    label: "XRP Ledger",
+    icon: (
+      <NetworkIcon
+        chainIcon="/static/icons/network/xrpledger.svg"
+        chainName="XRP Ledger"
+      />
+    ),
+    value: "xrpledger",
+  },
 ] as const satisfies Array<{
   label: string
   icon: ReactNode

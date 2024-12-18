@@ -72,6 +72,7 @@ export const backgroundBalanceActor = fromPromise(
       // Active deposits through Bitcoin, Dogecoin are not supported, so we don't need to check balances
       case BlockchainEnum.BITCOIN:
       case BlockchainEnum.DOGECOIN:
+      case BlockchainEnum.XRPLEDGER:
         return {
           balance: 0n,
           nativeBalance: 0n,
