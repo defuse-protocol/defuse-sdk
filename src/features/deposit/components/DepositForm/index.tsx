@@ -19,7 +19,6 @@ import { Controller, useFormContext } from "react-hook-form"
 import { TooltipInfo } from "src/components/TooltipInfo"
 import { RESERVED_NEAR_BALANCE } from "src/features/machines/getBalanceMachine"
 import { getPOABridgeInfo } from "src/features/machines/poaBridgeInfoActor"
-import { useDepositStatusSnapshot } from "src/hooks/useDepositStatusSnapshot"
 import { getAvailableDepositRoutes } from "src/services/depositService"
 import { assetNetworkAdapter } from "src/utils/adapters"
 import { http, createPublicClient } from "viem"
@@ -175,12 +174,6 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
     network,
     defuseAssetId
   )
-
-  const { isDepositReceived } = useDepositStatusSnapshot({
-    accountId: userAddress ?? "",
-    chain: network ?? "",
-    generatedAddress: depositAddress ?? "",
-  })
 
   const minDepositAmount = useSelector(poaBridgeInfoRef, (state) => {
     if (token == null || !isBaseToken(token)) {
@@ -413,9 +406,6 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
             generatedAddressResult,
             snapshot: snapshot.context,
           })}
-        {network !== BlockchainEnum.NEAR && isDepositReceived && (
-          <DepositSuccess />
-        )}
         {userAddress && network && !isActiveDeposit && !isPassiveDeposit && (
           <NotSupportedDepositRoute />
         )}
@@ -661,17 +651,6 @@ function NotSupportedDepositRoute() {
         Deposit is not supported for this wallet connection, please try another
         token or network
       </Callout.Text>
-    </Callout.Root>
-  )
-}
-
-function DepositSuccess() {
-  return (
-    <Callout.Root size={"1"} color="green" mt="4">
-      <Callout.Icon>
-        <ExclamationTriangleIcon />
-      </Callout.Icon>
-      <Callout.Text>Deposit received</Callout.Text>
     </Callout.Root>
   )
 }
