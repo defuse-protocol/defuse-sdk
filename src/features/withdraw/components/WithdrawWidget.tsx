@@ -56,8 +56,13 @@ export const WithdrawWidget = (props: WithdrawWidgetProps) => {
                       "Type must be withdraw"
                     )
 
-                    const { tokenOut, quote, nep141Storage, recipient } =
-                      context.intentOperationParams
+                    const {
+                      tokenOut,
+                      quote,
+                      nep141Storage,
+                      recipient,
+                      destinationMemo,
+                    } = context.intentOperationParams
 
                     const totalAmountWithdrawn = calcOperationAmountOut(
                       context.intentOperationParams
@@ -68,6 +73,13 @@ export const WithdrawWidget = (props: WithdrawWidgetProps) => {
                     assert(
                       tokenOutAccountId != null,
                       "Token out account id must be defined"
+                    )
+
+                    assert(
+                      tokenOut.chainName !== "xrpledger"
+                        ? destinationMemo === null
+                        : true,
+                      "Destination memo may exist only for XRP Ledger"
                     )
 
                     const innerMessage = makeInnerSwapAndWithdrawMessage({
@@ -102,6 +114,7 @@ export const WithdrawWidget = (props: WithdrawWidgetProps) => {
                               amount: totalAmountWithdrawn,
                               tokenAccountId: tokenOutAccountId,
                               destinationAddress: recipient,
+                              destinationMemo,
                             }
                         }
                       })(),

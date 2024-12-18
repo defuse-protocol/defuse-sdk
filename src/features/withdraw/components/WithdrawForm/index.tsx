@@ -42,6 +42,7 @@ import { validateAddress } from "../../../../utils/validateAddress"
 import type { intentStatusMachine } from "../../../machines/intentStatusMachine"
 import { getPOABridgeInfo } from "../../../machines/poaBridgeInfoActor"
 import type { PreparationOutput } from "../../../machines/prepareWithdrawActor"
+import { parseDestinationMemo } from "../../../machines/withdrawFormReducer"
 import {
   balanceSelector,
   renderIntentCreationResult,
@@ -58,6 +59,7 @@ export type WithdrawFormNearValues = {
   amountIn: string
   recipient: string
   blockchain: SupportedChainName
+  destinationMemo?: string
 }
 
 type WithdrawFormProps = WithdrawWidgetProps
@@ -220,6 +222,12 @@ export const WithdrawForm = ({
         actorRef.send({
           type: "WITHDRAW_FORM.RECIPIENT",
           params: { recipient: value[name] ?? "" },
+        })
+      }
+      if (name === "destinationMemo") {
+        actorRef.send({
+          type: "WITHDRAW_FORM.UPDATE_DESTINATION_MEMO",
+          params: { destinationMemo: value[name] ?? "" },
         })
       }
       if (name === "blockchain") {
@@ -401,6 +409,41 @@ export const WithdrawForm = ({
                   </Box>
                 )}
               </Flex>
+
+              {blockchain === "xrpledger" && (
+                <Flex direction={"column"} gap={"1"}>
+                  <Box px={"2"} asChild>
+                    <Text size={"1"} weight={"bold"}>
+                      Destination Tag (optional)
+                    </Text>
+                  </Box>
+                  <TextField.Root
+                    size={"3"}
+                    {...register("destinationMemo", {
+                      validate: {
+                        uint32: (value) => {
+                          if (
+                            parseDestinationMemo(
+                              value ?? "",
+                              tokenOut.chainName
+                            ) == null
+                          ) {
+                            return "Should be a number"
+                          }
+                        },
+                      },
+                    })}
+                    placeholder="Enter destination tag"
+                  />
+                  {errors.destinationMemo && (
+                    <Box px={"2"} asChild>
+                      <Text size={"1"} color={"red"} weight={"medium"}>
+                        {errors.destinationMemo.message}
+                      </Text>
+                    </Box>
+                  )}
+                </Flex>
+              )}
             </Flex>
 
             <Flex justify={"between"} px={"2"}>
