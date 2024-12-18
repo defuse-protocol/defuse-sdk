@@ -17,6 +17,7 @@ import { useSelector } from "@xstate/react"
 import { providers } from "near-api-js"
 import { Fragment, type ReactNode, useEffect, useMemo } from "react"
 import { Controller, useForm } from "react-hook-form"
+import { useTokensUsdPrices } from "src/hooks/useTokensUsdPrices"
 import type { ActorRefFrom } from "xstate"
 import { ButtonCustom } from "../../../../components/Button"
 import { EmptyIcon } from "../../../../components/EmptyIcon"
@@ -54,7 +55,6 @@ import {
   totalAmountReceivedSelector,
 } from "./selectors"
 import styles from "./styles.module.css"
-import { HARDCODED_USD_PRICE_FOR_TOKENS } from "./withdrawConstants"
 
 export type WithdrawFormNearValues = {
   amountIn: string
@@ -142,6 +142,7 @@ export const WithdrawForm = ({
     balanceSelector(token)
   )
 
+  const { data: tokensUsdPricesMap } = useTokensUsdPrices()
   const {
     handleSubmit,
     register,
@@ -269,13 +270,14 @@ export const WithdrawForm = ({
   )
 
   const renderLongWithdrawWarning = useMemo(() => {
+    if (tokensUsdPricesMap === undefined) return false
     const tokenIn = token.symbol
-    const tokenPrice = HARDCODED_USD_PRICE_FOR_TOKENS[tokenIn]
+    const tokenPrice = tokensUsdPricesMap[tokenIn]?.price
     if (tokenPrice === undefined) return false
     const tokenAmount = Number(amountIn)
     if (Number.isNaN(tokenAmount)) return false
     return tokenAmount * tokenPrice >= LONG_WITHDRAWAL_THRESHOLD_USD
-  }, [token, amountIn])
+  }, [token, amountIn, tokensUsdPricesMap])
 
   return (
     <div className={styles.container}>
@@ -630,11 +632,15 @@ function renderMinWithdrawalAmount(
     )
   )
 }
-
-const LONG_WITHDRAWAL_THRESHOLD_USD = 5000
+const LONG_WITHDRAWAL_THRESHOLD_USD = 4990
 function LongWithdrawWarning() {
   return (
-    <Callout.Root size="1" color="yellow" variant="soft">
+    <Callout.Root
+      size="1"
+      color="yellow"
+      variant="soft"
+      className={styles.longWithdrawCalloutRoot}
+    >
       <Callout.Text size="1" weight="bold">
         Withdrawal over ~5,000$ may take longer to process.
       </Callout.Text>
