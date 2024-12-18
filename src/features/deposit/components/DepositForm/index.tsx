@@ -21,8 +21,10 @@ import { RESERVED_NEAR_BALANCE } from "src/features/machines/getBalanceMachine"
 import { getPOABridgeInfo } from "src/features/machines/poaBridgeInfoActor"
 import { useDepositStatusSnapshot } from "src/hooks/useDepositStatusSnapshot"
 import { getAvailableDepositRoutes } from "src/services/depositService"
-import { assetNetworkAdapter } from "src/utils/adapters"
-import { http, createPublicClient } from "viem"
+import {
+  assetNetworkAdapter,
+  reverseAssetNetworkAdapter,
+} from "src/utils/adapters"
 import { AssetComboIcon } from "../../../../components/Asset/AssetComboIcon"
 import { BlockMultiBalances } from "../../../../components/Block/BlockMultiBalances"
 import { ButtonCustom } from "../../../../components/Button"
@@ -323,19 +325,7 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
           )}
           <Deposits
             chainName={
-              network === BlockchainEnum.NEAR
-                ? "near"
-                : network === BlockchainEnum.TURBOCHAIN
-                  ? "turbochain"
-                  : network === BlockchainEnum.ETHEREUM
-                    ? "eth"
-                    : network === BlockchainEnum.BASE
-                      ? "base"
-                      : network === BlockchainEnum.SOLANA
-                        ? "solana"
-                        : network === BlockchainEnum.AURORA
-                          ? "solana"
-                          : null
+              network != null ? reverseAssetNetworkAdapter[network] : null
             }
             depositResult={
               depositNearResult ??
