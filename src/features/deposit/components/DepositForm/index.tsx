@@ -20,8 +20,10 @@ import { TooltipInfo } from "src/components/TooltipInfo"
 import { RESERVED_NEAR_BALANCE } from "src/features/machines/getBalanceMachine"
 import { getPOABridgeInfo } from "src/features/machines/poaBridgeInfoActor"
 import { getAvailableDepositRoutes } from "src/services/depositService"
-import { assetNetworkAdapter } from "src/utils/adapters"
-import { http, createPublicClient } from "viem"
+import {
+  assetNetworkAdapter,
+  reverseAssetNetworkAdapter,
+} from "src/utils/adapters"
 import { AssetComboIcon } from "../../../../components/Asset/AssetComboIcon"
 import { BlockMultiBalances } from "../../../../components/Block/BlockMultiBalances"
 import { ButtonCustom } from "../../../../components/Button"
@@ -316,17 +318,7 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
           )}
           <Deposits
             chainName={
-              network === BlockchainEnum.NEAR
-                ? "near"
-                : network === BlockchainEnum.TURBOCHAIN
-                  ? "turbochain"
-                  : network === BlockchainEnum.ETHEREUM
-                    ? "eth"
-                    : network === BlockchainEnum.BASE
-                      ? "base"
-                      : network === BlockchainEnum.SOLANA
-                        ? "solana"
-                        : null
+              network != null ? reverseAssetNetworkAdapter[network] : null
             }
             depositResult={
               depositNearResult ??
@@ -490,7 +482,7 @@ function getBlockchainsOptions(): Record<
       value: BlockchainEnum.DOGECOIN,
     },
     [BlockchainEnum.TURBOCHAIN]: {
-      label: "Turbochain",
+      label: "TurboChain",
       icon: (
         <NetworkIcon
           chainIcon="/static/icons/network/turbochain.png"
@@ -498,6 +490,26 @@ function getBlockchainsOptions(): Record<
         />
       ),
       value: BlockchainEnum.TURBOCHAIN,
+    },
+    [BlockchainEnum.AURORA]: {
+      label: "Aurora",
+      icon: (
+        <NetworkIcon
+          chainIcon="/static/icons/network/aurora.svg"
+          chainName="aurora"
+        />
+      ),
+      value: BlockchainEnum.AURORA,
+    },
+    [BlockchainEnum.XRPLEDGER]: {
+      label: "XRP Ledger",
+      icon: (
+        <NetworkIcon
+          chainIcon="/static/icons/network/xrpledger.svg"
+          chainName="XRP Ledger"
+        />
+      ),
+      value: BlockchainEnum.XRPLEDGER,
     },
   }
   return options
@@ -677,7 +689,9 @@ const networkSelectToLabel: Record<BlockchainEnum, string> = {
   [BlockchainEnum.BITCOIN]: "Bitcoin",
   [BlockchainEnum.SOLANA]: "Solana",
   [BlockchainEnum.DOGECOIN]: "Dogecoin",
-  [BlockchainEnum.TURBOCHAIN]: "Turbochain",
+  [BlockchainEnum.TURBOCHAIN]: "TurboChain",
+  [BlockchainEnum.AURORA]: "Aurora",
+  [BlockchainEnum.XRPLEDGER]: "XRP Ledger",
 }
 
 function renderDepositHint(
@@ -754,6 +768,8 @@ function getBalance(
       case BlockchainEnum.SOLANA:
       case BlockchainEnum.DOGECOIN:
       case BlockchainEnum.TURBOCHAIN:
+      case BlockchainEnum.AURORA:
+      case BlockchainEnum.XRPLEDGER:
         return tokenAddress === "native" ? nativeBalance : balance
       default:
         network satisfies never

@@ -1,4 +1,8 @@
 import { PublicKey } from "@solana/web3.js"
+import {
+  isValidClassicAddress as xrp_isValidClassicAddress,
+  isValidXAddress as xrp_isValidXAddress,
+} from "ripple-address-codec"
 import type { SupportedChainName } from "../types"
 import { isLegitAccountId } from "./near"
 
@@ -13,6 +17,7 @@ export function validateAddress(
     case "base":
     case "arbitrum":
     case "turbochain":
+    case "aurora":
       // todo: Do we need to check checksum?
       return /^0x[a-fA-F0-9]{40}$/.test(address)
     case "bitcoin":
@@ -31,6 +36,9 @@ export function validateAddress(
 
     case "dogecoin":
       return /^[DA][1-9A-HJ-NP-Za-km-z]{25,33}$/.test(address)
+
+    case "xrpledger":
+      return xrp_isValidClassicAddress(address) || xrp_isValidXAddress(address)
 
     default:
       blockchain satisfies never

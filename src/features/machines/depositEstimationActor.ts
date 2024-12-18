@@ -48,7 +48,8 @@ export const depositEstimateMaxValueActor = fromPromise(
       case BlockchainEnum.ETHEREUM:
       case BlockchainEnum.BASE:
       case BlockchainEnum.ARBITRUM:
-      case BlockchainEnum.TURBOCHAIN: {
+      case BlockchainEnum.TURBOCHAIN:
+      case BlockchainEnum.AURORA: {
         if (
           !validateAddress(userAddress, reverseAssetNetworkAdapter[network]) ||
           generateAddress == null
@@ -94,6 +95,7 @@ export const depositEstimateMaxValueActor = fromPromise(
       // Active deposits through Bitcoin, Dogecoin are not supported, so no network fees
       case BlockchainEnum.BITCOIN:
       case BlockchainEnum.DOGECOIN:
+      case BlockchainEnum.XRPLEDGER:
         return 0n
       default:
         network satisfies never

@@ -186,6 +186,7 @@ describe("makeInnerSwapAndWithdrawMessage()", () => {
         amount: 200n,
         tokenAccountId: "bar-poa-bridge-token.near",
         destinationAddress: "0xdead",
+        destinationMemo: null,
       },
       signerId: userAddressToDefuseUserId("user.near", "near"),
       deadlineTimestamp: DEADLINE,
@@ -201,6 +202,37 @@ describe("makeInnerSwapAndWithdrawMessage()", () => {
             "memo": "WITHDRAW_TO:0xdead",
             "receiver_id": "bar-poa-bridge-token.near",
             "token": "bar-poa-bridge-token.near",
+          },
+        ],
+        "signer_id": "user.near",
+      }
+    `)
+  })
+
+  it("generates message for withdrawing via POA Bridge to XRP Ledger", () => {
+    const innerMessage = makeInnerSwapAndWithdrawMessage({
+      tokenDeltas: null,
+      withdrawParams: {
+        type: "via_poa_bridge",
+        amount: 200n,
+        tokenAccountId: "xrp.omft.near",
+        destinationAddress: "rJHkpNJVRUKMGV3NV6FNccySKNwEFF9C4c",
+        destinationMemo: "2682497019",
+      },
+      signerId: userAddressToDefuseUserId("user.near", "near"),
+      deadlineTimestamp: DEADLINE,
+    })
+
+    expect(innerMessage).toMatchInlineSnapshot(`
+      {
+        "deadline": "2024-01-01T12:00:00.000Z",
+        "intents": [
+          {
+            "amount": "200",
+            "intent": "ft_withdraw",
+            "memo": "WITHDRAW_TO:rJHkpNJVRUKMGV3NV6FNccySKNwEFF9C4c:2682497019",
+            "receiver_id": "xrp.omft.near",
+            "token": "xrp.omft.near",
           },
         ],
         "signer_id": "user.near",
