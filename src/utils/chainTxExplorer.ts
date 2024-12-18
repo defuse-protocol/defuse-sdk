@@ -20,6 +20,8 @@ export function chainTxExplorer(blockchain: SupportedChainName): string | null {
       return "https://dogechain.info/tx/"
     case "aurora":
       return "https://explorer.aurora.dev/tx/"
+    case "xrpledger":
+      return "https://livenet.xrpl.org/transactions/"
     default:
       blockchain satisfies never
       return null

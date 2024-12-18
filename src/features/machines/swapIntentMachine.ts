@@ -58,6 +58,7 @@ type IntentOperationParams =
       nep141Storage: NEP141StorageRequirement | null
       directWithdrawalAmount: bigint
       recipient: string
+      destinationMemo: string | null
     }
 
 export type IntentDescription =

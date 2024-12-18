@@ -1,5 +1,9 @@
 import { type ActorRef, type Snapshot, fromTransition } from "xstate"
-import type { BaseTokenInfo, UnifiedTokenInfo } from "../../types/base"
+import type {
+  BaseTokenInfo,
+  SupportedChainName,
+  UnifiedTokenInfo,
+} from "../../types/base"
 import { isBaseToken } from "../../utils"
 import { assert } from "../../utils/assert"
 import { validateAddress } from "../../utils/validateAddress"
@@ -10,6 +14,7 @@ const fields: Fields = [
   "tokenOut",
   "parsedAmount",
   "parsedRecipient",
+  "parsedDestinationMemo",
 ]
 
 export type ParentEvents = {
@@ -55,6 +60,12 @@ export type Events =
         recipient: string
       }
     }
+  | {
+      type: "WITHDRAW_FORM.UPDATE_DESTINATION_MEMO"
+      params: {
+        destinationMemo: string
+      }
+    }
 
 export type State = {
   parentRef: ParentActor
@@ -64,6 +75,8 @@ export type State = {
   parsedAmount: bigint | null
   recipient: string
   parsedRecipient: string | null
+  destinationMemo: string
+  parsedDestinationMemo: string | null
 }
 
 export const withdrawFormReducer = fromTransition(
@@ -83,6 +96,8 @@ export const withdrawFormReducer = fromTransition(
           tokenOut,
           recipient: "",
           parsedRecipient: null,
+          destinationMemo: "",
+          parsedDestinationMemo: null,
         }
         break
       }
@@ -96,6 +111,8 @@ export const withdrawFormReducer = fromTransition(
           tokenOut,
           recipient: "",
           parsedRecipient: null,
+          destinationMemo: "",
+          parsedDestinationMemo: null,
         }
         break
       }
@@ -114,6 +131,17 @@ export const withdrawFormReducer = fromTransition(
           ...state,
           recipient,
           parsedRecipient,
+        }
+        break
+      }
+      case "WITHDRAW_FORM.UPDATE_DESTINATION_MEMO": {
+        newState = {
+          ...state,
+          destinationMemo: event.params.destinationMemo,
+          parsedDestinationMemo: parseDestinationMemo(
+            event.params.destinationMemo,
+            state.tokenOut.chainName
+          ),
         }
         break
       }
@@ -151,6 +179,8 @@ export const withdrawFormReducer = fromTransition(
       parsedAmount: null,
       recipient: "",
       parsedRecipient: null,
+      destinationMemo: "",
+      parsedDestinationMemo: null,
     }
   }
 )
@@ -186,4 +216,17 @@ function getParsedRecipient(
   }
 
   return recipient
+}
+
+export function parseDestinationMemo(
+  memo: string,
+  chainName: SupportedChainName
+): string | null {
+  if (chainName !== "xrpledger") return null
+  if (memo.trim() === "") return null
+
+  const num = Number(memo.trim())
+  if (!Number.isInteger(num) || num < 0 || num > 4294967295) return null
+
+  return num.toString()
 }

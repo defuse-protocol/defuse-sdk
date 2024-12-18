@@ -511,6 +511,16 @@ function getBlockchainsOptions(): Record<
       ),
       value: BlockchainEnum.AURORA,
     },
+    [BlockchainEnum.XRPLEDGER]: {
+      label: "XRP Ledger",
+      icon: (
+        <NetworkIcon
+          chainIcon="/static/icons/network/xrpledger.svg"
+          chainName="XRP Ledger"
+        />
+      ),
+      value: BlockchainEnum.XRPLEDGER,
+    },
   }
   return options
 }
@@ -702,6 +712,7 @@ const networkSelectToLabel: Record<BlockchainEnum, string> = {
   [BlockchainEnum.DOGECOIN]: "Dogecoin",
   [BlockchainEnum.TURBOCHAIN]: "TurboChain",
   [BlockchainEnum.AURORA]: "Aurora",
+  [BlockchainEnum.XRPLEDGER]: "XRP Ledger",
 }
 
 function renderDepositHint(
@@ -779,6 +790,7 @@ function getBalance(
       case BlockchainEnum.DOGECOIN:
       case BlockchainEnum.TURBOCHAIN:
       case BlockchainEnum.AURORA:
+      case BlockchainEnum.XRPLEDGER:
         return tokenAddress === "native" ? nativeBalance : balance
       default:
         network satisfies never

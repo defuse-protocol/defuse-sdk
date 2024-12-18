@@ -574,6 +574,7 @@ export const withdrawUIMachine = setup({
               directWithdrawalAmount:
                 context.preparationOutput.value.directWithdrawAvailable,
               recipient: recipient,
+              destinationMemo: formValues.parsedDestinationMemo,
             },
           }
         },
