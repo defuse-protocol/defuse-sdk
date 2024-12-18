@@ -422,11 +422,11 @@ export const WithdrawForm = ({
                     {...register("destinationMemo", {
                       validate: {
                         uint32: (value) => {
+                          if (value == null || value === "") return
+
                           if (
-                            parseDestinationMemo(
-                              value ?? "",
-                              tokenOut.chainName
-                            ) == null
+                            parseDestinationMemo(value, tokenOut.chainName) ==
+                            null
                           ) {
                             return "Should be a number"
                           }
