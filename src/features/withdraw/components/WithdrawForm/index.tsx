@@ -15,7 +15,7 @@ import {
 } from "@radix-ui/themes"
 import { useSelector } from "@xstate/react"
 import { providers } from "near-api-js"
-import { Fragment, type ReactNode, useEffect } from "react"
+import { Fragment, type ReactNode, useEffect, useMemo } from "react"
 import { Controller, useForm } from "react-hook-form"
 import type { ActorRefFrom } from "xstate"
 import { ButtonCustom } from "../../../../components/Button"
@@ -54,6 +54,7 @@ import {
   totalAmountReceivedSelector,
 } from "./selectors"
 import styles from "./styles.module.css"
+import { HARDCODED_USD_PRICE_FOR_TOKENS } from "./withdrawConstants"
 
 export type WithdrawFormNearValues = {
   amountIn: string
@@ -267,6 +268,15 @@ export const WithdrawForm = ({
     tokenOut.chainName
   )
 
+  const renderLongWithdrawWarning = useMemo(() => {
+    const tokenIn = token.symbol
+    const tokenPrice = HARDCODED_USD_PRICE_FOR_TOKENS[tokenIn]
+    if (tokenPrice === undefined) return false
+    const tokenAmount = Number(amountIn)
+    if (Number.isNaN(tokenAmount)) return false
+    return tokenAmount * tokenPrice >= LONG_WITHDRAWAL_THRESHOLD_USD
+  }, [token, amountIn])
+
   return (
     <div className={styles.container}>
       <Flex direction={"column"} gap={"2"} className={styles.formWrapper}>
@@ -325,6 +335,7 @@ export const WithdrawForm = ({
             />
 
             {renderMinWithdrawalAmount(minWithdrawalAmount, tokenOut)}
+            {renderLongWithdrawWarning ? <LongWithdrawWarning /> : null}
 
             <Flex direction={"column"} gap={"2"}>
               <Box px={"2"} asChild>
@@ -617,6 +628,24 @@ function renderMinWithdrawalAmount(
         </Callout.Text>
       </Callout.Root>
     )
+  )
+}
+
+const LONG_WITHDRAWAL_THRESHOLD_USD = 5000
+function LongWithdrawWarning() {
+  return (
+    <Callout.Root size={"1"} color="yellow" variant="surface">
+      <Callout.Icon>
+        <InfoCircledIcon />
+      </Callout.Icon>
+      <Callout.Text>
+        Withdrawal bigger than&nbsp;
+        <Text size={"1"} weight={"bold"}>
+          ~{LONG_WITHDRAWAL_THRESHOLD_USD}$
+        </Text>{" "}
+        may take longer to process
+      </Callout.Text>
+    </Callout.Root>
   )
 }
 
