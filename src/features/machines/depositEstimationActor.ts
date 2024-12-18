@@ -48,7 +48,8 @@ export const depositEstimateMaxValueActor = fromPromise(
       case BlockchainEnum.ETHEREUM:
       case BlockchainEnum.BASE:
       case BlockchainEnum.ARBITRUM:
-      case BlockchainEnum.TURBOCHAIN: {
+      case BlockchainEnum.TURBOCHAIN:
+      case BlockchainEnum.AURORA: {
         if (
           !validateAddress(userAddress, reverseAssetNetworkAdapter[network]) ||
           generateAddress == null

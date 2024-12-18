@@ -26,6 +26,7 @@ import {
 import { ChainType } from "../types"
 import type { Transaction } from "../types/deposit"
 import { type DefuseUserId, userAddressToDefuseUserId } from "../utils/defuse"
+import { getEVMChainId } from "../utils/evmChainId"
 import { getDepositAddress, getSupportedTokens } from "./poaBridgeClient"
 
 const FT_DEPOSIT_GAS = `30${"0".repeat(12)}` // 30 TGAS
@@ -174,16 +175,22 @@ export function createDepositFromSiloTransaction(
       userAddressToDefuseUserId(userAddress, ChainType.EVM),
     ],
   })
-  return {
+  const tx: SendTransactionEVMParams = {
     from: getAddress(userAddress),
     to: getAddress(siloAddress),
     data,
     value,
-    // Fake gas price for EVM wallets as relayer doesn't take fee on relaing transaction to siloToSilo
-    gasPrice: 1n,
-    gas: 2_300_000n,
     chainId,
   }
+
+  if (chainId === getEVMChainId("turbochain")) {
+    // Fake gas price for EVM wallets as relayer doesn't take fee for relaying
+    // a transaction to siloToSilo contract.
+    tx.gas = 2_300_000n
+    tx.gasPrice = 1n
+  }
+
+  return tx
 }
 
 export function createDepositEVMNativeTransaction(
@@ -373,6 +380,7 @@ export function getAvailableDepositRoutes(
             passiveDeposit: true,
           }
         case BlockchainEnum.TURBOCHAIN:
+        case BlockchainEnum.AURORA:
           return {
             activeDeposit: false,
             passiveDeposit: false,
@@ -389,6 +397,7 @@ export function getAvailableDepositRoutes(
             passiveDeposit: false,
           }
         case BlockchainEnum.TURBOCHAIN:
+        case BlockchainEnum.AURORA:
           return {
             activeDeposit: true,
             passiveDeposit: false,
@@ -415,6 +424,7 @@ export function getAvailableDepositRoutes(
       switch (network) {
         case BlockchainEnum.NEAR:
         case BlockchainEnum.TURBOCHAIN:
+        case BlockchainEnum.AURORA:
           return {
             activeDeposit: false,
             passiveDeposit: false,
@@ -462,6 +472,8 @@ export function getWalletRpcUrl(network: BlockchainEnum): string {
       return settings.rpcUrls.dogecoin
     case BlockchainEnum.TURBOCHAIN:
       return settings.rpcUrls.turbochain
+    case BlockchainEnum.AURORA:
+      return settings.rpcUrls.aurora
     default:
       network satisfies never
       throw new Error("exhaustive check failed")

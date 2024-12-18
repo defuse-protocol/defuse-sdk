@@ -87,6 +87,7 @@ export const WithdrawWidget = (props: WithdrawWidgetProps) => {
                                 nep141Storage?.requiredStorageNEAR ?? 0n,
                             }
                           case "turbochain":
+                          case "aurora":
                             return {
                               type: "to_aurora_engine",
                               amount: totalAmountWithdrawn,
