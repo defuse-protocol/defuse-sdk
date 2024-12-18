@@ -634,16 +634,9 @@ function renderMinWithdrawalAmount(
 const LONG_WITHDRAWAL_THRESHOLD_USD = 5000
 function LongWithdrawWarning() {
   return (
-    <Callout.Root size={"1"} color="yellow" variant="surface">
-      <Callout.Icon>
-        <InfoCircledIcon />
-      </Callout.Icon>
-      <Callout.Text>
-        Withdrawal bigger than&nbsp;
-        <Text size={"1"} weight={"bold"}>
-          ~{LONG_WITHDRAWAL_THRESHOLD_USD}$
-        </Text>{" "}
-        may take longer to process
+    <Callout.Root size="1" color="yellow" variant="soft">
+      <Callout.Text size="1" weight="bold">
+        Withdrawal over ~5,000$ may take longer to process.
       </Callout.Text>
     </Callout.Root>
   )
