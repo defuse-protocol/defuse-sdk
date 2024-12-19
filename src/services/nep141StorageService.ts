@@ -17,8 +17,7 @@ export type Output =
 
 /**
  * Get the amount of NEP-141 storage required for the user to store the token.
- * @param tokenAddress.
- * @param tokenChainName.
+ * @param token The token to check.
  * @param userAccountId The user's NEAR account ID.
  * @returns The amount of NEAR required for the user to store the token; 0 means no storage required.
  */
