@@ -13,10 +13,6 @@ import {
   getAddress,
 } from "viem"
 import { settings } from "../config/settings"
-import {
-  getNearNep141MinStorageBalance,
-  getNearNep141StorageBalance,
-} from "../features/machines/getBalanceMachine"
 import { getNearTxSuccessValue } from "../features/machines/getTxMachine"
 import {
   BlockchainEnum,
@@ -53,85 +49,83 @@ const FT_TRANSFER_GAS = `50${"0".repeat(12)}` // 30 TGAS
 export function createBatchDepositNearNep141Transaction(
   assetAccountId: string,
   amount: bigint,
-  isStorageDepositRequired: boolean,
-  minStorageBalance: bigint
+  storageDepositPayment: bigint
 ): Transaction["NEAR"][] {
+  const actions: Transaction["NEAR"]["actions"] = []
+
+  if (storageDepositPayment > 0n) {
+    actions.push({
+      type: "FunctionCall" as const,
+      params: {
+        methodName: "storage_deposit",
+        args: {
+          account_id: settings.defuseContractId,
+          registration_only: true,
+        },
+        gas: FT_DEPOSIT_GAS,
+        deposit: storageDepositPayment.toString(),
+      },
+    })
+  }
+
+  actions.push({
+    type: "FunctionCall",
+    params: {
+      methodName: "ft_transfer_call",
+      args: {
+        receiver_id: settings.defuseContractId,
+        amount: amount.toString(),
+        msg: "",
+      },
+      gas: FT_TRANSFER_GAS,
+      deposit: "1",
+    },
+  })
+
   return [
     {
       receiverId: assetAccountId,
-      actions: [
-        ...(isStorageDepositRequired
-          ? [
-              {
-                type: "FunctionCall" as const,
-                params: {
-                  methodName: "storage_deposit",
-                  args: {
-                    account_id: settings.defuseContractId,
-                    registration_only: true,
-                  },
-                  gas: FT_DEPOSIT_GAS,
-                  deposit: minStorageBalance.toString(),
-                },
-              },
-            ]
-          : []),
-        {
-          type: "FunctionCall",
-          params: {
-            methodName: "ft_transfer_call",
-            args: {
-              receiver_id: settings.defuseContractId,
-              amount: amount.toString(),
-              msg: "",
-            },
-            gas: FT_TRANSFER_GAS,
-            deposit: "1",
-          },
-        },
-      ],
+      actions,
     },
   ]
 }
 
 export function createBatchDepositNearNativeTransaction(
-  assetAccountId: string,
   amount: bigint,
-  wrapAmount: bigint,
-  isWrapNearRequired: boolean,
-  minStorageBalance: bigint
+  nearAmountToWrap: bigint,
+  storagePayment: bigint
 ): Transaction["NEAR"][] {
+  const actions: Transaction["NEAR"]["actions"] = []
+
+  if (nearAmountToWrap > 0n) {
+    actions.push({
+      type: "FunctionCall" as const,
+      params: {
+        methodName: "near_deposit",
+        args: {},
+        gas: FT_DEPOSIT_GAS,
+        deposit: (nearAmountToWrap + storagePayment).toString(),
+      },
+    })
+  }
+
+  actions.push({
+    type: "FunctionCall",
+    params: {
+      methodName: "ft_transfer_call",
+      args: {
+        receiver_id: settings.defuseContractId,
+        amount: amount.toString(),
+        msg: "",
+      },
+      gas: FT_TRANSFER_GAS,
+      deposit: "1",
+    },
+  })
   return [
     {
-      receiverId: assetAccountId,
-      actions: [
-        ...(isWrapNearRequired
-          ? [
-              {
-                type: "FunctionCall" as const,
-                params: {
-                  methodName: "near_deposit",
-                  args: {},
-                  gas: FT_DEPOSIT_GAS,
-                  deposit: (wrapAmount + minStorageBalance).toString(),
-                },
-              },
-            ]
-          : []),
-        {
-          type: "FunctionCall",
-          params: {
-            methodName: "ft_transfer_call",
-            args: {
-              receiver_id: settings.defuseContractId,
-              amount: amount.toString(),
-              msg: "",
-            },
-            gas: FT_TRANSFER_GAS,
-            deposit: "1",
-          },
-        },
-      ],
+      receiverId: "wrap.near",
+      actions,
     },
   ]
 }
@@ -269,29 +263,6 @@ export async function checkNearTransactionValidity(
   })
   // Check if input amount is equal to the success value
   return successValue === BigInt(amount)
-}
-
-export async function isStorageDepositRequired(
-  contractId: string,
-  accountId: string
-): Promise<boolean> {
-  // Aurora is a special case and does not require storage deposit
-  if (contractId === "aurora") {
-    return false
-  }
-  const storageBalance = await getNearNep141StorageBalance({
-    contractId,
-    accountId,
-  })
-  return storageBalance < (await getMinimumStorageBalance(contractId))
-}
-
-export async function getMinimumStorageBalance(
-  contractId: string
-): Promise<bigint> {
-  return getNearNep141MinStorageBalance({
-    contractId,
-  })
 }
 
 export async function getAllowance(
