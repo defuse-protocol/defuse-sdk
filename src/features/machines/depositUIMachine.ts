@@ -632,7 +632,7 @@ export const depositUIMachine = setup({
         },
 
         onDone: {
-          target: "updateBalance",
+          target: "editing.preparation",
 
           actions: [
             {
@@ -642,16 +642,6 @@ export const depositUIMachine = setup({
             { type: "clearUIDepositAmount" },
           ],
 
-          reenter: true,
-        },
-      },
-    },
-
-    // Delay the request by 2 seconds to ensure accurate balance retrieval due to NEAR RPC latency issues.
-    updateBalance: {
-      after: {
-        "2000": {
-          target: "editing.preparation",
           reenter: true,
         },
       },
@@ -687,7 +677,7 @@ export const depositUIMachine = setup({
         },
 
         onDone: {
-          target: "updateBalance",
+          target: "editing.preparation",
 
           actions: [
             {
@@ -731,7 +721,7 @@ export const depositUIMachine = setup({
         },
 
         onDone: {
-          target: "updateBalance",
+          target: "editing.preparation",
 
           actions: [
             {
@@ -771,7 +761,7 @@ export const depositUIMachine = setup({
         },
 
         onDone: {
-          target: "updateBalance",
+          target: "editing.preparation",
 
           actions: [
             {
