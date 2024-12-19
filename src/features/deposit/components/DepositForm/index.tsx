@@ -621,6 +621,10 @@ function renderDepositWarning(
       case "ERR_GET_BALANCE":
         content = "It seems the balance is not available. Please try again."
         break
+      case "ERR_MIN_AMOUNT":
+        content =
+          "It seems the amount is less than minimum deposit amount. Please increase the amount and try again."
+        break
       default:
         content = "An error occurred. Please try again."
     }
