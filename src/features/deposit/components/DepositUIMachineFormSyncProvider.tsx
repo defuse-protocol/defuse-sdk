@@ -19,13 +19,7 @@ export function DepositUIMachineFormSyncProvider({
 
   useEffect(() => {
     const sub = watch(async (value, { name }) => {
-      if (name === "network") {
-        actorRef.send({
-          type: "INPUT",
-          params: { [name]: value[name] },
-        })
-      }
-      if (name === "amount") {
+      if (name === "network" || name === "amount") {
         actorRef.send({
           type: "INPUT",
           params: { [name]: value[name] },
