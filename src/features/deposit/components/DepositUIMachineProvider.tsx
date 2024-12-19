@@ -105,7 +105,7 @@ export function DepositUIMachineProvider({
                 let tx: Transaction["NEAR"][] = []
 
                 const storageDepositPayment = await getNEP141StorageRequired({
-                  tokenAddress,
+                  token: asset,
                   userAccountId: settings.defuseContractId,
                 })
 
@@ -115,13 +115,9 @@ export function DepositUIMachineProvider({
                 )
 
                 if (tokenAddress === "wrap.near") {
-                  const isWrapNearRequired =
-                    Number(amount) > Number(balance || 0n)
                   tx = createBatchDepositNearNativeTransaction(
-                    tokenAddress,
                     amount,
-                    amount - balance,
-                    isWrapNearRequired,
+                    amount - (balance || 0n),
                     storageDepositPayment.value
                   )
                 } else {

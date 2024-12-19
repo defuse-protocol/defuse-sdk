@@ -356,15 +356,8 @@ async function checkNEP141StorageRequirements({
 > {
   assert(formValues.parsedRecipient != null, "parsedRecipient is null")
 
-  if (
-    formValues.tokenOut.chainName !== "near" ||
-    isNativeToken(formValues.tokenOut)
-  ) {
-    return { tag: "ok", value: 0n }
-  }
-
   const nep141StorageRequired = await getNEP141StorageRequired({
-    tokenAddress: formValues.tokenOut.address,
+    token: formValues.tokenOut,
     userAccountId: formValues.parsedRecipient,
   })
 
