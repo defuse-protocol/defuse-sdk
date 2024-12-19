@@ -100,7 +100,7 @@ export function DepositUIMachineProvider({
                       (token) => token.chainName === "near"
                     )
 
-                assert(tokenToDeposit, "Token address is not defined")
+                assert(tokenToDeposit, "Token to deposit is not defined")
 
                 let tx: Transaction["NEAR"][] = []
 
