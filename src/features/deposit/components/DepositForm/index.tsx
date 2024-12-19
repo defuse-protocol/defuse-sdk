@@ -19,10 +19,11 @@ import { Controller, useFormContext } from "react-hook-form"
 import { TooltipInfo } from "src/components/TooltipInfo"
 import { RESERVED_NEAR_BALANCE } from "src/features/machines/getBalanceMachine"
 import { getPOABridgeInfo } from "src/features/machines/poaBridgeInfoActor"
-import { useDepositStatusSnapshot } from "src/hooks/useDepositStatusSnapshot"
 import { getAvailableDepositRoutes } from "src/services/depositService"
-import { assetNetworkAdapter } from "src/utils/adapters"
-import { http, createPublicClient } from "viem"
+import {
+  assetNetworkAdapter,
+  reverseAssetNetworkAdapter,
+} from "src/utils/adapters"
 import { AssetComboIcon } from "../../../../components/Asset/AssetComboIcon"
 import { BlockMultiBalances } from "../../../../components/Block/BlockMultiBalances"
 import { ButtonCustom } from "../../../../components/Button"
@@ -176,12 +177,6 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
     defuseAssetId
   )
 
-  const { isDepositReceived } = useDepositStatusSnapshot({
-    accountId: userAddress ?? "",
-    chain: network ?? "",
-    generatedAddress: depositAddress ?? "",
-  })
-
   const minDepositAmount = useSelector(poaBridgeInfoRef, (state) => {
     if (token == null || !isBaseToken(token)) {
       return null
@@ -323,17 +318,7 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
           )}
           <Deposits
             chainName={
-              network === BlockchainEnum.NEAR
-                ? "near"
-                : network === BlockchainEnum.TURBOCHAIN
-                  ? "turbochain"
-                  : network === BlockchainEnum.ETHEREUM
-                    ? "eth"
-                    : network === BlockchainEnum.BASE
-                      ? "base"
-                      : network === BlockchainEnum.SOLANA
-                        ? "solana"
-                        : null
+              network != null ? reverseAssetNetworkAdapter[network] : null
             }
             depositResult={
               depositNearResult ??
@@ -413,9 +398,6 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
             generatedAddressResult,
             snapshot: snapshot.context,
           })}
-        {network !== BlockchainEnum.NEAR && isDepositReceived && (
-          <DepositSuccess />
-        )}
         {userAddress && network && !isActiveDeposit && !isPassiveDeposit && (
           <NotSupportedDepositRoute />
         )}
@@ -500,7 +482,7 @@ function getBlockchainsOptions(): Record<
       value: BlockchainEnum.DOGECOIN,
     },
     [BlockchainEnum.TURBOCHAIN]: {
-      label: "Turbochain",
+      label: "TurboChain",
       icon: (
         <NetworkIcon
           chainIcon="/static/icons/network/turbochain.png"
@@ -508,6 +490,26 @@ function getBlockchainsOptions(): Record<
         />
       ),
       value: BlockchainEnum.TURBOCHAIN,
+    },
+    [BlockchainEnum.AURORA]: {
+      label: "Aurora",
+      icon: (
+        <NetworkIcon
+          chainIcon="/static/icons/network/aurora.svg"
+          chainName="aurora"
+        />
+      ),
+      value: BlockchainEnum.AURORA,
+    },
+    [BlockchainEnum.XRPLEDGER]: {
+      label: "XRP Ledger",
+      icon: (
+        <NetworkIcon
+          chainIcon="/static/icons/network/xrpledger.svg"
+          chainName="XRP Ledger"
+        />
+      ),
+      value: BlockchainEnum.XRPLEDGER,
     },
   }
   return options
@@ -665,17 +667,6 @@ function NotSupportedDepositRoute() {
   )
 }
 
-function DepositSuccess() {
-  return (
-    <Callout.Root size={"1"} color="green" mt="4">
-      <Callout.Icon>
-        <ExclamationTriangleIcon />
-      </Callout.Icon>
-      <Callout.Text>Deposit received</Callout.Text>
-    </Callout.Root>
-  )
-}
-
 function renderDepositButtonText(
   isBalanceInsufficient: boolean,
   network: BlockchainEnum | null,
@@ -698,7 +689,9 @@ const networkSelectToLabel: Record<BlockchainEnum, string> = {
   [BlockchainEnum.BITCOIN]: "Bitcoin",
   [BlockchainEnum.SOLANA]: "Solana",
   [BlockchainEnum.DOGECOIN]: "Dogecoin",
-  [BlockchainEnum.TURBOCHAIN]: "Turbochain",
+  [BlockchainEnum.TURBOCHAIN]: "TurboChain",
+  [BlockchainEnum.AURORA]: "Aurora",
+  [BlockchainEnum.XRPLEDGER]: "XRP Ledger",
 }
 
 function renderDepositHint(
@@ -775,6 +768,8 @@ function getBalance(
       case BlockchainEnum.SOLANA:
       case BlockchainEnum.DOGECOIN:
       case BlockchainEnum.TURBOCHAIN:
+      case BlockchainEnum.AURORA:
+      case BlockchainEnum.XRPLEDGER:
         return tokenAddress === "native" ? nativeBalance : balance
       default:
         network satisfies never

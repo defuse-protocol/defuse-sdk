@@ -27,8 +27,8 @@ import {
   getAllowance,
   waitEVMTransaction,
 } from "../../../services/depositService"
-import { BlockchainEnum, ChainType } from "../../../types"
-import type { SwappableToken, Transaction } from "../../../types"
+import type { ChainType, SwappableToken, Transaction } from "../../../types"
+import { assetNetworkAdapter } from "../../../utils/adapters"
 import { assert } from "../../../utils/assert"
 import { userAddressToDefuseUserId } from "../../../utils/defuse"
 import { getEVMChainId } from "../../../utils/evmChainId"
@@ -261,25 +261,28 @@ export function DepositUIMachineProvider({
                 } = input
 
                 const chainId = getEVMChainId(chainName)
+                const siloToSiloAddress_ =
+                  chainName in siloToSiloAddress
+                    ? siloToSiloAddress[
+                        chainName as keyof typeof siloToSiloAddress
+                      ]
+                    : null
 
-                assert(
-                  chainType !== null && chainType === ChainType.EVM,
-                  "chainType should be EVM"
-                )
+                assert(siloToSiloAddress_ != null, "chainType should be EVM")
 
                 if (tokenAddress !== "native") {
                   const allowance = await getAllowance(
                     tokenAddress,
                     accountId,
-                    siloToSiloAddress.turbochain,
-                    BlockchainEnum.TURBOCHAIN
+                    siloToSiloAddress_,
+                    assetNetworkAdapter[chainName]
                   )
                   assert(allowance != null, "Allowance is not defined")
 
                   if (allowance < amount) {
                     const approveTx = createApproveTransaction(
                       tokenAddress,
-                      siloToSiloAddress.turbochain,
+                      siloToSiloAddress_,
                       amount,
                       getAddress(accountId),
                       chainId
@@ -309,7 +312,7 @@ export function DepositUIMachineProvider({
                   accountId,
                   amount,
                   depositAddress,
-                  siloToSiloAddress.turbochain,
+                  siloToSiloAddress_,
                   tokenAddress === "native" ? amount : 0n,
                   chainId
                 )

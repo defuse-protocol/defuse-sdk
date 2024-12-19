@@ -106,6 +106,7 @@ type WithdrawParams =
       amount: bigint
       tokenAccountId: string
       destinationAddress: string
+      destinationMemo: string | null
     }
   | {
       type: "to_aurora_engine"
@@ -137,14 +138,20 @@ function makeInnerWithdrawMessage(params: WithdrawParams): Intent {
             : undefined,
       }
 
-    case "via_poa_bridge":
+    case "via_poa_bridge": {
+      const memo = ["WITHDRAW_TO", params.destinationAddress]
+      if (params.destinationMemo) {
+        memo.push(params.destinationMemo)
+      }
+
       return {
         intent: "ft_withdraw",
         token: params.tokenAccountId,
         receiver_id: params.tokenAccountId,
         amount: params.amount.toString(),
-        memo: `WITHDRAW_TO:${params.destinationAddress}`,
+        memo: memo.join(":"),
       }
+    }
 
     case "to_aurora_engine":
       return {

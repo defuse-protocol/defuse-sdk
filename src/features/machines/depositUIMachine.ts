@@ -230,21 +230,6 @@ export const depositUIMachine = setup({
         )
       },
     }),
-    spawnGeneratedAddressActor: assign({
-      depositGenerateAddressRef: (
-        { spawn },
-        output: {
-          userAddress: string
-          userChainType: ChainType
-          chain: BlockchainEnum
-        }
-      ) => {
-        return spawn("depositGenerateAddressActor", {
-          id: "deposit-generate-address",
-          input: output,
-        })
-      },
-    }),
 
     clearUIDepositAmount: () => {
       throw new Error("not implemented")
@@ -266,21 +251,24 @@ export const depositUIMachine = setup({
     isLoggedIn: ({ context }) => {
       return !!context.userAddress
     },
-    isDepositNearRelevant: ({ context }) => {
+    isChainNearSelected: ({ context }) => {
       return context.formValues.network === BlockchainEnum.NEAR
     },
-    isDepositEVMRelevant: ({ context }) => {
+    isChainEVMSelected: ({ context }) => {
       return (
         context.formValues.network === BlockchainEnum.ETHEREUM ||
         context.formValues.network === BlockchainEnum.BASE ||
         context.formValues.network === BlockchainEnum.ARBITRUM
       )
     },
-    isDepositSolanaRelevant: ({ context }) => {
+    isChainSolanaSelected: ({ context }) => {
       return context.formValues.network === BlockchainEnum.SOLANA
     },
-    isDepositTurbochainRelevant: ({ context }) => {
-      return context.formValues.network === BlockchainEnum.TURBOCHAIN
+    isChainAuroraEngineSelected: ({ context }) => {
+      return (
+        context.formValues.network === BlockchainEnum.TURBOCHAIN ||
+        context.formValues.network === BlockchainEnum.AURORA
+      )
     },
     isBalanceSufficientForEstimate: ({ context }) => {
       if (context.formValues.token == null) {
@@ -296,11 +284,12 @@ export const depositUIMachine = setup({
       }
       return context.balance > 0n
     },
-    isDepositNotNearRelevant: ({ context }) => {
+    isPassiveDepositEnabledForSelectedChain: ({ context }) => {
       return (
         context.formValues.network != null &&
         context.formValues.network !== BlockchainEnum.NEAR &&
         context.formValues.network !== BlockchainEnum.TURBOCHAIN &&
+        context.formValues.network !== BlockchainEnum.AURORA &&
         !!context.userAddress &&
         !!context.defuseAssetId
       )
@@ -378,23 +367,23 @@ export const depositUIMachine = setup({
         SUBMIT: [
           {
             target: "submittingNearTx",
-            guard: "isDepositNearRelevant",
+            guard: "isChainNearSelected",
             actions: "clearDepositResult",
           },
           {
             target: "submittingEVMTx",
             reenter: true,
-            guard: "isDepositEVMRelevant",
+            guard: "isChainEVMSelected",
           },
           {
             target: "submittingSolanaTx",
             reenter: true,
-            guard: "isDepositSolanaRelevant",
+            guard: "isChainSolanaSelected",
           },
           {
             target: "submittingTurboTx",
             reenter: true,
-            guard: "isDepositTurbochainRelevant",
+            guard: "isChainAuroraEngineSelected",
           },
         ],
 
@@ -498,7 +487,7 @@ export const depositUIMachine = setup({
                       always: [
                         {
                           target: "execution_generating",
-                          guard: "isDepositNotNearRelevant",
+                          guard: "isPassiveDepositEnabledForSelectedChain",
                         },
                         {
                           target: "done",
