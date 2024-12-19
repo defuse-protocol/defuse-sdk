@@ -91,19 +91,19 @@ export function createBatchDepositNearNep141Transaction(
 
 export function createBatchDepositNearNativeTransaction(
   amount: bigint,
-  wrapAmount: bigint,
+  nearAmountToWrap: bigint,
   storagePayment: bigint
 ): Transaction["NEAR"][] {
   const actions: Transaction["NEAR"]["actions"] = []
 
-  if (wrapAmount > 0n) {
+  if (nearAmountToWrap > 0n) {
     actions.push({
       type: "FunctionCall" as const,
       params: {
         methodName: "near_deposit",
         args: {},
         gas: FT_DEPOSIT_GAS,
-        deposit: (wrapAmount + storagePayment).toString(),
+        deposit: (nearAmountToWrap + storagePayment).toString(),
       },
     })
   }
