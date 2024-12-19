@@ -4,6 +4,7 @@ import { useFormContext } from "react-hook-form"
 import { siloToSiloAddress } from "src/constants"
 import { depositSolanaMachine } from "src/features/machines/depositSolanaMachine"
 import { depositTurboMachine } from "src/features/machines/depositTurboMachine"
+import { getNEP141StorageRequired } from "src/services/nep141StorageService"
 import { type Hash, getAddress, stringify } from "viem"
 import {
   type Actor,
@@ -24,8 +25,6 @@ import {
   createDepositSolanaTransaction,
   generateDepositAddress,
   getAllowance,
-  getMinimumStorageBalance,
-  isStorageDepositRequired,
   waitEVMTransaction,
 } from "../../../services/depositService"
 import type { ChainType, SwappableToken, Transaction } from "../../../types"
@@ -95,44 +94,38 @@ export function DepositUIMachineProvider({
               signAndSendTransactions: fromPromise(async ({ input }) => {
                 const { asset, amount, balance } = input
 
-                const tokenAddress = isBaseToken(asset)
-                  ? asset.address
-                  : (asset.groupedTokens.find(
+                const tokenToDeposit = isBaseToken(asset)
+                  ? asset
+                  : asset.groupedTokens.find(
                       (token) => token.chainName === "near"
-                    )?.address ?? null)
+                    )
 
-                assert(tokenAddress != null, "Token address is not defined")
+                assert(tokenToDeposit, "Token to deposit is not defined")
 
                 let tx: Transaction["NEAR"][] = []
 
-                if (tokenAddress === "wrap.near") {
-                  const isWrapNearRequired =
-                    Number(amount) > Number(balance || 0n)
-                  const minStorageBalance =
-                    await getMinimumStorageBalance(tokenAddress)
+                const storageDepositPayment = await getNEP141StorageRequired({
+                  token: tokenToDeposit,
+                  userAccountId: settings.defuseContractId,
+                })
+
+                assert(
+                  storageDepositPayment.tag === "ok",
+                  "Failed to get storage deposit payment amount"
+                )
+
+                if (tokenToDeposit.address === "wrap.near") {
                   tx = createBatchDepositNearNativeTransaction(
-                    tokenAddress,
                     amount,
-                    amount - balance,
-                    isWrapNearRequired,
-                    minStorageBalance
+                    // If user does not have enough wrap.near we calculate how much native NEAR we need to wrap to match the amount to deposit
+                    amount - (balance || 0n),
+                    storageDepositPayment.value
                   )
                 } else {
-                  const isStorageRequired = await isStorageDepositRequired(
-                    tokenAddress,
-                    settings.defuseContractId
-                  )
-
-                  let minStorageBalance = 0n
-                  if (isStorageRequired) {
-                    minStorageBalance =
-                      await getMinimumStorageBalance(tokenAddress)
-                  }
                   tx = createBatchDepositNearNep141Transaction(
-                    tokenAddress,
+                    tokenToDeposit.address,
                     amount,
-                    isStorageRequired,
-                    minStorageBalance
+                    storageDepositPayment.value
                   )
                 }
 

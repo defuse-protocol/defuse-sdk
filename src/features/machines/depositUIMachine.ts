@@ -197,6 +197,13 @@ export const depositUIMachine = setup({
     clearGeneratedAddressResult: assign({ generatedAddressResult: null }),
     clearDepositSolanaResult: assign({ depositSolanaResult: null }),
     clearDepositTurboResult: assign({ depositTurboResult: null }),
+    clearResults: assign({
+      depositNearResult: null,
+      depositEVMResult: null,
+      depositSolanaResult: null,
+      depositTurboResult: null,
+      generatedAddressResult: null,
+    }),
 
     extractAssetIds: assign({
       defuseAssetId: ({ context }) => {
@@ -343,10 +350,8 @@ export const depositUIMachine = setup({
 
     LOGOUT: {
       actions: [
-        "clearDepositResult",
-        "clearDepositEVMResult",
+        "clearResults",
         "clearBalances",
-        "clearGeneratedAddressResult",
         assign({
           userAddress: () => "",
           formValues: {
@@ -391,6 +396,7 @@ export const depositUIMachine = setup({
           target: ".pre-preparation",
           actions: [
             "clearError",
+            "clearResults",
             {
               type: "setFormValues",
               params: ({ event }) => ({ data: event.params }),
