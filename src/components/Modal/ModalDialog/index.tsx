@@ -63,7 +63,8 @@ export const ModalDialog = ({
           // Focusing first input is annoying for mobile users
           e.preventDefault()
         }}
-        aria-describedby="dialog-description"
+        // Suppressing the warning about missing aria-describedby
+        aria-describedby={undefined}
       >
         <VisuallyHidden>
           <Dialog.Title>null</Dialog.Title>
