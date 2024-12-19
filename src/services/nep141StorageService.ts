@@ -26,7 +26,7 @@ export async function getNEP141StorageRequired({
   token,
   userAccountId,
 }: {
-  token: BaseTokenInfo | UnifiedTokenInfo
+  token: BaseTokenInfo
   userAccountId: string
 }): Promise<Output> {
   if (!isFungibleToken(token) || token.chainName !== "near")
