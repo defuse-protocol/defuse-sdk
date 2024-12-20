@@ -1,18 +1,23 @@
 import { useQuery } from "@tanstack/react-query"
 import { tokens } from "src/services/tokensUsdPricesHttpClient"
-import type { TokenUsdPrices } from "src/services/tokensUsdPricesHttpClient/types"
+import type { TokenUsdPriceInfo } from "src/services/tokensUsdPricesHttpClient/types"
 
 export const tokensUsdPricesQueryKey = ["tokens-usd-prices"]
+export type TokenUsdPriceData = Record<
+  TokenUsdPriceInfo["defuse_asset_id"],
+  TokenUsdPriceInfo
+>
+export async function tokensPriceDataInUsd(): Promise<TokenUsdPriceData> {
+  const data = await tokens()
+  const result: TokenUsdPriceData = {}
+  for (const token of data.items) {
+    result[token.defuse_asset_id] = token
+  }
+  return result
+}
 
 export const useTokensUsdPrices = () =>
   useQuery({
     queryKey: tokensUsdPricesQueryKey,
-    queryFn: async () => {
-      const data = await tokens()
-      const result: Record<TokenUsdPrices["symbol"], TokenUsdPrices> = {}
-      for (const token of data.items) {
-        result[token.symbol] = token
-      }
-      return result
-    },
+    queryFn: tokensPriceDataInUsd,
   })

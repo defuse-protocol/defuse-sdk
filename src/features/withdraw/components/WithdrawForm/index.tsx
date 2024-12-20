@@ -50,6 +50,7 @@ import {
 } from "../../../swap/components/SwapForm"
 import { usePublicKeyModalOpener } from "../../../swap/hooks/usePublicKeyModalOpener"
 import { WithdrawUIMachineContext } from "../../WithdrawUIMachineContext"
+import LongWithdrawWarning from "./LongWithdrawWarning"
 import {
   isLiquidityUnavailableSelector,
   totalAmountReceivedSelector,
@@ -72,7 +73,6 @@ export const WithdrawForm = ({
   sendNearTransaction,
 }: WithdrawFormProps) => {
   const actorRef = WithdrawUIMachineContext.useActorRef()
-
   const {
     state,
     formRef,
@@ -117,9 +117,8 @@ export const WithdrawForm = ({
     }
   }, [userAddress, actorRef, chainType])
 
-  const { token, tokenOut, blockchain, amountIn, recipient } = useSelector(
-    formRef,
-    (state) => {
+  const { token, tokenOut, blockchain, amountIn, parsedAmountIn, recipient } =
+    useSelector(formRef, (state) => {
       const { tokenOut } = state.context
 
       return {
@@ -127,10 +126,10 @@ export const WithdrawForm = ({
         token: state.context.tokenIn,
         tokenOut: state.context.tokenOut,
         amountIn: state.context.amount,
+        parsedAmountIn: state.context.parsedAmount,
         recipient: state.context.recipient,
       }
-    }
-  )
+    })
 
   const minWithdrawalAmount = useSelector(poaBridgeInfoRef, (state) => {
     const bridgedTokenInfo = getPOABridgeInfo(state, tokenOut)
@@ -142,7 +141,7 @@ export const WithdrawForm = ({
     balanceSelector(token)
   )
 
-  const { data: tokensUsdPricesMap } = useTokensUsdPrices()
+  const { data: tokensUsdPriceData } = useTokensUsdPrices()
   const {
     handleSubmit,
     register,
@@ -269,16 +268,6 @@ export const WithdrawForm = ({
     tokenOut.chainName
   )
 
-  const renderLongWithdrawWarning = useMemo(() => {
-    if (tokensUsdPricesMap === undefined) return false
-    const tokenIn = token.symbol
-    const tokenPrice = tokensUsdPricesMap[tokenIn]?.price
-    if (tokenPrice === undefined) return false
-    const tokenAmount = Number(amountIn)
-    if (Number.isNaN(tokenAmount)) return false
-    return tokenAmount * tokenPrice >= LONG_WITHDRAWAL_THRESHOLD_USD
-  }, [token, amountIn, tokensUsdPricesMap])
-
   return (
     <div className={styles.container}>
       <Flex direction={"column"} gap={"2"} className={styles.formWrapper}>
@@ -337,7 +326,11 @@ export const WithdrawForm = ({
             />
 
             {renderMinWithdrawalAmount(minWithdrawalAmount, tokenOut)}
-            {renderLongWithdrawWarning ? <LongWithdrawWarning /> : null}
+            <LongWithdrawWarning
+              amountIn={parsedAmountIn}
+              token={tokenOut}
+              tokensUsdPriceData={tokensUsdPriceData}
+            />
 
             <Flex direction={"column"} gap={"2"}>
               <Box px={"2"} asChild>
@@ -630,21 +623,6 @@ function renderMinWithdrawalAmount(
         </Callout.Text>
       </Callout.Root>
     )
-  )
-}
-const LONG_WITHDRAWAL_THRESHOLD_USD = 4990
-function LongWithdrawWarning() {
-  return (
-    <Callout.Root
-      size="1"
-      color="yellow"
-      variant="soft"
-      className={styles.longWithdrawCalloutRoot}
-    >
-      <Callout.Text size="1" weight="bold">
-        Withdrawal over ~5,000$ may take longer to process.
-      </Callout.Text>
-    </Callout.Root>
   )
 }
 

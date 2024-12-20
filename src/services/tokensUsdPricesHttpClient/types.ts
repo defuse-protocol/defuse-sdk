@@ -1,4 +1,4 @@
-export type TokenUsdPrices = {
+export type TokenUsdPriceInfo = {
   defuse_asset_id: string
   decimals: number
   blockchain: string
@@ -9,7 +9,7 @@ export type TokenUsdPrices = {
 }
 
 export type TokensUsdPricesPayload = {
-  items: TokenUsdPrices[]
+  items: TokenUsdPriceInfo[]
   skip: number
   take: number
   total: number
