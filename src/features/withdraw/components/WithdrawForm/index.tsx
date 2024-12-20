@@ -15,8 +15,9 @@ import {
 } from "@radix-ui/themes"
 import { useSelector } from "@xstate/react"
 import { providers } from "near-api-js"
-import { Fragment, type ReactNode, useEffect } from "react"
+import { Fragment, type ReactNode, useEffect, useMemo } from "react"
 import { Controller, useForm } from "react-hook-form"
+import { useTokensUsdPrices } from "src/hooks/useTokensUsdPrices"
 import type { ActorRefFrom } from "xstate"
 import { ButtonCustom } from "../../../../components/Button"
 import { EmptyIcon } from "../../../../components/EmptyIcon"
@@ -49,6 +50,7 @@ import {
 } from "../../../swap/components/SwapForm"
 import { usePublicKeyModalOpener } from "../../../swap/hooks/usePublicKeyModalOpener"
 import { WithdrawUIMachineContext } from "../../WithdrawUIMachineContext"
+import LongWithdrawWarning from "./LongWithdrawWarning"
 import {
   isLiquidityUnavailableSelector,
   totalAmountReceivedSelector,
@@ -71,7 +73,6 @@ export const WithdrawForm = ({
   sendNearTransaction,
 }: WithdrawFormProps) => {
   const actorRef = WithdrawUIMachineContext.useActorRef()
-
   const {
     state,
     formRef,
@@ -116,9 +117,8 @@ export const WithdrawForm = ({
     }
   }, [userAddress, actorRef, chainType])
 
-  const { token, tokenOut, blockchain, amountIn, recipient } = useSelector(
-    formRef,
-    (state) => {
+  const { token, tokenOut, blockchain, amountIn, parsedAmountIn, recipient } =
+    useSelector(formRef, (state) => {
       const { tokenOut } = state.context
 
       return {
@@ -126,10 +126,10 @@ export const WithdrawForm = ({
         token: state.context.tokenIn,
         tokenOut: state.context.tokenOut,
         amountIn: state.context.amount,
+        parsedAmountIn: state.context.parsedAmount,
         recipient: state.context.recipient,
       }
-    }
-  )
+    })
 
   const minWithdrawalAmount = useSelector(poaBridgeInfoRef, (state) => {
     const bridgedTokenInfo = getPOABridgeInfo(state, tokenOut)
@@ -141,6 +141,7 @@ export const WithdrawForm = ({
     balanceSelector(token)
   )
 
+  const { data: tokensUsdPriceData } = useTokensUsdPrices()
   const {
     handleSubmit,
     register,
@@ -325,6 +326,11 @@ export const WithdrawForm = ({
             />
 
             {renderMinWithdrawalAmount(minWithdrawalAmount, tokenOut)}
+            <LongWithdrawWarning
+              amountIn={parsedAmountIn}
+              token={tokenOut}
+              tokensUsdPriceData={tokensUsdPriceData}
+            />
 
             <Flex direction={"column"} gap={"2"}>
               <Box px={"2"} asChild>
