@@ -227,9 +227,13 @@ export function DepositUIMachineProvider({
           depositSolanaActor: depositSolanaMachine.provide({
             actors: {
               signAndSendTransactions: fromPromise(async ({ input }) => {
-                const { amount, depositAddress, accountId } = input
+                const { amount, depositAddress, accountId, asset } = input
 
                 assert(depositAddress != null, "Deposit address is not defined")
+
+                if (isBaseToken(asset)) {
+                  assert(amount >= BigInt(12500000), "Minimum amount is 0.0125")
+                }
 
                 const tx = createDepositSolanaTransaction(
                   accountId,
