@@ -18,7 +18,7 @@ export default function LongWithdrawWarning({
   }
   const tokenPrice = tokensUsdPriceData[token.defuseAssetId]?.price
   if (!tokenPrice) return null
-  //4990 is an approximate threshold of what is considered big withdrawal. (Not 5k as USDT/USDC can be 0.99)
+  //4990 is an approximate threshold of what is considered big withdrawal. (As USDT/USDC is ~1$)
   return Number(formatUnits(amountIn, token.decimals)) * tokenPrice >= 4990 ? (
     <Callout.Root
       size="1"
