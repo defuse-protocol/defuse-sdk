@@ -3,6 +3,7 @@ import {
   SystemProgram,
   Transaction as TransactionSolana,
 } from "@solana/web3.js"
+import type { depositGenerateAddressMachineV2 } from "src/features/machines/depositGenerateAddressMachineV2"
 import {
   http,
   type Address,
@@ -12,7 +13,9 @@ import {
   erc20Abi,
   getAddress,
 } from "viem"
+import { type ActorRefFrom, waitFor } from "xstate"
 import { settings } from "../config/settings"
+import type { State as DepositFormContext } from "../features/machines/depositFormReducer"
 import { getNearTxSuccessValue } from "../features/machines/getTxMachine"
 import {
   BlockchainEnum,
@@ -24,6 +27,82 @@ import type { Transaction } from "../types/deposit"
 import { type DefuseUserId, userAddressToDefuseUserId } from "../utils/defuse"
 import { getEVMChainId } from "../utils/evmChainId"
 import { getDepositAddress, getSupportedTokens } from "./poaBridgeClient"
+
+export type PreparationOutput =
+  | {
+      tag: "ok"
+      value: {
+        generateDepositAddress: string | null
+      }
+    }
+  | {
+      tag: "err"
+      value: {
+        reason: "ERR_GENERATING_ADDRESS"
+      }
+    }
+
+export async function prepareDeposit(
+  {
+    formValues,
+    depositGenerateAddressV2Ref,
+  }: {
+    formValues: DepositFormContext
+    depositGenerateAddressV2Ref: ActorRefFrom<
+      typeof depositGenerateAddressMachineV2
+    >
+  },
+  { signal }: { signal: AbortSignal }
+): Promise<PreparationOutput> {
+  const generateDepositAddress = await getDepositGeneratedAddress(
+    {
+      depositGenerateAddressV2Ref,
+    },
+    { signal }
+  )
+  if (generateDepositAddress.tag === "err") {
+    return generateDepositAddress
+  }
+
+  return {
+    tag: "ok" as const,
+    value: {
+      generateDepositAddress:
+        generateDepositAddress.value.generateDepositAddress,
+    },
+  }
+}
+
+async function getDepositGeneratedAddress(
+  {
+    depositGenerateAddressV2Ref,
+  }: {
+    depositGenerateAddressV2Ref: ActorRefFrom<
+      typeof depositGenerateAddressMachineV2
+    >
+  },
+  { signal }: { signal: AbortSignal }
+): Promise<
+  | { tag: "ok"; value: { generateDepositAddress: string | null } }
+  | { tag: "err"; value: { reason: "ERR_GENERATING_ADDRESS" } }
+> {
+  const depositGenerateAddressState = await waitFor(
+    depositGenerateAddressV2Ref,
+    (state) => state.hasTag("generated"),
+    { signal }
+  )
+  if (depositGenerateAddressState.context.preparationOutput?.tag === "err") {
+    return depositGenerateAddressState.context.preparationOutput
+  }
+  return {
+    tag: "ok",
+    value: {
+      generateDepositAddress:
+        depositGenerateAddressState.context.preparationOutput?.value
+          .generateDepositAddress ?? null,
+    },
+  }
+}
 
 const FT_DEPOSIT_GAS = `30${"0".repeat(12)}` // 30 TGAS
 const FT_TRANSFER_GAS = `50${"0".repeat(12)}` // 30 TGAS
