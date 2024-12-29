@@ -25,6 +25,18 @@ export function DepositUIMachineFormSyncProvider({
           params: { [name]: value[name] },
         })
       }
+      if (name === "network" && value.network != null) {
+        actorRef.send({
+          type: "DEPOSIT_FORM.UPDATE_BLOCKCHAIN",
+          params: { network: value.network },
+        })
+      }
+      if (name === "amount" && value.amount && value.amount.length > 0) {
+        actorRef.send({
+          type: "DEPOSIT_FORM.UPDATE_AMOUNT",
+          params: { amount: value.amount },
+        })
+      }
     })
     return () => {
       sub.unsubscribe()

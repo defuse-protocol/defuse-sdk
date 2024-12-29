@@ -36,9 +36,11 @@ import { Select } from "../../../../components/Select/Select"
 import { useModalStore } from "../../../../providers/ModalStoreProvider"
 import { ModalType } from "../../../../stores/modalStore"
 import {
+  type BaseTokenInfo,
   BlockchainEnum,
   type ChainType,
   type SwappableToken,
+  type UnifiedTokenInfo,
 } from "../../../../types"
 import { formatTokenValue } from "../../../../utils/format"
 import {
@@ -57,7 +59,7 @@ const ENABLE_DEPOSIT_THROUGH_POA_BRIDGE = true
 export type DepositFormValues = {
   network: BlockchainEnum | null
   amount: string
-  token: SwappableToken | null
+  token: BaseTokenInfo | UnifiedTokenInfo | null
   userAddress: string | null
   rpcUrl: string | undefined
 }
@@ -141,6 +143,10 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
       depositUIActorRef.send({
         type: "INPUT",
         params: { token, network: null },
+      })
+      depositUIActorRef.send({
+        type: "DEPOSIT_FORM.UPDATE_TOKEN",
+        params: { token },
       })
       // We have to clean up network because it could be not a valid value for the previous token
       setValue("network", null)

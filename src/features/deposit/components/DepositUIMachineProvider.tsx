@@ -2,6 +2,7 @@ import { createActorContext } from "@xstate/react"
 import type { PropsWithChildren, ReactElement, ReactNode } from "react"
 import { useFormContext } from "react-hook-form"
 import { siloToSiloAddress } from "src/constants"
+import { depositGenerateAddressMachineV2 } from "src/features/machines/depositGenerateAddressMachineV2"
 import { depositSolanaMachine } from "src/features/machines/depositSolanaMachine"
 import { depositTurboMachine } from "src/features/machines/depositTurboMachine"
 import { getNEP141StorageRequired } from "src/services/nep141StorageService"
@@ -168,6 +169,21 @@ export function DepositUIMachineProvider({
               }),
             },
           }),
+          depositGenerateAddressV2Actor:
+            depositGenerateAddressMachineV2.provide({
+              actors: {
+                generateDepositAddress: fromPromise(async ({ input }) => {
+                  const { userAddress, blockchain, userChainType } = input
+
+                  const address = await generateDepositAddress(
+                    userAddressToDefuseUserId(userAddress, userChainType),
+                    assetNetworkAdapter[blockchain]
+                  )
+
+                  return address
+                }),
+              },
+            }),
           depositEVMActor: depositEVMMachine.provide({
             actors: {
               sendTransaction: fromPromise(async ({ input }) => {
