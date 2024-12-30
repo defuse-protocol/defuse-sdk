@@ -1,14 +1,11 @@
+import { estimateSolanaTransferCost } from "src/services/estimateService"
 import {
-  createDepositEVMERC20Transaction,
-  getWalletRpcUrl,
-} from "src/services/depositService"
-import {
-  estimateEVMTransferCost,
-  estimateSolanaTransferCost,
-} from "src/services/estimateService"
-import { BlockchainEnum, type SwappableToken } from "src/types"
-import { isBaseToken, isNativeToken, isUnifiedToken } from "src/utils"
-import { reverseAssetNetworkAdapter } from "src/utils/adapters"
+  BlockchainEnum,
+  type SupportedChainName,
+  type SwappableToken,
+} from "src/types"
+import { isBaseToken } from "src/utils"
+import { assetNetworkAdapter } from "src/utils/adapters"
 import { validateAddress } from "src/utils/validateAddress"
 import type { Address } from "viem"
 import { fromPromise } from "xstate"
@@ -19,7 +16,7 @@ import { getEVMChainId } from "../../utils/evmChainId"
 export const depositEstimateMaxValueActor = fromPromise(
   async ({
     input: {
-      network,
+      blockchain,
       tokenAddress,
       userAddress,
       balance,
@@ -29,7 +26,7 @@ export const depositEstimateMaxValueActor = fromPromise(
     },
   }: {
     input: {
-      network: BlockchainEnum
+      blockchain: SupportedChainName
       tokenAddress: string
       userAddress: string
       balance: bigint
@@ -38,7 +35,8 @@ export const depositEstimateMaxValueActor = fromPromise(
       generateAddress: string | null
     }
   }) => {
-    switch (network) {
+    const networkToSolverFormat = assetNetworkAdapter[blockchain]
+    switch (networkToSolverFormat) {
       case BlockchainEnum.NEAR:
         // Max value for NEAR is the sum of the native balance and the balance
         if (isBaseToken(token) && token?.address === "wrap.near") {
@@ -51,7 +49,7 @@ export const depositEstimateMaxValueActor = fromPromise(
       case BlockchainEnum.TURBOCHAIN:
       case BlockchainEnum.AURORA: {
         if (
-          !validateAddress(userAddress, reverseAssetNetworkAdapter[network]) ||
+          !validateAddress(userAddress, blockchain) ||
           generateAddress == null
         ) {
           return 0n
@@ -98,7 +96,7 @@ export const depositEstimateMaxValueActor = fromPromise(
       case BlockchainEnum.XRPLEDGER:
         return 0n
       default:
-        network satisfies never
+        networkToSolverFormat satisfies never
         throw new Error("exhaustive check failed")
     }
   }

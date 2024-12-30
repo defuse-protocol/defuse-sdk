@@ -88,7 +88,7 @@ async function getDepositGeneratedAddress(
 > {
   const depositGenerateAddressState = await waitFor(
     depositGenerateAddressV2Ref,
-    (state) => state.hasTag("generated"),
+    (state) => state.hasTag("completed"),
     { signal }
   )
   if (depositGenerateAddressState.context.preparationOutput?.tag === "err") {

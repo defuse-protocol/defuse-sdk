@@ -19,7 +19,7 @@ export const depositGenerateAddressMachineV2 = setup({
         Pick<Context, "userAddress" | "userChainType" | "blockchain">
       >
     },
-    tags: {} as "generated",
+    tags: {} as "completed",
   },
   actors: {
     generateDepositAddress: fromPromise(
@@ -99,6 +99,7 @@ export const depositGenerateAddressMachineV2 = setup({
         },
         onDone: {
           target: "idle",
+          tags: ["completed"],
           actions: assign({
             preparationOutput: ({ event }) => ({
               tag: "ok",
@@ -112,7 +113,7 @@ export const depositGenerateAddressMachineV2 = setup({
         },
         onError: {
           target: "idle",
-          tags: ["generated"],
+          tags: ["completed"],
           actions: assign({
             preparationOutput: {
               tag: "err",

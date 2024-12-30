@@ -1,9 +1,5 @@
 import { settings } from "src/config/settings"
 import {
-  assetNetworkAdapter,
-  reverseAssetNetworkAdapter,
-} from "src/utils/adapters"
-import {
   type ActorRefFrom,
   and,
   assertEvent,
@@ -11,9 +7,8 @@ import {
   sendTo,
   setup,
 } from "xstate"
-import type { ChainType, SwappableToken } from "../../types"
-import { BlockchainEnum } from "../../types"
-import { parseUnits } from "../../utils/parse"
+import type { BaseTokenInfo, ChainType, SwappableToken } from "../../types"
+import type { BlockchainEnum } from "../../types"
 import { isBaseToken, isNativeToken, isUnifiedToken } from "../../utils/token"
 import { backgroundBalanceActor } from "./backgroundBalanceActor"
 import {
@@ -46,7 +41,10 @@ import {
   depositTurboMachine,
 } from "./depositTurboMachine"
 import { poaBridgeInfoActor } from "./poaBridgeInfoActor"
-import { prepareDepositActor } from "./prepareDepositActor"
+import {
+  type PreparationOutput,
+  prepareDepositActor,
+} from "./prepareDepositActor"
 
 export type Context = {
   error: null | {
@@ -63,11 +61,6 @@ export type Context = {
    * todo: either remove this, or make it work, now it is 0n for native tokens
    */
   maxDepositValue: bigint
-  formValues: {
-    token: SwappableToken | null
-    network: BlockchainEnum | null
-    amount: string
-  }
   parsedFormValues: {
     amount: bigint
   }
@@ -92,6 +85,7 @@ export type Context = {
   fetchWalletAddressBalanceRef: ActorRefFrom<
     typeof backgroundBalanceActor
   > | null
+  preparationOutput: PreparationOutput | null
 }
 
 export const depositUIMachine = setup({
@@ -101,14 +95,6 @@ export const depositUIMachine = setup({
     },
     context: {} as Context,
     events: {} as
-      | {
-          type: "INPUT"
-          params: Partial<{
-            token: SwappableToken
-            network: BlockchainEnum | null
-            amount: string
-          }>
-        }
       | {
           type: "SUBMIT"
         }
@@ -157,44 +143,6 @@ export const depositUIMachine = setup({
         value: error,
       }),
     }),
-
-    setFormValues: assign({
-      formValues: (
-        { context },
-        {
-          data,
-        }: {
-          data: Partial<{
-            token: SwappableToken
-            network: BlockchainEnum | null
-            amount: string
-          }>
-        }
-      ) => ({
-        ...context.formValues,
-        ...data,
-      }),
-    }),
-    parseFormValues: assign({
-      parsedFormValues: ({ context }) => {
-        try {
-          return {
-            amount: parseUnits(
-              context.formValues.amount,
-              context.formValues.token?.decimals ?? 0
-            ),
-            network: context.formValues.network,
-            token: context.formValues.token,
-          }
-        } catch {
-          return {
-            amount: 0n,
-            network: null,
-            token: null,
-          }
-        }
-      },
-    }),
     clearError: assign({ error: null }),
     setDepositNearResult: assign({
       depositNearResult: (_, value: DepositNearMachineOutput) => value,
@@ -212,6 +160,9 @@ export const depositUIMachine = setup({
       generatedAddressResult: (_, value: DepositGenerateAddressMachineOutput) =>
         value,
     }),
+    setPreparationOutput: assign({
+      preparationOutput: (_, val: Context["preparationOutput"]) => val,
+    }),
     clearDepositResult: assign({ depositNearResult: null }),
     clearDepositEVMResult: assign({ depositEVMResult: null }),
     clearGeneratedAddressResult: assign({ generatedAddressResult: null }),
@@ -223,39 +174,6 @@ export const depositUIMachine = setup({
       depositSolanaResult: null,
       depositTurboResult: null,
       generatedAddressResult: null,
-    }),
-
-    extractAssetIds: assign({
-      defuseAssetId: ({ context }) => {
-        if (context.formValues.token == null) {
-          return null
-        }
-        if (isBaseToken(context.formValues.token)) {
-          return context.formValues.token.defuseAssetId
-        }
-        return (
-          context.formValues.token.groupedTokens.find(
-            (token) =>
-              assetNetworkAdapter[token.chainName] ===
-              context.formValues.network
-          )?.defuseAssetId ?? null
-        )
-      },
-      tokenAddress: ({ context }) => {
-        if (context.formValues.token == null) {
-          return null
-        }
-        if (isBaseToken(context.formValues.token)) {
-          return context.formValues.token.address
-        }
-        return (
-          context.formValues.token.groupedTokens.find(
-            (token) =>
-              assetNetworkAdapter[token.chainName] ===
-              context.formValues.network
-          )?.address ?? null
-        )
-      },
     }),
 
     clearUIDepositAmount: () => {
@@ -289,38 +207,39 @@ export const depositUIMachine = setup({
   },
   guards: {
     isTokenValid: ({ context }) => {
-      return !!context.formValues.token
+      return !!context.depositFormRef.getSnapshot().context.tokenIn
     },
     isNetworkValid: ({ context }) => {
-      return !!context.formValues.network
+      return !!context.depositFormRef.getSnapshot().context.blockchain
     },
     isLoggedIn: ({ context }) => {
       return !!context.userAddress
     },
     isChainNearSelected: ({ context }) => {
-      return context.formValues.network === BlockchainEnum.NEAR
+      return context.depositFormRef.getSnapshot().context.blockchain === "near"
     },
     isChainEVMSelected: ({ context }) => {
+      const blockchain = context.depositFormRef.getSnapshot().context.blockchain
       return (
-        context.formValues.network === BlockchainEnum.ETHEREUM ||
-        context.formValues.network === BlockchainEnum.BASE ||
-        context.formValues.network === BlockchainEnum.ARBITRUM
+        blockchain === "eth" ||
+        blockchain === "base" ||
+        blockchain === "arbitrum"
       )
     },
     isChainSolanaSelected: ({ context }) => {
-      return context.formValues.network === BlockchainEnum.SOLANA
-    },
-    isChainAuroraEngineSelected: ({ context }) => {
       return (
-        context.formValues.network === BlockchainEnum.TURBOCHAIN ||
-        context.formValues.network === BlockchainEnum.AURORA
+        context.depositFormRef.getSnapshot().context.blockchain === "solana"
       )
     },
+    isChainAuroraEngineSelected: ({ context }) => {
+      const blockchain = context.depositFormRef.getSnapshot().context.blockchain
+      return blockchain === "turbochain" || blockchain === "aurora"
+    },
     isBalanceSufficientForEstimate: ({ context }) => {
-      if (context.formValues.token == null) {
+      const token = context.depositFormRef.getSnapshot().context.tokenIn
+      if (token == null) {
         return false
       }
-      const token = context.formValues.token
       // For all Native tokens, we should validate wallet native balance
       if (
         (isUnifiedToken(token) && token.groupedTokens.some(isNativeToken)) ||
@@ -331,11 +250,12 @@ export const depositUIMachine = setup({
       return context.balance > 0n
     },
     isPassiveDepositEnabledForSelectedChain: ({ context }) => {
+      const blockchain = context.depositFormRef.getSnapshot().context.blockchain
       return (
-        context.formValues.network != null &&
-        context.formValues.network !== BlockchainEnum.NEAR &&
-        context.formValues.network !== BlockchainEnum.TURBOCHAIN &&
-        context.formValues.network !== BlockchainEnum.AURORA &&
+        blockchain != null &&
+        blockchain !== "near" &&
+        blockchain !== "turbochain" &&
+        blockchain !== "aurora" &&
         !!context.userAddress &&
         !!context.defuseAssetId
       )
@@ -348,7 +268,7 @@ export const depositUIMachine = setup({
     ]),
   },
 }).createMachine({
-  /** @xstate-layout N4IgpgJg5mDOIC5QTABwPawJYBcC0ArlgMQAyA8gOICSAcgNoAMAuoqBtjlugHZsgAPRHgCcAJkYA6AGwBWEQGYAHLIDsC1esYKANCACewgIxjpU1Y1nSALAsZiR1kUYUBfV3pQdchEhUrkAKoAKkysSCDeXLz8Qgh40tJikrYi0iJKpunWYtZ6hvEmSqoyssVqTkpGSpnunmiYPkSSkLhYPFDEACIAogAK5ADK1MEA+gBi5ABKALKSAFRh-FHcfBFxeGIayUY2mQqy8mKH+caM2pKWJmXSFiKMRiJ1IF6N+M2tXB3d-UMjE9MZhNqD1SF1BqMAMIACQAgrRKD0uksIisYuthMdrEpLtolOIVKolAoSad4rcjDJGISXIkFCIys9XpxfC0IG1voNAgAhGYjFHsN6rWKIWTWWQpQ4KLbSTJGSpkhImSQiRQZGrS1TyJ4eF4NFkfdlfTpc3n8ozhQWcYUYhCyXaXPbOY6qSqyRXWTSSMViYmHO5KW6qJn6ppYNkck08vmhMSWyJC9GgOKyRgiSTExiVRy5X2KhTSSnWIyMOSqLFaz0hqKsz7tKNm0IKeNotbJxBOKQPB41NJpXIiRW5CViVTiERaqUT6zVt61o314h0PohAUJ61JwTCDQjjKe+nd1RGIe+yRGMfKfGWMxKbGzg3husdSSoABOYDwb7QAENX9-ojwxBrq2IrxAoOQyIo9hGKmfZiC4ZJjt6+7UrIJLVGhbi6syYYRsaL7vqgv7-qsxAQLwYCSLAOD-pROHvI+C7Pl+RF-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-MsoUipAkPW1MmoE9qvrEa7VDe5-TKvG85wKgSxSVuD8zEBYMzUhMKqCQ4hEqufcEAA */
+  /** @xstate-layout N4IgpgJg5mDOIC5QTABwPawJYBcC0ArlgMQAyA8gOICSAcgNoAMAuoqBtjlugHZsgAPRHgBMARhGMAdIwDsYgMwBOACwA2RgA4FAVhUAaEAE9hYs0qkaxmsSqVqFi2QoC+Lwyg65CJCpXIAqgAqTKxIIF5cvPxCCHjWmrJSIiI6aipmjkp6OoYmcWbqUjp69jqaaTryOm4eaJjeRFKQuFg8UMQAIgCiAArkAMrUQQD6AGLkAEoAslIAVKH8kdx84bGiCrLSaYwistqMuioGxsLaSUrZImqaGmqKjCq1IJ4N+E0tXO1dfYPD41NpuNqN1SJ0BiMAMIACQAgrRKN1OotwstomthKkVElnLd9rI1DolJpdnlhGoRApiilNCS0go1Gp5M9XpwfM0IK1vgMAgAhabDFHsN4rGKYxhyGQqBQqRjEpSSbGyMlxY4WYkU67pcRyWQs+psj6cr4dHn8wViMLCziijFxSQMqTShSaFSUsSMy4iFV4RwqYq6OQKF2HGUlfWRdmfNqmvkCkIiK0REXo0DrRUiSw3SnqRwE4k+sTEp27TTZRjpMS7GruF4GxpYDlc2PmkIKJNo1Zp8UUp20vTqR5VBQ+zSZvZiHS6BnYlQ6EQRt5R40xqQAJzgYBwI1QG4AbtwCLAdxvUABDNdnqI8YhC5M21OCTEZKkuhUVsRbS4j06qyRSRIHBEYlFB0R4xEXQ1G2jdp103bddzAA90CPE80AvK8VlvS0lhTLsn3tDRpGJKpXX2IsKx9N1-TdQ5KXuTZXXDWtWQbJsTSkRDz0va8Rj3ERiAgXgwCkNo93QABrETWPeaCV1griMN4-iEDE9AAGNMN4UI707MV7VlKlgKUXQKj2dIGR9LYAJlWUiynWQMkgtiYKgTjTyUlY+IEsA1zXdA104gAbK8ADMAoAWykGTl2bdz0J4ryVLUzTrx0lhcIffD01lTMHCcLQqlkAkVWkRRKXI4ldBEFRtFpZzZKkWACAAIwi3ATVoMALyCARBOE0SeHEqTovrHAuovSYwFC3S8P0+IaqSEQSRq4MTLAz8qOcKRlCsdQdEUWqlAa9lmrajqY26AA1aZev6ngRLUkaZOu6YppmjLUTmu0FuxZIVuddbdjEH1bJkJQtnnJQJVdFITqaM72pwE0BnQEKeDPO6hIewbhuksbUfRs93tmrL5okMCAOcEz7n2SQbh9cQ1AAstlplOUJGAzR4cbRGLvaIICDXFr0CxganvxyJBeF9ASc+61WkfdYJD+4lZEkRIMmWkpRx0ZIp1qz9DaUCRjueHh0BQeBwhiohMsV7LMVkaGAJq2rKmsRzcl-PAIczOx5xlRyXXsnn2Jje3r3mvY3Vd44KkJT25ysswZBpdb5D2VwWLG2KOKwCAgrASPbW7QjVDj93E81738jwCkqXnZa6QcRlmRzyMjTijdYC3NDkNQxTEsfPSfpqxQpGcG43XkEzGFr4QHJkBwbBdce5QXDuly7jih60nhvJLpXn10Es7DkMCthlH86-EJIwMuWjA2ydQw755GYwmtdeqPx2CkJZmNxnBTnnBkKoC9VSUwfkyCkVYFTYjfq1JGJpXo-y+mTH6HoSjFDdDYN0GpqygwUHlaUCp9hMiqLsNQiDzof3aITM8GM0EKyjpgxkmhLDyEctDa4ztKI+0kHraU9xyibHKAdeeNDkExmliLZh94Hbk0ZOOCstIaraHwWoKyVISSHCZM4XY6tKRuDcEAA */
   id: "deposit-ui",
 
   context: ({ input, spawn, self }) => ({
@@ -387,6 +307,7 @@ export const depositUIMachine = setup({
       id: "depositGenerateAddressV2Ref",
       input: { parentRef: self },
     }),
+    preparationOutput: null,
   }),
 
   entry: ["fetchPOABridgeInfo"],
@@ -407,11 +328,6 @@ export const depositUIMachine = setup({
         "clearBalances",
         assign({
           userAddress: () => "",
-          formValues: {
-            token: null,
-            network: null,
-            amount: "",
-          },
         }),
       ],
     },
@@ -456,226 +372,10 @@ export const depositUIMachine = setup({
             guard: "isChainAuroraEngineSelected",
           },
         ],
-
-        INPUT: {
-          target: ".pre-preparation",
-          actions: [
-            "clearError",
-            "clearResults",
-            {
-              type: "setFormValues",
-              params: ({ event }) => ({ data: event.params }),
-            },
-            "parseFormValues",
-          ],
-        },
       },
 
       states: {
         idle: {},
-
-        "pre-preparation": {
-          always: {
-            target: "preparation",
-            guard: and(["isTokenValid", "isNetworkValid", "isLoggedIn"]),
-          },
-        },
-
-        preparation: {
-          entry: "extractAssetIds",
-          initial: "execution_requirements",
-
-          states: {
-            execution_requirements: {
-              type: "parallel",
-
-              states: {
-                balance: {
-                  initial: "idle",
-                  states: {
-                    idle: {
-                      invoke: {
-                        id: "fetchWalletAddressBalanceRef",
-                        src: "fetchWalletAddressBalanceActor",
-
-                        input: ({ context }: { context: Context }) => {
-                          assert(context.formValues.network, "network is null")
-                          assert(context.defuseAssetId, "defuseAssetId is null")
-                          assert(context.tokenAddress, "tokenAddress is null")
-                          assert(context.userAddress, "userAddress is null")
-
-                          return {
-                            defuseAssetId: context.defuseAssetId,
-                            tokenAddress: context.tokenAddress,
-                            userAddress: context.userAddress,
-                            network: context.formValues.network,
-                            token: context.formValues.token,
-                          }
-                        },
-
-                        onDone: {
-                          target: "done",
-                          actions: assign({
-                            balance: ({ event }) => event.output?.balance ?? 0n,
-                            nativeBalance: ({ event }) =>
-                              event.output?.nativeBalance ?? 0n,
-                          }),
-                        },
-
-                        onError: {
-                          target: "done",
-                          actions: [
-                            {
-                              type: "logError",
-                              params: ({ event }) => event,
-                            },
-                            {
-                              type: "setError",
-                              params: ({ event }) => {
-                                console.log("onError type: setError", event)
-                                return {
-                                  reason: "ERR_GET_BALANCE",
-                                  error: null,
-                                }
-                              },
-                            },
-                          ],
-                        },
-                      },
-                    },
-
-                    done: {
-                      type: "final",
-                    },
-                  },
-                },
-
-                generating: {
-                  initial: "idle",
-
-                  states: {
-                    idle: {
-                      always: [
-                        {
-                          target: "execution_generating",
-                          guard: "isPassiveDepositEnabledForSelectedChain",
-                        },
-                        {
-                          target: "done",
-                        },
-                      ],
-                    },
-                    execution_generating: {
-                      invoke: {
-                        id: "depositGenerateAddressRef",
-                        src: "depositGenerateAddressActor",
-
-                        input: ({ context }) => {
-                          assert(
-                            context.userAddress != null,
-                            "userAddress is null"
-                          )
-                          assert(
-                            context.userChainType != null,
-                            "userChainType is null"
-                          )
-                          assert(context.formValues.network, "network is null")
-
-                          return {
-                            userAddress: context.userAddress,
-                            userChainType: context.userChainType,
-                            chain: context.formValues.network,
-                          }
-                        },
-
-                        onDone: {
-                          target: "done",
-
-                          actions: [
-                            {
-                              type: "setDepositGenerateAddressResult",
-                              params: ({ event }) => {
-                                return event.output
-                              },
-                            },
-                          ],
-                        },
-                      },
-                    },
-
-                    done: {
-                      type: "final",
-                    },
-                  },
-                },
-              },
-
-              onDone: "direct_deposit_requirements",
-            },
-
-            direct_deposit_requirements: {
-              initial: "idle",
-
-              states: {
-                idle: {
-                  always: [
-                    {
-                      target: "amount",
-                      guard: "isBalanceSufficientForEstimate",
-                    },
-                    {
-                      target: "done",
-                    },
-                  ],
-                },
-                amount: {
-                  invoke: {
-                    id: "depositEstimateMaxValueRef",
-                    src: "depositEstimateMaxValueActor",
-
-                    input: ({ context }: { context: Context }) => {
-                      assert(context.formValues.token, "token is null")
-                      assert(context.formValues.network, "network is null")
-                      assert(context.tokenAddress, "tokenAddress is null")
-                      assert(context.userAddress, "userAddress is null")
-
-                      return {
-                        token: context.formValues.token,
-                        network: context.formValues.network,
-                        balance: context.balance,
-                        nativeBalance: context.nativeBalance,
-                        tokenAddress: context.tokenAddress as string,
-                        userAddress: context.userAddress,
-                        // It is optional cause for NEAR estimation we don't need to generate an address
-                        generateAddress:
-                          context.generatedAddressResult?.tag === "ok"
-                            ? context.generatedAddressResult.value
-                                .depositAddress
-                            : null,
-                      }
-                    },
-
-                    onDone: {
-                      target: "done",
-                      actions: assign({
-                        maxDepositValue: ({ event }) => event.output,
-                      }),
-                    },
-                  },
-                },
-                done: {
-                  type: "final",
-                },
-              },
-            },
-
-            preparation_done: {
-              type: "final",
-            },
-          },
-
-          onDone: "idle",
-        },
 
         reset_previous_preparation: {
           always: [
@@ -703,6 +403,10 @@ export const depositUIMachine = setup({
             },
             onDone: {
               target: "idle",
+              actions: {
+                type: "setPreparationOutput",
+                params: ({ event }) => event.output,
+              },
             },
             onError: {
               target: "idle",
@@ -722,19 +426,20 @@ export const depositUIMachine = setup({
         src: "depositNearActor",
 
         input: ({ context }) => {
-          assert(context.formValues.token, "token is null")
+          const tokenIn = context.depositFormRef.getSnapshot().context.tokenIn
+          assert(tokenIn, "token is null")
           assert(context.userAddress, "userAddress is null")
 
           return {
             balance: context.balance,
             amount: context.parsedFormValues.amount,
-            asset: context.formValues.token,
+            asset: tokenIn,
             accountId: context.userAddress,
           }
         },
 
         onDone: {
-          target: "editing.preparation",
+          target: "editing.reset_previous_preparation",
 
           actions: [
             {
@@ -760,26 +465,29 @@ export const depositUIMachine = setup({
             context.generatedAddressResult?.tag === "ok"
               ? context.generatedAddressResult.value.depositAddress
               : null
+          const tokenIn = context.depositFormRef.getSnapshot().context.tokenIn
+          const blockchain =
+            context.depositFormRef.getSnapshot().context.blockchain
 
-          assert(context.formValues.network, "network is null")
+          assert(tokenIn, "token is null")
+          assert(blockchain !== null, "blockchain is null")
           assert(context.userAddress, "userAddress is null")
           assert(context.tokenAddress, "tokenAddress is null")
           assert(depositAddress, "depositAddress is null")
-          assert(context.formValues.token, "token is null")
 
           return {
             balance: context.balance,
             amount: context.parsedFormValues.amount,
-            asset: context.formValues.token,
+            asset: tokenIn,
             accountId: context.userAddress,
             tokenAddress: context.tokenAddress,
             depositAddress,
-            chainName: reverseAssetNetworkAdapter[context.formValues.network],
+            chainName: blockchain,
           }
         },
 
         onDone: {
-          target: "editing.preparation",
+          target: "editing.reset_previous_preparation",
 
           actions: [
             {
@@ -805,25 +513,29 @@ export const depositUIMachine = setup({
             context.generatedAddressResult?.tag === "ok"
               ? context.generatedAddressResult.value.depositAddress
               : null
+          const tokenIn = context.depositFormRef.getSnapshot().context.tokenIn
+          const blockchain =
+            context.depositFormRef.getSnapshot().context.blockchain
 
-          assert(context.formValues.network, "network is null")
+          assert(tokenIn, "token is null")
+          assert(blockchain !== null, "blockchain is null")
           assert(context.userAddress, "userAddress is null")
           assert(context.tokenAddress, "tokenAddress is null")
           assert(depositAddress, "depositAddress is null")
-          assert(context.formValues.token, "token is null")
 
           return {
             balance: context.balance,
             amount: context.parsedFormValues.amount,
-            asset: context.formValues.token,
+            asset: tokenIn,
             accountId: context.userAddress,
             tokenAddress: context.tokenAddress,
             depositAddress,
+            chainName: blockchain,
           }
         },
 
         onDone: {
-          target: "editing.preparation",
+          target: "editing.reset_previous_preparation",
 
           actions: [
             {
@@ -845,25 +557,28 @@ export const depositUIMachine = setup({
 
         input: ({ context, event }) => {
           assertEvent(event, "SUBMIT")
+          const tokenIn = context.depositFormRef.getSnapshot().context.tokenIn
+          const blockchain =
+            context.depositFormRef.getSnapshot().context.blockchain
 
-          assert(context.formValues.network, "network is null")
+          assert(tokenIn, "token is null")
+          assert(blockchain !== null, "blockchain is null")
           assert(context.userAddress, "userAddress is null")
           assert(context.tokenAddress, "tokenAddress is null")
-          assert(context.formValues.token, "token is null")
 
           return {
             balance: context.balance,
             amount: context.parsedFormValues.amount,
-            asset: context.formValues.token,
+            asset: tokenIn,
             accountId: context.userAddress,
             tokenAddress: context.tokenAddress,
             depositAddress: settings.defuseContractId,
-            chainName: reverseAssetNetworkAdapter[context.formValues.network],
+            chainName: blockchain,
           }
         },
 
         onDone: {
-          target: "editing.preparation",
+          target: "editing.reset_previous_preparation",
 
           actions: [
             {

@@ -1,6 +1,6 @@
 import { getWalletRpcUrl } from "src/services/depositService"
-import { BlockchainEnum } from "src/types"
-import { reverseAssetNetworkAdapter } from "src/utils/adapters"
+import { BlockchainEnum, type SupportedChainName } from "src/types"
+import { assetNetworkAdapter } from "src/utils/adapters"
 import { validateAddress } from "src/utils/validateAddress"
 import type { Address } from "viem"
 import { fromPromise } from "xstate"
@@ -14,22 +14,22 @@ import {
 
 export const backgroundBalanceActor = fromPromise(
   async ({
-    input: { tokenAddress, userAddress, network },
+    input: { tokenAddress, userAddress, blockchain },
   }: {
     input: {
       tokenAddress: string
       userAddress: string
-      network: BlockchainEnum
+      blockchain: SupportedChainName
     }
   }): Promise<{
     balance: bigint
     nativeBalance: bigint
   } | null> => {
-    if (!validateAddress(userAddress, reverseAssetNetworkAdapter[network])) {
+    if (!validateAddress(userAddress, blockchain)) {
       return null
     }
-
-    switch (network) {
+    const networkToSolverFormat = assetNetworkAdapter[blockchain]
+    switch (networkToSolverFormat) {
       case BlockchainEnum.NEAR:
         return {
           balance:
@@ -52,12 +52,12 @@ export const backgroundBalanceActor = fromPromise(
             (await getEvmErc20Balance({
               tokenAddress: tokenAddress as Address,
               userAddress: userAddress as Address,
-              rpcUrl: getWalletRpcUrl(network),
+              rpcUrl: getWalletRpcUrl(networkToSolverFormat),
             })) ?? 0n,
           nativeBalance:
             (await getEvmNativeBalance({
               userAddress: userAddress as Address,
-              rpcUrl: getWalletRpcUrl(network),
+              rpcUrl: getWalletRpcUrl(networkToSolverFormat),
             })) ?? 0n,
         }
       case BlockchainEnum.SOLANA:
@@ -66,7 +66,7 @@ export const backgroundBalanceActor = fromPromise(
           nativeBalance:
             (await getSolanaNativeBalance({
               userAddress: userAddress,
-              rpcUrl: getWalletRpcUrl(network),
+              rpcUrl: getWalletRpcUrl(networkToSolverFormat),
             })) ?? 0n,
         }
       // Active deposits through Bitcoin, Dogecoin are not supported, so we don't need to check balances
@@ -78,7 +78,7 @@ export const backgroundBalanceActor = fromPromise(
           nativeBalance: 0n,
         }
       default:
-        network satisfies never
+        networkToSolverFormat satisfies never
         throw new Error("exhaustive check failed")
     }
   }

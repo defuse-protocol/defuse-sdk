@@ -19,12 +19,6 @@ export function DepositUIMachineFormSyncProvider({
 
   useEffect(() => {
     const sub = watch(async (value, { name }) => {
-      if (name === "network" || name === "amount") {
-        actorRef.send({
-          type: "INPUT",
-          params: { [name]: value[name] },
-        })
-      }
       if (name === "network" && value.network != null) {
         actorRef.send({
           type: "DEPOSIT_FORM.UPDATE_BLOCKCHAIN",

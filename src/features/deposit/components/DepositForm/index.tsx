@@ -76,46 +76,52 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
 
   const depositUIActorRef = DepositUIMachineContext.useActorRef()
   const snapshot = DepositUIMachineContext.useSelector((snapshot) => snapshot)
-  const generatedAddressResult = snapshot.context.generatedAddressResult
   const depositNearResult = snapshot.context.depositNearResult
   const depositEVMResult = snapshot.context.depositEVMResult
   const depositSolanaResult = snapshot.context.depositSolanaResult
   const depositTurboResult = snapshot.context.depositTurboResult
-  const depositAddress =
-    generatedAddressResult?.tag === "ok"
-      ? generatedAddressResult.value.depositAddress
-      : null
 
   const {
     token,
-    network,
+    blockchain,
     amount,
     balance,
     nativeBalance,
     userAddress,
     poaBridgeInfoRef,
     defuseAssetId,
+    preparationOutput,
   } = DepositUIMachineContext.useSelector((snapshot) => {
-    const token = snapshot.context.formValues.token
-    const network = snapshot.context.formValues.network
-    const amount = snapshot.context.formValues.amount
+    const token = snapshot.context.depositFormRef.getSnapshot().context.tokenIn
+    const blockchain =
+      snapshot.context.depositFormRef.getSnapshot().context.blockchain
+    const amount = snapshot.context.depositFormRef.getSnapshot().context.amount
     const balance = snapshot.context.balance
     const nativeBalance = snapshot.context.nativeBalance
     const userAddress = snapshot.context.userAddress
     const poaBridgeInfoRef = snapshot.context.poaBridgeInfoRef
     const defuseAssetId = snapshot.context.defuseAssetId
+    const preparationOutput = snapshot.context.preparationOutput
 
     return {
       token,
-      network,
+      blockchain,
       amount,
       balance,
       nativeBalance,
       userAddress,
       poaBridgeInfoRef,
       defuseAssetId,
+      preparationOutput,
     }
   })
+
+  const depositAddress =
+    preparationOutput?.tag === "ok"
+      ? preparationOutput.value.generateDepositAddress
+      : null
+
+  const network = blockchain ? assetNetworkAdapter[blockchain] : null
 
   const { setModalType, payload, onCloseModal } = useModalStore(
     (state) => state
@@ -140,10 +146,6 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
     }
     const { modalType, fieldName, token } = payload as ModalSelectAssetsPayload
     if (modalType === ModalType.MODAL_SELECT_ASSETS && fieldName && token) {
-      depositUIActorRef.send({
-        type: "INPUT",
-        params: { token, network: null },
-      })
       depositUIActorRef.send({
         type: "DEPOSIT_FORM.UPDATE_TOKEN",
         params: { token },
@@ -368,7 +370,7 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
                           e.preventDefault()
                         }}
                         className={styles.copyButton}
-                        disabled={!generatedAddressResult}
+                        disabled={!depositAddress}
                       >
                         <CopyToClipboard
                           text={depositAddress}
@@ -401,7 +403,7 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
             depositEVMResult,
             depositSolanaResult,
             depositTurboResult,
-            generatedAddressResult,
+            preparationOutput,
             snapshot: snapshot.context,
           })}
         {userAddress && network && !isActiveDeposit && !isPassiveDeposit && (
@@ -585,7 +587,7 @@ function renderDepositWarning(
     depositEVMResult: Context["depositEVMResult"]
     depositSolanaResult: Context["depositSolanaResult"]
     depositTurboResult: Context["depositTurboResult"]
-    generatedAddressResult: Context["generatedAddressResult"]
+    preparationOutput: Context["preparationOutput"]
     snapshot: Context
   }
 ) {
@@ -600,7 +602,7 @@ function renderDepositWarning(
     depositResults.depositEVMResult,
     depositResults.depositSolanaResult,
     depositResults.depositTurboResult,
-    depositResults.generatedAddressResult,
+    depositResults.preparationOutput,
     depositResults.snapshot.error,
   ]
 
