@@ -93,6 +93,7 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
     userAddress,
     poaBridgeInfoRef,
     defuseAssetId,
+    parsedAmount,
   } = DepositUIMachineContext.useSelector((snapshot) => {
     const token = snapshot.context.formValues.token
     const network = snapshot.context.formValues.network
@@ -102,6 +103,7 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
     const userAddress = snapshot.context.userAddress
     const poaBridgeInfoRef = snapshot.context.poaBridgeInfoRef
     const defuseAssetId = snapshot.context.defuseAssetId
+    const parsedAmount = snapshot.context.parsedFormValues
 
     return {
       token,
@@ -112,6 +114,7 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
       userAddress,
       poaBridgeInfoRef,
       defuseAssetId,
+      parsedAmount,
     }
   })
 
@@ -185,6 +188,11 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
     const bridgedTokenInfo = getPOABridgeInfo(state, token)
     return bridgedTokenInfo == null ? null : bridgedTokenInfo.minDeposit
   })
+
+  const isDepositAmountHighEnough =
+    minDepositAmount && parsedAmount.amount > 0n
+      ? parsedAmount.amount >= minDepositAmount
+      : true
 
   const availableDepositRoutes =
     chainType && network && getAvailableDepositRoutes(chainType, network)
@@ -300,7 +308,11 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
             <div className={styles.buttonGroup}>
               <ButtonCustom
                 size={"lg"}
-                disabled={!watch("amount") || balanceInsufficient}
+                disabled={
+                  !watch("amount") ||
+                  balanceInsufficient ||
+                  !isDepositAmountHighEnough
+                }
                 isLoading={
                   snapshot.matches("submittingNearTx") ||
                   snapshot.matches("submittingEVMTx") ||
@@ -311,7 +323,9 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
                 {renderDepositButtonText(
                   watch("amount") >= "0" && balanceInsufficient,
                   network,
-                  token
+                  token,
+                  minDepositAmount,
+                  isDepositAmountHighEnough
                 )}
               </ButtonCustom>
             </div>
@@ -670,8 +684,13 @@ function NotSupportedDepositRoute() {
 function renderDepositButtonText(
   isBalanceInsufficient: boolean,
   network: BlockchainEnum | null,
-  token: SwappableToken | null
+  token: SwappableToken | null,
+  minDepositAmount: bigint | null,
+  isDepositAmountHighEnough: boolean
 ) {
+  if (!isDepositAmountHighEnough && minDepositAmount != null && token != null) {
+    return `Minimal amount to deposit is ${formatTokenValue(minDepositAmount, token.decimals)} ${token.symbol}`
+  }
   if (isBalanceInsufficient) {
     return "Insufficient Balance"
   }
