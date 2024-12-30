@@ -92,7 +92,7 @@ export const depositSolanaMachine = setup({
     },
   },
 }).createMachine({
-  /** @xstate-layout N4IgpgJg5mDOIC5QTABwPawJYBcC0YAbgLYB02UAdlpVAMQTqVik2HoDWLKG2+RZCtVoI26AMYBDHFiYBtAAwBdRUsSheuWZXUgAHogDMhgBykALIYBshgIwB2BeYUL75gEzmANCACeRp1ITd1t3BU8TAE4beysAXzifHkxcAhJyLCoaejAAJ1z0XNJUABtpADNCsmS+NMFM4ShRSnYpGXllVV1Ndp0kfSNDSNJbJ3cTAFZ7SJc3ax9-BFNhyMMPcwnIh1HzVYSktBT+dMI8rHLfbIYmFjEuUhrUgVJT3PPLkTE27VUu-p7tLoDAhIhMrKQXJEoiYTEMNpMFkZ3PZSNN7LFdlEYvFEiBHscyK93lc8gUiqUKlUHodas8iRdss1WtIfp1lN0joD+sDQRMggoJrZImFPOZ0YillZzCNhVZkeZRvY1pF9niaU90gAjAqSCBSWAyWh0P4aTlMIGIWxWey2UgTCYeWz2qxYwzuCVulFojFQ6KGWIJXGUdAoeD9fF1Dl8LmgYF4cwmCUhFFu0IKOUO5Ho1UR55CbJRrTm7mIBQe6w59UEl5nBm0Qu9C0IKwTdykGyRcyWaLjJxWcs4g49OqkbXoXX6w1QBsxgYIWxrMwt9zWcYeG2GCYe2xmLZbKJbVzKyvD54AOXQOAABAAxdAAV0oECvhSvAEkWpISlgIDPi7HEE7FYdzFT0u3FPxEAmcJUQdZxhShdxVlsE8jhHABhdBiFKMAcEgP8+gA+cTBcCFbC7MIoXRYxDA9dw+ScdEpV9bFUNpdIAEFNUKPDf3+M1CLnTc2ydaDrScWZLH7SCEHtNtrFCKZbFEyx7EDOIgA */
+  /** @xstate-layout N4IgpgJg5mDOIC5QTABwPawJYBcC0s6ANgIYB2JAdNlGVmVAMQTpliX0Bu6A1uyhmz5CpCtSy16UBF3QBjEjiysA2gAYAuuo2JQg3MrK6QAD0QAmACyXKAZksBOAOwO1ADicBWT86cAaEABPC3MnOydbJzUARgA2ezUnN3NYgF9UgIFMXAJicioaOgZGMAAnUvRSylRSHAAzSoBbSiyhXNECiSLpWQUlVU1tY31+oyRTC0tPShinJ1jPN2joq3NogOCEW2ibWOinSwXbBw83N090zLRs4TyxTjKsOsCpZlZ2WT4W67aRfMoHqUni8GDIyNw+oZtENxiNDMYzAhktNYuZbG5rJ5LAl5hsLJ41HYCaE1ms1JZompbJcQK0cn97o9nq8yhUqjVFA1Ss06bcOgCmSCeuD5IooYNNMMbvDxojkm5KPNLG5Ymd3OYqW48QhzG5bHZQrZzA5vFjUeYabz2v8AEYVEgQBSwJTFGF6aWsBGIaKeZYzeYm6J6w7m7XmAlEtQklaUik7dIZEBkdAoeDjK0MkhSoQy0CIvArByUPYOIO2dHJRyxbXRY6UDy2VWxKPh8PzS0-el3TqSBjZgye2WIPBLYvRUt6itWByosM+OylklohbNk0dkbWxlA5l92EesZ5xDeWKUBxWSwucmxOZoufRYsHRvh9xR1Hrm6bqh29AOp0uqD9qMXoIMsJqUFilhqJ4BzzJSDgOHOhLQRi3jyuiThou+vzdpQABy6A4AABAAYugACuZAQIRlSEQAkuCJBEFgECAbmExIuY5j1kk+xolSWLasq0xeBhKSquGtaeNSiYZjhADC6CNDUYA4JArGDoeIEloqahqIGM6HKWYYXsWunhs4aixJB5aWFhXb8gAgjalSqSxe45hp7HhgqlnnOitYLOSCFBIgjg2NBLYxNi8SWQmqRAA */
   id: "deposit-solana",
 
   initial: "signing",
@@ -164,7 +164,6 @@ export const depositSolanaMachine = setup({
             {
               type: "setError",
               params: ({ event }) => {
-                console.log("onError type: setError", event)
                 return {
                   reason: "ERR_SUBMITTING_TRANSACTION",
                   error: toError(event.error),
