@@ -19,10 +19,7 @@ export type Context = {
   error: null | {
     tag: "err"
     value: {
-      reason:
-        | "ERR_SUBMITTING_TRANSACTION"
-        | "ERR_VERIFYING_TRANSACTION"
-        | "ERR_MIN_AMOUNT"
+      reason: "ERR_SUBMITTING_TRANSACTION" | "ERR_VERIFYING_TRANSACTION"
       error: Error | null
     }
   }
@@ -167,15 +164,6 @@ export const depositSolanaMachine = setup({
             {
               type: "setError",
               params: ({ event }) => {
-                if (
-                  event.error instanceof Error &&
-                  event.error.message === "Minimum amount is 0.0125"
-                ) {
-                  return {
-                    reason: "ERR_MIN_AMOUNT",
-                    error: toError(event.error),
-                  }
-                }
                 return {
                   reason: "ERR_SUBMITTING_TRANSACTION",
                   error: toError(event.error),
