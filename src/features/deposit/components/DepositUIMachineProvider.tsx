@@ -92,7 +92,7 @@ export function DepositUIMachineProvider({
           depositNearActor: depositNearMachine.provide({
             actors: {
               signAndSendTransactions: fromPromise(async ({ input }) => {
-                const { asset, amount, balance } = input
+                const { asset, amount, balance, storageDepositRequired } = input
 
                 const tokenToDeposit = isBaseToken(asset)
                   ? asset
@@ -104,28 +104,18 @@ export function DepositUIMachineProvider({
 
                 let tx: Transaction["NEAR"][] = []
 
-                const storageDepositPayment = await getNEP141StorageRequired({
-                  token: tokenToDeposit,
-                  userAccountId: settings.defuseContractId,
-                })
-
-                assert(
-                  storageDepositPayment.tag === "ok",
-                  "Failed to get storage deposit payment amount"
-                )
-
                 if (tokenToDeposit.address === "wrap.near") {
                   tx = createBatchDepositNearNativeTransaction(
                     amount,
                     // If user does not have enough wrap.near we calculate how much native NEAR we need to wrap to match the amount to deposit
                     amount - (balance || 0n),
-                    storageDepositPayment.value
+                    storageDepositRequired
                   )
                 } else {
                   tx = createBatchDepositNearNep141Transaction(
                     tokenToDeposit.address,
                     amount,
-                    storageDepositPayment.value
+                    storageDepositRequired
                   )
                 }
 

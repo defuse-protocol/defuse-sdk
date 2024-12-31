@@ -15,6 +15,7 @@ export type Context = {
   accountId: string
   tokenAddress: string
   txHash: string | null
+  storageDepositRequired: bigint
   error: null | {
     tag: "err"
     value: {
@@ -29,6 +30,7 @@ type Input = {
   amount: bigint
   asset: SwappableToken
   accountId: string
+  storageDepositRequired: bigint
 }
 
 export type Output =
@@ -125,6 +127,7 @@ export const depositNearMachine = setup({
       txHash: null,
       error: null,
       tokenAddress: "",
+      storageDepositRequired: input.storageDepositRequired,
     }
   },
 
@@ -139,6 +142,7 @@ export const depositNearMachine = setup({
             amount: context.amount,
             accountId: context.accountId,
             asset: context.asset,
+            storageDepositRequired: context.storageDepositRequired,
           }
         },
         onDone: {

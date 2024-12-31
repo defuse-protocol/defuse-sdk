@@ -1,5 +1,6 @@
-import type { BaseTokenInfo, UnifiedTokenInfo } from "src/types"
+import type { BaseTokenInfo } from "src/types"
 import { isFungibleToken } from "src/utils"
+
 import {
   getNearNep141MinStorageBalance,
   getNearNep141StorageBalance,
@@ -28,8 +29,10 @@ export async function getNEP141StorageRequired({
   token: BaseTokenInfo
   userAccountId: string
 }): Promise<Output> {
-  if (!isFungibleToken(token) || token.chainName !== "near")
+  if (!isFungibleToken(token) || token.chainName !== "near") {
     return { tag: "ok", value: 0n }
+  }
+
   // No storage deposit is required for having ETH in near blockchain. (P.S. aurora is ETH address on Near network)
   if (token.address === "aurora") {
     return { tag: "ok", value: 0n }
