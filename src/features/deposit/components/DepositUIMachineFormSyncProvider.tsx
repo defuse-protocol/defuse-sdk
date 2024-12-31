@@ -20,8 +20,9 @@ export function DepositUIMachineFormSyncProvider({
   useEffect(() => {
     const sub = watch(async (value, { name }) => {
       if (name === "network") {
+        const networkValue = value[name]
         // TODO: For some reason, the form sets the network to an empty string when the network is reset
-        if (value[name] == null || value[name].length === 0) {
+        if (!!networkValue && networkValue.length === 0) {
           return
         }
         actorRef.send({

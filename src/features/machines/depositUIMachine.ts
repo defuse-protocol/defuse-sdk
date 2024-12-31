@@ -700,12 +700,17 @@ export const depositUIMachine = setup({
         input: ({ context }) => {
           assert(context.formValues.token, "token is null")
           assert(context.userAddress, "userAddress is null")
+          assert(
+            context.storageDepositRequired != null,
+            "storageDepositRequired is null"
+          )
 
           return {
             balance: context.balance,
             amount: context.parsedFormValues.amount,
             asset: context.formValues.token,
             accountId: context.userAddress,
+            storageDepositRequired: context.storageDepositRequired,
           }
         },
 
