@@ -1,5 +1,6 @@
-import type { BaseTokenInfo, SwappableToken, UnifiedTokenInfo } from "src/types"
-import { getTokenWithFallback } from "src/utils/tokenFallback"
+import type { BaseTokenInfo } from "src/types"
+import { isFungibleToken } from "src/utils"
+
 import {
   getNearNep141MinStorageBalance,
   getNearNep141StorageBalance,
@@ -25,26 +26,25 @@ export async function getNEP141StorageRequired({
   token,
   userAccountId,
 }: {
-  token: BaseTokenInfo | SwappableToken
+  token: BaseTokenInfo
   userAccountId: string
 }): Promise<Output> {
-  const tokenFallback = getTokenWithFallback(token, "near")
-  if (tokenFallback.chainName !== "near") {
+  if (!isFungibleToken(token) || token.chainName !== "near") {
     return { tag: "ok", value: 0n }
   }
 
   // No storage deposit is required for having ETH in near blockchain. (P.S. aurora is ETH address on Near network)
-  if (tokenFallback.name === "Aurora") {
+  if (token.address === "aurora") {
     return { tag: "ok", value: 0n }
   }
 
   const [minStorageBalanceResult, userStorageBalanceResult] =
     await Promise.allSettled([
       getNearNep141MinStorageBalance({
-        contractId: tokenFallback.address,
+        contractId: token.address,
       }),
       getNearNep141StorageBalance({
-        contractId: tokenFallback.address,
+        contractId: token.address,
         accountId: userAccountId,
       }),
     ])

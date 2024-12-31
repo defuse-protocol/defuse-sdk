@@ -19,10 +19,20 @@ export function DepositUIMachineFormSyncProvider({
 
   useEffect(() => {
     const sub = watch(async (value, { name }) => {
-      if (name === "network" || name === "amount") {
+      if (name === "network") {
+        // TODO: For some reason, the form sets the network to an empty string when the network is reset
+        if (value[name] == null || value[name].length === 0) {
+          return
+        }
         actorRef.send({
           type: "INPUT",
-          params: { [name]: value[name] },
+          params: { network: value[name] },
+        })
+      }
+      if (name === "amount") {
+        actorRef.send({
+          type: "INPUT",
+          params: { amount: value[name] },
         })
       }
     })
