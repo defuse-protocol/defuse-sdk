@@ -8,6 +8,7 @@ import {
   spawnChild,
 } from "xstate"
 import { settings } from "../../config/settings"
+import { logger } from "../../logger"
 import {
   type AggregatedQuote,
   isAggregatedQuoteEmpty,
@@ -125,7 +126,7 @@ export const withdrawUIMachine = setup({
   },
   actions: {
     logError: (_, event: { error: unknown }) => {
-      console.error(event.error)
+      logger.error(event.error)
     },
 
     setQuote: assign({

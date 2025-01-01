@@ -1,5 +1,6 @@
 import type { BlockchainEnum, ChainType } from "src/types"
 import { assign, fromPromise, setup } from "xstate"
+import { logger } from "../../logger"
 
 export type DepositGeneratedDescription = {
   type: "depositAddressGenerated"
@@ -64,7 +65,7 @@ export const depositGenerateAddressMachine = setup({
       }),
     }),
     logError: (_, params: { error: unknown }) => {
-      console.error(params.error)
+      logger.error(params.error)
     },
   },
 }).createMachine({
@@ -136,7 +137,6 @@ export const depositGenerateAddressMachine = setup({
             {
               type: "setError",
               params: ({ event }) => {
-                console.log("onError type: setError", event)
                 return {
                   reason: "ERR_GENERATING_ADDRESS",
                   error: toError(event.error),

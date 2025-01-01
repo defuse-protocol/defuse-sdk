@@ -1,6 +1,7 @@
 import { base64 } from "@scure/base"
 import { Connection, PublicKey } from "@solana/web3.js"
 import { http, type Address, createPublicClient, erc20Abi } from "viem"
+import { logger } from "../../logger"
 import {
   getNearBalance,
   getNearNep141BalanceAccount,
@@ -31,7 +32,9 @@ export const getNearNativeBalance = async ({
       ? 0n
       : balance - RESERVED_NEAR_BALANCE
   } catch (err: unknown) {
-    console.warn(err, "error fetching near native balance")
+    logger.error(
+      new Error("error fetching near native balance", { cause: err })
+    )
     return null
   }
 }
@@ -61,7 +64,9 @@ export const getNearNep141Balance = async ({
     const balance = BigInt(parsed)
     return balance
   } catch (err: unknown) {
-    console.warn(err, "error fetching near nep141 balance")
+    logger.error(
+      new Error("error fetching near nep141 balance", { cause: err })
+    )
     return null
   }
 }
@@ -204,7 +209,7 @@ export const getEvmErc20Balance = async ({
     })
     return BigInt(data)
   } catch (err: unknown) {
-    console.warn(err, "error fetching evm erc20 balance")
+    logger.error(new Error("error fetching evm erc20 balance", { cause: err }))
     return null
   }
 }
@@ -222,7 +227,9 @@ export const getSolanaNativeBalance = async ({
     const balance = await connection.getBalance(publicKey)
     return BigInt(balance)
   } catch (err: unknown) {
-    console.warn(err, "error fetching Solana native balance")
+    logger.error(
+      new Error("error fetching Solana native balance", { cause: err })
+    )
     return null
   }
 }

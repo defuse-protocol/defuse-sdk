@@ -1,4 +1,5 @@
 import { assign, emit, fromPromise, setup } from "xstate"
+import { logger } from "../../logger"
 import type { SupportedChainName, SwappableToken } from "../../types"
 
 export type DepositDescription = {
@@ -77,7 +78,7 @@ export const depositTurboMachine = setup({
       }),
     }),
     logError: (_, params: { error: unknown }) => {
-      console.error(params.error)
+      logger.error(params.error)
     },
     emitSuccessfulDeposit: emit(({ context }) => ({
       type: "SUCCESSFUL_DEPOSIT",
@@ -168,7 +169,6 @@ export const depositTurboMachine = setup({
             {
               type: "setError",
               params: ({ event }) => {
-                console.log("onError type: setError", event)
                 return {
                   reason: "ERR_SUBMITTING_TRANSACTION",
                   error: toError(event.error),

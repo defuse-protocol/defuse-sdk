@@ -17,6 +17,7 @@ import {
   calcWithdrawAmount,
 } from "../features/machines/swapIntentMachine"
 import type { State as WithdrawFormContext } from "../features/machines/withdrawFormReducer"
+import { logger } from "../logger"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../types/base"
 import { assert } from "../utils/assert"
 import { isBaseToken, isNativeToken } from "../utils/token"
@@ -254,9 +255,7 @@ async function determineNEP141StorageRequirement(
       },
     }
   } catch (err) {
-    console.error(
-      new Error("Cannot fetch NEP141 storage quote", { cause: err })
-    )
+    logger.error(new Error("Cannot fetch NEP141 storage quote", { cause: err }))
     return { tag: "err", value: { reason: "ERR_CANNOT_FETCH_QUOTE" } }
   }
 }

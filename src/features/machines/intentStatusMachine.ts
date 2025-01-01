@@ -6,6 +6,7 @@ import {
   sendTo,
   setup,
 } from "xstate"
+import { logger } from "../../logger"
 import {
   type IntentSettlementResult,
   waitForIntentSettlement,
@@ -44,7 +45,7 @@ export const intentStatusMachine = setup({
   },
   actions: {
     logError: (_, params: { error: unknown }) => {
-      console.error(params.error)
+      logger.error(params.error)
     },
     setSettlementResult: assign({
       txHash: (_, settlementResult: IntentSettlementResult) =>
