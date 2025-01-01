@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../types/base"
-import { computeTotalBalance } from "./tokenUtils"
+import { computeTotalBalance, getDerivedToken } from "./tokenUtils"
 
 describe("computeTotalBalance", () => {
   const balances = {
@@ -121,5 +121,100 @@ describe("computeTotalBalance", () => {
       }
       expect(computeTotalBalance(tokenWithDuplicates, balances)).toBe(300n)
     })
+  })
+})
+
+describe("getDerivedToken", () => {
+  const tokenList: Array<BaseTokenInfo | UnifiedTokenInfo> = [
+    {
+      unifiedAssetId: "unified1",
+      symbol: "UTKN",
+      name: "Unified Token",
+      decimals: 18,
+      icon: "icon.png",
+      groupedTokens: [
+        {
+          defuseAssetId: "token1",
+          address: "0x123",
+          symbol: "TKN1",
+          name: "Token1",
+          decimals: 18,
+          icon: "icon1.png",
+          chainId: "",
+          chainIcon: "chain1.png",
+          chainName: "eth",
+          routes: [],
+        },
+        {
+          defuseAssetId: "token2",
+          address: "0x456",
+          symbol: "TKN2",
+          name: "Token2",
+          decimals: 18,
+          icon: "icon2.png",
+          chainId: "2",
+          chainIcon: "chain2.png",
+          chainName: "base",
+          routes: [],
+        },
+      ],
+    },
+    {
+      defuseAssetId: "token3",
+      address: "0x789",
+      symbol: "TKN3",
+      name: "Token3",
+      decimals: 18,
+      icon: "icon3.png",
+      chainId: "",
+      chainIcon: "chain.png",
+      chainName: "eth",
+      routes: [],
+    },
+  ]
+  it("should derive token from unified token list", () => {
+    // biome-ignore lint/style/noNonNullAssertion: It exists
+    const unifiedToken = tokenList[0]!
+    expect(getDerivedToken(unifiedToken, "eth")).toEqual({
+      defuseAssetId: "token1",
+      address: "0x123",
+      symbol: "TKN1",
+      name: "Token1",
+      decimals: 18,
+      icon: "icon1.png",
+      chainId: "",
+      chainIcon: "chain1.png",
+      chainName: "eth",
+      routes: [],
+    })
+  })
+
+  it("should derive token from base token", () => {
+    // biome-ignore lint/style/noNonNullAssertion: It exists
+    const baseToken = tokenList[1]!
+    expect(getDerivedToken(baseToken, "eth")).toEqual({
+      defuseAssetId: "token3",
+      address: "0x789",
+      symbol: "TKN3",
+      name: "Token3",
+      decimals: 18,
+      icon: "icon3.png",
+      chainId: "",
+      chainIcon: "chain.png",
+      chainName: "eth",
+      routes: [],
+    })
+  })
+
+  it("should return null if token is not derivable from unified token list", () => {
+    // biome-ignore lint/style/noNonNullAssertion: It exists
+    const unifiedToken = tokenList[0]!
+    expect(getDerivedToken(unifiedToken, "unknown_chain")).toBeNull()
+  })
+
+  it("should return null if token is not derivable from base token", () => {
+    // biome-ignore lint/style/noNonNullAssertion: It exists
+    const baseToken = tokenList[1]!
+    expect(getDerivedToken(baseToken, "unknown_chain")).toBeNull()
   })
 })

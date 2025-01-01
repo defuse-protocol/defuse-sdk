@@ -1,5 +1,10 @@
 import { settings } from "src/config/settings"
 import {
+  assetNetworkAdapter,
+  reverseAssetNetworkAdapter,
+} from "src/utils/adapters"
+import { getDerivedToken } from "src/utils/tokenUtils"
+import {
   type ActorRefFrom,
   and,
   assertEvent,
@@ -9,6 +14,7 @@ import {
 } from "xstate"
 import type { BaseTokenInfo, ChainType, SwappableToken } from "../../types"
 import type { BlockchainEnum } from "../../types"
+import { parseUnits } from "../../utils/parse"
 import { isBaseToken, isNativeToken, isUnifiedToken } from "../../utils/token"
 import { backgroundBalanceActor } from "./backgroundBalanceActor"
 import {
@@ -45,12 +51,13 @@ import {
   type PreparationOutput,
   prepareDepositActor,
 } from "./prepareDepositActor"
+import { storageDepositAmountActor } from "./storageDepositAmountActor"
 
 export type Context = {
   error: null | {
     tag: "err"
     value: {
-      reason: "ERR_GET_BALANCE"
+      reason: "ERR_GET_BALANCE" | "ERR_GET_STORAGE_DEPOSIT_AMOUNT"
       error: Error | null
     }
   }
@@ -81,6 +88,8 @@ export type Context = {
   depositEVMResult: DepositEVMMachineOutput | null
   depositSolanaResult: DepositSolanaMachineOutput | null
   depositTurboResult: DepositTurboMachineOutput | null
+  derivedToken: BaseTokenInfo | null
+  storageDepositRequired: bigint | null
   depositFormRef: ActorRefFrom<typeof depositFormReducer>
   fetchWalletAddressBalanceRef: ActorRefFrom<
     typeof backgroundBalanceActor
@@ -129,6 +138,7 @@ export const depositUIMachine = setup({
     depositSolanaActor: depositSolanaMachine,
     depositEstimateMaxValueActor: depositEstimateMaxValueActor,
     depositTurboActor: depositTurboMachine,
+    fetchStorageDepositAmountActor: storageDepositAmountActor,
     prepareDepositActor: prepareDepositActor,
     depositFormActor: depositFormReducer,
     depositGenerateAddressV2Actor: depositGenerateAddressMachineV2,
@@ -142,6 +152,28 @@ export const depositUIMachine = setup({
         tag: "err" as const,
         value: error,
       }),
+    }),
+    setDerivedToken: assign({
+      derivedToken: ({ context }) => {
+        const token = context.depositFormRef.getSnapshot().context.tokenIn
+        if (
+          token == null ||
+          context.depositFormRef.getSnapshot().context.blockchain == null
+        ) {
+          return null
+        }
+
+        const derivedToken = getDerivedToken(
+          token,
+          context.depositFormRef.getSnapshot().context.blockchain
+        )
+
+        // This isn't possible condition, if this happens, we need to fix the token list
+        if (derivedToken == null) {
+          throw new Error("ERR_TOKEN_NOT_FOUND")
+        }
+        return derivedToken
+      },
     }),
     clearError: assign({ error: null }),
     setDepositNearResult: assign({
@@ -298,6 +330,8 @@ export const depositUIMachine = setup({
     poaBridgeInfoRef: spawn("poaBridgeInfoActor", {
       id: "poaBridgeInfoRef",
     }),
+    storageDepositRequired: null,
+    derivedToken: null,
     depositFormRef: spawn("depositFormActor", {
       id: "depositFormRef",
       input: { parentRef: self },
@@ -377,17 +411,11 @@ export const depositUIMachine = setup({
       states: {
         idle: {},
 
-        reset_previous_preparation: {
-          always: [
-            {
-              target: "preparation_v2",
-              guard: "isDepositParamsComplete",
-              actions: ["clearError", "clearResults", "clearBalances"],
-            },
-            {
-              target: "idle",
-            },
-          ],
+        "pre-preparation": {
+          always: {
+            target: "preparation",
+            guard: and(["isTokenValid", "isNetworkValid", "isLoggedIn"]),
+          },
         },
 
         preparation_v2: {
@@ -429,12 +457,17 @@ export const depositUIMachine = setup({
           const tokenIn = context.depositFormRef.getSnapshot().context.tokenIn
           assert(tokenIn, "token is null")
           assert(context.userAddress, "userAddress is null")
+          assert(
+            context.storageDepositRequired != null,
+            "storageDepositRequired is null"
+          )
 
           return {
             balance: context.balance,
             amount: context.parsedFormValues.amount,
             asset: tokenIn,
             accountId: context.userAddress,
+            storageDepositRequired: context.storageDepositRequired,
           }
         },
 

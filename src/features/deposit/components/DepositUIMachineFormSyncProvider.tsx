@@ -19,16 +19,21 @@ export function DepositUIMachineFormSyncProvider({
 
   useEffect(() => {
     const sub = watch(async (value, { name }) => {
-      if (name === "network" && value.network != null) {
+      if (name === "network") {
+        const networkValue = value[name]
+        // TODO: For some reason, the form sets the network to an empty string when the network is reset
+        if (!!networkValue && networkValue.length === 0) {
+          return
+        }
         actorRef.send({
           type: "DEPOSIT_FORM.UPDATE_BLOCKCHAIN",
-          params: { network: value.network },
+          params: { network: value[name] },
         })
       }
-      if (name === "amount" && value.amount && value.amount.length > 0) {
+      if (name === "amount") {
         actorRef.send({
           type: "DEPOSIT_FORM.UPDATE_AMOUNT",
-          params: { amount: value.amount },
+          params: { amount: value[name] },
         })
       }
     })

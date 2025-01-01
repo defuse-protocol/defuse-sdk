@@ -33,3 +33,23 @@ export function computeTotalBalance(
     balances
   )
 }
+
+export function getDerivedToken(
+  tokenIn: BaseTokenInfo | UnifiedTokenInfo,
+  chainName: string | null
+): BaseTokenInfo | null {
+  if (isBaseToken(tokenIn)) {
+    return chainName === tokenIn.chainName ? tokenIn : null
+  }
+
+  if (chainName != null) {
+    const tokenOut = tokenIn.groupedTokens.find(
+      (token) => token.chainName === chainName
+    )
+    if (tokenOut != null) {
+      return tokenOut
+    }
+  }
+
+  return null
+}
