@@ -1,7 +1,6 @@
 import type { Settings } from "../types"
-import { SupportedChainName } from "../types/base"
 
-export let settings: Settings = {
+export const settings: Settings = {
   providerIds: [],
   defuseContractId: "intents.near",
   swapExpirySec: 600, // 10 minutes
@@ -40,10 +39,4 @@ export let settings: Settings = {
     aurora: "https://mainnet.aurora.dev",
     xrpledger: "https://xrplcluster.com",
   },
-}
-
-export const getSettings = (): Settings => settings
-
-export const setSettings = (newSettings: Partial<Settings>) => {
-  settings = { ...settings, ...newSettings }
 }

@@ -13,7 +13,6 @@ import type {
 } from "react-hook-form"
 
 import { FieldComboInputRegistryName } from "./FieldComboInput"
-import { FieldTextInputRegistryName } from "./FieldTextInput"
 
 // Define an interface for components that accept register as a prop
 interface RegisterProps<T extends FieldValues> {
@@ -30,10 +29,7 @@ export const Form = <T extends FieldValues>({
   handleSubmit,
   register,
 }: Props<T>) => {
-  const allowedComponents = [
-    FieldComboInputRegistryName,
-    FieldTextInputRegistryName,
-  ]
+  const allowedComponents = [FieldComboInputRegistryName]
 
   const childrenWithProps = Children.map(children, (child) => {
     if (isValidElement(child)) {
