@@ -1,6 +1,6 @@
 import { DialogOverlay } from "@radix-ui/react-dialog"
 import { Dialog, VisuallyHidden } from "@radix-ui/themes"
-import React, {
+import {
   type PropsWithChildren,
   useCallback,
   useEffect,

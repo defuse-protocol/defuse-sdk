@@ -66,9 +66,6 @@ describe.skip("swapUIMachine", () => {
     simulatedClock = new SimulatedClock()
   })
 
-  const T = () => true
-  const F = () => false
-
   it.each`
     initialState      | expectedState           | event      | guards  | context
     ${"editing.idle"} | ${"editing.validating"} | ${"input"} | ${null} | ${null}

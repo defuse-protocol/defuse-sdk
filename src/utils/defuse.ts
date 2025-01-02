@@ -1,5 +1,5 @@
 import { base58, hex } from "@scure/base"
-import type { ChainType } from "../types"
+import type { ChainType } from "../types/deposit"
 
 // Branding a string type with a unique symbol to prevent accidental misuse.
 export type DefuseUserId = string & { __brand: "DefuseAccountId" }

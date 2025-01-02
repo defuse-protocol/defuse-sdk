@@ -15,30 +15,31 @@ import {
 } from "@radix-ui/themes"
 import { useSelector } from "@xstate/react"
 import { providers } from "near-api-js"
-import { Fragment, type ReactNode, useEffect, useMemo } from "react"
+import { Fragment, type ReactNode, useEffect } from "react"
 import { Controller, useForm } from "react-hook-form"
 import { useTokensUsdPrices } from "src/hooks/useTokensUsdPrices"
 import type { ActorRefFrom } from "xstate"
-import { ButtonCustom } from "../../../../components/Button"
+import { ButtonCustom } from "../../../../components/Button/ButtonCustom"
 import { EmptyIcon } from "../../../../components/EmptyIcon"
 import { Form } from "../../../../components/Form"
 import { FieldComboInput } from "../../../../components/Form/FieldComboInput"
 import { WithdrawIntentCard } from "../../../../components/IntentCard/WithdrawIntentCard"
 import { NetworkIcon } from "../../../../components/Network/NetworkIcon"
 import { Select } from "../../../../components/Select/Select"
-import { useModalController } from "../../../../hooks"
+import { useModalController } from "../../../../hooks/useModalController"
+import { logger } from "../../../../logger"
 import { useTokensStore } from "../../../../providers/TokensStoreProvider"
 import { ModalType } from "../../../../stores/modalStore"
-import { ChainType } from "../../../../types"
 import type {
   BaseTokenInfo,
   SupportedChainName,
   UnifiedTokenInfo,
 } from "../../../../types/base"
+import { ChainType } from "../../../../types/deposit"
 import type { WithdrawWidgetProps } from "../../../../types/withdraw"
-import { isBaseToken } from "../../../../utils"
 import { formatTokenValue } from "../../../../utils/format"
 import { parseUnits } from "../../../../utils/parse"
+import { isBaseToken } from "../../../../utils/token"
 import { validateAddress } from "../../../../utils/validateAddress"
 import type { intentStatusMachine } from "../../../machines/intentStatusMachine"
 import { getPOABridgeInfo } from "../../../machines/poaBridgeInfoActor"
@@ -274,7 +275,7 @@ export const WithdrawForm = ({
         <Form<WithdrawFormNearValues>
           handleSubmit={handleSubmit(() => {
             if (userAddress == null || chainType == null) {
-              console.warn("No user address provided")
+              logger.warn("No user address provided")
               return
             }
 
@@ -598,7 +599,7 @@ const allBlockchains = [
 type TypeEqualityGuard<A, B> = Exclude<A, B> | Exclude<B, A> extends never
   ? true
   : never
-const typeCheck: TypeEqualityGuard<
+const _typeCheck: TypeEqualityGuard<
   SupportedChainName,
   (typeof allBlockchains)[number]["value"]
 > = true

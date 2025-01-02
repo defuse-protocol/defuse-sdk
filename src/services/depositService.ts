@@ -17,13 +17,14 @@ import { type ActorRefFrom, waitFor } from "xstate"
 import { settings } from "../config/settings"
 import type { State as DepositFormContext } from "../features/machines/depositFormReducer"
 import { getNearTxSuccessValue } from "../features/machines/getTxMachine"
+import { logger } from "../logger"
+import type { SupportedChainName } from "../types/base"
 import {
-  BlockchainEnum,
+  ChainType,
   type SendTransactionEVMParams,
-  type SupportedChainName,
-} from "../types"
-import { ChainType } from "../types"
-import type { Transaction } from "../types/deposit"
+  type Transaction,
+} from "../types/deposit"
+import { BlockchainEnum } from "../types/interfaces"
 import { type DefuseUserId, userAddressToDefuseUserId } from "../utils/defuse"
 import { getEVMChainId } from "../utils/evmChainId"
 import { getDepositAddress, getSupportedTokens } from "./poaBridgeClient"
@@ -44,7 +45,6 @@ export type PreparationOutput =
 
 export async function prepareDeposit(
   {
-    formValues,
     depositGenerateAddressV2Ref,
   }: {
     formValues: DepositFormContext
@@ -324,7 +324,9 @@ export async function generateDepositAddress(
 
     return generatedDepositAddress.address
   } catch (error) {
-    console.error("Error generating deposit address:", error)
+    logger.error(
+      new Error("Error generating deposit address", { cause: error })
+    )
     throw error
   }
 }
@@ -362,7 +364,7 @@ export async function getAllowance(
       args: [getAddress(owner), getAddress(spender)],
     })
     return result
-  } catch (error) {
+  } catch {
     return null
   }
 }

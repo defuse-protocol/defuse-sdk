@@ -1,7 +1,7 @@
 import { useEffect } from "react"
-import { SwapWidgetProvider } from "../../../providers"
+import { SwapWidgetProvider } from "../../../providers/SwapWidgetProvider"
 import { useTokensStore } from "../../../providers/TokensStoreProvider"
-import type { SwapWidgetProps } from "../../../types"
+import type { SwapWidgetProps } from "../../../types/swap"
 import { SwapForm } from "./SwapForm"
 import { SwapFormProvider } from "./SwapFormProvider"
 import { SwapSubmitterProvider } from "./SwapSubmitter"
@@ -58,10 +58,4 @@ function TokenListUpdater({
   }, [tokenList, updateTokens])
 
   return null
-}
-
-function assert(condition: unknown, msg?: string): asserts condition {
-  if (!condition) {
-    throw new Error(msg)
-  }
 }

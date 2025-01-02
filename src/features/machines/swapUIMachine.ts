@@ -9,13 +9,14 @@ import {
   spawnChild,
 } from "xstate"
 import { settings } from "../../config/settings"
+import { logger } from "../../logger"
 import {
   type AggregatedQuote,
   isAggregatedQuoteEmpty,
 } from "../../services/quoteService"
-import type { ChainType, SwappableToken } from "../../types"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../types/base"
-import type { Transaction } from "../../types/deposit"
+import type { ChainType, Transaction } from "../../types/deposit"
+import type { SwappableToken } from "../../types/swap"
 import { assert } from "../../utils/assert"
 import { userAddressToDefuseUserId } from "../../utils/defuse"
 import { parseUnits } from "../../utils/parse"
@@ -249,7 +250,7 @@ export const swapUIMachine = setup({
   guards: {
     isQuoteRelevant: ({ context }) => {
       // todo: implement real check for fetched quotes if they're expired or not
-      console.warn(
+      logger.warn(
         "Implement real check for fetched quotes if they're expired or not"
       )
       return context.quote != null && !isAggregatedQuoteEmpty(context.quote)
@@ -451,7 +452,7 @@ export const swapUIMachine = setup({
           target: "editing",
 
           actions: ({ event }) => {
-            console.error(event.error)
+            logger.error(event.error)
           },
         },
       },

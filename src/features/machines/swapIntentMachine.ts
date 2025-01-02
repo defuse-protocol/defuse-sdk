@@ -5,6 +5,7 @@ import { sign } from "tweetnacl"
 import { verifyMessage as verifyMessageViem } from "viem"
 import { assign, fromPromise, setup } from "xstate"
 import { settings } from "../../config/settings"
+import { logger } from "../../logger"
 import {
   publishIntent,
   waitForIntentSettlement,
@@ -145,7 +146,7 @@ export const swapIntentMachine = setup({
       }),
     }),
     logError: (_, params: { error: unknown }) => {
-      console.error(params.error)
+      logger.error(params.error)
     },
     proposeQuote: assign({
       intentOperationParams: ({ context }, proposedQuote: AggregatedQuote) => {

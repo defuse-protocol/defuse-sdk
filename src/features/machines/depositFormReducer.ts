@@ -1,15 +1,14 @@
-import { isBaseToken } from "src/utils"
 import { reverseAssetNetworkAdapter } from "src/utils/adapters"
 import { assert } from "src/utils/assert"
 import { parseUnits } from "src/utils/parse"
 import { getDerivedToken } from "src/utils/tokenUtils"
 import { type ActorRef, type Snapshot, fromTransition } from "xstate"
-import type { BlockchainEnum } from "../../types"
 import type {
   BaseTokenInfo,
   SupportedChainName,
   UnifiedTokenInfo,
 } from "../../types/base"
+import type { BlockchainEnum } from "../../types/interfaces"
 
 export type Fields = Array<Exclude<keyof State, "parentRef">>
 const fields: Fields = ["token", "blockchain", "parsedAmount", "amount"]

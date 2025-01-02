@@ -1,4 +1,5 @@
-import { BlockchainEnum, type SupportedChainName } from "../types"
+import type { SupportedChainName } from "../types/base"
+import { BlockchainEnum } from "../types/interfaces"
 
 export const assetNetworkAdapter: Record<SupportedChainName, BlockchainEnum> = {
   near: BlockchainEnum.NEAR,

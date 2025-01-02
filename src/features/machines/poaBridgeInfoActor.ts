@@ -7,6 +7,7 @@ import {
   setup,
   waitFor,
 } from "xstate"
+import { logger } from "../../logger"
 import { getSupportedTokens, type types } from "../../services/poaBridgeClient"
 import type { BaseTokenInfo } from "../../types/base"
 
@@ -32,7 +33,7 @@ export const poaBridgeInfoActor = setup({
   },
   actions: {
     logError: (_, err: Error) => {
-      console.error(err)
+      logger.error(err)
     },
     setBridgeInfo: assign({
       bridgeInfo: (

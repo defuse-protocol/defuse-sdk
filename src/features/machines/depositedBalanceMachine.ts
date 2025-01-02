@@ -8,14 +8,14 @@ import {
   setup,
 } from "xstate"
 import { getDepositedBalances } from "../../services/defuseBalanceService"
-import type { ChainType } from "../../types"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../types/base"
-import { isBaseToken } from "../../utils"
+import type { ChainType } from "../../types/deposit"
 import { assert } from "../../utils/assert"
 import {
   type DefuseUserId,
   userAddressToDefuseUserId,
 } from "../../utils/defuse"
+import { isBaseToken } from "../../utils/token"
 
 export interface Input {
   parentRef: ParentActor

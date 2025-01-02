@@ -1,6 +1,6 @@
 import { type PropsWithChildren, useEffect } from "react"
 import { useFormContext } from "react-hook-form"
-import type { ChainType } from "../../../types"
+import type { ChainType } from "../../../types/deposit"
 import { reverseAssetNetworkAdapter } from "../../../utils/adapters"
 import type { DepositFormValues } from "./DepositForm"
 import { DepositUIMachineContext } from "./DepositUIMachineProvider"

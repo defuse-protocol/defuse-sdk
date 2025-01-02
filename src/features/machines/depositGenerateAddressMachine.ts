@@ -1,5 +1,7 @@
-import type { BlockchainEnum, ChainType } from "src/types"
 import { assign, fromPromise, setup } from "xstate"
+import { logger } from "../../logger"
+import type { ChainType } from "../../types/deposit"
+import type { BlockchainEnum } from "../../types/interfaces"
 
 export type DepositGeneratedDescription = {
   type: "depositAddressGenerated"
@@ -51,7 +53,7 @@ export const depositGenerateAddressMachine = setup({
   },
   actors: {
     generateDepositAddress: fromPromise(
-      async ({ input }: { input: Input }): Promise<string> => {
+      async (_: { input: Input }): Promise<string> => {
         throw new Error("not implemented")
       }
     ),
@@ -64,7 +66,7 @@ export const depositGenerateAddressMachine = setup({
       }),
     }),
     logError: (_, params: { error: unknown }) => {
-      console.error(params.error)
+      logger.error(params.error)
     },
   },
 }).createMachine({
@@ -136,7 +138,6 @@ export const depositGenerateAddressMachine = setup({
             {
               type: "setError",
               params: ({ event }) => {
-                console.log("onError type: setError", event)
                 return {
                   reason: "ERR_GENERATING_ADDRESS",
                   error: toError(event.error),

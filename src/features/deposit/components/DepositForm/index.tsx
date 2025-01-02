@@ -13,7 +13,7 @@ import {
 } from "@radix-ui/themes"
 import { useSelector } from "@xstate/react"
 import { QRCodeSVG } from "qrcode.react"
-import { type ReactNode, useEffect, useRef, useState } from "react"
+import { type ReactNode, useEffect, useState } from "react"
 import CopyToClipboard from "react-copy-to-clipboard"
 import { Controller, useFormContext } from "react-hook-form"
 import { TooltipInfo } from "src/components/TooltipInfo"
@@ -26,7 +26,7 @@ import {
 } from "src/utils/adapters"
 import { AssetComboIcon } from "../../../../components/Asset/AssetComboIcon"
 import { BlockMultiBalances } from "../../../../components/Block/BlockMultiBalances"
-import { ButtonCustom } from "../../../../components/Button"
+import { ButtonCustom } from "../../../../components/Button/ButtonCustom"
 import { EmptyIcon } from "../../../../components/EmptyIcon"
 import { Form } from "../../../../components/Form"
 import { Input } from "../../../../components/Input"
@@ -35,13 +35,10 @@ import { NetworkIcon } from "../../../../components/Network/NetworkIcon"
 import { Select } from "../../../../components/Select/Select"
 import { useModalStore } from "../../../../providers/ModalStoreProvider"
 import { ModalType } from "../../../../stores/modalStore"
-import {
-  type BaseTokenInfo,
-  BlockchainEnum,
-  type ChainType,
-  type SwappableToken,
-  type UnifiedTokenInfo,
-} from "../../../../types"
+import type { BaseTokenInfo, UnifiedTokenInfo } from "../../../../types/base"
+import type { ChainType } from "../../../../types/deposit"
+import { BlockchainEnum } from "../../../../types/interfaces"
+import type { SwappableToken } from "../../../../types/swap"
 import { formatTokenValue } from "../../../../utils/format"
 import {
   isBaseToken,
@@ -65,14 +62,8 @@ export type DepositFormValues = {
 }
 
 export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
-  const {
-    handleSubmit,
-    register,
-    control,
-    setValue,
-    watch,
-    formState: { errors },
-  } = useFormContext<DepositFormValues>()
+  const { handleSubmit, register, control, setValue, watch } =
+    useFormContext<DepositFormValues>()
 
   const depositUIActorRef = DepositUIMachineContext.useActorRef()
   const snapshot = DepositUIMachineContext.useSelector((snapshot) => snapshot)
@@ -261,7 +252,6 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
                     disabled={!isUnifiedToken(token)}
                     onChange={field.onChange}
                     name={field.name}
-                    ref={field.ref}
                   />
                 )}
               />

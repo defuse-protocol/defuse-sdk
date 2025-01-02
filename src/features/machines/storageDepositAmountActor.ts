@@ -1,6 +1,6 @@
-import type { BaseTokenInfo } from "src/types"
 import { fromPromise } from "xstate"
 import { getNEP141StorageRequired } from "../../services/nep141StorageService"
+import type { BaseTokenInfo } from "../../types/base"
 
 export const storageDepositAmountActor = fromPromise(
   async ({
@@ -20,7 +20,7 @@ export const storageDepositAmountActor = fromPromise(
         return result.value
       }
       return null
-    } catch (error) {
+    } catch {
       throw new Error("ERR_NEP141_STORAGE_CANNOT_FETCH")
     }
   }

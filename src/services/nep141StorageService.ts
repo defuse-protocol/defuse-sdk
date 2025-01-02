@@ -1,10 +1,10 @@
-import type { BaseTokenInfo } from "src/types"
-import { isFungibleToken } from "src/utils"
-
 import {
   getNearNep141MinStorageBalance,
   getNearNep141StorageBalance,
 } from "../features/machines/getBalanceMachine"
+import { logger } from "../logger"
+import type { BaseTokenInfo } from "../types/base"
+import { isFungibleToken } from "../utils/token"
 
 export type Output =
   | {
@@ -50,7 +50,7 @@ export async function getNEP141StorageRequired({
     ])
 
   if (minStorageBalanceResult.status === "rejected") {
-    console.error(minStorageBalanceResult.reason)
+    logger.error(minStorageBalanceResult.reason)
     return {
       tag: "err",
       value: { reason: "ERR_NEP141_STORAGE_CANNOT_FETCH" },
@@ -58,7 +58,7 @@ export async function getNEP141StorageRequired({
   }
 
   if (userStorageBalanceResult.status === "rejected") {
-    console.error(userStorageBalanceResult.reason)
+    logger.error(userStorageBalanceResult.reason)
     return {
       tag: "err",
       value: { reason: "ERR_NEP141_STORAGE_CANNOT_FETCH" },

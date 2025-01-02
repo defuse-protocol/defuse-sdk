@@ -1,5 +1,6 @@
 import { settings } from "../config/settings"
-import type { BaseTokenInfo } from "../types"
+import { logger } from "../logger"
+import type { BaseTokenInfo } from "../types/base"
 import { computeTotalBalance } from "../utils/tokenUtils"
 import { quote } from "./solverRelayHttpClient"
 import type { QuoteResponse } from "./solverRelayHttpClient/types"
@@ -55,7 +56,7 @@ export async function queryQuote(
 
   // If total available is less than requested, just quote the full amount from one token
   if (totalAvailableIn == null || totalAvailableIn < input.amountIn) {
-    const q = await quote(
+    const q = await quoteWithLog(
       {
         defuse_asset_identifier_in: tokenIn,
         defuse_asset_identifier_out: tokenOut,
@@ -98,7 +99,7 @@ export async function queryQuoteExactOut(
   },
   { signal }: { signal?: AbortSignal } = {}
 ): Promise<AggregatedQuote> {
-  const quotes = await quote(
+  const quotes = await quoteWithLog(
     {
       defuse_asset_identifier_in: input.tokenIn,
       defuse_asset_identifier_out: input.tokenOut,
@@ -240,7 +241,7 @@ export async function fetchQuotesForTokens(
 ): Promise<null | NonNullable<QuoteResults>[]> {
   const quotes = await Promise.all(
     Object.entries(amountsToQuote).map(async ([tokenIn, amountIn]) => {
-      return quote(
+      return quoteWithLog(
         {
           defuse_asset_identifier_in: tokenIn,
           defuse_asset_identifier_out: tokenOut,
@@ -263,3 +264,11 @@ function ensureAllNonNull<T>(array: (T | null)[]): T[] | null {
   const filtered = array.filter((x): x is T => x !== null)
   return filtered.length === array.length ? filtered : null
 }
+
+const quoteWithLog = (async (params, config) => {
+  const result = await quote(params, config)
+  if (result == null) {
+    logger.warn("No liquidity", { quoteParams: params })
+  }
+  return result
+}) satisfies typeof quote

@@ -1,6 +1,5 @@
 import { settings } from "src/config/settings"
 import { assert } from "src/utils/assert"
-import { getDerivedToken } from "src/utils/tokenUtils"
 import {
   type ActorRefFrom,
   and,
@@ -9,8 +8,9 @@ import {
   sendTo,
   setup,
 } from "xstate"
-import type { BaseTokenInfo, ChainType, SwappableToken } from "../../types"
-import type { BlockchainEnum } from "../../types"
+import { logger } from "../../logger"
+import type { ChainType } from "../../types/deposit"
+import type { SwappableToken } from "../../types/swap"
 import { isBaseToken, isNativeToken, isUnifiedToken } from "../../utils/token"
 import { backgroundBalanceActor } from "./backgroundBalanceActor"
 import {
@@ -25,7 +25,6 @@ import {
 } from "./depositFormReducer"
 import {
   type Output as DepositGenerateAddressMachineOutput,
-  DepositGeneratedDescription,
   depositGenerateAddressMachine,
 } from "./depositGenerateAddressMachine"
 import { depositGenerateAddressMachineV2 } from "./depositGenerateAddressMachineV2"
@@ -128,7 +127,7 @@ export const depositUIMachine = setup({
   },
   actions: {
     logError: (_, event: { error: unknown }) => {
-      console.error(event.error)
+      logger.error(event.error)
     },
     setError: assign({
       error: (_, error: NonNullable<Context["error"]>["value"]) => ({

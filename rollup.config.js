@@ -9,12 +9,13 @@ import packageJson from "./package.json" assert { type: "json" }
 
 const config = [
   {
-    input: "src/index.ts",
+    input: ["src/index.ts", "src/logger.ts"],
     output: [
       {
-        file: "dist/index.esm.js",
+        dir: "dist",
         format: "es",
         sourcemap: true,
+        entryFileNames: "[name].esm.js",
       },
     ],
     plugins: [
@@ -40,6 +41,11 @@ const config = [
   {
     input: "src/index.ts",
     output: [{ file: "dist/index.d.ts", format: "es" }],
+    plugins: [dts()],
+  },
+  {
+    input: "src/logger.ts",
+    output: [{ file: "dist/logger.d.ts", format: "es" }],
     plugins: [dts()],
   },
   {

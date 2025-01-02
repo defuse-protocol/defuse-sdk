@@ -1,6 +1,7 @@
 import { providers } from "near-api-js"
 import { type ReactNode, createContext } from "react"
-import type { ChainType } from "../../../types"
+import { logger } from "../../../logger"
+import type { ChainType } from "../../../types/deposit"
 import type { SendNearTransaction } from "../../machines/publicKeyVerifierMachine"
 import { SwapUIMachineContext } from "./SwapUIMachineProvider"
 
@@ -25,7 +26,7 @@ export function SwapSubmitterProvider({
 
   const onSubmit = () => {
     if (userAddress == null || userChainType == null) {
-      console.warn("No user address provided")
+      logger.warn("No user address provided")
       return
     }
 

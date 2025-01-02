@@ -1,5 +1,6 @@
 import type { PreparationOutput } from "src/services/depositService"
-import type { ChainType, SupportedChainName } from "src/types"
+import type { SupportedChainName } from "src/types/base"
+import type { ChainType } from "src/types/deposit"
 import { assert } from "src/utils/assert"
 import { assign, fromPromise, setup } from "xstate"
 
@@ -22,9 +23,7 @@ export const depositGenerateAddressMachineV2 = setup({
   },
   actors: {
     generateDepositAddress: fromPromise(
-      async ({
-        input,
-      }: {
+      async (_: {
         input: {
           userAddress: string
           userChainType: ChainType

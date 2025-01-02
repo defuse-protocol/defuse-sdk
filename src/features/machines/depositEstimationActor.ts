@@ -1,15 +1,11 @@
-import { estimateSolanaTransferCost } from "src/services/estimateService"
-import {
-  BlockchainEnum,
-  type SupportedChainName,
-  type SwappableToken,
-} from "src/types"
-import { isBaseToken } from "src/utils"
-import { assetNetworkAdapter } from "src/utils/adapters"
-import { validateAddress } from "src/utils/validateAddress"
-import type { Address } from "viem"
 import { fromPromise } from "xstate"
-import { getEVMChainId } from "../../utils/evmChainId"
+import { estimateSolanaTransferCost } from "../../services/estimateService"
+import type { SupportedChainName } from "../../types/base"
+import { BlockchainEnum } from "../../types/interfaces"
+import type { SwappableToken } from "../../types/swap"
+import { assetNetworkAdapter } from "../../utils/adapters"
+import { isBaseToken } from "../../utils/token"
+import { validateAddress } from "../../utils/validateAddress"
 
 // Estimate the gas cost for transferring the maximum balance
 // Calculate the maximum transferable balance after accounting for gas cost
@@ -17,7 +13,6 @@ export const depositEstimateMaxValueActor = fromPromise(
   async ({
     input: {
       blockchain,
-      tokenAddress,
       userAddress,
       balance,
       nativeBalance,
