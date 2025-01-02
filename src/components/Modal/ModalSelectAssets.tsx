@@ -9,7 +9,7 @@ import type {
   BaseTokenInfo,
   UnifiedTokenInfo,
 } from "../../types/base"
-import { isBaseToken, isUnifiedToken } from "../../utils"
+import { isBaseToken } from "../../utils/token"
 import { computeTotalBalance } from "../../utils/tokenUtils"
 import { AssetList } from "../Asset/AssetList"
 import { EmptyAssetList } from "../Asset/EmptyAssetList"

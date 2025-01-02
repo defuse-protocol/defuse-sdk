@@ -1,5 +1,6 @@
 import { assign, emit, fromPromise, setup } from "xstate"
-import type { SupportedChainName, SwappableToken } from "../../types"
+import type { SupportedChainName } from "../../types/base"
+import type { SwappableToken } from "../../types/swap"
 
 export type DepositDescription = {
   type: "depositEVM"

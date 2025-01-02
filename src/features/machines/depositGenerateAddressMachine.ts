@@ -1,5 +1,6 @@
-import type { BlockchainEnum, ChainType } from "src/types"
 import { assign, fromPromise, setup } from "xstate"
+import type { ChainType } from "../../types/deposit"
+import type { BlockchainEnum } from "../../types/interfaces"
 
 export type DepositGeneratedDescription = {
   type: "depositAddressGenerated"

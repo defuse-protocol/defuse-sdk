@@ -14,9 +14,9 @@ import {
 } from "../../services/quoteService"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../types/base"
 import type { ChainType, Transaction } from "../../types/deposit"
-import { isBaseToken } from "../../utils"
 import { assert } from "../../utils/assert"
 import { userAddressToDefuseUserId } from "../../utils/defuse"
+import { isBaseToken } from "../../utils/token"
 import {
   type Events as BackgroundQuoterEvents,
   type ParentEvents as BackgroundQuoterParentEvents,

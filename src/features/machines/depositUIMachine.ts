@@ -12,8 +12,10 @@ import {
   sendTo,
   setup,
 } from "xstate"
-import type { BaseTokenInfo, ChainType, SwappableToken } from "../../types"
-import { BlockchainEnum } from "../../types"
+import type { BaseTokenInfo } from "../../types/base"
+import type { ChainType } from "../../types/deposit"
+import { BlockchainEnum } from "../../types/interfaces"
+import type { SwappableToken } from "../../types/swap"
 import { parseUnits } from "../../utils/parse"
 import { isBaseToken, isNativeToken, isUnifiedToken } from "../../utils/token"
 import { backgroundBalanceActor } from "./backgroundBalanceActor"

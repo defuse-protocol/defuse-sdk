@@ -1,4 +1,4 @@
-import type { SupportedChainName } from "../types"
+import type { SupportedChainName } from "../types/base"
 
 interface Settings {
   defuseContractId: string

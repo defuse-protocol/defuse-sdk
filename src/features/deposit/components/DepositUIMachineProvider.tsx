@@ -27,7 +27,8 @@ import {
   getAllowance,
   waitEVMTransaction,
 } from "../../../services/depositService"
-import type { ChainType, SwappableToken, Transaction } from "../../../types"
+import type { ChainType, Transaction } from "../../../types/deposit"
+import type { SwappableToken } from "../../../types/swap"
 import { assetNetworkAdapter } from "../../../utils/adapters"
 import { assert } from "../../../utils/assert"
 import { userAddressToDefuseUserId } from "../../../utils/defuse"

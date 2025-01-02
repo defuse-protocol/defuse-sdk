@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import type { SupportedChainName } from "../types"
+import type { SupportedChainName } from "../types/base"
 import { validateAddress } from "./validateAddress"
 
 describe("validateAddress", () => {

@@ -1,4 +1,4 @@
-import type { SupportedChainName } from "src/types"
+import type { SupportedChainName } from "../types/base"
 
 export function chainTxExplorer(blockchain: SupportedChainName): string | null {
   switch (blockchain) {

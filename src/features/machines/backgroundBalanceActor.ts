@@ -1,9 +1,9 @@
 import { getWalletRpcUrl } from "src/services/depositService"
-import { BlockchainEnum } from "src/types"
 import { reverseAssetNetworkAdapter } from "src/utils/adapters"
 import { validateAddress } from "src/utils/validateAddress"
 import type { Address } from "viem"
 import { fromPromise } from "xstate"
+import { BlockchainEnum } from "../../types/interfaces"
 import {
   getEvmErc20Balance,
   getEvmNativeBalance,

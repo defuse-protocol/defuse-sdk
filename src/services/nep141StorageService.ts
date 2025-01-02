@@ -1,10 +1,9 @@
-import type { BaseTokenInfo } from "src/types"
-import { isFungibleToken } from "src/utils"
-
 import {
   getNearNep141MinStorageBalance,
   getNearNep141StorageBalance,
 } from "../features/machines/getBalanceMachine"
+import type { BaseTokenInfo } from "../types/base"
+import { isFungibleToken } from "../utils/token"
 
 export type Output =
   | {

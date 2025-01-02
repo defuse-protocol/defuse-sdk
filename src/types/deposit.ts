@@ -1,6 +1,6 @@
 import type { Transaction as TransactionSolana } from "@solana/web3.js"
 import type { Address, Hash } from "viem"
-import type { SwappableToken } from "../types"
+import type { SwappableToken } from "./swap"
 
 export type ChainType = "near" | "evm" | "solana"
 

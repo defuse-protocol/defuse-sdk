@@ -6,13 +6,14 @@ import {
   estimateEVMTransferCost,
   estimateSolanaTransferCost,
 } from "src/services/estimateService"
-import { BlockchainEnum, type SwappableToken } from "src/types"
-import { isBaseToken, isNativeToken, isUnifiedToken } from "src/utils"
 import { reverseAssetNetworkAdapter } from "src/utils/adapters"
 import { validateAddress } from "src/utils/validateAddress"
 import type { Address } from "viem"
 import { fromPromise } from "xstate"
+import { BlockchainEnum } from "../../types/interfaces"
+import type { SwappableToken } from "../../types/swap"
 import { getEVMChainId } from "../../utils/evmChainId"
+import { isBaseToken } from "../../utils/token"
 
 // Estimate the gas cost for transferring the maximum balance
 // Calculate the maximum transferable balance after accounting for gas cost

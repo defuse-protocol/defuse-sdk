@@ -1,6 +1,6 @@
 import { useEffect } from "react"
 import { useTokensStore } from "../providers/TokensStoreProvider"
-import type { SwappableToken } from "../types"
+import type { SwappableToken } from "../types/swap"
 
 export function TokenListUpdater({
   tokenList,

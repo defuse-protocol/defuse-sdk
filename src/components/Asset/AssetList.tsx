@@ -5,8 +5,8 @@ import type { ReactNode } from "react"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../types/base"
 import type { SelectItemToken } from "../Modal/ModalSelectAssets"
 
-import { isBaseToken } from "../../utils"
 import { formatTokenValue } from "../../utils/format"
+import { isBaseToken } from "../../utils/token"
 import { AssetComboIcon } from "./AssetComboIcon"
 
 type Props<T> = {

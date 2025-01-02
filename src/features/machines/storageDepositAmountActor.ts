@@ -1,6 +1,6 @@
-import type { BaseTokenInfo } from "src/types"
 import { fromPromise } from "xstate"
 import { getNEP141StorageRequired } from "../../services/nep141StorageService"
+import type { BaseTokenInfo } from "../../types/base"
 
 export const storageDepositAmountActor = fromPromise(
   async ({

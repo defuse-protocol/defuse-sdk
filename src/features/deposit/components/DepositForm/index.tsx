@@ -26,7 +26,7 @@ import {
 } from "src/utils/adapters"
 import { AssetComboIcon } from "../../../../components/Asset/AssetComboIcon"
 import { BlockMultiBalances } from "../../../../components/Block/BlockMultiBalances"
-import { ButtonCustom } from "../../../../components/Button"
+import { ButtonCustom } from "../../../../components/Button/ButtonCustom"
 import { EmptyIcon } from "../../../../components/EmptyIcon"
 import { Form } from "../../../../components/Form"
 import { Input } from "../../../../components/Input"
@@ -35,11 +35,9 @@ import { NetworkIcon } from "../../../../components/Network/NetworkIcon"
 import { Select } from "../../../../components/Select/Select"
 import { useModalStore } from "../../../../providers/ModalStoreProvider"
 import { ModalType } from "../../../../stores/modalStore"
-import {
-  BlockchainEnum,
-  type ChainType,
-  type SwappableToken,
-} from "../../../../types"
+import type { ChainType } from "../../../../types/deposit"
+import { BlockchainEnum } from "../../../../types/interfaces"
+import type { SwappableToken } from "../../../../types/swap"
 import { formatTokenValue } from "../../../../utils/format"
 import {
   isBaseToken,

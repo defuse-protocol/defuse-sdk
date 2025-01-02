@@ -13,9 +13,9 @@ import {
   type AggregatedQuote,
   isAggregatedQuoteEmpty,
 } from "../../services/quoteService"
-import type { ChainType, SwappableToken } from "../../types"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../types/base"
-import type { Transaction } from "../../types/deposit"
+import type { ChainType, Transaction } from "../../types/deposit"
+import type { SwappableToken } from "../../types/swap"
 import { assert } from "../../utils/assert"
 import { userAddressToDefuseUserId } from "../../utils/defuse"
 import { parseUnits } from "../../utils/parse"

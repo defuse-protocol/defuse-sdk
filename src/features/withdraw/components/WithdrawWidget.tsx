@@ -3,12 +3,12 @@ import { settings } from "../../../config/settings"
 import { auroraEngineContractId } from "../../../constants/aurora"
 import { WithdrawWidgetProvider } from "../../../providers/WithdrawWidgetProvider"
 import type { WithdrawWidgetProps } from "../../../types/withdraw"
-import { isBaseToken } from "../../../utils"
 import { assert } from "../../../utils/assert"
 import {
   makeInnerSwapAndWithdrawMessage,
   makeSwapMessage,
 } from "../../../utils/messageFactory"
+import { isBaseToken } from "../../../utils/token"
 import {
   calcOperationAmountOut,
   swapIntentMachine,

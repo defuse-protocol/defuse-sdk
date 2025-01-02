@@ -4,8 +4,8 @@ import type {
   SupportedChainName,
   UnifiedTokenInfo,
 } from "../../types/base"
-import { isBaseToken } from "../../utils"
 import { assert } from "../../utils/assert"
+import { isBaseToken } from "../../utils/token"
 import { validateAddress } from "../../utils/validateAddress"
 
 export type Fields = Array<Exclude<keyof State, "parentRef">>

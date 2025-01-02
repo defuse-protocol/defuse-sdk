@@ -1,5 +1,5 @@
 import { assign, emit, fromPromise, setup } from "xstate"
-import type { SwappableToken } from "../../types"
+import type { SwappableToken } from "../../types/swap"
 
 export type DepositDescription = {
   type: "depositNear"

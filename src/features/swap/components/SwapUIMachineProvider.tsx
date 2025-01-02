@@ -14,7 +14,7 @@ import type {
   SwappableToken,
   WalletMessage,
   WalletSignatureResult,
-} from "../../../types"
+} from "../../../types/swap"
 import { swapIntentMachine } from "../../machines/swapIntentMachine"
 import { swapUIMachine } from "../../machines/swapUIMachine"
 import type { SwapFormValues } from "./SwapForm"

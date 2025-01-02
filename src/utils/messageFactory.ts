@@ -1,11 +1,11 @@
 import { base64 } from "@scure/base"
 import { getAddress } from "viem"
 import { settings } from "../config/settings"
-import type { WalletMessage } from "../types"
 import type {
   Intent,
   Nep413DefuseMessageFor_DefuseIntents,
 } from "../types/defuse-contracts-types"
+import type { WalletMessage } from "../types/swap"
 import { assert } from "./assert"
 import type { DefuseUserId } from "./defuse"
 

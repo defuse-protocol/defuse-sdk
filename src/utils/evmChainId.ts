@@ -1,5 +1,5 @@
 import { CHAIN_IDS } from "../constants/evm"
-import type { SupportedChainName } from "../types"
+import type { SupportedChainName } from "../types/base"
 
 export function getEVMChainId(chainName: SupportedChainName): number {
   const chainId = CHAIN_IDS[chainName]
