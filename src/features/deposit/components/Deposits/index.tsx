@@ -1,9 +1,9 @@
 import { Box, Flex, Link, Text } from "@radix-ui/themes"
 import { AssetComboIcon } from "src/components/Asset/AssetComboIcon"
-import type { SupportedChainName } from "src/types"
 import { assert } from "src/utils/assert"
 import { chainTxExplorer } from "src/utils/chainTxExplorer"
 import { formatTokenValue } from "src/utils/format"
+import type { SupportedChainName } from "../../../../types/base"
 import type { Context } from "../../../machines/depositUIMachine"
 
 export const Deposits = ({

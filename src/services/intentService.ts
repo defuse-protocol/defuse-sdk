@@ -1,5 +1,6 @@
 import { retry } from "@lifeomic/attempt"
-import type { ChainType, WalletSignatureResult } from "../types"
+import type { ChainType } from "../types/deposit"
+import type { WalletSignatureResult } from "../types/swap"
 import { prepareSwapSignedData } from "../utils/prepareBroadcastRequest"
 import * as solverRelayClient from "./solverRelayHttpClient"
 import type * as types from "./solverRelayHttpClient/types"

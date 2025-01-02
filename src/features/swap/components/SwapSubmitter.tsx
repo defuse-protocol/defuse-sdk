@@ -1,7 +1,7 @@
 import { providers } from "near-api-js"
 import { type ReactNode, createContext } from "react"
 import { logger } from "../../../logger"
-import type { ChainType } from "../../../types"
+import type { ChainType } from "../../../types/deposit"
 import type { SendNearTransaction } from "../../machines/publicKeyVerifierMachine"
 import { SwapUIMachineContext } from "./SwapUIMachineProvider"
 

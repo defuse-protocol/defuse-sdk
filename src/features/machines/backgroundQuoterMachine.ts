@@ -3,7 +3,7 @@ import { settings } from "../../config/settings"
 import { logger } from "../../logger"
 import { type AggregatedQuote, queryQuote } from "../../services/quoteService"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../types/base"
-import { isBaseToken } from "../../utils"
+import { isBaseToken } from "../../utils/token"
 
 export type QuoteInput =
   | {

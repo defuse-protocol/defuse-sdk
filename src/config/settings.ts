@@ -1,8 +1,21 @@
-import type { Settings } from "../types"
-import { SupportedChainName } from "../types/base"
+import type { SupportedChainName } from "../types/base"
 
-export let settings: Settings = {
-  providerIds: [],
+interface Settings {
+  defuseContractId: string
+  swapExpirySec: number
+  quoteQueryTimeoutMs: number
+  quotePollingIntervalMs: number
+  quoteMinDeadlineMs: number
+  maxQuoteMinDeadlineMs: number
+  queries: {
+    staleTime: number
+  }
+  rpcUrls: {
+    [key in SupportedChainName]: string
+  }
+}
+
+export const settings: Settings = {
   defuseContractId: "intents.near",
   swapExpirySec: 600, // 10 minutes
   /**
@@ -40,10 +53,4 @@ export let settings: Settings = {
     aurora: "https://mainnet.aurora.dev",
     xrpledger: "https://xrplcluster.com",
   },
-}
-
-export const getSettings = (): Settings => settings
-
-export const setSettings = (newSettings: Partial<Settings>) => {
-  settings = { ...settings, ...newSettings }
 }

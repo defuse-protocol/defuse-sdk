@@ -1,12 +1,10 @@
 import { Text } from "@radix-ui/themes"
 import clsx from "clsx"
 
-type Props<T> = {
+type Props = {
   className?: string
 }
-export const EmptyAssetList = ({
-  className,
-}: Pick<Props<unknown>, "className">) => {
+export const EmptyAssetList = ({ className }: Pick<Props, "className">) => {
   return (
     <div
       className={clsx(

@@ -1,4 +1,4 @@
-import type { SupportedChainName } from "../types"
+import type { SupportedChainName } from "../types/base"
 
 /**
  * Chain IDs for EVM-compatible chains.

@@ -1,18 +1,16 @@
 import { createActorContext } from "@xstate/react"
 import type { PropsWithChildren, ReactElement, ReactNode } from "react"
 import { useFormContext } from "react-hook-form"
-import { siloToSiloAddress } from "src/constants"
+import { siloToSiloAddress } from "src/constants/aurora"
 import { depositSolanaMachine } from "src/features/machines/depositSolanaMachine"
 import { depositTurboMachine } from "src/features/machines/depositTurboMachine"
-import { getNEP141StorageRequired } from "src/services/nep141StorageService"
-import { type Hash, getAddress, stringify } from "viem"
+import { type Hash, getAddress } from "viem"
 import {
   type Actor,
   type ActorOptions,
   type SnapshotFrom,
   fromPromise,
 } from "xstate"
-import { settings } from "../../../config/settings"
 import { depositEVMMachine } from "../../../features/machines/depositEVMMachine"
 import { logger } from "../../../logger"
 import {
@@ -28,7 +26,8 @@ import {
   getAllowance,
   waitEVMTransaction,
 } from "../../../services/depositService"
-import type { ChainType, SwappableToken, Transaction } from "../../../types"
+import type { Transaction } from "../../../types/deposit"
+import type { SwappableToken } from "../../../types/swap"
 import { assetNetworkAdapter } from "../../../utils/adapters"
 import { assert } from "../../../utils/assert"
 import { userAddressToDefuseUserId } from "../../../utils/defuse"
@@ -69,7 +68,6 @@ interface DepositUIMachineProviderProps extends PropsWithChildren {
   sendTransactionNear: (tx: Transaction["NEAR"][]) => Promise<string | null>
   sendTransactionEVM: (tx: Transaction["EVM"]) => Promise<Hash | null>
   sendTransactionSolana: (tx: Transaction["Solana"]) => Promise<string | null>
-  chainType?: ChainType
 }
 
 export function DepositUIMachineProvider({
@@ -78,7 +76,6 @@ export function DepositUIMachineProvider({
   sendTransactionNear,
   sendTransactionEVM,
   sendTransactionSolana,
-  chainType,
 }: DepositUIMachineProviderProps) {
   const { setValue } = useFormContext<DepositFormValues>()
   return (

@@ -3,7 +3,8 @@ import type {
   Params,
   PublishIntentRequest,
 } from "../services/solverRelayHttpClient/types"
-import type { ChainType, WalletSignatureResult } from "../types"
+import type { ChainType } from "../types/deposit"
+import type { WalletSignatureResult } from "../types/swap"
 import { assert } from "./assert"
 
 export function prepareSwapSignedData(

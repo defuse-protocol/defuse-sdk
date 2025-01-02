@@ -15,13 +15,13 @@ import {
 import { settings } from "../config/settings"
 import { getNearTxSuccessValue } from "../features/machines/getTxMachine"
 import { logger } from "../logger"
+import type { SupportedChainName } from "../types/base"
 import {
-  BlockchainEnum,
+  ChainType,
   type SendTransactionEVMParams,
-  type SupportedChainName,
-} from "../types"
-import { ChainType } from "../types"
-import type { Transaction } from "../types/deposit"
+  type Transaction,
+} from "../types/deposit"
+import { BlockchainEnum } from "../types/interfaces"
 import { type DefuseUserId, userAddressToDefuseUserId } from "../utils/defuse"
 import { getEVMChainId } from "../utils/evmChainId"
 import { getDepositAddress, getSupportedTokens } from "./poaBridgeClient"
@@ -285,7 +285,7 @@ export async function getAllowance(
       args: [getAddress(owner), getAddress(spender)],
     })
     return result
-  } catch (error) {
+  } catch {
     return null
   }
 }

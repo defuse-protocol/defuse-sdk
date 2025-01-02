@@ -1,6 +1,6 @@
 import { settings } from "../config/settings"
 import { logger } from "../logger"
-import type { BaseTokenInfo } from "../types"
+import type { BaseTokenInfo } from "../types/base"
 import { computeTotalBalance } from "../utils/tokenUtils"
 import { quote } from "./solverRelayHttpClient"
 import type { QuoteResponse } from "./solverRelayHttpClient/types"

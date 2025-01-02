@@ -3,7 +3,6 @@ import * as RadixSelect from "@radix-ui/react-select"
 import { Flex, Theme } from "@radix-ui/themes"
 import clsx from "clsx"
 import type React from "react"
-import { forwardRef } from "react"
 import type { FieldValues, Path, UseFormRegister } from "react-hook-form"
 import styles from "./styles.module.css"
 
@@ -26,23 +25,20 @@ type Props<T extends string, TFieldValues extends FieldValues> = {
   innerRef?: React.Ref<HTMLSelectElement>
 }
 
-export const Select = forwardRef(function Select<
+export const Select = function Select<
   T extends string,
   TFieldValues extends FieldValues,
->(
-  {
-    name,
-    register,
-    options,
-    placeholder,
-    label,
-    fullWidth = false,
-    disabled = false,
-    value,
-    onChange,
-  }: Props<T, TFieldValues>,
-  ref: React.Ref<HTMLSelectElement>
-) {
+>({
+  name,
+  register,
+  options,
+  placeholder,
+  label,
+  fullWidth = false,
+  disabled = false,
+  value,
+  onChange,
+}: Props<T, TFieldValues>) {
   const registerProps = register ? register(name as Path<TFieldValues>) : {}
 
   return (
@@ -115,7 +111,7 @@ export const Select = forwardRef(function Select<
       </RadixSelect.Portal>
     </RadixSelect.Root>
   )
-})
+}
 
 interface SelectItemProps {
   value: string

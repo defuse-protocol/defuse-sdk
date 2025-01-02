@@ -3,7 +3,7 @@ import {
   isValidClassicAddress as xrp_isValidClassicAddress,
   isValidXAddress as xrp_isValidXAddress,
 } from "ripple-address-codec"
-import type { SupportedChainName } from "../types"
+import type { SupportedChainName } from "../types/base"
 import { isLegitAccountId } from "./near"
 
 export function validateAddress(

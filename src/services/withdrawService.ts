@@ -1,7 +1,7 @@
 import { computeTotalBalance } from "src/utils/tokenUtils"
 import { type ActorRefFrom, waitFor } from "xstate"
 import { settings } from "../config/settings"
-import { NEP141_STORAGE_TOKEN } from "../constants"
+import { NEP141_STORAGE_TOKEN } from "../constants/tokens"
 import type {
   QuoteInput,
   backgroundQuoterMachine,
@@ -20,7 +20,7 @@ import type { State as WithdrawFormContext } from "../features/machines/withdraw
 import { logger } from "../logger"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../types/base"
 import { assert } from "../utils/assert"
-import { isBaseToken, isNativeToken } from "../utils/token"
+import { isBaseToken } from "../utils/token"
 import { getNEP141StorageRequired } from "./nep141StorageService"
 import {
   type AggregatedQuote,

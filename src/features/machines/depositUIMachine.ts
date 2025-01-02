@@ -13,8 +13,10 @@ import {
   setup,
 } from "xstate"
 import { logger } from "../../logger"
-import type { BaseTokenInfo, ChainType, SwappableToken } from "../../types"
-import { BlockchainEnum } from "../../types"
+import type { BaseTokenInfo } from "../../types/base"
+import type { ChainType } from "../../types/deposit"
+import { BlockchainEnum } from "../../types/interfaces"
+import type { SwappableToken } from "../../types/swap"
 import { parseUnits } from "../../utils/parse"
 import { isBaseToken, isNativeToken, isUnifiedToken } from "../../utils/token"
 import { backgroundBalanceActor } from "./backgroundBalanceActor"
@@ -25,7 +27,6 @@ import {
 import { depositEstimateMaxValueActor } from "./depositEstimationActor"
 import {
   type Output as DepositGenerateAddressMachineOutput,
-  DepositGeneratedDescription,
   depositGenerateAddressMachine,
 } from "./depositGenerateAddressMachine"
 import {
@@ -495,7 +496,7 @@ export const depositUIMachine = setup({
                             },
                             {
                               type: "setError",
-                              params: ({ event }) => {
+                              params: () => {
                                 return {
                                   reason: "ERR_GET_BALANCE",
                                   error: null,

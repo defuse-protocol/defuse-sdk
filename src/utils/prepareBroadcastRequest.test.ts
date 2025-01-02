@@ -4,7 +4,7 @@ import type {
   NEP413SignatureData,
   SolanaSignatureData,
   WalletMessage,
-} from "../types"
+} from "../types/swap"
 import { prepareSwapSignedData } from "./prepareBroadcastRequest"
 
 describe("prepareSwapSignedData()", () => {

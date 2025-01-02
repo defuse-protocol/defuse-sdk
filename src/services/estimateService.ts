@@ -1,4 +1,3 @@
-import web3, { LAMPORTS_PER_SOL } from "@solana/web3.js"
 import { http, type Address, type Hash, createPublicClient } from "viem"
 
 // Function returns the gas cost in Wei for a transfer
