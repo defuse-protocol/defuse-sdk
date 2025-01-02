@@ -1,7 +1,7 @@
 import { createActorContext } from "@xstate/react"
 import type { PropsWithChildren, ReactElement, ReactNode } from "react"
 import { useFormContext } from "react-hook-form"
-import { siloToSiloAddress } from "src/constants"
+import { siloToSiloAddress } from "src/constants/aurora"
 import { depositSolanaMachine } from "src/features/machines/depositSolanaMachine"
 import { depositTurboMachine } from "src/features/machines/depositTurboMachine"
 import { getNEP141StorageRequired } from "src/services/nep141StorageService"

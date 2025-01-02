@@ -1,7 +1,7 @@
 import { computeTotalBalance } from "src/utils/tokenUtils"
 import { type ActorRefFrom, waitFor } from "xstate"
 import { settings } from "../config/settings"
-import { NEP141_STORAGE_TOKEN } from "../constants"
+import { NEP141_STORAGE_TOKEN } from "../constants/tokens"
 import type {
   QuoteInput,
   backgroundQuoterMachine,
