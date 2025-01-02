@@ -68,15 +68,6 @@ export const backgroundQuoterMachine = fromCallback<
       case "NEW_QUOTE_INPUT": {
         const quoteInput = event.params
 
-        // todo: `NEW_QUOTE_INPUT` should not be emitted for 0 amounts, this is temporary fix
-        if (
-          quoteInput.amountIn === 0n ||
-          ("tokensIn" in quoteInput && !quoteInput.tokensIn.length)
-        ) {
-          console.warn("Ignoring quote input with empty input")
-          return
-        }
-
         pollQuote(
           abortController.signal,
           quoteInput,
