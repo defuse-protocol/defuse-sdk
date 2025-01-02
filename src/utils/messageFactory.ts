@@ -1,6 +1,7 @@
 import { base64 } from "@scure/base"
 import { getAddress } from "viem"
 import { settings } from "../config/settings"
+import { logger } from "../logger"
 import type {
   Intent,
   Nep413DefuseMessageFor_DefuseIntents,
@@ -34,7 +35,7 @@ export function makeInnerSwapMessage({
   }
 
   if (Object.keys(tokenDiff).length === 0) {
-    console.warn("Empty diff")
+    logger.warn("Empty diff")
     return {
       deadline: new Date(deadlineTimestamp).toISOString(),
       intents: [],

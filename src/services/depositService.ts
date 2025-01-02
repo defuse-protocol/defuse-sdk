@@ -14,6 +14,7 @@ import {
 } from "viem"
 import { settings } from "../config/settings"
 import { getNearTxSuccessValue } from "../features/machines/getTxMachine"
+import { logger } from "../logger"
 import type { SupportedChainName } from "../types/base"
 import {
   ChainType,
@@ -244,7 +245,9 @@ export async function generateDepositAddress(
 
     return generatedDepositAddress.address
   } catch (error) {
-    console.error("Error generating deposit address:", error)
+    logger.error(
+      new Error("Error generating deposit address", { cause: error })
+    )
     throw error
   }
 }

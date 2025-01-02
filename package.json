@@ -1,6 +1,6 @@
 {
   "name": "@defuse-protocol/defuse-sdk",
-  "version": "2.26.2",
+  "version": "2.27.0",
   "author": "Defuse Protocol",
   "license": "MIT",
   "type": "module",
@@ -8,6 +8,10 @@
     ".": {
       "import": "./dist/index.esm.js",
       "types": "./dist/index.d.ts"
+    },
+    "./logger": {
+      "import": "./dist/logger.esm.js",
+      "types": "./dist/logger.d.ts"
     },
     "./styles.css": "./dist/index.css"
   },

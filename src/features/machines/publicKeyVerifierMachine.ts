@@ -2,6 +2,7 @@ import type { providers } from "near-api-js"
 import type { CodeResult } from "near-api-js/lib/providers/provider"
 import { assign, fromPromise, setup } from "xstate"
 import { settings } from "../../config/settings"
+import { logger } from "../../logger"
 import type { Transaction } from "../../types/deposit"
 import {
   type WalletErrorCode,
@@ -50,7 +51,7 @@ export const publicKeyVerifierMachine = setup({
   },
   actions: {
     logError: (_, { error }: { error: unknown }) => {
-      console.error(error)
+      logger.error(error)
     },
     setError: assign({
       error: (_, { error }: { error: ErrorCodes }) => error,

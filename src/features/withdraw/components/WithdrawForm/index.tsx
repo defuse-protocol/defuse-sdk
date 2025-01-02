@@ -27,6 +27,7 @@ import { WithdrawIntentCard } from "../../../../components/IntentCard/WithdrawIn
 import { NetworkIcon } from "../../../../components/Network/NetworkIcon"
 import { Select } from "../../../../components/Select/Select"
 import { useModalController } from "../../../../hooks/useModalController"
+import { logger } from "../../../../logger"
 import { useTokensStore } from "../../../../providers/TokensStoreProvider"
 import { ModalType } from "../../../../stores/modalStore"
 import type {
@@ -274,7 +275,7 @@ export const WithdrawForm = ({
         <Form<WithdrawFormNearValues>
           handleSubmit={handleSubmit(() => {
             if (userAddress == null || chainType == null) {
-              console.warn("No user address provided")
+              logger.warn("No user address provided")
               return
             }
 

@@ -27,7 +27,6 @@ export function usePublicKeyModalOpener(
             onCloseModal()
           },
           onAbort: () => {
-            console.log("send onAbort")
             publicKeyVerifierRef.send({ type: "ABORT_ADD_PUBLIC_KEY" })
           },
         } satisfies ModalConfirmAddPubkeyPayload)
