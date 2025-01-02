@@ -1,5 +1,6 @@
 import { type ActorRef, type Snapshot, fromCallback } from "xstate"
 import { settings } from "../../config/settings"
+import { logger } from "../../logger"
 import { type AggregatedQuote, queryQuote } from "../../services/quoteService"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../types/base"
 import { isBaseToken } from "../../utils"
@@ -86,7 +87,7 @@ export const backgroundQuoterMachine = fromCallback<
       }
       default:
         eventType satisfies never
-        console.warn("Unhandled event type", { eventType })
+        logger.warn("Unhandled event type", { eventType })
     }
   })
 
@@ -102,7 +103,9 @@ function pollQuote(
   onResult: (result: AggregatedQuote) => void
 ): void {
   pollQuoteLoop(signal, quoteInput, delayMs, onResult).catch((error) =>
-    console.error("pollQuote terminated unexpectedly:", error)
+    logger.error(
+      new Error("pollQuote terminated unexpectedly", { cause: error })
+    )
   )
 }
 
@@ -144,10 +147,10 @@ async function pollQuoteLoop(
         }
       },
       (e) => {
-        if (isTimedOut(e)) {
-          console.error("Timeout querying quote", { quoteInput })
+        if (!isTimedOut(e)) {
+          logger.info("Timeout querying quote", { quoteInput })
         } else {
-          console.error("Error querying quote", e)
+          logger.error(e, { quoteInput })
         }
       }
     )

@@ -14,6 +14,7 @@ import {
 } from "xstate"
 import { settings } from "../../../config/settings"
 import { depositEVMMachine } from "../../../features/machines/depositEVMMachine"
+import { logger } from "../../../logger"
 import {
   checkNearTransactionValidity,
   createApproveTransaction,
@@ -191,14 +192,13 @@ export function DepositUIMachineProvider({
                   )
                 }
 
-                console.log("Sending transfer EVM transaction")
+                logger.verbose("Sending transfer EVM transaction")
                 const txHash = await sendTransactionEVM(tx)
                 assert(txHash != null, "Transaction failed")
 
-                console.log(
-                  "Waiting for transfer EVM transaction",
-                  stringify({ txHash })
-                )
+                logger.verbose("Waiting for transfer EVM transaction", {
+                  txHash,
+                })
                 const receipt = await waitEVMTransaction({ txHash, chainName })
                 if (receipt.status === "reverted") {
                   throw new Error("Transfer EVM transaction reverted")
@@ -277,14 +277,13 @@ export function DepositUIMachineProvider({
                       getAddress(accountId),
                       chainId
                     )
-                    console.log("Sending approve EVM transaction")
+                    logger.verbose("Sending approve EVM transaction")
                     const approveTxHash = await sendTransactionEVM(approveTx)
                     assert(approveTxHash != null, "Transaction failed")
 
-                    console.log(
-                      "Waiting for approve EVM transaction",
-                      stringify({ txHash: approveTxHash })
-                    )
+                    logger.verbose("Waiting for approve EVM transaction", {
+                      txHash: approveTxHash,
+                    })
                     const receipt = await waitEVMTransaction({
                       txHash: approveTxHash,
                       chainName,
@@ -306,13 +305,13 @@ export function DepositUIMachineProvider({
                   tokenAddress === "native" ? amount : 0n,
                   chainId
                 )
-                console.log("Sending deposit from Silo EVM transaction")
+                logger.verbose("Sending deposit from Silo EVM transaction")
                 const txHash = await sendTransactionEVM(tx)
                 assert(txHash != null, "Transaction failed")
 
-                console.log(
+                logger.verbose(
                   "Waiting for deposit from Silo EVM transaction",
-                  stringify({ txHash })
+                  { txHash }
                 )
                 const receipt = await waitEVMTransaction({ txHash, chainName })
                 if (receipt.status === "reverted") {

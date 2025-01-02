@@ -12,6 +12,7 @@ import {
   sendTo,
   setup,
 } from "xstate"
+import { logger } from "../../logger"
 import type { BaseTokenInfo, ChainType, SwappableToken } from "../../types"
 import { BlockchainEnum } from "../../types"
 import { parseUnits } from "../../utils/parse"
@@ -134,7 +135,7 @@ export const depositUIMachine = setup({
   },
   actions: {
     logError: (_, event: { error: unknown }) => {
-      console.error(event.error)
+      logger.error(event.error)
     },
     setError: assign({
       error: (_, error: NonNullable<Context["error"]>["value"]) => ({
@@ -495,7 +496,6 @@ export const depositUIMachine = setup({
                             {
                               type: "setError",
                               params: ({ event }) => {
-                                console.log("onError type: setError", event)
                                 return {
                                   reason: "ERR_GET_BALANCE",
                                   error: null,

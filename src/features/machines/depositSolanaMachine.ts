@@ -1,4 +1,5 @@
 import { assign, emit, fromPromise, setup } from "xstate"
+import { logger } from "../../logger"
 import type { SwappableToken } from "../../types"
 
 export type DepositDescription = {
@@ -75,7 +76,7 @@ export const depositSolanaMachine = setup({
       }),
     }),
     logError: (_, params: { error: unknown }) => {
-      console.error(params.error)
+      logger.error(params.error)
     },
     emitSuccessfulDeposit: emit(({ context }) => ({
       type: "SUCCESSFUL_DEPOSIT",
