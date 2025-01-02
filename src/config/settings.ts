@@ -1,7 +1,21 @@
-import type { Settings } from "../types"
+import type { SupportedChainName } from "../types"
+
+interface Settings {
+  defuseContractId: string
+  swapExpirySec: number
+  quoteQueryTimeoutMs: number
+  quotePollingIntervalMs: number
+  quoteMinDeadlineMs: number
+  maxQuoteMinDeadlineMs: number
+  queries: {
+    staleTime: number
+  }
+  rpcUrls: {
+    [key in SupportedChainName]: string
+  }
+}
 
 export const settings: Settings = {
-  providerIds: [],
   defuseContractId: "intents.near",
   swapExpirySec: 600, // 10 minutes
   /**

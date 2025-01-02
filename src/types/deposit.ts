@@ -63,14 +63,3 @@ export interface SendTransactionEVMParams {
 }
 
 export interface SendTransactionSolanaParams extends TransactionSolana {}
-
-export interface BaseAssetInfo {
-  address: string
-  decimals: number
-  icon: string
-  symbol: string
-}
-
-export type DepositSnapshot = {
-  txHash: Hash
-}
