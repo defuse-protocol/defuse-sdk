@@ -1,6 +1,7 @@
 import { type PropsWithChildren, useEffect } from "react"
 import { useFormContext } from "react-hook-form"
 import type { ChainType } from "../../../types"
+import { reverseAssetNetworkAdapter } from "../../../utils/adapters"
 import type { DepositFormValues } from "./DepositForm"
 import { DepositUIMachineContext } from "./DepositUIMachineProvider"
 
@@ -21,19 +22,32 @@ export function DepositUIMachineFormSyncProvider({
     const sub = watch(async (value, { name }) => {
       if (name === "network") {
         const networkValue = value[name]
-        // TODO: For some reason, the form sets the network to an empty string when the network is reset
-        if (!!networkValue && networkValue.length === 0) {
+        if (networkValue === undefined) {
+          return
+        }
+        const networkFromMachine = actorRef
+          .getSnapshot()
+          .context.depositFormRef.getSnapshot().context.blockchain
+        const networkFromForm = networkValue
+          ? reverseAssetNetworkAdapter[networkValue]
+          : null
+        // This is a hack to prevent double updates of the network triggered by form
+        if (networkFromMachine === networkFromForm) {
           return
         }
         actorRef.send({
           type: "DEPOSIT_FORM.UPDATE_BLOCKCHAIN",
-          params: { network: value[name] },
+          params: { network: networkValue },
         })
       }
       if (name === "amount") {
+        const amountValue = value[name]
+        if (amountValue === undefined) {
+          return
+        }
         actorRef.send({
           type: "DEPOSIT_FORM.UPDATE_AMOUNT",
-          params: { amount: value[name] },
+          params: { amount: amountValue },
         })
       }
     })

@@ -19,7 +19,6 @@ export const depositGenerateAddressMachineV2 = setup({
         Pick<Context, "userAddress" | "userChainType" | "blockchain">
       >
     },
-    tags: {} as "completed",
   },
   actors: {
     generateDepositAddress: fromPromise(
@@ -52,6 +51,13 @@ export const depositGenerateAddressMachineV2 = setup({
   },
   guards: {
     isInputSufficient: ({ event }) => {
+      if (
+        event.params.blockchain === "near" ||
+        event.params.blockchain === "turbochain" ||
+        event.params.blockchain === "aurora"
+      ) {
+        return false
+      }
       return (
         event.params.userAddress != null &&
         event.params.userChainType != null &&
@@ -60,7 +66,7 @@ export const depositGenerateAddressMachineV2 = setup({
     },
   },
 }).createMachine({
-  /** @xstate-layout N4IgpgJg5mDOIC5QTABwPawJYBcDiYAdmAE4CGOYAghBCXLALJkDGAFlsQGoBMAxACUAogEUAqkIDKAFQD6eIQDkhAqtKGyqAES3DJkgNoAGALqJQGbDizpC5kAA9EPAIwBWAHQuXAFgDsAJz+fu6hAGwANCAAnogAHGEePEYAzAFhbq5xKWlxbgC++VEolrgExOSUNHQMzOycYLyCohIy8koqahraulKGLmZIIKXWtvZOCG5xcR5xATx+ya4hcTxuUbEIWR5+YQEpfj4pa36ZBUUgJZhlRKQU1LT0sEysHNw8HjAVFJxQfBC2MAeTgAN3QAGsgVcrOU7lVHrVXg1eJ9bpVfghQegWD9bMYTPj7CMbHYhhMUkZEnMAvs3LsfGEUmF3BtECk6R4plk3DkXMy3HzCsU0Nd8Gj7tUni96u9Ud9rIQ-qQSOgSB5UAAbCgAM1VAFsPNCbvKHjVnnU3o0Pl84RisTjRoR8YShsSxmS2UY-JywoFkjyfDS-MHWQgfD4jF4eEc3GE4kcEu5ChdCOgUPAhkaxSbJYiZVaiaKSeNEHzvd5-EFg6EBZEYogALQuJLpVJxEJ+aZuIyrFJCy4imHi+Fm6WWlE29GKwtWYserb7DwpeMpFwHPzsrmhngHDw+bwhNJenjZAL9rOwyqmqUW5EfLAQDVgGe4OegCbBnweSn7aZ5ALtosobHF+wYhDGRzJC4PDJvkQA */
+  /** @xstate-layout N4IgpgJg5mDOIC5QTABwPawJYBcDiYAdmAE4CGOYAghBCXLALJkDGAFlsQGoBMAxACUAogEUAqkIDKAFQD6eIQDkhAqtKGyqAES3DJkgNoAGALqJQGbDizpC5kAA9EPAIwBWAHQuXAFgDsAJz+fu6hAGwANCAAnogAHGEePEYAzAFhbq5xKWlxbgC++VEolrgExOSUNHQMzOycYLyCohIy8koqahraulKGLmZIIKXWtvZOCG5xcR5xATx+ya4hcTxuUbEIWR5+YQEpfj4pa36ZBUUgJZhlRKQU1LT0sEysHNw8HjAVFJxQfBC2MAeTgAN3QAGsgVcrOU7lVHrVXg1eJ9bpVfghQegWD9bMYTPj7CMbHYhhMUkZEnMAvs3LsfGEUmF3BtECk6R4plk3DkXMy3HzCsU0Nd8Gj7tUni96u9Ud9rIQ-qQSOgSB5UAAbCgAM1VAFsPNCbvKHjVnnU3o0Pl84RisTjRoR8YShsSxmS2UY-JywoFkjyfDS-MHWQgfD4jF4eEc3GE4kcEu5ChdCOgUPAhkaxSbJYiZVaiaKSeNEHzvd5-EFg6EBZEYogALQuJLpVJGdJ7MI8abxoWXEUw8Xws3Sy0om3oxWFqzFj1bfYeFLxlIuA5+dlc0M8A4eHzeEJpL3dtJ9rOwyqmqUW5EfFjoPWasCUCDT3Cz0DkvyRoxGHn0nw8HsASUqGdIzDkRguAevopBGPCngOxpwpeeZjh8WAQBqYCvo6JYIIcAS7jGkEMisayhkESTRi4RhLLRjK+sm+RAA */
   context: {
     userAddress: null,
     userChainType: null,
@@ -69,18 +75,15 @@ export const depositGenerateAddressMachineV2 = setup({
   },
 
   id: "depositGenerateAddressMachineV2",
-  initial: "idle",
 
   on: {
     REQUEST_GENERATE_ADDRESS: [
       {
         actions: ["resetPreparationOutput", "setInputParams"],
-        target: "#depositGenerateAddressMachineV2.generating",
+        target: ".generating",
         guard: "isInputSufficient",
       },
-      {
-        target: "#depositGenerateAddressMachineV2.idle",
-      },
+      ".completed",
     ],
   },
 
@@ -98,8 +101,7 @@ export const depositGenerateAddressMachineV2 = setup({
           }
         },
         onDone: {
-          target: "idle",
-          tags: ["completed"],
+          target: "completed",
           actions: assign({
             preparationOutput: ({ event }) => ({
               tag: "ok",
@@ -112,8 +114,7 @@ export const depositGenerateAddressMachineV2 = setup({
           reenter: true,
         },
         onError: {
-          target: "idle",
-          tags: ["completed"],
+          target: "completed",
           actions: assign({
             preparationOutput: {
               tag: "err",
@@ -129,6 +130,9 @@ export const depositGenerateAddressMachineV2 = setup({
       },
     },
 
+    completed: {},
     idle: {},
   },
+
+  initial: "idle",
 })

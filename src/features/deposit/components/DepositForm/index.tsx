@@ -83,17 +83,19 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
 
   const {
     token,
+    derivedToken,
     blockchain,
     amount,
     balance,
     nativeBalance,
     userAddress,
     poaBridgeInfoRef,
-    defuseAssetId,
     preparationOutput,
     parsedAmount,
   } = DepositUIMachineContext.useSelector((snapshot) => {
-    const token = snapshot.context.depositFormRef.getSnapshot().context.tokenIn
+    const token = snapshot.context.depositFormRef.getSnapshot().context.token
+    const derivedToken =
+      snapshot.context.depositFormRef.getSnapshot().context.derivedToken
     const blockchain =
       snapshot.context.depositFormRef.getSnapshot().context.blockchain
     const amount = snapshot.context.depositFormRef.getSnapshot().context.amount
@@ -103,18 +105,17 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
     const nativeBalance = snapshot.context.nativeBalance
     const userAddress = snapshot.context.userAddress
     const poaBridgeInfoRef = snapshot.context.poaBridgeInfoRef
-    const defuseAssetId = snapshot.context.defuseAssetId
     const preparationOutput = snapshot.context.preparationOutput
 
     return {
       token,
+      derivedToken,
       blockchain,
       amount,
       balance,
       nativeBalance,
       userAddress,
       poaBridgeInfoRef,
-      defuseAssetId,
       preparationOutput,
       parsedAmount,
     }
@@ -154,6 +155,7 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
         type: "DEPOSIT_FORM.UPDATE_TOKEN",
         params: { token },
       })
+      setValue("token", token)
       // We have to clean up network because it could be not a valid value for the previous token
       setValue("network", null)
       setValue("amount", "")
@@ -173,21 +175,25 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
     setValue("amount", amountToFormat)
   }
 
+  const formNetwork = watch("network")
   useEffect(() => {
-    if (token && getDefaultBlockchainOptionValue(token)) {
-      const networkOption = getDefaultBlockchainOptionValue(token)
-      setValue("network", networkOption)
+    const networkDefaultOption = token
+      ? getDefaultBlockchainOptionValue(token)
+      : null
+    if (formNetwork === null) {
+      setValue("network", networkDefaultOption)
     }
-  }, [token, setValue])
+  }, [formNetwork, token, setValue])
 
-  const balanceInsufficient = isInsufficientBalance(
-    amount,
-    balance,
-    nativeBalance,
-    token,
-    network,
-    defuseAssetId
-  )
+  const balanceInsufficient = derivedToken
+    ? isInsufficientBalance(
+        amount,
+        balance,
+        nativeBalance,
+        derivedToken,
+        network
+      )
+    : null
 
   const minDepositAmount = useSelector(poaBridgeInfoRef, (state) => {
     if (token == null || !isBaseToken(token)) {
@@ -212,9 +218,10 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
 
   const { accentColor } = useThemeContext()
 
-  const tokenBalance = token
-    ? getBalance(token, balance, nativeBalance, defuseAssetId, network)
-    : null
+  const tokenBalance =
+    derivedToken && network
+      ? getBalance(derivedToken, balance, nativeBalance, network)
+      : null
 
   return (
     <div className={styles.container}>
@@ -330,7 +337,7 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
                 }
               >
                 {renderDepositButtonText(
-                  watch("amount") >= "0" && balanceInsufficient,
+                  watch("amount") >= "0" && balanceInsufficient !== null,
                   network,
                   token,
                   minDepositAmount,
@@ -539,7 +546,7 @@ function getBlockchainsOptions(): Record<
 }
 
 function filterBlockchainsOptions(
-  token: SwappableToken
+  token: BaseTokenInfo | UnifiedTokenInfo
 ): Record<string, { label: string; icon: React.ReactNode; value: string }> {
   if (isUnifiedToken(token)) {
     return token.groupedTokens.reduce(
@@ -581,16 +588,16 @@ function isInsufficientBalance(
   formAmount: string,
   balance: bigint,
   nativeBalance: bigint,
-  token: SwappableToken | null,
-  network: BlockchainEnum | null,
-  defuseAssetId: string | null
-) {
-  if (!token || !network) {
-    return false
+  derivedToken: BaseTokenInfo,
+  network: BlockchainEnum | null
+): boolean | null {
+  if (!network) {
+    return null
   }
+
   const balanceToFormat = formatTokenValue(
-    getBalance(token, balance, nativeBalance, defuseAssetId, network),
-    token.decimals
+    getBalance(derivedToken, balance, nativeBalance, network),
+    derivedToken.decimals
   )
   return Number.parseFloat(formAmount) > Number.parseFloat(balanceToFormat)
 }
@@ -759,21 +766,16 @@ function truncateUserAddress(hash: string) {
 // TODO: When Aurora network will be added we should cover a special case for Aurora token on Aurora network
 //       network === BlockchainEnum.AURORA && defuseAssetId === "nep141:aurora"
 function getBalance(
-  token: SwappableToken,
+  token: BaseTokenInfo,
   balance: bigint,
   nativeBalance: bigint,
-  defuseAssetId: string | null,
-  network: BlockchainEnum | null
+  network: BlockchainEnum
 ) {
   // For user experience, both NEAR and wNEAR are treated as equivalent during the deposit process.
   // This allows users to deposit either token seamlessly.
   // When the balance is checked, it considers the total of both NEAR and wNEAR,
   // ensuring that users can deposit without needing to convert between the two.
-  if (
-    isUnifiedToken(token) &&
-    token.unifiedAssetId === "near" &&
-    network === BlockchainEnum.NEAR
-  ) {
+  if (token.address === "wrap.near" && network === BlockchainEnum.NEAR) {
     return balance + nativeBalance
   }
 
@@ -782,10 +784,6 @@ function getBalance(
   }
 
   if (network && isUnifiedToken(token)) {
-    const tokenAddress =
-      isUnifiedToken(token) &&
-      token.groupedTokens.find((t) => t.defuseAssetId === defuseAssetId)
-        ?.address
     switch (network) {
       case BlockchainEnum.NEAR:
         return balance
@@ -798,7 +796,7 @@ function getBalance(
       case BlockchainEnum.TURBOCHAIN:
       case BlockchainEnum.AURORA:
       case BlockchainEnum.XRPLEDGER:
-        return tokenAddress === "native" ? nativeBalance : balance
+        return isNativeToken(token) ? nativeBalance : balance
       default:
         network satisfies never
         throw new Error("exhaustive check failed")

@@ -2,6 +2,7 @@ import { isBaseToken } from "src/utils"
 import { reverseAssetNetworkAdapter } from "src/utils/adapters"
 import { assert } from "src/utils/assert"
 import { parseUnits } from "src/utils/parse"
+import { getDerivedToken } from "src/utils/tokenUtils"
 import { type ActorRef, type Snapshot, fromTransition } from "xstate"
 import type { BlockchainEnum } from "../../types"
 import type {
@@ -11,7 +12,7 @@ import type {
 } from "../../types/base"
 
 export type Fields = Array<Exclude<keyof State, "parentRef">>
-const fields: Fields = ["tokenIn", "blockchain", "parsedAmount", "amount"]
+const fields: Fields = ["token", "blockchain", "parsedAmount", "amount"]
 
 export type ParentEvents = {
   type: "DEPOSIT_FORM_FIELDS_CHANGED"
@@ -29,7 +30,7 @@ export type Events =
   | {
       type: "DEPOSIT_FORM.UPDATE_BLOCKCHAIN"
       params: {
-        network: BlockchainEnum
+        network: BlockchainEnum | null
       }
     }
   | {
@@ -41,7 +42,8 @@ export type Events =
 
 export type State = {
   parentRef: ParentActor
-  tokenIn: BaseTokenInfo | UnifiedTokenInfo | null
+  token: BaseTokenInfo | UnifiedTokenInfo | null
+  derivedToken: BaseTokenInfo | null
   blockchain: SupportedChainName | null
   parsedAmount: bigint | null
   amount: string
@@ -55,7 +57,8 @@ export const depositFormReducer = fromTransition(
       case "DEPOSIT_FORM.UPDATE_TOKEN": {
         newState = {
           ...state,
-          tokenIn: event.params.token,
+          token: event.params.token,
+          derivedToken: null,
           blockchain: null,
           parsedAmount: null,
           amount: "",
@@ -63,22 +66,34 @@ export const depositFormReducer = fromTransition(
         break
       }
       case "DEPOSIT_FORM.UPDATE_BLOCKCHAIN": {
+        if (event.params.network == null || state.token == null) {
+          newState = {
+            ...state,
+            blockchain: null,
+            derivedToken: null,
+            parsedAmount: null,
+            amount: "",
+          }
+          break
+        }
         const blockchain = reverseAssetNetworkAdapter[event.params.network]
-        const tokenIn = state.tokenIn
-          ? getDepositTokenWithFallback(state.tokenIn, blockchain)
-          : null
+        const derivedToken = getDerivedToken(state.token, blockchain)
+        // This isn't possible assertion, if this happens then we need to check the token list
+        assert(derivedToken != null, "Token not found")
         newState = {
           ...state,
           blockchain,
-          tokenIn,
+          derivedToken,
+          parsedAmount: null,
+          amount: "",
         }
         break
       }
       case "DEPOSIT_FORM.UPDATE_AMOUNT": {
-        const tokenIn = state.tokenIn
-        assert(tokenIn != null, "Token in not found")
+        const token = state.token
+        assert(token != null, "Token not found")
         const amount = event.params.amount
-        const parsedAmount = parseUnits(amount, tokenIn.decimals)
+        const parsedAmount = amount ? parseUnits(amount, token.decimals) : null
         newState = {
           ...state,
           parsedAmount,
@@ -115,32 +130,11 @@ export const depositFormReducer = fromTransition(
   }): State => {
     return {
       parentRef: input.parentRef,
-      tokenIn: null,
+      token: null,
+      derivedToken: null,
       blockchain: null,
       parsedAmount: null,
       amount: "",
     }
   }
 )
-
-function getDepositTokenWithFallback(
-  tokenIn: BaseTokenInfo | UnifiedTokenInfo,
-  chainName: string | null
-): BaseTokenInfo {
-  if (isBaseToken(tokenIn)) {
-    return tokenIn
-  }
-
-  if (chainName != null) {
-    const selectToken = tokenIn.groupedTokens.find(
-      (token) => token.chainName === chainName
-    )
-    if (selectToken != null) {
-      return selectToken
-    }
-  }
-
-  const selectToken = tokenIn.groupedTokens[0]
-  assert(selectToken != null, "Token out not found")
-  return selectToken
-}

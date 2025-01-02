@@ -65,7 +65,7 @@ export async function prepareDeposit(
   }
 
   return {
-    tag: "ok" as const,
+    tag: "ok",
     value: {
       generateDepositAddress:
         generateDepositAddress.value.generateDepositAddress,
@@ -88,12 +88,13 @@ async function getDepositGeneratedAddress(
 > {
   const depositGenerateAddressState = await waitFor(
     depositGenerateAddressV2Ref,
-    (state) => state.hasTag("completed"),
+    (state) => state.matches("completed"),
     { signal }
   )
   if (depositGenerateAddressState.context.preparationOutput?.tag === "err") {
     return depositGenerateAddressState.context.preparationOutput
   }
+
   return {
     tag: "ok",
     value: {
