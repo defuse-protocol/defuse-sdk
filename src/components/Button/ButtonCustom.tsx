@@ -1,12 +1,5 @@
-import {
-  Button,
-  type ButtonProps,
-  Flex,
-  Spinner,
-  Text,
-  Theme,
-} from "@radix-ui/themes"
-import React, { type ReactNode, type ButtonHTMLAttributes } from "react"
+import { Button, type ButtonProps, Flex, Spinner, Text } from "@radix-ui/themes"
+import type { ButtonHTMLAttributes, ReactNode } from "react"
 import styles from "./ButtonCustom.module.css"
 
 interface ButtonCustomProps

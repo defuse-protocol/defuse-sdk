@@ -26,7 +26,6 @@ import {
 import { depositEstimateMaxValueActor } from "./depositEstimationActor"
 import {
   type Output as DepositGenerateAddressMachineOutput,
-  DepositGeneratedDescription,
   depositGenerateAddressMachine,
 } from "./depositGenerateAddressMachine"
 import {

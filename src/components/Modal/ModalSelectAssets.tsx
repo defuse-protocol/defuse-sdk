@@ -1,5 +1,5 @@
 import { Text } from "@radix-ui/themes"
-import React, { useState, useDeferredValue, useEffect } from "react"
+import { useDeferredValue, useEffect, useState } from "react"
 import type { BalanceMapping } from "../../features/machines/depositedBalanceMachine"
 import { useModalStore } from "../../providers/ModalStoreProvider"
 import { useTokensStore } from "../../providers/TokensStoreProvider"

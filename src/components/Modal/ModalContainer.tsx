@@ -1,5 +1,3 @@
-import React from "react"
-
 import { useModalStore } from "../../providers/ModalStoreProvider"
 
 import { ModalType } from "../../stores/modalStore"

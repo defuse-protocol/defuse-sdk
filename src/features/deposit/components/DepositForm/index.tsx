@@ -13,7 +13,7 @@ import {
 } from "@radix-ui/themes"
 import { useSelector } from "@xstate/react"
 import { QRCodeSVG } from "qrcode.react"
-import { type ReactNode, useEffect, useRef, useState } from "react"
+import { type ReactNode, useEffect, useState } from "react"
 import CopyToClipboard from "react-copy-to-clipboard"
 import { Controller, useFormContext } from "react-hook-form"
 import { TooltipInfo } from "src/components/TooltipInfo"
@@ -61,14 +61,8 @@ export type DepositFormValues = {
 }
 
 export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
-  const {
-    handleSubmit,
-    register,
-    control,
-    setValue,
-    watch,
-    formState: { errors },
-  } = useFormContext<DepositFormValues>()
+  const { handleSubmit, register, control, setValue, watch } =
+    useFormContext<DepositFormValues>()
 
   const depositUIActorRef = DepositUIMachineContext.useActorRef()
   const snapshot = DepositUIMachineContext.useSelector((snapshot) => snapshot)
@@ -243,7 +237,6 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
                     disabled={!isUnifiedToken(token)}
                     onChange={field.onChange}
                     name={field.name}
-                    ref={field.ref}
                   />
                 )}
               />

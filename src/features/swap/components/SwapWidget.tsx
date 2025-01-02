@@ -59,9 +59,3 @@ function TokenListUpdater({
 
   return null
 }
-
-function assert(condition: unknown, msg?: string): asserts condition {
-  if (!condition) {
-    throw new Error(msg)
-  }
-}

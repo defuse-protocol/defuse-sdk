@@ -1,18 +1,9 @@
-import {
-  createDepositEVMERC20Transaction,
-  getWalletRpcUrl,
-} from "src/services/depositService"
-import {
-  estimateEVMTransferCost,
-  estimateSolanaTransferCost,
-} from "src/services/estimateService"
+import { estimateSolanaTransferCost } from "src/services/estimateService"
 import { reverseAssetNetworkAdapter } from "src/utils/adapters"
 import { validateAddress } from "src/utils/validateAddress"
-import type { Address } from "viem"
 import { fromPromise } from "xstate"
 import { BlockchainEnum } from "../../types/interfaces"
 import type { SwappableToken } from "../../types/swap"
-import { getEVMChainId } from "../../utils/evmChainId"
 import { isBaseToken } from "../../utils/token"
 
 // Estimate the gas cost for transferring the maximum balance
@@ -21,7 +12,6 @@ export const depositEstimateMaxValueActor = fromPromise(
   async ({
     input: {
       network,
-      tokenAddress,
       userAddress,
       balance,
       nativeBalance,

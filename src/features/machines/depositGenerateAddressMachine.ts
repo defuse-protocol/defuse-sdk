@@ -52,7 +52,7 @@ export const depositGenerateAddressMachine = setup({
   },
   actors: {
     generateDepositAddress: fromPromise(
-      async ({ input }: { input: Input }): Promise<string> => {
+      async (_: { input: Input }): Promise<string> => {
         throw new Error("not implemented")
       }
     ),

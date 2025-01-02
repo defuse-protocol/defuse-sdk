@@ -20,7 +20,7 @@ export const storageDepositAmountActor = fromPromise(
         return result.value
       }
       return null
-    } catch (error) {
+    } catch {
       throw new Error("ERR_NEP141_STORAGE_CANNOT_FETCH")
     }
   }

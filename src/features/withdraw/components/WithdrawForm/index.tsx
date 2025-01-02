@@ -15,7 +15,7 @@ import {
 } from "@radix-ui/themes"
 import { useSelector } from "@xstate/react"
 import { providers } from "near-api-js"
-import { Fragment, type ReactNode, useEffect, useMemo } from "react"
+import { Fragment, type ReactNode, useEffect } from "react"
 import { Controller, useForm } from "react-hook-form"
 import { useTokensUsdPrices } from "src/hooks/useTokensUsdPrices"
 import type { ActorRefFrom } from "xstate"
@@ -598,7 +598,7 @@ const allBlockchains = [
 type TypeEqualityGuard<A, B> = Exclude<A, B> | Exclude<B, A> extends never
   ? true
   : never
-const typeCheck: TypeEqualityGuard<
+const _typeCheck: TypeEqualityGuard<
   SupportedChainName,
   (typeof allBlockchains)[number]["value"]
 > = true

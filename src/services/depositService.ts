@@ -282,7 +282,7 @@ export async function getAllowance(
       args: [getAddress(owner), getAddress(spender)],
     })
     return result
-  } catch (error) {
+  } catch {
     return null
   }
 }

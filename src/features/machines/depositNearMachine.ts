@@ -51,14 +51,12 @@ export const depositNearMachine = setup({
   },
   actors: {
     signAndSendTransactions: fromPromise(
-      async ({ input }: { input: Input }): Promise<string> => {
+      async (_: { input: Input }): Promise<string> => {
         throw new Error("not implemented")
       }
     ),
     validateTransaction: fromPromise(
-      async ({
-        input,
-      }: {
+      async (_: {
         input: { txHash: string; accountId: string; amount: bigint }
       }): Promise<boolean> => {
         throw new Error("not implemented")
@@ -192,7 +190,7 @@ export const depositNearMachine = setup({
           target: "Not Found or Invalid",
           actions: {
             type: "setError",
-            params: ({ event }) => ({
+            params: () => ({
               reason: "ERR_VERIFYING_TRANSACTION",
               error: null,
             }),

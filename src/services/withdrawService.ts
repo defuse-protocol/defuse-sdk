@@ -19,7 +19,7 @@ import {
 import type { State as WithdrawFormContext } from "../features/machines/withdrawFormReducer"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../types/base"
 import { assert } from "../utils/assert"
-import { isBaseToken, isNativeToken } from "../utils/token"
+import { isBaseToken } from "../utils/token"
 import { getNEP141StorageRequired } from "./nep141StorageService"
 import {
   type AggregatedQuote,

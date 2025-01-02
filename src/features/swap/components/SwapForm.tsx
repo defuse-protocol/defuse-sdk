@@ -238,7 +238,7 @@ function Intents({
 }: { intentRefs: ActorRefFrom<typeof intentStatusMachine>[] }) {
   return (
     <div>
-      {intentRefs.map((intentRef, i, list) => {
+      {intentRefs.map((intentRef) => {
         return (
           <Fragment key={intentRef.id}>
             <SwapIntentCard intentStatusActorRef={intentRef} />
