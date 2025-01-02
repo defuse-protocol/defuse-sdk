@@ -23,11 +23,7 @@ import {
   type ParentEvents as DepositFormParentEvents,
   depositFormReducer,
 } from "./depositFormReducer"
-import {
-  type Output as DepositGenerateAddressMachineOutput,
-  depositGenerateAddressMachine,
-} from "./depositGenerateAddressMachine"
-import { depositGenerateAddressMachineV2 } from "./depositGenerateAddressMachineV2"
+import { depositGenerateAddressMachine } from "./depositGenerateAddressMachine"
 import {
   type Output as DepositNearMachineOutput,
   depositNearMachine,
@@ -62,14 +58,11 @@ export type Context = {
    * todo: either remove this, or make it work, now it is 0n for native tokens
    */
   maxDepositValue: bigint
-  depositGenerateAddressV2Ref: ActorRefFrom<
-    typeof depositGenerateAddressMachineV2
-  >
+  depositGenerateAddressRef: ActorRefFrom<typeof depositGenerateAddressMachine>
   poaBridgeInfoRef: ActorRefFrom<typeof poaBridgeInfoActor>
   tokenList: SwappableToken[]
   userAddress: string | null
   userChainType: ChainType | null
-  generatedAddressResult: DepositGenerateAddressMachineOutput | null
   depositNearResult: DepositNearMachineOutput | null
   depositEVMResult: DepositEVMMachineOutput | null
   depositSolanaResult: DepositSolanaMachineOutput | null
@@ -114,7 +107,6 @@ export const depositUIMachine = setup({
   actors: {
     fetchWalletAddressBalanceActor: backgroundBalanceActor,
     depositNearActor: depositNearMachine,
-    depositGenerateAddressActor: depositGenerateAddressMachine,
     poaBridgeInfoActor: poaBridgeInfoActor,
     depositEVMActor: depositEVMMachine,
     depositSolanaActor: depositSolanaMachine,
@@ -123,7 +115,7 @@ export const depositUIMachine = setup({
     fetchStorageDepositAmountActor: storageDepositAmountActor,
     prepareDepositActor: prepareDepositActor,
     depositFormActor: depositFormReducer,
-    depositGenerateAddressV2Actor: depositGenerateAddressMachineV2,
+    depositGenerateAddressActor: depositGenerateAddressMachine,
   },
   actions: {
     logError: (_, event: { error: unknown }) => {
@@ -149,16 +141,11 @@ export const depositUIMachine = setup({
     setDepositTurboResult: assign({
       depositTurboResult: (_, value: DepositTurboMachineOutput) => value,
     }),
-    setDepositGenerateAddressResult: assign({
-      generatedAddressResult: (_, value: DepositGenerateAddressMachineOutput) =>
-        value,
-    }),
     setPreparationOutput: assign({
       preparationOutput: (_, val: Context["preparationOutput"]) => val,
     }),
     clearDepositResult: assign({ depositNearResult: null }),
     clearDepositEVMResult: assign({ depositEVMResult: null }),
-    clearGeneratedAddressResult: assign({ generatedAddressResult: null }),
     clearDepositSolanaResult: assign({ depositSolanaResult: null }),
     clearDepositTurboResult: assign({ depositTurboResult: null }),
     clearResults: assign({
@@ -166,7 +153,6 @@ export const depositUIMachine = setup({
       depositEVMResult: null,
       depositSolanaResult: null,
       depositTurboResult: null,
-      generatedAddressResult: null,
     }),
 
     clearUIDepositAmount: () => {
@@ -270,7 +256,6 @@ export const depositUIMachine = setup({
     userAddress: null,
     userChainType: null,
     tokenAddress: null,
-    generatedAddressResult: null,
     poaBridgeInfoRef: spawn("poaBridgeInfoActor", {
       id: "poaBridgeInfoRef",
     }),
@@ -280,7 +265,7 @@ export const depositUIMachine = setup({
       input: { parentRef: self },
     }),
     fetchWalletAddressBalanceRef: null,
-    depositGenerateAddressV2Ref: spawn("depositGenerateAddressV2Actor", {
+    depositGenerateAddressRef: spawn("depositGenerateAddressActor", {
       id: "depositGenerateAddressV2Ref",
       input: { parentRef: self },
     }),
@@ -355,7 +340,7 @@ export const depositUIMachine = setup({
         reset_previous_preparation: {
           always: [
             {
-              target: "preparation_v2",
+              target: "preparation",
               guard: "isDepositParamsComplete",
               actions: ["clearError", "clearResults", "clearBalances"],
             },
@@ -366,7 +351,7 @@ export const depositUIMachine = setup({
           entry: ["clearPreparationOutput"],
         },
 
-        preparation_v2: {
+        preparation: {
           entry: ["requestGenerateAddressV2"],
           invoke: {
             src: "prepareDepositActor",
@@ -374,8 +359,7 @@ export const depositUIMachine = setup({
             input: ({ context }) => {
               return {
                 formValues: context.depositFormRef.getSnapshot().context,
-                depositGenerateAddressV2Ref:
-                  context.depositGenerateAddressV2Ref,
+                depositGenerateAddressRef: context.depositGenerateAddressRef,
               }
             },
 
@@ -444,8 +428,8 @@ export const depositUIMachine = setup({
         input: ({ context, event }) => {
           assertEvent(event, "SUBMIT")
           const depositAddress =
-            context.generatedAddressResult?.tag === "ok"
-              ? context.generatedAddressResult.value.depositAddress
+            context.preparationOutput?.tag === "ok"
+              ? context.preparationOutput.value.generateDepositAddress
               : null
           const token = context.depositFormRef.getSnapshot().context.token
           const blockchain =
@@ -487,8 +471,8 @@ export const depositUIMachine = setup({
         input: ({ context, event }) => {
           assertEvent(event, "SUBMIT")
           const depositAddress =
-            context.generatedAddressResult?.tag === "ok"
-              ? context.generatedAddressResult.value.depositAddress
+            context.preparationOutput?.tag === "ok"
+              ? context.preparationOutput.value.generateDepositAddress
               : null
           const token = context.depositFormRef.getSnapshot().context.token
           const blockchain =

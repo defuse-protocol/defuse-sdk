@@ -10,7 +10,6 @@ import {
 } from "xstate"
 import { siloToSiloAddress } from "../../../constants/aurora"
 import { depositEVMMachine } from "../../../features/machines/depositEVMMachine"
-import { depositGenerateAddressMachineV2 } from "../../../features/machines/depositGenerateAddressMachineV2"
 import { depositSolanaMachine } from "../../../features/machines/depositSolanaMachine"
 import { depositTurboMachine } from "../../../features/machines/depositTurboMachine"
 import { logger } from "../../../logger"
@@ -146,32 +145,17 @@ export function DepositUIMachineProvider({
           depositGenerateAddressActor: depositGenerateAddressMachine.provide({
             actors: {
               generateDepositAddress: fromPromise(async ({ input }) => {
-                const { userAddress, userChainType, chain } = input
+                const { userAddress, blockchain, userChainType } = input
 
                 const address = await generateDepositAddress(
                   userAddressToDefuseUserId(userAddress, userChainType),
-                  chain
+                  assetNetworkAdapter[blockchain]
                 )
 
                 return address
               }),
             },
           }),
-          depositGenerateAddressV2Actor:
-            depositGenerateAddressMachineV2.provide({
-              actors: {
-                generateDepositAddress: fromPromise(async ({ input }) => {
-                  const { userAddress, blockchain, userChainType } = input
-
-                  const address = await generateDepositAddress(
-                    userAddressToDefuseUserId(userAddress, userChainType),
-                    assetNetworkAdapter[blockchain]
-                  )
-
-                  return address
-                }),
-              },
-            }),
           depositEVMActor: depositEVMMachine.provide({
             actors: {
               sendTransaction: fromPromise(async ({ input }) => {

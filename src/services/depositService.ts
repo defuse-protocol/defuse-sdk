@@ -3,7 +3,7 @@ import {
   SystemProgram,
   Transaction as TransactionSolana,
 } from "@solana/web3.js"
-import type { depositGenerateAddressMachineV2 } from "src/features/machines/depositGenerateAddressMachineV2"
+import type { depositGenerateAddressMachine } from "src/features/machines/depositGenerateAddressMachine"
 import {
   http,
   type Address,
@@ -45,18 +45,18 @@ export type PreparationOutput =
 
 export async function prepareDeposit(
   {
-    depositGenerateAddressV2Ref,
+    depositGenerateAddressRef,
   }: {
     formValues: DepositFormContext
-    depositGenerateAddressV2Ref: ActorRefFrom<
-      typeof depositGenerateAddressMachineV2
+    depositGenerateAddressRef: ActorRefFrom<
+      typeof depositGenerateAddressMachine
     >
   },
   { signal }: { signal: AbortSignal }
 ): Promise<PreparationOutput> {
   const generateDepositAddress = await getDepositGeneratedAddress(
     {
-      depositGenerateAddressV2Ref,
+      depositGenerateAddressRef,
     },
     { signal }
   )
@@ -75,10 +75,10 @@ export async function prepareDeposit(
 
 async function getDepositGeneratedAddress(
   {
-    depositGenerateAddressV2Ref,
+    depositGenerateAddressRef,
   }: {
-    depositGenerateAddressV2Ref: ActorRefFrom<
-      typeof depositGenerateAddressMachineV2
+    depositGenerateAddressRef: ActorRefFrom<
+      typeof depositGenerateAddressMachine
     >
   },
   { signal }: { signal: AbortSignal }
@@ -87,7 +87,7 @@ async function getDepositGeneratedAddress(
   | { tag: "err"; value: { reason: "ERR_GENERATING_ADDRESS" } }
 > {
   const depositGenerateAddressState = await waitFor(
-    depositGenerateAddressV2Ref,
+    depositGenerateAddressRef,
     (state) => state.matches("completed"),
     { signal }
   )
