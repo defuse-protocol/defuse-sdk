@@ -1,4 +1,5 @@
 import { useEffect } from "react"
+import { WidgetRoot } from "../../../components/WidgetRoot"
 import { SwapWidgetProvider } from "../../../providers/SwapWidgetProvider"
 import { useTokensStore } from "../../../providers/TokensStoreProvider"
 import type { SwapWidgetProps } from "../../../types/swap"
@@ -20,31 +21,33 @@ export const SwapWidget = ({
   initialTokenOut,
 }: SwapWidgetProps) => {
   return (
-    <SwapWidgetProvider>
-      <TokenListUpdater tokenList={tokenList} />
-      <SwapFormProvider>
-        <SwapUIMachineProvider
-          initialTokenIn={initialTokenIn}
-          initialTokenOut={initialTokenOut}
-          tokenList={tokenList}
-          signMessage={signMessage}
-        >
-          <SwapUIMachineFormSyncProvider
-            userAddress={userAddress}
-            userChainType={userChainType}
-            onSuccessSwap={onSuccessSwap}
+    <WidgetRoot>
+      <SwapWidgetProvider>
+        <TokenListUpdater tokenList={tokenList} />
+        <SwapFormProvider>
+          <SwapUIMachineProvider
+            initialTokenIn={initialTokenIn}
+            initialTokenOut={initialTokenOut}
+            tokenList={tokenList}
+            signMessage={signMessage}
           >
-            <SwapSubmitterProvider
+            <SwapUIMachineFormSyncProvider
               userAddress={userAddress}
               userChainType={userChainType}
-              sendNearTransaction={sendNearTransaction}
+              onSuccessSwap={onSuccessSwap}
             >
-              <SwapForm onNavigateDeposit={onNavigateDeposit} />
-            </SwapSubmitterProvider>
-          </SwapUIMachineFormSyncProvider>
-        </SwapUIMachineProvider>
-      </SwapFormProvider>
-    </SwapWidgetProvider>
+              <SwapSubmitterProvider
+                userAddress={userAddress}
+                userChainType={userChainType}
+                sendNearTransaction={sendNearTransaction}
+              >
+                <SwapForm onNavigateDeposit={onNavigateDeposit} />
+              </SwapSubmitterProvider>
+            </SwapUIMachineFormSyncProvider>
+          </SwapUIMachineProvider>
+        </SwapFormProvider>
+      </SwapWidgetProvider>
+    </WidgetRoot>
   )
 }
 
