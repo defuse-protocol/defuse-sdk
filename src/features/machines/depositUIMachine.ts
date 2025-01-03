@@ -12,7 +12,6 @@ import { logger } from "../../logger"
 import type { ChainType } from "../../types/deposit"
 import type { SwappableToken } from "../../types/swap"
 import { isBaseToken, isNativeToken, isUnifiedToken } from "../../utils/token"
-import { backgroundBalanceActor } from "./backgroundBalanceActor"
 import {
   type Output as DepositEVMMachineOutput,
   depositEVMMachine,
@@ -32,6 +31,7 @@ import {
   type Output as DepositSolanaMachineOutput,
   depositSolanaMachine,
 } from "./depositSolanaMachine"
+import { depositTokenBalanceMachine } from "./depositTokenBalanceMachine"
 import {
   type Output as DepositTurboMachineOutput,
   depositTurboMachine,
@@ -68,11 +68,9 @@ export type Context = {
   depositSolanaResult: DepositSolanaMachineOutput | null
   depositTurboResult: DepositTurboMachineOutput | null
   depositFormRef: ActorRefFrom<typeof depositFormReducer>
-  fetchWalletAddressBalanceRef: ActorRefFrom<
-    typeof backgroundBalanceActor
-  > | null
   preparationOutput: PreparationOutput | null
   storageDepositAmountRef: ActorRefFrom<typeof storageDepositAmountMachine>
+  depositTokenBalanceRef: ActorRefFrom<typeof depositTokenBalanceMachine>
 }
 
 export const depositUIMachine = setup({
@@ -105,7 +103,6 @@ export const depositUIMachine = setup({
     },
   },
   actors: {
-    fetchWalletAddressBalanceActor: backgroundBalanceActor,
     depositNearActor: depositNearMachine,
     poaBridgeInfoActor: poaBridgeInfoActor,
     depositEVMActor: depositEVMMachine,
@@ -116,6 +113,7 @@ export const depositUIMachine = setup({
     depositFormActor: depositFormReducer,
     depositGenerateAddressActor: depositGenerateAddressMachine,
     storageDepositAmountActor: storageDepositAmountMachine,
+    depositTokenBalanceActor: depositTokenBalanceMachine,
   },
   actions: {
     logError: (_, event: { error: unknown }) => {
@@ -199,6 +197,16 @@ export const depositUIMachine = setup({
         }
       }
     ),
+    requestBalanceRefresh: sendTo("depositTokenBalanceRef", ({ context }) => {
+      return {
+        type: "REQUEST_BALANCE_REFRESH",
+        params: {
+          token: context.depositFormRef.getSnapshot().context.derivedToken,
+          userAddress: context.userAddress,
+          blockchain: context.depositFormRef.getSnapshot().context.blockchain,
+        },
+      }
+    }),
   },
   guards: {
     isTokenValid: ({ context }) => {
@@ -285,6 +293,10 @@ export const depositUIMachine = setup({
       id: "storageDepositAmountRef",
       input: { parentRef: self },
     }),
+    depositTokenBalanceRef: spawn("depositTokenBalanceActor", {
+      id: "depositTokenBalanceRef",
+      input: { parentRef: self },
+    }),
   }),
 
   entry: ["fetchPOABridgeInfo"],
@@ -367,7 +379,11 @@ export const depositUIMachine = setup({
         },
 
         preparation: {
-          entry: ["requestGenerateAddress", "requestStorageDepositAmount"],
+          entry: [
+            "requestGenerateAddress",
+            "requestStorageDepositAmount",
+            "requestBalanceRefresh",
+          ],
           invoke: {
             src: "prepareDepositActor",
 
@@ -376,6 +392,7 @@ export const depositUIMachine = setup({
                 formValues: context.depositFormRef.getSnapshot().context,
                 depositGenerateAddressRef: context.depositGenerateAddressRef,
                 storageDepositAmountRef: context.storageDepositAmountRef,
+                depositTokenBalanceRef: context.depositTokenBalanceRef,
               }
             },
 

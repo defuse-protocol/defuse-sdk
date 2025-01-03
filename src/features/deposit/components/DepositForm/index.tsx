@@ -77,8 +77,6 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
     derivedToken,
     blockchain,
     amount,
-    balance,
-    nativeBalance,
     userAddress,
     poaBridgeInfoRef,
     preparationOutput,
@@ -92,8 +90,6 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
     const amount = snapshot.context.depositFormRef.getSnapshot().context.amount
     const parsedAmount =
       snapshot.context.depositFormRef.getSnapshot().context.parsedAmount
-    const balance = snapshot.context.balance
-    const nativeBalance = snapshot.context.nativeBalance
     const userAddress = snapshot.context.userAddress
     const poaBridgeInfoRef = snapshot.context.poaBridgeInfoRef
     const preparationOutput = snapshot.context.preparationOutput
@@ -103,8 +99,6 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
       derivedToken,
       blockchain,
       amount,
-      balance,
-      nativeBalance,
       userAddress,
       poaBridgeInfoRef,
       preparationOutput,
@@ -112,10 +106,14 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
     }
   })
 
-  const depositAddress =
-    preparationOutput?.tag === "ok"
-      ? preparationOutput.value.generateDepositAddress
-      : null
+  const isOutputOk = preparationOutput?.tag === "ok"
+  const depositAddress = isOutputOk
+    ? preparationOutput.value.generateDepositAddress
+    : null
+  const balance = isOutputOk ? preparationOutput.value.balance || 0n : 0n
+  const nativeBalance = isOutputOk
+    ? preparationOutput.value.nativeBalance || 0n
+    : 0n
 
   const network = blockchain ? assetNetworkAdapter[blockchain] : null
 
@@ -176,15 +174,16 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
     }
   }, [formNetwork, token, setValue])
 
-  const balanceInsufficient = derivedToken
-    ? isInsufficientBalance(
-        amount,
-        balance,
-        nativeBalance,
-        derivedToken,
-        network
-      )
-    : null
+  const balanceInsufficient =
+    derivedToken && network
+      ? isInsufficientBalance(
+          amount,
+          balance,
+          nativeBalance,
+          derivedToken,
+          network
+        )
+      : null
 
   const minDepositAmount = useSelector(poaBridgeInfoRef, (state) => {
     if (token == null || !isBaseToken(token)) {

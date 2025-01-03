@@ -3,6 +3,7 @@ import {
   SystemProgram,
   Transaction as TransactionSolana,
 } from "@solana/web3.js"
+import type { depositTokenBalanceMachine } from "src/features/machines/depositTokenBalanceMachine"
 import {
   http,
   type Address,
@@ -36,6 +37,8 @@ export type PreparationOutput =
       value: {
         generateDepositAddress: string | null
         storageDepositRequired: bigint | null
+        balance: bigint | null
+        nativeBalance: bigint | null
       }
     }
   | {
@@ -50,17 +53,25 @@ export type PreparationOutput =
         reason: "ERR_NEP141_STORAGE_CANNOT_FETCH"
       }
     }
+  | {
+      tag: "err"
+      value: {
+        reason: "ERR_FETCH_BALANCE"
+      }
+    }
 
 export async function prepareDeposit(
   {
     depositGenerateAddressRef,
     storageDepositAmountRef,
+    depositTokenBalanceRef,
   }: {
     formValues: DepositFormContext
     depositGenerateAddressRef: ActorRefFrom<
       typeof depositGenerateAddressMachine
     >
     storageDepositAmountRef: ActorRefFrom<typeof storageDepositAmountMachine>
+    depositTokenBalanceRef: ActorRefFrom<typeof depositTokenBalanceMachine>
   },
   { signal }: { signal: AbortSignal }
 ): Promise<PreparationOutput> {
@@ -82,6 +93,15 @@ export async function prepareDeposit(
     return depositGenerateAddressState.context.preparationOutput
   }
 
+  const depositTokenBalanceState = await waitFor(
+    depositTokenBalanceRef,
+    (state) => state.matches("completed"),
+    { signal }
+  )
+  if (depositTokenBalanceState.context.preparationOutput?.tag === "err") {
+    return depositTokenBalanceState.context.preparationOutput
+  }
+
   return {
     tag: "ok",
     value: {
@@ -90,6 +110,12 @@ export async function prepareDeposit(
           .generateDepositAddress ?? null,
       storageDepositRequired:
         storageDepositAmount.context.preparationOutput?.value ?? null,
+      balance:
+        depositTokenBalanceState.context.preparationOutput?.value.balance ??
+        null,
+      nativeBalance:
+        depositTokenBalanceState.context.preparationOutput?.value
+          .nativeBalance ?? null,
     },
   }
 }
