@@ -1,20 +1,23 @@
 import { assign, emit, fromPromise, setup } from "xstate"
 import { logger } from "../../logger"
-import type { SupportedChainName } from "../../types/base"
-import type { SwappableToken } from "../../types/swap"
+import type {
+  BaseTokenInfo,
+  SupportedChainName,
+  UnifiedTokenInfo,
+} from "../../types/base"
 
 export type DepositDescription = {
   type: "depositEVM"
-  userAddressId: string
+  userAddress: string
   amount: bigint
-  asset: SwappableToken
+  token: BaseTokenInfo | UnifiedTokenInfo
 }
 
 export type Context = {
   balance: bigint
   amount: bigint
-  asset: SwappableToken
-  accountId: string
+  token: BaseTokenInfo | UnifiedTokenInfo
+  userAddress: string
   tokenAddress: string
   txHash: string | null
   depositAddress: string
@@ -31,8 +34,8 @@ export type Context = {
 type Input = {
   balance: bigint
   amount: bigint
-  asset: SwappableToken
-  accountId: string
+  token: BaseTokenInfo | UnifiedTokenInfo
+  userAddress: string
   tokenAddress: string
   depositAddress: string
   chainName: SupportedChainName
@@ -62,7 +65,7 @@ export const depositEVMMachine = setup({
     ),
     validateTransaction: fromPromise(
       async (_: {
-        input: { txHash: string; accountId: string; amount: bigint }
+        input: { txHash: string; userAddress: string; amount: bigint }
       }): Promise<boolean> => {
         // TODO: implement
         return true
@@ -107,9 +110,9 @@ export const depositEVMMachine = setup({
           txHash: context.txHash,
           depositDescription: {
             type: "depositEVM",
-            userAddressId: context.accountId,
+            userAddress: context.userAddress,
             amount: context.amount,
-            asset: context.asset,
+            token: context.token,
           },
         },
       }
@@ -126,8 +129,8 @@ export const depositEVMMachine = setup({
     return {
       balance: input.balance,
       amount: input.amount,
-      asset: input.asset,
-      accountId: input.accountId,
+      token: input.token,
+      userAddress: input.userAddress,
       tokenAddress: input.tokenAddress,
       depositAddress: input.depositAddress,
       chainName: input.chainName,
@@ -145,8 +148,8 @@ export const depositEVMMachine = setup({
           return {
             balance: context.balance,
             amount: context.amount,
-            accountId: context.accountId,
-            asset: context.asset,
+            userAddress: context.userAddress,
+            token: context.token,
             tokenAddress: context.tokenAddress,
             depositAddress: context.depositAddress,
             chainName: context.chainName,
@@ -185,7 +188,7 @@ export const depositEVMMachine = setup({
         id: "deposit-evm.verifying:invocation[0]",
         input: ({ context }) => ({
           txHash: context.txHash || "",
-          accountId: context.accountId || "",
+          userAddress: context.userAddress || "",
           amount: context.amount || 0n,
         }),
         onDone: {

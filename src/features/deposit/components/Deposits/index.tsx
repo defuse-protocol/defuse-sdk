@@ -32,8 +32,8 @@ export const Deposits = ({
     <Flex p={"2"} gap={"3"}>
       <Box pt={"2"}>
         <AssetComboIcon
-          icon={depositResult.value.depositDescription.asset.icon}
-          name={depositResult.value.depositDescription.asset.name}
+          icon={depositResult.value.depositDescription.token.icon}
+          name={depositResult.value.depositDescription.token.name}
         />
       </Box>
 
@@ -56,9 +56,7 @@ export const Deposits = ({
           <Box flexGrow={"1"}>
             <Text size={"1"} weight={"medium"} color={"gray"}>
               From{" "}
-              {shortenText(
-                depositResult.value.depositDescription.userAddressId
-              )}
+              {shortenText(depositResult.value.depositDescription.userAddress)}
             </Text>
           </Box>
 
@@ -67,13 +65,13 @@ export const Deposits = ({
               +
               {formatTokenValue(
                 depositResult.value.depositDescription.amount,
-                depositResult.value.depositDescription.asset.decimals,
+                depositResult.value.depositDescription.token.decimals,
                 {
                   min: 0.0001,
                   fractionDigits: 4,
                 }
               )}{" "}
-              {depositResult.value.depositDescription.asset.symbol}
+              {depositResult.value.depositDescription.token.symbol}
             </Text>
           </Box>
         </Flex>

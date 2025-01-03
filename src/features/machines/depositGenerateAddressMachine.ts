@@ -1,164 +1,149 @@
+import type { SupportedChainName } from "src/types/base"
+import type { ChainType } from "src/types/deposit"
+import { assert } from "src/utils/assert"
 import { assign, fromPromise, setup } from "xstate"
-import { logger } from "../../logger"
-import type { ChainType } from "../../types/deposit"
-import type { BlockchainEnum } from "../../types/interfaces"
 
-export type DepositGeneratedDescription = {
-  type: "depositAddressGenerated"
-  depositAddress: string
-}
-
-type Context = {
-  userAddress: string
-  userChainType: ChainType
-  chain: BlockchainEnum | null
-  depositAddress: string | null
-  error: null | {
-    tag: "err"
-    value: {
-      reason: "ERR_GENERATING_ADDRESS"
-      error: Error | null
-    }
-  }
-}
-
-type Events = {
-  type: "INPUT"
-  userAddress: string
-  defuseAssetId: string
-}
-
-type Input = {
-  userAddress: string
-  userChainType: ChainType
-  chain: BlockchainEnum
-}
-
-export type Output =
-  | NonNullable<Context["error"]>
-  | {
-      tag: "ok"
-      value: {
-        depositAddress: string
-        depositDescription: DepositGeneratedDescription
+export type Context = {
+  userAddress: string | null
+  userChainType: ChainType | null
+  blockchain: SupportedChainName | null
+  preparationOutput:
+    | {
+        tag: "ok"
+        value: {
+          generateDepositAddress: string | null
+        }
       }
-    }
+    | {
+        tag: "err"
+        value: {
+          reason: "ERR_GENERATING_ADDRESS"
+        }
+      }
+    | null
+}
 
 export const depositGenerateAddressMachine = setup({
   types: {
     context: {} as Context,
-    events: {} as Events,
-    input: {} as Input,
-    output: {} as Output,
+    events: {} as {
+      type: "REQUEST_GENERATE_ADDRESS"
+      params: NonNullable<
+        Pick<Context, "userAddress" | "userChainType" | "blockchain">
+      >
+    },
   },
   actors: {
     generateDepositAddress: fromPromise(
-      async (_: { input: Input }): Promise<string> => {
+      async (_: {
+        input: {
+          userAddress: string
+          userChainType: ChainType
+          blockchain: SupportedChainName
+        }
+      }): Promise<string> => {
         throw new Error("not implemented")
       }
     ),
   },
   actions: {
-    setError: assign({
-      error: (_, error: NonNullable<Context["error"]>["value"]) => ({
-        tag: "err" as const,
-        value: error,
-      }),
+    setInputParams: assign(({ event }) => {
+      return {
+        userAddress: event.params.userAddress,
+        userChainType: event.params.userChainType,
+        blockchain: event.params.blockchain,
+      }
     }),
-    logError: (_, params: { error: unknown }) => {
-      logger.error(params.error)
+    resetPreparationOutput: assign(() => {
+      return {
+        preparationOutput: null,
+      }
+    }),
+  },
+  guards: {
+    isInputSufficient: ({ event }) => {
+      if (
+        event.params.blockchain === "near" ||
+        event.params.blockchain === "turbochain" ||
+        event.params.blockchain === "aurora"
+      ) {
+        return false
+      }
+      return (
+        event.params.userAddress != null &&
+        event.params.userChainType != null &&
+        event.params.blockchain != null
+      )
     },
   },
 }).createMachine({
-  /** @xstate-layout N4IgpgJg5mDOIC5QTABwPawJYBcC0MAdmAE4CGOYeZEEJcsAdFhADZgDEAkgHIAKAVQAqAbQAMAXUSgM2HFnSFpIAB6IAjAGYALIzEA2ABz7NAdgBMO-WM3qANCACeiTWMb6tpgJznD500Y2vgC+wQ4osrgEYMTklNS09LBMRKQUWIRQHBCKYMyEAG7oANZ5EZhRqXFUNHQMjFXpmQgZRQDG6YriEt3KkfKKymoI+tqGjNpill76XgCstgb2Toj6jF5i6luGfl6GYvNjoeFoFfiN8bVJKTFp8pkcpCToJIyorBQAZi8AtozlcmisQoNUS9QuGSgLUK6A6A0I3V6SBA-QUSmRw1GXj0phshjGcyM+M0DmcCC8mkYhlM6jEc0sk3MXj2oTCIEI6BQ8GRAMqt2qCTqyT6ZzRQ0QeHMazEpjmhgphNM+3lAVJEvUzMYcz2xgpMwMpmOIF5535IMF12YbDAIrkYoxiHM6nW5m0tNGmidXlprrVCHUpnczOpPlcmk0s3DRpNQLuoKFN2B9ygttw9tAwyZunp0y82m9vh2pj96l0OiCcv8AVmsujp0BF3jloA4vywJQIKn4eLyTT1tpZh4A6M5V4-f5GOp-PoLGJtJo9upqXM6-1YwKrvUAGJkLDsTvI1GDB29uaMLPeb2ejUmP3eydOunTinacz+VnBIA */
-  context: ({ input }) => {
-    return {
-      userAddress: input.userAddress,
-      userChainType: input.userChainType,
-      chain: input.chain,
-      depositAddress: null,
-      error: null,
-    }
+  /** @xstate-layout N4IgpgJg5mDOIC5QTABwPawJYBcDiYAdmAE4CGOYAghBCXLALJkDGAFlsQMQBKAogEUAqnwDKAFQD6ePgDk+PKuL6SqAETX9RogNoAGALqJQGbDizpCxkAE9EAWgAcAdgB0AVgA0IAB6J3AJwAzK7O7s6OAIwATO4AvnHeKKa4BMTklDR0DMzsnGC8giIS0nIKSirqmmK6kUZIICnmltZ+CAHujqHRAQAsAY6OekHuI162iNF6ka4AbJFBjrNBzgHB0b1LCUlomKlEpBTUtPSwTKwcxK4w6RScUFwQlmCunABu6ADWL8l7+AcZY7ZM65S4vG6HcyEKAId7oFh3Sz6AzI6xNCxWBptWaOdweXo9fqLAl6Wa9bx2BDRVahIKLSIBVaBZx6UbbEC-MxpSFA07nPJXCEZe5cUgkdAkVyoAA2FAAZhKALauTn7W6ZE45C75a4Au7Q2GED4I5qEZGohrolpYxA42auaKRPQBaKOIKRdx6XoLCmIEZdT2BXruHGxWIBBKJECEdAoeANVX-dW8rUCsBov4Y1qIXqLVxBYIFxmdAkbX0IeyRZy9VxrNbOHEe93ORbsxPcwFZPmgnVC-VQDNmLM2hCzZzRVx6al05nOMKzALlxmTxnTAm9Ya9HHONu7Ll6jXA-lg1wsdCKmVgSgQQe4YegNrVrpkxwEhkBBfzcvuBauRyMqY5yCVkf0iXcmg7I4u1TE8sAgaV00tTNrQfHMlnzQt6xLaIywmKlYknIICSI5wPVmZYcMjOIgA */
+  context: {
+    userAddress: null,
+    userChainType: null,
+    blockchain: null,
+    preparationOutput: null,
   },
 
-  id: "deposit-generate-address",
+  id: "depositGenerateAddressMachine",
 
-  initial: "generating",
-
-  output: ({ context }): Output => {
-    if (context.depositAddress != null) {
-      return {
-        tag: "ok",
-        value: {
-          depositAddress: context.depositAddress,
-          depositDescription: {
-            type: "depositAddressGenerated",
-            depositAddress: context.depositAddress,
-          },
-        },
-      }
-    }
-
-    if (context.error != null) {
-      return context.error
-    }
-
-    throw new Error("Unexpected output")
+  on: {
+    REQUEST_GENERATE_ADDRESS: [
+      {
+        actions: ["resetPreparationOutput", "setInputParams"],
+        target: ".generating",
+        guard: "isInputSufficient",
+      },
+      ".completed",
+    ],
   },
-
-  description:
-    "Handle initializing a new deposit procedure.\n\nResult \\[Branching\\]:\n\n1. Network base direct deposit (Near, Ethereum, etc.);\n2. Indirect deposit via POA bridge;",
 
   states: {
     generating: {
       invoke: {
         input: ({ context }) => {
-          if (!context.chain || !context.userAddress) {
-            throw new Error("Asset address or account ID is missing")
-          }
+          assert(context.userAddress, "userAddress is null")
+          assert(context.userChainType, "userChainType is null")
+          assert(context.blockchain, "blockchain is null")
           return {
             userAddress: context.userAddress,
             userChainType: context.userChainType,
-            chain: context.chain,
+            blockchain: context.blockchain,
           }
         },
         onDone: {
-          target: "Genereted",
+          target: "completed",
           actions: assign({
-            depositAddress: ({ event }) => event.output,
+            preparationOutput: ({ event }) => ({
+              tag: "ok",
+              value: {
+                generateDepositAddress: event.output,
+              },
+            }),
           }),
+
+          reenter: true,
         },
         onError: {
-          target: "Failed",
-          actions: [
-            {
-              type: "logError",
-              params: ({ event }) => event,
-            },
-            {
-              type: "setError",
-              params: ({ event }) => {
-                return {
-                  reason: "ERR_GENERATING_ADDRESS",
-                  error: toError(event.error),
-                }
+          target: "completed",
+          actions: assign({
+            preparationOutput: {
+              tag: "err",
+              value: {
+                reason: "ERR_GENERATING_ADDRESS",
               },
             },
-          ],
+          }),
+
+          reenter: true,
         },
         src: "generateDepositAddress",
       },
-      description: "Generate deposit address via POA bridge",
     },
-    Genereted: {
-      type: "final",
-    },
-    Failed: {
-      type: "final",
-    },
-  },
-})
 
-function toError(error: unknown): Error {
-  return error instanceof Error ? error : new Error("unknown error")
-}
+    completed: {},
+    idle: {},
+  },
+
+  initial: "idle",
+})

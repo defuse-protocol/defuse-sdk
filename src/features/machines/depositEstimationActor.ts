@@ -1,17 +1,15 @@
-import { estimateSolanaTransferCost } from "src/services/estimateService"
-import { reverseAssetNetworkAdapter } from "src/utils/adapters"
-import { validateAddress } from "src/utils/validateAddress"
-import { fromPromise } from "xstate"
+import { assign, fromPromise, setup } from "xstate"
+import { estimateSolanaTransferCost } from "../../services/estimateService"
+import type { BaseTokenInfo, SupportedChainName } from "../../types/base"
 import { BlockchainEnum } from "../../types/interfaces"
-import type { SwappableToken } from "../../types/swap"
+import { assetNetworkAdapter } from "../../utils/adapters"
 import { isBaseToken } from "../../utils/token"
+import { validateAddress } from "../../utils/validateAddress"
 
-// Estimate the gas cost for transferring the maximum balance
-// Calculate the maximum transferable balance after accounting for gas cost
 export const depositEstimateMaxValueActor = fromPromise(
   async ({
     input: {
-      network,
+      blockchain,
       userAddress,
       balance,
       nativeBalance,
@@ -20,19 +18,20 @@ export const depositEstimateMaxValueActor = fromPromise(
     },
   }: {
     input: {
-      network: BlockchainEnum
+      blockchain: SupportedChainName
       tokenAddress: string
       userAddress: string
       balance: bigint
       nativeBalance: bigint
-      token: SwappableToken
+      token: BaseTokenInfo
       generateAddress: string | null
     }
-  }) => {
-    switch (network) {
+  }): Promise<bigint> => {
+    const networkToSolverFormat = assetNetworkAdapter[blockchain]
+    switch (networkToSolverFormat) {
       case BlockchainEnum.NEAR:
         // Max value for NEAR is the sum of the native balance and the balance
-        if (isBaseToken(token) && token?.address === "wrap.near") {
+        if (isBaseToken(token) && token.address === "wrap.near") {
           return (nativeBalance || 0n) + (balance || 0n)
         }
         return balance
@@ -42,7 +41,7 @@ export const depositEstimateMaxValueActor = fromPromise(
       case BlockchainEnum.TURBOCHAIN:
       case BlockchainEnum.AURORA: {
         if (
-          !validateAddress(userAddress, reverseAssetNetworkAdapter[network]) ||
+          !validateAddress(userAddress, blockchain) ||
           generateAddress == null
         ) {
           return 0n
@@ -89,8 +88,100 @@ export const depositEstimateMaxValueActor = fromPromise(
       case BlockchainEnum.XRPLEDGER:
         return 0n
       default:
-        network satisfies never
+        networkToSolverFormat satisfies never
         throw new Error("exhaustive check failed")
     }
   }
 )
+
+export interface Context {
+  preparationOutput:
+    | {
+        tag: "ok"
+        value: {
+          maxDepositValue: bigint
+        }
+      }
+    | {
+        tag: "err"
+        value: { reason: "ERR_ESTIMATE_MAX_DEPOSIT_VALUE" }
+      }
+    | null
+}
+
+export const depositEstimationMachine = setup({
+  types: {
+    context: {} as Context,
+    events: {} as {
+      type: "REQUEST_ESTIMATE_MAX_DEPOSIT_VALUE"
+      params: {
+        blockchain: SupportedChainName
+        userAddress: string
+        balance: bigint
+        nativeBalance: bigint
+        token: BaseTokenInfo
+        generateAddress: string | null
+      }
+    },
+  },
+  actors: {
+    estimateMaxDepositValueActor: depositEstimateMaxValueActor,
+  },
+}).createMachine({
+  /** @xstate-layout N4IgpgJg5mDOIC5QTABwPawJYBcCisOWAtgIZHoB2AxAEp4CKAqngMoAqA+m+wJICyAQXZ5OQgBqcAIngAKAeVa8uANUEAZFgG0ADAF1EoDNgqVDIAB6IALACYANCACeiAIw7bAOgCcAdgBs-q4AHNZ23h4ArLYAvjGOKMa4BERkpp5wqeRYlFDUEFRgnjkAbugA1kWJmMmEJNlUGXVpOVAIpegAxg2Uunp95kmm5lYIwa6ewb6ROq6uAMzuHq7WwY4uCPPRnovBtr6ufjoB1t6RcQloNfjNPU1ZRLnUYABOL+gvnqgANuQAZh9iJ5qiYUvV0plwa12pQyt1TH0BkgQEMsFQRog9p5IuEDqd5gFXJFfOsbLZrD4QvN-MFvLZXL5rDS4vEQJR0Ch4MiQbUHmizMjUejkaMALS+eaeFbjBl2HRhKb+UkIImeawBSLBeWRGmMsLWC4gHk3PmNLAQb5gQbXfkYhCi2yRKWrOaM2zy1bTJXONxatWhKaRbxzUL+CWG41glqNSEtXLWky2kWIGk7IME4PE7zeGnWZWHCmLfzzT3Z1z+JkG1mR27pTroYg-MA4SAJ3BJ0CjcsUvz+YkHYvWHTHSLKnX+Ty+bxbEs6PY6fzTlkxIA */
+  id: "depositEstimation",
+
+  context: {
+    preparationOutput: null,
+  },
+
+  initial: "idle",
+
+  states: {
+    idle: {},
+
+    estimating: {
+      invoke: {
+        src: "estimateMaxDepositValueActor",
+        input: ({ event }) => {
+          return {
+            ...event.params,
+            tokenAddress: event.params.token.address,
+          }
+        },
+
+        onDone: {
+          target: "completed",
+          actions: assign({
+            preparationOutput: ({ event }) => {
+              if (event.output) {
+                return {
+                  tag: "ok",
+                  value: {
+                    maxDepositValue: event.output,
+                  },
+                }
+              }
+              return null
+            },
+          }),
+        },
+        onError: {
+          target: "completed",
+          actions: assign({
+            preparationOutput: {
+              tag: "err",
+              value: { reason: "ERR_ESTIMATE_MAX_DEPOSIT_VALUE" },
+            },
+          }),
+          reenter: true,
+        },
+      },
+    },
+    completed: {},
+  },
+
+  on: {
+    REQUEST_ESTIMATE_MAX_DEPOSIT_VALUE: ".estimating",
+  },
+})

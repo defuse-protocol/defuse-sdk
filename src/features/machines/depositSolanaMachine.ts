@@ -1,19 +1,19 @@
 import { assign, emit, fromPromise, setup } from "xstate"
 import { logger } from "../../logger"
-import type { SwappableToken } from "../../types/swap"
+import type { BaseTokenInfo, UnifiedTokenInfo } from "../../types/base"
 
 export type DepositDescription = {
   type: "depositSolana"
-  userAddressId: string
+  userAddress: string
   amount: bigint
-  asset: SwappableToken
+  token: BaseTokenInfo | UnifiedTokenInfo
 }
 
 export type Context = {
   balance: bigint
   amount: bigint
-  asset: SwappableToken
-  accountId: string
+  token: BaseTokenInfo | UnifiedTokenInfo
+  userAddress: string
   tokenAddress: string
   txHash: string | null
   depositAddress: string
@@ -29,8 +29,8 @@ export type Context = {
 type Input = {
   balance: bigint
   amount: bigint
-  asset: SwappableToken
-  accountId: string
+  token: BaseTokenInfo | UnifiedTokenInfo
+  userAddress: string
   tokenAddress: string
   depositAddress: string
 }
@@ -59,7 +59,7 @@ export const depositSolanaMachine = setup({
     ),
     validateTransaction: fromPromise(
       async (_: {
-        input: { txHash: string; accountId: string; amount: bigint }
+        input: { txHash: string; userAddress: string; amount: bigint }
       }): Promise<boolean> => {
         // TODO: implement
         return true
@@ -104,9 +104,9 @@ export const depositSolanaMachine = setup({
           txHash: context.txHash,
           depositDescription: {
             type: "depositSolana",
-            userAddressId: context.accountId,
+            userAddress: context.userAddress,
             amount: context.amount,
-            asset: context.asset,
+            token: context.token,
           },
         },
       }
@@ -123,8 +123,8 @@ export const depositSolanaMachine = setup({
     return {
       balance: input.balance,
       amount: input.amount,
-      asset: input.asset,
-      accountId: input.accountId,
+      token: input.token,
+      userAddress: input.userAddress,
       tokenAddress: input.tokenAddress,
       depositAddress: input.depositAddress,
       txHash: null,
@@ -141,8 +141,8 @@ export const depositSolanaMachine = setup({
           return {
             balance: context.balance,
             amount: context.amount,
-            accountId: context.accountId,
-            asset: context.asset,
+            userAddress: context.userAddress,
+            token: context.token,
             tokenAddress: context.tokenAddress,
             depositAddress: context.depositAddress,
           }
@@ -180,7 +180,7 @@ export const depositSolanaMachine = setup({
         id: "deposit-solana.verifying:invocation[0]",
         input: ({ context }) => ({
           txHash: context.txHash || "",
-          accountId: context.accountId || "",
+          userAddress: context.userAddress || "",
           amount: context.amount || 0n,
         }),
         onDone: {

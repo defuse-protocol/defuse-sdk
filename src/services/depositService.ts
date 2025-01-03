@@ -12,8 +12,15 @@ import {
   erc20Abi,
   getAddress,
 } from "viem"
+import type { depositEstimationMachine } from "../features/machines/depositEstimationActor"
+import type { depositTokenBalanceMachine } from "../features/machines/depositTokenBalanceMachine"
+
+import { type ActorRefFrom, waitFor } from "xstate"
 import { settings } from "../config/settings"
+import type { State as DepositFormContext } from "../features/machines/depositFormReducer"
+import type { depositGenerateAddressMachine } from "../features/machines/depositGenerateAddressMachine"
 import { getNearTxSuccessValue } from "../features/machines/getTxMachine"
+import type { storageDepositAmountMachine } from "../features/machines/storageDepositAmountMachine"
 import { logger } from "../logger"
 import type { SupportedChainName } from "../types/base"
 import {
@@ -22,9 +29,181 @@ import {
   type Transaction,
 } from "../types/deposit"
 import { BlockchainEnum } from "../types/interfaces"
+import { assert } from "../utils/assert"
 import { type DefuseUserId, userAddressToDefuseUserId } from "../utils/defuse"
 import { getEVMChainId } from "../utils/evmChainId"
 import { getDepositAddress, getSupportedTokens } from "./poaBridgeClient"
+
+export type PreparationOutput =
+  | {
+      tag: "ok"
+      value: {
+        generateDepositAddress: string | null
+        storageDepositRequired: bigint | null
+        balance: bigint | null
+        nativeBalance: bigint | null
+        maxDepositValue: bigint | null
+      }
+    }
+  | {
+      tag: "err"
+      value: {
+        reason: "ERR_GENERATING_ADDRESS"
+      }
+    }
+  | {
+      tag: "err"
+      value: {
+        reason: "ERR_NEP141_STORAGE_CANNOT_FETCH"
+      }
+    }
+  | {
+      tag: "err"
+      value: {
+        reason: "ERR_FETCH_BALANCE"
+      }
+    }
+  | {
+      tag: "err"
+      value: {
+        reason: "ERR_ESTIMATE_MAX_DEPOSIT_VALUE"
+      }
+    }
+
+export async function prepareDeposit(
+  {
+    userAddress,
+    formValues,
+    depositGenerateAddressRef,
+    storageDepositAmountRef,
+    depositTokenBalanceRef,
+    depositEstimationRef,
+  }: {
+    userAddress: string
+    formValues: DepositFormContext
+    depositGenerateAddressRef: ActorRefFrom<
+      typeof depositGenerateAddressMachine
+    >
+    storageDepositAmountRef: ActorRefFrom<typeof storageDepositAmountMachine>
+    depositTokenBalanceRef: ActorRefFrom<typeof depositTokenBalanceMachine>
+    depositEstimationRef: ActorRefFrom<typeof depositEstimationMachine>
+  },
+  { signal }: { signal: AbortSignal }
+): Promise<PreparationOutput> {
+  const storageDepositAmount = await waitFor(
+    storageDepositAmountRef,
+    (state) => state.matches("completed"),
+    { signal }
+  )
+  if (storageDepositAmount.context.preparationOutput?.tag === "err") {
+    return storageDepositAmount.context.preparationOutput
+  }
+
+  const depositGenerateAddressState = await waitFor(
+    depositGenerateAddressRef,
+    (state) => state.matches("completed"),
+    { signal }
+  )
+  if (depositGenerateAddressState.context.preparationOutput?.tag === "err") {
+    return depositGenerateAddressState.context.preparationOutput
+  }
+  const generateDepositAddress =
+    depositGenerateAddressState.context.preparationOutput?.value
+      .generateDepositAddress ?? null
+
+  const depositTokenBalanceState = await waitFor(
+    depositTokenBalanceRef,
+    (state) => state.matches("completed"),
+    { signal }
+  )
+  if (depositTokenBalanceState.context.preparationOutput?.tag === "err") {
+    return depositTokenBalanceState.context.preparationOutput
+  }
+  const balance =
+    depositTokenBalanceState.context.preparationOutput?.value.balance ?? null
+  const nativeBalance =
+    depositTokenBalanceState.context.preparationOutput?.value.nativeBalance ??
+    null
+
+  const estimation = await getDepositEstimation(
+    {
+      formValues,
+      userAddress,
+      balance,
+      nativeBalance,
+      generateDepositAddress,
+      depositEstimationRef,
+    },
+    { signal }
+  )
+  if (estimation.tag === "err") {
+    return estimation
+  }
+
+  return {
+    tag: "ok",
+    value: {
+      generateDepositAddress,
+      storageDepositRequired:
+        storageDepositAmount.context.preparationOutput?.value ?? null,
+      balance,
+      nativeBalance,
+      maxDepositValue: estimation.value.maxDepositValue,
+    },
+  }
+}
+
+async function getDepositEstimation(
+  {
+    userAddress,
+    formValues,
+    balance,
+    nativeBalance,
+    generateDepositAddress,
+    depositEstimationRef,
+  }: {
+    userAddress: string
+    formValues: DepositFormContext
+    balance: bigint | null
+    nativeBalance: bigint | null
+    generateDepositAddress: string | null
+    depositEstimationRef: ActorRefFrom<typeof depositEstimationMachine>
+  },
+  { signal }: { signal: AbortSignal }
+): Promise<
+  | { tag: "ok"; value: { maxDepositValue: bigint | null } }
+  | { tag: "err"; value: { reason: "ERR_ESTIMATE_MAX_DEPOSIT_VALUE" } }
+> {
+  assert(formValues.derivedToken, "Token is required")
+  assert(formValues.blockchain, "Blockchain is required")
+  depositEstimationRef.send({
+    type: "REQUEST_ESTIMATE_MAX_DEPOSIT_VALUE",
+    params: {
+      blockchain: formValues.blockchain,
+      userAddress,
+      balance: balance ?? 0n,
+      nativeBalance: nativeBalance ?? 0n,
+      token: formValues.derivedToken,
+      generateAddress: generateDepositAddress,
+    },
+  })
+  const depositEstimationState = await waitFor(
+    depositEstimationRef,
+    (state) => state.matches("completed"),
+    { signal }
+  )
+  if (depositEstimationState.context.preparationOutput?.tag === "err") {
+    return depositEstimationState.context.preparationOutput
+  }
+  return {
+    tag: "ok",
+    value: {
+      maxDepositValue:
+        depositEstimationState.context.preparationOutput?.value
+          .maxDepositValue ?? null,
+    },
+  }
+}
 
 const FT_DEPOSIT_GAS = `30${"0".repeat(12)}` // 30 TGAS
 const FT_TRANSFER_GAS = `50${"0".repeat(12)}` // 30 TGAS
