@@ -31,7 +31,7 @@ const config = [
         inject: false,
         extract: false,
         modules: false,
-        minimize: true,
+        minimize: false,
         plugins: [atImport, tailwindcss, autoprefixer],
       }),
     ],
@@ -60,7 +60,7 @@ const config = [
       postcss({
         plugins: [tailwindcss, autoprefixer],
         extract: true,
-        minimize: true,
+        minimize: false,
         sourceMap: false,
       }),
     ],
