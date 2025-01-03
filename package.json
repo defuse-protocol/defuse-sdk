@@ -82,6 +82,7 @@
     "husky": "^9.1.1",
     "lint-staged": "^15.2.10",
     "postcss": "^8.4.47",
+    "postcss-import": "^15.1.0",
     "rollup": "^4.22.5",
     "rollup-plugin-dts": "^6.1.1",
     "rollup-plugin-postcss": "^4.0.2",
