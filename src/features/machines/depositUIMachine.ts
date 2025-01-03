@@ -41,7 +41,7 @@ import {
   type PreparationOutput,
   prepareDepositActor,
 } from "./prepareDepositActor"
-import { storageDepositAmountActor } from "./storageDepositAmountActor"
+import { storageDepositAmountMachine } from "./storageDepositAmountMachine"
 
 export type Context = {
   error: null | {
@@ -67,12 +67,12 @@ export type Context = {
   depositEVMResult: DepositEVMMachineOutput | null
   depositSolanaResult: DepositSolanaMachineOutput | null
   depositTurboResult: DepositTurboMachineOutput | null
-  storageDepositRequired: bigint | null
   depositFormRef: ActorRefFrom<typeof depositFormReducer>
   fetchWalletAddressBalanceRef: ActorRefFrom<
     typeof backgroundBalanceActor
   > | null
   preparationOutput: PreparationOutput | null
+  storageDepositAmountRef: ActorRefFrom<typeof storageDepositAmountMachine>
 }
 
 export const depositUIMachine = setup({
@@ -112,10 +112,10 @@ export const depositUIMachine = setup({
     depositSolanaActor: depositSolanaMachine,
     depositEstimateMaxValueActor: depositEstimateMaxValueActor,
     depositTurboActor: depositTurboMachine,
-    fetchStorageDepositAmountActor: storageDepositAmountActor,
     prepareDepositActor: prepareDepositActor,
     depositFormActor: depositFormReducer,
     depositGenerateAddressActor: depositGenerateAddressMachine,
+    storageDepositAmountActor: storageDepositAmountMachine,
   },
   actions: {
     logError: (_, event: { error: unknown }) => {
@@ -174,8 +174,8 @@ export const depositUIMachine = setup({
       (_, event: DepositFormEvents) => event
     ),
 
-    requestGenerateAddressV2: sendTo(
-      "depositGenerateAddressV2Ref",
+    requestGenerateAddress: sendTo(
+      "depositGenerateAddressRef",
       ({ context }) => {
         return {
           type: "REQUEST_GENERATE_ADDRESS",
@@ -183,6 +183,18 @@ export const depositUIMachine = setup({
             userAddress: context.userAddress,
             blockchain: context.depositFormRef.getSnapshot().context.blockchain,
             userChainType: context.userChainType,
+          },
+        }
+      }
+    ),
+    requestStorageDepositAmount: sendTo(
+      "storageDepositAmountRef",
+      ({ context }) => {
+        return {
+          type: "REQUEST_STORAGE_DEPOSIT",
+          params: {
+            token: context.depositFormRef.getSnapshot().context.token,
+            userAccountId: context.userAddress,
           },
         }
       }
@@ -256,20 +268,23 @@ export const depositUIMachine = setup({
     userAddress: null,
     userChainType: null,
     tokenAddress: null,
+    preparationOutput: null,
+    fetchWalletAddressBalanceRef: null,
     poaBridgeInfoRef: spawn("poaBridgeInfoActor", {
       id: "poaBridgeInfoRef",
     }),
-    storageDepositRequired: null,
     depositFormRef: spawn("depositFormActor", {
       id: "depositFormRef",
       input: { parentRef: self },
     }),
-    fetchWalletAddressBalanceRef: null,
     depositGenerateAddressRef: spawn("depositGenerateAddressActor", {
-      id: "depositGenerateAddressV2Ref",
+      id: "depositGenerateAddressRef",
       input: { parentRef: self },
     }),
-    preparationOutput: null,
+    storageDepositAmountRef: spawn("storageDepositAmountActor", {
+      id: "storageDepositAmountRef",
+      input: { parentRef: self },
+    }),
   }),
 
   entry: ["fetchPOABridgeInfo"],
@@ -352,7 +367,7 @@ export const depositUIMachine = setup({
         },
 
         preparation: {
-          entry: ["requestGenerateAddressV2"],
+          entry: ["requestGenerateAddress", "requestStorageDepositAmount"],
           invoke: {
             src: "prepareDepositActor",
 
@@ -360,6 +375,7 @@ export const depositUIMachine = setup({
               return {
                 formValues: context.depositFormRef.getSnapshot().context,
                 depositGenerateAddressRef: context.depositGenerateAddressRef,
+                storageDepositAmountRef: context.storageDepositAmountRef,
               }
             },
 
@@ -393,10 +409,15 @@ export const depositUIMachine = setup({
           const token = context.depositFormRef.getSnapshot().context.token
           const parsedAmount =
             context.depositFormRef.getSnapshot().context.parsedAmount
+          const storageDepositRequired =
+            context.preparationOutput?.tag === "ok"
+              ? context.preparationOutput.value.storageDepositRequired
+              : null
+
           assert(token, "token is null")
           assert(context.userAddress, "userAddress is null")
           assert(
-            context.storageDepositRequired != null,
+            storageDepositRequired !== null,
             "storageDepositRequired is null"
           )
           assert(parsedAmount, "parsed amount is null")
@@ -405,7 +426,7 @@ export const depositUIMachine = setup({
             amount: parsedAmount,
             asset: token,
             accountId: context.userAddress,
-            storageDepositRequired: context.storageDepositRequired,
+            storageDepositRequired,
           }
         },
         onDone: {

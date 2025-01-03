@@ -3,7 +3,6 @@ import {
   SystemProgram,
   Transaction as TransactionSolana,
 } from "@solana/web3.js"
-import type { depositGenerateAddressMachine } from "src/features/machines/depositGenerateAddressMachine"
 import {
   http,
   type Address,
@@ -16,7 +15,9 @@ import {
 import { type ActorRefFrom, waitFor } from "xstate"
 import { settings } from "../config/settings"
 import type { State as DepositFormContext } from "../features/machines/depositFormReducer"
+import type { depositGenerateAddressMachine } from "../features/machines/depositGenerateAddressMachine"
 import { getNearTxSuccessValue } from "../features/machines/getTxMachine"
+import type { storageDepositAmountMachine } from "../features/machines/storageDepositAmountMachine"
 import { logger } from "../logger"
 import type { SupportedChainName } from "../types/base"
 import {
@@ -34,6 +35,7 @@ export type PreparationOutput =
       tag: "ok"
       value: {
         generateDepositAddress: string | null
+        storageDepositRequired: bigint | null
       }
     }
   | {
@@ -42,50 +44,35 @@ export type PreparationOutput =
         reason: "ERR_GENERATING_ADDRESS"
       }
     }
+  | {
+      tag: "err"
+      value: {
+        reason: "ERR_NEP141_STORAGE_CANNOT_FETCH"
+      }
+    }
 
 export async function prepareDeposit(
   {
     depositGenerateAddressRef,
+    storageDepositAmountRef,
   }: {
     formValues: DepositFormContext
     depositGenerateAddressRef: ActorRefFrom<
       typeof depositGenerateAddressMachine
     >
+    storageDepositAmountRef: ActorRefFrom<typeof storageDepositAmountMachine>
   },
   { signal }: { signal: AbortSignal }
 ): Promise<PreparationOutput> {
-  const generateDepositAddress = await getDepositGeneratedAddress(
-    {
-      depositGenerateAddressRef,
-    },
+  const storageDepositAmount = await waitFor(
+    storageDepositAmountRef,
+    (state) => state.matches("completed"),
     { signal }
   )
-  if (generateDepositAddress.tag === "err") {
-    return generateDepositAddress
+  if (storageDepositAmount.context.preparationOutput?.tag === "err") {
+    return storageDepositAmount.context.preparationOutput
   }
 
-  return {
-    tag: "ok",
-    value: {
-      generateDepositAddress:
-        generateDepositAddress.value.generateDepositAddress,
-    },
-  }
-}
-
-async function getDepositGeneratedAddress(
-  {
-    depositGenerateAddressRef,
-  }: {
-    depositGenerateAddressRef: ActorRefFrom<
-      typeof depositGenerateAddressMachine
-    >
-  },
-  { signal }: { signal: AbortSignal }
-): Promise<
-  | { tag: "ok"; value: { generateDepositAddress: string | null } }
-  | { tag: "err"; value: { reason: "ERR_GENERATING_ADDRESS" } }
-> {
   const depositGenerateAddressState = await waitFor(
     depositGenerateAddressRef,
     (state) => state.matches("completed"),
@@ -101,6 +88,8 @@ async function getDepositGeneratedAddress(
       generateDepositAddress:
         depositGenerateAddressState.context.preparationOutput?.value
           .generateDepositAddress ?? null,
+      storageDepositRequired:
+        storageDepositAmount.context.preparationOutput?.value ?? null,
     },
   }
 }

@@ -1,4 +1,3 @@
-import type { PreparationOutput } from "src/services/depositService"
 import type { SupportedChainName } from "src/types/base"
 import type { ChainType } from "src/types/deposit"
 import { assert } from "src/utils/assert"
@@ -8,7 +7,20 @@ export type Context = {
   userAddress: string | null
   userChainType: ChainType | null
   blockchain: SupportedChainName | null
-  preparationOutput: PreparationOutput | null
+  preparationOutput:
+    | {
+        tag: "ok"
+        value: {
+          generateDepositAddress: string | null
+        }
+      }
+    | {
+        tag: "err"
+        value: {
+          reason: "ERR_GENERATING_ADDRESS"
+        }
+      }
+    | null
 }
 
 export const depositGenerateAddressMachine = setup({
@@ -65,7 +77,7 @@ export const depositGenerateAddressMachine = setup({
     },
   },
 }).createMachine({
-  /** @xstate-layout N4IgpgJg5mDOIC5QTABwPawJYBcDiYAdmAE4CGOYAghBCXLALJkDGAFlsQGoBMAxACUAogEUAqkIDKAFQD6eIQDkhAqtKGyqAES3DJkgNoAGALqJQGbDizpC5kAA9EPAIwBWAHQuXAFgDsAJz+fu6hAGwANCAAnogAHGEePEYAzAFhbq5xKWlxbgC++VEolrgExOSUNHQMzOycYLyCohIy8koqahraulKGLmZIIKXWtvZOCG5xcR5xATx+ya4hcTxuUbEIWR5+YQEpfj4pa36ZBUUgJZhlRKQU1LT0sEysHNw8HjAVFJxQfBC2MAeTgAN3QAGsgVcrOU7lVHrVXg1eJ9bpVfghQegWD9bMYTPj7CMbHYhhMUkZEnMAvs3LsfGEUmF3BtECk6R4plk3DkXMy3HzCsU0Nd8Gj7tUni96u9Ud9rIQ-qQSOgSB5UAAbCgAM1VAFsPNCbvKHjVnnU3o0Pl84RisTjRoR8YShsSxmS2UY-JywoFkjyfDS-MHWQgfD4jF4eEc3GE4kcEu5ChdCOgUPAhkaxSbJYiZVaiaKSeNEHzvd5-EFg6EBZEYogALQuJLpVJGdJ7MI8abxoWXEUw8Xws3Sy0om3oxWFqzFj1bfYeFLxlIuA5+dlc0M8A4eHzeEJpL3dtJ9rOwyqmqUW5EfFjoPWasCUCDT3Cz0DkvyRoxGHn0nw8HsASUqGdIzDkRguAevopBGPCngOxpwpeeZjh8WAQBqYCvo6JYIIcAS7jGkEMisayhkESTRi4RhLLRjK+sm+RAA */
+  /** @xstate-layout N4IgpgJg5mDOIC5QTABwPawJYBcDiYAdmAE4CGOYAghBCXLALJkDGAFlsQMQBKAogEUAqnwDKAFQD6ePgDk+PKuL6SqAETX9RogNoAGALqJQGbDizpCxkAE9EAWgAcAdgB0AVgA0IAB6J3AJwAzK7O7s6OAIwATO4AvnHeKKa4BMTklDR0DMzsnGC8giIS0nIKSirqmmK6kUZIICnmltZ+CAHujqHRAQAsAY6OekHuI162iNF6ka4AbJFBjrNBzgHB0b1LCUlomKlEpBTUtPSwTKwcxK4w6RScUFwQlmCunABu6ADWL8l7+AcZY7ZM65S4vG6HcyEKAId7oFh3Sz6AzI6xNCxWBptWaOdweXo9fqLAl6Wa9bx2BDRVahIKLSIBVaBZx6UbbEC-MxpSFA07nPJXCEZe5cUgkdAkVyoAA2FAAZhKALauTn7W6ZE45C75a4Au7Q2GED4I5qEZGohrolpYxA42auaKRPQBaKOIKRdx6XoLCmIEZdT2BXruHGxWIBBKJECEdAoeANVX-dW8rUCsBov4Y1qIXqLVxBYIFxmdAkbX0IeyRZy9VxrNbOHEe93ORbsxPcwFZPmgnVC-VQDNmLM2hCzZzRVx6al05nOMKzALlxmTxnTAm9Ya9HHONu7Ll6jXA-lg1wsdCKmVgSgQQe4YegNrVrpkxwEhkBBfzcvuBauRyMqY5yCVkf0iXcmg7I4u1TE8sAgaV00tTNrQfHMlnzQt6xLaIywmKlYknIICSI5wPVmZYcMjOIgA */
   context: {
     userAddress: null,
     userChainType: null,
