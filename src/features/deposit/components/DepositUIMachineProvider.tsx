@@ -90,14 +90,17 @@ export function DepositUIMachineProvider({
           depositNearActor: depositNearMachine.provide({
             actors: {
               signAndSendTransactions: fromPromise(async ({ input }) => {
-                const { asset, amount, balance, storageDepositRequired } = input
+                const { token, amount, balance, storageDepositRequired } = input
 
-                const tokenToDeposit = isBaseToken(asset)
-                  ? asset
-                  : asset.groupedTokens.find(
-                      (token) => token.chainName === "near"
+                const tokenToDeposit = isBaseToken(token)
+                  ? token
+                  : token.groupedTokens.find(
+                      (token_) => token_.chainName === "near"
                     )
-
+                assert(
+                  storageDepositRequired !== null,
+                  "storageDepositRequired is null"
+                )
                 assert(tokenToDeposit, "Token to deposit is not defined")
 
                 let tx: Transaction["NEAR"][] = []
@@ -122,14 +125,14 @@ export function DepositUIMachineProvider({
                 return txHash
               }),
               validateTransaction: fromPromise(async ({ input }) => {
-                const { txHash, accountId, amount } = input
+                const { txHash, userAddress, amount } = input
                 assert(txHash != null, "Tx hash is not defined")
-                assert(accountId != null, "Account ID is not defined")
+                assert(userAddress != null, "User address is not defined")
                 assert(amount != null, "Amount is not defined")
 
                 const isValid = await checkNearTransactionValidity(
                   txHash,
-                  accountId,
+                  userAddress,
                   amount.toString()
                 )
                 return isValid
@@ -160,11 +163,11 @@ export function DepositUIMachineProvider({
             actors: {
               sendTransaction: fromPromise(async ({ input }) => {
                 const {
-                  asset,
+                  token,
                   amount,
                   tokenAddress,
                   depositAddress,
-                  accountId,
+                  userAddress,
                   chainName,
                 } = input
                 const chainId = getEVMChainId(chainName)
@@ -172,16 +175,16 @@ export function DepositUIMachineProvider({
                 assert(depositAddress != null, "Deposit address is not defined")
 
                 let tx: Transaction["EVM"]
-                if (isUnifiedToken(asset) && asset.unifiedAssetId === "eth") {
+                if (isUnifiedToken(token) && token.unifiedAssetId === "eth") {
                   tx = createDepositEVMNativeTransaction(
-                    accountId,
+                    userAddress,
                     depositAddress,
                     amount,
                     chainId
                   )
                 } else {
                   tx = createDepositEVMERC20Transaction(
-                    accountId,
+                    userAddress,
                     tokenAddress,
                     depositAddress,
                     amount,
@@ -214,12 +217,12 @@ export function DepositUIMachineProvider({
           depositSolanaActor: depositSolanaMachine.provide({
             actors: {
               signAndSendTransactions: fromPromise(async ({ input }) => {
-                const { amount, depositAddress, accountId } = input
+                const { amount, depositAddress, userAddress } = input
 
                 assert(depositAddress != null, "Deposit address is not defined")
 
                 const tx = createDepositSolanaTransaction(
-                  accountId,
+                  userAddress,
                   depositAddress,
                   amount
                 )
@@ -241,7 +244,7 @@ export function DepositUIMachineProvider({
               signAndSendTransactions: fromPromise(async ({ input }) => {
                 const {
                   amount,
-                  accountId,
+                  userAddress,
                   tokenAddress,
                   depositAddress,
                   chainName,
@@ -260,7 +263,7 @@ export function DepositUIMachineProvider({
                 if (tokenAddress !== "native") {
                   const allowance = await getAllowance(
                     tokenAddress,
-                    accountId,
+                    userAddress,
                     siloToSiloAddress_,
                     assetNetworkAdapter[chainName]
                   )
@@ -271,7 +274,7 @@ export function DepositUIMachineProvider({
                       tokenAddress,
                       siloToSiloAddress_,
                       amount,
-                      getAddress(accountId),
+                      getAddress(userAddress),
                       chainId
                     )
                     logger.verbose("Sending approve EVM transaction")
@@ -295,7 +298,7 @@ export function DepositUIMachineProvider({
                   tokenAddress === "native"
                     ? "0x0000000000000000000000000000000000000000"
                     : tokenAddress,
-                  accountId,
+                  userAddress,
                   amount,
                   depositAddress,
                   siloToSiloAddress_,

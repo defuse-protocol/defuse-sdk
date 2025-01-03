@@ -9,9 +9,13 @@ import {
   setup,
 } from "xstate"
 import { logger } from "../../logger"
+import type {
+  BaseTokenInfo,
+  SupportedChainName,
+  UnifiedTokenInfo,
+} from "../../types/base"
 import type { ChainType } from "../../types/deposit"
 import type { SwappableToken } from "../../types/swap"
-import { isBaseToken, isNativeToken, isUnifiedToken } from "../../utils/token"
 import {
   type Output as DepositEVMMachineOutput,
   depositEVMMachine,
@@ -51,13 +55,6 @@ export type Context = {
       error: Error | null
     }
   }
-  balance: bigint
-  nativeBalance: bigint
-  /**
-   * The maximum amount that available on the user's balance minus the cost of the gas.
-   * todo: either remove this, or make it work, now it is 0n for native tokens
-   */
-  maxDepositValue: bigint
   depositGenerateAddressRef: ActorRefFrom<typeof depositGenerateAddressMachine>
   poaBridgeInfoRef: ActorRefFrom<typeof poaBridgeInfoActor>
   tokenList: SwappableToken[]
@@ -126,8 +123,6 @@ export const depositUIMachine = setup({
         value: error,
       }),
     }),
-
-    clearError: assign({ error: null }),
     setDepositNearResult: assign({
       depositNearResult: (_, value: DepositNearMachineOutput) => value,
     }),
@@ -143,25 +138,17 @@ export const depositUIMachine = setup({
     setPreparationOutput: assign({
       preparationOutput: (_, val: Context["preparationOutput"]) => val,
     }),
-    clearDepositResult: assign({ depositNearResult: null }),
-    clearDepositEVMResult: assign({ depositEVMResult: null }),
-    clearDepositSolanaResult: assign({ depositSolanaResult: null }),
-    clearDepositTurboResult: assign({ depositTurboResult: null }),
+
+    clearError: assign({ error: null }),
     clearResults: assign({
       depositNearResult: null,
       depositEVMResult: null,
       depositSolanaResult: null,
       depositTurboResult: null,
     }),
-
     clearUIDepositAmount: () => {
       throw new Error("not implemented")
     },
-    clearBalances: assign({
-      balance: 0n,
-      nativeBalance: 0n,
-    }),
-
     clearPreparationOutput: assign({
       preparationOutput: null,
     }),
@@ -239,20 +226,6 @@ export const depositUIMachine = setup({
       const blockchain = context.depositFormRef.getSnapshot().context.blockchain
       return blockchain === "turbochain" || blockchain === "aurora"
     },
-    isBalanceSufficientForEstimate: ({ context }) => {
-      const token = context.depositFormRef.getSnapshot().context.token
-      if (token == null) {
-        return false
-      }
-      // For all Native tokens, we should validate wallet native balance
-      if (
-        (isUnifiedToken(token) && token.groupedTokens.some(isNativeToken)) ||
-        (isBaseToken(token) && isNativeToken(token))
-      ) {
-        return context.nativeBalance > 0n
-      }
-      return context.balance > 0n
-    },
     isOk: (_, a: { tag: "err" | "ok" }) => a.tag === "ok",
     isDepositParamsComplete: and([
       "isTokenValid",
@@ -261,14 +234,11 @@ export const depositUIMachine = setup({
     ]),
   },
 }).createMachine({
-  /** @xstate-layout N4IgpgJg5mDOIC5QTABwPawJYBcC0ArlgMQAyA8gOICSAcgNoAMAuoqBtjlugHZsgAPRAEZGADgB0YgKyiALHLFzpAZnEA2aQBoQAT0R51jYRPUAmMwHZGcyyuHqjlgL7OdKDrkIkKlcgFUAFSZWJBBPLl5+IQQVCwlpaTFLaUtbSzNxOR19BEMzSVSkuWElYQBOcvVy13c0TC8iCUhcLB4oYgARAFEABXIAZWpAgH0AMXIAJQBZCQAqEP4I7j4wmOEHCTizdRU5culqhWFLHIM4lSlys1KHOTNVFNqQDwb8Jpaudq6+weHxqbTcbUbqkToDEYAYQAEgBBWiUbqdRZhZZRNYiSwSKqMcq49SWSzXFQHM55DZY3YKC64yxKMTCZ6vTjeZoQVrfAb+ABC02GKPYbxW0UQ1kuGzEmWk5UsVI2ZNS2OS6gZcnMYhUYnUjLcL3qLI+7K+HS5vP5wlCgs4woxCBVWIU5ms10JmrJmXKCU0ckYdjpSksJyZ+saWDZHJNPL5wTMlvCQvRoBiKpMNwqGxO8l9ZJUJNMFWMD0zjmkcmDEVZnzakbNwRUcbRqyTiEcJhJDjEBwOYh7wjJtnUEkUaROWXxD3Lb0rRurEgATnAwDgRqgFwA3bgEWArheoACGc73kR4xAF8eticEiEUWwHOysZiq9myehENiHao1wiKGcqk4NYZVu086Lsuq5gBu6BbjuaAHkeKynhaSwJk2V6xD6Eg3JUwgqES1z7C+uTfnIWyyqWSSMLiOF2P+obhsaEjgfuh7HsQEC8GAEhtGu6AANaccydFAVAjG7nBx4INx6AAMbwbwIRno2IqxDImElI4PZYTIKg5qIEiBjsyQOCSuLSLR7yATOwFMeJCFgHOc7oHOjEADZHgAZk5AC2EiCRZ9GzjZLErJJPA8bJx4KSwyEXqhMSatI2L4rIZi4XYJQ5uUJE+ikcTVOUwjqWZup+aysAEAARl5uDGrQYAHoEAhsRxXFhXxAkhjgdUHpMYDuYpKHKYVaQJNY2r3OoaqFTpr4ILIpglKlBblGINidmWJWdWVlXVTgxrdAAatMjXNTwnFSfxvmdYd0y9f10WooNtrDSRqSMONOxTXIM1EdKEimeYDiJAoaRmOZ21VTV1YDOgbk8HuJ3sWdrU8Zdfkw3De53QNsVDbYjDYrKMhpCq0oPO6koSJmZj3EkgO7ODTTlZDe3VoEBBzhV6CIy1F0dRE7Oc+g2MPVarSXustiXFqKiJDKOFxH2s3fVixgEg4QNpYwKiuLqPDoCg8BhKVRAxeLcUGESCRWLhuzCDsGRamSeDKJIJI3DIuxUROm0VoaEZm8eyl4PY1t+nbDsFKkztSlTezfTTGr7Dc6iM5ZEZcRALlgIHNrNggyiepKuH299BJaoR16DnS0gFIwdO4rYYO+1O-sMQusBLjBkHQUFcmoUptq2NilQypN0i+vYzu11sqXat+KqalqhVpwF1licFl6D-nmxN+YKj2nEgbfTm72kSUCgMtq4i+qvzO7bV9Vzo1ucS2+Gr6e9lGJJk4ilAq0tkg+nuIGFMLgW4AQkPfKG7Qbov0erjZ6WQpAT1LD6bWhUySZiHOtSU5RNR4jUMVOofswzQNZu0DGe54bwLFkHJBgZ9Ipz2D2GU+x1Duiyl6WQ2stRVAyHfHaMCoCCy5rQ885shq+kkKUSaGQ67vQyP2XC-1xCyAmqWYwYhdbOCAA */
+  /** @xstate-layout N4IgpgJg5mDOIC5QTABwPawJYBcC0ArlgMQAyA8gOICSAcgNoAMAuoqBtjlugHZsgAPRAEZGADgB0YgKyiALHLFzpAZnEA2aQBoQAT0R51jYRPUAmMwHZGcyyuHqjlgL7OdKDrkIkKlcgFUAFSZWJBBPLl5+IQQVCwlpaTFLaUtbSzNxOR19BEMzSVSkuWElYQBOcvVy13c0TC8iCUhcLB4oYgARAFEABXIAZWpAgH0AMXIAJQBZCQAqEP4I7j4wmOEHCTizdRU5culqhWFLHIM4lSlys1KHOTNVFNqQDwb8Jpaudq6+weHxqbTcbUbqkToDEYAYQAEgBBWiUbqdRZhZZRNYiSwSKqMcq49SWSzXFQHM55DZY3YKC64yxKMTCZ6vTjeZoQVrfAb+ABC02GKPYbxW0UQ1kuGzEmWk5UsVI2ZNS2OS6gZcnMYhUYnUjLcL3qLI+7K+HS5vP5wlCgs4woxCBVWIU5ms10JmrJmXKCU0ckYdjpSksJyZ+saWDZHJNPL5wTMlvCQvRoBiKpMNwqGxO8l9ZJUJNMFWMD0zjmkcmDEVZnzakbNwRUcbRqyTiEcJhJDjEBwOYh7wjJtnUEkUaROWXxD3Lb0rRurEgATnAwDgRqgFwA3bgEWArheoACGc73kR4xAF8eticEiEUWwHOysZiq9myehENiHao1wiKGcqk4NYZVu086Lsuq5gBu6BbjuaAHkeKynhaSwJk2V6xD6Eg3JUwgqES1z7C+uTfnIWyyqWSSMLiOF2P+obhsaEjgfuh7HsQEC8GAEhtGu6AANaccydFAVAjG7nBx4INx6AAMbwbwIRno2IqxDImElI4PZYTIKg5qIEiBjsyQOCSuLSLR7yATOwFMeJCFgHOc7oHOjEADZHgAZk5AC2EiCRZ9GzjZLErJJPA8bJx4KSwyEXqhMSatI2L4rIZi4XYJQ5uUJE+ikcTVOUwjqWZup+aysAEAARl5uDGrQYAHoEAhsRxXFhXxAkhjgdUHpMYDuYpKHKYVaQJNY2r3OoaqFTpr4ILIpglKlBblGINidmWJWdWVlXVTgxrdAAatMjXNTwnFSfxvmdYd0y9f10WooNtrDSRqSMONOxTXIM1EdKEimeYDiJAoaRmOZ21VTV1YDOgbk8HuJ3sWdrU8Zdfkw3De53QNsVDbYjDYrKMhpCq0oPO6koSJmZj3EkgO7ODTTlZDe3VoEBBzhV6CIy1F0dRE7Oc+g2MPVarSXustiXFqKiJDKOFxH2s3fVixgEg4QNpYwKiuLqPDoCg8BhKVRAxeLcUGESCRWLhuzCDsGRamSeDKJIJIWJkKsKMo6iM5ZEZm8eyl4PY1t+nbDsFKkztSlTewkioKqdniLibRWhoRlxEAuWAgc2s2CDKJ6kqJ7Kk1VDcpyzSqUg2BsJTfmkDLFXU6f+wxC6wEuMGQdBQVyahSm2rY2KVDKk3SL69jO9IZhbKl2rfiqmpaoVfsBdZYnBZeQ8F5stj3onyRxIG305u9pElAoDLauIvrr8zu21fVc6NXnEtvhq+nvZRiSZOIpQFTS2SD6e4gYUyp1blOJmO0obtBum-R6uNnpZCkJPUsPptaFTJJmIc61JTlE1HiNQLc9RtwkI-OBUAMZ7nhogsWQcUGBn0jcKkPYZT7HUO6LKXpZDay1FUDID9YGs3aILLm9DzzmyGr6SQpRJoZAKJRAkZh+y4X+uIWQE1SzGDELrZwQA */
   id: "deposit-ui",
 
   context: ({ input, spawn, self }) => ({
     error: null,
-    balance: 0n,
-    nativeBalance: 0n,
-    maxDepositValue: 0n,
     depositNearResult: null,
     depositEVMResult: null,
     depositSolanaResult: null,
@@ -319,7 +289,6 @@ export const depositUIMachine = setup({
     LOGOUT: {
       actions: [
         "clearResults",
-        "clearBalances",
         assign({
           userAddress: () => "",
         }),
@@ -346,22 +315,26 @@ export const depositUIMachine = setup({
           {
             target: "submittingNearTx",
             guard: "isChainNearSelected",
-            actions: "clearDepositResult",
+            actions: "clearResults",
+            reenter: true,
           },
           {
             target: "submittingEVMTx",
-            reenter: true,
             guard: "isChainEVMSelected",
+            actions: "clearResults",
+            reenter: true,
           },
           {
             target: "submittingSolanaTx",
-            reenter: true,
             guard: "isChainSolanaSelected",
+            actions: "clearResults",
+            reenter: true,
           },
           {
             target: "submittingTurboTx",
-            reenter: true,
             guard: "isChainAuroraEngineSelected",
+            actions: "clearResults",
+            reenter: true,
           },
         ],
       },
@@ -374,7 +347,7 @@ export const depositUIMachine = setup({
             {
               target: "preparation",
               guard: "isDepositParamsComplete",
-              actions: ["clearError", "clearResults", "clearBalances"],
+              actions: ["clearError", "clearResults"],
             },
             {
               target: "idle",
@@ -430,28 +403,16 @@ export const depositUIMachine = setup({
       invoke: {
         id: "depositNearRef",
         src: "depositNearActor",
-        input: ({ context }) => {
-          const token = context.depositFormRef.getSnapshot().context.token
-          const parsedAmount =
-            context.depositFormRef.getSnapshot().context.parsedAmount
-          const storageDepositRequired =
-            context.preparationOutput?.tag === "ok"
-              ? context.preparationOutput.value.storageDepositRequired
-              : null
-
-          assert(token, "token is null")
-          assert(context.userAddress, "userAddress is null")
+        input: ({ context, event }) => {
+          assertEvent(event, "SUBMIT")
+          const params = extractDepositParams(context)
           assert(
-            storageDepositRequired !== null,
+            params.storageDepositRequired !== null,
             "storageDepositRequired is null"
           )
-          assert(parsedAmount, "parsed amount is null")
           return {
-            balance: context.balance,
-            amount: parsedAmount,
-            asset: token,
-            accountId: context.userAddress,
-            storageDepositRequired,
+            ...params,
+            storageDepositRequired: params.storageDepositRequired,
           }
         },
         onDone: {
@@ -473,28 +434,11 @@ export const depositUIMachine = setup({
         src: "depositEVMActor",
         input: ({ context, event }) => {
           assertEvent(event, "SUBMIT")
-          const depositAddress =
-            context.preparationOutput?.tag === "ok"
-              ? context.preparationOutput.value.generateDepositAddress
-              : null
-          const token = context.depositFormRef.getSnapshot().context.token
-          const blockchain =
-            context.depositFormRef.getSnapshot().context.blockchain
-          const parsedAmount =
-            context.depositFormRef.getSnapshot().context.parsedAmount
-          assert(token && isBaseToken(token), "token is not prepared")
-          assert(blockchain !== null, "blockchain is null")
-          assert(context.userAddress, "userAddress is null")
-          assert(depositAddress, "depositAddress is null")
-          assert(parsedAmount, "parsed amount is null")
+          const params = extractDepositParams(context)
+          assert(params.depositAddress, "depositAddress is null")
           return {
-            balance: context.balance,
-            amount: parsedAmount,
-            asset: token,
-            accountId: context.userAddress,
-            tokenAddress: token.address,
-            depositAddress,
-            chainName: blockchain,
+            ...params,
+            depositAddress: params.depositAddress,
           }
         },
         onDone: {
@@ -516,28 +460,11 @@ export const depositUIMachine = setup({
         src: "depositSolanaActor",
         input: ({ context, event }) => {
           assertEvent(event, "SUBMIT")
-          const depositAddress =
-            context.preparationOutput?.tag === "ok"
-              ? context.preparationOutput.value.generateDepositAddress
-              : null
-          const token = context.depositFormRef.getSnapshot().context.token
-          const blockchain =
-            context.depositFormRef.getSnapshot().context.blockchain
-          const parsedAmount =
-            context.depositFormRef.getSnapshot().context.parsedAmount
-          assert(token && isBaseToken(token), "token is not prepared")
-          assert(blockchain !== null, "blockchain is null")
-          assert(context.userAddress, "userAddress is null")
-          assert(depositAddress, "depositAddress is null")
-          assert(parsedAmount, "parsed amount is null")
+          const params = extractDepositParams(context)
+          assert(params.depositAddress, "depositAddress is null")
           return {
-            balance: context.balance,
-            amount: parsedAmount,
-            asset: token,
-            accountId: context.userAddress,
-            tokenAddress: token.address,
-            depositAddress,
-            chainName: blockchain,
+            ...params,
+            depositAddress: params.depositAddress,
           }
         },
         onDone: {
@@ -559,23 +486,10 @@ export const depositUIMachine = setup({
         src: "depositTurboActor",
         input: ({ context, event }) => {
           assertEvent(event, "SUBMIT")
-          const token = context.depositFormRef.getSnapshot().context.token
-          const blockchain =
-            context.depositFormRef.getSnapshot().context.blockchain
-          const parsedAmount =
-            context.depositFormRef.getSnapshot().context.parsedAmount
-          assert(token && isBaseToken(token), "token is not prepared")
-          assert(blockchain !== null, "blockchain is null")
-          assert(context.userAddress, "userAddress is null")
-          assert(parsedAmount, "parsed amount is null")
+          const params = extractDepositParams(context)
           return {
-            balance: context.balance,
-            amount: parsedAmount,
-            asset: token,
-            accountId: context.userAddress,
-            tokenAddress: token.address,
+            ...params,
             depositAddress: settings.defuseContractId,
-            chainName: blockchain,
           }
         },
         onDone: {
@@ -595,3 +509,46 @@ export const depositUIMachine = setup({
 
   initial: "editing",
 })
+
+type DepositParams = {
+  token: BaseTokenInfo | UnifiedTokenInfo
+  balance: bigint
+  nativeBalance: bigint
+  amount: bigint
+  userAddress: string
+  tokenAddress: string
+  depositAddress: string | null
+  chainName: SupportedChainName
+  storageDepositRequired: bigint | null
+}
+
+function extractDepositParams(context: Context): DepositParams {
+  const { value: prepOutput } =
+    context.preparationOutput?.tag === "ok"
+      ? context.preparationOutput
+      : { value: null }
+
+  const { token, derivedToken, blockchain, parsedAmount } =
+    context.depositFormRef.getSnapshot().context
+
+  // Validate all required fields
+  assert(token, "token is null")
+  assert(derivedToken, "derivedToken is null")
+  assert(blockchain !== null, "blockchain is null")
+  assert(context.userAddress, "userAddress is null")
+  assert(parsedAmount, "parsed amount is null")
+  assert(prepOutput?.balance, "balance is null")
+  assert(prepOutput?.nativeBalance, "nativeBalance is null")
+
+  return {
+    token,
+    balance: prepOutput.balance,
+    nativeBalance: prepOutput.nativeBalance,
+    amount: parsedAmount,
+    userAddress: context.userAddress,
+    tokenAddress: derivedToken.address,
+    depositAddress: prepOutput.generateDepositAddress,
+    chainName: blockchain,
+    storageDepositRequired: prepOutput.storageDepositRequired,
+  }
+}

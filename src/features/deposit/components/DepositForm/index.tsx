@@ -16,10 +16,6 @@ import { QRCodeSVG } from "qrcode.react"
 import { type ReactNode, useEffect, useState } from "react"
 import CopyToClipboard from "react-copy-to-clipboard"
 import { Controller, useFormContext } from "react-hook-form"
-import { TooltipInfo } from "src/components/TooltipInfo"
-import { RESERVED_NEAR_BALANCE } from "src/features/machines/getBalanceMachine"
-import { getPOABridgeInfo } from "src/features/machines/poaBridgeInfoActor"
-import { getAvailableDepositRoutes } from "src/services/depositService"
 import {
   assetNetworkAdapter,
   reverseAssetNetworkAdapter,
@@ -33,7 +29,11 @@ import { Input } from "../../../../components/Input"
 import type { ModalSelectAssetsPayload } from "../../../../components/Modal/ModalSelectAssets"
 import { NetworkIcon } from "../../../../components/Network/NetworkIcon"
 import { Select } from "../../../../components/Select/Select"
+import { TooltipInfo } from "../../../../components/TooltipInfo"
+import { RESERVED_NEAR_BALANCE } from "../../../../features/machines/getBalanceMachine"
+import { getPOABridgeInfo } from "../../../../features/machines/poaBridgeInfoActor"
 import { useModalStore } from "../../../../providers/ModalStoreProvider"
+import { getAvailableDepositRoutes } from "../../../../services/depositService"
 import { ModalType } from "../../../../stores/modalStore"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../../../types/base"
 import type { ChainType } from "../../../../types/deposit"
@@ -326,7 +326,10 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
                 }
               >
                 {renderDepositButtonText(
-                  watch("amount") >= "0" && balanceInsufficient !== null,
+                  watch("amount") >= "0" &&
+                    (balanceInsufficient !== null
+                      ? balanceInsufficient
+                      : false),
                   network,
                   token,
                   minDepositAmount,

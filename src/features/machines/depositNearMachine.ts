@@ -1,19 +1,20 @@
 import { assign, emit, fromPromise, setup } from "xstate"
 import { logger } from "../../logger"
-import type { SwappableToken } from "../../types/swap"
+import type { BaseTokenInfo, UnifiedTokenInfo } from "../../types/base"
+import { assert } from "../../utils/assert"
 
 export type DepositDescription = {
   type: "depositNear"
-  userAddressId: string
+  userAddress: string
   amount: bigint
-  asset: SwappableToken
+  token: BaseTokenInfo | UnifiedTokenInfo
 }
 
 export type Context = {
   balance: bigint
   amount: bigint
-  asset: SwappableToken
-  accountId: string
+  token: BaseTokenInfo | UnifiedTokenInfo
+  userAddress: string
   tokenAddress: string
   txHash: string | null
   storageDepositRequired: bigint
@@ -29,9 +30,9 @@ export type Context = {
 type Input = {
   balance: bigint
   amount: bigint
-  asset: SwappableToken
-  accountId: string
-  storageDepositRequired: bigint
+  token: BaseTokenInfo | UnifiedTokenInfo
+  userAddress: string
+  storageDepositRequired: bigint | null
 }
 
 export type Output =
@@ -58,7 +59,7 @@ export const depositNearMachine = setup({
     ),
     validateTransaction: fromPromise(
       async (_: {
-        input: { txHash: string; accountId: string; amount: bigint }
+        input: { txHash: string; userAddress: string; amount: bigint }
       }): Promise<boolean> => {
         throw new Error("not implemented")
       }
@@ -102,9 +103,9 @@ export const depositNearMachine = setup({
           txHash: context.txHash,
           depositDescription: {
             type: "depositNear",
-            userAddressId: context.accountId,
+            userAddress: context.userAddress,
             amount: context.amount,
-            asset: context.asset,
+            token: context.token,
           },
         },
       }
@@ -118,11 +119,15 @@ export const depositNearMachine = setup({
   },
 
   context: ({ input }) => {
+    assert(
+      input.storageDepositRequired !== null,
+      "storageDepositRequired is null"
+    )
     return {
       balance: input.balance,
       amount: input.amount,
-      asset: input.asset,
-      accountId: input.accountId,
+      token: input.token,
+      userAddress: input.userAddress,
       txHash: null,
       error: null,
       tokenAddress: "",
@@ -139,8 +144,8 @@ export const depositNearMachine = setup({
           return {
             balance: context.balance,
             amount: context.amount,
-            accountId: context.accountId,
-            asset: context.asset,
+            userAddress: context.userAddress,
+            token: context.token,
             storageDepositRequired: context.storageDepositRequired,
           }
         },
@@ -177,7 +182,7 @@ export const depositNearMachine = setup({
         id: "deposit-near.verifying:invocation[0]",
         input: ({ context }) => ({
           txHash: context.txHash || "",
-          accountId: context.accountId || "",
+          userAddress: context.userAddress || "",
           amount: context.amount || 0n,
         }),
         onDone: {
