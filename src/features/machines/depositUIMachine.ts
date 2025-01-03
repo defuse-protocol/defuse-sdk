@@ -16,7 +16,7 @@ import {
   type Output as DepositEVMMachineOutput,
   depositEVMMachine,
 } from "./depositEVMMachine"
-import { depositEstimateMaxValueActor } from "./depositEstimationActor"
+import { depositEstimationMachine } from "./depositEstimationActor"
 import {
   type Events as DepositFormEvents,
   type ParentEvents as DepositFormParentEvents,
@@ -71,6 +71,7 @@ export type Context = {
   preparationOutput: PreparationOutput | null
   storageDepositAmountRef: ActorRefFrom<typeof storageDepositAmountMachine>
   depositTokenBalanceRef: ActorRefFrom<typeof depositTokenBalanceMachine>
+  depositEstimationRef: ActorRefFrom<typeof depositEstimationMachine>
 }
 
 export const depositUIMachine = setup({
@@ -107,13 +108,13 @@ export const depositUIMachine = setup({
     poaBridgeInfoActor: poaBridgeInfoActor,
     depositEVMActor: depositEVMMachine,
     depositSolanaActor: depositSolanaMachine,
-    depositEstimateMaxValueActor: depositEstimateMaxValueActor,
     depositTurboActor: depositTurboMachine,
     prepareDepositActor: prepareDepositActor,
     depositFormActor: depositFormReducer,
     depositGenerateAddressActor: depositGenerateAddressMachine,
     storageDepositAmountActor: storageDepositAmountMachine,
     depositTokenBalanceActor: depositTokenBalanceMachine,
+    depositEstimationActor: depositEstimationMachine,
   },
   actions: {
     logError: (_, event: { error: unknown }) => {
@@ -260,7 +261,7 @@ export const depositUIMachine = setup({
     ]),
   },
 }).createMachine({
-  /** @xstate-layout N4IgpgJg5mDOIC5QTABwPawJYBcC0ArlgMQAyA8gOICSAcgNoAMAuoqBtjlugHZsgAPRAEZGADgB0YgKyiALHLFzpAZnEA2aQBoQAT0R51jYRPUAmMwHZGcyyuHqjlgL7OdKDrkIkKlcgFUAFSZWJBBPLl5+IQQVCwlpaTFLaUtbSzNxOR19BEMzSVSkuWElYQBOcvVy13c0TC8iCUhcLB4oYgARAFEABXIAZWpAgH0AMXIAJQBZCQAqEP4I7j4wmOEHCTizdRU5culqhWFLHIM4lSlys1KHOTNVFNqQDwb8Jpaudq6+weHxqbTcbUbqkToDEYAYQAEgBBWiUbqdRZhZZRNYiSwSKqMcq49SWSzXFQHM55DZY3YKC64yxKMTCZ6vTjeZoQVrfAb+ABC02GKPYbxW0UQ6jEl3K1mECkYuIOMjJVi2MkStwOiiJ0iZ9RZH3ZXw6XN5-OEoUFnGFGIQjkkZnKYkyYiqwhUiW0ekxkiqcUJdjddjk2oirM+bUNPL5wTMZvCQvRoBijjMEkYuyU1xsmgZZLU5RTDjEDuSKmSBMDbheOsaWDZHPDxuCKhjaNWCdF9wkZjkKnMlnMB0YhzJCmkUhkBTScnEqeUQbeIf1YYkACc4GAcCNUKuAG7cAiwTer1AAQ2Xx8iPGIAtjFvjgkQii2tnUd3M0gOBUV6gkJXMonFsrlKIpRzrqNahu0K5rhuW5gLu6D7oeaCnueKxXqaSxxq296xJUKYEqkjBEicYiDmSGy2mYcTlPcyQWGojIVsy1a1gaEiwSeZ4XiM25mMQEC8GAEhtNu6AANZCcx7zgYukEcSh3G8QgInoAAxqhvAhNeLYirEL6mKohkpIOsgOORVSdgokpURUSaFqBLEQVA7FHgpKw8XxYDLsu6DLuxAA254AGa+QAthIUkLnWLnIVx7lKSp6kXlpLCYbe2ExD2yZxMIsjqN29qWBUiopNiaiaNIRE9qIXYOdJEiwAQABGoW4AatBgKegQCPxgnCTwokSRFVY4B1p6TGAQXaVhunSokP4WIkFj2jZpweggohXC6k4yKI1xVHVrKNS1bVht0ABq0zdb1PBCSpQ1SRd0wTVNqWojNVpzaO9wPNIy0OvYa25MIBQ-uUewZiDuV9mYh1NMdrU4AaAzoIFPDHtdAm3f1g2SSNKNo8eL3Tels3KCYRaapVFjCIqsgJNUGx2vc1yaHDNYI6d7SBAQy5NegmN9fdeMRDzfPoMTb3mq0d7rMocgSEV0j7IScjVCW2TrVO34lMoYiaBY4gZCorgVjw6AoPAYSRUQaUyxlBh0imJK4ow2xEUY7q5HgetbNcDiDridq7OzrFhnbF66XgajO3ieLu32ZHrXgmSji6Ci-r93Z9qHTnCRA-lgBHlptgg3bflRiTeiD3aVeoOaFC+FE1cHs5MSNUVsausDrkh8GIfJcV3jpVq2NilSSvllV2LTyd-VsVFN4c4qFi+5Z1MGerRYPGk8B5xey4gOxbHEspOvluIZ4quUSBUDpAcrRUyIwsPt5vHPNYj7Wdcu3UHw7G0ZwJFSDRV0qhqjg0VJcAof00jmHFEBJ0odOZIzOpdP+71SafVTKOawXYHRuwImkciU4xx+moocF0DxkGfy5lAAmx50YYOlpHbB89UiugyMSHsQMj67GxP2NIFg0wWBoSdVB3Neb82YTee2s1Bx5jdmUN2LoxRq2HKmH8qYNbmBuCDU2zggA */
+  /** @xstate-layout N4IgpgJg5mDOIC5QTABwPawJYBcC0ArlgMQAyA8gOICSAcgNoAMAuoqBtjlugHZsgAPRAEZGADgB0YgKyiALHLFzpAZnEA2aQBoQAT0R51jYRPUAmMwHZGcyyuHqjlgL7OdKDrkIkKlcgFUAFSZWJBBPLl5+IQQVCwlpaTFLaUtbSzNxOR19BEMzSVSkuWElYQBOcvVy13c0TC8iCUhcLB4oYgARAFEABXIAZWpAgH0AMXIAJQBZCQAqEP4I7j4wmOEHCTizdRU5culqhWFLHIM4lSlys1KHOTNVFNqQDwb8Jpaudq6+weHxqbTcbUbqkToDEYAYQAEgBBWiUbqdRZhZZRNYiSwSKqMcq49SWSzXFQHM55DZY3YKC64yxKMTCZ6vTjeZoQVrfAb+ABC02GKPYbxW0UQ1kuGzEmWk5UsVI2ZNS2OS6gZcnMYhUYnUjLcL3qLI+7K+HS5vP5wlCgs4woxCBVWIU5ms10JmrJmXKCU0ckYdjpSksJyZ+saWDZHJNPL5wTMlvCQvRoBiKpMNwqGxO8l9ZJUJNMFWMD0zjmkcmDEVZnzakbNwRUcbRqyTiEcJhJDjEBwOYh7wjJtnUEkUaROWXxD3Lb0rRurEgATnAwDgRqgFwA3bgEWArheoACGc73kR4xAF8eticEiEUWwHOysZiq9myehENiHao1wiKGcqk4NYZVu086Lsuq5gBu6BbjuaAHkeKynhaSwJk2V6xD6Eg3JUwgqES1z7C+uTfnIWyyqWSSMLiOF2P+obhsaEjgfuh7HsQEC8GAEhtGu6AANaccydFAVAjG7nBx4INx6AAMbwbwIRno2IqxDImElI4PZYTIKg5qIEiBjsyQOCSuLSLR7yATOwFMeJCFgHOc7oHOjEADZHgAZk5AC2EiCRZ9GzjZLErJJPA8bJx4KSwyEXqhMSatI2L4rIZi4XYJQ5uUJE+ikcTVOUwjqWZup+aysAEAARl5uDGrQYAHoEAhsRxXFhXxAkhjgdUHpMYDuYpKHKYVaQJNY2r3OoaqFTpr4ILIpglKlBblGINidmWJWdWVlXVTgxrdAAatMjXNTwnFSfxvmdYd0y9f10WooNtrDSRqSMONOxTXIM1EdKEimeYDiJAoaRmOZ21VTV1YDOgbk8HuJ3sWdrU8Zdfkw3De53QNsVDbYjDYrKMhpCq0oPO6koSJmZj3EkgO7ODTTlZDe3VoEBBzhV6CIy1F0dRE7Oc+g2MPVarSXustiXFqKiJDKOFxH2s3fVixgEg4QNpYwKiuLqPDoCg8BhKVRAxeLcUGESCRWLhuzCDsGRamSeDKJIJI3DIuxUROm0VoaEZm8eyl4PY1t+nbDsFKkztSlTezfTTGr7Dc6iM5ZEZcRALlgIHNrNggyiepKuH299BJaoR16DnS0gFIwdO4rYYO+1O-sMQusBLjBkHQUFcmoUptq2NilQypN0i+vYzu11sqXat+KqalqhVpwF1licFl6D-nmxN+YKj2nEgbfTm72kSUCgMtq4i+qvzO7bV9Vzo1ucS2+Gr6e9lGJJk4ilAq0tkg+nuIGFMLgW4AQkPfKG7Qbov0erjZ6WQpAT1LD6bWhUySZiHOtSU5RNR4jUMVOofswzQNZu0DGe54bwLFkHJBgZ9Ipz2D2GU+x1Duiyl6WQ2stRVAyHfHaMCoCCy5rQ885shq+kkKUSaGQ67vQyP2XC-1xCyAmqWYwYhdbOCAA */
   id: "deposit-ui",
 
   context: ({ input, spawn, self }) => ({
@@ -295,6 +296,10 @@ export const depositUIMachine = setup({
     }),
     depositTokenBalanceRef: spawn("depositTokenBalanceActor", {
       id: "depositTokenBalanceRef",
+      input: { parentRef: self },
+    }),
+    depositEstimationRef: spawn("depositEstimationActor", {
+      id: "depositEstimationRef",
       input: { parentRef: self },
     }),
   }),
@@ -388,11 +393,14 @@ export const depositUIMachine = setup({
             src: "prepareDepositActor",
 
             input: ({ context }) => {
+              assert(context.userAddress, "userAddress is null")
               return {
+                userAddress: context.userAddress,
                 formValues: context.depositFormRef.getSnapshot().context,
                 depositGenerateAddressRef: context.depositGenerateAddressRef,
                 storageDepositAmountRef: context.storageDepositAmountRef,
                 depositTokenBalanceRef: context.depositTokenBalanceRef,
+                depositEstimationRef: context.depositEstimationRef,
               }
             },
 

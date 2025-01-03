@@ -130,10 +130,8 @@ export const depositTokenBalanceMachine = setup({
   /** @xstate-layout N4IgpgJg5mDOIC5QTABwPawJYBdICEBDAG0IDsBjMAYgCUBRARQFV6BlAFQH18BBAGV4A5AML0uDAGIM2ACQDaABgC6iUBmw4s6MmpAAPRAFoATABYArADoTADgDM9gJwB2M2fuKXARlsA2ABoQAE9jbydbKxcLF3Mvew9bE1iAXxSglA1cAhJyKisAMzAcCgALLDIoaggdMCsKgDd0AGs6zMxsiCJSSjqikvLKhEb0CkItHSVlKb0sid0kA2MTb3srJz8-JyczW1sLOL8XINCEMycrJO8fC19bRQt9kzSMtA68LtzewuKyiqqwAAnQHoQFWVCkHAFUEAWys7U0OR6+X6fyGIzG8ymM0Wc20C1AhgQplWNm2insLic4RcR1sZhOiG8JjWGws9m87JZjnuzxeIDI6BQ8EWCM63TyYFm73xeiJRns9MuzKpfnsW05HMZxLsfhsMXMB1ifnZLn5Yo+Eu+WAgxCluJlOjlxkcetsKo26up7O82qMq28628FJM1J87v8fnNb0Rn2RfV+gyg0s0ssW8pMySsuxMfncwcU3jMJvsfu85asiirVZN7icijVZmjcyRkqsFHQMIhxUgKdwacJYRciisfgpbgeWz8vl22rsLmzhdsrh8ZkUDgsaTSQA */
   id: "depositedBalance",
 
-  context: () => {
-    return {
-      preparationOutput: null,
-    }
+  context: {
+    preparationOutput: null,
   },
 
   initial: "idle",
