@@ -58,7 +58,7 @@ const config = [
     output: [{ file: "dist/index.css", format: "es" }],
     plugins: [
       postcss({
-        plugins: [tailwindcss, autoprefixer],
+        plugins: [atImport, tailwindcss, autoprefixer],
         extract: true,
         minimize: false,
         sourceMap: false,
