@@ -159,7 +159,7 @@ export const SwapForm = ({ onNavigateDeposit }: SwapFormProps) => {
     <Flex
       direction={"column"}
       gap={"2"}
-      className="max-w-[472px] rounded-[1rem] p-5 shadow-paper bg-white dark:shadow-paper-dark dark:bg-black-800"
+      className="max-w-[472px] rounded-[1rem] p-5 shadow bg-white dark:shadow-paper-dark dark:bg-black-800"
     >
       <Form<SwapFormValues>
         handleSubmit={handleSubmit(onSubmit)}
@@ -171,7 +171,7 @@ export const SwapForm = ({ onNavigateDeposit }: SwapFormProps) => {
           handleSelect={() => {
             openModalSelectAssets("tokenIn")
           }}
-          className="border rounded-t-xl"
+          className="border border-gray-200/50 rounded-t-xl"
           required
           errors={errors}
           balance={tokenInBalance}
@@ -187,7 +187,7 @@ export const SwapForm = ({ onNavigateDeposit }: SwapFormProps) => {
           handleSelect={() => {
             openModalSelectAssets("tokenOut")
           }}
-          className="border rounded-b-xl mb-5"
+          className="border border-gray-200/50 rounded-b-xl mb-5"
           errors={errors}
           disabled={true}
           isLoading={snapshot.matches({ editing: "waiting_quote" })}

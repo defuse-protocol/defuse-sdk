@@ -1,7 +1,0 @@
-.emptyIcon {
-  position: relative;
-  min-width: 32px;
-  min-height: 32px;
-  border: 2px dashed var(--gray-7);
-  border-radius: 9999px;
-}

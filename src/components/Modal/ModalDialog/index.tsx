@@ -1,15 +1,15 @@
-import { DialogOverlay } from "@radix-ui/react-dialog"
 import { Dialog, VisuallyHidden } from "@radix-ui/themes"
 import {
   type PropsWithChildren,
   useCallback,
+  useContext,
   useEffect,
   useRef,
   useState,
 } from "react"
 import { useResize } from "../../../hooks/useResize"
 import { useModalStore } from "../../../providers/ModalStoreProvider"
-import styles from "./styles.module.css"
+import { WidgetContext } from "../../WidgetRoot"
 
 export const ModalDialog = ({
   children,
@@ -46,11 +46,15 @@ export const ModalDialog = ({
     }
   }, [divRef.current, width])
 
+  const { portalContainer } = useContext(WidgetContext)
+
   return (
     <Dialog.Root open={open} onOpenChange={setOpen}>
-      <DialogOverlay className={styles.DialogOverlay} />
       <Dialog.Content
-        className={`${styles.DialogContent} p-0 dark:bg-black-800`}
+        container={portalContainer}
+        className={`fixed bg-white dark:bg-black-800 shadow-lg p-0 focus:outline-none
+          md:w-[90vw] md:max-w-[512px] md:max-h-[85vh] md:p-8 md:top-1/2 md:bottom-auto md:left-1/2 md:right-auto md:-translate-x-1/2 md:-translate-y-1/2 md:rounded-lg md:animate-content-show
+          bottom-0 left-0 right-0 top-auto max-w-full max-h-[70vh] rounded-t-2xl animate-slide-up`}
         maxWidth={
           containerWidth
             ? containerWidth < 768

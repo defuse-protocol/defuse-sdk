@@ -47,7 +47,6 @@ import {
 import type { Context } from "../../../machines/depositUIMachine"
 import { DepositUIMachineContext } from "../DepositUIMachineProvider"
 import { Deposits } from "../Deposits"
-import styles from "./styles.module.css"
 
 // TODO: Temporary disable deposit through POA bridge
 const ENABLE_DEPOSIT_THROUGH_POA_BRIDGE = true
@@ -200,15 +199,15 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
     : null
 
   return (
-    <div className={styles.container}>
-      <div className={styles.formWrapper}>
+    <div className="w-full max-w-[472px]">
+      <div className="rounded-2xl p-5 bg-white shadow dark:bg-[#111110] dark:shadow-[0_1px_3px_0_rgb(255_255_255_/_0.1),_0_1px_2px_-1px_rgb(255_255_255_/_0.1)]">
         <Form<DepositFormValues>
           handleSubmit={handleSubmit(onSubmit)}
           register={register}
         >
           <button
             type="button"
-            className={styles.assetWrapper}
+            className="w-full flex items-center justify-center text-base leading-6 h-14 px-4 gap-3 bg-gray-50 text-gray-500 max-w-full box-border flex-shrink-0 rounded-lg border border-gray-300 mb-4 hover:bg-gray-200/50"
             onClick={() => openModalSelectAssets("token", token ?? undefined)}
           >
             <Flex gap="2" align="center" justify="between" width="100%">
@@ -219,7 +218,7 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
             </Flex>
           </button>
           {token && (
-            <div className={styles.selectWrapper}>
+            <div className="mb-4 [&>button[disabled]]:opacity-50 [&>button[disabled]]:cursor-not-allowed [&>button[disabled]]:pointer-events-none [&>*[disabled]]:pointer-events-none">
               <Controller
                 name="network"
                 control={control}
@@ -256,9 +255,9 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
                   ref.focus()
                 }
               }}
-              className={styles.amountInput}
+              className="pb-16"
               slotRight={
-                <div className={styles.balanceBoxWrapper}>
+                <div className="flex items-center gap-2 flex-row absolute right-5 bottom-5">
                   {token &&
                     isBaseToken(token) &&
                     token.address === "wrap.near" && (
@@ -288,7 +287,7 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
                       decimals={token.decimals}
                       handleClick={() => handleSetMaxValue()}
                       disabled={tokenBalance === 0n}
-                      className={styles.blockMultiBalances}
+                      className="!static flex items-center justify-center"
                     />
                   )}
                 </div>
@@ -296,7 +295,7 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
             />
           )}
           {(isActiveDeposit || !network) && (
-            <div className={styles.buttonGroup}>
+            <div className="flex flex-col gap-4 mt-4">
               <ButtonCustom
                 size={"lg"}
                 disabled={
@@ -336,15 +335,17 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
             ENABLE_DEPOSIT_THROUGH_POA_BRIDGE &&
             network &&
             userAddress && (
-              <div className={styles.containerQr}>
-                <h2 className={styles.title}>Deposit to the address below</h2>
-                <p className={styles.instruction}>
+              <div className="flex flex-col items-stretch mt-4">
+                <h2 className="text-[#21201C] text-center text-base font-bold leading-6">
+                  Deposit to the address below
+                </h2>
+                <p className="text-[#63635E] text-center text-sm font-normal leading-5 mb-4">
                   Withdraw assets from an exchange to the{" "}
                   {networkSelectToLabel[network]} address below. Upon
                   confirmation, you will receive your assets on Defuse within
                   minutes.
                 </p>
-                <div className={styles.qrCodeWrapper}>
+                <div className="flex justify-center items-center w-full min-h-[188px] mb-4 rounded-lg bg-[#FDFDFC] border border-[#F1F1F1] p-4">
                   {depositAddress ? (
                     <QRCodeSVG value={depositAddress} />
                   ) : (
@@ -358,15 +359,13 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
                       depositAddress ? truncateUserAddress(depositAddress) : ""
                     }
                     disabled
-                    className={styles.inputGeneratedAddress}
+                    className="min-h-14 py-0 mb-4 [&>input]:text-base"
                     slotRight={
                       <Button
+                        type="button"
                         size="2"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          e.preventDefault()
-                        }}
-                        className={styles.copyButton}
+                        variant="soft"
+                        className="px-3"
                         disabled={!generatedAddressResult}
                       >
                         <CopyToClipboard
@@ -374,10 +373,8 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
                           onCopy={() => setIsCopied(true)}
                         >
                           <Flex gap="2" align="center">
-                            <Text color={accentColor}>
-                              {isCopied ? "Copied" : "Copy"}
-                            </Text>
-                            <Text color={accentColor} asChild>
+                            <Text>{isCopied ? "Copied" : "Copy"}</Text>
+                            <Text asChild>
                               <CopyIcon height="14" width="14" />
                             </Text>
                           </Flex>
