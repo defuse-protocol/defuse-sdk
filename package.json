@@ -12,8 +12,7 @@
     "./logger": {
       "import": "./dist/logger.esm.js",
       "types": "./dist/logger.d.ts"
-    },
-    "./styles.css": "./dist/index.css"
+    }
   },
   "module": "./dist/index.esm.js",
   "types": "./dist/index.d.ts",

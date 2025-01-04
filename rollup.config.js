@@ -53,18 +53,6 @@ const config = [
     output: [{ file: "dist/logger.d.ts", format: "es" }],
     plugins: [dts()],
   },
-  {
-    input: "src/styles/main.css",
-    output: [{ file: "dist/index.css", format: "es" }],
-    plugins: [
-      postcss({
-        plugins: [atImport, tailwindcss, autoprefixer],
-        extract: true,
-        minimize: false,
-        sourceMap: false,
-      }),
-    ],
-  },
 ]
 
 export default config
