@@ -8,7 +8,6 @@ import {
   sendTo,
   setup,
 } from "xstate"
-import { logger } from "../../logger"
 import type {
   BaseTokenInfo,
   SupportedChainName,
@@ -27,10 +26,7 @@ import {
   depositFormReducer,
 } from "./depositFormReducer"
 import { depositGenerateAddressMachine } from "./depositGenerateAddressMachine"
-import {
-  type Output as DepositNearMachineOutput,
-  depositNearMachine,
-} from "./depositNearMachine"
+import { type Output as DepositOutput, depositMachine } from "./depositMachine"
 import {
   type Output as DepositSolanaMachineOutput,
   depositSolanaMachine,
@@ -48,19 +44,12 @@ import {
 import { storageDepositAmountMachine } from "./storageDepositAmountMachine"
 
 export type Context = {
-  error: null | {
-    tag: "err"
-    value: {
-      reason: "ERR_GET_BALANCE" | "ERR_GET_STORAGE_DEPOSIT_AMOUNT"
-      error: Error | null
-    }
-  }
   depositGenerateAddressRef: ActorRefFrom<typeof depositGenerateAddressMachine>
   poaBridgeInfoRef: ActorRefFrom<typeof poaBridgeInfoActor>
   tokenList: SwappableToken[]
   userAddress: string | null
   userChainType: ChainType | null
-  depositNearResult: DepositNearMachineOutput | null
+  depositNearResult: DepositOutput | null
   depositEVMResult: DepositEVMMachineOutput | null
   depositSolanaResult: DepositSolanaMachineOutput | null
   depositTurboResult: DepositTurboMachineOutput | null
@@ -69,6 +58,7 @@ export type Context = {
   storageDepositAmountRef: ActorRefFrom<typeof storageDepositAmountMachine>
   depositTokenBalanceRef: ActorRefFrom<typeof depositTokenBalanceMachine>
   depositEstimationRef: ActorRefFrom<typeof depositEstimationMachine>
+  depositOutput: DepositOutput | null
 }
 
 export const depositUIMachine = setup({
@@ -101,7 +91,7 @@ export const depositUIMachine = setup({
     },
   },
   actors: {
-    depositNearActor: depositNearMachine,
+    depositNearActor: depositMachine,
     poaBridgeInfoActor: poaBridgeInfoActor,
     depositEVMActor: depositEVMMachine,
     depositSolanaActor: depositSolanaMachine,
@@ -114,17 +104,8 @@ export const depositUIMachine = setup({
     depositEstimationActor: depositEstimationMachine,
   },
   actions: {
-    logError: (_, event: { error: unknown }) => {
-      logger.error(event.error)
-    },
-    setError: assign({
-      error: (_, error: NonNullable<Context["error"]>["value"]) => ({
-        tag: "err" as const,
-        value: error,
-      }),
-    }),
     setDepositNearResult: assign({
-      depositNearResult: (_, value: DepositNearMachineOutput) => value,
+      depositOutput: (_, value: DepositOutput) => value,
     }),
     setDepositEVMResult: assign({
       depositEVMResult: (_, value: DepositEVMMachineOutput) => value,
@@ -135,11 +116,13 @@ export const depositUIMachine = setup({
     setDepositTurboResult: assign({
       depositTurboResult: (_, value: DepositTurboMachineOutput) => value,
     }),
+    setDepositOutput: assign({
+      depositOutput: (_, value: DepositOutput) => value,
+    }),
     setPreparationOutput: assign({
       preparationOutput: (_, val: Context["preparationOutput"]) => val,
     }),
 
-    clearError: assign({ error: null }),
     clearResults: assign({
       depositNearResult: null,
       depositEVMResult: null,
@@ -248,7 +231,7 @@ export const depositUIMachine = setup({
     userChainType: null,
     tokenAddress: null,
     preparationOutput: null,
-    fetchWalletAddressBalanceRef: null,
+    depositOutput: null,
     poaBridgeInfoRef: spawn("poaBridgeInfoActor", {
       id: "poaBridgeInfoRef",
     }),
@@ -347,7 +330,7 @@ export const depositUIMachine = setup({
             {
               target: "preparation",
               guard: "isDepositParamsComplete",
-              actions: ["clearError", "clearResults"],
+              actions: ["clearResults"],
             },
             {
               target: "idle",
@@ -380,8 +363,14 @@ export const depositUIMachine = setup({
             onError: {
               target: "idle",
               actions: {
-                type: "logError",
-                params: ({ event }) => event,
+                type: "setPreparationOutput",
+                params: ({ event }) => ({
+                  tag: "err",
+                  value: {
+                    reason: "ERR_PREPARING_DEPOSIT",
+                    error: event.error,
+                  },
+                }),
               },
               reenter: true,
             },
@@ -412,6 +401,7 @@ export const depositUIMachine = setup({
           )
           return {
             ...params,
+            type: "depositNear",
             storageDepositRequired: params.storageDepositRequired,
           }
         },
@@ -419,7 +409,7 @@ export const depositUIMachine = setup({
           target: "editing.reset_previous_preparation",
           actions: [
             {
-              type: "setDepositNearResult",
+              type: "setDepositOutput",
               params: ({ event }) => event.output,
             },
             { type: "clearUIDepositAmount" },
@@ -438,6 +428,7 @@ export const depositUIMachine = setup({
           assert(params.depositAddress, "depositAddress is null")
           return {
             ...params,
+            type: "depositEVM",
             depositAddress: params.depositAddress,
           }
         },
@@ -464,6 +455,7 @@ export const depositUIMachine = setup({
           assert(params.depositAddress, "depositAddress is null")
           return {
             ...params,
+            type: "depositSolana",
             depositAddress: params.depositAddress,
           }
         },
@@ -489,6 +481,7 @@ export const depositUIMachine = setup({
           const params = extractDepositParams(context)
           return {
             ...params,
+            type: "depositTurbo",
             depositAddress: settings.defuseContractId,
           }
         },
@@ -511,15 +504,19 @@ export const depositUIMachine = setup({
 })
 
 type DepositParams = {
-  token: BaseTokenInfo | UnifiedTokenInfo
+  chainName: SupportedChainName
+  derivedToken: BaseTokenInfo
   balance: bigint
-  nativeBalance: bigint
   amount: bigint
   userAddress: string
-  tokenAddress: string
   depositAddress: string | null
-  chainName: SupportedChainName
   storageDepositRequired: bigint | null
+  /** @deprecated Use `derivedToken` instead. */
+  token: BaseTokenInfo | UnifiedTokenInfo
+  /** @deprecated Use `balance` instead. */
+  nativeBalance: bigint
+  /** @deprecated Use `derivedToken.address` instead. */
+  tokenAddress: string
 }
 
 function extractDepositParams(context: Context): DepositParams {
@@ -541,14 +538,15 @@ function extractDepositParams(context: Context): DepositParams {
   assert(prepOutput?.nativeBalance, "nativeBalance is null")
 
   return {
-    token,
+    chainName: blockchain,
+    derivedToken,
     balance: prepOutput.balance,
-    nativeBalance: prepOutput.nativeBalance,
     amount: parsedAmount,
     userAddress: context.userAddress,
-    tokenAddress: derivedToken.address,
     depositAddress: prepOutput.generateDepositAddress,
-    chainName: blockchain,
     storageDepositRequired: prepOutput.storageDepositRequired,
+    token,
+    nativeBalance: prepOutput.nativeBalance,
+    tokenAddress: derivedToken.address,
   }
 }

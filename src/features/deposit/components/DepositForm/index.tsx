@@ -13,7 +13,7 @@ import {
 } from "@radix-ui/themes"
 import { useSelector } from "@xstate/react"
 import { QRCodeSVG } from "qrcode.react"
-import { type ReactNode, useEffect, useState } from "react"
+import { useEffect, useState } from "react"
 import CopyToClipboard from "react-copy-to-clipboard"
 import { Controller, useFormContext } from "react-hook-form"
 import {
@@ -45,9 +45,9 @@ import {
   isNativeToken,
   isUnifiedToken,
 } from "../../../../utils/token"
-import type { Context } from "../../../machines/depositUIMachine"
+import { DepositResult } from "../DepositResult"
 import { DepositUIMachineContext } from "../DepositUIMachineProvider"
-import { Deposits } from "../Deposits"
+import { DepositWarning } from "../DepositWarning"
 import styles from "./styles.module.css"
 
 // TODO: Temporary disable deposit through POA bridge
@@ -67,10 +67,7 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
 
   const depositUIActorRef = DepositUIMachineContext.useActorRef()
   const snapshot = DepositUIMachineContext.useSelector((snapshot) => snapshot)
-  const depositNearResult = snapshot.context.depositNearResult
-  const depositEVMResult = snapshot.context.depositEVMResult
-  const depositSolanaResult = snapshot.context.depositSolanaResult
-  const depositTurboResult = snapshot.context.depositTurboResult
+  const depositOutput = snapshot.context.depositOutput
 
   const {
     token,
@@ -338,17 +335,12 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
               </ButtonCustom>
             </div>
           )}
-          <Deposits
-            chainName={
-              network != null ? reverseAssetNetworkAdapter[network] : null
-            }
-            depositResult={
-              depositNearResult ??
-              depositTurboResult ??
-              depositEVMResult ??
-              depositSolanaResult
-            }
-          />
+          {network && (
+            <DepositResult
+              chainName={reverseAssetNetworkAdapter[network]}
+              depositResult={depositOutput}
+            />
+          )}
           {isPassiveDeposit &&
             ENABLE_DEPOSIT_THROUGH_POA_BRIDGE &&
             network &&
@@ -411,15 +403,12 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
           network &&
           network !== BlockchainEnum.NEAR &&
           !ENABLE_DEPOSIT_THROUGH_POA_BRIDGE && <UnderFeatureFlag />}
-        {token &&
-          renderDepositWarning(userAddress, {
-            depositNearResult,
-            depositEVMResult,
-            depositSolanaResult,
-            depositTurboResult,
-            preparationOutput,
-            snapshot: snapshot.context,
-          })}
+        {token && (
+          <DepositWarning
+            userAddress={userAddress}
+            depositWarning={depositOutput}
+          />
+        )}
         {userAddress && network && !isActiveDeposit && !isPassiveDeposit && (
           <NotSupportedDepositRoute />
         )}
@@ -592,74 +581,6 @@ function isInsufficientBalance(
     derivedToken.decimals
   )
   return Number.parseFloat(formAmount) > Number.parseFloat(balanceToFormat)
-}
-
-function renderDepositWarning(
-  userAddress: string | null,
-  depositResults: {
-    depositNearResult: Context["depositNearResult"]
-    depositEVMResult: Context["depositEVMResult"]
-    depositSolanaResult: Context["depositSolanaResult"]
-    depositTurboResult: Context["depositTurboResult"]
-    preparationOutput: Context["preparationOutput"]
-    snapshot: Context
-  }
-) {
-  let content: ReactNode = null
-  if (!userAddress) {
-    content = "Please connect your wallet to continue"
-  }
-
-  // Check for errors in deposit results
-  const results = [
-    depositResults.depositNearResult,
-    depositResults.depositEVMResult,
-    depositResults.depositSolanaResult,
-    depositResults.depositTurboResult,
-    depositResults.preparationOutput,
-    depositResults.snapshot.error,
-  ]
-
-  const errorResult = results.find(
-    (result) => result !== null && result.tag === "err"
-  )
-
-  if (errorResult) {
-    // Check if the errorResult has a 'reason' property
-    const status =
-      "reason" in errorResult.value
-        ? errorResult.value.reason
-        : "An error occurred. Please try again."
-
-    switch (status) {
-      case "ERR_SUBMITTING_TRANSACTION":
-        content =
-          "It seems the transaction was rejected in your wallet. Please try again."
-        break
-      case "ERR_GENERATING_ADDRESS":
-        content =
-          "It seems the deposit address was not generated. Please try re-selecting the token and network."
-        break
-      case "ERR_GET_BALANCE":
-        content = "It seems the balance is not available. Please try again."
-        break
-      default:
-        content = "An error occurred. Please try again."
-    }
-  }
-
-  if (!content) {
-    return null
-  }
-
-  return (
-    <Callout.Root size={"1"} color="red" mt="4">
-      <Callout.Icon>
-        <ExclamationTriangleIcon />
-      </Callout.Icon>
-      <Callout.Text>{content}</Callout.Text>
-    </Callout.Root>
-  )
 }
 
 function UnderFeatureFlag() {

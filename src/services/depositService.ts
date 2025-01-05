@@ -48,6 +48,12 @@ export type PreparationOutput =
   | {
       tag: "err"
       value: {
+        reason: "ERR_PREPARING_DEPOSIT"
+      }
+    }
+  | {
+      tag: "err"
+      value: {
         reason: "ERR_GENERATING_ADDRESS"
       }
     }

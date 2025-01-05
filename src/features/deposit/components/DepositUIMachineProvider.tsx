@@ -1,6 +1,7 @@
 import { createActorContext } from "@xstate/react"
 import type { PropsWithChildren, ReactElement, ReactNode } from "react"
 import { useFormContext } from "react-hook-form"
+import { depositMachine } from "src/features/machines/depositMachine"
 import { type Hash, getAddress } from "viem"
 import {
   type Actor,
@@ -32,9 +33,8 @@ import { assetNetworkAdapter } from "../../../utils/adapters"
 import { assert } from "../../../utils/assert"
 import { userAddressToDefuseUserId } from "../../../utils/defuse"
 import { getEVMChainId } from "../../../utils/evmChainId"
-import { isBaseToken, isUnifiedToken } from "../../../utils/token"
+import { isUnifiedToken } from "../../../utils/token"
 import { depositGenerateAddressMachine } from "../../machines/depositGenerateAddressMachine"
-import { depositNearMachine } from "../../machines/depositNearMachine"
 import { depositUIMachine } from "../../machines/depositUIMachine"
 import type { DepositFormValues } from "./DepositForm"
 
@@ -87,25 +87,24 @@ export function DepositUIMachineProvider({
       }}
       logic={depositUIMachine.provide({
         actors: {
-          depositNearActor: depositNearMachine.provide({
+          depositNearActor: depositMachine.provide({
             actors: {
               signAndSendTransactions: fromPromise(async ({ input }) => {
-                const { token, amount, balance, storageDepositRequired } = input
+                const {
+                  derivedToken,
+                  balance,
+                  amount,
+                  storageDepositRequired,
+                } = input
 
-                const tokenToDeposit = isBaseToken(token)
-                  ? token
-                  : token.groupedTokens.find(
-                      (token_) => token_.chainName === "near"
-                    )
                 assert(
                   storageDepositRequired !== null,
-                  "storageDepositRequired is null"
+                  "Storage deposit required is null"
                 )
-                assert(tokenToDeposit, "Token to deposit is not defined")
 
                 let tx: Transaction["NEAR"][] = []
 
-                if (tokenToDeposit.address === "wrap.near") {
+                if (derivedToken.address === "wrap.near") {
                   tx = createBatchDepositNearNativeTransaction(
                     amount,
                     // If user does not have enough wrap.near we calculate how much native NEAR we need to wrap to match the amount to deposit
@@ -114,7 +113,7 @@ export function DepositUIMachineProvider({
                   )
                 } else {
                   tx = createBatchDepositNearNep141Transaction(
-                    tokenToDeposit.address,
+                    derivedToken.address,
                     amount,
                     storageDepositRequired
                   )
@@ -127,8 +126,6 @@ export function DepositUIMachineProvider({
               validateTransaction: fromPromise(async ({ input }) => {
                 const { txHash, userAddress, amount } = input
                 assert(txHash != null, "Tx hash is not defined")
-                assert(userAddress != null, "User address is not defined")
-                assert(amount != null, "Amount is not defined")
 
                 const isValid = await checkNearTransactionValidity(
                   txHash,
@@ -139,9 +136,8 @@ export function DepositUIMachineProvider({
               }),
             },
             guards: {
-              isDepositValid: ({ context }) => {
-                if (!context.txHash) return false
-                return true
+              isDepositParamsValid: ({ context }) => {
+                return context.storageDepositRequired !== null
               },
             },
           }),
