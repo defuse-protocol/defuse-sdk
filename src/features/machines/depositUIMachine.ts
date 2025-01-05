@@ -23,15 +23,7 @@ import {
 } from "./depositFormReducer"
 import { depositGenerateAddressMachine } from "./depositGenerateAddressMachine"
 import { type Output as DepositOutput, depositMachine } from "./depositMachine"
-import {
-  type Output as DepositSolanaMachineOutput,
-  depositSolanaMachine,
-} from "./depositSolanaMachine"
 import { depositTokenBalanceMachine } from "./depositTokenBalanceMachine"
-import {
-  type Output as DepositTurboMachineOutput,
-  depositTurboMachine,
-} from "./depositTurboMachine"
 import { poaBridgeInfoActor } from "./poaBridgeInfoActor"
 import {
   type PreparationOutput,
@@ -45,10 +37,6 @@ export type Context = {
   tokenList: SwappableToken[]
   userAddress: string | null
   userChainType: ChainType | null
-  depositNearResult: DepositOutput | null
-  depositEVMResult: DepositOutput | null
-  depositSolanaResult: DepositSolanaMachineOutput | null
-  depositTurboResult: DepositTurboMachineOutput | null
   depositFormRef: ActorRefFrom<typeof depositFormReducer>
   preparationOutput: PreparationOutput | null
   storageDepositAmountRef: ActorRefFrom<typeof storageDepositAmountMachine>
@@ -90,8 +78,8 @@ export const depositUIMachine = setup({
     poaBridgeInfoActor: poaBridgeInfoActor,
     depositNearActor: depositMachine,
     depositEVMActor: depositMachine,
-    depositSolanaActor: depositSolanaMachine,
-    depositTurboActor: depositTurboMachine,
+    depositSolanaActor: depositMachine,
+    depositTurboActor: depositMachine,
     prepareDepositActor: prepareDepositActor,
     depositFormActor: depositFormReducer,
     depositGenerateAddressActor: depositGenerateAddressMachine,
@@ -100,18 +88,6 @@ export const depositUIMachine = setup({
     depositEstimationActor: depositEstimationMachine,
   },
   actions: {
-    setDepositNearResult: assign({
-      depositOutput: (_, value: DepositOutput) => value,
-    }),
-    setDepositEVMResult: assign({
-      depositEVMResult: (_, value: DepositOutput) => value,
-    }),
-    setDepositSolanaResult: assign({
-      depositSolanaResult: (_, value: DepositSolanaMachineOutput) => value,
-    }),
-    setDepositTurboResult: assign({
-      depositTurboResult: (_, value: DepositTurboMachineOutput) => value,
-    }),
     setDepositOutput: assign({
       depositOutput: (_, value: DepositOutput) => value,
     }),
@@ -120,10 +96,7 @@ export const depositUIMachine = setup({
     }),
 
     clearResults: assign({
-      depositNearResult: null,
-      depositEVMResult: null,
-      depositSolanaResult: null,
-      depositTurboResult: null,
+      depositOutput: null,
     }),
     clearUIDepositAmount: () => {
       throw new Error("not implemented")
@@ -217,15 +190,9 @@ export const depositUIMachine = setup({
   id: "deposit-ui",
 
   context: ({ input, spawn, self }) => ({
-    error: null,
-    depositNearResult: null,
-    depositEVMResult: null,
-    depositSolanaResult: null,
-    depositTurboResult: null,
     tokenList: input.tokenList,
     userAddress: null,
     userChainType: null,
-    tokenAddress: null,
     preparationOutput: null,
     depositOutput: null,
     poaBridgeInfoRef: spawn("poaBridgeInfoActor", {
@@ -326,7 +293,6 @@ export const depositUIMachine = setup({
             {
               target: "preparation",
               guard: "isDepositParamsComplete",
-              actions: ["clearResults"],
             },
             {
               target: "idle",
@@ -459,7 +425,7 @@ export const depositUIMachine = setup({
           target: "editing.reset_previous_preparation",
           actions: [
             {
-              type: "setDepositSolanaResult",
+              type: "setDepositOutput",
               params: ({ event }) => event.output,
             },
             { type: "clearUIDepositAmount" },
@@ -485,7 +451,7 @@ export const depositUIMachine = setup({
           target: "editing.reset_previous_preparation",
           actions: [
             {
-              type: "setDepositTurboResult",
+              type: "setDepositOutput",
               params: ({ event }) => event.output,
             },
             { type: "clearUIDepositAmount" },

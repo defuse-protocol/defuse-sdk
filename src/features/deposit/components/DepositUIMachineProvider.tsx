@@ -10,8 +10,6 @@ import {
   fromPromise,
 } from "xstate"
 import { siloToSiloAddress } from "../../../constants/aurora"
-import { depositSolanaMachine } from "../../../features/machines/depositSolanaMachine"
-import { depositTurboMachine } from "../../../features/machines/depositTurboMachine"
 import { logger } from "../../../logger"
 import {
   checkNearTransactionValidity,
@@ -86,6 +84,20 @@ export function DepositUIMachineProvider({
       }}
       logic={depositUIMachine.provide({
         actors: {
+          depositGenerateAddressActor: depositGenerateAddressMachine.provide({
+            actors: {
+              generateDepositAddress: fromPromise(async ({ input }) => {
+                const { userAddress, blockchain, userChainType } = input
+
+                const address = await generateDepositAddress(
+                  userAddressToDefuseUserId(userAddress, userChainType),
+                  assetNetworkAdapter[blockchain]
+                )
+
+                return address
+              }),
+            },
+          }),
           depositNearActor: depositMachine.provide({
             actors: {
               signAndSendTransactions: fromPromise(async ({ input }) => {
@@ -140,20 +152,6 @@ export function DepositUIMachineProvider({
               },
             },
           }),
-          depositGenerateAddressActor: depositGenerateAddressMachine.provide({
-            actors: {
-              generateDepositAddress: fromPromise(async ({ input }) => {
-                const { userAddress, blockchain, userChainType } = input
-
-                const address = await generateDepositAddress(
-                  userAddressToDefuseUserId(userAddress, userChainType),
-                  assetNetworkAdapter[blockchain]
-                )
-
-                return address
-              }),
-            },
-          }),
           depositEVMActor: depositMachine.provide({
             actors: {
               signAndSendTransactions: fromPromise(async ({ input }) => {
@@ -188,7 +186,7 @@ export function DepositUIMachineProvider({
 
                 logger.verbose("Sending transfer EVM transaction")
                 const txHash = await sendTransactionEVM(tx)
-                assert(txHash != null, "Transaction failed")
+                assert(txHash != null, "Tx hash is not defined")
 
                 logger.verbose("Waiting for transfer EVM transaction", {
                   txHash,
@@ -207,7 +205,7 @@ export function DepositUIMachineProvider({
               },
             },
           }),
-          depositSolanaActor: depositSolanaMachine.provide({
+          depositSolanaActor: depositMachine.provide({
             actors: {
               signAndSendTransactions: fromPromise(async ({ input }) => {
                 const { amount, depositAddress, userAddress } = input
@@ -220,28 +218,29 @@ export function DepositUIMachineProvider({
                   amount
                 )
                 const txHash = await sendTransactionSolana(tx)
-                assert(txHash != null, "Transaction failed")
+                assert(txHash != null, "Tx hash is not defined")
 
                 return txHash
               }),
             },
             guards: {
-              isDepositValid: ({ context }) => {
-                if (!context.txHash) return false
-                return true
+              isDepositParamsValid: ({ context }) => {
+                return context.depositAddress !== null
               },
             },
           }),
-          depositTurboActor: depositTurboMachine.provide({
+          depositTurboActor: depositMachine.provide({
             actors: {
               signAndSendTransactions: fromPromise(async ({ input }) => {
                 const {
                   amount,
                   userAddress,
-                  tokenAddress,
+                  derivedToken,
                   depositAddress,
                   chainName,
                 } = input
+
+                assert(depositAddress != null, "Deposit address is not defined")
 
                 const chainId = getEVMChainId(chainName)
                 const siloToSiloAddress_ =
@@ -253,9 +252,9 @@ export function DepositUIMachineProvider({
 
                 assert(siloToSiloAddress_ != null, "chainType should be EVM")
 
-                if (tokenAddress !== "native") {
+                if (!isNativeToken(derivedToken)) {
                   const allowance = await getAllowance(
-                    tokenAddress,
+                    derivedToken.address,
                     userAddress,
                     siloToSiloAddress_,
                     assetNetworkAdapter[chainName]
@@ -264,7 +263,7 @@ export function DepositUIMachineProvider({
 
                   if (allowance < amount) {
                     const approveTx = createApproveTransaction(
-                      tokenAddress,
+                      derivedToken.address,
                       siloToSiloAddress_,
                       amount,
                       getAddress(userAddress),
@@ -288,14 +287,14 @@ export function DepositUIMachineProvider({
                 }
 
                 const tx = createDepositFromSiloTransaction(
-                  tokenAddress === "native"
+                  isNativeToken(derivedToken)
                     ? "0x0000000000000000000000000000000000000000"
-                    : tokenAddress,
+                    : derivedToken.address,
                   userAddress,
                   amount,
                   depositAddress,
                   siloToSiloAddress_,
-                  tokenAddress === "native" ? amount : 0n,
+                  isNativeToken(derivedToken) ? amount : 0n,
                   chainId
                 )
                 logger.verbose("Sending deposit from Silo EVM transaction")
@@ -315,9 +314,8 @@ export function DepositUIMachineProvider({
               }),
             },
             guards: {
-              isDepositValid: ({ context }) => {
-                if (!context.txHash) return false
-                return true
+              isDepositParamsValid: ({ context }) => {
+                return context.depositAddress !== null
               },
             },
           }),
