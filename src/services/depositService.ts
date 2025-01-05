@@ -116,6 +116,7 @@ export async function prepareDeposit(
     (state) => state.matches("completed"),
     { signal }
   )
+
   if (depositGenerateAddressState.context.preparationOutput?.tag === "err") {
     return depositGenerateAddressState.context.preparationOutput
   }

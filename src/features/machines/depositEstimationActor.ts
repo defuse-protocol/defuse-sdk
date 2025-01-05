@@ -1,10 +1,19 @@
+import {
+  createDepositEVMERC20Transaction,
+  getWalletRpcUrl,
+} from "src/services/depositService"
 import { assert } from "src/utils/assert"
+import { getEVMChainId } from "src/utils/evmChainId"
+import type { Address } from "viem"
 import { assign, fromPromise, setup } from "xstate"
-import { estimateSolanaTransferCost } from "../../services/estimateService"
+import {
+  estimateEVMTransferCost,
+  estimateSolanaTransferCost,
+} from "../../services/estimateService"
 import type { BaseTokenInfo, SupportedChainName } from "../../types/base"
 import { BlockchainEnum } from "../../types/interfaces"
 import { assetNetworkAdapter } from "../../utils/adapters"
-import { isBaseToken } from "../../utils/token"
+import { isBaseToken, isNativeToken } from "../../utils/token"
 import { validateAddress } from "../../utils/validateAddress"
 
 export const depositEstimateMaxValueActor = fromPromise(
@@ -48,33 +57,33 @@ export const depositEstimateMaxValueActor = fromPromise(
         ) {
           return 0n
         }
-        // TODO: Disable this for now as we have issue with estimation of gas cost.
-        // const chainId = getEVMChainId(reverseAssetNetworkAdapter[network])
-        // if (isUnifiedToken(token) && token.groupedTokens.some(isNativeToken)) {
-        //   const gasCost = await estimateEVMTransferCost({
-        //     rpcUrl: getWalletRpcUrl(network),
-        //     from: userAddress as Address,
-        //     to: generateAddress as Address,
-        //     value: nativeBalance,
-        //   })
-        //   const maxTransferableBalance = nativeBalance - gasCost
-        //   return maxTransferableBalance > 0n ? maxTransferableBalance : 0n
-        // }
-        // const gasCost = await estimateEVMTransferCost({
-        //   rpcUrl: getWalletRpcUrl(network),
-        //   from: userAddress as Address,
-        //   to: tokenAddress as Address,
-        //   data: createDepositEVMERC20Transaction(
-        //     userAddress,
-        //     tokenAddress,
-        //     generateAddress,
-        //     balance,
-        //     chainId
-        //   ).data,
-        // })
-        // if (nativeBalance < gasCost) {
-        //   return 0n
-        // }
+        const rpcUrl = getWalletRpcUrl(assetNetworkAdapter[blockchain])
+        if (isNativeToken(token)) {
+          const gasCost = await estimateEVMTransferCost({
+            rpcUrl,
+            from: userAddress as Address,
+            to: generateAddress as Address,
+            value: balance,
+          })
+          const maxTransferableBalance = balance - gasCost
+          return maxTransferableBalance > 0n ? maxTransferableBalance : 0n
+        }
+        const chainId = getEVMChainId(blockchain)
+        const gasCost = await estimateEVMTransferCost({
+          rpcUrl,
+          from: userAddress as Address,
+          to: token.address as Address,
+          data: createDepositEVMERC20Transaction(
+            userAddress,
+            token.address,
+            generateAddress,
+            balance,
+            chainId
+          ).data,
+        })
+        if (balance < gasCost) {
+          return 0n
+        }
         return balance
       }
       case BlockchainEnum.SOLANA: {
