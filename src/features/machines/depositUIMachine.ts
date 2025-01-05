@@ -15,10 +15,6 @@ import type {
 } from "../../types/base"
 import type { ChainType } from "../../types/deposit"
 import type { SwappableToken } from "../../types/swap"
-import {
-  type Output as DepositEVMMachineOutput,
-  depositEVMMachine,
-} from "./depositEVMMachine"
 import { depositEstimationMachine } from "./depositEstimationActor"
 import {
   type Events as DepositFormEvents,
@@ -50,7 +46,7 @@ export type Context = {
   userAddress: string | null
   userChainType: ChainType | null
   depositNearResult: DepositOutput | null
-  depositEVMResult: DepositEVMMachineOutput | null
+  depositEVMResult: DepositOutput | null
   depositSolanaResult: DepositSolanaMachineOutput | null
   depositTurboResult: DepositTurboMachineOutput | null
   depositFormRef: ActorRefFrom<typeof depositFormReducer>
@@ -91,9 +87,9 @@ export const depositUIMachine = setup({
     },
   },
   actors: {
-    depositNearActor: depositMachine,
     poaBridgeInfoActor: poaBridgeInfoActor,
-    depositEVMActor: depositEVMMachine,
+    depositNearActor: depositMachine,
+    depositEVMActor: depositMachine,
     depositSolanaActor: depositSolanaMachine,
     depositTurboActor: depositTurboMachine,
     prepareDepositActor: prepareDepositActor,
@@ -108,7 +104,7 @@ export const depositUIMachine = setup({
       depositOutput: (_, value: DepositOutput) => value,
     }),
     setDepositEVMResult: assign({
-      depositEVMResult: (_, value: DepositEVMMachineOutput) => value,
+      depositEVMResult: (_, value: DepositOutput) => value,
     }),
     setDepositSolanaResult: assign({
       depositSolanaResult: (_, value: DepositSolanaMachineOutput) => value,
@@ -436,7 +432,7 @@ export const depositUIMachine = setup({
           target: "editing.reset_previous_preparation",
           actions: [
             {
-              type: "setDepositEVMResult",
+              type: "setDepositOutput",
               params: ({ event }) => event.output,
             },
             { type: "clearUIDepositAmount" },

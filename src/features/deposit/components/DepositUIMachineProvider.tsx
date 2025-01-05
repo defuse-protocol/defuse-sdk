@@ -10,7 +10,6 @@ import {
   fromPromise,
 } from "xstate"
 import { siloToSiloAddress } from "../../../constants/aurora"
-import { depositEVMMachine } from "../../../features/machines/depositEVMMachine"
 import { depositSolanaMachine } from "../../../features/machines/depositSolanaMachine"
 import { depositTurboMachine } from "../../../features/machines/depositTurboMachine"
 import { logger } from "../../../logger"
@@ -33,7 +32,7 @@ import { assetNetworkAdapter } from "../../../utils/adapters"
 import { assert } from "../../../utils/assert"
 import { userAddressToDefuseUserId } from "../../../utils/defuse"
 import { getEVMChainId } from "../../../utils/evmChainId"
-import { isUnifiedToken } from "../../../utils/token"
+import { isNativeToken } from "../../../utils/token"
 import { depositGenerateAddressMachine } from "../../machines/depositGenerateAddressMachine"
 import { depositUIMachine } from "../../machines/depositUIMachine"
 import type { DepositFormValues } from "./DepositForm"
@@ -155,13 +154,12 @@ export function DepositUIMachineProvider({
               }),
             },
           }),
-          depositEVMActor: depositEVMMachine.provide({
+          depositEVMActor: depositMachine.provide({
             actors: {
-              sendTransaction: fromPromise(async ({ input }) => {
+              signAndSendTransactions: fromPromise(async ({ input }) => {
                 const {
-                  token,
+                  derivedToken,
                   amount,
-                  tokenAddress,
                   depositAddress,
                   userAddress,
                   chainName,
@@ -171,7 +169,7 @@ export function DepositUIMachineProvider({
                 assert(depositAddress != null, "Deposit address is not defined")
 
                 let tx: Transaction["EVM"]
-                if (isUnifiedToken(token) && token.unifiedAssetId === "eth") {
+                if (isNativeToken(derivedToken)) {
                   tx = createDepositEVMNativeTransaction(
                     userAddress,
                     depositAddress,
@@ -181,7 +179,7 @@ export function DepositUIMachineProvider({
                 } else {
                   tx = createDepositEVMERC20Transaction(
                     userAddress,
-                    tokenAddress,
+                    derivedToken.address,
                     depositAddress,
                     amount,
                     chainId
@@ -204,9 +202,8 @@ export function DepositUIMachineProvider({
               }),
             },
             guards: {
-              isDepositValid: ({ context }) => {
-                if (!context.txHash) return false
-                return true
+              isDepositParamsValid: ({ context }) => {
+                return context.depositAddress !== null
               },
             },
           }),
