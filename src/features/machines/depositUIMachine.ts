@@ -8,11 +8,7 @@ import {
   sendTo,
   setup,
 } from "xstate"
-import type {
-  BaseTokenInfo,
-  SupportedChainName,
-  UnifiedTokenInfo,
-} from "../../types/base"
+import type { BaseTokenInfo, SupportedChainName } from "../../types/base"
 import type { ChainType } from "../../types/deposit"
 import type { SwappableToken } from "../../types/swap"
 import { depositEstimationMachine } from "./depositEstimationActor"
@@ -141,7 +137,8 @@ export const depositUIMachine = setup({
       return {
         type: "REQUEST_BALANCE_REFRESH",
         params: {
-          token: context.depositFormRef.getSnapshot().context.derivedToken,
+          derivedToken:
+            context.depositFormRef.getSnapshot().context.derivedToken,
           userAddress: context.userAddress,
           blockchain: context.depositFormRef.getSnapshot().context.blockchain,
         },
@@ -470,15 +467,10 @@ type DepositParams = {
   derivedToken: BaseTokenInfo
   balance: bigint
   amount: bigint
+  nearBalance: bigint | null
   userAddress: string
   depositAddress: string | null
   storageDepositRequired: bigint | null
-  /** @deprecated Use `derivedToken` instead. */
-  token: BaseTokenInfo | UnifiedTokenInfo
-  /** @deprecated Use `balance` instead. */
-  nativeBalance: bigint
-  /** @deprecated Use `derivedToken.address` instead. */
-  tokenAddress: string
 }
 
 function extractDepositParams(context: Context): DepositParams {
@@ -497,18 +489,15 @@ function extractDepositParams(context: Context): DepositParams {
   assert(context.userAddress, "userAddress is null")
   assert(parsedAmount, "parsed amount is null")
   assert(prepOutput?.balance, "balance is null")
-  assert(prepOutput?.nativeBalance, "nativeBalance is null")
 
   return {
     chainName: blockchain,
     derivedToken,
     balance: prepOutput.balance,
+    nearBalance: prepOutput.nearBalance,
     amount: parsedAmount,
     userAddress: context.userAddress,
     depositAddress: prepOutput.generateDepositAddress,
     storageDepositRequired: prepOutput.storageDepositRequired,
-    token,
-    nativeBalance: prepOutput.nativeBalance,
-    tokenAddress: derivedToken.address,
   }
 }

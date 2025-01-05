@@ -40,11 +40,7 @@ import type { ChainType } from "../../../../types/deposit"
 import { BlockchainEnum } from "../../../../types/interfaces"
 import type { SwappableToken } from "../../../../types/swap"
 import { formatTokenValue } from "../../../../utils/format"
-import {
-  isBaseToken,
-  isNativeToken,
-  isUnifiedToken,
-} from "../../../../utils/token"
+import { isBaseToken, isUnifiedToken } from "../../../../utils/token"
 import { DepositResult } from "../DepositResult"
 import { DepositUIMachineContext } from "../DepositUIMachineProvider"
 import { DepositWarning } from "../DepositWarning"
@@ -108,9 +104,6 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
     ? preparationOutput.value.generateDepositAddress
     : null
   const balance = isOutputOk ? preparationOutput.value.balance || 0n : 0n
-  const nativeBalance = isOutputOk
-    ? preparationOutput.value.nativeBalance || 0n
-    : 0n
 
   const network = blockchain ? assetNetworkAdapter[blockchain] : null
 
@@ -156,8 +149,8 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
   }
 
   const handleSetMaxValue = async () => {
-    if (token == null || tokenBalance == null) return
-    const amountToFormat = formatTokenValue(tokenBalance, token.decimals)
+    if (token == null || balance == null) return
+    const amountToFormat = formatTokenValue(balance, token.decimals)
     setValue("amount", amountToFormat)
   }
 
@@ -173,13 +166,7 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
 
   const balanceInsufficient =
     derivedToken && network
-      ? isInsufficientBalance(
-          amount,
-          balance,
-          nativeBalance,
-          derivedToken,
-          network
-        )
+      ? isInsufficientBalance(amount, balance, derivedToken, network)
       : null
 
   const minDepositAmount = useSelector(poaBridgeInfoRef, (state) => {
@@ -204,11 +191,6 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
   const [isCopied, setIsCopied] = useState(false)
 
   const { accentColor } = useThemeContext()
-
-  const tokenBalance =
-    derivedToken && network
-      ? getBalance(derivedToken, balance, nativeBalance, network)
-      : null
 
   return (
     <div className={styles.container}>
@@ -293,12 +275,12 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
                         <br /> in your wallet.
                       </TooltipInfo>
                     )}
-                  {tokenBalance != null && token != null && (
+                  {balance != null && token != null && (
                     <BlockMultiBalances
-                      balance={tokenBalance}
+                      balance={balance}
                       decimals={token.decimals}
                       handleClick={() => handleSetMaxValue()}
-                      disabled={tokenBalance === 0n}
+                      disabled={balance === 0n}
                       className={styles.blockMultiBalances}
                     />
                   )}
@@ -568,7 +550,6 @@ function getDefaultBlockchainOptionValue(
 function isInsufficientBalance(
   formAmount: string,
   balance: bigint,
-  nativeBalance: bigint,
   derivedToken: BaseTokenInfo,
   network: BlockchainEnum | null
 ): boolean | null {
@@ -576,10 +557,7 @@ function isInsufficientBalance(
     return null
   }
 
-  const balanceToFormat = formatTokenValue(
-    getBalance(derivedToken, balance, nativeBalance, network),
-    derivedToken.decimals
-  )
+  const balanceToFormat = formatTokenValue(balance, derivedToken.decimals)
   return Number.parseFloat(formAmount) > Number.parseFloat(balanceToFormat)
 }
 
@@ -674,47 +652,4 @@ function renderDepositHint(
 
 function truncateUserAddress(hash: string) {
   return `${hash.slice(0, 12)}...${hash.slice(-12)}`
-}
-
-// TODO: When Aurora network will be added we should cover a special case for Aurora token on Aurora network
-//       network === BlockchainEnum.AURORA && defuseAssetId === "nep141:aurora"
-function getBalance(
-  token: BaseTokenInfo,
-  balance: bigint,
-  nativeBalance: bigint,
-  network: BlockchainEnum
-) {
-  // For user experience, both NEAR and wNEAR are treated as equivalent during the deposit process.
-  // This allows users to deposit either token seamlessly.
-  // When the balance is checked, it considers the total of both NEAR and wNEAR,
-  // ensuring that users can deposit without needing to convert between the two.
-  if (token.address === "wrap.near" && network === BlockchainEnum.NEAR) {
-    return balance + nativeBalance
-  }
-
-  if (isNativeToken(token)) {
-    return nativeBalance
-  }
-
-  if (network && isUnifiedToken(token)) {
-    switch (network) {
-      case BlockchainEnum.NEAR:
-        return balance
-      case BlockchainEnum.ETHEREUM:
-      case BlockchainEnum.BASE:
-      case BlockchainEnum.ARBITRUM:
-      case BlockchainEnum.BITCOIN:
-      case BlockchainEnum.SOLANA:
-      case BlockchainEnum.DOGECOIN:
-      case BlockchainEnum.TURBOCHAIN:
-      case BlockchainEnum.AURORA:
-      case BlockchainEnum.XRPLEDGER:
-        return isNativeToken(token) ? nativeBalance : balance
-      default:
-        network satisfies never
-        throw new Error("exhaustive check failed")
-    }
-  }
-
-  return balance
 }

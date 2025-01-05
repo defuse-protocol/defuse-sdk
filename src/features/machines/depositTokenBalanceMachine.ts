@@ -1,3 +1,4 @@
+import { isNativeToken } from "src/utils/token"
 import type { Address } from "viem"
 import { assign, fromPromise, setup } from "xstate"
 import { getWalletRpcUrl } from "../../services/depositService"
@@ -15,73 +16,108 @@ import {
 
 export const backgroundBalanceActor = fromPromise(
   async ({
-    input: { tokenAddress, userAddress, blockchain },
+    input: { derivedToken, userAddress, blockchain },
   }: {
     input: {
-      tokenAddress: string
+      derivedToken: BaseTokenInfo
       userAddress: string
       blockchain: SupportedChainName
     }
   }): Promise<{
     balance: bigint
-    nativeBalance: bigint
+    nearBalance: bigint | null
   } | null> => {
     if (!validateAddress(userAddress, blockchain)) {
       return null
     }
+
+    const result: {
+      balance: bigint
+      nearBalance: bigint | null
+    } | null = {
+      balance: 0n,
+      nearBalance: null,
+    }
+
     const networkToSolverFormat = assetNetworkAdapter[blockchain]
     switch (networkToSolverFormat) {
-      case BlockchainEnum.NEAR:
-        return {
-          balance:
-            (await getNearNep141Balance({
-              tokenAddress: tokenAddress,
+      case BlockchainEnum.NEAR: {
+        // This is unique case for NEAR, where we need to sum up the native balance and the NEP-141 balance
+        if (derivedToken.address === "wrap.near") {
+          const [nep141Balance, nativeBalance] = await Promise.all([
+            getNearNep141Balance({
+              tokenAddress: derivedToken.address,
               accountId: normalizeToNearAddress(userAddress),
-            })) ?? 0n,
-          nativeBalance:
-            (await getNearNativeBalance({
+            }),
+            getNearNativeBalance({
               accountId: normalizeToNearAddress(userAddress),
-            })) ?? 0n,
+            }),
+          ])
+          if (nep141Balance === null || nativeBalance === null) {
+            throw new Error("Failed to fetch NEAR balances")
+          }
+          result.balance = nep141Balance + nativeBalance
+          result.nearBalance = nativeBalance
+          break
         }
+        const balance = await getNearNep141Balance({
+          tokenAddress: derivedToken.address,
+          accountId: normalizeToNearAddress(userAddress),
+        })
+        if (balance === null) {
+          throw new Error("Failed to fetch NEAR balances")
+        }
+        result.balance = balance
+        break
+      }
       case BlockchainEnum.ETHEREUM:
       case BlockchainEnum.BASE:
       case BlockchainEnum.ARBITRUM:
       case BlockchainEnum.TURBOCHAIN:
-      case BlockchainEnum.AURORA:
-        return {
-          balance:
-            (await getEvmErc20Balance({
-              tokenAddress: tokenAddress as Address,
-              userAddress: userAddress as Address,
-              rpcUrl: getWalletRpcUrl(networkToSolverFormat),
-            })) ?? 0n,
-          nativeBalance:
-            (await getEvmNativeBalance({
-              userAddress: userAddress as Address,
-              rpcUrl: getWalletRpcUrl(networkToSolverFormat),
-            })) ?? 0n,
+      case BlockchainEnum.AURORA: {
+        if (isNativeToken(derivedToken)) {
+          const balance = await getEvmNativeBalance({
+            userAddress: userAddress as Address,
+            rpcUrl: getWalletRpcUrl(networkToSolverFormat),
+          })
+          if (balance === null) {
+            throw new Error("Failed to fetch EVM balances")
+          }
+          result.balance = balance
+          break
         }
-      case BlockchainEnum.SOLANA:
-        return {
-          balance: 0n,
-          nativeBalance:
-            (await getSolanaNativeBalance({
-              userAddress: userAddress,
-              rpcUrl: getWalletRpcUrl(networkToSolverFormat),
-            })) ?? 0n,
+        const balance = await getEvmErc20Balance({
+          tokenAddress: derivedToken.address as Address,
+          userAddress: userAddress as Address,
+          rpcUrl: getWalletRpcUrl(networkToSolverFormat),
+        })
+        if (balance === null) {
+          throw new Error("Failed to fetch EVM balances")
         }
-      // Active deposits through Bitcoin, Dogecoin are not supported, so we don't need to check balances
+        result.balance = balance
+        break
+      }
+      case BlockchainEnum.SOLANA: {
+        const balance = await getSolanaNativeBalance({
+          userAddress: userAddress,
+          rpcUrl: getWalletRpcUrl(networkToSolverFormat),
+        })
+        if (balance === null) {
+          throw new Error("Failed to fetch SOLANA balances")
+        }
+        result.balance = balance
+        break
+      }
+      // Active deposits through Bitcoin and other blockchains are not supported, so we don't need to check balances
       case BlockchainEnum.BITCOIN:
       case BlockchainEnum.DOGECOIN:
       case BlockchainEnum.XRPLEDGER:
-        return {
-          balance: 0n,
-          nativeBalance: 0n,
-        }
+        break
       default:
         networkToSolverFormat satisfies never
         throw new Error("exhaustive check failed")
     }
+    return result
   }
 )
 
@@ -95,7 +131,7 @@ export interface Context {
         tag: "ok"
         value: {
           balance: bigint
-          nativeBalance: bigint
+          nearBalance: bigint | null
         }
       }
     | {
@@ -111,7 +147,7 @@ export const depositTokenBalanceMachine = setup({
     events: {} as {
       type: "REQUEST_BALANCE_REFRESH"
       params: {
-        token: BaseTokenInfo
+        derivedToken: BaseTokenInfo
         userAddress: string
         blockchain: SupportedChainName
       }
@@ -144,7 +180,7 @@ export const depositTokenBalanceMachine = setup({
         src: "fetchBalanceActor",
 
         input: ({ event }) => ({
-          tokenAddress: event.params.token.address,
+          derivedToken: event.params.derivedToken,
           userAddress: event.params.userAddress,
           blockchain: event.params.blockchain,
         }),
@@ -158,7 +194,7 @@ export const depositTokenBalanceMachine = setup({
                   tag: "ok",
                   value: {
                     balance: event.output.balance,
-                    nativeBalance: event.output.nativeBalance,
+                    nearBalance: event.output.nearBalance,
                   },
                 }
               }

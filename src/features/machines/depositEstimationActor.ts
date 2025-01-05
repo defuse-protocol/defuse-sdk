@@ -1,3 +1,4 @@
+import { assert } from "src/utils/assert"
 import { assign, fromPromise, setup } from "xstate"
 import { estimateSolanaTransferCost } from "../../services/estimateService"
 import type { BaseTokenInfo, SupportedChainName } from "../../types/base"
@@ -12,7 +13,7 @@ export const depositEstimateMaxValueActor = fromPromise(
       blockchain,
       userAddress,
       balance,
-      nativeBalance,
+      nearBalance,
       token,
       generateAddress,
     },
@@ -22,7 +23,7 @@ export const depositEstimateMaxValueActor = fromPromise(
       tokenAddress: string
       userAddress: string
       balance: bigint
-      nativeBalance: bigint
+      nearBalance: bigint | null
       token: BaseTokenInfo
       generateAddress: string | null
     }
@@ -30,9 +31,10 @@ export const depositEstimateMaxValueActor = fromPromise(
     const networkToSolverFormat = assetNetworkAdapter[blockchain]
     switch (networkToSolverFormat) {
       case BlockchainEnum.NEAR:
+        assert(nearBalance !== null, "Near balance is required")
         // Max value for NEAR is the sum of the native balance and the balance
         if (isBaseToken(token) && token.address === "wrap.near") {
-          return (nativeBalance || 0n) + (balance || 0n)
+          return nearBalance + balance
         }
         return balance
       case BlockchainEnum.ETHEREUM:
@@ -77,10 +79,10 @@ export const depositEstimateMaxValueActor = fromPromise(
       }
       case BlockchainEnum.SOLANA: {
         const fee = estimateSolanaTransferCost()
-        if (nativeBalance < fee) {
+        if (balance < fee) {
           return 0n
         }
-        return nativeBalance - fee
+        return balance - fee
       }
       // Active deposits through Bitcoin, Dogecoin are not supported, so no network fees
       case BlockchainEnum.BITCOIN:
@@ -118,7 +120,7 @@ export const depositEstimationMachine = setup({
         blockchain: SupportedChainName
         userAddress: string
         balance: bigint
-        nativeBalance: bigint
+        nearBalance: bigint | null
         token: BaseTokenInfo
         generateAddress: string | null
       }

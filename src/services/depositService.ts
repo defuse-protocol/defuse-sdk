@@ -41,7 +41,13 @@ export type PreparationOutput =
         generateDepositAddress: string | null
         storageDepositRequired: bigint | null
         balance: bigint | null
-        nativeBalance: bigint | null
+        /**
+         * Near balance is required for depositing wrap.near only. We treat it as a just NEAR token
+         * to simplify the user experience by abstracting away the complexity of wrapping and unwrapping
+         * base tokens. This approach provides a more streamlined deposit process where users don't need
+         * to manually handle token wrapping operations.
+         */
+        nearBalance: bigint | null
         maxDepositValue: bigint | null
       }
     }
@@ -127,16 +133,18 @@ export async function prepareDeposit(
   }
   const balance =
     depositTokenBalanceState.context.preparationOutput?.value.balance ?? null
-  const nativeBalance =
-    depositTokenBalanceState.context.preparationOutput?.value.nativeBalance ??
+  const nearBalance =
+    depositTokenBalanceState.context.preparationOutput?.value.nearBalance ??
     null
+
+  assert(balance !== null, "Balance is required")
 
   const estimation = await getDepositEstimation(
     {
       formValues,
       userAddress,
       balance,
-      nativeBalance,
+      nearBalance,
       generateDepositAddress,
       depositEstimationRef,
     },
@@ -153,7 +161,7 @@ export async function prepareDeposit(
       storageDepositRequired:
         storageDepositAmount.context.preparationOutput?.value ?? null,
       balance,
-      nativeBalance,
+      nearBalance,
       maxDepositValue: estimation.value.maxDepositValue,
     },
   }
@@ -164,14 +172,14 @@ async function getDepositEstimation(
     userAddress,
     formValues,
     balance,
-    nativeBalance,
+    nearBalance,
     generateDepositAddress,
     depositEstimationRef,
   }: {
     userAddress: string
     formValues: DepositFormContext
-    balance: bigint | null
-    nativeBalance: bigint | null
+    balance: bigint
+    nearBalance: bigint | null
     generateDepositAddress: string | null
     depositEstimationRef: ActorRefFrom<typeof depositEstimationMachine>
   },
@@ -187,8 +195,8 @@ async function getDepositEstimation(
     params: {
       blockchain: formValues.blockchain,
       userAddress,
-      balance: balance ?? 0n,
-      nativeBalance: nativeBalance ?? 0n,
+      balance: balance,
+      nearBalance: nearBalance,
       token: formValues.derivedToken,
       generateAddress: generateDepositAddress,
     },
