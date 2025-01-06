@@ -1,9 +1,7 @@
 import { createActorContext } from "@xstate/react"
 import type { PropsWithChildren, ReactElement, ReactNode } from "react"
 import { useFormContext } from "react-hook-form"
-import { siloToSiloAddress } from "src/constants/aurora"
-import { depositSolanaMachine } from "src/features/machines/depositSolanaMachine"
-import { depositTurboMachine } from "src/features/machines/depositTurboMachine"
+import { depositMachine } from "src/features/machines/depositMachine"
 import { type Hash, getAddress } from "viem"
 import {
   type Actor,
@@ -11,7 +9,7 @@ import {
   type SnapshotFrom,
   fromPromise,
 } from "xstate"
-import { depositEVMMachine } from "../../../features/machines/depositEVMMachine"
+import { siloToSiloAddress } from "../../../constants/aurora"
 import { logger } from "../../../logger"
 import {
   checkNearTransactionValidity,
@@ -32,9 +30,8 @@ import { assetNetworkAdapter } from "../../../utils/adapters"
 import { assert } from "../../../utils/assert"
 import { userAddressToDefuseUserId } from "../../../utils/defuse"
 import { getEVMChainId } from "../../../utils/evmChainId"
-import { isBaseToken, isUnifiedToken } from "../../../utils/token"
+import { isNativeToken } from "../../../utils/token"
 import { depositGenerateAddressMachine } from "../../machines/depositGenerateAddressMachine"
-import { depositNearMachine } from "../../machines/depositNearMachine"
 import { depositUIMachine } from "../../machines/depositUIMachine"
 import type { DepositFormValues } from "./DepositForm"
 
@@ -87,31 +84,60 @@ export function DepositUIMachineProvider({
       }}
       logic={depositUIMachine.provide({
         actors: {
-          depositNearActor: depositNearMachine.provide({
+          depositGenerateAddressActor: depositGenerateAddressMachine.provide({
+            actors: {
+              generateDepositAddress: fromPromise(async ({ input }) => {
+                const { userAddress, blockchain, userChainType } = input
+
+                const address = await generateDepositAddress(
+                  userAddressToDefuseUserId(userAddress, userChainType),
+                  assetNetworkAdapter[blockchain]
+                )
+
+                return address
+              }),
+            },
+          }),
+          depositNearActor: depositMachine.provide({
             actors: {
               signAndSendTransactions: fromPromise(async ({ input }) => {
-                const { asset, amount, balance, storageDepositRequired } = input
+                const {
+                  derivedToken,
+                  balance,
+                  amount,
+                  nearBalance,
+                  storageDepositRequired,
+                } = input
 
-                const tokenToDeposit = isBaseToken(asset)
-                  ? asset
-                  : asset.groupedTokens.find(
-                      (token) => token.chainName === "near"
-                    )
-
-                assert(tokenToDeposit, "Token to deposit is not defined")
+                assert(
+                  storageDepositRequired !== null,
+                  "Storage deposit required is null"
+                )
+                assert(nearBalance !== null, "Near balance is null")
 
                 let tx: Transaction["NEAR"][] = []
-
-                if (tokenToDeposit.address === "wrap.near") {
+                if (derivedToken.address === "wrap.near") {
+                  /**
+                   * On calculation of the balance NEAR, we bound it with the amount of wrap.near
+                   * So to destinguish how much NEAR we have, we need to subtract the amount of wrap.near
+                   *
+                   * Example:
+                   * amount = 100n
+                   * near = 0n
+                   * wrap.near = 100n
+                   * wNearBalance = 100n - 0n = 100n
+                   * nearAmountToWrap = 100n - 100n = 0n
+                   */
+                  const wNearBalance = balance - nearBalance
+                  const nearAmountToWrap = amount - wNearBalance
                   tx = createBatchDepositNearNativeTransaction(
                     amount,
-                    // If user does not have enough wrap.near we calculate how much native NEAR we need to wrap to match the amount to deposit
-                    amount - (balance || 0n),
+                    nearAmountToWrap,
                     storageDepositRequired
                   )
                 } else {
                   tx = createBatchDepositNearNep141Transaction(
-                    tokenToDeposit.address,
+                    derivedToken.address,
                     amount,
                     storageDepositRequired
                   )
@@ -122,49 +148,34 @@ export function DepositUIMachineProvider({
                 return txHash
               }),
               validateTransaction: fromPromise(async ({ input }) => {
-                const { txHash, accountId, amount } = input
+                const { txHash, userAddress, amount } = input
                 assert(txHash != null, "Tx hash is not defined")
-                assert(accountId != null, "Account ID is not defined")
-                assert(amount != null, "Amount is not defined")
 
                 const isValid = await checkNearTransactionValidity(
                   txHash,
-                  accountId,
+                  userAddress,
                   amount.toString()
                 )
                 return isValid
               }),
             },
             guards: {
-              isDepositValid: ({ context }) => {
-                if (!context.txHash) return false
-                return true
+              isDepositParamsValid: ({ context }) => {
+                return (
+                  context.storageDepositRequired !== null &&
+                  context.nearBalance !== null
+                )
               },
             },
           }),
-          depositGenerateAddressActor: depositGenerateAddressMachine.provide({
+          depositEVMActor: depositMachine.provide({
             actors: {
-              generateDepositAddress: fromPromise(async ({ input }) => {
-                const { userAddress, userChainType, chain } = input
-
-                const address = await generateDepositAddress(
-                  userAddressToDefuseUserId(userAddress, userChainType),
-                  chain
-                )
-
-                return address
-              }),
-            },
-          }),
-          depositEVMActor: depositEVMMachine.provide({
-            actors: {
-              sendTransaction: fromPromise(async ({ input }) => {
+              signAndSendTransactions: fromPromise(async ({ input }) => {
                 const {
-                  asset,
+                  derivedToken,
                   amount,
-                  tokenAddress,
                   depositAddress,
-                  accountId,
+                  userAddress,
                   chainName,
                 } = input
                 const chainId = getEVMChainId(chainName)
@@ -172,17 +183,17 @@ export function DepositUIMachineProvider({
                 assert(depositAddress != null, "Deposit address is not defined")
 
                 let tx: Transaction["EVM"]
-                if (isUnifiedToken(asset) && asset.unifiedAssetId === "eth") {
+                if (isNativeToken(derivedToken)) {
                   tx = createDepositEVMNativeTransaction(
-                    accountId,
+                    userAddress,
                     depositAddress,
                     amount,
                     chainId
                   )
                 } else {
                   tx = createDepositEVMERC20Transaction(
-                    accountId,
-                    tokenAddress,
+                    userAddress,
+                    derivedToken.address,
                     depositAddress,
                     amount,
                     chainId
@@ -191,7 +202,7 @@ export function DepositUIMachineProvider({
 
                 logger.verbose("Sending transfer EVM transaction")
                 const txHash = await sendTransactionEVM(tx)
-                assert(txHash != null, "Transaction failed")
+                assert(txHash != null, "Tx hash is not defined")
 
                 logger.verbose("Waiting for transfer EVM transaction", {
                   txHash,
@@ -205,47 +216,47 @@ export function DepositUIMachineProvider({
               }),
             },
             guards: {
-              isDepositValid: ({ context }) => {
-                if (!context.txHash) return false
-                return true
+              isDepositParamsValid: ({ context }) => {
+                return context.depositAddress !== null
               },
             },
           }),
-          depositSolanaActor: depositSolanaMachine.provide({
+          depositSolanaActor: depositMachine.provide({
             actors: {
               signAndSendTransactions: fromPromise(async ({ input }) => {
-                const { amount, depositAddress, accountId } = input
+                const { amount, depositAddress, userAddress } = input
 
                 assert(depositAddress != null, "Deposit address is not defined")
 
                 const tx = createDepositSolanaTransaction(
-                  accountId,
+                  userAddress,
                   depositAddress,
                   amount
                 )
                 const txHash = await sendTransactionSolana(tx)
-                assert(txHash != null, "Transaction failed")
+                assert(txHash != null, "Tx hash is not defined")
 
                 return txHash
               }),
             },
             guards: {
-              isDepositValid: ({ context }) => {
-                if (!context.txHash) return false
-                return true
+              isDepositParamsValid: ({ context }) => {
+                return context.depositAddress !== null
               },
             },
           }),
-          depositTurboActor: depositTurboMachine.provide({
+          depositTurboActor: depositMachine.provide({
             actors: {
               signAndSendTransactions: fromPromise(async ({ input }) => {
                 const {
                   amount,
-                  accountId,
-                  tokenAddress,
+                  userAddress,
+                  derivedToken,
                   depositAddress,
                   chainName,
                 } = input
+
+                assert(depositAddress != null, "Deposit address is not defined")
 
                 const chainId = getEVMChainId(chainName)
                 const siloToSiloAddress_ =
@@ -257,10 +268,10 @@ export function DepositUIMachineProvider({
 
                 assert(siloToSiloAddress_ != null, "chainType should be EVM")
 
-                if (tokenAddress !== "native") {
+                if (!isNativeToken(derivedToken)) {
                   const allowance = await getAllowance(
-                    tokenAddress,
-                    accountId,
+                    derivedToken.address,
+                    userAddress,
                     siloToSiloAddress_,
                     assetNetworkAdapter[chainName]
                   )
@@ -268,10 +279,10 @@ export function DepositUIMachineProvider({
 
                   if (allowance < amount) {
                     const approveTx = createApproveTransaction(
-                      tokenAddress,
+                      derivedToken.address,
                       siloToSiloAddress_,
                       amount,
-                      getAddress(accountId),
+                      getAddress(userAddress),
                       chainId
                     )
                     logger.verbose("Sending approve EVM transaction")
@@ -292,14 +303,14 @@ export function DepositUIMachineProvider({
                 }
 
                 const tx = createDepositFromSiloTransaction(
-                  tokenAddress === "native"
+                  isNativeToken(derivedToken)
                     ? "0x0000000000000000000000000000000000000000"
-                    : tokenAddress,
-                  accountId,
+                    : derivedToken.address,
+                  userAddress,
                   amount,
                   depositAddress,
                   siloToSiloAddress_,
-                  tokenAddress === "native" ? amount : 0n,
+                  isNativeToken(derivedToken) ? amount : 0n,
                   chainId
                 )
                 logger.verbose("Sending deposit from Silo EVM transaction")
@@ -319,9 +330,8 @@ export function DepositUIMachineProvider({
               }),
             },
             guards: {
-              isDepositValid: ({ context }) => {
-                if (!context.txHash) return false
-                return true
+              isDepositParamsValid: ({ context }) => {
+                return context.depositAddress !== null
               },
             },
           }),

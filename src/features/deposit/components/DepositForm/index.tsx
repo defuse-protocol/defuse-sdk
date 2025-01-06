@@ -13,13 +13,9 @@ import {
 } from "@radix-ui/themes"
 import { useSelector } from "@xstate/react"
 import { QRCodeSVG } from "qrcode.react"
-import { type ReactNode, useEffect, useState } from "react"
+import { useEffect, useState } from "react"
 import CopyToClipboard from "react-copy-to-clipboard"
 import { Controller, useFormContext } from "react-hook-form"
-import { TooltipInfo } from "src/components/TooltipInfo"
-import { RESERVED_NEAR_BALANCE } from "src/features/machines/getBalanceMachine"
-import { getPOABridgeInfo } from "src/features/machines/poaBridgeInfoActor"
-import { getAvailableDepositRoutes } from "src/services/depositService"
 import {
   assetNetworkAdapter,
   reverseAssetNetworkAdapter,
@@ -33,20 +29,21 @@ import { Input } from "../../../../components/Input"
 import type { ModalSelectAssetsPayload } from "../../../../components/Modal/ModalSelectAssets"
 import { NetworkIcon } from "../../../../components/Network/NetworkIcon"
 import { Select } from "../../../../components/Select/Select"
+import { TooltipInfo } from "../../../../components/TooltipInfo"
+import { RESERVED_NEAR_BALANCE } from "../../../../features/machines/getBalanceMachine"
+import { getPOABridgeInfo } from "../../../../features/machines/poaBridgeInfoActor"
 import { useModalStore } from "../../../../providers/ModalStoreProvider"
+import { getAvailableDepositRoutes } from "../../../../services/depositService"
 import { ModalType } from "../../../../stores/modalStore"
+import type { BaseTokenInfo, UnifiedTokenInfo } from "../../../../types/base"
 import type { ChainType } from "../../../../types/deposit"
 import { BlockchainEnum } from "../../../../types/interfaces"
 import type { SwappableToken } from "../../../../types/swap"
 import { formatTokenValue } from "../../../../utils/format"
-import {
-  isBaseToken,
-  isNativeToken,
-  isUnifiedToken,
-} from "../../../../utils/token"
-import type { Context } from "../../../machines/depositUIMachine"
+import { isBaseToken, isUnifiedToken } from "../../../../utils/token"
+import { DepositResult } from "../DepositResult"
 import { DepositUIMachineContext } from "../DepositUIMachineProvider"
-import { Deposits } from "../Deposits"
+import { DepositWarning } from "../DepositWarning"
 import styles from "./styles.module.css"
 
 // TODO: Temporary disable deposit through POA bridge
@@ -55,7 +52,7 @@ const ENABLE_DEPOSIT_THROUGH_POA_BRIDGE = true
 export type DepositFormValues = {
   network: BlockchainEnum | null
   amount: string
-  token: SwappableToken | null
+  token: BaseTokenInfo | UnifiedTokenInfo | null
   userAddress: string | null
   rpcUrl: string | undefined
 }
@@ -66,49 +63,47 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
 
   const depositUIActorRef = DepositUIMachineContext.useActorRef()
   const snapshot = DepositUIMachineContext.useSelector((snapshot) => snapshot)
-  const generatedAddressResult = snapshot.context.generatedAddressResult
-  const depositNearResult = snapshot.context.depositNearResult
-  const depositEVMResult = snapshot.context.depositEVMResult
-  const depositSolanaResult = snapshot.context.depositSolanaResult
-  const depositTurboResult = snapshot.context.depositTurboResult
-  const depositAddress =
-    generatedAddressResult?.tag === "ok"
-      ? generatedAddressResult.value.depositAddress
-      : null
+  const depositOutput = snapshot.context.depositOutput
+  const preparationOutput = snapshot.context.preparationOutput
 
   const {
     token,
-    network,
+    derivedToken,
+    blockchain,
     amount,
-    balance,
-    nativeBalance,
     userAddress,
     poaBridgeInfoRef,
-    defuseAssetId,
     parsedAmount,
   } = DepositUIMachineContext.useSelector((snapshot) => {
-    const token = snapshot.context.formValues.token
-    const network = snapshot.context.formValues.network
-    const amount = snapshot.context.formValues.amount
-    const balance = snapshot.context.balance
-    const nativeBalance = snapshot.context.nativeBalance
+    const token = snapshot.context.depositFormRef.getSnapshot().context.token
+    const derivedToken =
+      snapshot.context.depositFormRef.getSnapshot().context.derivedToken
+    const blockchain =
+      snapshot.context.depositFormRef.getSnapshot().context.blockchain
+    const amount = snapshot.context.depositFormRef.getSnapshot().context.amount
+    const parsedAmount =
+      snapshot.context.depositFormRef.getSnapshot().context.parsedAmount
     const userAddress = snapshot.context.userAddress
     const poaBridgeInfoRef = snapshot.context.poaBridgeInfoRef
-    const defuseAssetId = snapshot.context.defuseAssetId
-    const parsedAmount = snapshot.context.parsedFormValues
 
     return {
       token,
-      network,
+      derivedToken,
+      blockchain,
       amount,
-      balance,
-      nativeBalance,
       userAddress,
       poaBridgeInfoRef,
-      defuseAssetId,
       parsedAmount,
     }
   })
+
+  const isOutputOk = preparationOutput?.tag === "ok"
+  const depositAddress = isOutputOk
+    ? preparationOutput.value.generateDepositAddress
+    : null
+  const balance = isOutputOk ? preparationOutput.value.balance || 0n : 0n
+
+  const network = blockchain ? assetNetworkAdapter[blockchain] : null
 
   const { setModalType, payload, onCloseModal } = useModalStore(
     (state) => state
@@ -134,9 +129,10 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
     const { modalType, fieldName, token } = payload as ModalSelectAssetsPayload
     if (modalType === ModalType.MODAL_SELECT_ASSETS && fieldName && token) {
       depositUIActorRef.send({
-        type: "INPUT",
-        params: { token, network: null },
+        type: "DEPOSIT_FORM.UPDATE_TOKEN",
+        params: { token },
       })
+      setValue("token", token)
       // We have to clean up network because it could be not a valid value for the previous token
       setValue("network", null)
       setValue("amount", "")
@@ -151,26 +147,25 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
   }
 
   const handleSetMaxValue = async () => {
-    if (token == null || tokenBalance == null) return
-    const amountToFormat = formatTokenValue(tokenBalance, token.decimals)
+    if (token == null || balance == null) return
+    const amountToFormat = formatTokenValue(balance, token.decimals)
     setValue("amount", amountToFormat)
   }
 
+  const formNetwork = watch("network")
   useEffect(() => {
-    if (token && getDefaultBlockchainOptionValue(token)) {
-      const networkOption = getDefaultBlockchainOptionValue(token)
-      setValue("network", networkOption)
+    const networkDefaultOption = token
+      ? getDefaultBlockchainOptionValue(token)
+      : null
+    if (formNetwork === null) {
+      setValue("network", networkDefaultOption)
     }
-  }, [token, setValue])
+  }, [formNetwork, token, setValue])
 
-  const balanceInsufficient = isInsufficientBalance(
-    amount,
-    balance,
-    nativeBalance,
-    token,
-    network,
-    defuseAssetId
-  )
+  const balanceInsufficient =
+    derivedToken && network
+      ? isInsufficientBalance(amount, balance, derivedToken, network)
+      : null
 
   const minDepositAmount = useSelector(poaBridgeInfoRef, (state) => {
     if (token == null || !isBaseToken(token)) {
@@ -182,8 +177,8 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
   })
 
   const isDepositAmountHighEnough =
-    minDepositAmount && parsedAmount.amount > 0n
-      ? parsedAmount.amount >= minDepositAmount
+    minDepositAmount && parsedAmount !== null && parsedAmount > 0n
+      ? parsedAmount >= minDepositAmount
       : true
 
   const availableDepositRoutes =
@@ -194,10 +189,6 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
   const [isCopied, setIsCopied] = useState(false)
 
   const { accentColor } = useThemeContext()
-
-  const tokenBalance = token
-    ? getBalance(token, balance, nativeBalance, defuseAssetId, network)
-    : null
 
   return (
     <div className={styles.container}>
@@ -282,12 +273,12 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
                         <br /> in your wallet.
                       </TooltipInfo>
                     )}
-                  {tokenBalance != null && token != null && (
+                  {balance != null && token != null && (
                     <BlockMultiBalances
-                      balance={tokenBalance}
+                      balance={balance}
                       decimals={token.decimals}
                       handleClick={() => handleSetMaxValue()}
-                      disabled={tokenBalance === 0n}
+                      disabled={balance === 0n}
                       className={styles.blockMultiBalances}
                     />
                   )}
@@ -312,7 +303,10 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
                 }
               >
                 {renderDepositButtonText(
-                  watch("amount") >= "0" && balanceInsufficient,
+                  watch("amount") >= "0" &&
+                    (balanceInsufficient !== null
+                      ? balanceInsufficient
+                      : false),
                   network,
                   token,
                   minDepositAmount,
@@ -321,17 +315,12 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
               </ButtonCustom>
             </div>
           )}
-          <Deposits
-            chainName={
-              network != null ? reverseAssetNetworkAdapter[network] : null
-            }
-            depositResult={
-              depositNearResult ??
-              depositTurboResult ??
-              depositEVMResult ??
-              depositSolanaResult
-            }
-          />
+          {network && (
+            <DepositResult
+              chainName={reverseAssetNetworkAdapter[network]}
+              depositResult={depositOutput}
+            />
+          )}
           {isPassiveDeposit &&
             ENABLE_DEPOSIT_THROUGH_POA_BRIDGE &&
             network &&
@@ -367,7 +356,7 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
                           e.preventDefault()
                         }}
                         className={styles.copyButton}
-                        disabled={!generatedAddressResult}
+                        disabled={!depositAddress}
                       >
                         <CopyToClipboard
                           text={depositAddress}
@@ -394,15 +383,12 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
           network &&
           network !== BlockchainEnum.NEAR &&
           !ENABLE_DEPOSIT_THROUGH_POA_BRIDGE && <UnderFeatureFlag />}
-        {token &&
-          renderDepositWarning(userAddress, {
-            depositNearResult,
-            depositEVMResult,
-            depositSolanaResult,
-            depositTurboResult,
-            generatedAddressResult,
-            snapshot: snapshot.context,
-          })}
+        {token && (
+          <DepositWarning
+            userAddress={userAddress}
+            depositWarning={depositOutput || preparationOutput}
+          />
+        )}
         {userAddress && network && !isActiveDeposit && !isPassiveDeposit && (
           <NotSupportedDepositRoute />
         )}
@@ -521,7 +507,7 @@ function getBlockchainsOptions(): Record<
 }
 
 function filterBlockchainsOptions(
-  token: SwappableToken
+  token: BaseTokenInfo | UnifiedTokenInfo
 ): Record<string, { label: string; icon: React.ReactNode; value: string }> {
   if (isUnifiedToken(token)) {
     return token.groupedTokens.reduce(
@@ -562,87 +548,15 @@ function getDefaultBlockchainOptionValue(
 function isInsufficientBalance(
   formAmount: string,
   balance: bigint,
-  nativeBalance: bigint,
-  token: SwappableToken | null,
-  network: BlockchainEnum | null,
-  defuseAssetId: string | null
-) {
-  if (!token || !network) {
-    return false
-  }
-  const balanceToFormat = formatTokenValue(
-    getBalance(token, balance, nativeBalance, defuseAssetId, network),
-    token.decimals
-  )
-  return Number.parseFloat(formAmount) > Number.parseFloat(balanceToFormat)
-}
-
-function renderDepositWarning(
-  userAddress: string | null,
-  depositResults: {
-    depositNearResult: Context["depositNearResult"]
-    depositEVMResult: Context["depositEVMResult"]
-    depositSolanaResult: Context["depositSolanaResult"]
-    depositTurboResult: Context["depositTurboResult"]
-    generatedAddressResult: Context["generatedAddressResult"]
-    snapshot: Context
-  }
-) {
-  let content: ReactNode = null
-  if (!userAddress) {
-    content = "Please connect your wallet to continue"
-  }
-
-  // Check for errors in deposit results
-  const results = [
-    depositResults.depositNearResult,
-    depositResults.depositEVMResult,
-    depositResults.depositSolanaResult,
-    depositResults.depositTurboResult,
-    depositResults.generatedAddressResult,
-    depositResults.snapshot.error,
-  ]
-
-  const errorResult = results.find(
-    (result) => result !== null && result.tag === "err"
-  )
-
-  if (errorResult) {
-    // Check if the errorResult has a 'reason' property
-    const status =
-      "reason" in errorResult.value
-        ? errorResult.value.reason
-        : "An error occurred. Please try again."
-
-    switch (status) {
-      case "ERR_SUBMITTING_TRANSACTION":
-        content =
-          "It seems the transaction was rejected in your wallet. Please try again."
-        break
-      case "ERR_GENERATING_ADDRESS":
-        content =
-          "It seems the deposit address was not generated. Please try re-selecting the token and network."
-        break
-      case "ERR_GET_BALANCE":
-        content = "It seems the balance is not available. Please try again."
-        break
-      default:
-        content = "An error occurred. Please try again."
-    }
-  }
-
-  if (!content) {
+  derivedToken: BaseTokenInfo,
+  network: BlockchainEnum | null
+): boolean | null {
+  if (!network) {
     return null
   }
 
-  return (
-    <Callout.Root size={"1"} color="red" mt="4">
-      <Callout.Icon>
-        <ExclamationTriangleIcon />
-      </Callout.Icon>
-      <Callout.Text>{content}</Callout.Text>
-    </Callout.Root>
-  )
+  const balanceToFormat = formatTokenValue(balance, derivedToken.decimals)
+  return Number.parseFloat(formAmount) > Number.parseFloat(balanceToFormat)
 }
 
 function UnderFeatureFlag() {
@@ -736,56 +650,4 @@ function renderDepositHint(
 
 function truncateUserAddress(hash: string) {
   return `${hash.slice(0, 12)}...${hash.slice(-12)}`
-}
-
-// TODO: When Aurora network will be added we should cover a special case for Aurora token on Aurora network
-//       network === BlockchainEnum.AURORA && defuseAssetId === "nep141:aurora"
-function getBalance(
-  token: SwappableToken,
-  balance: bigint,
-  nativeBalance: bigint,
-  defuseAssetId: string | null,
-  network: BlockchainEnum | null
-) {
-  // For user experience, both NEAR and wNEAR are treated as equivalent during the deposit process.
-  // This allows users to deposit either token seamlessly.
-  // When the balance is checked, it considers the total of both NEAR and wNEAR,
-  // ensuring that users can deposit without needing to convert between the two.
-  if (
-    isUnifiedToken(token) &&
-    token.unifiedAssetId === "near" &&
-    network === BlockchainEnum.NEAR
-  ) {
-    return balance + nativeBalance
-  }
-
-  if (isNativeToken(token)) {
-    return nativeBalance
-  }
-
-  if (network && isUnifiedToken(token)) {
-    const tokenAddress =
-      isUnifiedToken(token) &&
-      token.groupedTokens.find((t) => t.defuseAssetId === defuseAssetId)
-        ?.address
-    switch (network) {
-      case BlockchainEnum.NEAR:
-        return balance
-      case BlockchainEnum.ETHEREUM:
-      case BlockchainEnum.BASE:
-      case BlockchainEnum.ARBITRUM:
-      case BlockchainEnum.BITCOIN:
-      case BlockchainEnum.SOLANA:
-      case BlockchainEnum.DOGECOIN:
-      case BlockchainEnum.TURBOCHAIN:
-      case BlockchainEnum.AURORA:
-      case BlockchainEnum.XRPLEDGER:
-        return tokenAddress === "native" ? nativeBalance : balance
-      default:
-        network satisfies never
-        throw new Error("exhaustive check failed")
-    }
-  }
-
-  return balance
 }

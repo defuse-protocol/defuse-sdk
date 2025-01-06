@@ -1,9 +1,5 @@
 import { settings } from "src/config/settings"
-import {
-  assetNetworkAdapter,
-  reverseAssetNetworkAdapter,
-} from "src/utils/adapters"
-import { getDerivedToken } from "src/utils/tokenUtils"
+import { assert } from "src/utils/assert"
 import {
   type ActorRefFrom,
   and,
@@ -12,77 +8,37 @@ import {
   sendTo,
   setup,
 } from "xstate"
-import { logger } from "../../logger"
-import type { BaseTokenInfo } from "../../types/base"
+import type { BaseTokenInfo, SupportedChainName } from "../../types/base"
 import type { ChainType } from "../../types/deposit"
-import { BlockchainEnum } from "../../types/interfaces"
 import type { SwappableToken } from "../../types/swap"
-import { parseUnits } from "../../utils/parse"
-import { isBaseToken, isNativeToken, isUnifiedToken } from "../../utils/token"
-import { backgroundBalanceActor } from "./backgroundBalanceActor"
+import { depositEstimationMachine } from "./depositEstimationActor"
 import {
-  type Output as DepositEVMMachineOutput,
-  depositEVMMachine,
-} from "./depositEVMMachine"
-import { depositEstimateMaxValueActor } from "./depositEstimationActor"
-import {
-  type Output as DepositGenerateAddressMachineOutput,
-  depositGenerateAddressMachine,
-} from "./depositGenerateAddressMachine"
-import {
-  type Output as DepositNearMachineOutput,
-  depositNearMachine,
-} from "./depositNearMachine"
-import {
-  type Output as DepositSolanaMachineOutput,
-  depositSolanaMachine,
-} from "./depositSolanaMachine"
-import {
-  type Output as DepositTurboMachineOutput,
-  depositTurboMachine,
-} from "./depositTurboMachine"
+  type Events as DepositFormEvents,
+  type ParentEvents as DepositFormParentEvents,
+  depositFormReducer,
+} from "./depositFormReducer"
+import { depositGenerateAddressMachine } from "./depositGenerateAddressMachine"
+import { type Output as DepositOutput, depositMachine } from "./depositMachine"
+import { depositTokenBalanceMachine } from "./depositTokenBalanceMachine"
 import { poaBridgeInfoActor } from "./poaBridgeInfoActor"
-import { storageDepositAmountActor } from "./storageDepositAmountActor"
+import {
+  type PreparationOutput,
+  prepareDepositActor,
+} from "./prepareDepositActor"
+import { storageDepositAmountMachine } from "./storageDepositAmountMachine"
 
 export type Context = {
-  error: null | {
-    tag: "err"
-    value: {
-      reason: "ERR_GET_BALANCE" | "ERR_GET_STORAGE_DEPOSIT_AMOUNT"
-      error: Error | null
-    }
-  }
-  balance: bigint
-  nativeBalance: bigint
-  /**
-   * The maximum amount that available on the user's balance minus the cost of the gas.
-   * todo: either remove this, or make it work, now it is 0n for native tokens
-   */
-  maxDepositValue: bigint
-  formValues: {
-    token: SwappableToken | null
-    network: BlockchainEnum | null
-    amount: string
-  }
-  parsedFormValues: {
-    amount: bigint
-  }
-  depositGenerateAddressRef: ActorRefFrom<
-    typeof depositGenerateAddressMachine
-  > | null
+  depositGenerateAddressRef: ActorRefFrom<typeof depositGenerateAddressMachine>
   poaBridgeInfoRef: ActorRefFrom<typeof poaBridgeInfoActor>
   tokenList: SwappableToken[]
   userAddress: string | null
   userChainType: ChainType | null
-  defuseAssetId: string | null
-  tokenAddress: string | null
-  generatedAddressResult: DepositGenerateAddressMachineOutput | null
-  depositNearResult: DepositNearMachineOutput | null
-  depositEVMResult: DepositEVMMachineOutput | null
-  depositSolanaResult: DepositSolanaMachineOutput | null
-  depositTurboResult: DepositTurboMachineOutput | null
-  derivedToken: BaseTokenInfo | null
-  storageDepositRequired: bigint | null
+  depositFormRef: ActorRefFrom<typeof depositFormReducer>
+  preparationOutput: PreparationOutput | null
+  storageDepositAmountRef: ActorRefFrom<typeof storageDepositAmountMachine>
+  depositTokenBalanceRef: ActorRefFrom<typeof depositTokenBalanceMachine>
+  depositEstimationRef: ActorRefFrom<typeof depositEstimationMachine>
+  depositOutput: DepositOutput | null
 }
 
 export const depositUIMachine = setup({
@@ -93,18 +49,7 @@ export const depositUIMachine = setup({
     context: {} as Context,
     events: {} as
       | {
-          type: "INPUT"
-          params: Partial<{
-            token: SwappableToken
-            network: BlockchainEnum | null
-            amount: string
-          }>
-        }
-      | {
           type: "SUBMIT"
-        }
-      | {
-          type: "AUTO_SUBMIT"
         }
       | {
           type: "LOGIN"
@@ -115,7 +60,9 @@ export const depositUIMachine = setup({
         }
       | {
           type: "LOGOUT"
-        },
+        }
+      | DepositFormEvents
+      | DepositFormParentEvents,
     children: {} as {
       depositNearRef: "depositNearActor"
       depositEVMRef: "depositEVMActor"
@@ -124,245 +71,150 @@ export const depositUIMachine = setup({
     },
   },
   actors: {
-    fetchWalletAddressBalanceActor: backgroundBalanceActor,
-    depositNearActor: depositNearMachine,
-    depositGenerateAddressActor: depositGenerateAddressMachine,
     poaBridgeInfoActor: poaBridgeInfoActor,
-    depositEVMActor: depositEVMMachine,
-    depositSolanaActor: depositSolanaMachine,
-    depositEstimateMaxValueActor: depositEstimateMaxValueActor,
-    depositTurboActor: depositTurboMachine,
-    fetchStorageDepositAmountActor: storageDepositAmountActor,
+    depositNearActor: depositMachine,
+    depositEVMActor: depositMachine,
+    depositSolanaActor: depositMachine,
+    depositTurboActor: depositMachine,
+    prepareDepositActor: prepareDepositActor,
+    depositFormActor: depositFormReducer,
+    depositGenerateAddressActor: depositGenerateAddressMachine,
+    storageDepositAmountActor: storageDepositAmountMachine,
+    depositTokenBalanceActor: depositTokenBalanceMachine,
+    depositEstimationActor: depositEstimationMachine,
   },
   actions: {
-    logError: (_, event: { error: unknown }) => {
-      logger.error(event.error)
-    },
-    setError: assign({
-      error: (_, error: NonNullable<Context["error"]>["value"]) => ({
-        tag: "err" as const,
-        value: error,
-      }),
+    setDepositOutput: assign({
+      depositOutput: (_, value: DepositOutput) => value,
     }),
-    setFormValues: assign({
-      formValues: (
-        { context },
-        {
-          data,
-        }: {
-          data: Partial<{
-            token: SwappableToken
-            network: BlockchainEnum | null
-            amount: string
-          }>
-        }
-      ) => ({
-        ...context.formValues,
-        ...data,
-      }),
+    setPreparationOutput: assign({
+      preparationOutput: (_, val: Context["preparationOutput"]) => val,
     }),
-    setDerivedToken: assign({
-      derivedToken: ({ context }) => {
-        if (
-          context.formValues.token == null ||
-          context.formValues.network == null
-        ) {
-          return null
-        }
 
-        const derivedToken = getDerivedToken(
-          context.formValues.token,
-          reverseAssetNetworkAdapter[context.formValues.network]
-        )
-
-        // This isn't possible condition, if this happens, we need to fix the token list
-        if (derivedToken == null) {
-          throw new Error("ERR_TOKEN_NOT_FOUND")
-        }
-        return derivedToken
-      },
-    }),
-    parseFormValues: assign({
-      parsedFormValues: ({ context }) => {
-        try {
-          return {
-            amount: parseUnits(
-              context.formValues.amount,
-              context.formValues.token?.decimals ?? 0
-            ),
-            network: context.formValues.network,
-            token: context.formValues.token,
-          }
-        } catch {
-          return {
-            amount: 0n,
-            network: null,
-            token: null,
-          }
-        }
-      },
-    }),
-    clearError: assign({ error: null }),
-    setDepositNearResult: assign({
-      depositNearResult: (_, value: DepositNearMachineOutput) => value,
-    }),
-    setDepositEVMResult: assign({
-      depositEVMResult: (_, value: DepositEVMMachineOutput) => value,
-    }),
-    setDepositSolanaResult: assign({
-      depositSolanaResult: (_, value: DepositSolanaMachineOutput) => value,
-    }),
-    setDepositTurboResult: assign({
-      depositTurboResult: (_, value: DepositTurboMachineOutput) => value,
-    }),
-    setDepositGenerateAddressResult: assign({
-      generatedAddressResult: (_, value: DepositGenerateAddressMachineOutput) =>
-        value,
-    }),
-    clearDepositResult: assign({ depositNearResult: null }),
-    clearDepositEVMResult: assign({ depositEVMResult: null }),
-    clearGeneratedAddressResult: assign({ generatedAddressResult: null }),
-    clearDepositSolanaResult: assign({ depositSolanaResult: null }),
-    clearDepositTurboResult: assign({ depositTurboResult: null }),
     clearResults: assign({
-      depositNearResult: null,
-      depositEVMResult: null,
-      depositSolanaResult: null,
-      depositTurboResult: null,
-      generatedAddressResult: null,
+      depositOutput: null,
     }),
-
-    extractAssetIds: assign({
-      defuseAssetId: ({ context }) => {
-        if (context.formValues.token == null) {
-          return null
-        }
-        if (isBaseToken(context.formValues.token)) {
-          return context.formValues.token.defuseAssetId
-        }
-        return (
-          context.formValues.token.groupedTokens.find(
-            (token) =>
-              assetNetworkAdapter[token.chainName] ===
-              context.formValues.network
-          )?.defuseAssetId ?? null
-        )
-      },
-      tokenAddress: ({ context }) => {
-        if (context.formValues.token == null) {
-          return null
-        }
-        if (isBaseToken(context.formValues.token)) {
-          return context.formValues.token.address
-        }
-        return (
-          context.formValues.token.groupedTokens.find(
-            (token) =>
-              assetNetworkAdapter[token.chainName] ===
-              context.formValues.network
-          )?.address ?? null
-        )
-      },
-    }),
-
     clearUIDepositAmount: () => {
       throw new Error("not implemented")
     },
-    clearBalances: assign({
-      balance: 0n,
-      nativeBalance: 0n,
+    clearPreparationOutput: assign({
+      preparationOutput: null,
     }),
 
     fetchPOABridgeInfo: sendTo("poaBridgeInfoRef", { type: "FETCH" }),
+
+    relayToDepositFormRef: sendTo(
+      "depositFormRef",
+      (_, event: DepositFormEvents) => event
+    ),
+
+    requestGenerateAddress: sendTo(
+      "depositGenerateAddressRef",
+      ({ context }) => {
+        return {
+          type: "REQUEST_GENERATE_ADDRESS",
+          params: {
+            userAddress: context.userAddress,
+            blockchain: context.depositFormRef.getSnapshot().context.blockchain,
+            userChainType: context.userChainType,
+          },
+        }
+      }
+    ),
+    requestStorageDepositAmount: sendTo(
+      "storageDepositAmountRef",
+      ({ context }) => {
+        return {
+          type: "REQUEST_STORAGE_DEPOSIT",
+          params: {
+            token: context.depositFormRef.getSnapshot().context.token,
+            userAccountId: context.userAddress,
+          },
+        }
+      }
+    ),
+    requestBalanceRefresh: sendTo("depositTokenBalanceRef", ({ context }) => {
+      return {
+        type: "REQUEST_BALANCE_REFRESH",
+        params: {
+          derivedToken:
+            context.depositFormRef.getSnapshot().context.derivedToken,
+          userAddress: context.userAddress,
+          blockchain: context.depositFormRef.getSnapshot().context.blockchain,
+        },
+      }
+    }),
   },
   guards: {
     isTokenValid: ({ context }) => {
-      return !!context.formValues.token
+      return !!context.depositFormRef.getSnapshot().context.token
     },
     isNetworkValid: ({ context }) => {
-      return !!context.formValues.network
+      return !!context.depositFormRef.getSnapshot().context.blockchain
     },
     isLoggedIn: ({ context }) => {
       return !!context.userAddress
     },
     isChainNearSelected: ({ context }) => {
-      return context.formValues.network === BlockchainEnum.NEAR
+      return context.depositFormRef.getSnapshot().context.blockchain === "near"
     },
     isChainEVMSelected: ({ context }) => {
+      const blockchain = context.depositFormRef.getSnapshot().context.blockchain
       return (
-        context.formValues.network === BlockchainEnum.ETHEREUM ||
-        context.formValues.network === BlockchainEnum.BASE ||
-        context.formValues.network === BlockchainEnum.ARBITRUM
+        blockchain === "eth" ||
+        blockchain === "base" ||
+        blockchain === "arbitrum"
       )
     },
     isChainSolanaSelected: ({ context }) => {
-      return context.formValues.network === BlockchainEnum.SOLANA
+      return (
+        context.depositFormRef.getSnapshot().context.blockchain === "solana"
+      )
     },
     isChainAuroraEngineSelected: ({ context }) => {
-      return (
-        context.formValues.network === BlockchainEnum.TURBOCHAIN ||
-        context.formValues.network === BlockchainEnum.AURORA
-      )
-    },
-    isBalanceSufficientForEstimate: ({ context }) => {
-      if (context.formValues.token == null) {
-        return false
-      }
-      const token = context.formValues.token
-      // For all Native tokens, we should validate wallet native balance
-      if (
-        (isUnifiedToken(token) && token.groupedTokens.some(isNativeToken)) ||
-        (isBaseToken(token) && isNativeToken(token))
-      ) {
-        return context.nativeBalance > 0n
-      }
-      return context.balance > 0n
-    },
-    isPassiveDepositEnabledForSelectedChain: ({ context }) => {
-      return (
-        context.formValues.network != null &&
-        context.formValues.network !== BlockchainEnum.NEAR &&
-        context.formValues.network !== BlockchainEnum.TURBOCHAIN &&
-        context.formValues.network !== BlockchainEnum.AURORA &&
-        !!context.userAddress &&
-        !!context.defuseAssetId
-      )
+      const blockchain = context.depositFormRef.getSnapshot().context.blockchain
+      return blockchain === "turbochain" || blockchain === "aurora"
     },
     isOk: (_, a: { tag: "err" | "ok" }) => a.tag === "ok",
+    isDepositParamsComplete: and([
+      "isTokenValid",
+      "isNetworkValid",
+      "isLoggedIn",
+    ]),
   },
 }).createMachine({
-  /** @xstate-layout N4IgpgJg5mDOIC5QTABwPawJYBcC0ArlgMQAyA8gOICSAcgNoAMAuoqBtjlugHZsgAPRHgAcIgEwA6AGziALHMbiAjI0UjZAGhABPYcuUB2ZZIDMy6dMbLx0uaYCcD8QF8X2lB1yESFSuQBVABUmViQQLy5efiEEPFlGSQk5AFZxRhFDcWcHaW09OIMRUxkHFMyVOWdxERS3DzRMbyJJSFwsHihiAGUAgCEAWWoQln5I7j5w2LwHROkUxkZTRkMHR1VlfOFxBclGSxTDO2U5ZVN503qQTyb8FrauTp7+oZDlMPZbiZjhZ0kalKmDQ7aQOI6bXTCDRJOSGRhghwKawiOTSK43Tg+VoQdpPXqDYb0cQfCJfaJTX4iSQKRF2cSmUxZZQpBxbBAlQwSdKAlmGTmpBzoxqY+44x5dfGveimEnjcmgaYGEyMmwODRyTIWLSQhC5SSGOT0kQnI6KWZyIWRLEPDpdOgABWCoTGZMmCuEjJS-zVVSU0hOp1ZOrwfLkMlBoJSJxUBtc7muwuaWGxuKgklQACcwHhM2gAIYZvNRHjEZ3hOVuwQew2lbJrdKGcynFJsvCojnM7LnexgoGW27WsW29NZ1AFosTYgQXhgSSwHBF2cYpMp8Uj-OF4tlz6cb4UwqzaSSAxHY01ZmnVvSOHHjJWVZR5QI-si5M2zrrsebiatARgADGBDFgA+lmACORBZgAtmAPA4LAU4znOC44EuiZ3G+Q4frmX4Trwv4AUBEygWAEFYNBsHwdupK7vKVaFCoR4GikCyrIaDKHGyVhhhqjI1I2jJgha8bLhhq7Djh47FgRgEgeBkFgDBcGwJIABGeYADZ5jw-6zlgEAaWAiE8HpPAAG7oAA1rOABmYA4P+AAWADqmmGTgACCEAQFmsCwH0mnabpABKYA2dRFY-IUWr6nCazSJkDIOBCBRtrIexKFGpyWMaYIviu75ppJ374WAf6ycR8nkYplEqepWk6XpBlGWAGYZugGbplpOA2R1UGSHZDkuW59leT5cD+YFjWheFozlq6UV4AYli3tkVT2BYpgpHkwZAlSGrZDYKSotIDKWPlYmFZ+Uk-mVhFyaRClKfBkgwCZ34fvphmlnNO7tHRippFI4gg4eYgqCiIhskCexZEJzjbeIcUXYOqbXSVPAyURvAkWRFHKa9sGtROn3NaW7wurRlaKvIiTFAGRyMiIawtjqMMrNkBoI7IyMiehqNrsVeGY3dFU41V+MvW9xNrqL2M8MB0sfV004mZIHQWdZkiiZQRObmAY2+bAM0RQt+5LRski5PCINHIwUZlK2qhzBkzMrMUqKPijopo0L0lyw9eM1QT84dXmMB4KJ6tk6rpma7Z9lOd0OBhzAAAi6EeVB6AEHBJu-TR-3U-oFhessmrWE4iirGy9JzE+W2zPI16MoY3uYb7o43fhOJZv+ODAaJuNPbV0ffabVOLZtDj-AlaqdkUaRsizZjzGolhgk+Tjt+J2Fdxj2vVf3g-ocP1XPSpX1GfQFPzZP5tnGox42AYGpGPMJzL1tq8LCdm9OIKPmVofaC33sLQ+fcB5DwlsHF6eZs65xwMZOOVk0KRAAKLziwFBRcAw8wCAAGqaQIGAfOsozbujiFXfU5Q7BrDUCaOQbJQzhn2OcDIBpYTKB3rAAgqkoK4HFLQMABYggCGQercyqDtboWEQWMhlMi5RVNFbOk1hrBKiRq2WwUg1DmCRqiMECw8pAIHC0Xh-DBG2nQQQgYYiJEa2kaJGxAwFF3yUfuFRuRDQGn5JGKGwYziGCtslRY5QVCzHOJcUxr45x8IETgcU3R0ANTzPY2Okj44yMiMk1Jbi-rFmUf6MwcJUQoiqBYcQTsjy5FyFtU61hTRtxiSuCxCTxRBAIBmVS6B0lIUcVrUSnTunoHyYXQpnjimMgYUjf08xshslfuGOZJxrDyBUDvK6ftbrlXlmfSWKlQ6FgjlHK+xBWrtU6qgbqvUMz9UGknFOxywAZ0iFnHOecwoTw8ZQi2dgZDV3ONedIhpoY2BhOcZK6RHD22EvGHg6AUDwHCKJHwiiJm-PSEoZ+p4bDGmOilfQYS9g7DWKcY0GprybKwlAdFe5flPmOjihKeKLyEriJkRIaRyi5DOJqf01K0ZXzpQDfQzMShLG2rIZQIglDGCYcGTkiRVihMsFUJGW1BWgOzNsuikVzZ8TMICIJ5wdhKE-sGY6XoWKNlWclREjgtUSTARi8Z9L6JLUbDPZs5gWQZFNaYVsnIJU7GZozEFYgnV7w3OAgOlVHrn1qiK4uhRQQmB9cyWYxRZCBuDHYKk3L6zLWMYAhowCO7atwv7XZgcR4E3qkFMAyap50mpA+GVYhFg2AValbaJhMprHYT6WwUaioup2fdeNQcL5qSmrpMeTb3GusBoiNtZQO2yrWT24QsISiFq2qocwhhASjvRrGmtU660vQbY1bWM5m3mwkF6O2VRTrHqWDsVsCgTB8hZKYZuoI1mnt1SLC94sE0HMJu9EmtKl3usVK23xx7jq2DSBoJ2TgZD-qRslDQhwuTAfHaVMDCsYEzqVjBhdD6GUsjDEhlihp5nocCeCs49JAQNmjAKlpl0aVnurZO8D07R4UdliRxWesYPUY9ScNU1JHASHmPYeYlgnasf-f+mk+x0g7EIzGgTYtSMQdgSpUTw5Y7SemE+6kzgZVAhUPILatcwymC4YcRY9JAwWD01Widhn9kmeQqnbMolLP6DsCUDNfrs30kWYoGznYgQsls2qHz3dQOCaM8JkOTzw4hfQlRuDorCgsi9FFrNAba5IxCZ2ekBxxVpYPnGoTV7Dm5ZOQVizRWU2iB2PqbidT32adrrsFEPKxtJaWMJMtZiK3Ov0z+XuAEoGnzI0m7rLbMiz2ZvilQMql46gSpF5YdgMi21WNwnjAt5u+Z7kfFbkQAszuFRth+20Z4sTVCyOwihtoBIKHyRI9DjD7csJyRr4ClvH2gcZmd8CPk4DC4UBQJRnDktw65s4rMAfJT2MdVE8J4SnCRhD6SUOHu3Ce6PLrBT4O-AsHsYFEh-VGOXrYY8pxzD2yxfFHh8SrGdDkRmMRSP-3WuZixa8ztFhBlSmayQfrkT2AyAsXTV3zH88SdY2xIvXuUP-UxVzGRFiyrEI7QJ-79TrL5KdMoThLszdiW0gXUBcnaTSbEWnxX-1UjhJC8JlhW6tmtaXDIJpMhODUHzyxWvOjDJ6brr3KaOLHgSijqwFxc0FBsEeAwzhkhglBMzOMbggA */
+  /** @xstate-layout N4IgpgJg5mDOIC5QTABwPawJYBcC0ArlgMQAyA8gOICSAcgNoAMAuoqBtjlugHZsgAPRAEZGADgB0YgKyiALHLFzpAZnEA2aQBoQAT0R51jYRPUAmMwHZGcyyuHqjlgL7OdKDrkIkKlcgFUAFSZWJBBPLl5+IQQVCwlpaTFLaUtbSzNxOR19BEMzSVSkuWElYQBOcvVy13c0TC8iCUhcLB4oYgARAFEABXIAZWpAgH0AMXIAJQBZCQAqEP4I7j4wmOEHCTizdRU5culqhWFLHIM4lSlys1KHOTNVFNqQDwb8Jpaudq6+weHxqbTcbUbqkToDEYAYQAEgBBWiUbqdRZhZZRNYiSwSKqMcq49SWSzXFQHM55DZY3YKC64yxKMTCZ6vTjeZoQVrfAb+ABC02GKPYbxW0UQ1kuGzEmWk5UsVI2ZNS2OS6gZcnMYhUYnUjLcL3qLI+7K+HS5vP5wlCgs4woxCBVWIU5ms10JmrJmXKCU0ckYdjpSksJyZ+saWDZHJNPL5wTMlvCQvRoBiKpMNwqGxO8l9ZJUJNMFWMD0zjmkcmDEVZnzakbNwRUcbRqyTiEcJhJDjEBwOYh7wjJtnUEkUaROWXxD3Lb0rRurEgATnAwDgRqgFwA3bgEWArheoACGc73kR4xAF8eticEiEUWwHOysZiq9myehENiHao1wiKGcqk4NYZVu086Lsuq5gBu6BbjuaAHkeKynhaSwJk2V6xD6Eg3JUwgqES1z7C+uTfnIWyyqWSSMLiOF2P+obhsaEjgfuh7HsQEC8GAEhtGu6AANaccydFAVAjG7nBx4INx6AAMbwbwIRno2IqxDImElI4PZYTIKg5qIEiBjsyQOCSuLSLR7yATOwFMeJCFgHOc7oHOjEADZHgAZk5AC2EiCRZ9GzjZLErJJPA8bJx4KSwyEXqhMSatI2L4rIZi4XYJQ5uUJE+ikcTVOUwjqWZup+aysAEAARl5uDGrQYAHoEAhsRxXFhXxAkhjgdUHpMYDuYpKHKYVaQJNY2r3OoaqFTpr4ILIpglKlBblGINidmWJWdWVlXVTgxrdAAatMjXNTwnFSfxvmdYd0y9f10WooNtrDSRqSMONOxTXIM1EdKEimeYDiJAoaRmOZ21VTV1YDOgbk8HuJ3sWdrU8Zdfkw3De53QNsVDbYjDYrKMhpCq0oPO6koSJmZj3EkgO7ODTTlZDe3VoEBBzhV6CIy1F0dRE7Oc+g2MPVarSXustiXFqKiJDKOFxH2s3fVixgEg4QNpYwKiuLqPDoCg8BhKVRAxeLcUGESCRWLhuzCDsGRamSeDKJIJIWJkKsKMo6iM5ZEZm8eyl4PY1t+nbDsFKkztSlTewkioKqdniLibRWhoRlxEAuWAgc2s2CDKJ6kqJ7Kk1VDcpyzSqUg2BsJTfmkDLFXU6f+wxC6wEuMGQdBQVyahSm2rY2KVDKk3SL69jO9IZhbKl2rfiqmpaoVfsBdZYnBZeQ8F5stj3onyRxIG305u9pElAoDLauIvrr8zu21fVc6NXnEtvhq+nvZRiSZOIpQFTS2SD6e4gYUyp1blOJmO0obtBum-R6uNnpZCkJPUsPptaFTJJmIc61JTlE1HiNQLc9RtwkI-OBUAMZ7nhogsWQcUGBn0jcKkPYZT7HUO6LKXpZDay1FUDID9YGs3aILLm9DzzmyGr6SQpRJoZAKJRAkZh+y4X+uIWQE1SzGDELrZwQA */
   id: "deposit-ui",
 
-  context: ({ input, spawn }) => ({
-    error: null,
-    balance: 0n,
-    nativeBalance: 0n,
-    maxDepositValue: 0n,
-    formValues: {
-      token: null,
-      network: null,
-      amount: "",
-    },
-    parsedFormValues: {
-      amount: 0n,
-    },
-    depositNearResult: null,
-    depositEVMResult: null,
-    depositSolanaResult: null,
-    depositTurboResult: null,
-    depositGenerateAddressRef: null,
+  context: ({ input, spawn, self }) => ({
     tokenList: input.tokenList,
     userAddress: null,
     userChainType: null,
-    defuseAssetId: null,
-    tokenAddress: null,
-    generatedAddressResult: null,
+    preparationOutput: null,
+    depositOutput: null,
     poaBridgeInfoRef: spawn("poaBridgeInfoActor", {
       id: "poaBridgeInfoRef",
     }),
-    storageDepositRequired: null,
-    derivedToken: null,
+    depositFormRef: spawn("depositFormActor", {
+      id: "depositFormRef",
+      input: { parentRef: self },
+    }),
+    depositGenerateAddressRef: spawn("depositGenerateAddressActor", {
+      id: "depositGenerateAddressRef",
+      input: { parentRef: self },
+    }),
+    storageDepositAmountRef: spawn("storageDepositAmountActor", {
+      id: "storageDepositAmountRef",
+      input: { parentRef: self },
+    }),
+    depositTokenBalanceRef: spawn("depositTokenBalanceActor", {
+      id: "depositTokenBalanceRef",
+      input: { parentRef: self },
+    }),
+    depositEstimationRef: spawn("depositEstimationActor", {
+      id: "depositEstimationRef",
+      input: { parentRef: self },
+    }),
   }),
 
   entry: ["fetchPOABridgeInfo"],
@@ -380,14 +232,8 @@ export const depositUIMachine = setup({
     LOGOUT: {
       actions: [
         "clearResults",
-        "clearBalances",
         assign({
           userAddress: () => "",
-          formValues: {
-            token: null,
-            network: null,
-            amount: "",
-          },
         }),
       ],
     },
@@ -398,297 +244,105 @@ export const depositUIMachine = setup({
       initial: "idle",
 
       on: {
+        "DEPOSIT_FORM.*": {
+          target: "editing",
+          actions: [
+            {
+              type: "relayToDepositFormRef",
+              params: ({ event }) => event,
+            },
+          ],
+        },
+        DEPOSIT_FORM_FIELDS_CHANGED: ".reset_previous_preparation",
         SUBMIT: [
           {
             target: "submittingNearTx",
             guard: "isChainNearSelected",
-            actions: "clearDepositResult",
+            actions: "clearResults",
+            reenter: true,
           },
           {
             target: "submittingEVMTx",
-            reenter: true,
             guard: "isChainEVMSelected",
+            actions: "clearResults",
+            reenter: true,
           },
           {
             target: "submittingSolanaTx",
-            reenter: true,
             guard: "isChainSolanaSelected",
+            actions: "clearResults",
+            reenter: true,
           },
           {
             target: "submittingTurboTx",
-            reenter: true,
             guard: "isChainAuroraEngineSelected",
+            actions: "clearResults",
+            reenter: true,
           },
         ],
-
-        INPUT: {
-          target: ".pre-preparation",
-          actions: [
-            "clearError",
-            "clearResults",
-            {
-              type: "setFormValues",
-              params: ({ event }) => ({ data: event.params }),
-            },
-            "setDerivedToken",
-            "parseFormValues",
-          ],
-        },
       },
 
       states: {
         idle: {},
 
-        "pre-preparation": {
-          always: {
-            target: "preparation",
-            guard: and(["isTokenValid", "isNetworkValid", "isLoggedIn"]),
-          },
+        reset_previous_preparation: {
+          always: [
+            {
+              target: "preparation",
+              guard: "isDepositParamsComplete",
+            },
+            {
+              target: "idle",
+            },
+          ],
+          entry: ["clearPreparationOutput"],
         },
 
         preparation: {
-          entry: "extractAssetIds",
-          initial: "execution_requirements",
+          entry: [
+            "requestGenerateAddress",
+            "requestStorageDepositAmount",
+            "requestBalanceRefresh",
+          ],
+          invoke: {
+            src: "prepareDepositActor",
 
-          states: {
-            execution_requirements: {
-              type: "parallel",
-
-              states: {
-                balance: {
-                  initial: "idle",
-                  states: {
-                    idle: {
-                      invoke: {
-                        id: "fetchWalletAddressBalanceRef",
-                        src: "fetchWalletAddressBalanceActor",
-
-                        input: ({ context }: { context: Context }) => {
-                          assert(context.formValues.network, "network is null")
-                          assert(context.defuseAssetId, "defuseAssetId is null")
-                          assert(context.tokenAddress, "tokenAddress is null")
-                          assert(context.userAddress, "userAddress is null")
-
-                          return {
-                            defuseAssetId: context.defuseAssetId,
-                            tokenAddress: context.tokenAddress,
-                            userAddress: context.userAddress,
-                            network: context.formValues.network,
-                            token: context.formValues.token,
-                          }
-                        },
-
-                        onDone: {
-                          target: "done",
-                          actions: assign({
-                            balance: ({ event }) => event.output?.balance ?? 0n,
-                            nativeBalance: ({ event }) =>
-                              event.output?.nativeBalance ?? 0n,
-                          }),
-                        },
-
-                        onError: {
-                          target: "done",
-                          actions: [
-                            {
-                              type: "logError",
-                              params: ({ event }) => event,
-                            },
-                            {
-                              type: "setError",
-                              params: () => {
-                                return {
-                                  reason: "ERR_GET_BALANCE",
-                                  error: null,
-                                }
-                              },
-                            },
-                          ],
-                        },
-                      },
-                    },
-
-                    done: {
-                      type: "final",
-                    },
-                  },
-                },
-
-                generating: {
-                  initial: "idle",
-
-                  states: {
-                    idle: {
-                      always: [
-                        {
-                          target: "execution_generating",
-                          guard: "isPassiveDepositEnabledForSelectedChain",
-                        },
-                        {
-                          target: "done",
-                        },
-                      ],
-                    },
-                    execution_generating: {
-                      invoke: {
-                        id: "depositGenerateAddressRef",
-                        src: "depositGenerateAddressActor",
-
-                        input: ({ context }) => {
-                          assert(
-                            context.userAddress != null,
-                            "userAddress is null"
-                          )
-                          assert(
-                            context.userChainType != null,
-                            "userChainType is null"
-                          )
-                          assert(context.formValues.network, "network is null")
-
-                          return {
-                            userAddress: context.userAddress,
-                            userChainType: context.userChainType,
-                            chain: context.formValues.network,
-                          }
-                        },
-
-                        onDone: {
-                          target: "done",
-
-                          actions: [
-                            {
-                              type: "setDepositGenerateAddressResult",
-                              params: ({ event }) => {
-                                return event.output
-                              },
-                            },
-                          ],
-                        },
-                      },
-                    },
-
-                    done: {
-                      type: "final",
-                    },
-                  },
-                },
-
-                "storage-deposit": {
-                  initial: "idle",
-                  states: {
-                    idle: {
-                      invoke: {
-                        id: "fetchStorageDepositAmountRef",
-                        src: "fetchStorageDepositAmountActor",
-
-                        input: ({ context }: { context: Context }) => {
-                          assert(context.userAddress, "userAddress is null")
-                          assert(context.derivedToken, "derivedToken is null")
-
-                          return {
-                            token: context.derivedToken,
-                            userAccountId: context.userAddress,
-                          }
-                        },
-
-                        onDone: {
-                          target: "done",
-                          actions: assign({
-                            storageDepositRequired: ({ event }) => event.output,
-                          }),
-                          reenter: true,
-                        },
-
-                        onError: {
-                          target: "done",
-                          actions: [
-                            {
-                              type: "logError",
-                              params: ({ event }) => event,
-                            },
-                            {
-                              type: "setError",
-                              params: () => {
-                                return {
-                                  reason: "ERR_GET_STORAGE_DEPOSIT_AMOUNT",
-                                  error: null,
-                                }
-                              },
-                            },
-                          ],
-                          reenter: true,
-                        },
-                      },
-                    },
-
-                    done: {
-                      type: "final",
-                    },
-                  },
-                },
-              },
-
-              onDone: "direct_deposit_requirements",
+            input: ({ context }) => {
+              assert(context.userAddress, "userAddress is null")
+              return {
+                userAddress: context.userAddress,
+                formValues: context.depositFormRef.getSnapshot().context,
+                depositGenerateAddressRef: context.depositGenerateAddressRef,
+                storageDepositAmountRef: context.storageDepositAmountRef,
+                depositTokenBalanceRef: context.depositTokenBalanceRef,
+                depositEstimationRef: context.depositEstimationRef,
+              }
             },
 
-            direct_deposit_requirements: {
-              initial: "idle",
-
-              states: {
-                idle: {
-                  always: [
-                    {
-                      target: "amount",
-                      guard: "isBalanceSufficientForEstimate",
-                    },
-                    {
-                      target: "done",
-                    },
-                  ],
-                },
-                amount: {
-                  invoke: {
-                    id: "depositEstimateMaxValueRef",
-                    src: "depositEstimateMaxValueActor",
-
-                    input: ({ context }: { context: Context }) => {
-                      assert(context.formValues.token, "token is null")
-                      assert(context.formValues.network, "network is null")
-                      assert(context.tokenAddress, "tokenAddress is null")
-                      assert(context.userAddress, "userAddress is null")
-
-                      return {
-                        token: context.formValues.token,
-                        network: context.formValues.network,
-                        balance: context.balance,
-                        nativeBalance: context.nativeBalance,
-                        tokenAddress: context.tokenAddress as string,
-                        userAddress: context.userAddress,
-                        // It is optional cause for NEAR estimation we don't need to generate an address
-                        generateAddress:
-                          context.generatedAddressResult?.tag === "ok"
-                            ? context.generatedAddressResult.value
-                                .depositAddress
-                            : null,
-                      }
-                    },
-
-                    onDone: {
-                      target: "done",
-                      actions: assign({
-                        maxDepositValue: ({ event }) => event.output,
-                      }),
-                    },
+            onError: {
+              target: "idle",
+              actions: {
+                type: "setPreparationOutput",
+                params: ({ event }) => ({
+                  tag: "err",
+                  value: {
+                    reason: "ERR_PREPARING_DEPOSIT",
+                    error: event.error,
                   },
-                },
-                done: {
-                  type: "final",
-                },
+                }),
               },
+              reenter: true,
+            },
+
+            onDone: {
+              target: "idle",
+              actions: {
+                type: "setPreparationOutput",
+                params: ({ event }) => event.output,
+              },
+              reenter: true,
             },
           },
-
-          onDone: "idle",
         },
       },
     },
@@ -697,164 +351,108 @@ export const depositUIMachine = setup({
       invoke: {
         id: "depositNearRef",
         src: "depositNearActor",
-
-        input: ({ context }) => {
-          assert(context.formValues.token, "token is null")
-          assert(context.userAddress, "userAddress is null")
+        input: ({ context, event }) => {
+          assertEvent(event, "SUBMIT")
+          const params = extractDepositParams(context)
           assert(
-            context.storageDepositRequired != null,
+            params.storageDepositRequired !== null,
             "storageDepositRequired is null"
           )
-
           return {
-            balance: context.balance,
-            amount: context.parsedFormValues.amount,
-            asset: context.formValues.token,
-            accountId: context.userAddress,
-            storageDepositRequired: context.storageDepositRequired,
+            ...params,
+            type: "depositNear",
+            storageDepositRequired: params.storageDepositRequired,
           }
         },
-
         onDone: {
-          target: "editing.preparation",
-
+          target: "editing.reset_previous_preparation",
           actions: [
             {
-              type: "setDepositNearResult",
+              type: "setDepositOutput",
               params: ({ event }) => event.output,
             },
             { type: "clearUIDepositAmount" },
           ],
-
           reenter: true,
         },
       },
     },
-
     submittingEVMTx: {
       invoke: {
         id: "depositEVMRef",
         src: "depositEVMActor",
-
         input: ({ context, event }) => {
           assertEvent(event, "SUBMIT")
-          const depositAddress =
-            context.generatedAddressResult?.tag === "ok"
-              ? context.generatedAddressResult.value.depositAddress
-              : null
-
-          assert(context.formValues.network, "network is null")
-          assert(context.userAddress, "userAddress is null")
-          assert(context.tokenAddress, "tokenAddress is null")
-          assert(depositAddress, "depositAddress is null")
-          assert(context.formValues.token, "token is null")
-
+          const params = extractDepositParams(context)
+          assert(params.depositAddress, "depositAddress is null")
           return {
-            balance: context.balance,
-            amount: context.parsedFormValues.amount,
-            asset: context.formValues.token,
-            accountId: context.userAddress,
-            tokenAddress: context.tokenAddress,
-            depositAddress,
-            chainName: reverseAssetNetworkAdapter[context.formValues.network],
+            ...params,
+            type: "depositEVM",
+            depositAddress: params.depositAddress,
           }
         },
-
         onDone: {
-          target: "editing.preparation",
-
+          target: "editing.reset_previous_preparation",
           actions: [
             {
-              type: "setDepositEVMResult",
+              type: "setDepositOutput",
               params: ({ event }) => event.output,
             },
             { type: "clearUIDepositAmount" },
           ],
-
           reenter: true,
         },
       },
     },
-
     submittingSolanaTx: {
       invoke: {
         id: "depositSolanaRef",
         src: "depositSolanaActor",
-
         input: ({ context, event }) => {
           assertEvent(event, "SUBMIT")
-          const depositAddress =
-            context.generatedAddressResult?.tag === "ok"
-              ? context.generatedAddressResult.value.depositAddress
-              : null
-
-          assert(context.formValues.network, "network is null")
-          assert(context.userAddress, "userAddress is null")
-          assert(context.tokenAddress, "tokenAddress is null")
-          assert(depositAddress, "depositAddress is null")
-          assert(context.formValues.token, "token is null")
-
+          const params = extractDepositParams(context)
+          assert(params.depositAddress, "depositAddress is null")
           return {
-            balance: context.balance,
-            amount: context.parsedFormValues.amount,
-            asset: context.formValues.token,
-            accountId: context.userAddress,
-            tokenAddress: context.tokenAddress,
-            depositAddress,
+            ...params,
+            type: "depositSolana",
+            depositAddress: params.depositAddress,
           }
         },
-
         onDone: {
-          target: "editing.preparation",
-
+          target: "editing.reset_previous_preparation",
           actions: [
             {
-              type: "setDepositSolanaResult",
+              type: "setDepositOutput",
               params: ({ event }) => event.output,
             },
             { type: "clearUIDepositAmount" },
           ],
-
           reenter: true,
         },
       },
     },
-
     submittingTurboTx: {
       invoke: {
         id: "depositTurboRef",
         src: "depositTurboActor",
-
         input: ({ context, event }) => {
           assertEvent(event, "SUBMIT")
-
-          assert(context.formValues.network, "network is null")
-          assert(context.userAddress, "userAddress is null")
-          assert(context.tokenAddress, "tokenAddress is null")
-          assert(context.formValues.token, "token is null")
-
+          const params = extractDepositParams(context)
           return {
-            balance: context.balance,
-            amount: context.parsedFormValues.amount,
-            asset: context.formValues.token,
-            accountId: context.userAddress,
-            tokenAddress: context.tokenAddress,
+            ...params,
+            type: "depositTurbo",
             depositAddress: settings.defuseContractId,
-            chainName: reverseAssetNetworkAdapter[context.formValues.network],
           }
         },
-
         onDone: {
-          target: "editing.preparation",
-
+          target: "editing.reset_previous_preparation",
           actions: [
             {
-              type: "setDepositTurboResult",
+              type: "setDepositOutput",
               params: ({ event }) => event.output,
             },
             { type: "clearUIDepositAmount" },
           ],
-
           reenter: true,
         },
       },
@@ -864,8 +462,42 @@ export const depositUIMachine = setup({
   initial: "editing",
 })
 
-function assert(condition: unknown, msg?: string): asserts condition {
-  if (!condition) {
-    throw new Error(msg)
+type DepositParams = {
+  chainName: SupportedChainName
+  derivedToken: BaseTokenInfo
+  balance: bigint
+  amount: bigint
+  nearBalance: bigint | null
+  userAddress: string
+  depositAddress: string | null
+  storageDepositRequired: bigint | null
+}
+
+function extractDepositParams(context: Context): DepositParams {
+  const { value: prepOutput } =
+    context.preparationOutput?.tag === "ok"
+      ? context.preparationOutput
+      : { value: null }
+
+  const { token, derivedToken, blockchain, parsedAmount } =
+    context.depositFormRef.getSnapshot().context
+
+  // Validate all required fields
+  assert(token, "token is null")
+  assert(derivedToken, "derivedToken is null")
+  assert(blockchain !== null, "blockchain is null")
+  assert(context.userAddress, "userAddress is null")
+  assert(parsedAmount, "parsed amount is null")
+  assert(prepOutput?.balance, "balance is null")
+
+  return {
+    chainName: blockchain,
+    derivedToken,
+    balance: prepOutput.balance,
+    nearBalance: prepOutput.nearBalance,
+    amount: parsedAmount,
+    userAddress: context.userAddress,
+    depositAddress: prepOutput.generateDepositAddress,
+    storageDepositRequired: prepOutput.storageDepositRequired,
   }
 }
