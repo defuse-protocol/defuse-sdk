@@ -103,11 +103,12 @@ export function DepositUIMachineProvider({
                 let tx: Transaction["NEAR"][] = []
 
                 if (tokenToDeposit.address === "wrap.near") {
+                  // If user does not have enough wrap.near we calculate how much native NEAR we need to wrap to match the amount to deposit
+                  const nearAmountToWrap = amount - (balance || 0n)
                   tx = createBatchDepositNearNativeTransaction(
                     amount,
-                    // If user does not have enough wrap.near we calculate how much native NEAR we need to wrap to match the amount to deposit
-                    amount - (balance || 0n),
-                    storageDepositRequired
+                    nearAmountToWrap > 0n ? nearAmountToWrap : 0n,
+                    storageDepositRequired > 0n ? storageDepositRequired : 0n
                   )
                 } else {
                   tx = createBatchDepositNearNep141Transaction(
