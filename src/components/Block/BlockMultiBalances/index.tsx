@@ -30,7 +30,7 @@ export const BlockMultiBalances = ({
           <div
             className={clsx(
               "w-4 h-4  [mask-image:url(/static/icons/wallet_no_active.svg)] bg-no-repeat bg-contain",
-              active ? "bg-accent-800" : "bg-gray-500"
+              active ? "bg-accent-800" : "bg-gray-600/90"
             )}
           />
           <Text
@@ -38,8 +38,8 @@ export const BlockMultiBalances = ({
             className={clsx(
               "px-2 py-0.5 rounded-full font-bold",
               active
-                ? "bg-accent-a200 text-accent-800"
-                : "bg-gray-300/30 text-gray-500"
+                ? "bg-accent-a200 text-accent-900"
+                : "bg-gray-300/50 text-gray-600"
             )}
           >
             {formatTokenValue(balance, decimals, {
