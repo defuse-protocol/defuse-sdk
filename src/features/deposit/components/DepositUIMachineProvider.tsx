@@ -132,8 +132,8 @@ export function DepositUIMachineProvider({
                   const nearAmountToWrap = amount - wNearBalance
                   tx = createBatchDepositNearNativeTransaction(
                     amount,
-                    nearAmountToWrap,
-                    storageDepositRequired
+                    nearAmountToWrap > 0n ? nearAmountToWrap : 0n,
+                    storageDepositRequired > 0n ? storageDepositRequired : 0n
                   )
                 } else {
                   tx = createBatchDepositNearNep141Transaction(
