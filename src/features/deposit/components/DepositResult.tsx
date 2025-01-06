@@ -3,27 +3,22 @@ import { AssetComboIcon } from "src/components/Asset/AssetComboIcon"
 import { assert } from "src/utils/assert"
 import { chainTxExplorer } from "src/utils/chainTxExplorer"
 import { formatTokenValue } from "src/utils/format"
-import type { SupportedChainName } from "../../../../types/base"
-import type { Context } from "../../../machines/depositUIMachine"
+import type { SupportedChainName } from "../../../types/base"
+import type { Context } from "../../machines/depositUIMachine"
 
-export const Deposits = ({
+export const DepositResult = ({
   chainName,
   depositResult,
 }: {
-  chainName: SupportedChainName | null
-  depositResult:
-    | Context["depositNearResult"]
-    | Context["depositTurboResult"]
-    | Context["depositEVMResult"]
-    | Context["depositSolanaResult"]
+  chainName: SupportedChainName
+  depositResult: Context["depositOutput"]
 }) => {
   if (depositResult?.tag !== "ok") {
     return null
   }
-  const explorerUrl = chainName != null && chainTxExplorer(chainName)
+  const explorerUrl = chainTxExplorer(chainName)
   const txHash = depositResult.value.txHash
 
-  assert(txHash != null, "txHash should not be null")
   assert(explorerUrl != null, "explorerUrl should not be null")
 
   const txUrl = explorerUrl + txHash
@@ -32,8 +27,8 @@ export const Deposits = ({
     <Flex p={"2"} gap={"3"}>
       <Box pt={"2"}>
         <AssetComboIcon
-          icon={depositResult.value.depositDescription.asset.icon}
-          name={depositResult.value.depositDescription.asset.name}
+          icon={depositResult.value.depositDescription.derivedToken.icon}
+          name={depositResult.value.depositDescription.derivedToken.name}
         />
       </Box>
 
@@ -56,9 +51,7 @@ export const Deposits = ({
           <Box flexGrow={"1"}>
             <Text size={"1"} weight={"medium"} color={"gray"}>
               From{" "}
-              {shortenText(
-                depositResult.value.depositDescription.userAddressId
-              )}
+              {shortenText(depositResult.value.depositDescription.userAddress)}
             </Text>
           </Box>
 
@@ -67,13 +60,13 @@ export const Deposits = ({
               +
               {formatTokenValue(
                 depositResult.value.depositDescription.amount,
-                depositResult.value.depositDescription.asset.decimals,
+                depositResult.value.depositDescription.derivedToken.decimals,
                 {
                   min: 0.0001,
                   fractionDigits: 4,
                 }
               )}{" "}
-              {depositResult.value.depositDescription.asset.symbol}
+              {depositResult.value.depositDescription.derivedToken.symbol}
             </Text>
           </Box>
         </Flex>
