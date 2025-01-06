@@ -53,7 +53,7 @@ export const ModalDialog = ({
       <Dialog.Content
         container={portalContainer}
         className={`fixed bg-white dark:bg-black-800 shadow-lg p-0 focus:outline-none
-          md:w-[90vw] md:max-w-[512px] md:max-h-[85vh] md:p-8 md:top-1/2 md:bottom-auto md:left-1/2 md:right-auto md:-translate-x-1/2 md:-translate-y-1/2 md:rounded-lg md:animate-content-show
+          md:w-[90vw] md:max-w-[512px] md:max-h-[85vh] md:p-6 md:top-1/2 md:bottom-auto md:left-1/2 md:right-auto md:-translate-x-1/2 md:-translate-y-1/2 md:rounded-lg md:animate-content-show
           bottom-0 left-0 right-0 top-auto max-w-full max-h-[70vh] rounded-t-2xl animate-slide-up`}
         maxWidth={
           containerWidth
