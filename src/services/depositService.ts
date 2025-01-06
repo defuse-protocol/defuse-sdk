@@ -98,7 +98,7 @@ export function createBatchDepositNearNativeTransaction(
 ): Transaction["NEAR"][] {
   const actions: Transaction["NEAR"]["actions"] = []
 
-  if (nearAmountToWrap > 0n) {
+  if (nearAmountToWrap > 0n || storagePayment > 0n) {
     actions.push({
       type: "FunctionCall" as const,
       params: {
