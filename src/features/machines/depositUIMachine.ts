@@ -127,7 +127,7 @@ export const depositUIMachine = setup({
         return {
           type: "REQUEST_STORAGE_DEPOSIT",
           params: {
-            token: context.depositFormRef.getSnapshot().context.token,
+            token: context.depositFormRef.getSnapshot().context.derivedToken,
             userAccountId: context.userAddress,
           },
         }
