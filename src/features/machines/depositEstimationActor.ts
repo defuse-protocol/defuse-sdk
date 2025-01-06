@@ -40,9 +40,9 @@ export const depositEstimateMaxValueActor = fromPromise(
     const networkToSolverFormat = assetNetworkAdapter[blockchain]
     switch (networkToSolverFormat) {
       case BlockchainEnum.NEAR:
-        assert(nearBalance !== null, "Near balance is required")
         // Max value for NEAR is the sum of the native balance and the balance
         if (isBaseToken(token) && token.address === "wrap.near") {
+          assert(nearBalance !== null, "Near balance is required")
           return nearBalance + balance
         }
         return balance

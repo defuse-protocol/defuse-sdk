@@ -16,6 +16,7 @@ export type Input = {
   userAddress: string
   depositAddress: string | null
   storageDepositRequired: bigint | null
+  nearBalance: bigint | null
   type: string
 }
 

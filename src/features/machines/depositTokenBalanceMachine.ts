@@ -27,16 +27,15 @@ export const backgroundBalanceActor = fromPromise(
     balance: bigint
     nearBalance: bigint | null
   } | null> => {
-    if (!validateAddress(userAddress, blockchain)) {
-      return null
-    }
-
     const result: {
       balance: bigint
       nearBalance: bigint | null
     } | null = {
       balance: 0n,
       nearBalance: null,
+    }
+    if (!validateAddress(userAddress, blockchain)) {
+      return result
     }
 
     const networkToSolverFormat = assetNetworkAdapter[blockchain]

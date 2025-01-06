@@ -64,6 +64,7 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
   const depositUIActorRef = DepositUIMachineContext.useActorRef()
   const snapshot = DepositUIMachineContext.useSelector((snapshot) => snapshot)
   const depositOutput = snapshot.context.depositOutput
+  const preparationOutput = snapshot.context.preparationOutput
 
   const {
     token,
@@ -72,7 +73,6 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
     amount,
     userAddress,
     poaBridgeInfoRef,
-    preparationOutput,
     parsedAmount,
   } = DepositUIMachineContext.useSelector((snapshot) => {
     const token = snapshot.context.depositFormRef.getSnapshot().context.token
@@ -85,7 +85,6 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
       snapshot.context.depositFormRef.getSnapshot().context.parsedAmount
     const userAddress = snapshot.context.userAddress
     const poaBridgeInfoRef = snapshot.context.poaBridgeInfoRef
-    const preparationOutput = snapshot.context.preparationOutput
 
     return {
       token,
@@ -94,7 +93,6 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
       amount,
       userAddress,
       poaBridgeInfoRef,
-      preparationOutput,
       parsedAmount,
     }
   })
@@ -388,7 +386,7 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
         {token && (
           <DepositWarning
             userAddress={userAddress}
-            depositWarning={depositOutput}
+            depositWarning={depositOutput || preparationOutput}
           />
         )}
         {userAddress && network && !isActiveDeposit && !isPassiveDeposit && (

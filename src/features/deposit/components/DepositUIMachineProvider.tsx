@@ -105,6 +105,7 @@ export function DepositUIMachineProvider({
                   derivedToken,
                   balance,
                   amount,
+                  nearBalance,
                   storageDepositRequired,
                 } = input
 
@@ -112,14 +113,26 @@ export function DepositUIMachineProvider({
                   storageDepositRequired !== null,
                   "Storage deposit required is null"
                 )
+                assert(nearBalance !== null, "Near balance is null")
 
                 let tx: Transaction["NEAR"][] = []
-
                 if (derivedToken.address === "wrap.near") {
+                  /**
+                   * On calculation of the balance NEAR, we bound it with the amount of wrap.near
+                   * So to destinguish how much NEAR we have, we need to subtract the amount of wrap.near
+                   *
+                   * Example:
+                   * amount = 100n
+                   * near = 0n
+                   * wrap.near = 100n
+                   * wNearBalance = 100n - 0n = 100n
+                   * nearAmountToWrap = 100n - 100n = 0n
+                   */
+                  const wNearBalance = balance - nearBalance
+                  const nearAmountToWrap = amount - wNearBalance
                   tx = createBatchDepositNearNativeTransaction(
                     amount,
-                    // If user does not have enough wrap.near we calculate how much native NEAR we need to wrap to match the amount to deposit
-                    amount - (balance || 0n),
+                    nearAmountToWrap,
                     storageDepositRequired
                   )
                 } else {
@@ -148,7 +161,10 @@ export function DepositUIMachineProvider({
             },
             guards: {
               isDepositParamsValid: ({ context }) => {
-                return context.storageDepositRequired !== null
+                return (
+                  context.storageDepositRequired !== null &&
+                  context.nearBalance !== null
+                )
               },
             },
           }),

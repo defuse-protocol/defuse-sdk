@@ -8,7 +8,7 @@ export const DepositWarning = ({
   depositWarning,
 }: {
   userAddress: string | null
-  depositWarning: Context["depositOutput"]
+  depositWarning: Context["depositOutput"] | Context["preparationOutput"]
 }) => {
   let content: ReactNode = null
   if (!userAddress) {
@@ -27,13 +27,25 @@ export const DepositWarning = ({
         content =
           "It seems the transaction was rejected in your wallet. Please try again."
         break
-      //   case "ERR_GENERATING_ADDRESS":
-      //     content =
-      //       "It seems the deposit address was not generated. Please try re-selecting the token and network."
-      //     break
-      //   case "ERR_FETCH_BALANCE":
-      //     content = "It seems the balance is not available. Please try again."
-      //     break
+      case "ERR_GENERATING_ADDRESS":
+        content =
+          "It seems the deposit address was not generated. Please try re-selecting the token and network."
+        break
+      case "ERR_FETCH_BALANCE":
+        content = "It seems the balance is not available. Please try again."
+        break
+      case "ERR_NEP141_STORAGE_CANNOT_FETCH":
+        content =
+          "It seems the storage deposit check is failed. Please try again."
+        break
+      case "ERR_PREPARING_DEPOSIT":
+        content =
+          "It seems the deposit preparation is failed. Please try again."
+        break
+      case "ERR_ESTIMATE_MAX_DEPOSIT_VALUE":
+        content =
+          "It seems the max deposit value is not calculated. Please try again."
+        break
       default:
         content = "An error occurred. Please try again."
     }
