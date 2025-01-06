@@ -43,7 +43,7 @@ export const AssetList = <T extends Token>({
           key={itemId}
           type={"button"}
           className={clsx(
-            "flex justify-between items-center gap-3 p-2.5 rounded-md hover:bg-gray-950 dark:hover:bg-black-950",
+            "flex justify-between items-center gap-3 p-2.5 rounded-md hover:bg-gray-200/60 dark:hover:bg-black-950",
             disabled && "opacity-50 pointer-events-none"
           )}
           // biome-ignore lint/style/noNonNullAssertion: i is always within bounds

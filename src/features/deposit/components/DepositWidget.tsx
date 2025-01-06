@@ -1,4 +1,5 @@
 import { useEffect } from "react"
+import { WidgetRoot } from "../../../components/WidgetRoot"
 import { DepositWidgetProvider } from "../../../providers/DepositWidgetProvider"
 import { useTokensStore } from "../../../providers/TokensStoreProvider"
 import type { DepositWidgetProps } from "../../../types/deposit"
@@ -16,24 +17,26 @@ export const DepositWidget = ({
   sendTransactionSolana,
 }: DepositWidgetProps) => {
   return (
-    <DepositWidgetProvider>
-      <TokenListUpdater tokenList={tokenList} />
-      <DepositFormProvider>
-        <DepositUIMachineProvider
-          tokenList={tokenList}
-          sendTransactionNear={sendTransactionNear}
-          sendTransactionEVM={sendTransactionEVM}
-          sendTransactionSolana={sendTransactionSolana}
-        >
-          <DepositUIMachineFormSyncProvider
-            userAddress={userAddress}
-            userChainType={chainType}
+    <WidgetRoot>
+      <DepositWidgetProvider>
+        <TokenListUpdater tokenList={tokenList} />
+        <DepositFormProvider>
+          <DepositUIMachineProvider
+            tokenList={tokenList}
+            sendTransactionNear={sendTransactionNear}
+            sendTransactionEVM={sendTransactionEVM}
+            sendTransactionSolana={sendTransactionSolana}
           >
-            <DepositForm chainType={chainType} />
-          </DepositUIMachineFormSyncProvider>
-        </DepositUIMachineProvider>
-      </DepositFormProvider>
-    </DepositWidgetProvider>
+            <DepositUIMachineFormSyncProvider
+              userAddress={userAddress}
+              userChainType={chainType}
+            >
+              <DepositForm chainType={chainType} />
+            </DepositUIMachineFormSyncProvider>
+          </DepositUIMachineProvider>
+        </DepositFormProvider>
+      </DepositWidgetProvider>
+    </WidgetRoot>
   )
 }
 

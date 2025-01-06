@@ -1,10 +1,10 @@
 import json from "@rollup/plugin-json"
 import typescript from "@rollup/plugin-typescript"
 import autoprefixer from "autoprefixer"
+import atImport from "postcss-import"
 import { dts } from "rollup-plugin-dts"
 import postcss from "rollup-plugin-postcss"
 import tailwindcss from "tailwindcss"
-
 import packageJson from "./package.json" assert { type: "json" }
 
 const config = [
@@ -28,6 +28,11 @@ const config = [
       json(),
       postcss({
         extensions: [".css"],
+        inject: false,
+        extract: false,
+        modules: false,
+        minimize: false,
+        plugins: [atImport, tailwindcss, autoprefixer],
       }),
     ],
     external: [
@@ -47,18 +52,6 @@ const config = [
     input: "src/logger.ts",
     output: [{ file: "dist/logger.d.ts", format: "es" }],
     plugins: [dts()],
-  },
-  {
-    input: "src/styles/main.css",
-    output: [{ file: "dist/index.css", format: "es" }],
-    plugins: [
-      postcss({
-        plugins: [tailwindcss, autoprefixer],
-        extract: true,
-        minimize: true,
-        sourceMap: false,
-      }),
-    ],
   },
 ]
 

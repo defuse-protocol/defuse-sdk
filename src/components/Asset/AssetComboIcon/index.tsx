@@ -1,5 +1,3 @@
-import styles from "./styles.module.css"
-
 type AssetComboIconProps = {
   icon?: string
   name?: string
@@ -16,21 +14,25 @@ export const AssetComboIcon = ({
   showChainIcon = false,
 }: AssetComboIconProps) => {
   return (
-    <div className={styles.container}>
-      <div className={styles.iconWrapper}>
+    <div className="relative inline-block">
+      <div className="relative overflow-hidden w-9 h-9 flex justify-center items-center rounded-full">
         {icon ? (
-          <img src={icon} alt={name || "Coin Logo"} className={styles.icon} />
+          <img
+            src={icon}
+            alt={name || "Coin Logo"}
+            className="w-full h-full object-contain"
+          />
         ) : (
           <EmptyAssetComboIcon />
         )}
       </div>
       {showChainIcon && (
-        <div className={styles.chainIconWrapper}>
+        <div className="absolute -right-[7px] bottom-0 flex justify-center items-center p-1 bg-black-300 rounded-full border-2 border-white dark:border-black-950">
           {chainIcon ? (
             <img
               src={chainIcon}
               alt={chainName || "Network Logo"}
-              className={styles.chainIcon}
+              className="w-[6px] h-[6px]"
             />
           ) : (
             <EmptyChainIcon />
@@ -42,9 +44,13 @@ export const AssetComboIcon = ({
 }
 
 const EmptyAssetComboIcon = () => {
-  return <div className={styles.iconWrapper} />
+  return (
+    <div className="relative overflow-hidden w-9 h-9 flex justify-center items-center border border-silver-100 rounded-full" />
+  )
 }
 
 const EmptyChainIcon = () => {
-  return <div className={styles.emptyChainIcon} />
+  return (
+    <div className="w-[6px] h-[6px] flex justify-center items-center bg-black-300 rounded-full border-2 border-white dark:border-black-950" />
+  )
 }

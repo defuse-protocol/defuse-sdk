@@ -1,6 +1,5 @@
 import { Button, type ButtonProps, Flex, Spinner, Text } from "@radix-ui/themes"
 import type { ButtonHTMLAttributes, ReactNode } from "react"
-import styles from "./ButtonCustom.module.css"
 
 interface ButtonCustomProps
   extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, "color"> {
@@ -55,7 +54,13 @@ export const ButtonCustom = ({
         variant={radixButtonVariant}
         size={radixButtonSize}
         disabled={disabled || isLoading}
-        className={styles[size]}
+        className={
+          {
+            sm: "h-8",
+            base: "h-10",
+            lg: "h-14",
+          }[size]
+        }
         {...rest}
       >
         <Spinner loading={isLoading as boolean} />
