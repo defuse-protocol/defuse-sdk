@@ -12,6 +12,7 @@ import {
   getNearNativeBalance,
   getNearNep141Balance,
   getSolanaNativeBalance,
+  getSolanaSplBalance,
 } from "./getBalanceMachine"
 
 export const backgroundBalanceActor = fromPromise(
@@ -99,8 +100,21 @@ export const backgroundBalanceActor = fromPromise(
         break
       }
       case BlockchainEnum.SOLANA: {
-        const balance = await getSolanaNativeBalance({
+        if (isNativeToken(derivedToken)) {
+          const balance = await getSolanaNativeBalance({
+            userAddress: userAddress,
+            rpcUrl: getWalletRpcUrl(networkToSolverFormat),
+          })
+          if (balance === null) {
+            throw new Error("Failed to fetch SOLANA balances")
+          }
+          result.balance = balance
+          break
+        }
+
+        const balance = await getSolanaSplBalance({
           userAddress: userAddress,
+          tokenAddress: derivedToken.address,
           rpcUrl: getWalletRpcUrl(networkToSolverFormat),
         })
         if (balance === null) {
