@@ -51,7 +51,7 @@ export const Select = function Select<
       {...registerProps}
     >
       <RadixSelect.Trigger
-        className={`flex items-center justify-center text-base leading-6 h-14 px-4 gap-3 bg-gray-50 hover:bg-gray-200/50 text-gray-500 box-border flex-shrink-0 rounded-lg border border-gray-300 data-[placeholder]:text-[#63635e] ${
+        className={`flex items-center justify-center text-base font-medium leading-6 h-14 px-4 gap-3 bg-gray-50 hover:bg-gray-200/50 text-gray-500 box-border flex-shrink-0 rounded-lg border border-gray-300 data-[placeholder]:text-[#63635e] ${
           fullWidth ? "w-full" : ""
         }`}
         aria-label={label ?? "Not specified"}
