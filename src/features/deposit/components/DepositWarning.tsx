@@ -46,6 +46,9 @@ export const DepositWarning = ({
         content =
           "It seems the max deposit value is not calculated. Please try again."
         break
+      case "ERR_DEPOSIT_PARAMS_INVALID":
+        content = "It seems the deposit params are invalid. Please try again."
+        break
       default:
         content = "An error occurred. Please try again."
     }

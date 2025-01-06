@@ -34,6 +34,7 @@ export const backgroundBalanceActor = fromPromise(
       balance: 0n,
       nearBalance: null,
     }
+
     if (!validateAddress(userAddress, blockchain)) {
       return result
     }
@@ -41,17 +42,17 @@ export const backgroundBalanceActor = fromPromise(
     const networkToSolverFormat = assetNetworkAdapter[blockchain]
     switch (networkToSolverFormat) {
       case BlockchainEnum.NEAR: {
+        const [nep141Balance, nativeBalance] = await Promise.all([
+          getNearNep141Balance({
+            tokenAddress: derivedToken.address,
+            accountId: normalizeToNearAddress(userAddress),
+          }),
+          getNearNativeBalance({
+            accountId: normalizeToNearAddress(userAddress),
+          }),
+        ])
         // This is unique case for NEAR, where we need to sum up the native balance and the NEP-141 balance
         if (derivedToken.address === "wrap.near") {
-          const [nep141Balance, nativeBalance] = await Promise.all([
-            getNearNep141Balance({
-              tokenAddress: derivedToken.address,
-              accountId: normalizeToNearAddress(userAddress),
-            }),
-            getNearNativeBalance({
-              accountId: normalizeToNearAddress(userAddress),
-            }),
-          ])
           if (nep141Balance === null || nativeBalance === null) {
             throw new Error("Failed to fetch NEAR balances")
           }
@@ -67,6 +68,7 @@ export const backgroundBalanceActor = fromPromise(
           throw new Error("Failed to fetch NEAR balances")
         }
         result.balance = balance
+        result.nearBalance = nativeBalance
         break
       }
       case BlockchainEnum.ETHEREUM:
