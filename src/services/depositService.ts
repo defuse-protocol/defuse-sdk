@@ -1,4 +1,11 @@
 import {
+  createAssociatedTokenAccountInstruction,
+  createTransferInstruction,
+  getAccount,
+  getAssociatedTokenAddressSync,
+} from "@solana/spl-token"
+import {
+  Connection,
   PublicKey as PublicKeySolana,
   SystemProgram,
   Transaction as TransactionSolana,
@@ -22,7 +29,7 @@ import type { depositGenerateAddressMachine } from "../features/machines/deposit
 import { getNearTxSuccessValue } from "../features/machines/getTxMachine"
 import type { storageDepositAmountMachine } from "../features/machines/storageDepositAmountMachine"
 import { logger } from "../logger"
-import type { SupportedChainName } from "../types/base"
+import type { BaseTokenInfo, SupportedChainName } from "../types/base"
 import {
   ChainType,
   type SendTransactionEVMParams,
@@ -32,6 +39,7 @@ import { BlockchainEnum } from "../types/interfaces"
 import { assert } from "../utils/assert"
 import { type DefuseUserId, userAddressToDefuseUserId } from "../utils/defuse"
 import { getEVMChainId } from "../utils/evmChainId"
+import { isNativeToken } from "../utils/token"
 import { getDepositAddress, getSupportedTokens } from "./poaBridgeClient"
 
 export type PreparationOutput =
@@ -49,6 +57,7 @@ export type PreparationOutput =
          */
         nearBalance: bigint | null
         maxDepositValue: bigint | null
+        solanaATACreationRequired: boolean
       }
     }
   | {
@@ -102,6 +111,8 @@ export async function prepareDeposit(
   },
   { signal }: { signal: AbortSignal }
 ): Promise<PreparationOutput> {
+  assert(formValues.derivedToken, "Token is required")
+
   const storageDepositAmount = await getStorageDepositAmount(
     {
       storageDepositAmountRef,
@@ -148,6 +159,11 @@ export async function prepareDeposit(
     return estimation
   }
 
+  const solanaATACreationRequired = await checkSolanaATARequired(
+    formValues.derivedToken,
+    generateDepositAddress.value.generateDepositAddress
+  )
+
   return {
     tag: "ok",
     value: {
@@ -157,6 +173,7 @@ export async function prepareDeposit(
       balance: balances.value.balance,
       nearBalance: balances.value.nearBalance,
       maxDepositValue: estimation.value.maxDepositValue,
+      solanaATACreationRequired,
     },
   }
 }
@@ -489,7 +506,35 @@ export function createDepositEVMNativeTransaction(
   }
 }
 
-export function createDepositSolanaTransaction(
+export function createDepositSolanaTransaction({
+  userAddress,
+  depositAddress,
+  amount,
+  token,
+  ataExists,
+}: {
+  userAddress: string
+  depositAddress: string
+  amount: bigint
+  token: BaseTokenInfo
+  ataExists: boolean
+}): TransactionSolana {
+  assert(token.chainName === "solana", "Token must be a Solana token")
+
+  if (isNativeToken(token)) {
+    return createTransferSolanaTransaction(userAddress, depositAddress, amount)
+  }
+
+  return createSPLTransferSolanaTransaction(
+    userAddress,
+    depositAddress,
+    amount,
+    token.address,
+    ataExists
+  )
+}
+
+function createTransferSolanaTransaction(
   from: string,
   to: string,
   amount: bigint
@@ -501,6 +546,41 @@ export function createDepositSolanaTransaction(
       lamports: amount,
     })
   )
+  return transaction
+}
+
+function createSPLTransferSolanaTransaction(
+  from: string,
+  to: string,
+  amount: bigint,
+  token: string,
+  ataExists: boolean
+): TransactionSolana {
+  const fromPubkey = new PublicKeySolana(from)
+  const toPubkey = new PublicKeySolana(to)
+  const mintPubkey = new PublicKeySolana(token)
+
+  // Get associated token accounts for sender and receiver
+  const fromATA = getAssociatedTokenAddressSync(mintPubkey, fromPubkey)
+  const toATA = getAssociatedTokenAddressSync(mintPubkey, toPubkey)
+
+  const transaction = new TransactionSolana()
+
+  if (!ataExists) {
+    // Add ATA creation - even if it exists, this will fail gracefully
+    transaction.add(
+      createAssociatedTokenAccountInstruction(
+        fromPubkey,
+        toATA,
+        toPubkey,
+        mintPubkey
+      )
+    )
+  }
+
+  // Add transfer instruction
+  transaction.add(createTransferInstruction(fromATA, toATA, fromPubkey, amount))
+
   return transaction
 }
 
@@ -775,3 +855,36 @@ const siloToSiloABI = [
     type: "function",
   },
 ]
+
+async function checkATAExists(
+  connection: Connection,
+  ataAddress: PublicKeySolana
+): Promise<boolean> {
+  try {
+    await getAccount(connection, ataAddress)
+    return true
+  } catch {
+    return false
+  }
+}
+
+async function checkSolanaATARequired(
+  token: BaseTokenInfo,
+  depositAddress: string | null
+): Promise<boolean> {
+  if (
+    token.chainName !== "solana" ||
+    isNativeToken(token) ||
+    depositAddress === null
+  ) {
+    return false
+  }
+
+  const connection = new Connection(settings.rpcUrls.solana)
+  const toPubkey = new PublicKeySolana(depositAddress)
+  const mintPubkey = new PublicKeySolana(token.address)
+  const toATA = getAssociatedTokenAddressSync(mintPubkey, toPubkey)
+
+  const ataExists = await checkATAExists(connection, toATA)
+  return !ataExists
+}

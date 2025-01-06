@@ -224,15 +224,24 @@ export function DepositUIMachineProvider({
           depositSolanaActor: depositMachine.provide({
             actors: {
               signAndSendTransactions: fromPromise(async ({ input }) => {
-                const { amount, depositAddress, userAddress } = input
+                const {
+                  amount,
+                  depositAddress,
+                  userAddress,
+                  derivedToken,
+                  solanaATACreationRequired,
+                } = input
 
                 assert(depositAddress != null, "Deposit address is not defined")
 
-                const tx = createDepositSolanaTransaction(
+                const tx = createDepositSolanaTransaction({
                   userAddress,
                   depositAddress,
-                  amount
-                )
+                  amount,
+                  token: derivedToken,
+                  ataExists: !solanaATACreationRequired,
+                })
+
                 const txHash = await sendTransactionSolana(tx)
                 assert(txHash != null, "Tx hash is not defined")
 

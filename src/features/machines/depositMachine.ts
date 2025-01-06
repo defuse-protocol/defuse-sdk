@@ -16,6 +16,7 @@ export type Input = {
   userAddress: string
   depositAddress: string | null
   storageDepositRequired: bigint | null
+  solanaATACreationRequired: boolean
   nearBalance: bigint | null
   type: string
 }
