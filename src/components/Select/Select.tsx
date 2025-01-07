@@ -1,6 +1,6 @@
 import { ChevronDownIcon } from "@radix-ui/react-icons"
 import * as RadixSelect from "@radix-ui/react-select"
-import { Flex, Theme } from "@radix-ui/themes"
+import { Theme } from "@radix-ui/themes"
 import type React from "react"
 import { useContext } from "react"
 import type { FieldValues, Path, UseFormRegister } from "react-hook-form"
@@ -57,17 +57,17 @@ export const Select = function Select<
         aria-label={label ?? "Not specified"}
         disabled={disabled}
       >
-        <Flex as="span" align="center" justify="between" gap="2" width="100%">
-          <Flex as="span" align="center" gap="2">
+        <div className="flex items-center justify-between w-full gap-2">
+          <div className="flex items-center gap-2">
             {showPlaceholder && placeholder?.icon && (
-              <Flex as="span">{placeholder.icon}</Flex>
+              <div>{placeholder.icon}</div>
             )}
             <RadixSelect.Value placeholder={placeholder?.label} />
-          </Flex>
+          </div>
           <RadixSelect.Icon>
             <ChevronDownIcon />
           </RadixSelect.Icon>
-        </Flex>
+        </div>
       </RadixSelect.Trigger>
       <RadixSelect.Portal container={portalContainer}>
         <Theme asChild>
@@ -83,22 +83,14 @@ export const Select = function Select<
                   key={key}
                   value={options[key as keyof typeof options].value}
                 >
-                  <Flex
-                    as="span"
-                    align="center"
-                    justify="between"
-                    gap="2"
-                    width="100%"
-                  >
+                  <div className="flex items-center justify-between w-full gap-2">
                     {options[key as keyof typeof options]?.icon && (
-                      <Flex as="span" className="flex-shrink-0">
+                      <div className="flex-shrink-0">
                         {options[key as keyof typeof options].icon}
-                      </Flex>
+                      </div>
                     )}
-                    <Flex as="span">
-                      {options[key as keyof typeof options].label}
-                    </Flex>
-                  </Flex>
+                    <div>{options[key as keyof typeof options].label}</div>
+                  </div>
                 </SelectItem>
               ))}
             </RadixSelect.Viewport>
