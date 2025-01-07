@@ -98,7 +98,20 @@ export const depositUIMachine = setup({
       throw new Error("not implemented")
     },
     clearPreparationOutput: assign({
-      preparationOutput: null,
+      preparationOutput: ({ context }): Context["preparationOutput"] => {
+        if (context.preparationOutput?.tag === "ok") {
+          return {
+            tag: "ok",
+            value: {
+              ...context.preparationOutput.value,
+              // We don't need to clear the balances, instead we'll update them on the next balance refresh
+              balance: context.preparationOutput.value.balance,
+              nearBalance: context.preparationOutput.value.nearBalance,
+            },
+          }
+        }
+        return null
+      },
     }),
 
     fetchPOABridgeInfo: sendTo("poaBridgeInfoRef", { type: "FETCH" }),
