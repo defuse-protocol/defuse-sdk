@@ -92,11 +92,22 @@ export const depositFormReducer = fromTransition(
         const token = state.token
         assert(token != null, "Token not found")
         const amount = event.params.amount
-        const parsedAmount = amount ? parseUnits(amount, token.decimals) : null
-        newState = {
-          ...state,
-          parsedAmount,
-          amount,
+        // Use catch to prevent invalid amount as not numberish string from stopping the deposit UI machine
+        try {
+          const parsedAmount = amount
+            ? parseUnits(amount, token.decimals)
+            : null
+          newState = {
+            ...state,
+            parsedAmount,
+            amount,
+          }
+        } catch {
+          newState = {
+            ...state,
+            parsedAmount: null,
+            amount: "",
+          }
         }
         break
       }
