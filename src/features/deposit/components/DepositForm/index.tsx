@@ -10,6 +10,7 @@ import { Form } from "../../../../components/Form"
 import type { ModalSelectAssetsPayload } from "../../../../components/Modal/ModalSelectAssets"
 import { NetworkIcon } from "../../../../components/Network/NetworkIcon"
 import { Select } from "../../../../components/Select/Select"
+import { Separator } from "../../../../components/Separator"
 import { getPOABridgeInfo } from "../../../../features/machines/poaBridgeInfoActor"
 import { useModalStore } from "../../../../providers/ModalStoreProvider"
 import { getAvailableDepositRoutes } from "../../../../services/depositService"
@@ -192,35 +193,47 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
             </div>
           )}
 
-          {currentDepositOption != null &&
-            isActiveDeposit &&
-            isPassiveDeposit && (
-              <DepositMethodSelector
-                selectedDepositOption={currentDepositOption}
-                onSelectDepositOption={setPreferredDepositOption}
-              />
-            )}
+          {currentDepositOption != null && (
+            <>
+              {isActiveDeposit && isPassiveDeposit && (
+                <>
+                  <div className="-mx-5">
+                    <Separator />
+                  </div>
 
-          {currentDepositOption === "active" &&
-            network != null &&
-            derivedToken != null && (
-              <ActiveDeposit
-                network={network}
-                token={derivedToken}
-                minDepositAmount={minDepositAmount}
-              />
-            )}
+                  <DepositMethodSelector
+                    selectedDepositOption={currentDepositOption}
+                    onSelectDepositOption={setPreferredDepositOption}
+                  />
+                </>
+              )}
 
-          {currentDepositOption === "passive" &&
-            network != null &&
-            derivedToken != null && (
-              <PassiveDeposit
-                network={network}
-                depositAddress={depositAddress}
-                minDepositAmount={minDepositAmount}
-                token={derivedToken}
-              />
-            )}
+              <div className="-mx-5">
+                <Separator />
+              </div>
+
+              {currentDepositOption === "active" &&
+                network != null &&
+                derivedToken != null && (
+                  <ActiveDeposit
+                    network={network}
+                    token={derivedToken}
+                    minDepositAmount={minDepositAmount}
+                  />
+                )}
+
+              {currentDepositOption === "passive" &&
+                network != null &&
+                derivedToken != null && (
+                  <PassiveDeposit
+                    network={network}
+                    depositAddress={depositAddress}
+                    minDepositAmount={minDepositAmount}
+                    token={derivedToken}
+                  />
+                )}
+            </>
+          )}
         </Form>
 
         {token && (
