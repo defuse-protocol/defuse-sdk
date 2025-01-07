@@ -1,7 +1,6 @@
 import { ExclamationTriangleIcon } from "@radix-ui/react-icons"
-import { Button, Callout, Flex, Text } from "@radix-ui/themes"
+import { Callout, Flex, Text } from "@radix-ui/themes"
 import { useSelector } from "@xstate/react"
-import clsx from "clsx"
 import { useEffect, useState } from "react"
 import { Controller, useFormContext } from "react-hook-form"
 import { assetNetworkAdapter } from "src/utils/adapters"
@@ -23,6 +22,7 @@ import { isBaseToken, isUnifiedToken } from "../../../../utils/token"
 import { DepositUIMachineContext } from "../DepositUIMachineProvider"
 import { DepositWarning } from "../DepositWarning"
 import { ActiveDeposit } from "./ActiveDeposit"
+import { DepositMethodSelector } from "./DepositMethodSelector"
 import { PassiveDeposit } from "./PassiveDeposit"
 
 // TODO: Temporary disable deposit through POA bridge
@@ -194,49 +194,13 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
             </div>
           )}
 
-          {currentDepositOption == null ? null : (
-            <div className="flex flex-col gap-3">
-              <div className="font-bold text-gray-950 text-sm">
-                Choose deposit method
-              </div>
-
-              <div className="flex items-stretch gap-2">
-                <Button
-                  type="button"
-                  onClick={() => setPreferredDepositOption("passive")}
-                  disabled={!isPassiveDeposit}
-                  size="4"
-                  variant={
-                    currentDepositOption === "passive" ? "surface" : "outline"
-                  }
-                  color={
-                    currentDepositOption === "passive" ? undefined : "gray"
-                  }
-                  className={clsx("flex-1 font-bold text-sm", {
-                    "ring-2 ring-accent-a700 ring-inset":
-                      currentDepositOption === "passive",
-                  })}
-                >
-                  Exchange
-                </Button>
-                <Button
-                  type="button"
-                  onClick={() => setPreferredDepositOption("active")}
-                  disabled={!isActiveDeposit}
-                  size="4"
-                  variant={
-                    currentDepositOption === "active" ? "surface" : "outline"
-                  }
-                  color={currentDepositOption === "active" ? undefined : "gray"}
-                  className={clsx("flex-1 font-bold text-sm", {
-                    "ring-2 ring-accent-a700 ring-inset":
-                      currentDepositOption === "active",
-                  })}
-                >
-                  Wallet
-                </Button>
-              </div>
-            </div>
+          {currentDepositOption != null && (
+            <DepositMethodSelector
+              selectedDepositOption={currentDepositOption}
+              isActiveDepositAvailable={!!isActiveDeposit}
+              isPassiveDepositAvailable={!!isPassiveDeposit}
+              onSelectDepositOption={setPreferredDepositOption}
+            />
           )}
 
           {currentDepositOption === "active" &&
