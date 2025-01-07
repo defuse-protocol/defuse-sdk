@@ -12,6 +12,7 @@ import {
   useThemeContext,
 } from "@radix-ui/themes"
 import { useSelector } from "@xstate/react"
+import clsx from "clsx"
 import { QRCodeSVG } from "qrcode.react"
 import { useEffect, useState } from "react"
 import CopyToClipboard from "react-copy-to-clipboard"
@@ -189,6 +190,19 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
 
   const { accentColor } = useThemeContext()
 
+  const [preferredDepositOption, setPreferredDepositOption] = useState<
+    "active" | "passive"
+  >("active")
+
+  const currentDepositOption =
+    preferredDepositOption === "active" && isActiveDeposit
+      ? "active"
+      : isPassiveDeposit
+        ? "passive"
+        : isActiveDeposit
+          ? "active"
+          : null
+
   return (
     <div className="w-full max-w-[472px]">
       <div className="rounded-2xl p-5 bg-white shadow dark:bg-[#111110] dark:shadow-[0_1px_3px_0_rgb(255_255_255_/_0.1),_0_1px_2px_-1px_rgb(255_255_255_/_0.1)]">
@@ -232,6 +246,50 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
               />
             </div>
           )}
+
+          {currentDepositOption == null ? null : (
+            <div className="flex flex-col gap-3">
+              <div className="font-bold text-gray-950 text-sm">
+                Choose deposit method
+              </div>
+
+              <div className="flex items-stretch gap-2">
+                <Button
+                  onClick={() => setPreferredDepositOption("passive")}
+                  disabled={!isPassiveDeposit}
+                  size="4"
+                  variant={
+                    currentDepositOption === "passive" ? "surface" : "outline"
+                  }
+                  color={
+                    currentDepositOption === "passive" ? undefined : "gray"
+                  }
+                  className={clsx("flex-1 font-bold text-sm", {
+                    "ring-2 ring-accent-a700 ring-inset":
+                      currentDepositOption === "passive",
+                  })}
+                >
+                  Exchange
+                </Button>
+                <Button
+                  onClick={() => setPreferredDepositOption("active")}
+                  disabled={!isActiveDeposit}
+                  size="4"
+                  variant={
+                    currentDepositOption === "active" ? "surface" : "outline"
+                  }
+                  color={currentDepositOption === "active" ? undefined : "gray"}
+                  className={clsx("flex-1 font-bold text-sm", {
+                    "ring-2 ring-accent-a700 ring-inset":
+                      currentDepositOption === "active",
+                  })}
+                >
+                  Wallet
+                </Button>
+              </div>
+            </div>
+          )}
+
           {isActiveDeposit && (
             <Input
               name="amount"
