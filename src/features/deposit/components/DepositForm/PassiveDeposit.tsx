@@ -34,8 +34,7 @@ export function PassiveDeposit({
         Withdraw assets from an exchange to the{" "}
         {/* biome-ignore lint/nursery/useConsistentCurlyBraces: space is needed here */}
         {network != null ? networkSelectToLabel[network] : "(empty)"} address
-        below. Upon confirmation, you will receive your assets on Defuse within
-        minutes.
+        below. Upon confirmation, you will receive your assets within minutes.
       </p>
       <div className="flex justify-center items-center w-full min-h-[188px] mb-4 rounded-lg bg-[#FDFDFC] border border-[#F1F1F1] p-4">
         {depositAddress ? (
