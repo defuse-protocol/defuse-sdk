@@ -271,8 +271,8 @@ export const WithdrawForm = ({
   return (
     <div className="w-full max-w-[472px]">
       <Flex
-        direction={"column"}
-        gap={"2"}
+        direction="column"
+        gap="2"
         className="rounded-2xl p-5 bg-white shadow dark:bg-[#111110] dark:shadow-[0_1px_3px_0_rgb(255_255_255_/_0.1),_0_1px_2px_-1px_rgb(255_255_255_/_0.1)]"
       >
         <Form<WithdrawFormNearValues>
@@ -296,7 +296,7 @@ export const WithdrawForm = ({
           })}
           register={register}
         >
-          <Flex direction={"column"} gap={"5"}>
+          <Flex direction="column" gap="5">
             <FieldComboInput<WithdrawFormNearValues>
               fieldName="amountIn"
               selected={token}
@@ -336,9 +336,9 @@ export const WithdrawForm = ({
               tokensUsdPriceData={tokensUsdPriceData}
             />
 
-            <Flex direction={"column"} gap={"2"}>
-              <Box px={"2"} asChild>
-                <Text size={"1"} weight={"bold"}>
+            <Flex direction="column" gap="2">
+              <Box px="2" asChild>
+                <Text size="1" weight="bold">
                   Recipient
                 </Text>
               </Box>
@@ -367,11 +367,11 @@ export const WithdrawForm = ({
                 }}
               />
 
-              <Flex direction={"column"} gap={"1"}>
-                <Flex gap={"2"} align={"center"}>
-                  <Box asChild flexGrow={"1"}>
+              <Flex direction="column" gap="1">
+                <Flex gap="2" align="center">
+                  <Box asChild flexGrow="1">
                     <TextField.Root
-                      size={"3"}
+                      size="3"
                       {...register("recipient", {
                         validate: {
                           pattern: (value, formValues) => {
@@ -395,14 +395,14 @@ export const WithdrawForm = ({
                     userAddress != null &&
                     recipient !== userAddress && (
                       <IconButton
-                        type={"button"}
+                        type="button"
                         onClick={() => {
                           setValue("recipient", userAddress, {
                             shouldValidate: true,
                           })
                         }}
-                        variant={"outline"}
-                        size={"3"}
+                        variant="outline"
+                        size="3"
                         title={`Autofill with your address ${truncateUserAddress(userAddress)}`}
                         aria-label={`Autofill with your address ${truncateUserAddress(userAddress)}`}
                       >
@@ -412,8 +412,8 @@ export const WithdrawForm = ({
                 </Flex>
 
                 {errors.recipient && (
-                  <Box px={"2"} asChild>
-                    <Text size={"1"} color={"red"} weight={"medium"}>
+                  <Box px="2" asChild>
+                    <Text size="1" color="red" weight="medium">
                       {errors.recipient.message}
                     </Text>
                   </Box>
@@ -421,14 +421,14 @@ export const WithdrawForm = ({
               </Flex>
 
               {blockchain === "xrpledger" && (
-                <Flex direction={"column"} gap={"1"}>
-                  <Box px={"2"} asChild>
-                    <Text size={"1"} weight={"bold"}>
+                <Flex direction="column" gap="1">
+                  <Box px="2" asChild>
+                    <Text size="1" weight="bold">
                       Destination Tag (optional)
                     </Text>
                   </Box>
                   <TextField.Root
-                    size={"3"}
+                    size="3"
                     {...register("destinationMemo", {
                       validate: {
                         uint32: (value) => {
@@ -446,8 +446,8 @@ export const WithdrawForm = ({
                     placeholder="Enter destination tag"
                   />
                   {errors.destinationMemo && (
-                    <Box px={"2"} asChild>
-                      <Text size={"1"} color={"red"} weight={"medium"}>
+                    <Box px="2" asChild>
+                      <Text size="1" color="red" weight="medium">
                         {errors.destinationMemo.message}
                       </Text>
                     </Box>
@@ -456,25 +456,26 @@ export const WithdrawForm = ({
               )}
             </Flex>
 
-            <Flex justify={"between"} px={"2"}>
-              <Text size={"1"} weight={"medium"} color={"gray"}>
+            <Flex justify="between" px="2">
+              <Text size="1" weight="medium" color="gray">
                 Received amount
               </Text>
 
-              <Text size={"1"} weight={"bold"}>
+              <Text size="1" weight="bold">
                 {state.matches({ editing: "preparation" }) ? (
                   <Skeleton>100.000000</Skeleton>
                 ) : totalAmountReceived == null ? (
                   "–"
                 ) : (
                   formatTokenValue(totalAmountReceived, tokenOut.decimals)
+                  // biome-ignore lint/nursery/useConsistentCurlyBraces: space is needed here
                 )}{" "}
                 {token.symbol}
               </Text>
             </Flex>
 
             <ButtonCustom
-              size={"lg"}
+              size="lg"
               disabled={state.matches("submitting") || !!noLiquidity}
               isLoading={state.matches("submitting")}
             >
@@ -614,13 +615,15 @@ function renderMinWithdrawalAmount(
   return (
     minWithdrawalAmount != null &&
     minWithdrawalAmount > 1n && (
-      <Callout.Root size={"1"} color="gray" variant="surface">
+      <Callout.Root size="1" color="gray" variant="surface">
         <Callout.Icon>
           <InfoCircledIcon />
         </Callout.Icon>
         <Callout.Text>
+          {/* biome-ignore lint/nursery/useConsistentCurlyBraces: space is needed here */}
           Minimal amount to withdraw is{" "}
-          <Text size={"1"} weight={"bold"}>
+          <Text size="1" weight="bold">
+            {/* biome-ignore lint/nursery/useConsistentCurlyBraces: space is needed here */}
             {formatTokenValue(minWithdrawalAmount, tokenOut.decimals)}{" "}
             {tokenOut.symbol}
           </Text>
@@ -668,7 +671,7 @@ function renderPreparationResult(preparationOutput: PreparationOutput | null) {
   if (content == null) return null
 
   return (
-    <Callout.Root size={"1"} color="red">
+    <Callout.Root size="1" color="red">
       <Callout.Icon>
         <ExclamationTriangleIcon />
       </Callout.Icon>

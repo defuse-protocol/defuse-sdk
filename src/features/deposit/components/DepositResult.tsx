@@ -24,39 +24,40 @@ export const DepositResult = ({
   const txUrl = explorerUrl + txHash
 
   return (
-    <Flex p={"2"} gap={"3"}>
-      <Box pt={"2"}>
+    <Flex p="2" gap="3">
+      <Box pt="2">
         <AssetComboIcon
           icon={depositResult.value.depositDescription.derivedToken.icon}
           name={depositResult.value.depositDescription.derivedToken.name}
         />
       </Box>
 
-      <Flex direction={"column"} flexGrow={"1"}>
+      <Flex direction="column" flexGrow="1">
         <Flex>
-          <Box flexGrow={"1"}>
-            <Text size={"2"} weight={"medium"}>
+          <Box flexGrow="1">
+            <Text size="2" weight="medium">
               Deposit
             </Text>
           </Box>
 
-          <Flex gap={"1"} align={"center"}>
-            <Text size={"1"} weight={"medium"}>
+          <Flex gap="1" align="center">
+            <Text size="1" weight="medium">
               Completed
             </Text>
           </Flex>
         </Flex>
 
-        <Flex align={"center"}>
-          <Box flexGrow={"1"}>
-            <Text size={"1"} weight={"medium"} color={"gray"}>
+        <Flex align="center">
+          <Box flexGrow="1">
+            <Text size="1" weight="medium" color="gray">
+              {/* biome-ignore lint/nursery/useConsistentCurlyBraces: space is needed here */}
               From{" "}
               {shortenText(depositResult.value.depositDescription.userAddress)}
             </Text>
           </Box>
 
           <Box>
-            <Text size={"1"} weight={"medium"} color={"green"}>
+            <Text size="1" weight="medium" color="green">
               +
               {formatTokenValue(
                 depositResult.value.depositDescription.amount,
@@ -65,6 +66,7 @@ export const DepositResult = ({
                   min: 0.0001,
                   fractionDigits: 4,
                 }
+                // biome-ignore lint/nursery/useConsistentCurlyBraces: space is needed here
               )}{" "}
               {depositResult.value.depositDescription.derivedToken.symbol}
             </Text>
@@ -73,11 +75,12 @@ export const DepositResult = ({
 
         {depositResult.value.txHash != null && txUrl != null && (
           <Box>
-            <Text size={"1"} color={"gray"}>
+            <Text size="1" color="gray">
               Transaction:
+              {/* biome-ignore lint/nursery/useConsistentCurlyBraces: space is needed here */}
             </Text>{" "}
-            <Text size={"1"}>
-              <Link href={txUrl} target={"_blank"}>
+            <Text size="1">
+              <Link href={txUrl} target="_blank">
                 {shortenText(depositResult.value.txHash)}
               </Link>
             </Text>
@@ -85,7 +88,7 @@ export const DepositResult = ({
         )}
 
         <Box>
-          <Text size={"1"} color={"gray"}>
+          <Text size="1" color="gray">
             Settlement in flight!
           </Text>
         </Box>

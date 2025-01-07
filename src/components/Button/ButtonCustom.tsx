@@ -48,7 +48,7 @@ export const ButtonCustom = ({
   }
 
   return (
-    <Flex align={"center"} gap={"2"} asChild>
+    <Flex align="center" gap="2" asChild>
       <Button
         color={radixButtonColor}
         variant={radixButtonVariant}
@@ -64,7 +64,7 @@ export const ButtonCustom = ({
         {...rest}
       >
         <Spinner loading={isLoading as boolean} />
-        <Text weight={"bold"}>{children}</Text>
+        <Text weight="bold">{children}</Text>
       </Button>
     </Flex>
   )

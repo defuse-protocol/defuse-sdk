@@ -21,12 +21,12 @@ export const BlockMultiBalances = ({
 
   return (
     <Flex
-      gap={"1"}
+      gap="1"
       asChild
       className={clsx("absolute bottom-4 right-5", className)}
     >
-      <Flex asChild align={"center"} gap={"1"}>
-        <button type={"button"} onClick={handleClick} disabled={!active}>
+      <Flex asChild align="center" gap="1">
+        <button type="button" onClick={handleClick} disabled={!active}>
           <div
             className={clsx(
               "w-4 h-4  [mask-image:url(/static/icons/wallet_no_active.svg)] bg-no-repeat bg-contain",
@@ -34,7 +34,7 @@ export const BlockMultiBalances = ({
             )}
           />
           <Text
-            size={"1"}
+            size="1"
             className={clsx(
               "px-2 py-0.5 rounded-full font-bold",
               active
