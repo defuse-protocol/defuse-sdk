@@ -5,15 +5,11 @@ type DepositMethod = "active" | "passive"
 
 interface DepositMethodSelectorProps {
   selectedDepositOption: DepositMethod
-  isActiveDepositAvailable: boolean
-  isPassiveDepositAvailable: boolean
   onSelectDepositOption: (method: DepositMethod) => void
 }
 
 export function DepositMethodSelector({
   selectedDepositOption,
-  isActiveDepositAvailable,
-  isPassiveDepositAvailable,
   onSelectDepositOption,
 }: DepositMethodSelectorProps) {
   return (
@@ -26,7 +22,6 @@ export function DepositMethodSelector({
         <Button
           type="button"
           onClick={() => onSelectDepositOption("passive")}
-          disabled={!isPassiveDepositAvailable}
           size="4"
           variant={selectedDepositOption === "passive" ? "surface" : "outline"}
           color={selectedDepositOption === "passive" ? undefined : "gray"}
@@ -40,7 +35,6 @@ export function DepositMethodSelector({
         <Button
           type="button"
           onClick={() => onSelectDepositOption("active")}
-          disabled={!isActiveDepositAvailable}
           size="4"
           variant={selectedDepositOption === "active" ? "surface" : "outline"}
           color={selectedDepositOption === "active" ? undefined : "gray"}

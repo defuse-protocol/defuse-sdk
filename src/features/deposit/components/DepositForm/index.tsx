@@ -166,6 +166,7 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
               </Flex>
             </Flex>
           </button>
+
           {token && (
             <div className="[&>button[disabled]]:opacity-50 [&>button[disabled]]:cursor-not-allowed [&>button[disabled]]:pointer-events-none [&>*[disabled]]:pointer-events-none">
               <Controller
@@ -191,14 +192,14 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
             </div>
           )}
 
-          {currentDepositOption != null && (
-            <DepositMethodSelector
-              selectedDepositOption={currentDepositOption}
-              isActiveDepositAvailable={!!isActiveDeposit}
-              isPassiveDepositAvailable={!!isPassiveDeposit}
-              onSelectDepositOption={setPreferredDepositOption}
-            />
-          )}
+          {currentDepositOption != null &&
+            isActiveDeposit &&
+            isPassiveDeposit && (
+              <DepositMethodSelector
+                selectedDepositOption={currentDepositOption}
+                onSelectDepositOption={setPreferredDepositOption}
+              />
+            )}
 
           {currentDepositOption === "active" &&
             network != null &&
@@ -228,6 +229,7 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
             depositWarning={depositOutput || preparationOutput}
           />
         )}
+
         {userAddress && network && !isActiveDeposit && !isPassiveDeposit && (
           <NotSupportedDepositRoute />
         )}
