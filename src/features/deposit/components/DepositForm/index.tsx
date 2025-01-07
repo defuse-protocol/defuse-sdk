@@ -25,9 +25,6 @@ import { ActiveDeposit } from "./ActiveDeposit"
 import { DepositMethodSelector } from "./DepositMethodSelector"
 import { PassiveDeposit } from "./PassiveDeposit"
 
-// TODO: Temporary disable deposit through POA bridge
-const ENABLE_DEPOSIT_THROUGH_POA_BRIDGE = true
-
 export type DepositFormValues = {
   network: BlockchainEnum | null
   amount: string
@@ -224,10 +221,7 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
               />
             )}
         </Form>
-        {token &&
-          network &&
-          network !== BlockchainEnum.NEAR &&
-          !ENABLE_DEPOSIT_THROUGH_POA_BRIDGE && <UnderFeatureFlag />}
+
         {token && (
           <DepositWarning
             userAddress={userAddress}
@@ -388,19 +382,6 @@ function getDefaultBlockchainOptionValue(
       : null
   }
   return null
-}
-
-function UnderFeatureFlag() {
-  return (
-    <Callout.Root size="1" color="yellow" mt="4">
-      <Callout.Icon>
-        <ExclamationTriangleIcon />
-      </Callout.Icon>
-      <Callout.Text>
-        Temporaty disable feature, please use NEAR bridge to deposit
-      </Callout.Text>
-    </Callout.Root>
-  )
 }
 
 function NotSupportedDepositRoute() {
