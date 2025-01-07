@@ -13,7 +13,7 @@ import type { BaseTokenInfo, UnifiedTokenInfo } from "../../types/base"
 import { Semaphore } from "../../utils/semaphore"
 import { isBaseToken, isUnifiedToken } from "../../utils/token"
 
-export const RESERVED_NEAR_BALANCE = 1n * 10n ** 24n // 1 NEAR reserved for transaction fees and storage, using yoctoNEAR precision
+export const RESERVED_NEAR_BALANCE = 100000000000000000000000n // 0.1 NEAR reserved for transaction fees and storage
 const semaphore = new Semaphore(5, 500) // 5 concurrent request, 0.5 second delay (adjust maxConcurrent and delayMs as needed)
 
 export const getNearNativeBalance = async ({
