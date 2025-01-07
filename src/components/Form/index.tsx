@@ -1,7 +1,7 @@
 import {
   Children,
   type FormEventHandler,
-  type PropsWithChildren,
+  type FormHTMLAttributes,
   type ReactElement,
   cloneElement,
   isValidElement,
@@ -19,7 +19,8 @@ interface RegisterProps<T extends FieldValues> {
   register: UseFormRegister<T>
 }
 
-interface Props<T extends FieldValues> extends PropsWithChildren {
+interface Props<T extends FieldValues>
+  extends FormHTMLAttributes<HTMLFormElement> {
   register: UseFormRegister<T>
   handleSubmit: UseFormHandleSubmit<T> | FormEventHandler<T> | undefined
 }
@@ -28,6 +29,7 @@ export const Form = <T extends FieldValues>({
   children,
   handleSubmit,
   register,
+  ...props
 }: Props<T>) => {
   const allowedComponents = [FieldComboInputRegistryName]
 
@@ -47,6 +49,10 @@ export const Form = <T extends FieldValues>({
     return child
   })
 
-  // biome-ignore lint/suspicious/noExplicitAny: <reason>
-  return <form onSubmit={handleSubmit as any}>{childrenWithProps}</form>
+  return (
+    // biome-ignore lint/suspicious/noExplicitAny: <reason>
+    <form onSubmit={handleSubmit as any} {...props}>
+      {childrenWithProps}
+    </form>
+  )
 }
