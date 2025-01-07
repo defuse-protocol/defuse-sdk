@@ -471,6 +471,7 @@ type DepositParams = {
   userAddress: string
   depositAddress: string | null
   storageDepositRequired: bigint | null
+  solanaATACreationRequired: boolean
 }
 
 function extractDepositParams(context: Context): DepositParams {
@@ -499,5 +500,6 @@ function extractDepositParams(context: Context): DepositParams {
     userAddress: context.userAddress,
     depositAddress: prepOutput.generateDepositAddress,
     storageDepositRequired: prepOutput.storageDepositRequired,
+    solanaATACreationRequired: prepOutput.solanaATACreationRequired,
   }
 }

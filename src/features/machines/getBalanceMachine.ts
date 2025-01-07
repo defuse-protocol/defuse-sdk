@@ -1,4 +1,5 @@
 import { base64 } from "@scure/base"
+import { AccountLayout } from "@solana/spl-token"
 import { Connection, PublicKey } from "@solana/web3.js"
 import { http, type Address, createPublicClient, erc20Abi } from "viem"
 import { logger } from "../../logger"
@@ -229,6 +230,39 @@ export const getSolanaNativeBalance = async ({
   } catch (err: unknown) {
     logger.error(
       new Error("error fetching Solana native balance", { cause: err })
+    )
+    return null
+  }
+}
+
+export const getSolanaSplBalance = async ({
+  userAddress,
+  tokenAddress,
+  rpcUrl,
+}: {
+  userAddress: string
+  tokenAddress: string
+  rpcUrl: string
+}): Promise<bigint | null> => {
+  try {
+    const connection = new Connection(rpcUrl, "confirmed")
+    const publicKey = new PublicKey(userAddress)
+    const tokenPublicKey = new PublicKey(tokenAddress)
+
+    const accounts = await connection.getTokenAccountsByOwner(publicKey, {
+      mint: tokenPublicKey,
+    })
+
+    // Sum up all token accounts' balances (usually there's just one)
+    const balance = accounts.value.reduce((total, accountInfo) => {
+      const decoded = AccountLayout.decode(accountInfo.account.data)
+      return total + BigInt(decoded.amount.toString())
+    }, 0n)
+
+    return balance
+  } catch (err: unknown) {
+    logger.error(
+      new Error("error fetching Solana SPL token balance", { cause: err })
     )
     return null
   }
