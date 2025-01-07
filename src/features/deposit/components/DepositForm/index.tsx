@@ -209,10 +209,11 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
         <Form<DepositFormValues>
           handleSubmit={handleSubmit(onSubmit)}
           register={register}
+          className="flex flex-col gap-4"
         >
           <button
             type="button"
-            className="w-full flex items-center justify-center text-base leading-6 h-14 px-4 gap-3 bg-gray-50 text-gray-500 max-w-full box-border flex-shrink-0 rounded-lg border border-gray-300 mb-4 hover:bg-gray-200/50"
+            className="flex items-center justify-center text-base leading-6 h-14 px-4 gap-3 bg-gray-50 text-gray-500 max-w-full box-border flex-shrink-0 rounded-lg border border-gray-300 hover:bg-gray-200/50"
             onClick={() => openModalSelectAssets("token", token ?? undefined)}
           >
             <Flex gap="2" align="center" justify="between" width="100%">
@@ -223,7 +224,7 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
             </Flex>
           </button>
           {token && (
-            <div className="mb-4 [&>button[disabled]]:opacity-50 [&>button[disabled]]:cursor-not-allowed [&>button[disabled]]:pointer-events-none [&>*[disabled]]:pointer-events-none">
+            <div className="[&>button[disabled]]:opacity-50 [&>button[disabled]]:cursor-not-allowed [&>button[disabled]]:pointer-events-none [&>*[disabled]]:pointer-events-none">
               <Controller
                 name="network"
                 control={control}
@@ -255,6 +256,7 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
 
               <div className="flex items-stretch gap-2">
                 <Button
+                  type="button"
                   onClick={() => setPreferredDepositOption("passive")}
                   disabled={!isPassiveDeposit}
                   size="4"
@@ -272,6 +274,7 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
                   Exchange
                 </Button>
                 <Button
+                  type="button"
                   onClick={() => setPreferredDepositOption("active")}
                   disabled={!isActiveDeposit}
                   size="4"
@@ -290,150 +293,152 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
             </div>
           )}
 
-          {isActiveDeposit && (
-            <Input
-              name="amount"
-              value={watch("amount")}
-              onChange={(value) => setValue("amount", value)}
-              type="text"
-              inputMode="decimal"
-              pattern="[0-9]*[.]?[0-9]*"
-              autoComplete="off"
-              ref={(ref) => {
-                if (ref) {
-                  ref.focus()
-                }
-              }}
-              className="pb-16"
-              slotRight={
-                <div className="flex items-center gap-2 flex-row absolute right-5 bottom-5">
-                  {token &&
-                    isBaseToken(token) &&
-                    token.address === "wrap.near" && (
-                      <TooltipInfo
-                        icon={
-                          <Text asChild color={accentColor}>
-                            <InfoCircledIcon />
-                          </Text>
-                        }
-                      >
-                        Combined balance of NEAR and wNEAR.
-                        <br /> NEAR will be automatically wrapped to wNEAR
-                        <br /> if your wNEAR balance isn't sufficient for the
-                        swap.
-                        <br />
-                        Note that to cover network fees, we reserve
-                        {` ${formatTokenValue(
-                          RESERVED_NEAR_BALANCE,
-                          token.decimals
-                        )} NEAR`}
-                        <br /> in your wallet.
-                      </TooltipInfo>
+          {currentDepositOption === "active" && (
+            <>
+              <Input
+                name="amount"
+                value={watch("amount")}
+                onChange={(value) => setValue("amount", value)}
+                type="text"
+                inputMode="decimal"
+                pattern="[0-9]*[.]?[0-9]*"
+                autoComplete="off"
+                ref={(ref) => {
+                  if (ref) {
+                    ref.focus()
+                  }
+                }}
+                className="pb-16"
+                slotRight={
+                  <div className="flex items-center gap-2 flex-row absolute right-5 bottom-5">
+                    {token &&
+                      isBaseToken(token) &&
+                      token.address === "wrap.near" && (
+                        <TooltipInfo
+                          icon={
+                            <Text asChild color={accentColor}>
+                              <InfoCircledIcon />
+                            </Text>
+                          }
+                        >
+                          Combined balance of NEAR and wNEAR.
+                          <br /> NEAR will be automatically wrapped to wNEAR
+                          <br /> if your wNEAR balance isn't sufficient for the
+                          swap.
+                          <br />
+                          Note that to cover network fees, we reserve
+                          {` ${formatTokenValue(
+                            RESERVED_NEAR_BALANCE,
+                            token.decimals
+                          )} NEAR`}
+                          <br /> in your wallet.
+                        </TooltipInfo>
+                      )}
+                    {balance != null && token != null && (
+                      <BlockMultiBalances
+                        balance={balance}
+                        decimals={token.decimals}
+                        handleClick={() => handleSetMaxValue()}
+                        disabled={balance === 0n}
+                        className="!static flex items-center justify-center"
+                      />
                     )}
-                  {balance != null && token != null && (
-                    <BlockMultiBalances
-                      balance={balance}
-                      decimals={token.decimals}
-                      handleClick={() => handleSetMaxValue()}
-                      disabled={balance === 0n}
-                      className="!static flex items-center justify-center"
-                    />
+                  </div>
+                }
+              />
+
+              <div className="flex flex-col gap-4 mt-4">
+                <ButtonCustom
+                  size="lg"
+                  disabled={
+                    !watch("amount") ||
+                    balanceInsufficient ||
+                    !isDepositAmountHighEnough
+                  }
+                  isLoading={
+                    snapshot.matches("submittingNearTx") ||
+                    snapshot.matches("submittingEVMTx") ||
+                    snapshot.matches("submittingSolanaTx") ||
+                    snapshot.matches("submittingTurboTx")
+                  }
+                >
+                  {renderDepositButtonText(
+                    watch("amount") >= "0" &&
+                      (balanceInsufficient !== null
+                        ? balanceInsufficient
+                        : false),
+                    network,
+                    token,
+                    minDepositAmount,
+                    isDepositAmountHighEnough
                   )}
-                </div>
-              }
-            />
+                </ButtonCustom>
+              </div>
+
+              {network && (
+                <DepositResult
+                  chainName={reverseAssetNetworkAdapter[network]}
+                  depositResult={depositOutput}
+                />
+              )}
+            </>
           )}
-          {(isActiveDeposit || !network) && (
-            <div className="flex flex-col gap-4 mt-4">
-              <ButtonCustom
-                size="lg"
-                disabled={
-                  !watch("amount") ||
-                  balanceInsufficient ||
-                  !isDepositAmountHighEnough
-                }
-                isLoading={
-                  snapshot.matches("submittingNearTx") ||
-                  snapshot.matches("submittingEVMTx") ||
-                  snapshot.matches("submittingSolanaTx") ||
-                  snapshot.matches("submittingTurboTx")
-                }
-              >
-                {renderDepositButtonText(
-                  watch("amount") >= "0" &&
-                    (balanceInsufficient !== null
-                      ? balanceInsufficient
-                      : false),
-                  network,
-                  token,
-                  minDepositAmount,
-                  isDepositAmountHighEnough
+
+          {currentDepositOption === "passive" && (
+            <div className="flex flex-col items-stretch">
+              <h2 className="text-[#21201C] text-center text-base font-bold leading-6">
+                Deposit to the address below
+              </h2>
+              <p className="text-[#63635E] text-center text-sm font-normal leading-5 mb-4">
+                {/* biome-ignore lint/nursery/useConsistentCurlyBraces: space is needed here */}
+                Withdraw assets from an exchange to the{" "}
+                {/* biome-ignore lint/nursery/useConsistentCurlyBraces: space is needed here */}
+                {network != null ? networkSelectToLabel[network] : "(empty)"}{" "}
+                address below. Upon confirmation, you will receive your assets
+                on Defuse within minutes.
+              </p>
+              <div className="flex justify-center items-center w-full min-h-[188px] mb-4 rounded-lg bg-[#FDFDFC] border border-[#F1F1F1] p-4">
+                {depositAddress ? (
+                  <QRCodeSVG value={depositAddress} />
+                ) : (
+                  <Spinner loading={true} />
                 )}
-              </ButtonCustom>
+              </div>
+              {depositAddress && (
+                <Input
+                  name="generatedAddress"
+                  value={
+                    depositAddress ? truncateUserAddress(depositAddress) : ""
+                  }
+                  disabled
+                  className="min-h-14 py-0 mb-4 [&>input]:text-base"
+                  slotRight={
+                    <Button
+                      type="button"
+                      size="2"
+                      variant="soft"
+                      className="px-3"
+                      disabled={!depositAddress}
+                    >
+                      <CopyToClipboard
+                        text={depositAddress}
+                        onCopy={() => setIsCopied(true)}
+                      >
+                        <Flex gap="2" align="center">
+                          <Text>{isCopied ? "Copied" : "Copy"}</Text>
+                          <Text asChild>
+                            <CopyIcon height="14" width="14" />
+                          </Text>
+                        </Flex>
+                      </CopyToClipboard>
+                    </Button>
+                  }
+                />
+              )}
+
+              {renderDepositHint(network, minDepositAmount, token)}
             </div>
           )}
-          {network && (
-            <DepositResult
-              chainName={reverseAssetNetworkAdapter[network]}
-              depositResult={depositOutput}
-            />
-          )}
-          {isPassiveDeposit &&
-            ENABLE_DEPOSIT_THROUGH_POA_BRIDGE &&
-            network &&
-            userAddress && (
-              <div className="flex flex-col items-stretch mt-4">
-                <h2 className="text-[#21201C] text-center text-base font-bold leading-6">
-                  Deposit to the address below
-                </h2>
-                <p className="text-[#63635E] text-center text-sm font-normal leading-5 mb-4">
-                  {/* biome-ignore lint/nursery/useConsistentCurlyBraces: space is needed here */}
-                  Withdraw assets from an exchange to the{" "}
-                  {networkSelectToLabel[network]} address below. Upon
-                  confirmation, you will receive your assets on Defuse within
-                  minutes.
-                </p>
-                <div className="flex justify-center items-center w-full min-h-[188px] mb-4 rounded-lg bg-[#FDFDFC] border border-[#F1F1F1] p-4">
-                  {depositAddress ? (
-                    <QRCodeSVG value={depositAddress} />
-                  ) : (
-                    <Spinner loading={true} />
-                  )}
-                </div>
-                {depositAddress && (
-                  <Input
-                    name="generatedAddress"
-                    value={
-                      depositAddress ? truncateUserAddress(depositAddress) : ""
-                    }
-                    disabled
-                    className="min-h-14 py-0 mb-4 [&>input]:text-base"
-                    slotRight={
-                      <Button
-                        type="button"
-                        size="2"
-                        variant="soft"
-                        className="px-3"
-                        disabled={!depositAddress}
-                      >
-                        <CopyToClipboard
-                          text={depositAddress}
-                          onCopy={() => setIsCopied(true)}
-                        >
-                          <Flex gap="2" align="center">
-                            <Text>{isCopied ? "Copied" : "Copy"}</Text>
-                            <Text asChild>
-                              <CopyIcon height="14" width="14" />
-                            </Text>
-                          </Flex>
-                        </CopyToClipboard>
-                      </Button>
-                    }
-                  />
-                )}
-                {renderDepositHint(network, minDepositAmount, token)}
-              </div>
-            )}
         </Form>
         {token &&
           network &&
