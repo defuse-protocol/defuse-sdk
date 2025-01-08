@@ -15,6 +15,7 @@ import { DepositResult } from "../DepositResult"
 import { DepositUIMachineContext } from "../DepositUIMachineProvider"
 import { TokenAmountInputCard } from "./TokenAmountInputCard"
 import type { DepositFormValues } from "./index"
+import { renderDepositHint } from "./renderDepositHint"
 
 export type ActiveDepositProps = {
   network: BlockchainEnum
@@ -124,18 +125,7 @@ export function ActiveDeposit({
         )}
       </ButtonCustom>
 
-      {minDepositAmount != null && (
-        <div className="flex flex-col gap-3.5 font-medium text-gray-600 text-xs dark:text-gray-400">
-          <div className="flex justify-between">
-            <div>Minimum deposit</div>
-            <div className="text-label">
-              {/* biome-ignore lint/nursery/useConsistentCurlyBraces: space is needed here */}
-              {formatTokenValue(minDepositAmount, token.decimals)}{" "}
-              {token.symbol}
-            </div>
-          </div>
-        </div>
-      )}
+      {renderDepositHint(network, minDepositAmount, token)}
 
       <DepositResult
         chainName={reverseAssetNetworkAdapter[network]}
