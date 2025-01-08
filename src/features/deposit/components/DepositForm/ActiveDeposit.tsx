@@ -1,5 +1,6 @@
 import { InfoCircledIcon } from "@radix-ui/react-icons"
 import { Text, useThemeContext } from "@radix-ui/themes"
+import { useId } from "react"
 import { useFormContext } from "react-hook-form"
 import { BlockMultiBalances } from "../../../../components/Block/BlockMultiBalances"
 import { ButtonCustom } from "../../../../components/Button/ButtonCustom"
@@ -68,16 +69,23 @@ export function ActiveDeposit({
     setValue("amount", amountToFormat)
   }
 
+  const inputId = useId()
+
   return (
     <div className="flex flex-col gap-5">
       <div className="flex flex-col gap-3">
-        <div className="font-bold text-gray-800 text-sm">Enter amount</div>
+        <label htmlFor={inputId} className="font-bold text-gray-800 text-sm">
+          Enter amount
+        </label>
+
         <TokenAmountInputCard
           inputSlot={
             <TokenAmountInputCard.Input
+              id={inputId}
               name="amount"
               value={watch("amount")}
               onChange={(value) => setValue("amount", value.target.value)}
+              aria-labelledby={inputId}
             />
           }
           tokenSlot={<TokenAmountInputCard.DisplayToken token={token} />}
