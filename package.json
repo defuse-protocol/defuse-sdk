@@ -55,6 +55,7 @@
     "react-hook-form": "^7.52.1",
     "react-shadow": "^20.5.0",
     "ripple-address-codec": "^5.0.0",
+    "tailwindcss-animate": "^1.0.7",
     "tweetnacl": "^1.0.3",
     "viem": "^2.18.1",
     "xstate": "^5.18.2",
