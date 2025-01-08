@@ -1,5 +1,6 @@
 import forms from "@tailwindcss/forms"
 import typography from "@tailwindcss/typography"
+import animate from "tailwindcss-animate"
 import colors from "tailwindcss/colors"
 import defaultTheme from "tailwindcss/defaultTheme"
 
@@ -102,6 +103,6 @@ const config = {
       },
     },
   },
-  plugins: [forms, typography],
+  plugins: [forms, typography, animate],
 }
 export default config
