@@ -28,27 +28,27 @@ export function WithdrawIntentCard({
       : null
 
   return (
-    <Flex p={"2"} gap={"3"}>
-      <Box pt={"2"}>
+    <Flex p="2" gap="3">
+      <Box pt="2">
         <AssetComboIcon {...tokenOut} />
       </Box>
 
-      <Flex direction={"column"} gap={"1"} flexGrow={"1"}>
+      <Flex direction="column" gap="1" flexGrow="1">
         <Flex>
-          <Box flexGrow={"1"}>
-            <Text size={"2"} weight={"medium"}>
+          <Box flexGrow="1">
+            <Text size="2" weight="medium">
               Withdraw
             </Text>
           </Box>
 
-          <Flex gap={"1"} align={"center"}>
+          <Flex gap="1" align="center">
             {(state.matches("pending") || state.matches("checking")) && (
               <Spinner size="1" />
             )}
 
             <Text
-              size={"1"}
-              weight={"medium"}
+              size="1"
+              weight="medium"
               color={
                 state.matches("error") || state.matches("not_valid")
                   ? "red"
@@ -60,8 +60,8 @@ export function WithdrawIntentCard({
 
             {state.can({ type: "RETRY" }) && (
               <Button
-                size={"1"}
-                variant={"outline"}
+                size="1"
+                variant="outline"
                 onClick={() => intentStatusActorRef.send({ type: "RETRY" })}
               >
                 retry
@@ -71,40 +71,41 @@ export function WithdrawIntentCard({
         </Flex>
 
         <Flex>
-          <Flex direction={"column"} gap={"1"} flexGrow={"1"}>
+          <Flex direction="column" gap="1" flexGrow="1">
             {state.context.intentHash != null && (
-              <Flex align={"center"} gap={"1"}>
-                <Text size={"1"} color={"gray"}>
+              <Flex align="center" gap="1">
+                <Text size="1" color="gray">
                   Intent: {truncateHash(state.context.intentHash)}
                 </Text>
 
                 <CopyButton
                   text={state.context.intentHash}
-                  ariaLabel={"Copy Intent hash"}
+                  ariaLabel="Copy Intent hash"
                 />
               </Flex>
             )}
 
             {state.context.txHash != null && txUrl != null && (
-              <Flex align={"center"} gap={"1"}>
-                <Text size={"1"} color={"gray"}>
+              <Flex align="center" gap="1">
+                <Text size="1" color="gray">
+                  {/* biome-ignore lint/nursery/useConsistentCurlyBraces: space is needed here */}
                   Transaction:{" "}
-                  <Link href={txUrl} target={"_blank"} color={"blue"}>
+                  <Link href={txUrl} target="_blank" color="blue">
                     {truncateHash(state.context.txHash)}
                   </Link>
                 </Text>
 
                 <CopyButton
                   text={state.context.txHash}
-                  ariaLabel={"Copy Transaction hash"}
+                  ariaLabel="Copy Transaction hash"
                 />
               </Flex>
             )}
           </Flex>
 
           <Text
-            size={"1"}
-            weight={"medium"}
+            size="1"
+            weight="medium"
             color={state.matches("not_valid") ? "gray" : "green"}
             style={{
               textDecoration: state.matches("not_valid")
@@ -116,6 +117,7 @@ export function WithdrawIntentCard({
             {formatTokenValue(amountWithdrawn, tokenOut.decimals, {
               min: 0.0001,
               fractionDigits: 4,
+              // biome-ignore lint/nursery/useConsistentCurlyBraces: space is needed here
             })}{" "}
             {tokenOut.symbol}
           </Text>

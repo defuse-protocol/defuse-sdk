@@ -25,27 +25,27 @@ export function SwapIntentCard({ intentStatusActorRef }: SwapIntentCardProps) {
       : null
 
   return (
-    <Flex p={"2"} gap={"3"}>
-      <Box pt={"2"}>
+    <Flex p="2" gap="3">
+      <Box pt="2">
         <AssetComboIcon {...tokenOut} />
       </Box>
 
-      <Flex direction={"column"} flexGrow={"1"}>
+      <Flex direction="column" flexGrow="1">
         <Flex>
-          <Box flexGrow={"1"}>
-            <Text size={"2"} weight={"medium"}>
+          <Box flexGrow="1">
+            <Text size="2" weight="medium">
               Swap
             </Text>
           </Box>
 
-          <Flex gap={"1"} align={"center"}>
+          <Flex gap="1" align="center">
             {(state.matches("pending") || state.matches("checking")) && (
               <Spinner size="1" />
             )}
 
             <Text
-              size={"1"}
-              weight={"medium"}
+              size="1"
+              weight="medium"
               color={
                 state.matches("error") || state.matches("not_valid")
                   ? "red"
@@ -57,8 +57,8 @@ export function SwapIntentCard({ intentStatusActorRef }: SwapIntentCardProps) {
 
             {state.can({ type: "RETRY" }) && (
               <Button
-                size={"1"}
-                variant={"outline"}
+                size="1"
+                variant="outline"
                 onClick={() => intentStatusActorRef.send({ type: "RETRY" })}
               >
                 retry
@@ -67,56 +67,59 @@ export function SwapIntentCard({ intentStatusActorRef }: SwapIntentCardProps) {
           </Flex>
         </Flex>
 
-        <Flex align={"center"}>
-          <Box flexGrow={"1"}>
-            <Text size={"1"} weight={"medium"} color={"gray"}>
+        <Flex align="center">
+          <Box flexGrow="1">
+            <Text size="1" weight="medium" color="gray">
               -
               {formatTokenValue(totalAmountIn, tokenIn.decimals, {
                 min: 0.0001,
                 fractionDigits: 4,
+                // biome-ignore lint/nursery/useConsistentCurlyBraces: space is needed here
               })}{" "}
               {tokenIn.symbol}
             </Text>
           </Box>
 
           <Box>
-            <Text size={"1"} weight={"medium"} color={"green"}>
+            <Text size="1" weight="medium" color="green">
               +
               {formatTokenValue(totalAmountOut, tokenOut.decimals, {
                 min: 0.0001,
                 fractionDigits: 4,
+                // biome-ignore lint/nursery/useConsistentCurlyBraces: space is needed here
               })}{" "}
               {tokenOut.symbol}
             </Text>
           </Box>
         </Flex>
 
-        <Flex direction={"column"} gap={"1"} mt={"1"}>
+        <Flex direction="column" gap="1" mt="1">
           {state.context.intentHash != null && (
-            <Flex align={"center"} gap={"1"}>
-              <Text size={"1"} color={"gray"}>
+            <Flex align="center" gap="1">
+              <Text size="1" color="gray">
                 Intent: {truncateHash(state.context.intentHash)}
               </Text>
 
               <CopyButton
                 text={state.context.intentHash}
-                ariaLabel={"Copy Intent hash"}
+                ariaLabel="Copy Intent hash"
               />
             </Flex>
           )}
 
           {state.context.txHash != null && txUrl != null && (
-            <Flex align={"center"} gap={"1"}>
-              <Text size={"1"} color={"gray"}>
+            <Flex align="center" gap="1">
+              <Text size="1" color="gray">
+                {/* biome-ignore lint/nursery/useConsistentCurlyBraces: space is needed here */}
                 Transaction:{" "}
-                <Link href={txUrl} target={"_blank"} color={"blue"}>
+                <Link href={txUrl} target="_blank" color="blue">
                   {truncateHash(state.context.txHash)}
                 </Link>
               </Text>
 
               <CopyButton
                 text={state.context.txHash}
-                ariaLabel={"Copy Transaction hash"}
+                ariaLabel="Copy Transaction hash"
               />
             </Flex>
           )}

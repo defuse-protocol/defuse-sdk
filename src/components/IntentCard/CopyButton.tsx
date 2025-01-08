@@ -19,9 +19,9 @@ export function CopyButton({ text, ariaLabel }: CopyButtonProps) {
   return (
     <IconButton
       onClick={handleCopy}
-      size={"1"}
-      variant={"ghost"}
-      color={"gray"}
+      size="1"
+      variant="ghost"
+      color="gray"
       aria-label={ariaLabel}
     >
       {copied ? <CheckIcon /> : <CopyIcon />}

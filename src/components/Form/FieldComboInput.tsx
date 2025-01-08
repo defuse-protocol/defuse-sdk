@@ -108,14 +108,14 @@ export const FieldComboInput = <T extends FieldValues>({
         {isLoading && <Skeleton className="w-full" height="40px" />}
 
         <input
-          type={"text"}
-          inputMode={"decimal"}
-          pattern={"[0-9]*[,.]?[0-9]*"}
+          type="text"
+          inputMode="decimal"
+          pattern="[0-9]*[,.]?[0-9]*"
           {...reactHookFormRegisterProps}
           ref={allInputRefs}
           placeholder={placeholder}
           disabled={disabled}
-          autoComplete={"off"}
+          autoComplete="off"
           className={clsx(
             "bg-gray-50 w-full text-3xl font-medium placeholder-black border-transparent focus:border-transparent focus:ring-0 dark:bg-black-900 dark:placeholder-white",
             disabled &&

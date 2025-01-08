@@ -237,10 +237,10 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
               name="amount"
               value={watch("amount")}
               onChange={(value) => setValue("amount", value)}
-              type={"text"}
-              inputMode={"decimal"}
-              pattern={"[0-9]*[.]?[0-9]*"}
-              autoComplete={"off"}
+              type="text"
+              inputMode="decimal"
+              pattern="[0-9]*[.]?[0-9]*"
+              autoComplete="off"
               ref={(ref) => {
                 if (ref) {
                   ref.focus()
@@ -288,7 +288,7 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
           {(isActiveDeposit || !network) && (
             <div className="flex flex-col gap-4 mt-4">
               <ButtonCustom
-                size={"lg"}
+                size="lg"
                 disabled={
                   !watch("amount") ||
                   balanceInsufficient ||
@@ -329,6 +329,7 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
                   Deposit to the address below
                 </h2>
                 <p className="text-[#63635E] text-center text-sm font-normal leading-5 mb-4">
+                  {/* biome-ignore lint/nursery/useConsistentCurlyBraces: space is needed here */}
                   Withdraw assets from an exchange to the{" "}
                   {networkSelectToLabel[network]} address below. Upon
                   confirmation, you will receive your assets on Defuse within
@@ -558,7 +559,7 @@ function isInsufficientBalance(
 
 function UnderFeatureFlag() {
   return (
-    <Callout.Root size={"1"} color="yellow" mt="4">
+    <Callout.Root size="1" color="yellow" mt="4">
       <Callout.Icon>
         <ExclamationTriangleIcon />
       </Callout.Icon>
@@ -571,7 +572,7 @@ function UnderFeatureFlag() {
 
 function NotSupportedDepositRoute() {
   return (
-    <Callout.Root size={"1"} color="yellow" mt="4">
+    <Callout.Root size="1" color="yellow" mt="4">
       <Callout.Icon>
         <ExclamationTriangleIcon />
       </Callout.Icon>
@@ -621,7 +622,7 @@ function renderDepositHint(
   token: SwappableToken | null
 ) {
   return (
-    <Callout.Root size={"1"} color="indigo" variant="soft">
+    <Callout.Root size="1" color="indigo" variant="soft">
       <Callout.Icon>
         <InfoCircledIcon />
       </Callout.Icon>
@@ -635,8 +636,9 @@ function renderDepositHint(
 
       {minDepositAmount != null && minDepositAmount > 1n && token != null && (
         <Callout.Text>
+          {/* biome-ignore lint/nursery/useConsistentCurlyBraces: space is needed here */}
           Minimal amount to deposit is{" "}
-          <Text size={"1"} weight={"bold"}>
+          <Text size="1" weight="bold">
             {formatTokenValue(minDepositAmount, token.decimals)} {token.symbol}
           </Text>
         </Callout.Text>

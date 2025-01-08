@@ -19,21 +19,22 @@ export const ModalConfirmAddPubkey = () => {
         onAbort()
       }}
     >
-      <Flex direction={"column"} gap={"4"}>
+      <Flex direction="column" gap="4">
         <Flex>
-          <Text size={"8"}>Confirm Your Account</Text>
+          <Text size="8">Confirm Your Account</Text>
         </Flex>
 
         <Text>
+          {/* biome-ignore lint/nursery/useConsistentCurlyBraces: space is needed here */}
           To verify your account (NEAR ID:{" "}
-          <Text weight={"bold"}>{accountId}</Text>), please send a one-time
+          <Text weight="bold">{accountId}</Text>), please send a one-time
           transaction.
         </Text>
 
-        <Flex gap={"3"} justify={"end"}>
+        <Flex gap="3" justify="end">
           <Button
-            color={"gray"}
-            variant={"outline"}
+            color="gray"
+            variant="outline"
             onClick={() => {
               // `onCloseModal` does not call `onClose` prop passed to `ModalDialog`, so we need to call abort manually
               onAbort()

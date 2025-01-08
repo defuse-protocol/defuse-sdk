@@ -59,7 +59,7 @@ export const DepositWarning = ({
   }
 
   return (
-    <Callout.Root size={"1"} color="red" mt="4">
+    <Callout.Root size="1" color="red" mt="4">
       <Callout.Icon>
         <ExclamationTriangleIcon />
       </Callout.Icon>

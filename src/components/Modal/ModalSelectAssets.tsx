@@ -143,7 +143,7 @@ export const ModalSelectAssets = () => {
           {deferredQuery && (
             <div className="flex justify-center items-center">
               <button
-                type={"button"}
+                type="button"
                 onClick={handleSearchClear}
                 className="mb-2.5 px-3 py-1.5 bg-red-100 rounded-full"
               >

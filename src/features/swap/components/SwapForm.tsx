@@ -157,8 +157,8 @@ export const SwapForm = ({ onNavigateDeposit }: SwapFormProps) => {
 
   return (
     <Flex
-      direction={"column"}
-      gap={"2"}
+      direction="column"
+      gap="2"
       className="max-w-[472px] rounded-[1rem] p-5 shadow bg-white dark:shadow-paper-dark dark:bg-black-800"
     >
       <Form<SwapFormValues>
@@ -194,10 +194,10 @@ export const SwapForm = ({ onNavigateDeposit }: SwapFormProps) => {
           balance={tokenOutBalance}
         />
 
-        <Flex align={"stretch"} direction={"column"}>
+        <Flex align="stretch" direction="column">
           {showDepositButton ? (
             <ButtonCustom
-              type={"button"}
+              type="button"
               size="lg"
               fullWidth
               onClick={() => {
@@ -320,7 +320,7 @@ export function renderIntentCreationResult(
   }
 
   return (
-    <Callout.Root size={"1"} color="red">
+    <Callout.Root size="1" color="red">
       <Callout.Icon>
         <ExclamationTriangleIcon />
       </Callout.Icon>
