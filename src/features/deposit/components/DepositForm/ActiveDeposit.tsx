@@ -3,17 +3,16 @@ import { Text, useThemeContext } from "@radix-ui/themes"
 import { useFormContext } from "react-hook-form"
 import { BlockMultiBalances } from "../../../../components/Block/BlockMultiBalances"
 import { ButtonCustom } from "../../../../components/Button/ButtonCustom"
-import { Input } from "../../../../components/Input"
 import { TooltipInfo } from "../../../../components/TooltipInfo"
 import type { BaseTokenInfo } from "../../../../types/base"
 import type { BlockchainEnum } from "../../../../types/interfaces"
 import type { SwappableToken } from "../../../../types/swap"
 import { reverseAssetNetworkAdapter } from "../../../../utils/adapters"
 import { formatTokenValue } from "../../../../utils/format"
-import { isBaseToken } from "../../../../utils/token"
 import { RESERVED_NEAR_BALANCE } from "../../../machines/getBalanceMachine"
 import { DepositResult } from "../DepositResult"
 import { DepositUIMachineContext } from "../DepositUIMachineProvider"
+import { TokenAmountInputCard } from "./TokenAmountInputCard"
 import type { DepositFormValues } from "./index"
 
 export type ActiveDepositProps = {
@@ -28,7 +27,6 @@ export function ActiveDeposit({
   minDepositAmount,
 }: ActiveDepositProps) {
   const { setValue, watch } = useFormContext<DepositFormValues>()
-  const { accentColor } = useThemeContext()
   const snapshot = DepositUIMachineContext.useSelector((snapshot) => snapshot)
 
   const { amount, parsedAmount, depositOutput, balance } =
@@ -68,57 +66,31 @@ export function ActiveDeposit({
 
   return (
     <>
-      <Input
-        name="amount"
-        value={watch("amount")}
-        onChange={(value) => setValue("amount", value)}
-        type="text"
-        inputMode="decimal"
-        pattern="[0-9]*[.]?[0-9]*"
-        autoComplete="off"
-        placeholder="0"
-        ref={(ref) => {
-          if (ref) {
-            ref.focus()
-          }
-        }}
-        className="pb-16"
-        slotRight={
-          <div className="flex items-center gap-2 flex-row absolute right-5 bottom-5">
-            {token && isBaseToken(token) && token.address === "wrap.near" && (
-              <TooltipInfo
-                icon={
-                  <Text asChild color={accentColor}>
-                    <InfoCircledIcon />
-                  </Text>
-                }
-              >
-                Combined balance of NEAR and wNEAR.
-                <br /> NEAR will be automatically wrapped to wNEAR
-                <br /> if your wNEAR balance isn't sufficient for the swap.
-                <br />
-                Note that to cover network fees, we reserve
-                {` ${formatTokenValue(
-                  RESERVED_NEAR_BALANCE,
-                  token.decimals
-                )} NEAR`}
-                <br /> in your wallet.
-              </TooltipInfo>
-            )}
-            {balance != null && token != null && (
-              <BlockMultiBalances
-                balance={balance}
-                decimals={token.decimals}
-                handleClick={() => handleSetMaxValue()}
-                disabled={balance === 0n}
-                className="!static flex items-center justify-center"
-              />
-            )}
-          </div>
+      <TokenAmountInputCard
+        inputSlot={
+          <TokenAmountInputCard.Input
+            name="amount"
+            value={watch("amount")}
+            onChange={(value) => setValue("amount", value.target.value)}
+          />
+        }
+        tokenSlot={<TokenAmountInputCard.DisplayToken token={token} />}
+        balanceSlot={
+          <Balance
+            balance={balance}
+            token={token}
+            onClick={handleSetMaxValue}
+          />
+        }
+        priceSlot={
+          <TokenAmountInputCard.DisplayPrice>
+            {/* biome-ignore lint/nursery/useConsistentCurlyBraces: <explanation> */}
+            {/* tbd */ ""}
+          </TokenAmountInputCard.DisplayPrice>
         }
       />
 
-      <div className="flex flex-col gap-4 mt-4">
+      <div className="mt-4 flex flex-col gap-4">
         <ButtonCustom
           size="lg"
           disabled={
@@ -149,6 +121,50 @@ export function ActiveDeposit({
         depositResult={depositOutput}
       />
     </>
+  )
+}
+
+function Balance({
+  balance,
+  token,
+  onClick,
+}: {
+  balance: bigint | null
+  token: BaseTokenInfo
+  onClick: () => void
+}) {
+  const { accentColor } = useThemeContext()
+
+  return (
+    <div className="flex items-center gap-1">
+      {balance != null && (
+        <BlockMultiBalances
+          balance={balance}
+          decimals={token.decimals}
+          handleClick={() => onClick()}
+          disabled={balance === 0n}
+          className="!static"
+        />
+      )}
+
+      {token.address === "wrap.near" && (
+        <TooltipInfo
+          icon={
+            <Text asChild color={accentColor}>
+              <InfoCircledIcon />
+            </Text>
+          }
+        >
+          Combined balance of NEAR and wNEAR.
+          <br /> NEAR will be automatically wrapped to wNEAR
+          <br /> if your wNEAR balance isn't sufficient for the swap.
+          <br />
+          Note that to cover network fees, we reserve
+          {` ${formatTokenValue(RESERVED_NEAR_BALANCE, token.decimals)} NEAR`}
+          <br /> in your wallet.
+        </TooltipInfo>
+      )}
+    </div>
   )
 }
 
