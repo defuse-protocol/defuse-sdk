@@ -1,5 +1,6 @@
 import forms from "@tailwindcss/forms"
 import typography from "@tailwindcss/typography"
+import colors from "tailwindcss/colors"
 import defaultTheme from "tailwindcss/defaultTheme"
 
 const config = {
@@ -27,6 +28,10 @@ const config = {
         15: "3.75rem",
       },
       colors: {
+        // Figma design uses Sand palette from Radix colors.
+        // "Stone" is the closest match in Tailwind colors.
+        gray: colors.stone,
+
         accent: {
           DEFAULT: "var(--accent-9)",
           50: "var(--accent-1)",
