@@ -23,7 +23,7 @@ export const ButtonCustom = ({
   let radixButtonColor: ButtonProps["color"]
   switch (variant) {
     case "primary":
-      radixButtonVariant = "classic"
+      radixButtonVariant = undefined
       break
     case "secondary":
       radixButtonVariant = "outline"
