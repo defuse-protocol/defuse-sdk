@@ -18,7 +18,10 @@ export function TokenAmountInputCard({
     <div className="flex flex-col gap-2.5 rounded-lg border bg-gray-50 p-4">
       <div className="flex items-center gap-4">
         {/* Amount Input */}
-        <div className="flex-1">{inputSlot}</div>
+        <div className="relative flex-1">
+          <div className="overflow-hidden">{inputSlot}</div>
+          <div className="pointer-events-none absolute top-0 right-0 bottom-0 w-12 bg-gradient-to-r from-transparent to-gray-50" />
+        </div>
 
         {/* Token Selector */}
         <div className="shrink-0">{tokenSlot}</div>
