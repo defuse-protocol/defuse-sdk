@@ -31,7 +31,7 @@ interface Props<T extends FieldValues>
   handleSelect?: () => void
   className?: string
   errors?: FieldErrors
-  usdAmount?: number | null
+  usdAmount?: string | null
   disabled?: boolean
   isLoading?: boolean
 }
@@ -139,7 +139,7 @@ export const FieldComboInput = <T extends FieldValues>({
         </span>
       ) : usdAmount ? (
         <span className="absolute bottom-4 left-5 text-xs sm:text-sm font-medium text-gray-400">
-          ~${usdAmount}
+          {usdAmount}
         </span>
       ) : null}
       {balance != null && (

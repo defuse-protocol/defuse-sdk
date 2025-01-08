@@ -21,6 +21,7 @@ import {
   assetNetworkAdapter,
   reverseAssetNetworkAdapter,
 } from "src/utils/adapters"
+import { formatUsdAmount } from "src/utils/format"
 import getTokenUsdPrice from "src/utils/getTokenUsdPrice"
 import { AssetComboIcon } from "../../../../components/Asset/AssetComboIcon"
 import { BlockMultiBalances } from "../../../../components/Block/BlockMultiBalances"
@@ -251,9 +252,9 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
               }}
               className="pb-16"
               slotLeft={
-                usdAmountToDeposit !== null ? (
+                usdAmountToDeposit ? (
                   <span className="absolute bottom-4 left-5 text-xs sm:text-sm font-medium text-gray-400">
-                    ~${usdAmountToDeposit}
+                    ~{formatUsdAmount(usdAmountToDeposit)}
                   </span>
                 ) : null
               }

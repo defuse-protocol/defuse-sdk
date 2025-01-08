@@ -10,6 +10,7 @@ import {
 } from "react"
 import { useFormContext } from "react-hook-form"
 import { useTokensUsdPrices } from "src/hooks/useTokensUsdPrices"
+import { formatUsdAmount } from "src/utils/format"
 import getTokenUsdPrice from "src/utils/getTokenUsdPrice"
 import type { ActorRefFrom, SnapshotFrom } from "xstate"
 import { ButtonCustom } from "../../../components/Button/ButtonCustom"
@@ -158,6 +159,17 @@ export const SwapForm = ({ onNavigateDeposit }: SwapFormProps) => {
   const showDepositButton =
     tokenInBalance != null && tokenInBalance === 0n && onNavigateDeposit != null
 
+  const usdAmountInt = getTokenUsdPrice(
+    getValues().amountIn,
+    tokenIn,
+    tokensUsdPriceData
+  )
+  const usdAmountOut = getTokenUsdPrice(
+    getValues().amountOut,
+    tokenOut,
+    tokensUsdPriceData
+  )
+
   return (
     <Flex
       direction="column"
@@ -177,11 +189,7 @@ export const SwapForm = ({ onNavigateDeposit }: SwapFormProps) => {
           className="border border-gray-200/50 rounded-t-xl"
           required
           errors={errors}
-          usdAmount={getTokenUsdPrice(
-            getValues().amountIn,
-            tokenIn,
-            tokensUsdPriceData
-          )}
+          usdAmount={usdAmountInt ? `~${formatUsdAmount(usdAmountInt)}` : ""}
           balance={tokenInBalance}
         />
 
@@ -199,11 +207,7 @@ export const SwapForm = ({ onNavigateDeposit }: SwapFormProps) => {
           errors={errors}
           disabled={true}
           isLoading={snapshot.matches({ editing: "waiting_quote" })}
-          usdAmount={getTokenUsdPrice(
-            getValues().amountOut,
-            tokenOut,
-            tokensUsdPriceData
-          )}
+          usdAmount={usdAmountOut ? `~${formatUsdAmount(usdAmountOut)}` : ""}
           balance={tokenOutBalance}
         />
 

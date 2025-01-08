@@ -56,3 +56,16 @@ function trimEnd(s: string, char: string) {
 
   return pointer != null ? s.slice(0, pointer) : s
 }
+
+export function formatUsdAmount(value: number): string {
+  try {
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
+      // Omit cents for bigger values
+      maximumFractionDigits: value >= 500 ? 0 : 2,
+    }).format(value)
+  } catch {
+    return ""
+  }
+}

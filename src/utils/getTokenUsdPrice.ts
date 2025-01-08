@@ -7,28 +7,32 @@ const getTokenUsdPrice = (
   token: SwappableToken | null,
   tokensUsdPriceData?: TokenUsdPriceData
 ): number | null => {
-  if (
-    !tokensUsdPriceData ||
-    !token ||
-    !tokenAmount ||
-    Number.isNaN(+tokenAmount)
-  )
-    return null
-  let tokenUsdPriceData = null
-  if (isBaseToken(token) && tokensUsdPriceData[token.defuseAssetId]) {
-    tokenUsdPriceData = tokensUsdPriceData[token.defuseAssetId]
-  } else if (isUnifiedToken(token)) {
-    for (const groupedToken of token.groupedTokens) {
-      if (
-        isBaseToken(groupedToken) &&
-        tokensUsdPriceData[groupedToken.defuseAssetId]
-      ) {
-        tokenUsdPriceData = tokensUsdPriceData[groupedToken.defuseAssetId]
-        break
+  try {
+    if (
+      !tokensUsdPriceData ||
+      !token ||
+      !tokenAmount ||
+      Number.isNaN(+tokenAmount)
+    )
+      return null
+    let tokenUsdPriceData = null
+    if (isBaseToken(token) && tokensUsdPriceData[token.defuseAssetId]) {
+      tokenUsdPriceData = tokensUsdPriceData[token.defuseAssetId]
+    } else if (isUnifiedToken(token)) {
+      for (const groupedToken of token.groupedTokens) {
+        if (
+          isBaseToken(groupedToken) &&
+          tokensUsdPriceData[groupedToken.defuseAssetId]
+        ) {
+          tokenUsdPriceData = tokensUsdPriceData[groupedToken.defuseAssetId]
+          break
+        }
       }
     }
+    if (!tokenUsdPriceData) return null
+    return Number(tokenAmount) * tokenUsdPriceData.price
+  } catch {
+    return null
   }
-  if (!tokenUsdPriceData) return null
-  return Number(tokenAmount) * tokenUsdPriceData?.price
 }
 export default getTokenUsdPrice
