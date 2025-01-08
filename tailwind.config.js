@@ -59,7 +59,8 @@ const config = {
           a900: "var(--accent-a11)",
           a950: "var(--accent-a12)",
         },
-        border: "hsl(var(--border))",
+        border: "var(--color-border)",
+        label: "var(--color-label)",
       },
       boxShadow: {
         paper:

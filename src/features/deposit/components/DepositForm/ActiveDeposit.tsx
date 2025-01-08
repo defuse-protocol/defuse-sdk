@@ -74,7 +74,7 @@ export function ActiveDeposit({
   return (
     <div className="flex flex-col gap-5">
       <div className="flex flex-col gap-3">
-        <label htmlFor={inputId} className="font-bold text-gray-800 text-sm">
+        <label htmlFor={inputId} className="font-bold text-label text-sm">
           Enter amount
         </label>
 
@@ -125,10 +125,10 @@ export function ActiveDeposit({
       </ButtonCustom>
 
       {minDepositAmount != null && (
-        <div className="flex flex-col gap-3.5 font-medium text-gray-600 text-xs">
+        <div className="flex flex-col gap-3.5 font-medium text-gray-600 text-xs dark:text-gray-400">
           <div className="flex justify-between">
             <div>Minimum deposit</div>
-            <div className="text-gray-800">
+            <div className="text-label">
               {/* biome-ignore lint/nursery/useConsistentCurlyBraces: space is needed here */}
               {formatTokenValue(minDepositAmount, token.decimals)}{" "}
               {token.symbol}

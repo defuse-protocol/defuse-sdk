@@ -14,19 +14,17 @@ export function DepositMethodSelector({
 }: DepositMethodSelectorProps) {
   return (
     <div className="flex flex-col gap-3">
-      <div className="font-bold text-gray-800 text-sm">
-        Choose deposit method
-      </div>
+      <div className="font-bold text-label text-sm">Choose deposit method</div>
 
       <div className="flex items-stretch gap-2">
         <Button
           type="button"
           onClick={() => onSelectDepositOption("passive")}
           size="4"
-          variant={selectedDepositOption === "passive" ? "surface" : "outline"}
+          variant="outline"
           color={selectedDepositOption === "passive" ? undefined : "gray"}
           className={clsx("flex-1 font-bold text-sm", {
-            "ring-2 ring-accent-a700 ring-inset":
+            "bg-accent-a300 ring-2 ring-accent-a700 ring-inset dark:bg-accent-a500":
               selectedDepositOption === "passive",
           })}
         >
@@ -36,10 +34,10 @@ export function DepositMethodSelector({
           type="button"
           onClick={() => onSelectDepositOption("active")}
           size="4"
-          variant={selectedDepositOption === "active" ? "surface" : "outline"}
+          variant="outline"
           color={selectedDepositOption === "active" ? undefined : "gray"}
           className={clsx("flex-1 font-bold text-sm", {
-            "ring-2 ring-accent-a700 ring-inset":
+            "bg-accent-a300 ring-2 ring-accent-a700 ring-inset dark:bg-accent-a500":
               selectedDepositOption === "active",
           })}
         >

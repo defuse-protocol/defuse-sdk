@@ -11,6 +11,16 @@
 
 @layer base {
   :host {
-    --border: 214.3 31.8% 91.4%;
+    --color-border: var(--sand-4);
+    --color-label: var(--sand-12);
+  }
+
+  .dark {
+    /**
+     * It's not a mistake, duplicating the same color values here.
+     * They are Radix UI colors palette, and they're switched based on the theme.
+     */
+    --color-border: var(--sand-4);
+    --color-label: var(--sand-12);
   }
 }
