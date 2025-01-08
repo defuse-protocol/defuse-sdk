@@ -65,7 +65,7 @@ export function ActiveDeposit({
   }
 
   return (
-    <>
+    <div className="flex flex-col gap-5">
       <TokenAmountInputCard
         inputSlot={
           <TokenAmountInputCard.Input
@@ -90,37 +90,46 @@ export function ActiveDeposit({
         }
       />
 
-      <div className="mt-4 flex flex-col gap-4">
-        <ButtonCustom
-          size="lg"
-          disabled={
-            !watch("amount") ||
-            balanceInsufficient ||
-            !isDepositAmountHighEnough
-          }
-          isLoading={
-            snapshot.matches("submittingNearTx") ||
-            snapshot.matches("submittingEVMTx") ||
-            snapshot.matches("submittingSolanaTx") ||
-            snapshot.matches("submittingTurboTx")
-          }
-        >
-          {renderDepositButtonText(
-            watch("amount") >= "0" &&
-              (balanceInsufficient !== null ? balanceInsufficient : false),
-            network,
-            token,
-            minDepositAmount,
-            isDepositAmountHighEnough
-          )}
-        </ButtonCustom>
-      </div>
+      <ButtonCustom
+        size="lg"
+        disabled={
+          !watch("amount") || balanceInsufficient || !isDepositAmountHighEnough
+        }
+        isLoading={
+          snapshot.matches("submittingNearTx") ||
+          snapshot.matches("submittingEVMTx") ||
+          snapshot.matches("submittingSolanaTx") ||
+          snapshot.matches("submittingTurboTx")
+        }
+      >
+        {renderDepositButtonText(
+          watch("amount") >= "0" &&
+            (balanceInsufficient !== null ? balanceInsufficient : false),
+          network,
+          token,
+          minDepositAmount,
+          isDepositAmountHighEnough
+        )}
+      </ButtonCustom>
+
+      {minDepositAmount != null && (
+        <div className="flex flex-col gap-3.5 font-medium text-gray-600 text-xs">
+          <div className="flex justify-between">
+            <div>Minimum deposit</div>
+            <div className="text-gray-800">
+              {/* biome-ignore lint/nursery/useConsistentCurlyBraces: space is needed here */}
+              {formatTokenValue(minDepositAmount, token.decimals)}{" "}
+              {token.symbol}
+            </div>
+          </div>
+        </div>
+      )}
 
       <DepositResult
         chainName={reverseAssetNetworkAdapter[network]}
         depositResult={depositOutput}
       />
-    </>
+    </div>
   )
 }
 
