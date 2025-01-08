@@ -76,6 +76,7 @@ export function ActiveDeposit({
         inputMode="decimal"
         pattern="[0-9]*[.]?[0-9]*"
         autoComplete="off"
+        placeholder="0"
         ref={(ref) => {
           if (ref) {
             ref.focus()
