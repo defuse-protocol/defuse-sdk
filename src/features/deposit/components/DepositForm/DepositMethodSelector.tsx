@@ -14,7 +14,7 @@ export function DepositMethodSelector({
 }: DepositMethodSelectorProps) {
   return (
     <div className="flex flex-col gap-3">
-      <div className="font-bold text-gray-950 text-sm">
+      <div className="font-bold text-gray-800 text-sm">
         Choose deposit method
       </div>
 

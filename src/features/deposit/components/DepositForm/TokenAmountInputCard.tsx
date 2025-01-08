@@ -65,7 +65,7 @@ TokenAmountInputCard.DisplayToken = function DisplayToken({
         chainName={isBaseToken(token) ? token.chainName : undefined}
       />
 
-      <div className="font-bold text-sm">{token.symbol}</div>
+      <div className="font-bold text-gray-800 text-sm">{token.symbol}</div>
     </div>
   )
 }

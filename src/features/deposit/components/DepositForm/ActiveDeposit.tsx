@@ -70,29 +70,32 @@ export function ActiveDeposit({
 
   return (
     <div className="flex flex-col gap-5">
-      <TokenAmountInputCard
-        inputSlot={
-          <TokenAmountInputCard.Input
-            name="amount"
-            value={watch("amount")}
-            onChange={(value) => setValue("amount", value.target.value)}
-          />
-        }
-        tokenSlot={<TokenAmountInputCard.DisplayToken token={token} />}
-        balanceSlot={
-          <Balance
-            balance={balance}
-            token={token}
-            onClick={handleSetMaxValue}
-          />
-        }
-        priceSlot={
-          <TokenAmountInputCard.DisplayPrice>
-            {/* biome-ignore lint/nursery/useConsistentCurlyBraces: <explanation> */}
-            {/* tbd */ ""}
-          </TokenAmountInputCard.DisplayPrice>
-        }
-      />
+      <div className="flex flex-col gap-3">
+        <div className="font-bold text-gray-800 text-sm">Enter amount</div>
+        <TokenAmountInputCard
+          inputSlot={
+            <TokenAmountInputCard.Input
+              name="amount"
+              value={watch("amount")}
+              onChange={(value) => setValue("amount", value.target.value)}
+            />
+          }
+          tokenSlot={<TokenAmountInputCard.DisplayToken token={token} />}
+          balanceSlot={
+            <Balance
+              balance={balance}
+              token={token}
+              onClick={handleSetMaxValue}
+            />
+          }
+          priceSlot={
+            <TokenAmountInputCard.DisplayPrice>
+              {/* biome-ignore lint/nursery/useConsistentCurlyBraces: <explanation> */}
+              {/* tbd */ ""}
+            </TokenAmountInputCard.DisplayPrice>
+          }
+        />
+      </div>
 
       <ButtonCustom
         size="lg"
