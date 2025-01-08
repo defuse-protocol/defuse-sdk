@@ -16,10 +16,12 @@ import { QRCodeSVG } from "qrcode.react"
 import { useEffect, useState } from "react"
 import CopyToClipboard from "react-copy-to-clipboard"
 import { Controller, useFormContext } from "react-hook-form"
+import { useTokensUsdPrices } from "src/hooks/useTokensUsdPrices"
 import {
   assetNetworkAdapter,
   reverseAssetNetworkAdapter,
 } from "src/utils/adapters"
+import getTokenUsdPrice from "src/utils/getTokenUsdPrice"
 import { AssetComboIcon } from "../../../../components/Asset/AssetComboIcon"
 import { BlockMultiBalances } from "../../../../components/Block/BlockMultiBalances"
 import { ButtonCustom } from "../../../../components/Button/ButtonCustom"
@@ -188,7 +190,8 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
   const [isCopied, setIsCopied] = useState(false)
 
   const { accentColor } = useThemeContext()
-
+  const { data: tokensUsdPriceData } = useTokensUsdPrices()
+  const usdAmountToDeposit = getTokenUsdPrice(amount, token, tokensUsdPriceData)
   return (
     <div className="w-full max-w-[472px]">
       <div className="rounded-2xl p-5 bg-white shadow dark:bg-[#111110] dark:shadow-[0_1px_3px_0_rgb(255_255_255_/_0.1),_0_1px_2px_-1px_rgb(255_255_255_/_0.1)]">
@@ -247,6 +250,13 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
                 }
               }}
               className="pb-16"
+              slotLeft={
+                usdAmountToDeposit !== null ? (
+                  <span className="absolute bottom-4 left-5 text-xs sm:text-sm font-medium text-gray-400">
+                    ~${usdAmountToDeposit}
+                  </span>
+                ) : null
+              }
               slotRight={
                 <div className="flex items-center gap-2 flex-row absolute right-5 bottom-5">
                   {token &&

@@ -31,6 +31,7 @@ interface Props<T extends FieldValues>
   handleSelect?: () => void
   className?: string
   errors?: FieldErrors
+  usdAmount?: number | null
   disabled?: boolean
   isLoading?: boolean
 }
@@ -49,6 +50,7 @@ export const FieldComboInput = <T extends FieldValues>({
   handleSelect,
   className,
   errors,
+  usdAmount,
   disabled,
   isLoading,
 }: Props<T>) => {
@@ -96,7 +98,7 @@ export const FieldComboInput = <T extends FieldValues>({
   })
 
   const allInputRefs = useMergedRef(inputRef, reactHookFormRegisterProps.ref)
-
+  const fieldError = errors?.[fieldName]
   return (
     <div
       className={clsx(
@@ -131,9 +133,13 @@ export const FieldComboInput = <T extends FieldValues>({
         )}
       </div>
 
-      {errors?.[fieldName] ? (
+      {fieldError ? (
         <span className="absolute bottom-4 left-5 text-xs sm:text-sm font-medium text-red-400">
-          {(errors[fieldName] as FieldError).message}
+          {(fieldError as FieldError).message}
+        </span>
+      ) : usdAmount ? (
+        <span className="absolute bottom-4 left-5 text-xs sm:text-sm font-medium text-gray-400">
+          ~${usdAmount}
         </span>
       ) : null}
       {balance != null && (

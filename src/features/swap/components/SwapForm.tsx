@@ -9,6 +9,8 @@ import {
   useEffect,
 } from "react"
 import { useFormContext } from "react-hook-form"
+import { useTokensUsdPrices } from "src/hooks/useTokensUsdPrices"
+import getTokenUsdPrice from "src/utils/getTokenUsdPrice"
 import type { ActorRefFrom, SnapshotFrom } from "xstate"
 import { ButtonCustom } from "../../../components/Button/ButtonCustom"
 import { ButtonSwitch } from "../../../components/Button/ButtonSwitch"
@@ -48,6 +50,7 @@ export const SwapForm = ({ onNavigateDeposit }: SwapFormProps) => {
   const swapUIActorRef = SwapUIMachineContext.useActorRef()
   const snapshot = SwapUIMachineContext.useSelector((snapshot) => snapshot)
   const intentCreationResult = snapshot.context.intentCreationResult
+  const { data: tokensUsdPriceData } = useTokensUsdPrices()
 
   const { tokenIn, tokenOut, noLiquidity } = SwapUIMachineContext.useSelector(
     (snapshot) => {
@@ -174,6 +177,11 @@ export const SwapForm = ({ onNavigateDeposit }: SwapFormProps) => {
           className="border border-gray-200/50 rounded-t-xl"
           required
           errors={errors}
+          usdAmount={getTokenUsdPrice(
+            getValues().amountIn,
+            tokenIn,
+            tokensUsdPriceData
+          )}
           balance={tokenInBalance}
         />
 
@@ -191,6 +199,11 @@ export const SwapForm = ({ onNavigateDeposit }: SwapFormProps) => {
           errors={errors}
           disabled={true}
           isLoading={snapshot.matches({ editing: "waiting_quote" })}
+          usdAmount={getTokenUsdPrice(
+            getValues().amountOut,
+            tokenOut,
+            tokensUsdPriceData
+          )}
           balance={tokenOutBalance}
         />
 

@@ -18,6 +18,7 @@ import { providers } from "near-api-js"
 import { Fragment, type ReactNode, useEffect } from "react"
 import { Controller, useForm } from "react-hook-form"
 import { useTokensUsdPrices } from "src/hooks/useTokensUsdPrices"
+import getTokenUsdPrice from "src/utils/getTokenUsdPrice"
 import type { ActorRefFrom } from "xstate"
 import { ButtonCustom } from "../../../../components/Button/ButtonCustom"
 import { EmptyIcon } from "../../../../components/EmptyIcon"
@@ -149,6 +150,7 @@ export const WithdrawForm = ({
     watch,
     formState: { errors },
     setValue,
+    getValues,
   } = useForm<WithdrawFormNearValues>({
     mode: "onSubmit",
     reValidateMode: "onChange",
@@ -327,6 +329,11 @@ export const WithdrawForm = ({
               errors={errors}
               balance={tokenInBalance}
               register={register}
+              usdAmount={getTokenUsdPrice(
+                getValues().amountIn,
+                token,
+                tokensUsdPriceData
+              )}
             />
 
             {renderMinWithdrawalAmount(minWithdrawalAmount, tokenOut)}
