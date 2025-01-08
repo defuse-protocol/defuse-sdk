@@ -27,9 +27,8 @@ export function ActiveDeposit({
   minDepositAmount,
 }: ActiveDepositProps) {
   const { setValue, watch } = useFormContext<DepositFormValues>()
-  const snapshot = DepositUIMachineContext.useSelector((snapshot) => snapshot)
 
-  const { amount, parsedAmount, depositOutput, balance } =
+  const { amount, parsedAmount, depositOutput, balance, isLoading } =
     DepositUIMachineContext.useSelector((snapshot) => {
       const amount =
         snapshot.context.depositFormRef.getSnapshot().context.amount
@@ -45,6 +44,11 @@ export function ActiveDeposit({
           preparationOutput?.tag === "ok"
             ? preparationOutput.value.balance
             : null,
+        isLoading:
+          snapshot.matches("submittingNearTx") ||
+          snapshot.matches("submittingEVMTx") ||
+          snapshot.matches("submittingSolanaTx") ||
+          snapshot.matches("submittingTurboTx"),
       }
     })
 
@@ -95,20 +99,17 @@ export function ActiveDeposit({
         disabled={
           !watch("amount") || balanceInsufficient || !isDepositAmountHighEnough
         }
-        isLoading={
-          snapshot.matches("submittingNearTx") ||
-          snapshot.matches("submittingEVMTx") ||
-          snapshot.matches("submittingSolanaTx") ||
-          snapshot.matches("submittingTurboTx")
-        }
+        isLoading={isLoading}
       >
         {renderDepositButtonText(
+          watch("amount") === "",
           watch("amount") >= "0" &&
             (balanceInsufficient !== null ? balanceInsufficient : false),
           network,
           token,
           minDepositAmount,
-          isDepositAmountHighEnough
+          isDepositAmountHighEnough,
+          isLoading
         )}
       </ButtonCustom>
 
@@ -178,17 +179,25 @@ function Balance({
 }
 
 function renderDepositButtonText(
+  isAmountEmpty: boolean,
   isBalanceInsufficient: boolean,
   network: BlockchainEnum | null,
   token: SwappableToken | null,
   minDepositAmount: bigint | null,
-  isDepositAmountHighEnough: boolean
+  isDepositAmountHighEnough: boolean,
+  isLoading: boolean
 ) {
+  if (isLoading) {
+    return "Processing..."
+  }
+  if (isAmountEmpty) {
+    return "Enter amount"
+  }
   if (!isDepositAmountHighEnough && minDepositAmount != null && token != null) {
     return `Minimal amount to deposit is ${formatTokenValue(minDepositAmount, token.decimals)} ${token.symbol}`
   }
   if (isBalanceInsufficient) {
-    return "Insufficient Balance"
+    return "Insufficient balance"
   }
   if (!!network && !!token) {
     return "Deposit"
