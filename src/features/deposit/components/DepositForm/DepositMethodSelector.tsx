@@ -24,12 +24,13 @@ export function DepositMethodSelector({
           variant="outline"
           color={selectedDepositOption === "passive" ? undefined : "gray"}
           className={clsx("flex-1 font-bold text-sm", {
-            "bg-accent-a300 ring-2 ring-accent-a700 ring-inset dark:bg-accent-a500":
+            "bg-accent-a200 text-accent-800 ring-2 ring-accent-a500 ring-inset":
               selectedDepositOption === "passive",
           })}
         >
           Exchange
         </Button>
+
         <Button
           type="button"
           onClick={() => onSelectDepositOption("active")}
@@ -37,7 +38,7 @@ export function DepositMethodSelector({
           variant="outline"
           color={selectedDepositOption === "active" ? undefined : "gray"}
           className={clsx("flex-1 font-bold text-sm", {
-            "bg-accent-a300 ring-2 ring-accent-a700 ring-inset dark:bg-accent-a500":
+            "bg-accent-a200 text-accent-800 ring-2 ring-accent-a500 ring-inset":
               selectedDepositOption === "active",
           })}
         >
