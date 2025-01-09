@@ -18,6 +18,8 @@ import { providers } from "near-api-js"
 import { Fragment, type ReactNode, useEffect } from "react"
 import { Controller, useForm } from "react-hook-form"
 import { useTokensUsdPrices } from "src/hooks/useTokensUsdPrices"
+import { formatTokenValue, formatUsdAmount } from "src/utils/format"
+import getTokenUsdPrice from "src/utils/getTokenUsdPrice"
 import type { ActorRefFrom } from "xstate"
 import { ButtonCustom } from "../../../../components/Button/ButtonCustom"
 import { EmptyIcon } from "../../../../components/EmptyIcon"
@@ -37,7 +39,6 @@ import type {
 } from "../../../../types/base"
 import { ChainType } from "../../../../types/deposit"
 import type { WithdrawWidgetProps } from "../../../../types/withdraw"
-import { formatTokenValue } from "../../../../utils/format"
 import { parseUnits } from "../../../../utils/parse"
 import { isBaseToken } from "../../../../utils/token"
 import { validateAddress } from "../../../../utils/validateAddress"
@@ -149,6 +150,7 @@ export const WithdrawForm = ({
     watch,
     formState: { errors },
     setValue,
+    getValues,
   } = useForm<WithdrawFormNearValues>({
     mode: "onSubmit",
     reValidateMode: "onChange",
@@ -268,6 +270,12 @@ export const WithdrawForm = ({
     tokenOut.chainName
   )
 
+  const tokenToWithdrawUsdAmount = getTokenUsdPrice(
+    getValues().amountIn,
+    token,
+    tokensUsdPriceData
+  )
+
   return (
     <div className="w-full max-w-[472px]">
       <Flex
@@ -327,6 +335,11 @@ export const WithdrawForm = ({
               errors={errors}
               balance={tokenInBalance}
               register={register}
+              usdAmount={
+                tokenToWithdrawUsdAmount
+                  ? `~${formatUsdAmount(tokenToWithdrawUsdAmount)}`
+                  : null
+              }
             />
 
             {renderMinWithdrawalAmount(minWithdrawalAmount, tokenOut)}

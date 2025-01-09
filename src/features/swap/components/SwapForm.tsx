@@ -9,6 +9,9 @@ import {
   useEffect,
 } from "react"
 import { useFormContext } from "react-hook-form"
+import { useTokensUsdPrices } from "src/hooks/useTokensUsdPrices"
+import { formatUsdAmount } from "src/utils/format"
+import getTokenUsdPrice from "src/utils/getTokenUsdPrice"
 import type { ActorRefFrom, SnapshotFrom } from "xstate"
 import { ButtonCustom } from "../../../components/Button/ButtonCustom"
 import { ButtonSwitch } from "../../../components/Button/ButtonSwitch"
@@ -48,6 +51,7 @@ export const SwapForm = ({ onNavigateDeposit }: SwapFormProps) => {
   const swapUIActorRef = SwapUIMachineContext.useActorRef()
   const snapshot = SwapUIMachineContext.useSelector((snapshot) => snapshot)
   const intentCreationResult = snapshot.context.intentCreationResult
+  const { data: tokensUsdPriceData } = useTokensUsdPrices()
 
   const { tokenIn, tokenOut, noLiquidity } = SwapUIMachineContext.useSelector(
     (snapshot) => {
@@ -155,6 +159,17 @@ export const SwapForm = ({ onNavigateDeposit }: SwapFormProps) => {
   const showDepositButton =
     tokenInBalance != null && tokenInBalance === 0n && onNavigateDeposit != null
 
+  const usdAmountIn = getTokenUsdPrice(
+    getValues().amountIn,
+    tokenIn,
+    tokensUsdPriceData
+  )
+  const usdAmountOut = getTokenUsdPrice(
+    getValues().amountOut,
+    tokenOut,
+    tokensUsdPriceData
+  )
+
   return (
     <Flex
       direction="column"
@@ -174,6 +189,7 @@ export const SwapForm = ({ onNavigateDeposit }: SwapFormProps) => {
           className="border border-gray-200/50 rounded-t-xl"
           required
           errors={errors}
+          usdAmount={usdAmountIn ? `~${formatUsdAmount(usdAmountIn)}` : null}
           balance={tokenInBalance}
         />
 
@@ -191,6 +207,7 @@ export const SwapForm = ({ onNavigateDeposit }: SwapFormProps) => {
           errors={errors}
           disabled={true}
           isLoading={snapshot.matches({ editing: "waiting_quote" })}
+          usdAmount={usdAmountOut ? `~${formatUsdAmount(usdAmountOut)}` : null}
           balance={tokenOutBalance}
         />
 
