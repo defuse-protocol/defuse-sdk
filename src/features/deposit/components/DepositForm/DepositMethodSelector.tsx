@@ -22,7 +22,7 @@ export function DepositMethodSelector({
           className={clsx(
             "flex h-12 flex-1 items-center justify-center rounded-md bg-transparent font-bold text-sm",
             selectedDepositOption === "passive"
-              ? "bg-accent-a3 text-accent-a11 ring-2 ring-accent-a8 ring-inset"
+              ? "bg-accent-a3 text-accent-a11 ring-2 ring-accent-a8 ring-inset dark:bg-accent-a2 dark:text-accent-10"
               : "bg-transparent text-gray-11 ring-1 ring-border"
           )}
         >
@@ -35,7 +35,7 @@ export function DepositMethodSelector({
           className={clsx(
             "flex h-12 flex-1 items-center justify-center rounded-md bg-transparent font-bold text-sm",
             selectedDepositOption === "active"
-              ? "bg-accent-a3 text-accent-a11 ring-2 ring-accent-a8 ring-inset"
+              ? "bg-accent-a3 text-accent-a11 ring-2 ring-accent-a8 ring-inset dark:bg-accent-a2 dark:text-accent-10"
               : "bg-transparent text-gray-11 ring-1 ring-border"
           )}
         >
