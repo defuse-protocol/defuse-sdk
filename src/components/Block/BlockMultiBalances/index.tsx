@@ -18,13 +18,8 @@ export const BlockMultiBalances = ({
   className,
 }: BlockMultiBalancesProps) => {
   const active = balance > 0n && !disabled
-
   return (
-    <Flex
-      gap="1"
-      asChild
-      className={clsx("absolute bottom-4 right-5", className)}
-    >
+    <Flex gap="1" asChild className={className}>
       <Flex asChild align="center" gap="1">
         <button type="button" onClick={handleClick} disabled={!active}>
           <div

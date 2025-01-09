@@ -16,6 +16,9 @@ import { QRCodeSVG } from "qrcode.react"
 import { useEffect, useState } from "react"
 import CopyToClipboard from "react-copy-to-clipboard"
 import { Controller, useFormContext } from "react-hook-form"
+import { BlockMultiBalances } from "src/components/Block/BlockMultiBalances"
+import { TooltipInfo } from "src/components/TooltipInfo"
+import { RESERVED_NEAR_BALANCE } from "src/features/machines/getBalanceMachine"
 import { useTokensUsdPrices } from "src/hooks/useTokensUsdPrices"
 import {
   assetNetworkAdapter,
@@ -24,7 +27,6 @@ import {
 import { formatUsdAmount } from "src/utils/format"
 import getTokenUsdPrice from "src/utils/getTokenUsdPrice"
 import { AssetComboIcon } from "../../../../components/Asset/AssetComboIcon"
-import { BlockMultiBalances } from "../../../../components/Block/BlockMultiBalances"
 import { ButtonCustom } from "../../../../components/Button/ButtonCustom"
 import { EmptyIcon } from "../../../../components/EmptyIcon"
 import { Form } from "../../../../components/Form"
@@ -32,8 +34,6 @@ import { Input } from "../../../../components/Input"
 import type { ModalSelectAssetsPayload } from "../../../../components/Modal/ModalSelectAssets"
 import { NetworkIcon } from "../../../../components/Network/NetworkIcon"
 import { Select } from "../../../../components/Select/Select"
-import { TooltipInfo } from "../../../../components/TooltipInfo"
-import { RESERVED_NEAR_BALANCE } from "../../../../features/machines/getBalanceMachine"
 import { getPOABridgeInfo } from "../../../../features/machines/poaBridgeInfoActor"
 import { useModalStore } from "../../../../providers/ModalStoreProvider"
 import { getAvailableDepositRoutes } from "../../../../services/depositService"
@@ -237,64 +237,58 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
             </div>
           )}
           {isActiveDeposit && (
-            <Input
-              name="amount"
-              value={watch("amount")}
-              onChange={(value) => setValue("amount", value)}
-              type="text"
-              inputMode="decimal"
-              pattern="[0-9]*[.]?[0-9]*"
-              autoComplete="off"
-              ref={(ref) => {
-                if (ref) {
-                  ref.focus()
-                }
-              }}
-              className="pb-16"
-              slotLeft={
-                usdAmountToDeposit ? (
-                  <span className="absolute bottom-4 left-5 text-xs sm:text-sm font-medium text-gray-400">
+            <div className="flex flex-col p-5 w-full bg-gray-50 border border-gray-200/50 dark:bg-gray-900 dark:border-gray-950 rounded-lg">
+              <Input
+                name="amount"
+                value={watch("amount")}
+                onChange={(value) => setValue("amount", value)}
+                inputMode="decimal"
+                type="text"
+                pattern="[0-9]*[.]?[0-9]*"
+                autoComplete="off"
+                ref={(ref) => {
+                  if (ref) {
+                    ref.focus()
+                  }
+                }}
+              />
+              <div className="flex justify-between items-center gap-2 mt-1 min-h-5 w-full max-w-[calc(100vw-106px)]">
+                {usdAmountToDeposit ? (
+                  <span className="text-xs sm:text-sm font-medium text-gray-400 whitespace-nowrap overflow-hidden">
                     ~{formatUsdAmount(usdAmountToDeposit)}
                   </span>
-                ) : null
-              }
-              slotRight={
-                <div className="flex items-center gap-2 flex-row absolute right-5 bottom-5">
-                  {token &&
-                    isBaseToken(token) &&
-                    token.address === "wrap.near" && (
-                      <TooltipInfo
-                        icon={
-                          <Text asChild color={accentColor}>
-                            <InfoCircledIcon />
-                          </Text>
-                        }
-                      >
-                        Combined balance of NEAR and wNEAR.
-                        <br /> NEAR will be automatically wrapped to wNEAR
-                        <br /> if your wNEAR balance isn't sufficient for the
-                        swap.
-                        <br />
-                        Note that to cover network fees, we reserve
-                        {` ${formatTokenValue(
-                          RESERVED_NEAR_BALANCE,
-                          token.decimals
-                        )} NEAR`}
-                        <br /> in your wallet.
-                      </TooltipInfo>
-                    )}
+                ) : null}
+
+                <div className="flex items-center gap-2 ml-auto">
+                  {token?.symbol === "NEAR" && blockchain === "near" && (
+                    <TooltipInfo
+                      icon={
+                        <Text asChild color={accentColor}>
+                          <InfoCircledIcon />
+                        </Text>
+                      }
+                    >
+                      Combined balance of NEAR and wNEAR.
+                      <br /> NEAR will be automatically wrapped to wNEAR
+                      <br /> if your wNEAR balance isn't sufficient for the
+                      swap.
+                      <br />
+                      Note that to cover network fees, we reserve
+                      {` ${formatTokenValue(RESERVED_NEAR_BALANCE, 24)} NEAR`}
+                      <br /> in your wallet.
+                    </TooltipInfo>
+                  )}
                   {balance != null && token != null && (
                     <BlockMultiBalances
                       balance={balance}
                       decimals={token.decimals}
-                      handleClick={() => handleSetMaxValue()}
+                      handleClick={handleSetMaxValue}
                       disabled={balance === 0n}
-                      className="!static flex items-center justify-center"
                     />
                   )}
                 </div>
-              }
-            />
+              </div>
+            </div>
           )}
           {(isActiveDeposit || !network) && (
             <div className="flex flex-col gap-4 mt-4">
@@ -354,35 +348,32 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
                   )}
                 </div>
                 {depositAddress && (
-                  <Input
-                    name="generatedAddress"
-                    value={
-                      depositAddress ? truncateUserAddress(depositAddress) : ""
-                    }
-                    disabled
-                    className="min-h-14 py-0 mb-4 [&>input]:text-base"
-                    slotRight={
-                      <Button
-                        type="button"
-                        size="2"
-                        variant="soft"
-                        className="px-3"
-                        disabled={!depositAddress}
+                  <div className="flex p-5 w-full items-center justify-between gap-2 bg-gray-50 border border-gray-200/50 dark:bg-gray-900 dark:border-gray-950 rounded-lg mb-4 max-w-[calc(100vw-60px)]">
+                    {depositAddress ? (
+                      <span className="text-base font-medium text-gray-500 whitespace-nowrap overflow-hidden">
+                        {truncateUserAddress(depositAddress)}
+                      </span>
+                    ) : null}
+                    <Button
+                      type="button"
+                      size="2"
+                      variant="soft"
+                      className="px-3 cursor-copy"
+                      disabled={!depositAddress}
+                    >
+                      <CopyToClipboard
+                        text={depositAddress}
+                        onCopy={() => setIsCopied(true)}
                       >
-                        <CopyToClipboard
-                          text={depositAddress}
-                          onCopy={() => setIsCopied(true)}
-                        >
-                          <Flex gap="2" align="center">
-                            <Text>{isCopied ? "Copied" : "Copy"}</Text>
-                            <Text asChild>
-                              <CopyIcon height="14" width="14" />
-                            </Text>
-                          </Flex>
-                        </CopyToClipboard>
-                      </Button>
-                    }
-                  />
+                        <Flex gap="2" align="center">
+                          <Text>{isCopied ? "Copied" : "Copy"}</Text>
+                          <Text asChild>
+                            <CopyIcon height="14" width="14" />
+                          </Text>
+                        </Flex>
+                      </CopyToClipboard>
+                    </Button>
+                  </div>
                 )}
                 {renderDepositHint(network, minDepositAmount, token)}
               </div>

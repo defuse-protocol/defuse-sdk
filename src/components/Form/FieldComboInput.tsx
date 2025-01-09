@@ -102,7 +102,7 @@ export const FieldComboInput = <T extends FieldValues>({
   return (
     <div
       className={clsx(
-        "relative flex flex-col px-5 pt-5 pb-10 w-full bg-gray-50 dark:bg-black-900 dark:border-black-950",
+        "relative flex flex-col px-5 pt-5 pb-6 w-full bg-gray-50 dark:bg-black-900 dark:border-black-950",
         className
       )}
     >
@@ -119,7 +119,7 @@ export const FieldComboInput = <T extends FieldValues>({
           disabled={disabled}
           autoComplete="off"
           className={clsx(
-            "bg-gray-50 w-full text-3xl font-medium placeholder-black border-transparent focus:border-transparent focus:ring-0 dark:bg-black-900 dark:placeholder-white",
+            "bg-gray-50 w-full text-3xl font-medium placeholder-black border-transparent focus:border-transparent focus:ring-0 dark:bg-black-900 dark:placeholder-white px-0",
             disabled &&
               "text-black-200 pointer-events-none placeholder-black-200",
             {
@@ -133,23 +133,26 @@ export const FieldComboInput = <T extends FieldValues>({
         )}
       </div>
 
-      {fieldError ? (
-        <span className="absolute bottom-4 left-5 text-xs sm:text-sm font-medium text-red-400">
-          {(fieldError as FieldError).message}
-        </span>
-      ) : usdAmount ? (
-        <span className="absolute bottom-4 left-5 text-xs sm:text-sm font-medium text-gray-400">
-          {usdAmount}
-        </span>
-      ) : null}
-      {balance != null && (
-        <BlockMultiBalances
-          balance={balance}
-          decimals={selected?.decimals ?? 0}
-          handleClick={handleSetMaxValue}
-          disabled={disabled}
-        />
-      )}
+      <div className="flex justify-between items-center gap-2 mt-1 min-h-5 w-full max-w-[calc(100vw-106px)]">
+        {fieldError ? (
+          <span className="text-xs sm:text-sm font-medium text-red-400  whitespace-nowrap overflow-hidden">
+            {(fieldError as FieldError).message}
+          </span>
+        ) : usdAmount ? (
+          <span className="text-xs sm:text-sm font-medium text-gray-400 whitespace-nowrap overflow-hidden">
+            {usdAmount}
+          </span>
+        ) : null}
+        {balance != null && (
+          <BlockMultiBalances
+            balance={balance}
+            decimals={selected?.decimals ?? 0}
+            handleClick={handleSetMaxValue}
+            disabled={disabled}
+            className="ml-auto"
+          />
+        )}
+      </div>
     </div>
   )
 }
