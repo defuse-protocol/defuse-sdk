@@ -1,5 +1,9 @@
-export const EmptyIcon = () => {
+import clsx from "clsx"
+
+export const EmptyIcon = ({ circle = false }: { circle?: boolean }) => {
   return (
-    <div className="relative min-w-[32px] min-h-[32px] border-2 border-dashed rounded-full border-gray-300" />
+    <div
+      className={clsx("size-7 bg-gray-7", circle ? "rounded-full" : "rounded")}
+    />
   )
 }

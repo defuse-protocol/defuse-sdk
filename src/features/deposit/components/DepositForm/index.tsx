@@ -170,7 +170,7 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
                   {token ? (
                     <AssetComboIcon icon={token?.icon} />
                   ) : (
-                    <EmptyIcon />
+                    <EmptyIcon circle />
                   )}
                   <Text>{token?.name ?? "Select asset"}</Text>
                 </Flex>
