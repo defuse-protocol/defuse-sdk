@@ -7,7 +7,10 @@ import {
   fromPromise,
   setup,
 } from "xstate"
-import { getDepositedBalances } from "../../services/defuseBalanceService"
+import {
+  getDepositedBalances,
+  getTransitBalances,
+} from "../../services/defuseBalanceService"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../types/base"
 import type { ChainType } from "../../types/deposit"
 import { assert } from "../../utils/assert"
@@ -28,6 +31,7 @@ type ParentReceivedEvents = {
   type: "BALANCE_CHANGED"
   params: {
     changedBalanceMapping: BalanceMapping
+    changedTransitBalanceMapping: BalanceMapping
   }
 }
 type ParentActor = ActorRef<Snapshot<unknown>, ParentReceivedEvents>
@@ -36,6 +40,7 @@ type SharedEvents = {
   type: "UPDATE_BALANCE_SLICE"
   params: {
     balanceSlice: BalanceMapping
+    transitBalanceSlice: BalanceMapping
   }
 }
 type ThisActor = ActorRef<Snapshot<unknown>, SharedEvents>
@@ -51,6 +56,8 @@ export const depositedBalanceMachine = setup({
       defuseTokenIds: string[]
       userAccountId: DefuseUserId | null
       balances: BalanceMapping
+      transitBalances: BalanceMapping
+      tokenList: (BaseTokenInfo | UnifiedTokenInfo)[]
     },
     events: {} as Events | SharedEvents,
     input: {} as Input,
@@ -64,6 +71,7 @@ export const depositedBalanceMachine = setup({
           parentRef: ThisActor
           userAccountId: DefuseUserId
           defuseTokenIds: string[]
+          tokenList: (BaseTokenInfo | UnifiedTokenInfo)[]
         }
       }) => {
         const { parentRef, userAccountId } = input
@@ -78,9 +86,18 @@ export const depositedBalanceMachine = setup({
           })
         )
 
+        const transitBalances = await getTransitBalances(
+          userAccountId,
+          input.defuseTokenIds,
+          input.tokenList
+        )
+
         parentRef.send({
           type: "UPDATE_BALANCE_SLICE",
-          params: { balanceSlice: balance },
+          params: {
+            balanceSlice: balance,
+            transitBalanceSlice: transitBalances,
+          },
         })
       }
     ),
@@ -93,25 +110,45 @@ export const depositedBalanceMachine = setup({
       userAccountId: null,
     }),
     updateBalance: enqueueActions(
-      ({ enqueue, context }, params: BalanceMapping) => {
-        const changed: BalanceMapping = {}
+      (
+        { enqueue, context },
+        params: {
+          balanceSlice: BalanceMapping
+          transitBalanceSlice: BalanceMapping
+        }
+      ) => {
+        const balanceChanged: BalanceMapping = {}
+        const transitBalanceChanged: BalanceMapping = {}
 
-        for (const [key, val] of Object.entries(params)) {
+        for (const [key, val] of Object.entries(params.balanceSlice)) {
           if (context.balances[key] !== val) {
-            changed[key] = val
+            balanceChanged[key] = val
           }
         }
 
-        if (Object.keys(changed).length > 0) {
+        for (const [key, val] of Object.entries(params.transitBalanceSlice)) {
+          if (context.transitBalances[key] !== val) {
+            transitBalanceChanged[key] = val
+          }
+        }
+
+        if (
+          Object.keys(balanceChanged).length > 0 ||
+          Object.keys(transitBalanceChanged).length > 0
+        ) {
           // First update the local state
           enqueue.assign({
-            balances: () => ({ ...context.balances, ...changed }),
+            balances: () => ({ ...context.balances, ...balanceChanged }),
+            transitBalances: transitBalanceChanged,
           })
           // Then send the event to the parent
           enqueue(({ context }) => {
             context.parentRef.send({
               type: "BALANCE_CHANGED",
-              params: { changedBalanceMapping: changed },
+              params: {
+                changedBalanceMapping: balanceChanged,
+                changedTransitBalanceMapping: transitBalanceChanged,
+              },
             })
           })
         }
@@ -119,9 +156,11 @@ export const depositedBalanceMachine = setup({
     ),
     clearBalance: assign({
       balances: {},
+      transitBalances: {},
     }),
   },
   guards: {
+    // TODO: Either use this guard or remove it
     balanceDifferent: ({ context }, balanceSlice: BalanceMapping) => {
       for (const [key, val] of Object.entries(balanceSlice)) {
         if (context.balances[key] !== val) {
@@ -132,7 +171,7 @@ export const depositedBalanceMachine = setup({
     },
   },
 }).createMachine({
-  /** @xstate-layout N4IgpgJg5mDOIC5QTABwPawJYBdICEBDAG0IDsBjMAYgBkB5AcQEkA5AbQAYBdRUDbDizoyfEAA9EAWgCMAZk4A6AOwBOAKwyALJ1UA2ZXLnqANCACe0mQA45ivda2G9WgExyt15VoC+PsygCuAQk5FSKhACuOAAWYGRCFIR4EHRM9ACqACpcvEggQUIiYpIIssaKqsq6Mhqunpw2ymaWZR4qWnWOnHKunH3WfgFomMEQRKSUYBHRcQlYSSmKAE5gAGarsDFYZFAABABGoVPUECLTOwBu6ADW02tgOBQxE2FgAErruWKFwqL5pRktUU6ms1k4WgU1Tkelc6i0LUQehkikakIc8Lk3j0qkG-hAgVGKVeUxmsXiiWSkBW602212h2OVGoGQACgARACCWQAogB9fCc2ic1gAYX5AGVaMxxd98r9igDEOpXCjlDJNMjXGoVdZTBZpAZFNZkRD1T14eo9EMCSNBCFJuEouT5otqVgIMQaOJYDgqRE1nhlgAKGSccOcACUpztYxJTtmFIWVIgig9Xrl-CJfxKiA81lRtnUqlUnAcVVU2kRCGRqO0ML1kO8yhthPt4yZ02dc0pKWo7x5AEUMjyJVkBUKReK+QOAGIDiUACUzBWzitAgM0ijktmRNlq6mUh9c1dkejsO-ccPqnBNEL8+LI6BQ8HybbjnZ+a-+G+kO6Uxb5g4Xhli4p5GAW-TWDY9S9KoqpyK2sbEp2iiRGQ3ZJm6EBfoIOZKm0vQgqoQFgtUehgQaCBKBoPRaMW546N4ep4sMhQOm8ZI9smKS4bg+G-jWdgaHo6iak4aiqgiVFSHCSjVCqLgUXoEJwqxtrsR2jpdomropjSGxwPS+xHNpfFFD+EiIECKIiWJMguMoklVjJDjGrYB6uLCVr1L4+Lvih2lcVh+npmA5kCVZCCuNBqLFjFKlgpCRjSa08h2OeJadNYcL0VCD4+EAA */
+  /** @xstate-layout N4IgpgJg5mDOIC5QTABwPawJYBdICEBDAG0IDsBjMAYgBkB5AcQEkA5AbQAYBdRUDbDizoyfEAA9EAWgCMAZk4A6AOwBOAKwyALJ1UA2ZXLnqANCACe0mQA45ivda2G9WgExyt15VoC+PsygCuAQk5FSKhACuOAAWYGRCFIR4EHRM9ACqACpcvEggQUIiYpIIssaKqsq6Mhqunpw2ymaWZR4qWnWOnHKunH3WfgFomMEQRKSUYBHRcQlYSSnUAEoAogCKGasAylkA+vgAgrSHrADCq3trAGJr2wASuWKFwqL5pTKainK2ejI2tXUyiBrhaVj0dh+7lc6nqnGsek4vn8IECoxSEzC0yisXiiWSkEUACcwAAzEmwGJYMhQAAEACNQlNqBARNNqQA3dAAa2mpLAOAoMUxU2WZKe+RexXeiH+qkU6ms1iRCmqcj0MK0YIQf0UjS06us6gN3j0qkGKLRghCk3COLm+JSxLJFKpNIZTKo1AyAAUACKHLKXI4nc6Xba0ZgXCX8dGvEqIWEyFSfGR-VxqWFG7VSAyKBEyJHKQvGLTqPRDVEja3jT3Y2Z4hYEiCKLAQYg0cSwHAEiKkvBEgAU6k4o4AlCzq2MRXaG-NFoS2x2YwU49LQKUPMmtNoNRDNY5QRZELr9YbjXJTea-CiyOgUPB8lbp3Xnmu3hvpD8lOpVB4EUq1R6C4OZGNY3zWO4qZKoWqiuBWlpThidaKJEZD2o2C4QG+gjxjKbS9Aqf6eA4XicMBWrHggSgaD0Zb6B4nDeEaFrDIUNpYjMuLzs2OG4Hhn46nYGh6OomguMoaiuNoOYwkoSrQv02ieJ4riVs+yG2vW3GOoSJLknAbp0oyWl8UUH4SLK-yVOWYlpk4UkyVRubgUqciAvBMIaloyJseiHFTFxDpNk6S5gGZAmWQgrjWMmnC-jFiJKgaRiUa08h2BCqiqJ0kHGuoqo3j4QA */
   id: "depositedBalance",
 
   initial: "unauthenticated",
@@ -141,12 +180,14 @@ export const depositedBalanceMachine = setup({
     return {
       userAccountId: null,
       balances: {},
+      transitBalances: {},
       parentRef: input.parentRef,
       defuseTokenIds: input.tokenList.flatMap((token) => {
         return isBaseToken(token)
           ? [token.defuseAssetId]
           : token.groupedTokens.map((t) => t.defuseAssetId)
       }),
+      tokenList: input.tokenList,
     }
   },
 
@@ -167,6 +208,7 @@ export const depositedBalanceMachine = setup({
                 parentRef: self,
                 userAccountId: context.userAccountId,
                 defuseTokenIds: context.defuseTokenIds,
+                tokenList: context.tokenList,
               }
             },
             onDone: "idle",
@@ -178,7 +220,10 @@ export const depositedBalanceMachine = setup({
               target: "refreshing balance",
               actions: {
                 type: "updateBalance",
-                params: ({ event }) => event.params.balanceSlice,
+                params: ({ event }) => ({
+                  balanceSlice: event.params.balanceSlice,
+                  transitBalanceSlice: event.params.transitBalanceSlice,
+                }),
               },
             },
           },

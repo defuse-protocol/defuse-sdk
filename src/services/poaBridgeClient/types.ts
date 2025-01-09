@@ -52,14 +52,14 @@ export type DepositStatus = {
   amount: number
   account_id: string
   address: string
-  status: "COMPLETED"
+  status: "COMPLETED" | "PENDING" | "FAILED"
 }
 
 export type GetDepositStatusRequest = JSONRPCRequest<
   "recent_deposits",
   {
     account_id: string
-    chain: string
+    chain?: string
   }
 >
 

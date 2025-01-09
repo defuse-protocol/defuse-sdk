@@ -1,9 +1,10 @@
-import { Flex, Text } from "@radix-ui/themes"
+import { Flex } from "@radix-ui/themes"
 import clsx from "clsx"
 import { formatTokenValue } from "../../../utils/format"
 
 export interface BlockMultiBalancesProps {
   balance: bigint
+  optimisticBalance?: bigint
   decimals: number
   handleClick?: () => void
   disabled?: boolean
@@ -12,6 +13,7 @@ export interface BlockMultiBalancesProps {
 
 export const BlockMultiBalances = ({
   balance,
+  optimisticBalance,
   decimals,
   handleClick,
   disabled,
@@ -19,7 +21,24 @@ export const BlockMultiBalances = ({
 }: BlockMultiBalancesProps) => {
   const active = balance > 0n && !disabled
   return (
-    <Flex gap="1" asChild className={className}>
+    <Flex gap="1" className={className}>
+      {optimisticBalance ? (
+        <button
+          type="button"
+          onClick={handleClick}
+          disabled={!active}
+          className="flex items-center gap-1 opacity-40"
+        >
+          🛬
+          <span className="text-xs py-0.5 font-bold text-gray-600">
+            +
+            {formatTokenValue(optimisticBalance, decimals, {
+              min: 0.0001,
+              fractionDigits: 4,
+            })}
+          </span>
+        </button>
+      ) : null}
       <Flex asChild align="center" gap="1">
         <button type="button" onClick={handleClick} disabled={!active}>
           <div
@@ -28,10 +47,9 @@ export const BlockMultiBalances = ({
               active ? "bg-accent-800" : "bg-gray-600/90"
             )}
           />
-          <Text
-            size="1"
+          <span
             className={clsx(
-              "px-2 py-0.5 rounded-full font-bold",
+              "text-xs px-2 py-0.5 rounded-full font-bold",
               active
                 ? "bg-accent-a200 text-accent-900"
                 : "bg-gray-300/50 text-gray-600"
@@ -41,7 +59,7 @@ export const BlockMultiBalances = ({
               min: 0.0001,
               fractionDigits: 4,
             })}
-          </Text>
+          </span>
         </button>
       </Flex>
     </Flex>
