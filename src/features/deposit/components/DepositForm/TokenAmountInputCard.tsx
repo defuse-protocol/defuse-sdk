@@ -15,12 +15,12 @@ export function TokenAmountInputCard({
   priceSlot?: ReactNode
 }) {
   return (
-    <div className="flex flex-col gap-2.5 rounded-lg border border-border bg-gray-50 p-4 dark:bg-gray-900">
+    <div className="flex flex-col gap-2.5 rounded-lg border border-border bg-gray-2 p-4">
       <div className="flex items-center gap-4">
         {/* Amount Input */}
         <div className="relative flex-1">
           <div className="overflow-hidden">{inputSlot}</div>
-          <div className="pointer-events-none absolute top-0 right-0 bottom-0 w-12 bg-gradient-to-r from-transparent to-gray-50 dark:to-gray-900" />
+          <div className="pointer-events-none absolute top-0 right-0 bottom-0 w-12 bg-gradient-to-r from-transparent to-gray-2" />
         </div>
 
         {/* Token Selector */}
@@ -78,5 +78,5 @@ TokenAmountInputCard.DisplayPrice = function DisplayPrice({
 }: {
   children: ReactNode
 }) {
-  return <div className="font-medium text-gray-500 text-sm">{children}</div>
+  return <div className="font-medium text-gray-9 text-sm">{children}</div>
 }

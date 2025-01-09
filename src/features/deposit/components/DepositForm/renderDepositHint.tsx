@@ -39,7 +39,7 @@ export function renderDepositHint(
       </Callout.Root>
 
       {minDepositAmount != null && (
-        <div className="flex flex-col gap-3.5 font-medium text-gray-600 text-xs dark:text-gray-400">
+        <div className="flex flex-col gap-3.5 font-medium text-gray-11 text-xs">
           <div className="flex justify-between">
             <div>Minimum deposit</div>
             <div className="text-label">

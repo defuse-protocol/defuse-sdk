@@ -71,7 +71,7 @@ export function Select<T extends string>({
       <RadixSelect.Portal container={portalContainer}>
         <Theme asChild>
           <RadixSelect.Content
-            className="box-border max-h-[var(--radix-select-content-available-height)] w-[var(--radix-select-trigger-width)] max-w-[var(--radix-select-trigger-width)] overflow-hidden rounded-md bg-white shadow-md"
+            className="box-border max-h-[var(--radix-select-content-available-height)] w-[var(--radix-select-trigger-width)] max-w-[var(--radix-select-trigger-width)] overflow-hidden rounded-md border border-border bg-gray-1 shadow-2xl"
             position="popper"
             side="bottom"
             sideOffset={8}
@@ -108,7 +108,7 @@ interface SelectItemProps {
 function SelectItem({ value, children }: SelectItemProps) {
   return (
     <RadixSelect.Item
-      className="relative flex w-full select-none items-center justify-between gap-3 self-stretch rounded-[3px] p-2 font-bold text-gray-12 text-sm data-[disabled]:pointer-events-none data-[highlighted]:rounded-lg data-[state=checked]:rounded-lg data-[highlighted]:bg-[#f1f0ef] data-[state=checked]:bg-[#f1f0ef] data-[disabled]:text-mauve-8 data-[highlighted]:outline-none"
+      className="relative flex w-full select-none items-center justify-between gap-3 self-stretch rounded-md p-2 font-bold text-gray-12 text-sm data-[disabled]:pointer-events-none data-[highlighted]:bg-gray-3 data-[state=checked]:bg-gray-3 data-[disabled]:text-gray-8 data-[highlighted]:outline-none"
       value={value}
     >
       <RadixSelect.ItemText>{children}</RadixSelect.ItemText>

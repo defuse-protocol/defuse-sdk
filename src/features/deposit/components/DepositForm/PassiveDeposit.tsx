@@ -27,12 +27,12 @@ export function PassiveDeposit({
         Use this deposit address
       </div>
 
-      <div className="mt-1 text-gray-700 text-sm dark:text-gray-300">
+      <div className="mt-1 text-gray-11 text-sm dark:text-gray-11">
         Always double-check your deposit address — it may change without notice.
       </div>
 
       <div className="my-6 flex items-center justify-center">
-        <div className="flex size-36 items-center justify-center rounded-lg border border-border bg-gray-50 p-2 dark:bg-gray-900">
+        <div className="flex size-36 items-center justify-center rounded-lg border border-border p-2">
           {depositAddress != null ? (
             <QRCodeSVG value={depositAddress} />
           ) : (
@@ -41,7 +41,7 @@ export function PassiveDeposit({
         </div>
       </div>
 
-      <div className="mb-4 flex items-center rounded-lg bg-gray-100 px-4 py-2 dark:bg-gray-900">
+      <div className="mb-4 flex items-center rounded-lg bg-gray-3 px-4 py-2">
         <div className="flex flex-1 justify-center">
           <span className="relative">
             {/* Visible truncated address */}
