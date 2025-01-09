@@ -1,5 +1,6 @@
 import { InfoCircledIcon } from "@radix-ui/react-icons"
 import { Text, useThemeContext } from "@radix-ui/themes"
+import clsx from "clsx"
 import { useId } from "react"
 import { useFormContext } from "react-hook-form"
 import { BlockMultiBalances } from "../../../../components/Block/BlockMultiBalances"
@@ -154,15 +155,13 @@ function Balance({
 
   return (
     <div className="flex items-center gap-1">
-      {balance != null && (
-        <BlockMultiBalances
-          balance={balance}
-          decimals={token.decimals}
-          handleClick={() => onClick()}
-          disabled={balance === 0n}
-          className="!static"
-        />
-      )}
+      <BlockMultiBalances
+        balance={balance ?? 0n}
+        decimals={token.decimals}
+        handleClick={() => onClick()}
+        disabled={balance === 0n}
+        className={clsx("!static", balance == null && "invisible")}
+      />
 
       {token.address === "wrap.near" && (
         <TooltipInfo
