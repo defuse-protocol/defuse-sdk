@@ -1,4 +1,3 @@
-import { Button } from "@radix-ui/themes"
 import clsx from "clsx"
 
 type DepositMethod = "active" | "passive"
@@ -17,33 +16,31 @@ export function DepositMethodSelector({
       <div className="font-bold text-label text-sm">Choose deposit method</div>
 
       <div className="flex items-stretch gap-2">
-        <Button
+        <button
           type="button"
           onClick={() => onSelectDepositOption("passive")}
-          size="4"
-          variant="outline"
-          color={selectedDepositOption === "passive" ? undefined : "gray"}
-          className={clsx("flex-1 font-bold text-sm", {
-            "bg-accent-a200 text-accent-800 ring-2 ring-accent-a500 ring-inset":
-              selectedDepositOption === "passive",
-          })}
+          className={clsx(
+            "flex h-12 flex-1 items-center justify-center rounded-md bg-transparent font-bold text-sm",
+            selectedDepositOption === "passive"
+              ? "bg-accent-a3 text-accent-a11 ring-2 ring-accent-a8 ring-inset"
+              : "bg-transparent text-gray-11 ring-1 ring-border"
+          )}
         >
           Exchange
-        </Button>
+        </button>
 
-        <Button
+        <button
           type="button"
           onClick={() => onSelectDepositOption("active")}
-          size="4"
-          variant="outline"
-          color={selectedDepositOption === "active" ? undefined : "gray"}
-          className={clsx("flex-1 font-bold text-sm", {
-            "bg-accent-a200 text-accent-800 ring-2 ring-accent-a500 ring-inset":
-              selectedDepositOption === "active",
-          })}
+          className={clsx(
+            "flex h-12 flex-1 items-center justify-center rounded-md bg-transparent font-bold text-sm",
+            selectedDepositOption === "active"
+              ? "bg-accent-a3 text-accent-a11 ring-2 ring-accent-a8 ring-inset"
+              : "bg-transparent text-gray-11 ring-1 ring-border"
+          )}
         >
           Wallet
-        </Button>
+        </button>
       </div>
     </div>
   )
