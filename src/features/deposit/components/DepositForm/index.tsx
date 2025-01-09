@@ -3,7 +3,10 @@ import { Callout, Flex, Text } from "@radix-ui/themes"
 import { useSelector } from "@xstate/react"
 import { useEffect, useState } from "react"
 import { Controller, useFormContext } from "react-hook-form"
-import { assetNetworkAdapter } from "src/utils/adapters"
+import {
+  assetNetworkAdapter,
+  reverseAssetNetworkAdapter,
+} from "src/utils/adapters"
 import { AssetComboIcon } from "../../../../components/Asset/AssetComboIcon"
 import { EmptyIcon } from "../../../../components/EmptyIcon"
 import { Form } from "../../../../components/Form"
@@ -147,6 +150,8 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
           ? "active"
           : null
 
+  const chainOptions = token != null ? filterBlockchainsOptions(token) : {}
+
   return (
     <div className="w-full max-w-[472px]">
       <div className="rounded-2xl p-5 bg-white shadow dark:bg-[#111110] dark:shadow-[0_1px_3px_0_rgb(255_255_255_/_0.1),_0_1px_2px_-1px_rgb(255_255_255_/_0.1)]">
@@ -178,28 +183,31 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
             </button>
 
             {token && (
-              <div className="[&>button[disabled]]:opacity-50 [&>button[disabled]]:cursor-not-allowed [&>button[disabled]]:pointer-events-none [&>*[disabled]]:pointer-events-none">
-                <Controller
-                  name="network"
-                  control={control}
-                  render={({ field }) => (
-                    <Select
-                      options={filterBlockchainsOptions(token)}
-                      placeholder={{
-                        label: "Select network",
-                        icon: <EmptyIcon />,
-                      }}
-                      fullWidth
-                      value={
-                        getDefaultBlockchainOptionValue(token) || network || ""
-                      }
-                      disabled={!isUnifiedToken(token)}
-                      onChange={field.onChange}
-                      name={field.name}
-                    />
-                  )}
-                />
-              </div>
+              <Controller
+                name="network"
+                control={control}
+                render={({ field }) => (
+                  <Select
+                    options={chainOptions}
+                    placeholder={{
+                      label: "Select network",
+                      icon: <EmptyIcon />,
+                    }}
+                    value={
+                      getDefaultBlockchainOptionValue(token) || network || ""
+                    }
+                    onChange={field.onChange}
+                    name={field.name}
+                    hint={
+                      <Select.Hint>
+                        {Object.keys(chainOptions).length === 1
+                          ? "This network only"
+                          : "Network"}
+                      </Select.Hint>
+                    }
+                  />
+                )}
+              />
             )}
           </div>
 
@@ -373,28 +381,18 @@ function getBlockchainsOptions(): Record<
 function filterBlockchainsOptions(
   token: BaseTokenInfo | UnifiedTokenInfo
 ): Record<string, { label: string; icon: React.ReactNode; value: string }> {
-  if (isUnifiedToken(token)) {
-    return token.groupedTokens.reduce(
-      (
-        acc: Record<
-          string,
-          { label: string; icon: React.ReactNode; value: string }
-        >,
-        token
-      ) => {
-        const key = assetNetworkAdapter[token.chainName]
-        if (key) {
-          const option = getBlockchainsOptions()[key]
-          if (option) {
-            acc[key] = option
-          }
-        }
-        return acc
-      },
-      {}
+  const tokens = isUnifiedToken(token) ? token.groupedTokens : [token]
+  const chains = tokens.map((token) => token.chainName)
+
+  const options = getBlockchainsOptions()
+
+  const res = Object.values(options)
+    .filter((option) =>
+      chains.includes(reverseAssetNetworkAdapter[option.value])
     )
-  }
-  return getBlockchainsOptions()
+    .map((option) => [option.value, option])
+
+  return Object.fromEntries(res)
 }
 
 function getDefaultBlockchainOptionValue(

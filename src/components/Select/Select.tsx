@@ -1,7 +1,7 @@
 import { ChevronDownIcon } from "@radix-ui/react-icons"
 import * as RadixSelect from "@radix-ui/react-select"
 import { Theme } from "@radix-ui/themes"
-import type React from "react"
+import type { ReactNode } from "react"
 import { useContext } from "react"
 import type { FieldValues, Path, UseFormRegister } from "react-hook-form"
 import { WidgetContext } from "../WidgetRoot"
@@ -18,9 +18,9 @@ type Props<T extends string, TFieldValues extends FieldValues> = {
   }
   placeholder: { label: string; icon: React.ReactNode }
   label?: string
-  fullWidth?: boolean
   disabled?: boolean
   value?: string
+  hint?: ReactNode
   onChange?: (value: string) => void
   innerRef?: React.Ref<HTMLSelectElement>
 }
@@ -34,13 +34,12 @@ export const Select = function Select<
   options,
   placeholder,
   label,
-  fullWidth = false,
-  disabled = false,
+  disabled,
   value,
+  hint,
   onChange,
 }: Props<T, TFieldValues>) {
   const registerProps = register ? register(name as Path<TFieldValues>) : {}
-  const showPlaceholder = value == null || value === ""
   const { portalContainer } = useContext(WidgetContext)
   return (
     <RadixSelect.Root
@@ -51,24 +50,33 @@ export const Select = function Select<
       {...registerProps}
     >
       <RadixSelect.Trigger
-        className={`flex items-center justify-center text-base font-medium leading-6 h-14 px-4 gap-3 bg-gray-50 hover:bg-gray-200/50 text-gray-500 box-border flex-shrink-0 rounded-lg border border-gray-300 data-[placeholder]:text-[#63635e] ${
-          fullWidth ? "w-full" : ""
-        }`}
+        className="h-12 gap-3 rounded-lg bg-gray-3 px-4 text-gray-12 leading-6 ring-accent-9 ring-inset transition-all duration-100 ease-in-out hover:bg-gray-4 data-[state=open]:bg-gray-4 data-[state=open]:ring-2"
         aria-label={label ?? "Not specified"}
         disabled={disabled}
       >
-        <div className="flex items-center justify-between w-full gap-2">
-          <div className="flex items-center gap-2">
-            {showPlaceholder && placeholder?.icon && (
-              <div>{placeholder.icon}</div>
-            )}
-            <RadixSelect.Value placeholder={placeholder?.label} />
+        <div className="flex items-center justify-between gap-2">
+          <div className="hidden items-center gap-2 [[data-placeholder]_&]:flex">
+            {placeholder?.icon && <div>{placeholder.icon}</div>}
+            <div className="font-medium text-gray-11 text-sm">
+              {placeholder?.label}
+            </div>
           </div>
-          <RadixSelect.Icon>
-            <ChevronDownIcon />
-          </RadixSelect.Icon>
+
+          <div className="flex flex-1 items-center justify-between [[data-placeholder]_&]:hidden">
+            <div className="font-bold text-sm">
+              <RadixSelect.Value />
+            </div>
+            {hint != null ? hint : null}
+          </div>
+
+          {Object.keys(options).length > 1 ? (
+            <RadixSelect.Icon>
+              <ChevronDownIcon className="size-7" />
+            </RadixSelect.Icon>
+          ) : null}
         </div>
       </RadixSelect.Trigger>
+
       <RadixSelect.Portal container={portalContainer}>
         <Theme asChild>
           <RadixSelect.Content
@@ -109,10 +117,18 @@ interface SelectItemProps {
 const SelectItem: React.FC<SelectItemProps> = ({ value, children }) => {
   return (
     <RadixSelect.Item
-      className="flex p-2 items-center justify-between gap-3 self-stretch text-sm leading-none text-[#63635e] rounded-[3px] relative select-none w-full data-[highlighted]:outline-none data-[highlighted]:bg-[#f1f0ef] data-[highlighted]:rounded-lg data-[highlighted]:text-[#21201c] data-[state=checked]:bg-[#f1f0ef] data-[state=checked]:rounded-lg data-[state=checked]:text-[#21201c] data-[disabled]:text-mauve-8 data-[disabled]:pointer-events-none"
+      className="flex p-2 items-center justify-between gap-3 self-stretch font-bold text-sm text-gray-12 rounded-[3px] relative select-none w-full data-[highlighted]:outline-none data-[highlighted]:bg-[#f1f0ef] data-[highlighted]:rounded-lg data-[state=checked]:bg-[#f1f0ef] data-[state=checked]:rounded-lg data-[disabled]:text-mauve-8 data-[disabled]:pointer-events-none"
       value={value}
     >
       <RadixSelect.ItemText>{children}</RadixSelect.ItemText>
     </RadixSelect.Item>
+  )
+}
+
+Select.Hint = function Badge({ children }: { children: ReactNode }) {
+  return (
+    <div className="rounded bg-gray-a3 px-2 py-1 font-medium text-gray-a11 text-xs">
+      {children}
+    </div>
   )
 }
