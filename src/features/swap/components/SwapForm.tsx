@@ -159,7 +159,7 @@ export const SwapForm = ({ onNavigateDeposit }: SwapFormProps) => {
   const showDepositButton =
     tokenInBalance != null && tokenInBalance === 0n && onNavigateDeposit != null
 
-  const usdAmountInt = getTokenUsdPrice(
+  const usdAmountIn = getTokenUsdPrice(
     getValues().amountIn,
     tokenIn,
     tokensUsdPriceData
@@ -189,7 +189,7 @@ export const SwapForm = ({ onNavigateDeposit }: SwapFormProps) => {
           className="border border-gray-200/50 rounded-t-xl"
           required
           errors={errors}
-          usdAmount={usdAmountInt ? `~${formatUsdAmount(usdAmountInt)}` : ""}
+          usdAmount={usdAmountIn ? `~${formatUsdAmount(usdAmountIn)}` : null}
           balance={tokenInBalance}
         />
 
@@ -207,7 +207,7 @@ export const SwapForm = ({ onNavigateDeposit }: SwapFormProps) => {
           errors={errors}
           disabled={true}
           isLoading={snapshot.matches({ editing: "waiting_quote" })}
-          usdAmount={usdAmountOut ? `~${formatUsdAmount(usdAmountOut)}` : ""}
+          usdAmount={usdAmountOut ? `~${formatUsdAmount(usdAmountOut)}` : null}
           balance={tokenOutBalance}
         />
 

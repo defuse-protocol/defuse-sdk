@@ -338,7 +338,7 @@ export const WithdrawForm = ({
               usdAmount={
                 tokenToWithdrawUsdAmount
                   ? `~${formatUsdAmount(tokenToWithdrawUsdAmount)}`
-                  : ""
+                  : null
               }
             />
 
