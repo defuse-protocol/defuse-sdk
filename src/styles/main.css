@@ -13,6 +13,8 @@
   :host {
     --color-border: var(--sand-4);
     --color-label: var(--sand-12);
+    --color-warning: var(--amber-a2);
+    --color-warning-foreground: var(--amber-a11);
   }
 
   .dark {
@@ -22,5 +24,7 @@
      */
     --color-border: var(--sand-4);
     --color-label: var(--sand-12);
+    --color-warning: var(--amber-a2);
+    --color-warning-foreground: var(--amber-a11);
   }
 }

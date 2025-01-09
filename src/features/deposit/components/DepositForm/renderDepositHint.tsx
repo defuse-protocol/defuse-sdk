@@ -23,13 +23,8 @@ export function renderDepositHint(
 ) {
   return (
     <div className="flex flex-col gap-4">
-      <Callout.Root
-        size="1"
-        color="yellow"
-        variant="soft"
-        className="px-3 py-2"
-      >
-        <Callout.Text>
+      <Callout.Root className="bg-warning px-3 py-2 text-warning-foreground">
+        <Callout.Text className="text-xs">
           <span className="font-bold">
             {/* biome-ignore lint/nursery/useConsistentCurlyBraces: <explanation> */}
             Only deposit {token.symbol} from the {networkSelectToLabel[network]}{" "}

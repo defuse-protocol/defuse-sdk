@@ -61,6 +61,8 @@ const config = {
         },
         border: "var(--color-border)",
         label: "var(--color-label)",
+        warning: "var(--color-warning)",
+        "warning-foreground": "var(--color-warning-foreground)",
       },
       boxShadow: {
         paper:

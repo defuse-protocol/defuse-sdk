@@ -41,7 +41,7 @@ export function PassiveDeposit({
         </div>
       </div>
 
-      <div className="my-4 flex items-center rounded-lg bg-gray-100 px-4 py-2 dark:bg-gray-900">
+      <div className="mb-4 flex items-center rounded-lg bg-gray-100 px-4 py-2 dark:bg-gray-900">
         <div className="flex flex-1 justify-center">
           <span className="relative">
             {/* Visible truncated address */}
