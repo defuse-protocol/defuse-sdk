@@ -8,12 +8,9 @@ const getTokenUsdPrice = (
   tokensUsdPriceData?: TokenUsdPriceData
 ): number | null => {
   try {
-    if (
-      !tokensUsdPriceData ||
-      !token ||
-      !tokenAmount ||
-      Number.isNaN(+tokenAmount)
-    )
+    if (!tokensUsdPriceData || !token || !tokenAmount) return null
+    const numberTokenAmount = +tokenAmount
+    if (Number.isNaN(numberTokenAmount) || !Number.isFinite(numberTokenAmount))
       return null
     let tokenUsdPriceData = null
     if (isBaseToken(token) && tokensUsdPriceData[token.defuseAssetId]) {
@@ -30,7 +27,7 @@ const getTokenUsdPrice = (
       }
     }
     if (!tokenUsdPriceData) return null
-    return Number(tokenAmount) * tokenUsdPriceData.price
+    return numberTokenAmount * tokenUsdPriceData.price
   } catch {
     return null
   }
