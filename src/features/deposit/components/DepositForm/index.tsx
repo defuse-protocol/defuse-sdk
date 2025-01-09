@@ -153,45 +153,55 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
         <Form<DepositFormValues>
           handleSubmit={handleSubmit(onSubmit)}
           register={register}
-          className="flex flex-col gap-4"
+          className="flex flex-col gap-5"
         >
-          <button
-            type="button"
-            className="flex items-center justify-center text-base leading-6 h-14 px-4 gap-3 bg-gray-50 text-gray-500 max-w-full box-border flex-shrink-0 rounded-lg border border-gray-300 hover:bg-gray-200/50"
-            onClick={() => openModalSelectAssets("token", token ?? undefined)}
-          >
-            <Flex gap="2" align="center" justify="between" width="100%">
-              <Flex gap="2" align="center">
-                {token ? <AssetComboIcon icon={token?.icon} /> : <EmptyIcon />}
-                <Text>{token?.name ?? "Select asset"}</Text>
-              </Flex>
-            </Flex>
-          </button>
-
-          {token && (
-            <div className="[&>button[disabled]]:opacity-50 [&>button[disabled]]:cursor-not-allowed [&>button[disabled]]:pointer-events-none [&>*[disabled]]:pointer-events-none">
-              <Controller
-                name="network"
-                control={control}
-                render={({ field }) => (
-                  <Select
-                    options={filterBlockchainsOptions(token)}
-                    placeholder={{
-                      label: "Select network",
-                      icon: <EmptyIcon />,
-                    }}
-                    fullWidth
-                    value={
-                      getDefaultBlockchainOptionValue(token) || network || ""
-                    }
-                    disabled={!isUnifiedToken(token)}
-                    onChange={field.onChange}
-                    name={field.name}
-                  />
-                )}
-              />
+          <div className="flex flex-col gap-2.5">
+            <div className="font-bold text-label text-sm">
+              Select asset and network
             </div>
-          )}
+
+            <button
+              type="button"
+              className="flex items-center justify-center text-base leading-6 h-14 px-4 gap-3 bg-gray-50 text-gray-500 max-w-full box-border flex-shrink-0 rounded-lg border border-gray-300 hover:bg-gray-200/50"
+              onClick={() => openModalSelectAssets("token", token ?? undefined)}
+            >
+              <Flex gap="2" align="center" justify="between" width="100%">
+                <Flex gap="2" align="center">
+                  {token ? (
+                    <AssetComboIcon icon={token?.icon} />
+                  ) : (
+                    <EmptyIcon />
+                  )}
+                  <Text>{token?.name ?? "Select asset"}</Text>
+                </Flex>
+              </Flex>
+            </button>
+
+            {token && (
+              <div className="[&>button[disabled]]:opacity-50 [&>button[disabled]]:cursor-not-allowed [&>button[disabled]]:pointer-events-none [&>*[disabled]]:pointer-events-none">
+                <Controller
+                  name="network"
+                  control={control}
+                  render={({ field }) => (
+                    <Select
+                      options={filterBlockchainsOptions(token)}
+                      placeholder={{
+                        label: "Select network",
+                        icon: <EmptyIcon />,
+                      }}
+                      fullWidth
+                      value={
+                        getDefaultBlockchainOptionValue(token) || network || ""
+                      }
+                      disabled={!isUnifiedToken(token)}
+                      onChange={field.onChange}
+                      name={field.name}
+                    />
+                  )}
+                />
+              </div>
+            )}
+          </div>
 
           {currentDepositOption != null && (
             <>
