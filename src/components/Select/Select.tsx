@@ -3,34 +3,27 @@ import * as RadixSelect from "@radix-ui/react-select"
 import { Theme } from "@radix-ui/themes"
 import type { ReactNode } from "react"
 import { useContext } from "react"
-import type { FieldValues, Path, UseFormRegister } from "react-hook-form"
 import { WidgetContext } from "../WidgetRoot"
 
-type Props<T extends string, TFieldValues extends FieldValues> = {
+type Props<T extends string> = {
   name: string
-  register?: UseFormRegister<TFieldValues>
   options: {
     [key in T extends string ? T : never]: {
       label: string
-      icon: React.ReactNode
+      icon: ReactNode
       value: string
     }
   }
-  placeholder: { label: string; icon: React.ReactNode }
+  placeholder: { label: string; icon: ReactNode }
   label?: string
   disabled?: boolean
   value?: string
   hint?: ReactNode
   onChange?: (value: string) => void
-  innerRef?: React.Ref<HTMLSelectElement>
 }
 
-export const Select = function Select<
-  T extends string,
-  TFieldValues extends FieldValues,
->({
+export function Select<T extends string>({
   name,
-  register,
   options,
   placeholder,
   label,
@@ -38,8 +31,7 @@ export const Select = function Select<
   value,
   hint,
   onChange,
-}: Props<T, TFieldValues>) {
-  const registerProps = register ? register(name as Path<TFieldValues>) : {}
+}: Props<T>) {
   const { portalContainer } = useContext(WidgetContext)
   return (
     <RadixSelect.Root
@@ -47,7 +39,6 @@ export const Select = function Select<
       value={value}
       name={name}
       disabled={disabled}
-      {...registerProps}
     >
       <RadixSelect.Trigger
         className="h-12 gap-3 rounded-lg bg-gray-3 px-4 text-gray-12 leading-6 ring-accent-9 ring-inset transition-all duration-100 ease-in-out hover:bg-gray-4 data-[state=open]:bg-gray-4 data-[state=open]:ring-2"
@@ -80,18 +71,18 @@ export const Select = function Select<
       <RadixSelect.Portal container={portalContainer}>
         <Theme asChild>
           <RadixSelect.Content
-            className="overflow-hidden bg-white rounded-md shadow-md w-[var(--radix-select-trigger-width)] max-h-[var(--radix-select-content-available-height)] max-w-[var(--radix-select-trigger-width)] box-border"
+            className="box-border max-h-[var(--radix-select-content-available-height)] w-[var(--radix-select-trigger-width)] max-w-[var(--radix-select-trigger-width)] overflow-hidden rounded-md bg-white shadow-md"
             position="popper"
             side="bottom"
             sideOffset={8}
           >
-            <RadixSelect.Viewport className="p-2 flex flex-col gap-1">
+            <RadixSelect.Viewport className="flex flex-col gap-1 p-2">
               {Object.keys(options).map((key: string) => (
                 <SelectItem
                   key={key}
                   value={options[key as keyof typeof options].value}
                 >
-                  <div className="flex items-center justify-between w-full gap-2">
+                  <div className="flex w-full items-center justify-between gap-2">
                     {options[key as keyof typeof options]?.icon && (
                       <div className="flex-shrink-0">
                         {options[key as keyof typeof options].icon}
@@ -111,13 +102,13 @@ export const Select = function Select<
 
 interface SelectItemProps {
   value: string
-  children: React.ReactNode
+  children: ReactNode
 }
 
-const SelectItem: React.FC<SelectItemProps> = ({ value, children }) => {
+function SelectItem({ value, children }: SelectItemProps) {
   return (
     <RadixSelect.Item
-      className="flex p-2 items-center justify-between gap-3 self-stretch font-bold text-sm text-gray-12 rounded-[3px] relative select-none w-full data-[highlighted]:outline-none data-[highlighted]:bg-[#f1f0ef] data-[highlighted]:rounded-lg data-[state=checked]:bg-[#f1f0ef] data-[state=checked]:rounded-lg data-[disabled]:text-mauve-8 data-[disabled]:pointer-events-none"
+      className="relative flex w-full select-none items-center justify-between gap-3 self-stretch rounded-[3px] p-2 font-bold text-gray-12 text-sm data-[disabled]:pointer-events-none data-[highlighted]:rounded-lg data-[state=checked]:rounded-lg data-[highlighted]:bg-[#f1f0ef] data-[state=checked]:bg-[#f1f0ef] data-[disabled]:text-mauve-8 data-[highlighted]:outline-none"
       value={value}
     >
       <RadixSelect.ItemText>{children}</RadixSelect.ItemText>
