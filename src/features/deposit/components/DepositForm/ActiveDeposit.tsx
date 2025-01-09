@@ -16,6 +16,7 @@ import getTokenUsdPrice from "../../../../utils/getTokenUsdPrice"
 import { RESERVED_NEAR_BALANCE } from "../../../machines/getBalanceMachine"
 import { DepositResult } from "../DepositResult"
 import { DepositUIMachineContext } from "../DepositUIMachineProvider"
+import { DepositWarning } from "../DepositWarning"
 import { TokenAmountInputCard } from "./TokenAmountInputCard"
 import type { DepositFormValues } from "./index"
 import { renderDepositHint } from "./renderDepositHint"
@@ -33,29 +34,34 @@ export function ActiveDeposit({
 }: ActiveDepositProps) {
   const { setValue, watch } = useFormContext<DepositFormValues>()
 
-  const { amount, parsedAmount, depositOutput, balance, isLoading } =
-    DepositUIMachineContext.useSelector((snapshot) => {
-      const amount =
-        snapshot.context.depositFormRef.getSnapshot().context.amount
-      const parsedAmount =
-        snapshot.context.depositFormRef.getSnapshot().context.parsedAmount
-      const preparationOutput = snapshot.context.preparationOutput
-      return {
-        amount,
-        parsedAmount,
-        depositOutput: snapshot.context.depositOutput,
-        preparationOutput: snapshot.context.preparationOutput,
-        balance:
-          preparationOutput?.tag === "ok"
-            ? preparationOutput.value.balance
-            : null,
-        isLoading:
-          snapshot.matches("submittingNearTx") ||
-          snapshot.matches("submittingEVMTx") ||
-          snapshot.matches("submittingSolanaTx") ||
-          snapshot.matches("submittingTurboTx"),
-      }
-    })
+  const {
+    amount,
+    parsedAmount,
+    depositOutput,
+    preparationOutput,
+    balance,
+    isLoading,
+  } = DepositUIMachineContext.useSelector((snapshot) => {
+    const amount = snapshot.context.depositFormRef.getSnapshot().context.amount
+    const parsedAmount =
+      snapshot.context.depositFormRef.getSnapshot().context.parsedAmount
+    const preparationOutput = snapshot.context.preparationOutput
+    return {
+      amount,
+      parsedAmount,
+      depositOutput: snapshot.context.depositOutput,
+      preparationOutput: snapshot.context.preparationOutput,
+      balance:
+        preparationOutput?.tag === "ok"
+          ? preparationOutput.value.balance
+          : null,
+      isLoading:
+        snapshot.matches("submittingNearTx") ||
+        snapshot.matches("submittingEVMTx") ||
+        snapshot.matches("submittingSolanaTx") ||
+        snapshot.matches("submittingTurboTx"),
+    }
+  })
 
   const balanceInsufficient =
     balance != null
@@ -112,6 +118,8 @@ export function ActiveDeposit({
           }
         />
       </div>
+
+      <DepositWarning depositWarning={depositOutput || preparationOutput} />
 
       <ButtonCustom
         size="lg"

@@ -25,7 +25,6 @@ import { BlockchainEnum } from "../../../../types/interfaces"
 import type { SwappableToken } from "../../../../types/swap"
 import { isBaseToken, isUnifiedToken } from "../../../../utils/token"
 import { DepositUIMachineContext } from "../DepositUIMachineProvider"
-import { DepositWarning } from "../DepositWarning"
 import { ActiveDeposit } from "./ActiveDeposit"
 import { DepositMethodSelector } from "./DepositMethodSelector"
 import { PassiveDeposit } from "./PassiveDeposit"
@@ -44,7 +43,6 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
 
   const depositUIActorRef = DepositUIMachineContext.useActorRef()
   const snapshot = DepositUIMachineContext.useSelector((snapshot) => snapshot)
-  const depositOutput = snapshot.context.depositOutput
   const preparationOutput = snapshot.context.preparationOutput
 
   const { token, derivedToken, blockchain, userAddress, poaBridgeInfoRef } =
@@ -250,18 +248,22 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
                 )}
             </>
           )}
+
+          {userAddress ? null : (
+            <Callout.Root size="1" color="yellow">
+              <Callout.Icon>
+                <ExclamationTriangleIcon />
+              </Callout.Icon>
+              <Callout.Text>
+                Please connect your wallet to continue
+              </Callout.Text>
+            </Callout.Root>
+          )}
+
+          {userAddress && network && !isActiveDeposit && !isPassiveDeposit && (
+            <NotSupportedDepositRoute />
+          )}
         </Form>
-
-        {token && (
-          <DepositWarning
-            userAddress={userAddress}
-            depositWarning={depositOutput || preparationOutput}
-          />
-        )}
-
-        {userAddress && network && !isActiveDeposit && !isPassiveDeposit && (
-          <NotSupportedDepositRoute />
-        )}
       </div>
     </div>
   )
@@ -407,7 +409,7 @@ function getDefaultBlockchainOptionValue(
 
 function NotSupportedDepositRoute() {
   return (
-    <Callout.Root size="1" color="yellow" mt="4">
+    <Callout.Root size="1" color="yellow">
       <Callout.Icon>
         <ExclamationTriangleIcon />
       </Callout.Icon>
