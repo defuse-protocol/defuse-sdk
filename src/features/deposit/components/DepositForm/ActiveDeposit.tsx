@@ -5,11 +5,13 @@ import { useFormContext } from "react-hook-form"
 import { BlockMultiBalances } from "../../../../components/Block/BlockMultiBalances"
 import { ButtonCustom } from "../../../../components/Button/ButtonCustom"
 import { TooltipInfo } from "../../../../components/TooltipInfo"
+import { useTokensUsdPrices } from "../../../../hooks/useTokensUsdPrices"
 import type { BaseTokenInfo } from "../../../../types/base"
 import type { BlockchainEnum } from "../../../../types/interfaces"
 import type { SwappableToken } from "../../../../types/swap"
 import { reverseAssetNetworkAdapter } from "../../../../utils/adapters"
-import { formatTokenValue } from "../../../../utils/format"
+import { formatTokenValue, formatUsdAmount } from "../../../../utils/format"
+import getTokenUsdPrice from "../../../../utils/getTokenUsdPrice"
 import { RESERVED_NEAR_BALANCE } from "../../../machines/getBalanceMachine"
 import { DepositResult } from "../DepositResult"
 import { DepositUIMachineContext } from "../DepositUIMachineProvider"
@@ -72,6 +74,9 @@ export function ActiveDeposit({
 
   const inputId = useId()
 
+  const { data: tokensUsdPriceData } = useTokensUsdPrices()
+  const usdAmountToDeposit = getTokenUsdPrice(amount, token, tokensUsdPriceData)
+
   return (
     <div className="flex flex-col gap-5">
       <div className="flex flex-col gap-3">
@@ -99,8 +104,9 @@ export function ActiveDeposit({
           }
           priceSlot={
             <TokenAmountInputCard.DisplayPrice>
-              {/* biome-ignore lint/nursery/useConsistentCurlyBraces: <explanation> */}
-              {/* tbd */ ""}
+              {usdAmountToDeposit != null
+                ? formatUsdAmount(usdAmountToDeposit)
+                : null}
             </TokenAmountInputCard.DisplayPrice>
           }
         />
