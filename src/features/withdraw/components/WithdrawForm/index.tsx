@@ -361,7 +361,13 @@ export const WithdrawForm = ({
                         label: "Select network",
                         icon: <EmptyIcon />,
                       }}
-                      fullWidth
+                      hint={
+                        <Select.Hint>
+                          {Object.keys(blockchainSelectItems).length === 1
+                            ? "This network only"
+                            : "Network"}
+                        </Select.Hint>
+                      }
                     />
                   )
                 }}
