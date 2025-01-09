@@ -1,5 +1,5 @@
 import { ExclamationTriangleIcon } from "@radix-ui/react-icons"
-import { Callout, Flex, Text } from "@radix-ui/themes"
+import { Callout } from "@radix-ui/themes"
 import { useSelector } from "@xstate/react"
 import { useEffect, useState } from "react"
 import { Controller, useFormContext } from "react-hook-form"
@@ -13,6 +13,7 @@ import { Form } from "../../../../components/Form"
 import type { ModalSelectAssetsPayload } from "../../../../components/Modal/ModalSelectAssets"
 import { NetworkIcon } from "../../../../components/Network/NetworkIcon"
 import { Select } from "../../../../components/Select/Select"
+import { SelectTriggerLike } from "../../../../components/Select/SelectTriggerLike"
 import { Separator } from "../../../../components/Separator"
 import { getPOABridgeInfo } from "../../../../features/machines/poaBridgeInfoActor"
 import { useModalStore } from "../../../../providers/ModalStoreProvider"
@@ -165,22 +166,19 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
               Select asset and network
             </div>
 
-            <button
-              type="button"
-              className="flex items-center justify-center text-base leading-6 h-14 px-4 gap-3 bg-gray-50 text-gray-500 max-w-full box-border flex-shrink-0 rounded-lg border border-gray-300 hover:bg-gray-200/50"
+            <SelectTriggerLike
+              icon={
+                token ? (
+                  <AssetComboIcon icon={token?.icon} />
+                ) : (
+                  <EmptyIcon circle />
+                )
+              }
+              label={token?.name ?? "Select asset"}
               onClick={() => openModalSelectAssets("token", token ?? undefined)}
-            >
-              <Flex gap="2" align="center" justify="between" width="100%">
-                <Flex gap="2" align="center">
-                  {token ? (
-                    <AssetComboIcon icon={token?.icon} />
-                  ) : (
-                    <EmptyIcon circle />
-                  )}
-                  <Text>{token?.name ?? "Select asset"}</Text>
-                </Flex>
-              </Flex>
-            </button>
+              isPlaceholder={!token}
+              hint={token ? <Select.Hint>Asset</Select.Hint> : null}
+            />
 
             {token && (
               <Controller
