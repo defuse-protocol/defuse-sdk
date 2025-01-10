@@ -166,7 +166,7 @@ function Balance({
       <BlockMultiBalances
         balance={balance ?? 0n}
         decimals={token.decimals}
-        handleClick={() => onClick()}
+        handleClick={onClick}
         disabled={balance === 0n}
         className={clsx("!static", balance == null && "invisible")}
       />

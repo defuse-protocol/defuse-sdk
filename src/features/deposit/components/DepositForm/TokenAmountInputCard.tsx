@@ -27,12 +27,15 @@ export function TokenAmountInputCard({
         <div className="shrink-0">{tokenSlot}</div>
       </div>
 
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-4">
         {/* Price */}
-        <div>{priceSlot}</div>
+        <div className="relative flex-1 overflow-hidden whitespace-nowrap">
+          <div>{priceSlot}</div>
+          <div className="pointer-events-none absolute top-0 right-0 bottom-0 w-12 bg-gradient-to-r from-transparent to-gray-2" />
+        </div>
 
         {/* Balance */}
-        <div>{balanceSlot}</div>
+        <div className="shrink-0">{balanceSlot}</div>
       </div>
     </div>
   )
