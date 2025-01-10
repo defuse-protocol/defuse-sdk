@@ -1,39 +1,20 @@
-import {
-  CopyIcon,
-  ExclamationTriangleIcon,
-  InfoCircledIcon,
-} from "@radix-ui/react-icons"
-import {
-  Button,
-  Callout,
-  Flex,
-  Spinner,
-  Text,
-  useThemeContext,
-} from "@radix-ui/themes"
+import { ExclamationTriangleIcon } from "@radix-ui/react-icons"
+import { Callout } from "@radix-ui/themes"
 import { useSelector } from "@xstate/react"
-import { QRCodeSVG } from "qrcode.react"
 import { useEffect, useState } from "react"
-import CopyToClipboard from "react-copy-to-clipboard"
 import { Controller, useFormContext } from "react-hook-form"
-import { BlockMultiBalances } from "src/components/Block/BlockMultiBalances"
-import { TooltipInfo } from "src/components/TooltipInfo"
-import { RESERVED_NEAR_BALANCE } from "src/features/machines/getBalanceMachine"
-import { useTokensUsdPrices } from "src/hooks/useTokensUsdPrices"
 import {
   assetNetworkAdapter,
   reverseAssetNetworkAdapter,
 } from "src/utils/adapters"
-import { formatUsdAmount } from "src/utils/format"
-import getTokenUsdPrice from "src/utils/getTokenUsdPrice"
 import { AssetComboIcon } from "../../../../components/Asset/AssetComboIcon"
-import { ButtonCustom } from "../../../../components/Button/ButtonCustom"
 import { EmptyIcon } from "../../../../components/EmptyIcon"
 import { Form } from "../../../../components/Form"
-import { Input } from "../../../../components/Input"
 import type { ModalSelectAssetsPayload } from "../../../../components/Modal/ModalSelectAssets"
 import { NetworkIcon } from "../../../../components/Network/NetworkIcon"
 import { Select } from "../../../../components/Select/Select"
+import { SelectTriggerLike } from "../../../../components/Select/SelectTriggerLike"
+import { Separator } from "../../../../components/Separator"
 import { getPOABridgeInfo } from "../../../../features/machines/poaBridgeInfoActor"
 import { useModalStore } from "../../../../providers/ModalStoreProvider"
 import { getAvailableDepositRoutes } from "../../../../services/depositService"
@@ -42,14 +23,11 @@ import type { BaseTokenInfo, UnifiedTokenInfo } from "../../../../types/base"
 import type { ChainType } from "../../../../types/deposit"
 import { BlockchainEnum } from "../../../../types/interfaces"
 import type { SwappableToken } from "../../../../types/swap"
-import { formatTokenValue } from "../../../../utils/format"
 import { isBaseToken, isUnifiedToken } from "../../../../utils/token"
-import { DepositResult } from "../DepositResult"
 import { DepositUIMachineContext } from "../DepositUIMachineProvider"
-import { DepositWarning } from "../DepositWarning"
-
-// TODO: Temporary disable deposit through POA bridge
-const ENABLE_DEPOSIT_THROUGH_POA_BRIDGE = true
+import { ActiveDeposit } from "./ActiveDeposit"
+import { DepositMethodSelector } from "./DepositMethodSelector"
+import { PassiveDeposit } from "./PassiveDeposit"
 
 export type DepositFormValues = {
   network: BlockchainEnum | null
@@ -65,45 +43,31 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
 
   const depositUIActorRef = DepositUIMachineContext.useActorRef()
   const snapshot = DepositUIMachineContext.useSelector((snapshot) => snapshot)
-  const depositOutput = snapshot.context.depositOutput
   const preparationOutput = snapshot.context.preparationOutput
 
-  const {
-    token,
-    derivedToken,
-    blockchain,
-    amount,
-    userAddress,
-    poaBridgeInfoRef,
-    parsedAmount,
-  } = DepositUIMachineContext.useSelector((snapshot) => {
-    const token = snapshot.context.depositFormRef.getSnapshot().context.token
-    const derivedToken =
-      snapshot.context.depositFormRef.getSnapshot().context.derivedToken
-    const blockchain =
-      snapshot.context.depositFormRef.getSnapshot().context.blockchain
-    const amount = snapshot.context.depositFormRef.getSnapshot().context.amount
-    const parsedAmount =
-      snapshot.context.depositFormRef.getSnapshot().context.parsedAmount
-    const userAddress = snapshot.context.userAddress
-    const poaBridgeInfoRef = snapshot.context.poaBridgeInfoRef
+  const { token, derivedToken, blockchain, userAddress, poaBridgeInfoRef } =
+    DepositUIMachineContext.useSelector((snapshot) => {
+      const token = snapshot.context.depositFormRef.getSnapshot().context.token
+      const derivedToken =
+        snapshot.context.depositFormRef.getSnapshot().context.derivedToken
+      const blockchain =
+        snapshot.context.depositFormRef.getSnapshot().context.blockchain
+      const userAddress = snapshot.context.userAddress
+      const poaBridgeInfoRef = snapshot.context.poaBridgeInfoRef
 
-    return {
-      token,
-      derivedToken,
-      blockchain,
-      amount,
-      userAddress,
-      poaBridgeInfoRef,
-      parsedAmount,
-    }
-  })
+      return {
+        token,
+        derivedToken,
+        blockchain,
+        userAddress,
+        poaBridgeInfoRef,
+      }
+    })
 
   const isOutputOk = preparationOutput?.tag === "ok"
   const depositAddress = isOutputOk
     ? preparationOutput.value.generateDepositAddress
     : null
-  const balance = isOutputOk ? preparationOutput.value.balance || 0n : 0n
 
   const network = blockchain ? assetNetworkAdapter[blockchain] : null
 
@@ -148,12 +112,6 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
     })
   }
 
-  const handleSetMaxValue = async () => {
-    if (token == null || balance == null) return
-    const amountToFormat = formatTokenValue(balance, token.decimals)
-    setValue("amount", amountToFormat)
-  }
-
   const formNetwork = watch("network")
   useEffect(() => {
     const networkDefaultOption = token
@@ -164,11 +122,6 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
     }
   }, [formNetwork, token, setValue])
 
-  const balanceInsufficient =
-    derivedToken && network
-      ? isInsufficientBalance(amount, balance, derivedToken, network)
-      : null
-
   const minDepositAmount = useSelector(poaBridgeInfoRef, (state) => {
     if (token == null || !isBaseToken(token)) {
       return null
@@ -178,220 +131,139 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
     return bridgedTokenInfo == null ? null : bridgedTokenInfo.minDeposit
   })
 
-  const isDepositAmountHighEnough =
-    minDepositAmount && parsedAmount !== null && parsedAmount > 0n
-      ? parsedAmount >= minDepositAmount
-      : true
-
   const availableDepositRoutes =
     chainType && network && getAvailableDepositRoutes(chainType, network)
   const isActiveDeposit = availableDepositRoutes?.activeDeposit
   const isPassiveDeposit = availableDepositRoutes?.passiveDeposit
 
-  const [isCopied, setIsCopied] = useState(false)
+  const [preferredDepositOption, setPreferredDepositOption] = useState<
+    "active" | "passive"
+  >("active")
 
-  const { accentColor } = useThemeContext()
-  const { data: tokensUsdPriceData } = useTokensUsdPrices()
-  const usdAmountToDeposit = getTokenUsdPrice(amount, token, tokensUsdPriceData)
+  const currentDepositOption =
+    preferredDepositOption === "active" && isActiveDeposit
+      ? "active"
+      : isPassiveDeposit
+        ? "passive"
+        : isActiveDeposit
+          ? "active"
+          : null
+
+  const chainOptions = token != null ? filterBlockchainsOptions(token) : {}
+
   return (
-    <div className="w-full max-w-[472px]">
-      <div className="rounded-2xl p-5 bg-white shadow dark:bg-[#111110] dark:shadow-[0_1px_3px_0_rgb(255_255_255_/_0.1),_0_1px_2px_-1px_rgb(255_255_255_/_0.1)]">
+    <div className="widget-container">
+      <div className="rounded-2xl bg-gray-1 p-5 shadow">
         <Form<DepositFormValues>
           handleSubmit={handleSubmit(onSubmit)}
           register={register}
+          className="flex flex-col gap-5"
         >
-          <button
-            type="button"
-            className="w-full flex items-center justify-center text-base leading-6 h-14 px-4 gap-3 bg-gray-50 text-gray-500 max-w-full box-border flex-shrink-0 rounded-lg border border-gray-300 mb-4 hover:bg-gray-200/50"
-            onClick={() => openModalSelectAssets("token", token ?? undefined)}
-          >
-            <Flex gap="2" align="center" justify="between" width="100%">
-              <Flex gap="2" align="center">
-                {token ? <AssetComboIcon icon={token?.icon} /> : <EmptyIcon />}
-                <Text>{token?.name ?? "Select asset"}</Text>
-              </Flex>
-            </Flex>
-          </button>
-          {token && (
-            <div className="mb-4 [&>button[disabled]]:opacity-50 [&>button[disabled]]:cursor-not-allowed [&>button[disabled]]:pointer-events-none [&>*[disabled]]:pointer-events-none">
+          <div className="flex flex-col gap-2.5">
+            <div className="font-bold text-label text-sm">
+              Select asset and network
+            </div>
+
+            <SelectTriggerLike
+              icon={
+                token ? (
+                  <AssetComboIcon icon={token?.icon} />
+                ) : (
+                  <EmptyIcon circle />
+                )
+              }
+              label={token?.name ?? "Select asset"}
+              onClick={() => openModalSelectAssets("token", token ?? undefined)}
+              isPlaceholder={!token}
+              hint={token ? <Select.Hint>Asset</Select.Hint> : null}
+            />
+
+            {token && (
               <Controller
                 name="network"
                 control={control}
                 render={({ field }) => (
                   <Select
-                    options={filterBlockchainsOptions(token)}
+                    options={chainOptions}
                     placeholder={{
                       label: "Select network",
                       icon: <EmptyIcon />,
                     }}
-                    fullWidth
                     value={
                       getDefaultBlockchainOptionValue(token) || network || ""
                     }
-                    disabled={!isUnifiedToken(token)}
                     onChange={field.onChange}
                     name={field.name}
+                    hint={
+                      <Select.Hint>
+                        {Object.keys(chainOptions).length === 1
+                          ? "This network only"
+                          : "Network"}
+                      </Select.Hint>
+                    }
                   />
                 )}
               />
-            </div>
-          )}
-          {isActiveDeposit && (
-            <div className="flex flex-col p-5 w-full bg-gray-50 border border-gray-200/50 dark:bg-gray-900 dark:border-gray-950 rounded-lg">
-              <Input
-                name="amount"
-                value={watch("amount")}
-                onChange={(value) => setValue("amount", value)}
-                inputMode="decimal"
-                type="text"
-                pattern="[0-9]*[.]?[0-9]*"
-                autoComplete="off"
-                ref={(ref) => {
-                  if (ref) {
-                    ref.focus()
-                  }
-                }}
-              />
-              <div className="flex justify-between items-center gap-2 mt-1 min-h-5 w-full max-w-[calc(100vw-106px)]">
-                {usdAmountToDeposit ? (
-                  <span className="text-xs sm:text-sm font-medium text-gray-400 whitespace-nowrap overflow-hidden">
-                    ~{formatUsdAmount(usdAmountToDeposit)}
-                  </span>
-                ) : null}
-
-                <div className="flex items-center gap-2 ml-auto">
-                  {token?.symbol === "NEAR" && blockchain === "near" && (
-                    <TooltipInfo
-                      icon={
-                        <Text asChild color={accentColor}>
-                          <InfoCircledIcon />
-                        </Text>
-                      }
-                    >
-                      Combined balance of NEAR and wNEAR.
-                      <br /> NEAR will be automatically wrapped to wNEAR
-                      <br /> if your wNEAR balance isn't sufficient for the
-                      swap.
-                      <br />
-                      Note that to cover network fees, we reserve
-                      {` ${formatTokenValue(RESERVED_NEAR_BALANCE, 24)} NEAR`}
-                      <br /> in your wallet.
-                    </TooltipInfo>
-                  )}
-                  {balance != null && token != null && (
-                    <BlockMultiBalances
-                      balance={balance}
-                      decimals={token.decimals}
-                      handleClick={handleSetMaxValue}
-                      disabled={balance === 0n}
-                    />
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
-          {(isActiveDeposit || !network) && (
-            <div className="flex flex-col gap-4 mt-4">
-              <ButtonCustom
-                size="lg"
-                disabled={
-                  !watch("amount") ||
-                  balanceInsufficient ||
-                  !isDepositAmountHighEnough
-                }
-                isLoading={
-                  snapshot.matches("submittingNearTx") ||
-                  snapshot.matches("submittingEVMTx") ||
-                  snapshot.matches("submittingSolanaTx") ||
-                  snapshot.matches("submittingTurboTx")
-                }
-              >
-                {renderDepositButtonText(
-                  watch("amount") >= "0" &&
-                    (balanceInsufficient !== null
-                      ? balanceInsufficient
-                      : false),
-                  network,
-                  token,
-                  minDepositAmount,
-                  isDepositAmountHighEnough
-                )}
-              </ButtonCustom>
-            </div>
-          )}
-          {network && (
-            <DepositResult
-              chainName={reverseAssetNetworkAdapter[network]}
-              depositResult={depositOutput}
-            />
-          )}
-          {isPassiveDeposit &&
-            ENABLE_DEPOSIT_THROUGH_POA_BRIDGE &&
-            network &&
-            userAddress && (
-              <div className="flex flex-col items-stretch mt-4">
-                <h2 className="text-[#21201C] text-center text-base font-bold leading-6">
-                  Deposit to the address below
-                </h2>
-                <p className="text-[#63635E] text-center text-sm font-normal leading-5 mb-4">
-                  {/* biome-ignore lint/nursery/useConsistentCurlyBraces: space is needed here */}
-                  Withdraw assets from an exchange to the{" "}
-                  {networkSelectToLabel[network]} address below. Upon
-                  confirmation, you will receive your assets on Defuse within
-                  minutes.
-                </p>
-                <div className="flex justify-center items-center w-full min-h-[188px] mb-4 rounded-lg bg-[#FDFDFC] border border-[#F1F1F1] p-4">
-                  {depositAddress ? (
-                    <QRCodeSVG value={depositAddress} />
-                  ) : (
-                    <Spinner loading={true} />
-                  )}
-                </div>
-                {depositAddress && (
-                  <div className="flex p-5 w-full items-center justify-between gap-2 bg-gray-50 border border-gray-200/50 dark:bg-gray-900 dark:border-gray-950 rounded-lg mb-4 max-w-[calc(100vw-60px)]">
-                    {depositAddress ? (
-                      <span className="text-base font-medium text-gray-500 whitespace-nowrap overflow-hidden">
-                        {truncateUserAddress(depositAddress)}
-                      </span>
-                    ) : null}
-                    <Button
-                      type="button"
-                      size="2"
-                      variant="soft"
-                      className="px-3 cursor-copy"
-                      disabled={!depositAddress}
-                    >
-                      <CopyToClipboard
-                        text={depositAddress}
-                        onCopy={() => setIsCopied(true)}
-                      >
-                        <Flex gap="2" align="center">
-                          <Text>{isCopied ? "Copied" : "Copy"}</Text>
-                          <Text asChild>
-                            <CopyIcon height="14" width="14" />
-                          </Text>
-                        </Flex>
-                      </CopyToClipboard>
-                    </Button>
-                  </div>
-                )}
-                {renderDepositHint(network, minDepositAmount, token)}
-              </div>
             )}
+          </div>
+
+          {currentDepositOption != null && (
+            <>
+              {isActiveDeposit && isPassiveDeposit && (
+                <>
+                  <div className="-mx-5">
+                    <Separator />
+                  </div>
+
+                  <DepositMethodSelector
+                    selectedDepositOption={currentDepositOption}
+                    onSelectDepositOption={setPreferredDepositOption}
+                  />
+                </>
+              )}
+
+              <div className="-mx-5">
+                <Separator />
+              </div>
+
+              {currentDepositOption === "active" &&
+                network != null &&
+                derivedToken != null && (
+                  <ActiveDeposit
+                    network={network}
+                    token={derivedToken}
+                    minDepositAmount={minDepositAmount}
+                  />
+                )}
+
+              {currentDepositOption === "passive" &&
+                network != null &&
+                derivedToken != null && (
+                  <PassiveDeposit
+                    network={network}
+                    depositAddress={depositAddress}
+                    minDepositAmount={minDepositAmount}
+                    token={derivedToken}
+                  />
+                )}
+            </>
+          )}
+
+          {userAddress ? null : (
+            <Callout.Root size="1" color="yellow">
+              <Callout.Icon>
+                <ExclamationTriangleIcon />
+              </Callout.Icon>
+              <Callout.Text>
+                Please connect your wallet to continue
+              </Callout.Text>
+            </Callout.Root>
+          )}
+
+          {userAddress && network && !isActiveDeposit && !isPassiveDeposit && (
+            <NotSupportedDepositRoute />
+          )}
         </Form>
-        {token &&
-          network &&
-          network !== BlockchainEnum.NEAR &&
-          !ENABLE_DEPOSIT_THROUGH_POA_BRIDGE && <UnderFeatureFlag />}
-        {token && (
-          <DepositWarning
-            userAddress={userAddress}
-            depositWarning={depositOutput || preparationOutput}
-          />
-        )}
-        {userAddress && network && !isActiveDeposit && !isPassiveDeposit && (
-          <NotSupportedDepositRoute />
-        )}
       </div>
     </div>
   )
@@ -509,28 +381,18 @@ function getBlockchainsOptions(): Record<
 function filterBlockchainsOptions(
   token: BaseTokenInfo | UnifiedTokenInfo
 ): Record<string, { label: string; icon: React.ReactNode; value: string }> {
-  if (isUnifiedToken(token)) {
-    return token.groupedTokens.reduce(
-      (
-        acc: Record<
-          string,
-          { label: string; icon: React.ReactNode; value: string }
-        >,
-        token
-      ) => {
-        const key = assetNetworkAdapter[token.chainName]
-        if (key) {
-          const option = getBlockchainsOptions()[key]
-          if (option) {
-            acc[key] = option
-          }
-        }
-        return acc
-      },
-      {}
+  const tokens = isUnifiedToken(token) ? token.groupedTokens : [token]
+  const chains = tokens.map((token) => token.chainName)
+
+  const options = getBlockchainsOptions()
+
+  const res = Object.values(options)
+    .filter((option) =>
+      chains.includes(reverseAssetNetworkAdapter[option.value])
     )
-  }
-  return getBlockchainsOptions()
+    .map((option) => [option.value, option])
+
+  return Object.fromEntries(res)
 }
 
 function getDefaultBlockchainOptionValue(
@@ -545,36 +407,9 @@ function getDefaultBlockchainOptionValue(
   return null
 }
 
-function isInsufficientBalance(
-  formAmount: string,
-  balance: bigint,
-  derivedToken: BaseTokenInfo,
-  network: BlockchainEnum | null
-): boolean | null {
-  if (!network) {
-    return null
-  }
-
-  const balanceToFormat = formatTokenValue(balance, derivedToken.decimals)
-  return Number.parseFloat(formAmount) > Number.parseFloat(balanceToFormat)
-}
-
-function UnderFeatureFlag() {
-  return (
-    <Callout.Root size="1" color="yellow" mt="4">
-      <Callout.Icon>
-        <ExclamationTriangleIcon />
-      </Callout.Icon>
-      <Callout.Text>
-        Temporaty disable feature, please use NEAR bridge to deposit
-      </Callout.Text>
-    </Callout.Root>
-  )
-}
-
 function NotSupportedDepositRoute() {
   return (
-    <Callout.Root size="1" color="yellow" mt="4">
+    <Callout.Root size="1" color="yellow">
       <Callout.Icon>
         <ExclamationTriangleIcon />
       </Callout.Icon>
@@ -584,71 +419,4 @@ function NotSupportedDepositRoute() {
       </Callout.Text>
     </Callout.Root>
   )
-}
-
-function renderDepositButtonText(
-  isBalanceInsufficient: boolean,
-  network: BlockchainEnum | null,
-  token: SwappableToken | null,
-  minDepositAmount: bigint | null,
-  isDepositAmountHighEnough: boolean
-) {
-  if (!isDepositAmountHighEnough && minDepositAmount != null && token != null) {
-    return `Minimal amount to deposit is ${formatTokenValue(minDepositAmount, token.decimals)} ${token.symbol}`
-  }
-  if (isBalanceInsufficient) {
-    return "Insufficient Balance"
-  }
-  if (!!network && !!token) {
-    return "Deposit"
-  }
-  return !network && !token ? "Select asset first" : "Select network"
-}
-
-const networkSelectToLabel: Record<BlockchainEnum, string> = {
-  [BlockchainEnum.NEAR]: "NEAR",
-  [BlockchainEnum.ETHEREUM]: "Ethereum",
-  [BlockchainEnum.BASE]: "Base",
-  [BlockchainEnum.ARBITRUM]: "Arbitrum",
-  [BlockchainEnum.BITCOIN]: "Bitcoin",
-  [BlockchainEnum.SOLANA]: "Solana",
-  [BlockchainEnum.DOGECOIN]: "Dogecoin",
-  [BlockchainEnum.TURBOCHAIN]: "TurboChain",
-  [BlockchainEnum.AURORA]: "Aurora",
-  [BlockchainEnum.XRPLEDGER]: "XRP Ledger",
-}
-
-function renderDepositHint(
-  network: BlockchainEnum | null,
-  minDepositAmount: bigint | null,
-  token: SwappableToken | null
-) {
-  return (
-    <Callout.Root size="1" color="indigo" variant="soft">
-      <Callout.Icon>
-        <InfoCircledIcon />
-      </Callout.Icon>
-
-      {network != null && (
-        <Callout.Text>
-          Make sure to select {networkSelectToLabel[network]} as the deposit
-          network
-        </Callout.Text>
-      )}
-
-      {minDepositAmount != null && minDepositAmount > 1n && token != null && (
-        <Callout.Text>
-          {/* biome-ignore lint/nursery/useConsistentCurlyBraces: space is needed here */}
-          Minimal amount to deposit is{" "}
-          <Text size="1" weight="bold">
-            {formatTokenValue(minDepositAmount, token.decimals)} {token.symbol}
-          </Text>
-        </Callout.Text>
-      )}
-    </Callout.Root>
-  )
-}
-
-function truncateUserAddress(hash: string) {
-  return `${hash.slice(0, 12)}...${hash.slice(-12)}`
 }

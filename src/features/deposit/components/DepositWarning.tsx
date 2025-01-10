@@ -4,16 +4,11 @@ import type { ReactNode } from "react"
 import type { Context } from "../../machines/depositUIMachine"
 
 export const DepositWarning = ({
-  userAddress,
   depositWarning,
 }: {
-  userAddress: string | null
   depositWarning: Context["depositOutput"] | Context["preparationOutput"]
 }) => {
   let content: ReactNode = null
-  if (!userAddress) {
-    content = "Please connect your wallet to continue"
-  }
 
   if (depositWarning?.tag === "err") {
     // Check if the errorResult has a 'reason' property
@@ -59,7 +54,7 @@ export const DepositWarning = ({
   }
 
   return (
-    <Callout.Root size="1" color="red" mt="4">
+    <Callout.Root size="1" color="red">
       <Callout.Icon>
         <ExclamationTriangleIcon />
       </Callout.Icon>

@@ -19,8 +19,8 @@ export default function LongWithdrawWarning({
   if (!tokenPrice) return null
   //4990 is an approximate threshold of what is considered big withdrawal. (As USDT/USDC is ~1$)
   return Number(formatUnits(amountIn, token.decimals)) * tokenPrice >= 4990 ? (
-    <Callout.Root size="1" color="yellow" variant="soft" className="px-3 py-2">
-      <Callout.Text size="1" weight="bold">
+    <Callout.Root className="bg-warning px-3 py-2 text-warning-foreground">
+      <Callout.Text className="font-bold text-xs">
         Withdrawal over ~5,000$ may take longer to process.
       </Callout.Text>
     </Callout.Root>

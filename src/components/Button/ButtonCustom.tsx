@@ -1,4 +1,5 @@
-import { Button, type ButtonProps, Flex, Spinner, Text } from "@radix-ui/themes"
+import { ReloadIcon } from "@radix-ui/react-icons"
+import { Button, type ButtonProps, Flex, Text } from "@radix-ui/themes"
 import type { ButtonHTMLAttributes, ReactNode } from "react"
 
 interface ButtonCustomProps
@@ -23,7 +24,7 @@ export const ButtonCustom = ({
   let radixButtonColor: ButtonProps["color"]
   switch (variant) {
     case "primary":
-      radixButtonVariant = "classic"
+      radixButtonVariant = undefined
       break
     case "secondary":
       radixButtonVariant = "outline"
@@ -63,7 +64,7 @@ export const ButtonCustom = ({
         }
         {...rest}
       >
-        <Spinner loading={isLoading as boolean} />
+        {isLoading ? <ReloadIcon className="size-5 animate-spin" /> : null}
         <Text weight="bold">{children}</Text>
       </Button>
     </Flex>

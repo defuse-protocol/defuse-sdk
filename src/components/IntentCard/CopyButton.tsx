@@ -1,6 +1,6 @@
 import { CheckIcon, CopyIcon } from "@radix-ui/react-icons"
-import { IconButton } from "@radix-ui/themes"
-import { useState } from "react"
+import { IconButton, Slot } from "@radix-ui/themes"
+import { type ReactNode, useEffect, useRef, useState } from "react"
 
 interface CopyButtonProps {
   text: string
@@ -8,23 +8,67 @@ interface CopyButtonProps {
 }
 
 export function CopyButton({ text, ariaLabel }: CopyButtonProps) {
-  const [copied, setCopied] = useState(false)
+  return (
+    <Copy text={text}>
+      {(copied) => (
+        <IconButton
+          type="button"
+          size="1"
+          variant="ghost"
+          color="gray"
+          aria-label={ariaLabel}
+        >
+          {copied ? <CheckIcon /> : <CopyIcon />}
+        </IconButton>
+      )}
+    </Copy>
+  )
+}
 
-  const handleCopy = () => {
-    void navigator.clipboard.writeText(text)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
-  }
+export function Copy({
+  children,
+  text,
+}: { children: (copied: boolean) => ReactNode; text: string }) {
+  const [copied, setCopied] = useState(false)
+  const abortCtrlRef = useRef<AbortController | null>(null)
+
+  useEffect(() => {
+    return () => {
+      abortCtrlRef.current?.abort()
+    }
+  }, [])
 
   return (
-    <IconButton
-      onClick={handleCopy}
-      size="1"
-      variant="ghost"
-      color="gray"
-      aria-label={ariaLabel}
+    <Slot
+      onClick={async () => {
+        abortCtrlRef.current?.abort()
+        abortCtrlRef.current = new AbortController()
+
+        await navigator.clipboard.writeText(text)
+
+        let timerId: ReturnType<typeof setTimeout>
+        if (!copied) {
+          setCopied(true)
+          timerId = setTimeout(() => {
+            setCopied(false)
+          }, 2000)
+        } else {
+          setCopied(false)
+
+          timerId = setTimeout(() => {
+            setCopied(true)
+            timerId = setTimeout(() => {
+              setCopied(false)
+            }, 2000)
+          }, 125)
+        }
+
+        abortCtrlRef.current.signal.addEventListener("abort", () => {
+          clearTimeout(timerId)
+        })
+      }}
     >
-      {copied ? <CheckIcon /> : <CopyIcon />}
-    </IconButton>
+      {children(copied)}
+    </Slot>
   )
 }
