@@ -27,7 +27,7 @@ interface Props<T extends FieldValues>
   max?: RegisterOptions["max"]
   placeholder?: string
   balance?: bigint
-  optimisticBalance?: bigint
+  transitBalance?: bigint
   selected?: BaseTokenInfo | UnifiedTokenInfo
   handleSelect?: () => void
   className?: string
@@ -47,7 +47,7 @@ export const FieldComboInput = <T extends FieldValues>({
   max,
   placeholder = "0",
   balance,
-  optimisticBalance,
+  transitBalance,
   selected,
   handleSelect,
   className,
@@ -152,7 +152,7 @@ export const FieldComboInput = <T extends FieldValues>({
             handleClick={handleSetMaxValue}
             disabled={disabled}
             className="ml-auto"
-            optimisticBalance={optimisticBalance}
+            transitBalance={transitBalance}
           />
         )}
       </div>

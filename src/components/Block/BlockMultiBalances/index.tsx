@@ -4,7 +4,7 @@ import { formatTokenValue } from "../../../utils/format"
 
 export interface BlockMultiBalancesProps {
   balance: bigint
-  optimisticBalance?: bigint
+  transitBalance?: bigint
   decimals: number
   handleClick?: () => void
   disabled?: boolean
@@ -13,7 +13,7 @@ export interface BlockMultiBalancesProps {
 
 export const BlockMultiBalances = ({
   balance,
-  optimisticBalance,
+  transitBalance,
   decimals,
   handleClick,
   disabled,
@@ -48,13 +48,13 @@ export const BlockMultiBalances = ({
           })}
         </span>
       </button>
-      {optimisticBalance ? (
+      {transitBalance ? (
         <TooltipInfo
           icon={
             <div className="flex items-center gap-1 rounded-full bg-gray-300/50 text-gray-600 px-2 py-0.5">
               <div className="w-3 h-3 bg-[url('/static/images/process.gif')] bg-no-repeat bg-contain" />
               <span className="text-xs font-bold text-gray-600">
-                {formatTokenValue(optimisticBalance, decimals, {
+                {formatTokenValue(transitBalance, decimals, {
                   min: 0.0001,
                   fractionDigits: 4,
                 })}

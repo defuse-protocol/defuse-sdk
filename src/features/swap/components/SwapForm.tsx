@@ -200,7 +200,7 @@ export const SwapForm = ({ onNavigateDeposit }: SwapFormProps) => {
           errors={errors}
           usdAmount={usdAmountIn ? `~${formatUsdAmount(usdAmountIn)}` : null}
           balance={tokenInBalance}
-          optimisticBalance={tokenInTransitBalance ?? undefined}
+          transitBalance={tokenInTransitBalance ?? undefined}
         />
 
         <div className="relative w-full">
