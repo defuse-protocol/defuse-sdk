@@ -57,7 +57,6 @@ export const depositedBalanceMachine = setup({
       userAccountId: DefuseUserId | null
       balances: BalanceMapping
       transitBalances: BalanceMapping
-      tokenList: (BaseTokenInfo | UnifiedTokenInfo)[]
     },
     events: {} as Events | SharedEvents,
     input: {} as Input,
@@ -71,7 +70,6 @@ export const depositedBalanceMachine = setup({
           parentRef: ThisActor
           userAccountId: DefuseUserId
           defuseTokenIds: string[]
-          tokenList: (BaseTokenInfo | UnifiedTokenInfo)[]
         }
       }) => {
         const { parentRef, userAccountId } = input
@@ -88,8 +86,7 @@ export const depositedBalanceMachine = setup({
 
         const transitBalances = await getTransitBalances(
           userAccountId,
-          input.defuseTokenIds,
-          input.tokenList
+          input.defuseTokenIds
         )
 
         parentRef.send({
@@ -208,7 +205,6 @@ export const depositedBalanceMachine = setup({
                 parentRef: self,
                 userAccountId: context.userAccountId,
                 defuseTokenIds: context.defuseTokenIds,
-                tokenList: context.tokenList,
               }
             },
             onDone: "idle",

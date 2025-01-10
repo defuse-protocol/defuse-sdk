@@ -48,6 +48,7 @@ export type DepositStatus = {
   tx_hash: string
   chain: string
   defuse_asset_identifier: string
+  near_token_id: string
   decimals: number
   amount: number
   account_id: string

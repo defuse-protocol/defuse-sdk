@@ -1,8 +1,7 @@
 import type { providers } from "near-api-js"
 import type { CodeResult } from "near-api-js/lib/providers/provider"
-import { isBaseToken } from "src/utils/token"
 import { settings } from "../config/settings"
-import type { BaseTokenInfo, UnifiedTokenInfo } from "../types/base"
+import type { BaseTokenInfo } from "../types/base"
 import { assert } from "../utils/assert"
 import type { DefuseUserId } from "../utils/defuse"
 import { getDepositStatus } from "./poaBridgeClient"
@@ -53,41 +52,20 @@ export async function getDepositedBalances(
 
 export async function getTransitBalances(
   accountId: DefuseUserId,
-  tokenIds: BaseTokenInfo["defuseAssetId"][],
-  tokenList: (BaseTokenInfo | UnifiedTokenInfo)[]
+  tokenIds: BaseTokenInfo["defuseAssetId"][]
 ): Promise<TokenBalances> {
   const depositStatus = await getDepositStatus({
     account_id: accountId,
   })
 
-  const tokenAddressToDefuseAssetId = tokenList.reduce(
-    (acc, token) => {
-      if (isBaseToken(token)) {
-        acc[token.address.toLowerCase()] = token.defuseAssetId
-      } else {
-        for (const t of token.groupedTokens) {
-          acc[t.address.toLowerCase()] = t.defuseAssetId
-        }
-      }
-      return acc
-    },
-    {} as Record<string, string>
-  )
-
   const result: TokenBalances = {}
   for (const deposit of depositStatus.deposits) {
-    // POA Bridge use specific format for defuse_asset_identifier [chain]:[token_address]
-    const tokenAddress = deposit.defuse_asset_identifier
-      .replace(`${deposit.chain}:`, "")
-      .toLowerCase()
-    const defuseAssetId = tokenAddressToDefuseAssetId[tokenAddress]
-
     if (
-      defuseAssetId != null &&
-      tokenIds.includes(defuseAssetId) &&
+      // POA bridge returns token IDs without the 'nep141:' prefix (e.g. 'base.omft.near')
+      tokenIds.includes(`nep141:${deposit.near_token_id}`) &&
       deposit.status === "PENDING"
     ) {
-      result[defuseAssetId] = BigInt(deposit.amount)
+      result[`nep141:${deposit.near_token_id}`] = BigInt(deposit.amount)
     }
   }
 
