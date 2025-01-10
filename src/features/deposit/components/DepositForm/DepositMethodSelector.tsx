@@ -20,7 +20,7 @@ export function DepositMethodSelector({
           type="button"
           onClick={() => onSelectDepositOption("passive")}
           className={clsx(
-            "flex h-12 flex-1 items-center justify-center rounded-md bg-transparent font-bold text-sm",
+            "flex h-12 flex-1 items-center justify-center rounded-md font-bold text-sm",
             selectedDepositOption === "passive"
               ? "bg-accent-2 text-accent-a11 ring-2 ring-accent-a8 ring-inset dark:bg-accent-a2 dark:text-accent-10"
               : "bg-transparent text-gray-11 ring-1 ring-border"
@@ -33,7 +33,7 @@ export function DepositMethodSelector({
           type="button"
           onClick={() => onSelectDepositOption("active")}
           className={clsx(
-            "flex h-12 flex-1 items-center justify-center rounded-md bg-transparent font-bold text-sm",
+            "flex h-12 flex-1 items-center justify-center rounded-md font-bold text-sm",
             selectedDepositOption === "active"
               ? "bg-accent-2 text-accent-a11 ring-2 ring-accent-a8 ring-inset dark:bg-accent-a2 dark:text-accent-10"
               : "bg-transparent text-gray-11 ring-1 ring-border"
