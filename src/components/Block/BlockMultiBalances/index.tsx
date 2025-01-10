@@ -1,5 +1,5 @@
-import { Flex } from "@radix-ui/themes"
 import clsx from "clsx"
+import { TooltipInfo } from "src/components/TooltipInfo"
 import { formatTokenValue } from "../../../utils/format"
 
 export interface BlockMultiBalancesProps {
@@ -21,47 +21,52 @@ export const BlockMultiBalances = ({
 }: BlockMultiBalancesProps) => {
   const active = balance > 0n && !disabled
   return (
-    <Flex gap="1" className={className}>
-      {optimisticBalance ? (
-        <button
-          type="button"
-          onClick={handleClick}
-          disabled={!active}
-          className="flex items-center gap-1 opacity-40"
+    <div className={clsx("flex gap-1", className)}>
+      <button
+        type="button"
+        onClick={handleClick}
+        disabled={!active}
+        className="flex items-center gap-1"
+      >
+        <div
+          className={clsx(
+            "w-4 h-4  [mask-image:url(/static/icons/wallet_no_active.svg)] bg-no-repeat bg-contain",
+            active ? "bg-accent-800" : "bg-gray-600/90"
+          )}
+        />
+        <span
+          className={clsx(
+            "text-xs px-2 py-0.5 rounded-full font-bold",
+            active
+              ? "bg-accent-a200 text-accent-900"
+              : "bg-gray-300/50 text-gray-600"
+          )}
         >
-          🛬
-          <span className="text-xs py-0.5 font-bold text-gray-600">
-            +
-            {formatTokenValue(optimisticBalance, decimals, {
-              min: 0.0001,
-              fractionDigits: 4,
-            })}
-          </span>
-        </button>
+          {formatTokenValue(balance, decimals, {
+            min: 0.0001,
+            fractionDigits: 4,
+          })}
+        </span>
+      </button>
+      {optimisticBalance ? (
+        <TooltipInfo
+          icon={
+            <div className="flex items-center gap-1 rounded-full bg-gray-300/50 text-gray-600 px-2 py-0.5">
+              <div className="w-3 h-3 bg-[url('/static/images/process.gif')] bg-no-repeat bg-contain" />
+              <span className="text-xs font-bold text-gray-600">
+                {formatTokenValue(optimisticBalance, decimals, {
+                  min: 0.0001,
+                  fractionDigits: 4,
+                })}
+              </span>
+            </div>
+          }
+        >
+          Deposit is in progress and will be
+          <br />
+          available shortly.
+        </TooltipInfo>
       ) : null}
-      <Flex asChild align="center" gap="1">
-        <button type="button" onClick={handleClick} disabled={!active}>
-          <div
-            className={clsx(
-              "w-4 h-4  [mask-image:url(/static/icons/wallet_no_active.svg)] bg-no-repeat bg-contain",
-              active ? "bg-accent-800" : "bg-gray-600/90"
-            )}
-          />
-          <span
-            className={clsx(
-              "text-xs px-2 py-0.5 rounded-full font-bold",
-              active
-                ? "bg-accent-a200 text-accent-900"
-                : "bg-gray-300/50 text-gray-600"
-            )}
-          >
-            {formatTokenValue(balance, decimals, {
-              min: 0.0001,
-              fractionDigits: 4,
-            })}
-          </span>
-        </button>
-      </Flex>
-    </Flex>
+    </div>
   )
 }
