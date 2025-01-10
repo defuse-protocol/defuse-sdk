@@ -184,7 +184,6 @@ export const depositedBalanceMachine = setup({
           ? [token.defuseAssetId]
           : token.groupedTokens.map((t) => t.defuseAssetId)
       }),
-      tokenList: input.tokenList,
     }
   },
 
