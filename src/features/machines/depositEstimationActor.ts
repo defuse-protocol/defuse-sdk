@@ -13,7 +13,7 @@ import {
 import type { BaseTokenInfo, SupportedChainName } from "../../types/base"
 import { BlockchainEnum } from "../../types/interfaces"
 import { assetNetworkAdapter } from "../../utils/adapters"
-import { isBaseToken, isNativeToken } from "../../utils/token"
+import { isFungibleToken, isNativeToken } from "../../utils/token"
 import { validateAddress } from "../../utils/validateAddress"
 
 export const depositEstimateMaxValueActor = fromPromise(
@@ -41,7 +41,7 @@ export const depositEstimateMaxValueActor = fromPromise(
     switch (networkToSolverFormat) {
       case BlockchainEnum.NEAR:
         // Max value for NEAR is the sum of the native balance and the balance
-        if (isBaseToken(token) && token.address === "wrap.near") {
+        if (isFungibleToken(token) && token.address === "wrap.near") {
           assert(nearBalance !== null, "Near balance is required")
           return nearBalance + balance
         }
@@ -155,9 +155,13 @@ export const depositEstimationMachine = setup({
       invoke: {
         src: "estimateMaxDepositValueActor",
         input: ({ event }) => {
+          const address = isFungibleToken(event.params.token)
+            ? event.params.token.address
+            : null
+          assert(address != null, "Address is not defined")
           return {
             ...event.params,
-            tokenAddress: event.params.token.address,
+            tokenAddress: address,
           }
         },
 

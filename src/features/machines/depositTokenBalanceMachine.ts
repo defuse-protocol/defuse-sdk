@@ -1,10 +1,11 @@
-import { isNativeToken } from "src/utils/token"
 import type { Address } from "viem"
 import { assign, fromPromise, setup } from "xstate"
 import { getWalletRpcUrl } from "../../services/depositService"
 import type { BaseTokenInfo, SupportedChainName } from "../../types/base"
 import { BlockchainEnum } from "../../types/interfaces"
 import { assetNetworkAdapter } from "../../utils/adapters"
+import { assert } from "../../utils/assert"
+import { isFungibleToken, isNativeToken } from "../../utils/token"
 import { validateAddress } from "../../utils/validateAddress"
 import {
   getEvmErc20Balance,
@@ -40,12 +41,15 @@ export const backgroundBalanceActor = fromPromise(
       return result
     }
 
+    const address = isFungibleToken(derivedToken) ? derivedToken.address : null
+    assert(address != null, "Address is not defined")
+
     const networkToSolverFormat = assetNetworkAdapter[blockchain]
     switch (networkToSolverFormat) {
       case BlockchainEnum.NEAR: {
         const [nep141Balance, nativeBalance] = await Promise.all([
           getNearNep141Balance({
-            tokenAddress: derivedToken.address,
+            tokenAddress: address,
             accountId: normalizeToNearAddress(userAddress),
           }),
           getNearNativeBalance({
@@ -53,7 +57,7 @@ export const backgroundBalanceActor = fromPromise(
           }),
         ])
         // This is unique case for NEAR, where we need to sum up the native balance and the NEP-141 balance
-        if (derivedToken.address === "wrap.near") {
+        if (address === "wrap.near") {
           if (nep141Balance === null || nativeBalance === null) {
             throw new Error("Failed to fetch NEAR balances")
           }
@@ -62,7 +66,7 @@ export const backgroundBalanceActor = fromPromise(
           break
         }
         const balance = await getNearNep141Balance({
-          tokenAddress: derivedToken.address,
+          tokenAddress: address,
           accountId: normalizeToNearAddress(userAddress),
         })
         if (balance === null) {

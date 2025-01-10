@@ -41,8 +41,6 @@ export interface FungibleTokenInfo extends Partial<BaseTokenBalance> {
 export interface NativeTokenInfo extends Partial<BaseTokenBalance> {
   defuseAssetId: string
   type: "native"
-  /** this is a hack to have backward capability with `FungibleTokenInfo`, prefer using "type" property */
-  address: "native"
   symbol: string
   name: string
   decimals: number
