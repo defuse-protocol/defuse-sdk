@@ -277,7 +277,7 @@ export const WithdrawForm = ({
   )
 
   return (
-    <div className="w-full max-w-[472px]">
+    <div className="widget-container">
       <Flex
         direction="column"
         gap="2"

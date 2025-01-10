@@ -152,7 +152,7 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
   const chainOptions = token != null ? filterBlockchainsOptions(token) : {}
 
   return (
-    <div className="w-full max-w-[472px]">
+    <div className="widget-container">
       <div className="rounded-2xl bg-gray-1 p-5 shadow">
         <Form<DepositFormValues>
           handleSubmit={handleSubmit(onSubmit)}
