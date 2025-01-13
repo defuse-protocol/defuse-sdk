@@ -285,11 +285,11 @@ export const WithdrawForm = ({
   )
 
   return (
-    <div className="w-full max-w-[472px]">
+    <div className="widget-container">
       <Flex
         direction="column"
         gap="2"
-        className="rounded-2xl p-5 bg-white shadow dark:bg-[#111110] dark:shadow-[0_1px_3px_0_rgb(255_255_255_/_0.1),_0_1px_2px_-1px_rgb(255_255_255_/_0.1)]"
+        className="rounded-2xl bg-gray-1 p-5 shadow"
       >
         <Form<WithdrawFormNearValues>
           handleSubmit={handleSubmit(() => {
@@ -383,7 +383,13 @@ export const WithdrawForm = ({
                         label: "Select network",
                         icon: <EmptyIcon />,
                       }}
-                      fullWidth
+                      hint={
+                        <Select.Hint>
+                          {Object.keys(blockchainSelectItems).length === 1
+                            ? "This network only"
+                            : "Network"}
+                        </Select.Hint>
+                      }
                     />
                   )
                 }}

@@ -15,7 +15,7 @@ export const AssetComboIcon = ({
 }: AssetComboIconProps) => {
   return (
     <div className="relative inline-block">
-      <div className="relative overflow-hidden w-9 h-9 flex justify-center items-center rounded-full">
+      <div className="relative overflow-hidden size-7 flex justify-center items-center rounded-full">
         {icon ? (
           <img
             src={icon}
@@ -45,7 +45,7 @@ export const AssetComboIcon = ({
 
 const EmptyAssetComboIcon = () => {
   return (
-    <div className="relative overflow-hidden w-9 h-9 flex justify-center items-center border border-silver-100 rounded-full" />
+    <div className="relative overflow-hidden size-7 flex justify-center items-center border border-silver-100 rounded-full" />
   )
 }
 
