@@ -30,7 +30,7 @@ import { assetNetworkAdapter } from "../../../utils/adapters"
 import { assert } from "../../../utils/assert"
 import { userAddressToDefuseUserId } from "../../../utils/defuse"
 import { getEVMChainId } from "../../../utils/evmChainId"
-import { isNativeToken } from "../../../utils/token"
+import { isFungibleToken, isNativeToken } from "../../../utils/token"
 import { depositGenerateAddressMachine } from "../../machines/depositGenerateAddressMachine"
 import { depositUIMachine } from "../../machines/depositUIMachine"
 import type { DepositFormValues } from "./DepositForm"
@@ -108,7 +108,11 @@ export function DepositUIMachineProvider({
                   nearBalance,
                   storageDepositRequired,
                 } = input
+                const address = isFungibleToken(derivedToken)
+                  ? derivedToken.address
+                  : null
 
+                assert(address != null, "Address is not defined")
                 assert(
                   storageDepositRequired !== null,
                   "Storage deposit required is null"
@@ -116,7 +120,7 @@ export function DepositUIMachineProvider({
                 assert(nearBalance !== null, "Near balance is null")
 
                 let tx: Transaction["NEAR"][] = []
-                if (derivedToken.address === "wrap.near") {
+                if (address === "wrap.near") {
                   /**
                    * On calculation of the balance NEAR, we bound it with the amount of wrap.near
                    * So to destinguish how much NEAR we have, we need to subtract the amount of wrap.near
@@ -137,7 +141,7 @@ export function DepositUIMachineProvider({
                   )
                 } else {
                   tx = createBatchDepositNearNep141Transaction(
-                    derivedToken.address,
+                    address,
                     amount,
                     storageDepositRequired
                   )

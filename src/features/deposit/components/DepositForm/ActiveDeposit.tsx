@@ -13,6 +13,7 @@ import type { SwappableToken } from "../../../../types/swap"
 import { reverseAssetNetworkAdapter } from "../../../../utils/adapters"
 import { formatTokenValue, formatUsdAmount } from "../../../../utils/format"
 import getTokenUsdPrice from "../../../../utils/getTokenUsdPrice"
+import { isFungibleToken } from "../../../../utils/token"
 import { RESERVED_NEAR_BALANCE } from "../../../machines/getBalanceMachine"
 import { DepositResult } from "../DepositResult"
 import { DepositUIMachineContext } from "../DepositUIMachineProvider"
@@ -171,7 +172,7 @@ function Balance({
         className={clsx("!static", balance == null && "invisible")}
       />
 
-      {token.address === "wrap.near" && (
+      {isFungibleToken(token) && token.address === "wrap.near" && (
         <TooltipInfo
           icon={
             <Text asChild color={accentColor}>
