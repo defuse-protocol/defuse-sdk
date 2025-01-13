@@ -65,6 +65,10 @@ export const BlockMultiBalances = ({
           Deposit is in progress and will be
           <br />
           available shortly.
+          <br />
+          Note: Deposits of the same token are
+          <br />
+          queued and added in order.
         </TooltipInfo>
       ) : null}
     </div>
