@@ -59,11 +59,15 @@ function trimEnd(s: string, char: string) {
 
 export function formatUsdAmount(value: number): string {
   try {
+    let maximumFractionDigits = 2
+    // Omit cents for bigger values
+    if (value >= 500) maximumFractionDigits = 0
+    // handle tiny amounts to not show $0.00
+    else if (value < 1) maximumFractionDigits = 7
     return new Intl.NumberFormat("en-US", {
       style: "currency",
       currency: "USD",
-      // Omit cents for bigger values
-      maximumFractionDigits: value >= 500 ? 0 : 2,
+      maximumFractionDigits,
     }).format(value)
   } catch {
     return ""
