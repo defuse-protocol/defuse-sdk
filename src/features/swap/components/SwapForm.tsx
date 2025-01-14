@@ -20,7 +20,6 @@ import { FieldComboInput } from "../../../components/Form/FieldComboInput"
 import { SwapIntentCard } from "../../../components/IntentCard/SwapIntentCard"
 import type { ModalSelectAssetsPayload } from "../../../components/Modal/ModalSelectAssets"
 import { useModalStore } from "../../../providers/ModalStoreProvider"
-import { isAggregatedQuoteEmpty } from "../../../services/quoteService"
 import { ModalType } from "../../../stores/modalStore"
 import type { SwappableToken } from "../../../types/swap"
 import { computeTotalBalance } from "../../../utils/tokenUtils"
@@ -53,20 +52,26 @@ export const SwapForm = ({ onNavigateDeposit }: SwapFormProps) => {
   const intentCreationResult = snapshot.context.intentCreationResult
   const { data: tokensUsdPriceData } = useTokensUsdPrices()
 
-  const { tokenIn, tokenOut, noLiquidity } = SwapUIMachineContext.useSelector(
-    (snapshot) => {
+  const { tokenIn, tokenOut, noLiquidity, insufficientAmount } =
+    SwapUIMachineContext.useSelector((snapshot) => {
       const tokenIn = snapshot.context.formValues.tokenIn
       const tokenOut = snapshot.context.formValues.tokenOut
       const noLiquidity =
-        snapshot.context.quote && isAggregatedQuoteEmpty(snapshot.context.quote)
+        snapshot.context.quote &&
+        snapshot.context.quote.tag === "err" &&
+        snapshot.context.quote.value.type === "NO_QUOTES"
+      const insufficientAmount =
+        snapshot.context.quote &&
+        snapshot.context.quote.tag === "err" &&
+        snapshot.context.quote.value.type === "INSUFFICIENT_AMOUNT"
 
       return {
         tokenIn,
         tokenOut,
         noLiquidity,
+        insufficientAmount,
       }
-    }
-  )
+    })
 
   // we need stable references to allow passing to useEffect
   const switchTokens = useCallback(() => {
@@ -229,13 +234,18 @@ export const SwapForm = ({ onNavigateDeposit }: SwapFormProps) => {
               size="lg"
               fullWidth
               isLoading={snapshot.matches("submitting")}
-              disabled={!!balanceInsufficient || !!noLiquidity}
+              disabled={
+                !!balanceInsufficient || !!noLiquidity || !!insufficientAmount
+              }
             >
+              {/* refactor */}
               {noLiquidity
                 ? "No liquidity providers"
                 : balanceInsufficient
                   ? "Insufficient Balance"
-                  : "Swap"}
+                  : insufficientAmount
+                    ? "Insufficient amount"
+                    : "Swap"}
             </ButtonCustom>
           )}
         </Flex>

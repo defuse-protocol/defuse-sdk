@@ -29,8 +29,13 @@ export type QuoteRequest = JSONRPCRequest<
 >
 
 export type Params<T extends JSONRPCRequest<unknown, unknown>> = T["params"][0]
+export type InsufficientAmount = {
+  type: "INSUFFICIENT_AMOUNT"
+  min_amount: number
+}
 
-export type QuoteResponse = JSONRPCResponse<null | Array<{
+export type FailedQuote = InsufficientAmount
+export type Quote = {
   quote_hash: string
   defuse_asset_identifier_in: string
   defuse_asset_identifier_out: string
@@ -38,7 +43,8 @@ export type QuoteResponse = JSONRPCResponse<null | Array<{
   amount_out: string
   // ISO-8601 date string
   expiration_time: string
-}>>
+}
+export type QuoteResponse = JSONRPCResponse<null | Array<Quote | FailedQuote>>
 
 export type PublishIntentRequest = JSONRPCRequest<
   "publish_intent",

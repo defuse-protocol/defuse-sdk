@@ -6,7 +6,15 @@ export function isLiquidityUnavailableSelector(
 ): boolean {
   return (
     state.context.preparationOutput?.tag === "err" &&
-    state.context.preparationOutput.value.reason === "ERR_EMPTY_QUOTE"
+    state.context.preparationOutput.value.reason === "NO_QUOTES"
+  )
+}
+export function isUnsufficientAmount(
+  state: SnapshotFrom<typeof withdrawUIMachine>
+): boolean {
+  return (
+    state.context.preparationOutput?.tag === "err" &&
+    state.context.preparationOutput.value.reason === "INSUFFICIENT_AMOUNT"
   )
 }
 

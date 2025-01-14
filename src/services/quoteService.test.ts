@@ -264,7 +264,7 @@ describe("queryQuote()", () => {
     const result = await queryQuote(input)
 
     expect(relayClient.quote).toHaveBeenCalledTimes(1)
-    expect(result.totalAmountIn).toBe(150n)
+    expect(result.tag === "ok" && result.value.totalAmountIn).toBe(150n)
   })
 })
 

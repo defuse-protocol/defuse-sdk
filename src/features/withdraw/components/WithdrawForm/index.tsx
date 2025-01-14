@@ -55,6 +55,7 @@ import { WithdrawUIMachineContext } from "../../WithdrawUIMachineContext"
 import LongWithdrawWarning from "./LongWithdrawWarning"
 import {
   isLiquidityUnavailableSelector,
+  isUnsufficientAmount,
   totalAmountReceivedSelector,
 } from "./selectors"
 
@@ -83,6 +84,7 @@ export const WithdrawForm = ({
     intentCreationResult,
     intentRefs,
     noLiquidity,
+    insufficientAmount,
     totalAmountReceived,
   } = WithdrawUIMachineContext.useSelector((state) => {
     return {
@@ -94,6 +96,7 @@ export const WithdrawForm = ({
       intentCreationResult: state.context.intentCreationResult,
       intentRefs: state.context.intentRefs,
       noLiquidity: isLiquidityUnavailableSelector(state),
+      insufficientAmount: isUnsufficientAmount(state),
       totalAmountReceived: totalAmountReceivedSelector(state),
     }
   })
@@ -498,7 +501,11 @@ export const WithdrawForm = ({
               disabled={state.matches("submitting") || !!noLiquidity}
               isLoading={state.matches("submitting")}
             >
-              {noLiquidity ? "No liquidity providers" : "Withdraw"}
+              {noLiquidity
+                ? "No liquidity providers"
+                : insufficientAmount
+                  ? "Insufficient amount"
+                  : "Withdraw"}
             </ButtonCustom>
           </Flex>
         </Form>
@@ -672,7 +679,8 @@ function renderPreparationResult(preparationOutput: PreparationOutput | null) {
     case "ERR_AMOUNT_TOO_LOW":
       content = `Need ${formatTokenValue(err.minWithdrawalAmount - err.receivedAmount, err.token.decimals)} ${err.token.symbol} more to withdraw`
       break
-    case "ERR_EMPTY_QUOTE":
+    case "NO_QUOTES":
+    case "INSUFFICIENT_AMOUNT":
       // Don't duplicate error messages, message should be displayed in the submit button
       break
     case "ERR_CANNOT_FETCH_QUOTE":

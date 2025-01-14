@@ -273,6 +273,9 @@ export const swapIntentMachine = setup({
     isSigned: (_, params: WalletSignatureResult | null) => params != null,
     isTrue: (_, params: boolean) => params,
     isOk: (_, params: { tag: "ok" } | { tag: "err" }) => params.tag === "ok",
+    isSuccesfulQuote: ({ event }) => {
+      return event.params.quote.tag === "ok"
+    },
   },
 }).createMachine({
   /** @xstate-layout N4IgpgJg5mDOIC5SwO4EMAOBaAlgOwBcxCBiAOQFEB1AfQEUBVAeQBUKBtABgF1FQMA9rBwEcAvHxAAPRACYAnAFYAdPIAcigGyKA7It0BGTcYDMAGhABPRAZOzlJxfJNqdmnTs7zOsgCwBffwtUTFxCYgJlHAgAGzASLl4kEEFhUXFJGQRbNWUfTgNfRVk1eU01Ut8LawQTdWVNP05HfU9fY0Dg9Gx8IkJlAGUcKDx8KBIIcTAovAA3AQBraeERgFk4WDQYRMlUkTEJZKzvZRLdV0bfWVkdAwNqxEaDVSKTO18dK7cTTpAQnvC-SGIzGJDAACdwQJwcoMDE0AQAGbQgC2yhWeHWsE22x4uyE+wyR0QWFkmk4ygqmhM1OMBm8dweCF8vnkyicrLKei0JVsv3+YT6kQAahCcIjLGMAAQABQArgAjGI4ADGUoA0mBLLLwXBiCr4pM8NN8PMlrDFcqVZrLKLweKcBCAEpgRE7ZJ7dKHUBZWQmVT09qFbxvLwGHRMgycHT2WRGErucn0-T87qCiLKO3iyV4KCyy2qjVanV6vAGiZTGZm6YYAvWrVZxGO8Eut0GJL8AlezJyMqUv1qO5RpxqD6aSN3XyqckKTjlQfRn5BP5p3oZxs5vPypWFm0l2D6+IQqEwuEI5HgtG1nf121ipvO13uztpA49hCkk5XeSfZzFOMFFUVg2JwnAqJoUYuDog6KEYHipqEa79AAQlCaAQCqaCwKIuZSgAkoCBAVsaVaLMsq6EcoqECOhmHYdKBFCggpoCJhXqJM+KRdm+xIILclKgS4fqKEU+gFJGHwqIojjRtc8gGBUnABMuApIZE1G0VhOF5oxERgpC0KwvCSKouiFFClRaEYVpDGEcxcysQiBwcXiHrcUSPokiU9g5B4+ilAY+juJGJhRqctxKaUajznoCEAhZG62UKCSuS+hLetIiDReyGiskpCkiWS47Adk1w+Y03yiWoSmKHF6b9IluG6aQ7Dtvir4eZltR+MoLKfBoZLSZo8iyCFPWhm8ziTbIxR1Wpmb3puUrAngCJyrqxEmg55qqZRjV5ita26vZ8xsc5PCcZ6PGed1yjfPksEiSyaijSVGgUmJnh1KB1LOHNe2LdKh0EOthqVixO3meugO4cDoMnY57EXW1bkdRlWRYCYvjPApZJhj+bweEyg72NGOgmHocafM0S5dIhAP2hKQPDKtIMbcehlniZl5mfTCUwwdLNHWACNneILkdlxaPvpjzSnGSFTyKyL2OPcJXGLkmjYxBSuFLY1yBMueACBAcCSLtQrtelMsuGyuPkvJBMUxGJV+myXhuPISgwUUyl0-FGbRHEVvdrxhQUpUrIxl7cbOK9NR2JovWyHOfjtErNxqP9FkrWMIfXV1Ci9VGvkU+Gui+OYJW+C9DhQUUhRlSNfsrnz0OM0t25WkW2oyrqB5lmA+edRjKheBULKBbB4blPITJx6csHDToShlNotOtwHKFWXR2n4YRw-o4guiqHU2gr3oHjlC7NT61O8kQU4dyKGobyaNn7fZklESH++Ub328UcHwTDRgqFoCcbxTguC0OUBQ2gfAf36AAYQECiOEYAiAQF-rxJQDh5xOH6iUGMxVb7Uh0A0cMoUp4iWjIgyIABxYgYo1QUAMuCbBN1SRawaJJCedx5JExKkYCmFDybP30L4WhKkoYNQFstIWbMh6o2trxaSd1mhuEUKBUchUgI1HJvYQcdRX5Y3UB4ZSgQgA */
@@ -334,10 +337,11 @@ export const swapIntentMachine = setup({
 
   on: {
     NEW_QUOTE: {
+      guard: "isSuccesfulQuote",
       actions: [
         {
           type: "proposeQuote",
-          params: ({ event }) => event.params.quote,
+          params: ({ event }) => event.params.quote.value as AggregatedQuote,
         },
       ],
     },
