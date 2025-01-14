@@ -20,7 +20,7 @@ import type { State as WithdrawFormContext } from "../features/machines/withdraw
 import { logger } from "../logger"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../types/base"
 import { assert } from "../utils/assert"
-import { isBaseToken } from "../utils/token"
+import { isBaseToken, isFungibleToken } from "../utils/token"
 import { getNEP141StorageRequired } from "./nep141StorageService"
 import {
   type AggregatedQuote,
@@ -201,7 +201,10 @@ async function determineNEP141StorageRequirement(
     }
 > {
   // We withdraw unwrapped near so no storage deposit is required for withdrawal of NEAR
-  if (formValues.tokenOut.address === "wrap.near") {
+  if (
+    isFungibleToken(formValues.tokenOut) &&
+    formValues.tokenOut.address === "wrap.near"
+  ) {
     return { tag: "ok", value: null }
   }
 

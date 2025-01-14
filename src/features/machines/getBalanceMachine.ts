@@ -11,7 +11,7 @@ import {
 } from "../../services/nearHttpClient"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../types/base"
 import { Semaphore } from "../../utils/semaphore"
-import { isBaseToken, isUnifiedToken } from "../../utils/token"
+import { isFungibleToken, isUnifiedToken } from "../../utils/token"
 
 export const RESERVED_NEAR_BALANCE = 100000000000000000000000n // 0.1 NEAR reserved for transaction fees and storage
 const semaphore = new Semaphore(5, 500) // 5 concurrent request, 0.5 second delay (adjust maxConcurrent and delayMs as needed)
@@ -112,12 +112,15 @@ function mapTokenList(
   tokenList: Array<BaseTokenInfo | UnifiedTokenInfo>
 ): Array<[string, string]> {
   return tokenList.reduce<Array<[string, string]>>((acc, token) => {
-    if (isBaseToken(token)) {
+    if (isFungibleToken(token)) {
       acc.push([token.defuseAssetId, token.address])
     }
     if (isUnifiedToken(token)) {
       for (const groupToken of token.groupedTokens) {
-        acc.push([groupToken.defuseAssetId, groupToken.address])
+        // As this map for nep141 tokens, we can map the fungible tokens only
+        if (isFungibleToken(groupToken)) {
+          acc.push([groupToken.defuseAssetId, groupToken.address])
+        }
       }
     }
     return acc
