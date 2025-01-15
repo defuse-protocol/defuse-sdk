@@ -29,12 +29,16 @@ export type QuoteRequest = JSONRPCRequest<
 >
 
 export type Params<T extends JSONRPCRequest<unknown, unknown>> = T["params"][0]
-export type InsufficientAmount = {
-  type: "INSUFFICIENT_AMOUNT"
+
+export enum FAILED_QUOTES_TYPES {
+  INSUFFICIENT_AMOUNT = "INSUFFICIENT_AMOUNT",
+}
+export type InsufficientAmountQuote = {
+  type: FAILED_QUOTES_TYPES.INSUFFICIENT_AMOUNT
   min_amount: number
 }
 
-export type FailedQuote = InsufficientAmount
+export type FailedQuote = InsufficientAmountQuote
 export type Quote = {
   quote_hash: string
   defuse_asset_identifier_in: string
