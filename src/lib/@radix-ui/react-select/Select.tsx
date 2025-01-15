@@ -656,8 +656,11 @@ const SelectContentImpl = React.forwardRef<
         if (pointerMoveDelta.x <= 10 && pointerMoveDelta.y <= 10) {
           event.preventDefault()
         } else {
+          // Patch: We use `composedPath` to account for shadow DOM.
+          const target = event.composedPath()[0] ?? event.target // <-- this line
+
           // otherwise, if the event was outside the content, close.
-          if (!content.contains(event.target as HTMLElement)) {
+          if (!content.contains(target as HTMLElement)) {
             onOpenChange(false)
           }
         }
