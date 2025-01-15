@@ -10,7 +10,7 @@ import {
 } from "xstate"
 import { settings } from "../../config/settings"
 import { logger } from "../../logger"
-import type { QuoteRequestResult } from "../../services/quoteService"
+import type { QuoteResult } from "../../services/quoteService"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../types/base"
 import type { ChainType, Transaction } from "../../types/deposit"
 import type { SwappableToken } from "../../types/swap"
@@ -35,7 +35,7 @@ import {
 
 export type Context = {
   error: Error | null
-  quote: QuoteRequestResult | null
+  quote: QuoteResult | null
   formValues: {
     tokenIn: SwappableToken
     tokenOut: SwappableToken
@@ -150,7 +150,7 @@ export const swapUIMachine = setup({
       throw new Error("not implemented")
     },
     setQuote: assign({
-      quote: (_, value: QuoteRequestResult) => value,
+      quote: (_, value: QuoteResult) => value,
     }),
     clearQuote: assign({ quote: null }),
     clearError: assign({ error: null }),

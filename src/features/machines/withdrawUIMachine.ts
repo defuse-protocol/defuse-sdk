@@ -9,7 +9,7 @@ import {
 } from "xstate"
 import { settings } from "../../config/settings"
 import { logger } from "../../logger"
-import type { QuoteRequestResult } from "../../services/quoteService"
+import type { QuoteResult } from "../../services/quoteService"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../types/base"
 import type { ChainType, Transaction } from "../../types/deposit"
 import { assert } from "../../utils/assert"
@@ -127,7 +127,7 @@ export const withdrawUIMachine = setup({
     },
 
     setQuote: assign({
-      preparationOutput: ({ context }, value: QuoteRequestResult) => {
+      preparationOutput: ({ context }, value: QuoteResult) => {
         if (
           context.preparationOutput == null ||
           context.preparationOutput.tag === "err" ||
@@ -284,7 +284,7 @@ export const withdrawUIMachine = setup({
       {
         balances,
         quote,
-      }: { balances: BalanceMapping; quote: QuoteRequestResult | null }
+      }: { balances: BalanceMapping; quote: QuoteResult | null }
     ) => {
       // No quote - no need to check balances
       if (quote === null) return true
@@ -334,7 +334,7 @@ export const withdrawUIMachine = setup({
       return context.preparationOutput?.tag === "ok"
     },
 
-    isQuoteNotEmpty: (_, quote: QuoteRequestResult) => quote.tag !== "err",
+    isQuoteNotEmpty: (_, quote: QuoteResult) => quote.tag !== "err",
 
     isOk: (_, a: { tag: "err" | "ok" }) => a.tag === "ok",
   },

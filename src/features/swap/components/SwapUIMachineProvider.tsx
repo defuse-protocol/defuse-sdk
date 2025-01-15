@@ -86,7 +86,7 @@ export function SwapUIMachineProvider({
               setValue("amountOut", "–", {
                 shouldValidate: false,
               })
-            } else if (quote.tag === "ok") {
+            } else {
               const amountOutFormatted = formatUnits(
                 quote.value.totalAmountOut,
                 context.formValues.tokenOut.decimals

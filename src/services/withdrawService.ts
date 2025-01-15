@@ -22,12 +22,12 @@ import type { BaseTokenInfo, UnifiedTokenInfo } from "../types/base"
 import { assert } from "../utils/assert"
 import { isBaseToken, isFungibleToken } from "../utils/token"
 import { getNEP141StorageRequired } from "./nep141StorageService"
-import { type QuoteRequestResult, queryQuoteExactOut } from "./quoteService"
+import { type QuoteResult, queryQuoteExactOut } from "./quoteService"
 import type { FAILED_QUOTES_TYPES } from "./solverRelayHttpClient/types"
 
 interface SwapRequirement {
   swapParams: QuoteInput
-  swapQuote: QuoteRequestResult
+  swapQuote: QuoteResult
 }
 
 export type PreparationOutput =
@@ -108,7 +108,7 @@ export async function prepareWithdraw(
       balances: balances.value,
     }
 
-    const swapQuote = await new Promise<QuoteRequestResult>((resolve) => {
+    const swapQuote = await new Promise<QuoteResult>((resolve) => {
       backgroundQuoteRef.send({
         type: "NEW_QUOTE_INPUT",
         params: swapParams,

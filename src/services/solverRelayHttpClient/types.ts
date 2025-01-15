@@ -35,7 +35,8 @@ export enum FAILED_QUOTES_TYPES {
 }
 export type InsufficientAmountQuote = {
   type: FAILED_QUOTES_TYPES.INSUFFICIENT_AMOUNT
-  min_amount: number
+  // Stringified big int
+  min_amount: string
 }
 
 export type FailedQuote = InsufficientAmountQuote

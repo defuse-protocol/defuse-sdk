@@ -9,9 +9,7 @@ import type {
   QuoteResponse,
 } from "./solverRelayHttpClient/types"
 
-export function isFailedQuote(
-  quote: Quote | FailedQuote
-): quote is FailedQuote {
+function isFailedQuote(quote: Quote | FailedQuote): quote is FailedQuote {
   return "type" in quote
 }
 
@@ -37,7 +35,7 @@ export interface AggregatedQuote {
 
 type QuoteResults = QuoteResponse["result"]
 
-export type QuoteRequestResult =
+export type QuoteResult =
   | {
       tag: "ok"
       value: AggregatedQuote
@@ -57,7 +55,7 @@ export async function queryQuote(
   }: {
     signal?: AbortSignal
   } = {}
-): Promise<QuoteRequestResult> {
+): Promise<QuoteResult> {
   // Sanity checks
   const tokenOut = input.tokensOut[0]
   assert(tokenOut != null, "tokensOut is empty")
@@ -121,7 +119,7 @@ export async function queryQuoteExactOut(
     minDeadlineMs?: number
   },
   { signal }: { signal?: AbortSignal } = {}
-): Promise<QuoteRequestResult> {
+): Promise<QuoteResult> {
   const quotes = await quoteWithLog(
     {
       defuse_asset_identifier_in: input.tokenIn,
