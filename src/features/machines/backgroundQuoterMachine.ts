@@ -31,7 +31,7 @@ export type Events =
       type: "PAUSE"
     }
 
-export type EmittedEvents = {
+type EmittedEvents = {
   type: "NEW_QUOTE"
   params: {
     quoteInput: QuoteInput

@@ -273,7 +273,7 @@ export const swapIntentMachine = setup({
     isSigned: (_, params: WalletSignatureResult | null) => params != null,
     isTrue: (_, params: boolean) => params,
     isOk: (_, params: { tag: "ok" } | { tag: "err" }) => params.tag === "ok",
-    isSuccesfulQuote: ({ event }) => {
+    isQuoteOk: ({ event }) => {
       return event.params.quote.tag === "ok"
     },
   },
@@ -337,7 +337,7 @@ export const swapIntentMachine = setup({
 
   on: {
     NEW_QUOTE: {
-      guard: "isSuccesfulQuote",
+      guard: "isQuoteOk",
       actions: [
         {
           type: "proposeQuote",
@@ -346,7 +346,6 @@ export const swapIntentMachine = setup({
       ],
     },
   },
-
   states: {
     idle: {
       always: "Signing",
