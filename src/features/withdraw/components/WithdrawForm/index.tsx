@@ -520,7 +520,7 @@ function renderWithdrawButtonText(
   insufficientTokenInAmount: boolean
 ) {
   if (noLiquidity) return "No liquidity providers"
-  if (insufficientTokenInAmount) return "Insufficient token in amount"
+  if (insufficientTokenInAmount) return "Insufficient amount"
   return "Withdraw"
 }
 

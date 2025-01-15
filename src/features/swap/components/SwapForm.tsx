@@ -280,7 +280,7 @@ function renderSwapButtonText(
 ) {
   if (noLiquidity) return "No liquidity providers"
   if (balanceInsufficient) return "Insufficient Balance"
-  if (insufficientTokenInAmount) return "Insufficient token in amount"
+  if (insufficientTokenInAmount) return "Insufficient amount"
   return "Swap"
 }
 
