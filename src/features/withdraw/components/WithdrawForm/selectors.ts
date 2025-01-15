@@ -9,7 +9,7 @@ export function isLiquidityUnavailableSelector(
     state.context.preparationOutput.value.reason === "NO_QUOTES"
   )
 }
-export function isUnsufficientAmount(
+export function isUnsufficientTokenInAmount(
   state: SnapshotFrom<typeof withdrawUIMachine>
 ): boolean {
   return (

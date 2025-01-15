@@ -52,7 +52,7 @@ export const SwapForm = ({ onNavigateDeposit }: SwapFormProps) => {
   const intentCreationResult = snapshot.context.intentCreationResult
   const { data: tokensUsdPriceData } = useTokensUsdPrices()
 
-  const { tokenIn, tokenOut, noLiquidity, insufficientAmount } =
+  const { tokenIn, tokenOut, noLiquidity, insufficientTokenInAmount } =
     SwapUIMachineContext.useSelector((snapshot) => {
       const tokenIn = snapshot.context.formValues.tokenIn
       const tokenOut = snapshot.context.formValues.tokenOut
@@ -60,7 +60,7 @@ export const SwapForm = ({ onNavigateDeposit }: SwapFormProps) => {
         snapshot.context.quote &&
         snapshot.context.quote.tag === "err" &&
         snapshot.context.quote.value.type === "NO_QUOTES"
-      const insufficientAmount =
+      const insufficientTokenInAmount =
         snapshot.context.quote &&
         snapshot.context.quote.tag === "err" &&
         snapshot.context.quote.value.type === "INSUFFICIENT_AMOUNT"
@@ -68,8 +68,8 @@ export const SwapForm = ({ onNavigateDeposit }: SwapFormProps) => {
       return {
         tokenIn,
         tokenOut,
-        noLiquidity,
-        insufficientAmount,
+        noLiquidity: Boolean(noLiquidity),
+        insufficientTokenInAmount: Boolean(insufficientTokenInAmount),
       }
     })
 
@@ -159,7 +159,7 @@ export const SwapForm = ({ onNavigateDeposit }: SwapFormProps) => {
   const balanceInsufficient =
     tokenInBalance != null && snapshot.context.parsedFormValues.amountIn != null
       ? tokenInBalance < snapshot.context.parsedFormValues.amountIn
-      : null
+      : false
 
   const showDepositButton =
     tokenInBalance != null && tokenInBalance === 0n && onNavigateDeposit != null
@@ -235,17 +235,14 @@ export const SwapForm = ({ onNavigateDeposit }: SwapFormProps) => {
               fullWidth
               isLoading={snapshot.matches("submitting")}
               disabled={
-                !!balanceInsufficient || !!noLiquidity || !!insufficientAmount
+                balanceInsufficient || noLiquidity || insufficientTokenInAmount
               }
             >
-              {/* refactor */}
-              {noLiquidity
-                ? "No liquidity providers"
-                : balanceInsufficient
-                  ? "Insufficient Balance"
-                  : insufficientAmount
-                    ? "Insufficient amount"
-                    : "Swap"}
+              {renderSwapButtonText(
+                noLiquidity,
+                balanceInsufficient,
+                insufficientTokenInAmount
+              )}
             </ButtonCustom>
           )}
         </Flex>
@@ -274,6 +271,17 @@ function Intents({
       })}
     </div>
   )
+}
+
+function renderSwapButtonText(
+  noLiquidity: boolean,
+  balanceInsufficient: boolean,
+  insufficientTokenInAmount: boolean
+) {
+  if (noLiquidity) return "No liquidity providers"
+  if (balanceInsufficient) return "Insufficient Balance"
+  if (insufficientTokenInAmount) return "Insufficient token in amount"
+  return "Swap"
 }
 
 export function renderIntentCreationResult(

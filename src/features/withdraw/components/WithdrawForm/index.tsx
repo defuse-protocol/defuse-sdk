@@ -55,7 +55,7 @@ import { WithdrawUIMachineContext } from "../../WithdrawUIMachineContext"
 import LongWithdrawWarning from "./LongWithdrawWarning"
 import {
   isLiquidityUnavailableSelector,
-  isUnsufficientAmount,
+  isUnsufficientTokenInAmount,
   totalAmountReceivedSelector,
 } from "./selectors"
 
@@ -84,7 +84,7 @@ export const WithdrawForm = ({
     intentCreationResult,
     intentRefs,
     noLiquidity,
-    insufficientAmount,
+    insufficientTokenInAmount,
     totalAmountReceived,
   } = WithdrawUIMachineContext.useSelector((state) => {
     return {
@@ -96,7 +96,7 @@ export const WithdrawForm = ({
       intentCreationResult: state.context.intentCreationResult,
       intentRefs: state.context.intentRefs,
       noLiquidity: isLiquidityUnavailableSelector(state),
-      insufficientAmount: isUnsufficientAmount(state),
+      insufficientTokenInAmount: isUnsufficientTokenInAmount(state),
       totalAmountReceived: totalAmountReceivedSelector(state),
     }
   })
@@ -498,14 +498,10 @@ export const WithdrawForm = ({
 
             <ButtonCustom
               size="lg"
-              disabled={state.matches("submitting") || !!noLiquidity}
+              disabled={state.matches("submitting") || noLiquidity}
               isLoading={state.matches("submitting")}
             >
-              {noLiquidity
-                ? "No liquidity providers"
-                : insufficientAmount
-                  ? "Insufficient amount"
-                  : "Withdraw"}
+              {renderWithdrawButtonText(noLiquidity, insufficientTokenInAmount)}
             </ButtonCustom>
           </Flex>
         </Form>
@@ -517,6 +513,15 @@ export const WithdrawForm = ({
       </Flex>
     </div>
   )
+}
+
+function renderWithdrawButtonText(
+  noLiquidity: boolean,
+  insufficientTokenInAmount: boolean
+) {
+  if (noLiquidity) return "No liquidity providers"
+  if (insufficientTokenInAmount) return "Insufficient token in amount"
+  return "Withdraw"
 }
 
 const allBlockchains = [
