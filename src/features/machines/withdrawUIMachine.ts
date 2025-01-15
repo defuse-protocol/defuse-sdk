@@ -334,7 +334,7 @@ export const withdrawUIMachine = setup({
       return context.preparationOutput?.tag === "ok"
     },
 
-    isQuoteNotEmpty: (_, quote: QuoteResult) => quote.tag !== "err",
+    isQuoteOk: (_, quote: QuoteResult) => quote.tag === "ok",
 
     isOk: (_, a: { tag: "err" | "ok" }) => a.tag === "ok",
   },
@@ -616,7 +616,7 @@ export const withdrawUIMachine = setup({
       on: {
         NEW_QUOTE: {
           guard: {
-            type: "isQuoteNotEmpty",
+            type: "isQuoteOk",
             params: ({ event }) => event.params.quote,
           },
           actions: [
