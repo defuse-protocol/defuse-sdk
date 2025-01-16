@@ -140,3 +140,24 @@ export function getDerivedToken(
 
   return null
 }
+
+export function compareAmounts(
+  value1: TokenValue,
+  value2: TokenValue
+): -1 | 0 | 1 {
+  const maxDecimals = Math.max(value1.decimals, value2.decimals)
+  const normalizedAmount1 = adjustDecimals(
+    value1.amount,
+    value1.decimals,
+    maxDecimals
+  )
+  const normalizedAmount2 = adjustDecimals(
+    value2.amount,
+    value2.decimals,
+    maxDecimals
+  )
+
+  if (normalizedAmount1 < normalizedAmount2) return -1
+  if (normalizedAmount1 > normalizedAmount2) return 1
+  return 0
+}

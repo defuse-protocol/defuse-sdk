@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../types/base"
 import {
   DuplicateTokenError,
+  compareAmounts,
   computeTotalBalance,
   computeTotalBalanceDifferentDecimals,
   getDerivedToken,
@@ -499,5 +500,52 @@ describe("getDerivedToken", () => {
     // biome-ignore lint/style/noNonNullAssertion: It exists
     const baseToken = tokenList[1]!
     expect(getDerivedToken(baseToken, "unknown_chain")).toBeNull()
+  })
+})
+
+describe("compareAmounts", () => {
+  it("should compare amounts with same decimals", () => {
+    expect(
+      compareAmounts(
+        { amount: 100n, decimals: 18 },
+        { amount: 200n, decimals: 18 }
+      )
+    ).toBe(-1)
+    expect(
+      compareAmounts(
+        { amount: 200n, decimals: 18 },
+        { amount: 100n, decimals: 18 }
+      )
+    ).toBe(1)
+    expect(
+      compareAmounts(
+        { amount: 100n, decimals: 18 },
+        { amount: 100n, decimals: 18 }
+      )
+    ).toBe(0)
+  })
+
+  it("should compare amounts with different decimals", () => {
+    // 1.0 (6 decimals) vs 0.5 (18 decimals)
+    expect(
+      compareAmounts(
+        { amount: 1000000n, decimals: 6 },
+        { amount: 500000000000000000n, decimals: 18 }
+      )
+    ).toBe(1)
+    // 0.5 (6 decimals) vs 1.0 (18 decimals)
+    expect(
+      compareAmounts(
+        { amount: 500000n, decimals: 6 },
+        { amount: 1000000000000000000n, decimals: 18 }
+      )
+    ).toBe(-1)
+    // 1.0 (6 decimals) vs 1.0 (18 decimals)
+    expect(
+      compareAmounts(
+        { amount: 1000000n, decimals: 6 },
+        { amount: 1000000000000000000n, decimals: 18 }
+      )
+    ).toBe(0)
   })
 })
