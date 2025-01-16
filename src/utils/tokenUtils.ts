@@ -1,5 +1,5 @@
 import type { BalanceMapping } from "../features/machines/depositedBalanceMachine"
-import type { BaseTokenInfo, UnifiedTokenInfo } from "../types/base"
+import type { BaseTokenInfo, TokenValue, UnifiedTokenInfo } from "../types/base"
 import { assert } from "./assert"
 import { isBaseToken } from "./token"
 
@@ -33,6 +33,80 @@ export function computeTotalBalance(
     token.groupedTokens.map((t) => t.defuseAssetId),
     balances
   )
+}
+
+export class DuplicateTokenError extends Error {
+  constructor(tokenId: string, decimals1: number, decimals2: number) {
+    super(
+      `Duplicate token ${tokenId} found with different decimals: ${decimals1} and ${decimals2}`
+    )
+    this.name = "DuplicateTokenError"
+  }
+}
+
+function adjustDecimals(
+  amount: bigint,
+  fromDecimals: number,
+  toDecimals: number
+): bigint {
+  if (fromDecimals === toDecimals) return amount
+  if (fromDecimals > toDecimals) {
+    return amount / BigInt(10 ** (fromDecimals - toDecimals))
+  }
+  return amount * BigInt(10 ** (toDecimals - fromDecimals))
+}
+
+function deduplicateTokens(tokens: BaseTokenInfo[]): BaseTokenInfo[] {
+  const tokenMap = new Map<string, BaseTokenInfo>()
+
+  for (const token of tokens) {
+    const existing = tokenMap.get(token.defuseAssetId)
+    if (existing) {
+      if (existing.decimals !== token.decimals) {
+        throw new DuplicateTokenError(
+          token.defuseAssetId,
+          existing.decimals,
+          token.decimals
+        )
+      }
+      // If decimals match, keep existing token
+      continue
+    }
+    tokenMap.set(token.defuseAssetId, token)
+  }
+
+  return Array.from(tokenMap.values())
+}
+
+export function computeTotalBalanceDifferentDecimals(
+  token: BaseTokenInfo[] | BaseTokenInfo | UnifiedTokenInfo,
+  balances: BalanceMapping
+): TokenValue | undefined {
+  // Case 1: Base token
+  if (!Array.isArray(token) && isBaseToken(token)) {
+    const balance = balances[token.defuseAssetId]
+    if (balance == null) {
+      return undefined
+    }
+    return { amount: balance, decimals: token.decimals }
+  }
+
+  // Case 2: Unified token
+  const uniqueTokens = deduplicateTokens(
+    Array.isArray(token) ? token : token.groupedTokens
+  )
+  const maxDecimals = Math.max(...uniqueTokens.map((t) => t.decimals))
+  let total = 0n
+
+  for (const t of uniqueTokens) {
+    const balance = balances[t.defuseAssetId]
+    if (balance == null) {
+      return undefined
+    }
+    total += adjustDecimals(balance, t.decimals, maxDecimals)
+  }
+
+  return { amount: total, decimals: maxDecimals }
 }
 
 /**
