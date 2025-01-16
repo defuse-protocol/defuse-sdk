@@ -8,7 +8,7 @@ import { isBaseToken } from "../../utils/token"
 export type QuoteInput =
   | {
       tokenIn: BaseTokenInfo | UnifiedTokenInfo
-      tokenOut: BaseTokenInfo | UnifiedTokenInfo
+      tokenOut: BaseTokenInfo
       amountIn: bigint
       balances: Record<BaseTokenInfo["defuseAssetId"], bigint>
     }
@@ -125,7 +125,7 @@ async function pollQuoteLoop(
         tokensIn: getUnderlyingDefuseAssetIds(
           "tokensIn" in quoteInput ? quoteInput.tokensIn : [quoteInput.tokenIn]
         ),
-        tokensOut: getUnderlyingDefuseAssetIds([quoteInput.tokenOut]),
+        tokenOut: quoteInput.tokenOut.defuseAssetId,
         amountIn: quoteInput.amountIn,
         balances: quoteInput.balances,
       },

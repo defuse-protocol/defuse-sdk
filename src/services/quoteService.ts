@@ -15,7 +15,7 @@ function isFailedQuote(quote: Quote | FailedQuote): quote is FailedQuote {
 
 export interface AggregatedQuoteParams {
   tokensIn: string[] // set of close tokens, e.g. [USDC on Solana, USDC on Ethereum, USDC on Near]
-  tokensOut: string[] // set of close tokens, e.g. [USDC on Solana, USDC on Ethereum, USDC on Near]
+  tokenOut: string // set of close tokens, e.g. [USDC on Solana, USDC on Ethereum, USDC on Near]
   amountIn: bigint // total amount in
   balances: Record<string, bigint> // how many tokens of each type are available
 }
@@ -57,8 +57,7 @@ export async function queryQuote(
   } = {}
 ): Promise<QuoteResult> {
   // Sanity checks
-  const tokenOut = input.tokensOut[0]
-  assert(tokenOut != null, "tokensOut is empty")
+  const tokenOut = input.tokenOut
 
   const tokenIn = input.tokensIn[0]
   assert(tokenIn != null, "tokensIn is empty")

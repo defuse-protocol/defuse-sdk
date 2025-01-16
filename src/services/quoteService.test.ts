@@ -17,7 +17,7 @@ describe("queryQuote()", () => {
   it("quotes full amount even if user has less funds than requested", async () => {
     const input = {
       tokensIn: ["token1"],
-      tokensOut: ["tokenOut"],
+      tokenOut: "tokenOut",
       amountIn: 150n,
       balances: { token1: 100n },
     }
@@ -65,7 +65,7 @@ describe("queryQuote()", () => {
   it("splits amount across tokens if user has enough funds", async () => {
     const input = {
       tokensIn: ["token1", "token2", "token3"],
-      tokensOut: ["tokenOut"],
+      tokenOut: "tokenOut",
       amountIn: 150n,
       balances: { token1: 100n, token2: 100n, token3: 100n },
     }
@@ -135,7 +135,7 @@ describe("queryQuote()", () => {
   it("takes a quote with the best return", async () => {
     const input = {
       tokensIn: ["token1"],
-      tokensOut: ["tokenOut"],
+      tokenOut: "tokenOut",
       amountIn: 150n,
       balances: { token1: 100n },
     }
@@ -189,7 +189,7 @@ describe("queryQuote()", () => {
   it("returns empty result if quote is null", async () => {
     const input = {
       tokensIn: ["token1"],
-      tokensOut: ["tokenOut"],
+      tokenOut: "tokenOut",
       amountIn: 150n,
       balances: { token1: 100n },
     }
@@ -216,7 +216,7 @@ describe("queryQuote()", () => {
   it("returns empty result if any quote is null", async () => {
     const input = {
       tokensIn: ["token1", "token2"],
-      tokensOut: ["tokenOut"],
+      tokenOut: "tokenOut",
       amountIn: 150n,
       balances: { token1: 100n, token2: 100n },
     }
@@ -245,7 +245,7 @@ describe("queryQuote()", () => {
   it("correctly handles duplicate input tokens", async () => {
     const input = {
       tokensIn: ["token1", "token1"], // Duplicate token
-      tokensOut: ["tokenOut"],
+      tokenOut: "tokenOut",
       amountIn: 150n,
       balances: { token1: 100n },
     }
