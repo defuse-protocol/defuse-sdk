@@ -231,15 +231,9 @@ export function calculateSplitAmounts(
   return amountsToQuote
 }
 
-export function aggregateQuotes(quotes: NonNullable<QuoteResults>[]):
-  | {
-      tag: "ok"
-      value: AggregatedQuote
-    }
-  | {
-      tag: "err"
-      value: FailedQuote
-    } {
+export function aggregateQuotes(
+  quotes: NonNullable<QuoteResults>[]
+): QuoteResult {
   let totalAmountIn = 0n
   let totalAmountOut = 0n
   const amountsIn: Record<string, bigint> = {}
@@ -295,10 +289,21 @@ export function aggregateQuotes(quotes: NonNullable<QuoteResults>[]):
     quoteHashes.push(q.quote_hash)
   }
 
-  if (quoteHashes.length === 0 && quoteError !== null) {
+  const noQuotes = quoteHashes.length === 0
+
+  if (noQuotes && quoteError !== null) {
     return {
       tag: "err",
       value: quoteError,
+    }
+  }
+
+  if (noQuotes) {
+    return {
+      tag: "err",
+      value: {
+        type: "NO_QUOTES",
+      },
     }
   }
 

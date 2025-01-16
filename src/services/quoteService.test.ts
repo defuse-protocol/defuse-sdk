@@ -194,7 +194,16 @@ describe("queryQuote()", () => {
       balances: { token1: 100n },
     }
 
-    vi.mocked(relayClient.quote).mockImplementationOnce(async () => null)
+    vi.mocked(relayClient.quote)
+      .mockImplementationOnce(async () => null)
+      .mockImplementationOnce(async () => [])
+
+    await expect(queryQuote(input)).resolves.toEqual({
+      tag: "err",
+      value: {
+        type: "NO_QUOTES",
+      },
+    })
 
     await expect(queryQuote(input)).resolves.toEqual({
       tag: "err",
