@@ -31,7 +31,7 @@ describe("queryQuote()", () => {
     const input = {
       tokensIn: [token1],
       tokenOut: tokenOut,
-      amountIn: 150n,
+      amountIn: { amount: 150n, decimals: 6 },
       balances: { token1: 100n },
     }
 
@@ -79,7 +79,7 @@ describe("queryQuote()", () => {
     const input = {
       tokensIn: [token1, token2, token3],
       tokenOut: tokenOut,
-      amountIn: 150n,
+      amountIn: { amount: 150n, decimals: 6 },
       balances: { token1: 100n, token2: 100n, token3: 100n },
     }
 
@@ -149,7 +149,7 @@ describe("queryQuote()", () => {
     const input = {
       tokensIn: [token1],
       tokenOut: tokenOut,
-      amountIn: 150n,
+      amountIn: { amount: 150n, decimals: 6 },
       balances: { token1: 100n },
     }
 
@@ -203,7 +203,7 @@ describe("queryQuote()", () => {
     const input = {
       tokensIn: [token1],
       tokenOut: tokenOut,
-      amountIn: 150n,
+      amountIn: { amount: 150n, decimals: 6 },
       balances: { token1: 100n },
     }
 
@@ -230,7 +230,7 @@ describe("queryQuote()", () => {
     const input = {
       tokensIn: [token1, token2],
       tokenOut: tokenOut,
-      amountIn: 150n,
+      amountIn: { amount: 150n, decimals: 6 },
       balances: { token1: 100n, token2: 100n },
     }
 
@@ -259,7 +259,7 @@ describe("queryQuote()", () => {
     const input = {
       tokensIn: [token1, token1], // Duplicate token
       tokenOut: tokenOut,
-      amountIn: 150n,
+      amountIn: { amount: 150n, decimals: 6 },
       balances: { token1: 100n },
     }
 

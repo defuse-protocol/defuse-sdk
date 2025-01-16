@@ -186,7 +186,10 @@ export const swapUIMachine = setup({
           params: {
             tokenIn: context.formValues.tokenIn,
             tokenOut: getAnyBaseTokenInfo(context.formValues.tokenOut),
-            amountIn: context.parsedFormValues.amountIn,
+            amountIn: {
+              amount: context.parsedFormValues.amountIn,
+              decimals: context.formValues.tokenIn.decimals,
+            },
             balances: balances ?? {},
           },
         }

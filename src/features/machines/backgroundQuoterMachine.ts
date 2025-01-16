@@ -9,13 +9,13 @@ export type QuoteInput =
   | {
       tokenIn: BaseTokenInfo | UnifiedTokenInfo
       tokenOut: BaseTokenInfo
-      amountIn: bigint
+      amountIn: { amount: bigint; decimals: number }
       balances: Record<BaseTokenInfo["defuseAssetId"], bigint>
     }
   | {
       tokensIn: Array<BaseTokenInfo>
       tokenOut: BaseTokenInfo
-      amountIn: bigint
+      amountIn: { amount: bigint; decimals: number }
       balances: Record<BaseTokenInfo["defuseAssetId"], bigint>
     }
 

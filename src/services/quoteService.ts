@@ -14,11 +14,15 @@ function isFailedQuote(quote: Quote | FailedQuote): quote is FailedQuote {
 }
 
 type TokenSlice = Pick<BaseTokenInfo, "defuseAssetId">
+type TokenValue = {
+  amount: bigint
+  decimals: number
+}
 
 export interface AggregatedQuoteParams {
   tokensIn: TokenSlice[] // set of close tokens, e.g. [USDC on Solana, USDC on Ethereum, USDC on Near]
   tokenOut: TokenSlice // set of close tokens, e.g. [USDC on Solana, USDC on Ethereum, USDC on Near]
-  amountIn: bigint // total amount in
+  amountIn: TokenValue // total amount in
   balances: Record<string, bigint> // how many tokens of each type are available
 }
 
@@ -70,12 +74,12 @@ export async function queryQuote(
   )
 
   // If total available is less than requested, just quote the full amount from one token
-  if (totalAvailableIn == null || totalAvailableIn < input.amountIn) {
+  if (totalAvailableIn == null || totalAvailableIn < input.amountIn.amount) {
     const q = await quoteWithLog(
       {
         defuse_asset_identifier_in: tokenIn.defuseAssetId,
         defuse_asset_identifier_out: tokenOut.defuseAssetId,
-        exact_amount_in: input.amountIn.toString(),
+        exact_amount_in: input.amountIn.amount.toString(),
         min_deadline_ms: settings.quoteMinDeadlineMs,
       },
       { signal }
@@ -95,7 +99,7 @@ export async function queryQuote(
 
   const amountsToQuote = calculateSplitAmounts(
     input.tokensIn,
-    input.amountIn,
+    input.amountIn.amount,
     input.balances
   )
 
