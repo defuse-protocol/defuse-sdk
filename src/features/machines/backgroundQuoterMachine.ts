@@ -122,10 +122,10 @@ async function pollQuoteLoop(
 
     queryQuote(
       {
-        tokensIn: getUnderlyingDefuseAssetIds(
+        tokensIn: getUnderlyingBaseTokenInfos(
           "tokensIn" in quoteInput ? quoteInput.tokensIn : [quoteInput.tokenIn]
         ),
-        tokenOut: quoteInput.tokenOut.defuseAssetId,
+        tokenOut: quoteInput.tokenOut,
         amountIn: quoteInput.amountIn,
         balances: quoteInput.balances,
       },
@@ -159,13 +159,11 @@ async function pollQuoteLoop(
   }
 }
 
-function getUnderlyingDefuseAssetIds(
+function getUnderlyingBaseTokenInfos(
   tokens: Array<BaseTokenInfo | UnifiedTokenInfo>
-): BaseTokenInfo["defuseAssetId"][] {
+): BaseTokenInfo[] {
   return tokens.flatMap((token) => {
-    return isBaseToken(token)
-      ? [token.defuseAssetId]
-      : token.groupedTokens.map((token) => token.defuseAssetId)
+    return isBaseToken(token) ? [token] : token.groupedTokens
   })
 }
 

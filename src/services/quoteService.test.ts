@@ -9,6 +9,19 @@ import * as relayClient from "./solverRelayHttpClient"
 
 vi.spyOn(relayClient, "quote")
 
+const token1 = {
+  defuseAssetId: "token1",
+}
+const token2 = {
+  defuseAssetId: "token2",
+}
+const token3 = {
+  defuseAssetId: "token3",
+}
+const tokenOut = {
+  defuseAssetId: "tokenOut",
+}
+
 describe("queryQuote()", () => {
   afterEach(() => {
     vi.clearAllMocks()
@@ -16,8 +29,8 @@ describe("queryQuote()", () => {
 
   it("quotes full amount even if user has less funds than requested", async () => {
     const input = {
-      tokensIn: ["token1"],
-      tokenOut: "tokenOut",
+      tokensIn: [token1],
+      tokenOut: tokenOut,
       amountIn: 150n,
       balances: { token1: 100n },
     }
@@ -64,8 +77,8 @@ describe("queryQuote()", () => {
 
   it("splits amount across tokens if user has enough funds", async () => {
     const input = {
-      tokensIn: ["token1", "token2", "token3"],
-      tokenOut: "tokenOut",
+      tokensIn: [token1, token2, token3],
+      tokenOut: tokenOut,
       amountIn: 150n,
       balances: { token1: 100n, token2: 100n, token3: 100n },
     }
@@ -134,8 +147,8 @@ describe("queryQuote()", () => {
 
   it("takes a quote with the best return", async () => {
     const input = {
-      tokensIn: ["token1"],
-      tokenOut: "tokenOut",
+      tokensIn: [token1],
+      tokenOut: tokenOut,
       amountIn: 150n,
       balances: { token1: 100n },
     }
@@ -188,8 +201,8 @@ describe("queryQuote()", () => {
 
   it("returns empty result if quote is null", async () => {
     const input = {
-      tokensIn: ["token1"],
-      tokenOut: "tokenOut",
+      tokensIn: [token1],
+      tokenOut: tokenOut,
       amountIn: 150n,
       balances: { token1: 100n },
     }
@@ -215,8 +228,8 @@ describe("queryQuote()", () => {
 
   it("returns empty result if any quote is null", async () => {
     const input = {
-      tokensIn: ["token1", "token2"],
-      tokenOut: "tokenOut",
+      tokensIn: [token1, token2],
+      tokenOut: tokenOut,
       amountIn: 150n,
       balances: { token1: 100n, token2: 100n },
     }
@@ -244,8 +257,8 @@ describe("queryQuote()", () => {
 
   it("correctly handles duplicate input tokens", async () => {
     const input = {
-      tokensIn: ["token1", "token1"], // Duplicate token
-      tokenOut: "tokenOut",
+      tokensIn: [token1, token1], // Duplicate token
+      tokenOut: tokenOut,
       amountIn: 150n,
       balances: { token1: 100n },
     }
@@ -269,7 +282,7 @@ describe("queryQuote()", () => {
 })
 
 it("calculateSplitAmounts(): splits amounts correctly", () => {
-  const tokensIn = ["token1", "token2", "token3"]
+  const tokensIn = [token1, token2, token3]
   const amountIn = 150n
   const balances = {
     token1: 100n,
@@ -285,7 +298,7 @@ it("calculateSplitAmounts(): splits amounts correctly", () => {
 })
 
 it("calculateSplitAmounts(): only considers each token's balance once when duplicated", () => {
-  const tokensIn = ["token1", "token1", "token2", "token2", "token3"]
+  const tokensIn = [token1, token1, token2, token2, token3]
   const amountIn = 150n
   const balances = {
     token1: 100n,
