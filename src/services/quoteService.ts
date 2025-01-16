@@ -1,6 +1,6 @@
 import { settings } from "../config/settings"
 import { logger } from "../logger"
-import type { BaseTokenInfo } from "../types/base"
+import type { BaseTokenInfo, TokenValue } from "../types/base"
 import { computeTotalBalance } from "../utils/tokenUtils"
 import { quote } from "./solverRelayHttpClient"
 import type {
@@ -14,10 +14,6 @@ function isFailedQuote(quote: Quote | FailedQuote): quote is FailedQuote {
 }
 
 type TokenSlice = Pick<BaseTokenInfo, "defuseAssetId">
-type TokenValue = {
-  amount: bigint
-  decimals: number
-}
 
 export interface AggregatedQuoteParams {
   tokensIn: TokenSlice[] // set of close tokens, e.g. [USDC on Solana, USDC on Ethereum, USDC on Near]

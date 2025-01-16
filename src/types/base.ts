@@ -71,3 +71,8 @@ export interface UnifiedTokenInfo {
   icon: string
   groupedTokens: BaseTokenInfo[]
 }
+
+export interface TokenValue {
+  amount: bigint
+  decimals: number
+}
