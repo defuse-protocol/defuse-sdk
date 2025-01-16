@@ -30,7 +30,17 @@ export type QuoteRequest = JSONRPCRequest<
 
 export type Params<T extends JSONRPCRequest<unknown, unknown>> = T["params"][0]
 
-export type QuoteResponse = JSONRPCResponse<null | Array<{
+export enum FAILED_QUOTES_TYPES {
+  INSUFFICIENT_AMOUNT = "INSUFFICIENT_AMOUNT",
+}
+export type InsufficientAmountQuote = {
+  type: FAILED_QUOTES_TYPES.INSUFFICIENT_AMOUNT
+  // Stringified big int
+  min_amount: string
+}
+
+export type FailedQuote = InsufficientAmountQuote
+export type Quote = {
   quote_hash: string
   defuse_asset_identifier_in: string
   defuse_asset_identifier_out: string
@@ -38,7 +48,8 @@ export type QuoteResponse = JSONRPCResponse<null | Array<{
   amount_out: string
   // ISO-8601 date string
   expiration_time: string
-}>>
+}
+export type QuoteResponse = JSONRPCResponse<null | Array<Quote | FailedQuote>>
 
 export type PublishIntentRequest = JSONRPCRequest<
   "publish_intent",
