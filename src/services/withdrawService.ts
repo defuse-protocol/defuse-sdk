@@ -149,9 +149,10 @@ export async function prepareWithdraw(
     { signal }
   )
 
-  assert(swapRequirement?.swapQuote.tag === "ok", "Fail")
   const receivedAmount = calcWithdrawAmount(
-    swapRequirement?.swapQuote.value ?? null,
+    swapRequirement?.swapQuote?.tag === "ok"
+      ? swapRequirement.swapQuote.value
+      : null,
     nep141Storage.value,
     directWithdrawAvailable
   )
