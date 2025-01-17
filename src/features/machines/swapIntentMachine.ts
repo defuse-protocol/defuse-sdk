@@ -47,7 +47,7 @@ export type NEP141StorageRequirement =
       quote: null
     }
 
-type IntentOperationParams =
+export type IntentOperationParams =
   | {
       type: "swap"
       quote: AggregatedQuote
@@ -85,6 +85,7 @@ type Context = {
   }
   signature: WalletSignatureResult | null
   intentHash: string | null
+  intentProcess: "standard" | "optimistic"
   error: null | {
     tag: "err"
     value:
@@ -121,8 +122,19 @@ export type Output =
   | {
       tag: "ok"
       value: {
+        intentProcess: "standard"
         intentHash: string
         intentDescription: IntentDescription
+      }
+    }
+  | {
+      tag: "ok"
+      value: {
+        intentProcess: "optimistic"
+        intentOperationParams: IntentOperationParams
+        signature: WalletSignatureResult
+        userAddress: string
+        userChainType: ChainType
       }
     }
 
@@ -210,6 +222,10 @@ export const swapIntentMachine = setup({
     setIntentHash: assign({
       intentHash: (_, intentHash: string) => intentHash,
     }),
+    setIntentFlow: assign({
+      intentProcess: (_, intentProcess: "standard" | "optimistic") =>
+        intentProcess,
+    }),
   },
   actors: {
     verifySignatureActor: fromPromise(
@@ -270,6 +286,14 @@ export const swapIntentMachine = setup({
 
       return true
     },
+    isOptimisticIntent: () => {
+      // TODO: Ture if is feature enabled and balance isn't sufficient
+      return false
+    },
+    isSignedAndHeld: () => {
+      // TODO: Ture if is feature enabled and held intent data is present
+      return false
+    },
     isSigned: (_, params: WalletSignatureResult | null) => params != null,
     isTrue: (_, params: boolean) => params,
     isOk: (_, params: { tag: "ok" } | { tag: "err" }) => params.tag === "ok",
@@ -278,13 +302,14 @@ export const swapIntentMachine = setup({
     },
   },
 }).createMachine({
-  /** @xstate-layout N4IgpgJg5mDOIC5SwO4EMAOBaAlgOwBcxCBiAOQFEB1AfQEUBVAeQBUKBtABgF1FQMA9rBwEcAvHxAAPRACYAnAFYAdPIAcigGyKA7It0BGTcYDMAGhABPRAZOzlJxfJNqdmnTs7zOsgCwBffwtUTFxCYgJlHAgAGzASLl4kEEFhUXFJGQRbNWUfTgNfRVk1eU01Ut8LawQTdWVNP05HfU9fY0Dg9Gx8IkJlAGUcKDx8KBIIcTAovAA3AQBraeERgFk4WDQYRMlUkTEJZKzvZRLdV0bfWVkdAwNqxEaDVSKTO18dK7cTTpAQnvC-SGIzGJDAACdwQJwcoMDE0AQAGbQgC2yhWeHWsE22x4uyE+wyR0QWFkmk4ygqmhM1OMBm8dweCF8vnkyicrLKei0JVsv3+YT6kQAahCcIjLGMAAQABQArgAjGI4ADGUoA0mBLLLwXBiCr4pM8NN8PMlrDFcqVZrLKLweKcBCAEpgRE7ZJ7dKHUBZWQmVT09qFbxvLwGHRMgycHT2WRGErucn0-T87qCiLKO3iyV4KCyy2qjVanV6vAGiZTGZm6YYAvWrVZxGO8Eut0GJL8AlezJyMqUv1qO5RpxqD6aSN3XyqckKTjlQfRn5BP5p3oZxs5vPypWFm0l2D6+IQqEwuEI5HgtG1nf121ipvO13uztpA49hCkk5XeSfZzFOMFFUVg2JwnAqJoUYuDog6KEYHipqEa79AAQlCaAQCqaCwKIuZSgAkoCBAVsaVaLMsq6EcoqECOhmHYdKBFCggpoCJhXqJM+KRdm+xIILclKgS4fqKEU+gFJGHwqIojjRtc8gGBUnABMuApIZE1G0VhOF5oxERgpC0KwvCSKouiFFClRaEYVpDGEcxcysQiBwcXiHrcUSPokiU9g5B4+ilAY+juJGJhRqctxKaUajznoCEAhZG62UKCSuS+hLetIiDReyGiskpCkiWS47Adk1w+Y03yiWoSmKHF6b9IluG6aQ7Dtvir4eZltR+MoLKfBoZLSZo8iyCFPWhm8ziTbIxR1Wpmb3puUrAngCJyrqxEmg55qqZRjV5ita26vZ8xsc5PCcZ6PGed1yjfPksEiSyaijSVGgUmJnh1KB1LOHNe2LdKh0EOthqVixO3meugO4cDoMnY57EXW1bkdRlWRYCYvjPApZJhj+bweEyg72NGOgmHocafM0S5dIhAP2hKQPDKtIMbcehlniZl5mfTCUwwdLNHWACNneILkdlxaPvpjzSnGSFTyKyL2OPcJXGLkmjYxBSuFLY1yBMueACBAcCSLtQrtelMsuGyuPkvJBMUxGJV+myXhuPISgwUUyl0-FGbRHEVvdrxhQUpUrIxl7cbOK9NR2JovWyHOfjtErNxqP9FkrWMIfXV1Ci9VGvkU+Gui+OYJW+C9DhQUUhRlSNfsrnz0OM0t25WkW2oyrqB5lmA+edRjKheBULKBbB4blPITJx6csHDToShlNotOtwHKFWXR2n4YRw-o4guiqHU2gr3oHjlC7NT61O8kQU4dyKGobyaNn7fZklESH++Ub328UcHwTDRgqFoCcbxTguC0OUBQ2gfAf36AAYQECiOEYAiAQF-rxJQDh5xOH6iUGMxVb7Uh0A0cMoUp4iWjIgyIABxYgYo1QUAMuCbBN1SRawaJJCedx5JExKkYCmFDybP30L4WhKkoYNQFstIWbMh6o2trxaSd1mhuEUKBUchUgI1HJvYQcdRX5Y3UB4ZSgQgA */
+  /** @xstate-layout N4IgpgJg5mDOIC5SwO4EMAOBaAlgOwBcxCBiAOQFEB1AfQEUBVAeQBUKBtABgF1FQMA9rBwEcAvHxAAPRACYA7ADYAdLIDMATjWLNsgKzbOigDQgAnogAcAFmWXFNrQEYne69Y16Avl9OpMuITEBMo4EAA2YCRcvEgggsKi4pIyCGpqsnbyerKcnNacTrkGeqYWaTl2nPZOGdb2apY2Pn7o2PhEhMoAyjhQePhQJBDiYKF4AG4CANZjwv0AsnCwaDAxkgkiYhJxqZYayhrWtTZO+Vp6nKXmiHryaspXlo2WV4p6zxotIP7tQV29fqDEhgABOoIEoOUGHCaAIADNIQBbZTzPBLWArNY8DZCLbJXaILCyRQHPJ5NwuWTUy5qMqIayVS6vAyWPR6DSWIreXw-NqBTohABqYJw8LMgwABIC8HCAK6gqIjPBjfBTWao-kdYLKEWgsUSvBQaV9WUEBVgBBqgQAYzh2xi6zimySO1AqWpygKilkRS0RkKaj0JhuCFOyjcRw++me8lc31+Ap1eoNUpl8sVw1G43Vcy1-2FovFadNGct1rtrsdTli-DxrpSRLUHmUamq7w0SgyGh09LDLjssmO+0USnq8gT+cFuqLhuN6fNmbBEKhMLhiNBKMT2q6KeLRpN-TLVsmtvt4kdOOd9e2jYQWDUA4yXKaUesSj770syhcz9HjNyNlJwCHdC31fdjQABTlAAjcIcBtSUAGkwDMSVIMVWBiBtJVs2tDUMFg+CbRQsw9xwMEACUwHhJ060SW9CQQWRv00dwmmsdJ-TuENyjObIvXkeROB7IMnCUeRrGAv5pz3Od0KIhDkNQ9DMOw3CVRzGYxkIuCENI8iqJo9ga1xBiCXdBkBPqWQNE4dRfXskS+xcK4fw0cTFC8xxcik3ltwLGdwPk6C9MQ0jVLgdSQXBSFoVhBFkWhRSSNQwzQWo2ir3o-E3WkIlbM4L1bOyfR9Gbd5rBc+yHgUTRFE431fQyaSky6AAhCE0AgO1YFEA8AEkCyzTT8LzEDAs6gRut6-rjSGwUTymSsHR4Oj4hvCz8rSJwvVedwh3kXy1GE64+PkLkf0UVxTicTwJNa0DlCmma0D6qUFuCEbVVPDUAunF6ereubJU+wglrPKs1tM69zLy1J32-YMmmDdkDH4ulQ3Ey6nGuj5jjuniJ38qcdUB2aPuG5c4rXRLN01CaAa6oH3sGgsIZWi81uyja4bvYl9mUBxtHfS4inSK4XJ9TJGWuhw7OODlHsCuTKcFaIeZdRjLLDFQTo8C6hNx0cXPUB4ow+Tx0gUZXZNnNWvpM2tedyu8Cj0VtOWsHQbA5Z4XLcWxfU46xHJZHlWkZnUAAkBHCCBQeG9ata2j0lFUfH0j9i73hck6VAMPJO0fTh0lqW2Y7jhOwYIaIYZyhsmOE5R7kajznjed8XM4h4PBcYSSSOjROQrrowkiOvnZT+HEDOB4uSHTQmkk3yzsQINMleBph1qJx9h8Xk8AECA4Ekf7gjM12mIfTtW3bDku1s3sseH1QvK7YeV40alR5CcewEvo3HWTgCiHH2s2Y4ocjDyD7CxFQShRyKCME0EBHlf49FNIMQB2ttq2S9GcE49w4zZDjFVUMod5Bel0Gcdk9kLp+UjjJZM9sDwLgtNg1OtwHjCRLj6d88g7KB0-GyVsuNOIOHcHkb26DVYHlCsRZSaEMJRTwDhDhM97yuDfp4H0Ai+FuCHH2I4Dwzgxm0Dob+P8SZRw6szCmbNBTqLvB8R4XJOycC7EJZsmM+J6AHG4DxbYqRKD3jIlh80CxOKYq-SwQ495INJNkESMCsa4yKh3BQd1sh2XyOggAwgIJEMIwBEAgFEnWt8BG2QJgoOJw8XLf3SScOyxRLACLUOggA4sQUUiEKCxVBOU7axJSSHB7K4O638s4NM8BGOMCgezPH2FodBsd46J0cbDK+wCtGtyDHZYS9kGh53UO5IuQYmgOCHOggAIjRZckAhmpDjCodsHg8h8JAbIbuIk9ptneJoI6igD5eCAA */
   context: ({ input }) => {
     return {
       messageToSign: null,
       signature: null,
       error: null,
       intentHash: null,
+      intentProcess: "standard",
       ...input,
     }
   },
@@ -294,6 +319,19 @@ export const swapIntentMachine = setup({
   initial: "idle",
 
   output: ({ context }): Output => {
+    if (context.intentProcess === "optimistic") {
+      assert(context.signature != null, "Signature is not set")
+      return {
+        tag: "ok",
+        value: {
+          intentProcess: "optimistic",
+          intentOperationParams: context.intentOperationParams,
+          signature: context.signature,
+          userAddress: context.userAddress,
+          userChainType: context.userChainType,
+        },
+      }
+    }
     if (context.intentHash != null) {
       const intentType = context.intentOperationParams.type
       switch (intentType) {
@@ -301,6 +339,7 @@ export const swapIntentMachine = setup({
           return {
             tag: "ok",
             value: {
+              intentProcess: "standard",
               intentHash: context.intentHash,
               intentDescription: {
                 type: "swap",
@@ -312,6 +351,7 @@ export const swapIntentMachine = setup({
           return {
             tag: "ok",
             value: {
+              intentProcess: "standard",
               intentHash: context.intentHash,
               intentDescription: {
                 type: "withdraw",
@@ -348,7 +388,14 @@ export const swapIntentMachine = setup({
   },
   states: {
     idle: {
-      always: "Signing",
+      always: [
+        {
+          target: "Verifying Signature",
+          guard: "isSignedAndHeld",
+          reenter: true,
+        },
+        "Signing",
+      ],
     },
 
     Signing: {
@@ -596,7 +643,7 @@ export const swapIntentMachine = setup({
     "Verifying Intent": {
       always: [
         {
-          target: "Broadcasting Intent",
+          target: "Hold Intent",
           guard: "isIntentRelevant",
         },
         {
@@ -621,6 +668,28 @@ export const swapIntentMachine = setup({
     },
 
     "Generic Error": {
+      type: "final",
+    },
+
+    "Hold Intent": {
+      always: [
+        {
+          target: "Deferred",
+          guard: "isOptimisticIntent",
+          actions: [
+            {
+              type: "setIntentFlow",
+              params: "optimistic",
+            },
+          ],
+        },
+        {
+          target: "Broadcasting Intent",
+        },
+      ],
+    },
+
+    Deferred: {
       type: "final",
     },
   },
