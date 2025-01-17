@@ -20,4 +20,5 @@ export const useTokensUsdPrices = () =>
   useQuery({
     queryKey: tokensUsdPricesQueryKey,
     queryFn: tokensPriceDataInUsd,
+    refetchInterval: 20_000,
   })

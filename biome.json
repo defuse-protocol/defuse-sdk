@@ -3,7 +3,12 @@
   "vcs": { "enabled": false, "clientKind": "git", "useIgnoreFile": false },
   "files": {
     "ignoreUnknown": false,
-    "ignore": ["dist/*", "artifacts/*", "package.json"]
+    "ignore": [
+      "dist/*",
+      "artifacts/*",
+      "package.json",
+      "src/lib/@radix-ui/react-select/*"
+    ]
   },
   "formatter": {
     "enabled": true,
