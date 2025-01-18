@@ -1,7 +1,7 @@
 import { type ActorRef, type Snapshot, fromCallback } from "xstate"
 import { settings } from "../../config/settings"
 import { logger } from "../../logger"
-import { type QuoteResult, queryQuote } from "../../services/quoteService"
+import { type AggregatedQuote, queryQuote } from "../../services/quoteService"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../types/base"
 import { isBaseToken } from "../../utils/token"
 
@@ -28,11 +28,11 @@ export type Events =
       type: "PAUSE"
     }
 
-type EmittedEvents = {
+export type EmittedEvents = {
   type: "NEW_QUOTE"
   params: {
     quoteInput: QuoteInput
-    quote: QuoteResult
+    quote: AggregatedQuote
   }
 }
 
@@ -40,7 +40,7 @@ export type ParentEvents = {
   type: "NEW_QUOTE"
   params: {
     quoteInput: QuoteInput
-    quote: QuoteResult
+    quote: AggregatedQuote
   }
 }
 type ParentActor = ActorRef<Snapshot<unknown>, ParentEvents>
@@ -100,7 +100,7 @@ function pollQuote(
   signal: AbortSignal,
   quoteInput: QuoteInput,
   delayMs: number,
-  onResult: (result: QuoteResult) => void
+  onResult: (result: AggregatedQuote) => void
 ): void {
   pollQuoteLoop(signal, quoteInput, delayMs, onResult).catch((error) =>
     logger.error(
@@ -113,7 +113,7 @@ async function pollQuoteLoop(
   signal: AbortSignal,
   quoteInput: QuoteInput,
   delayMs: number,
-  onResult: (result: QuoteResult) => void
+  onResult: (result: AggregatedQuote) => void
 ): Promise<void> {
   let lastPropagatedResultRequestedAt: number | null = null
 

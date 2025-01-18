@@ -18,10 +18,9 @@ import { providers } from "near-api-js"
 import { Fragment, type ReactNode, useEffect } from "react"
 import { Controller, useForm } from "react-hook-form"
 import { useTokensUsdPrices } from "src/hooks/useTokensUsdPrices"
-import type { SwappableToken } from "src/types/swap"
 import { formatTokenValue, formatUsdAmount } from "src/utils/format"
 import getTokenUsdPrice from "src/utils/getTokenUsdPrice"
-import type { ActorRefFrom, SnapshotFrom } from "xstate"
+import type { ActorRefFrom } from "xstate"
 import { ButtonCustom } from "../../../../components/Button/ButtonCustom"
 import { EmptyIcon } from "../../../../components/EmptyIcon"
 import { Form } from "../../../../components/Form"
@@ -29,7 +28,6 @@ import { FieldComboInput } from "../../../../components/Form/FieldComboInput"
 import { WithdrawIntentCard } from "../../../../components/IntentCard/WithdrawIntentCard"
 import { NetworkIcon } from "../../../../components/Network/NetworkIcon"
 import { Select } from "../../../../components/Select/Select"
-import type { depositedBalanceMachine } from "../../../../features/machines/depositedBalanceMachine"
 import { useModalController } from "../../../../hooks/useModalController"
 import { logger } from "../../../../logger"
 import { useTokensStore } from "../../../../providers/TokensStoreProvider"
@@ -50,7 +48,6 @@ import type { PreparationOutput } from "../../../machines/prepareWithdrawActor"
 import { parseDestinationMemo } from "../../../machines/withdrawFormReducer"
 import {
   balanceSelector,
-  extractTransitBalance,
   renderIntentCreationResult,
 } from "../../../swap/components/SwapForm"
 import { usePublicKeyModalOpener } from "../../../swap/hooks/usePublicKeyModalOpener"
@@ -58,7 +55,6 @@ import { WithdrawUIMachineContext } from "../../WithdrawUIMachineContext"
 import LongWithdrawWarning from "./LongWithdrawWarning"
 import {
   isLiquidityUnavailableSelector,
-  isUnsufficientTokenInAmount,
   totalAmountReceivedSelector,
 } from "./selectors"
 
@@ -87,7 +83,6 @@ export const WithdrawForm = ({
     intentCreationResult,
     intentRefs,
     noLiquidity,
-    insufficientTokenInAmount,
     totalAmountReceived,
   } = WithdrawUIMachineContext.useSelector((state) => {
     return {
@@ -99,7 +94,6 @@ export const WithdrawForm = ({
       intentCreationResult: state.context.intentCreationResult,
       intentRefs: state.context.intentRefs,
       noLiquidity: isLiquidityUnavailableSelector(state),
-      insufficientTokenInAmount: isUnsufficientTokenInAmount(state),
       totalAmountReceived: totalAmountReceivedSelector(state),
     }
   })
@@ -146,11 +140,6 @@ export const WithdrawForm = ({
   const tokenInBalance = useSelector(
     depositedBalanceRef,
     balanceSelector(token)
-  )
-
-  const tokenInTransitBalance = useSelector(
-    depositedBalanceRef,
-    transitBalanceSelector(token)
   )
 
   const { data: tokensUsdPriceData } = useTokensUsdPrices()
@@ -345,7 +334,6 @@ export const WithdrawForm = ({
               }
               errors={errors}
               balance={tokenInBalance}
-              transitBalance={tokenInTransitBalance ?? undefined}
               register={register}
               usdAmount={
                 tokenToWithdrawUsdAmount
@@ -507,10 +495,10 @@ export const WithdrawForm = ({
 
             <ButtonCustom
               size="lg"
-              disabled={state.matches("submitting") || noLiquidity}
+              disabled={state.matches("submitting") || !!noLiquidity}
               isLoading={state.matches("submitting")}
             >
-              {renderWithdrawButtonText(noLiquidity, insufficientTokenInAmount)}
+              {noLiquidity ? "No liquidity providers" : "Withdraw"}
             </ButtonCustom>
           </Flex>
         </Form>
@@ -522,15 +510,6 @@ export const WithdrawForm = ({
       </Flex>
     </div>
   )
-}
-
-function renderWithdrawButtonText(
-  noLiquidity: boolean,
-  insufficientTokenInAmount: boolean
-) {
-  if (noLiquidity) return "No liquidity providers"
-  if (insufficientTokenInAmount) return "Insufficient amount"
-  return "Withdraw"
 }
 
 const allBlockchains = [
@@ -693,8 +672,7 @@ function renderPreparationResult(preparationOutput: PreparationOutput | null) {
     case "ERR_AMOUNT_TOO_LOW":
       content = `Need ${formatTokenValue(err.minWithdrawalAmount - err.receivedAmount, err.token.decimals)} ${err.token.symbol} more to withdraw`
       break
-    case "NO_QUOTES":
-    case "INSUFFICIENT_AMOUNT":
+    case "ERR_EMPTY_QUOTE":
       // Don't duplicate error messages, message should be displayed in the submit button
       break
     case "ERR_CANNOT_FETCH_QUOTE":
@@ -759,11 +737,4 @@ function chainTypeSatisfiesChainName(
 
 function truncateUserAddress(hash: string) {
   return `${hash.slice(0, 6)}...${hash.slice(-4)}`
-}
-
-export function transitBalanceSelector(token: SwappableToken) {
-  return (state: undefined | SnapshotFrom<typeof depositedBalanceMachine>) => {
-    if (!state) return null
-    return extractTransitBalance(token, state.context.transitBalances)
-  }
 }

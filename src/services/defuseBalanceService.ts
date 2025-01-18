@@ -4,7 +4,6 @@ import { settings } from "../config/settings"
 import type { BaseTokenInfo } from "../types/base"
 import { assert } from "../utils/assert"
 import type { DefuseUserId } from "../utils/defuse"
-import { getDepositStatus } from "./poaBridgeClient"
 
 type TokenBalances = Record<BaseTokenInfo["defuseAssetId"], bigint>
 
@@ -45,28 +44,6 @@ export async function getDepositedBalances(
   for (let i = 0; i < tokenIds.length; i++) {
     // biome-ignore lint/style/noNonNullAssertion: always within bounds
     result[tokenIds[i]!] = BigInt(parsed[i])
-  }
-
-  return result
-}
-
-export async function getTransitBalances(
-  accountId: DefuseUserId,
-  tokenIds: BaseTokenInfo["defuseAssetId"][]
-): Promise<TokenBalances> {
-  const depositStatus = await getDepositStatus({
-    account_id: accountId,
-  })
-
-  const result: TokenBalances = {}
-  for (const deposit of depositStatus.deposits) {
-    if (
-      // POA bridge returns token IDs without the 'nep141:' prefix (e.g. 'base.omft.near')
-      tokenIds.includes(`nep141:${deposit.near_token_id}`) &&
-      deposit.status === "PENDING"
-    ) {
-      result[`nep141:${deposit.near_token_id}`] = BigInt(deposit.amount)
-    }
   }
 
   return result
