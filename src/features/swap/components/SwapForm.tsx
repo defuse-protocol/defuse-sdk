@@ -12,7 +12,6 @@ import { useFormContext } from "react-hook-form"
 import { useTokensUsdPrices } from "src/hooks/useTokensUsdPrices"
 import { formatUsdAmount } from "src/utils/format"
 import getTokenUsdPrice from "src/utils/getTokenUsdPrice"
-import { isBaseToken } from "src/utils/token"
 import type { ActorRefFrom, SnapshotFrom } from "xstate"
 import { ButtonCustom } from "../../../components/Button/ButtonCustom"
 import { ButtonSwitch } from "../../../components/Button/ButtonSwitch"
@@ -24,10 +23,7 @@ import { useModalStore } from "../../../providers/ModalStoreProvider"
 import { ModalType } from "../../../stores/modalStore"
 import type { SwappableToken } from "../../../types/swap"
 import { computeTotalBalance } from "../../../utils/tokenUtils"
-import type {
-  BalanceMapping,
-  depositedBalanceMachine,
-} from "../../machines/depositedBalanceMachine"
+import type { depositedBalanceMachine } from "../../machines/depositedBalanceMachine"
 import type { intentStatusMachine } from "../../machines/intentStatusMachine"
 import type { Context } from "../../machines/swapUIMachine"
 import { SwapSubmitterContext } from "./SwapSubmitter"
@@ -160,11 +156,6 @@ export const SwapForm = ({ onNavigateDeposit }: SwapFormProps) => {
     balanceSelector(tokenOut)
   )
 
-  const tokenInTransitBalance = useSelector(
-    depositedBalanceRef,
-    transitBalanceSelector(tokenIn)
-  )
-
   const balanceInsufficient =
     tokenInBalance != null && snapshot.context.parsedFormValues.amountIn != null
       ? tokenInBalance < snapshot.context.parsedFormValues.amountIn
@@ -205,7 +196,6 @@ export const SwapForm = ({ onNavigateDeposit }: SwapFormProps) => {
           errors={errors}
           usdAmount={usdAmountIn ? `~${formatUsdAmount(usdAmountIn)}` : null}
           balance={tokenInBalance}
-          transitBalance={tokenInTransitBalance ?? undefined}
         />
 
         <div className="relative w-full">
@@ -379,27 +369,4 @@ export function balanceSelector(token: SwappableToken) {
     if (!state) return
     return computeTotalBalance(token, state.context.balances)
   }
-}
-
-export function transitBalanceSelector(token: SwappableToken) {
-  return (state: undefined | SnapshotFrom<typeof depositedBalanceMachine>) => {
-    if (!state) return null
-    return extractTransitBalance(token, state.context.transitBalances)
-  }
-}
-
-export function extractTransitBalance(
-  token: SwappableToken,
-  transits: BalanceMapping
-): bigint | null {
-  if (isBaseToken(token)) {
-    const transitBalance = transits[token.defuseAssetId]
-    return transitBalance ?? null
-  }
-  const derivedToken = token.groupedTokens.find(
-    (t) => transits[t.defuseAssetId]
-  )
-  if (!derivedToken) return null
-  const transitBalance = transits[derivedToken.defuseAssetId]
-  return transitBalance ?? null
 }
