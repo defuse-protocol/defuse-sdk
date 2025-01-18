@@ -20,6 +20,7 @@ import { FieldComboInput } from "../../../components/Form/FieldComboInput"
 import { SwapIntentCard } from "../../../components/IntentCard/SwapIntentCard"
 import type { ModalSelectAssetsPayload } from "../../../components/Modal/ModalSelectAssets"
 import { useModalStore } from "../../../providers/ModalStoreProvider"
+import { isAggregatedQuoteEmpty } from "../../../services/quoteService"
 import { ModalType } from "../../../stores/modalStore"
 import type { SwappableToken } from "../../../types/swap"
 import { computeTotalBalance } from "../../../utils/tokenUtils"
@@ -52,26 +53,20 @@ export const SwapForm = ({ onNavigateDeposit }: SwapFormProps) => {
   const intentCreationResult = snapshot.context.intentCreationResult
   const { data: tokensUsdPriceData } = useTokensUsdPrices()
 
-  const { tokenIn, tokenOut, noLiquidity, insufficientTokenInAmount } =
-    SwapUIMachineContext.useSelector((snapshot) => {
+  const { tokenIn, tokenOut, noLiquidity } = SwapUIMachineContext.useSelector(
+    (snapshot) => {
       const tokenIn = snapshot.context.formValues.tokenIn
       const tokenOut = snapshot.context.formValues.tokenOut
       const noLiquidity =
-        snapshot.context.quote &&
-        snapshot.context.quote.tag === "err" &&
-        snapshot.context.quote.value.type === "NO_QUOTES"
-      const insufficientTokenInAmount =
-        snapshot.context.quote &&
-        snapshot.context.quote.tag === "err" &&
-        snapshot.context.quote.value.type === "INSUFFICIENT_AMOUNT"
+        snapshot.context.quote && isAggregatedQuoteEmpty(snapshot.context.quote)
 
       return {
         tokenIn,
         tokenOut,
-        noLiquidity: Boolean(noLiquidity),
-        insufficientTokenInAmount: Boolean(insufficientTokenInAmount),
+        noLiquidity,
       }
-    })
+    }
+  )
 
   // we need stable references to allow passing to useEffect
   const switchTokens = useCallback(() => {
@@ -159,7 +154,7 @@ export const SwapForm = ({ onNavigateDeposit }: SwapFormProps) => {
   const balanceInsufficient =
     tokenInBalance != null && snapshot.context.parsedFormValues.amountIn != null
       ? tokenInBalance < snapshot.context.parsedFormValues.amountIn
-      : false
+      : null
 
   const showDepositButton =
     tokenInBalance != null && tokenInBalance === 0n && onNavigateDeposit != null
@@ -234,15 +229,13 @@ export const SwapForm = ({ onNavigateDeposit }: SwapFormProps) => {
               size="lg"
               fullWidth
               isLoading={snapshot.matches("submitting")}
-              disabled={
-                balanceInsufficient || noLiquidity || insufficientTokenInAmount
-              }
+              disabled={!!balanceInsufficient || !!noLiquidity}
             >
-              {renderSwapButtonText(
-                noLiquidity,
-                balanceInsufficient,
-                insufficientTokenInAmount
-              )}
+              {noLiquidity
+                ? "No liquidity providers"
+                : balanceInsufficient
+                  ? "Insufficient Balance"
+                  : "Swap"}
             </ButtonCustom>
           )}
         </Flex>
@@ -271,17 +264,6 @@ function Intents({
       })}
     </div>
   )
-}
-
-function renderSwapButtonText(
-  noLiquidity: boolean,
-  balanceInsufficient: boolean,
-  insufficientTokenInAmount: boolean
-) {
-  if (noLiquidity) return "No liquidity providers"
-  if (balanceInsufficient) return "Insufficient Balance"
-  if (insufficientTokenInAmount) return "Insufficient amount"
-  return "Swap"
 }
 
 export function renderIntentCreationResult(

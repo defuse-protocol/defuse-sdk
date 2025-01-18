@@ -9,7 +9,10 @@ import {
 } from "xstate"
 import { settings } from "../../config/settings"
 import { logger } from "../../logger"
-import type { QuoteResult } from "../../services/quoteService"
+import {
+  type AggregatedQuote,
+  isAggregatedQuoteEmpty,
+} from "../../services/quoteService"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../types/base"
 import type { ChainType, Transaction } from "../../types/deposit"
 import { assert } from "../../utils/assert"
@@ -127,7 +130,7 @@ export const withdrawUIMachine = setup({
     },
 
     setQuote: assign({
-      preparationOutput: ({ context }, value: QuoteResult) => {
+      preparationOutput: ({ context }, value: AggregatedQuote) => {
         if (
           context.preparationOutput == null ||
           context.preparationOutput.tag === "err" ||
@@ -284,13 +287,12 @@ export const withdrawUIMachine = setup({
       {
         balances,
         quote,
-      }: { balances: BalanceMapping; quote: QuoteResult | null }
+      }: { balances: BalanceMapping; quote: AggregatedQuote | null }
     ) => {
       // No quote - no need to check balances
-      if (quote === null) return true
-      if (quote.tag === "err") return true
+      if (quote == null) return true
 
-      for (const [token, amount] of Object.entries(quote.value.amountsIn)) {
+      for (const [token, amount] of Object.entries(quote.amountsIn)) {
         // We need to know balances of all tokens involved in the swap
         const balance = balances[token]
         if (balance == null || balance < amount) {
@@ -334,7 +336,8 @@ export const withdrawUIMachine = setup({
       return context.preparationOutput?.tag === "ok"
     },
 
-    isQuoteOk: (_, quote: QuoteResult) => quote.tag === "ok",
+    isQuoteNotEmpty: (_, quote: AggregatedQuote) =>
+      !isAggregatedQuoteEmpty(quote),
 
     isOk: (_, a: { tag: "err" | "ok" }) => a.tag === "ok",
   },
@@ -451,6 +454,10 @@ export const withdrawUIMachine = setup({
         ],
 
         NEW_QUOTE: {
+          guard: {
+            type: "isQuoteNotEmpty",
+            params: ({ event }) => event.params.quote,
+          },
           actions: {
             type: "setQuote",
             params: ({ event }) => event.params.quote,
@@ -550,10 +557,7 @@ export const withdrawUIMachine = setup({
           const formValues = context.withdrawFormRef.getSnapshot().context
           const recipient = formValues.parsedRecipient
           assert(recipient, "recipient is null")
-          const quote =
-            context.preparationOutput.value.swap?.swapQuote.tag === "ok"
-              ? context.preparationOutput.value.swap?.swapQuote.value
-              : null
+
           return {
             userAddress: context.submitDeps.userAddress,
             userChainType: context.submitDeps.userChainType,
@@ -566,7 +570,7 @@ export const withdrawUIMachine = setup({
             intentOperationParams: {
               type: "withdraw",
               tokenOut: formValues.tokenOut,
-              quote,
+              quote: context.preparationOutput.value.swap?.swapQuote || null,
               nep141Storage: context.preparationOutput.value.nep141Storage,
               directWithdrawalAmount:
                 context.preparationOutput.value.directWithdrawAvailable,
@@ -616,7 +620,7 @@ export const withdrawUIMachine = setup({
       on: {
         NEW_QUOTE: {
           guard: {
-            type: "isQuoteOk",
+            type: "isQuoteNotEmpty",
             params: ({ event }) => event.params.quote,
           },
           actions: [

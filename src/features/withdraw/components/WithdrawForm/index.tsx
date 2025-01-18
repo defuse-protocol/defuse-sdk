@@ -55,7 +55,6 @@ import { WithdrawUIMachineContext } from "../../WithdrawUIMachineContext"
 import LongWithdrawWarning from "./LongWithdrawWarning"
 import {
   isLiquidityUnavailableSelector,
-  isUnsufficientTokenInAmount,
   totalAmountReceivedSelector,
 } from "./selectors"
 
@@ -84,7 +83,6 @@ export const WithdrawForm = ({
     intentCreationResult,
     intentRefs,
     noLiquidity,
-    insufficientTokenInAmount,
     totalAmountReceived,
   } = WithdrawUIMachineContext.useSelector((state) => {
     return {
@@ -96,7 +94,6 @@ export const WithdrawForm = ({
       intentCreationResult: state.context.intentCreationResult,
       intentRefs: state.context.intentRefs,
       noLiquidity: isLiquidityUnavailableSelector(state),
-      insufficientTokenInAmount: isUnsufficientTokenInAmount(state),
       totalAmountReceived: totalAmountReceivedSelector(state),
     }
   })
@@ -498,10 +495,10 @@ export const WithdrawForm = ({
 
             <ButtonCustom
               size="lg"
-              disabled={state.matches("submitting") || noLiquidity}
+              disabled={state.matches("submitting") || !!noLiquidity}
               isLoading={state.matches("submitting")}
             >
-              {renderWithdrawButtonText(noLiquidity, insufficientTokenInAmount)}
+              {noLiquidity ? "No liquidity providers" : "Withdraw"}
             </ButtonCustom>
           </Flex>
         </Form>
@@ -513,15 +510,6 @@ export const WithdrawForm = ({
       </Flex>
     </div>
   )
-}
-
-function renderWithdrawButtonText(
-  noLiquidity: boolean,
-  insufficientTokenInAmount: boolean
-) {
-  if (noLiquidity) return "No liquidity providers"
-  if (insufficientTokenInAmount) return "Insufficient amount"
-  return "Withdraw"
 }
 
 const allBlockchains = [
@@ -684,8 +672,7 @@ function renderPreparationResult(preparationOutput: PreparationOutput | null) {
     case "ERR_AMOUNT_TOO_LOW":
       content = `Need ${formatTokenValue(err.minWithdrawalAmount - err.receivedAmount, err.token.decimals)} ${err.token.symbol} more to withdraw`
       break
-    case "NO_QUOTES":
-    case "INSUFFICIENT_AMOUNT":
+    case "ERR_EMPTY_QUOTE":
       // Don't duplicate error messages, message should be displayed in the submit button
       break
     case "ERR_CANNOT_FETCH_QUOTE":
