@@ -336,7 +336,8 @@ export const WithdrawForm = ({
               balance={tokenInBalance}
               register={register}
               usdAmount={
-                tokenToWithdrawUsdAmount
+                tokenToWithdrawUsdAmount !== null &&
+                tokenToWithdrawUsdAmount > 0
                   ? `~${formatUsdAmount(tokenToWithdrawUsdAmount)}`
                   : null
               }
