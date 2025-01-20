@@ -12,6 +12,7 @@ import { useFormContext } from "react-hook-form"
 import { useTokensUsdPrices } from "src/hooks/useTokensUsdPrices"
 import { formatUsdAmount } from "src/utils/format"
 import getTokenUsdPrice from "src/utils/getTokenUsdPrice"
+import { isBaseToken } from "src/utils/token"
 import type { ActorRefFrom, SnapshotFrom } from "xstate"
 import { ButtonCustom } from "../../../components/Button/ButtonCustom"
 import { ButtonSwitch } from "../../../components/Button/ButtonSwitch"
@@ -20,11 +21,13 @@ import { FieldComboInput } from "../../../components/Form/FieldComboInput"
 import { SwapIntentCard } from "../../../components/IntentCard/SwapIntentCard"
 import type { ModalSelectAssetsPayload } from "../../../components/Modal/ModalSelectAssets"
 import { useModalStore } from "../../../providers/ModalStoreProvider"
-import { isAggregatedQuoteEmpty } from "../../../services/quoteService"
 import { ModalType } from "../../../stores/modalStore"
 import type { SwappableToken } from "../../../types/swap"
 import { computeTotalBalance } from "../../../utils/tokenUtils"
-import type { depositedBalanceMachine } from "../../machines/depositedBalanceMachine"
+import type {
+  BalanceMapping,
+  depositedBalanceMachine,
+} from "../../machines/depositedBalanceMachine"
 import type { intentStatusMachine } from "../../machines/intentStatusMachine"
 import type { Context } from "../../machines/swapUIMachine"
 import { SwapSubmitterContext } from "./SwapSubmitter"
@@ -53,20 +56,26 @@ export const SwapForm = ({ onNavigateDeposit }: SwapFormProps) => {
   const intentCreationResult = snapshot.context.intentCreationResult
   const { data: tokensUsdPriceData } = useTokensUsdPrices()
 
-  const { tokenIn, tokenOut, noLiquidity } = SwapUIMachineContext.useSelector(
-    (snapshot) => {
+  const { tokenIn, tokenOut, noLiquidity, insufficientTokenInAmount } =
+    SwapUIMachineContext.useSelector((snapshot) => {
       const tokenIn = snapshot.context.formValues.tokenIn
       const tokenOut = snapshot.context.formValues.tokenOut
       const noLiquidity =
-        snapshot.context.quote && isAggregatedQuoteEmpty(snapshot.context.quote)
+        snapshot.context.quote &&
+        snapshot.context.quote.tag === "err" &&
+        snapshot.context.quote.value.type === "NO_QUOTES"
+      const insufficientTokenInAmount =
+        snapshot.context.quote &&
+        snapshot.context.quote.tag === "err" &&
+        snapshot.context.quote.value.type === "INSUFFICIENT_AMOUNT"
 
       return {
         tokenIn,
         tokenOut,
-        noLiquidity,
+        noLiquidity: Boolean(noLiquidity),
+        insufficientTokenInAmount: Boolean(insufficientTokenInAmount),
       }
-    }
-  )
+    })
 
   // we need stable references to allow passing to useEffect
   const switchTokens = useCallback(() => {
@@ -151,10 +160,15 @@ export const SwapForm = ({ onNavigateDeposit }: SwapFormProps) => {
     balanceSelector(tokenOut)
   )
 
+  const tokenInTransitBalance = useSelector(
+    depositedBalanceRef,
+    transitBalanceSelector(tokenIn)
+  )
+
   const balanceInsufficient =
     tokenInBalance != null && snapshot.context.parsedFormValues.amountIn != null
       ? tokenInBalance < snapshot.context.parsedFormValues.amountIn
-      : null
+      : false
 
   const showDepositButton =
     tokenInBalance != null && tokenInBalance === 0n && onNavigateDeposit != null
@@ -191,6 +205,7 @@ export const SwapForm = ({ onNavigateDeposit }: SwapFormProps) => {
           errors={errors}
           usdAmount={usdAmountIn ? `~${formatUsdAmount(usdAmountIn)}` : null}
           balance={tokenInBalance}
+          transitBalance={tokenInTransitBalance ?? undefined}
         />
 
         <div className="relative w-full">
@@ -229,13 +244,15 @@ export const SwapForm = ({ onNavigateDeposit }: SwapFormProps) => {
               size="lg"
               fullWidth
               isLoading={snapshot.matches("submitting")}
-              disabled={!!balanceInsufficient || !!noLiquidity}
+              disabled={
+                balanceInsufficient || noLiquidity || insufficientTokenInAmount
+              }
             >
-              {noLiquidity
-                ? "No liquidity providers"
-                : balanceInsufficient
-                  ? "Insufficient Balance"
-                  : "Swap"}
+              {renderSwapButtonText(
+                noLiquidity,
+                balanceInsufficient,
+                insufficientTokenInAmount
+              )}
             </ButtonCustom>
           )}
         </Flex>
@@ -264,6 +281,17 @@ function Intents({
       })}
     </div>
   )
+}
+
+function renderSwapButtonText(
+  noLiquidity: boolean,
+  balanceInsufficient: boolean,
+  insufficientTokenInAmount: boolean
+) {
+  if (noLiquidity) return "No liquidity providers"
+  if (balanceInsufficient) return "Insufficient Balance"
+  if (insufficientTokenInAmount) return "Insufficient amount"
+  return "Swap"
 }
 
 export function renderIntentCreationResult(
@@ -351,4 +379,27 @@ export function balanceSelector(token: SwappableToken) {
     if (!state) return
     return computeTotalBalance(token, state.context.balances)
   }
+}
+
+export function transitBalanceSelector(token: SwappableToken) {
+  return (state: undefined | SnapshotFrom<typeof depositedBalanceMachine>) => {
+    if (!state) return null
+    return extractTransitBalance(token, state.context.transitBalances)
+  }
+}
+
+export function extractTransitBalance(
+  token: SwappableToken,
+  transits: BalanceMapping
+): bigint | null {
+  if (isBaseToken(token)) {
+    const transitBalance = transits[token.defuseAssetId]
+    return transitBalance ?? null
+  }
+  const derivedToken = token.groupedTokens.find(
+    (t) => transits[t.defuseAssetId]
+  )
+  if (!derivedToken) return null
+  const transitBalance = transits[derivedToken.defuseAssetId]
+  return transitBalance ?? null
 }

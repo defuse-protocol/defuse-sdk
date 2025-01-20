@@ -3,7 +3,15 @@ import { logger } from "../logger"
 import type { BaseTokenInfo } from "../types/base"
 import { computeTotalBalance } from "../utils/tokenUtils"
 import { quote } from "./solverRelayHttpClient"
-import type { QuoteResponse } from "./solverRelayHttpClient/types"
+import type {
+  FailedQuote,
+  Quote,
+  QuoteResponse,
+} from "./solverRelayHttpClient/types"
+
+function isFailedQuote(quote: Quote | FailedQuote): quote is FailedQuote {
+  return "type" in quote
+}
 
 export interface AggregatedQuoteParams {
   tokensIn: string[] // set of close tokens, e.g. [USDC on Solana, USDC on Ethereum, USDC on Near]
@@ -27,16 +35,19 @@ export interface AggregatedQuote {
 
 type QuoteResults = QuoteResponse["result"]
 
-const BLANK_AGGREGATED_QUOTE: AggregatedQuote = Object.freeze({
-  quoteHashes: [],
-  expirationTime: new Date(0).toISOString(),
-  totalAmountIn: 0n,
-  totalAmountOut: 0n,
-  amountsIn: {},
-  amountsOut: {},
-  tokenDeltas: [],
-})
-
+export type QuoteResult =
+  | {
+      tag: "ok"
+      value: AggregatedQuote
+    }
+  | {
+      tag: "err"
+      value:
+        | FailedQuote
+        | {
+            type: "NO_QUOTES"
+          }
+    }
 export async function queryQuote(
   input: AggregatedQuoteParams,
   {
@@ -44,7 +55,7 @@ export async function queryQuote(
   }: {
     signal?: AbortSignal
   } = {}
-): Promise<AggregatedQuote> {
+): Promise<QuoteResult> {
   // Sanity checks
   const tokenOut = input.tokensOut[0]
   assert(tokenOut != null, "tokensOut is empty")
@@ -67,7 +78,12 @@ export async function queryQuote(
     )
 
     if (q == null) {
-      return BLANK_AGGREGATED_QUOTE
+      return {
+        tag: "err",
+        value: {
+          type: "NO_QUOTES",
+        },
+      }
     }
 
     return aggregateQuotes([q])
@@ -84,7 +100,12 @@ export async function queryQuote(
   })
 
   if (quotes == null) {
-    return BLANK_AGGREGATED_QUOTE
+    return {
+      tag: "err",
+      value: {
+        type: "NO_QUOTES",
+      },
+    }
   }
 
   return aggregateQuotes(quotes)
@@ -98,7 +119,7 @@ export async function queryQuoteExactOut(
     minDeadlineMs?: number
   },
   { signal }: { signal?: AbortSignal } = {}
-): Promise<AggregatedQuote> {
+): Promise<QuoteResult> {
   const quotes = await quoteWithLog(
     {
       defuse_asset_identifier_in: input.tokenIn,
@@ -110,30 +131,63 @@ export async function queryQuoteExactOut(
   )
 
   if (quotes == null) {
-    return BLANK_AGGREGATED_QUOTE
+    return {
+      tag: "err",
+      value: {
+        type: "NO_QUOTES",
+      },
+    }
   }
 
-  quotes.sort((a, b) => {
+  const failedQuotes: FailedQuote[] = []
+  const validQuotes = []
+  for (const q of quotes) {
+    if (isFailedQuote(q)) {
+      failedQuotes.push(q)
+    } else {
+      validQuotes.push(q)
+    }
+  }
+
+  validQuotes.sort((a, b) => {
     // Sort by `amount_in` in ascending order, because backend does not sort
     if (BigInt(a.amount_in) < BigInt(b.amount_in)) return -1
     if (BigInt(a.amount_in) > BigInt(b.amount_in)) return 1
     return 0
   })
 
-  const bestQuote = quotes[0]
-  assert(bestQuote != null, "No valid quotes")
+  const bestQuote = validQuotes[0]
+
+  if (bestQuote) {
+    return {
+      tag: "ok",
+      value: {
+        quoteHashes: [bestQuote.quote_hash],
+        expirationTime: bestQuote.expiration_time,
+        totalAmountIn: BigInt(bestQuote.amount_in),
+        totalAmountOut: BigInt(bestQuote.amount_out),
+        amountsIn: { [input.tokenIn]: BigInt(bestQuote.amount_in) },
+        amountsOut: { [input.tokenOut]: BigInt(bestQuote.amount_out) },
+        tokenDeltas: [
+          [input.tokenIn, -BigInt(bestQuote.amount_in)],
+          [input.tokenOut, BigInt(bestQuote.amount_out)],
+        ],
+      },
+    }
+  }
+
+  if (failedQuotes[0]) {
+    return {
+      tag: "err",
+      value: failedQuotes[0],
+    }
+  }
 
   return {
-    quoteHashes: [bestQuote.quote_hash],
-    expirationTime: bestQuote.expiration_time,
-    totalAmountIn: BigInt(bestQuote.amount_in),
-    totalAmountOut: BigInt(bestQuote.amount_out),
-    amountsIn: { [input.tokenIn]: BigInt(bestQuote.amount_in) },
-    amountsOut: { [input.tokenOut]: BigInt(bestQuote.amount_out) },
-    tokenDeltas: [
-      [input.tokenIn, -BigInt(bestQuote.amount_in)],
-      [input.tokenOut, BigInt(bestQuote.amount_out)],
-    ],
+    tag: "err",
+    value: {
+      type: "NO_QUOTES",
+    },
   }
 }
 
@@ -179,7 +233,7 @@ export function calculateSplitAmounts(
 
 export function aggregateQuotes(
   quotes: NonNullable<QuoteResults>[]
-): AggregatedQuote {
+): QuoteResult {
   let totalAmountIn = 0n
   let totalAmountOut = 0n
   const amountsIn: Record<string, bigint> = {}
@@ -187,18 +241,30 @@ export function aggregateQuotes(
   const quoteHashes: string[] = []
   let expirationTime = Number.POSITIVE_INFINITY
   const tokenDeltas: [string, bigint][] = []
-
+  let quoteError: FailedQuote | null = null
   for (const qList of quotes) {
-    qList.sort((a, b) => {
-      // Sort by `amount_out` in descending order, because backend does not sort
+    const failedQuotes: FailedQuote[] = []
+    const validQuotes = []
+    for (const q of qList) {
+      if (isFailedQuote(q)) {
+        failedQuotes.push(q)
+      } else {
+        validQuotes.push(q)
+      }
+    }
+
+    validQuotes.sort((a, b) => {
       if (BigInt(a.amount_out) > BigInt(b.amount_out)) return -1
       if (BigInt(a.amount_out) < BigInt(b.amount_out)) return 1
       return 0
     })
 
-    const q = qList[0]
-    if (q === undefined) continue
+    const q = validQuotes[0]
+    if (failedQuotes[0]) {
+      if (quoteError === null) quoteError = failedQuotes[0]
+    }
 
+    if (q === undefined) continue
     const amountOut = BigInt(q.amount_out)
     const amountIn = BigInt(q.amount_in)
 
@@ -211,8 +277,10 @@ export function aggregateQuotes(
     )
 
     amountsIn[q.defuse_asset_identifier_in] ??= 0n
+    //@ts-ignore
     amountsIn[q.defuse_asset_identifier_in] += amountIn
     amountsOut[q.defuse_asset_identifier_out] ??= 0n
+    //@ts-ignore
     amountsOut[q.defuse_asset_identifier_out] += amountOut
 
     tokenDeltas.push([q.defuse_asset_identifier_in, -amountIn])
@@ -221,16 +289,37 @@ export function aggregateQuotes(
     quoteHashes.push(q.quote_hash)
   }
 
+  const noQuotes = quoteHashes.length === 0
+
+  if (noQuotes && quoteError !== null) {
+    return {
+      tag: "err",
+      value: quoteError,
+    }
+  }
+
+  if (noQuotes) {
+    return {
+      tag: "err",
+      value: {
+        type: "NO_QUOTES",
+      },
+    }
+  }
+
   return {
-    quoteHashes,
-    expirationTime: new Date(
-      expirationTime === Number.POSITIVE_INFINITY ? 0 : expirationTime
-    ).toISOString(),
-    totalAmountIn,
-    totalAmountOut,
-    amountsIn,
-    amountsOut,
-    tokenDeltas,
+    tag: "ok",
+    value: {
+      quoteHashes,
+      expirationTime: new Date(
+        expirationTime === Number.POSITIVE_INFINITY ? 0 : expirationTime
+      ).toISOString(),
+      totalAmountIn,
+      totalAmountOut,
+      amountsIn,
+      amountsOut,
+      tokenDeltas,
+    },
   }
 }
 
@@ -254,10 +343,6 @@ export async function fetchQuotesForTokens(
   )
 
   return ensureAllNonNull(quotes)
-}
-
-export function isAggregatedQuoteEmpty(a: AggregatedQuote): boolean {
-  return !a.quoteHashes.length || a.totalAmountOut === 0n
 }
 
 function ensureAllNonNull<T>(array: (T | null)[]): T[] | null {
