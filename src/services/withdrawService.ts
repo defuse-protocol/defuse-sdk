@@ -22,15 +22,12 @@ import type { BaseTokenInfo, UnifiedTokenInfo } from "../types/base"
 import { assert } from "../utils/assert"
 import { isBaseToken, isFungibleToken } from "../utils/token"
 import { getNEP141StorageRequired } from "./nep141StorageService"
-import {
-  type AggregatedQuote,
-  isAggregatedQuoteEmpty,
-  queryQuoteExactOut,
-} from "./quoteService"
+import { type QuoteResult, queryQuoteExactOut } from "./quoteService"
+import type { FAILED_QUOTES_TYPES } from "./solverRelayHttpClient/types"
 
 interface SwapRequirement {
   swapParams: QuoteInput
-  swapQuote: AggregatedQuote
+  swapQuote: QuoteResult
 }
 
 export type PreparationOutput =
@@ -54,7 +51,8 @@ export type PreparationOutput =
               | "ERR_NEP141_STORAGE"
               | "ERR_CANNOT_FETCH_POA_BRIDGE_INFO"
               | "ERR_CANNOT_FETCH_QUOTE"
-              | "ERR_EMPTY_QUOTE"
+              | "NO_QUOTES"
+              | "INSUFFICIENT_AMOUNT"
           }
         | {
             reason: "ERR_AMOUNT_TOO_LOW"
@@ -113,7 +111,7 @@ export async function prepareWithdraw(
       balances: balances.value,
     }
 
-    const swapQuote = await new Promise<AggregatedQuote>((resolve) => {
+    const swapQuote = await new Promise<QuoteResult>((resolve) => {
       backgroundQuoteRef.send({
         type: "NEW_QUOTE_INPUT",
         params: swapParams,
@@ -131,8 +129,11 @@ export async function prepareWithdraw(
     }
   }
 
-  if (swapRequirement && isAggregatedQuoteEmpty(swapRequirement.swapQuote)) {
-    return { tag: "err", value: { reason: "ERR_EMPTY_QUOTE" } }
+  if (swapRequirement && swapRequirement.swapQuote.tag === "err") {
+    return {
+      tag: "err",
+      value: { reason: swapRequirement.swapQuote.value.type },
+    }
   }
 
   const nep141Storage = await determineNEP141StorageRequirement(
@@ -152,7 +153,9 @@ export async function prepareWithdraw(
   )
 
   const receivedAmount = calcWithdrawAmount(
-    swapRequirement?.swapQuote ?? null,
+    swapRequirement?.swapQuote?.tag === "ok"
+      ? swapRequirement.swapQuote.value
+      : null,
     nep141Storage.value,
     directWithdrawAvailable
   )
@@ -198,7 +201,8 @@ async function determineNEP141StorageRequirement(
       value: {
         reason:
           | "ERR_NEP141_STORAGE"
-          | "ERR_EMPTY_QUOTE"
+          | FAILED_QUOTES_TYPES
+          | "NO_QUOTES"
           | "ERR_CANNOT_FETCH_QUOTE"
       }
     }
@@ -249,15 +253,15 @@ async function determineNEP141StorageRequirement(
       },
       { signal }
     )
-    if (isAggregatedQuoteEmpty(nep141StorageQuote)) {
-      return { tag: "err", value: { reason: "ERR_EMPTY_QUOTE" } }
+    if (nep141StorageQuote.tag === "err") {
+      return { tag: "err", value: { reason: nep141StorageQuote.value.type } }
     }
     return {
       tag: "ok",
       value: {
         type: "swap_needed",
         requiredStorageNEAR: nep141StorageRequired.value,
-        quote: nep141StorageQuote,
+        quote: nep141StorageQuote.value,
       },
     }
   } catch (err) {

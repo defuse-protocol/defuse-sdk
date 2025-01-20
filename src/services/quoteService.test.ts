@@ -59,16 +59,19 @@ describe("queryQuote()", () => {
       expect.any(Object)
     )
     expect(result).toEqual({
-      amountsIn: { token1: 150n },
-      amountsOut: { tokenOut: 200n },
-      expirationTime: "2024-01-15T12:02:00.000Z",
-      quoteHashes: ["q1"],
-      totalAmountIn: 150n,
-      totalAmountOut: 200n,
-      tokenDeltas: [
-        ["token1", -150n],
-        ["tokenOut", 200n],
-      ],
+      tag: "ok",
+      value: {
+        amountsIn: { token1: 150n },
+        amountsOut: { tokenOut: 200n },
+        expirationTime: "2024-01-15T12:02:00.000Z",
+        quoteHashes: ["q1"],
+        totalAmountIn: 150n,
+        totalAmountOut: 200n,
+        tokenDeltas: [
+          ["token1", -150n],
+          ["tokenOut", 200n],
+        ],
+      },
     })
   })
 
@@ -124,18 +127,21 @@ describe("queryQuote()", () => {
       expect.any(Object)
     )
     expect(result).toEqual({
-      amountsIn: { token1: 100n, token2: 50n },
-      amountsOut: { tokenOut: 30n },
-      expirationTime: "2024-01-15T12:01:30.000Z",
-      quoteHashes: ["q1", "q2"],
-      totalAmountIn: 150n,
-      totalAmountOut: 30n,
-      tokenDeltas: [
-        ["token1", -100n],
-        ["tokenOut", 20n],
-        ["token2", -50n],
-        ["tokenOut", 10n],
-      ],
+      tag: "ok",
+      value: {
+        amountsIn: { token1: 100n, token2: 50n },
+        amountsOut: { tokenOut: 30n },
+        expirationTime: "2024-01-15T12:01:30.000Z",
+        quoteHashes: ["q1", "q2"],
+        totalAmountIn: 150n,
+        totalAmountOut: 30n,
+        tokenDeltas: [
+          ["token1", -100n],
+          ["tokenOut", 20n],
+          ["token2", -50n],
+          ["tokenOut", 10n],
+        ],
+      },
     })
   })
 
@@ -177,16 +183,19 @@ describe("queryQuote()", () => {
     const result = await queryQuote(input)
 
     expect(result).toEqual({
-      amountsIn: { token1: 150n },
-      amountsOut: { tokenOut: 200n },
-      expirationTime: "2024-01-15T12:02:00.000Z",
-      quoteHashes: ["q2"],
-      totalAmountIn: 150n,
-      totalAmountOut: 200n,
-      tokenDeltas: [
-        ["token1", -150n],
-        ["tokenOut", 200n],
-      ],
+      tag: "ok",
+      value: {
+        amountsIn: { token1: 150n },
+        amountsOut: { tokenOut: 200n },
+        expirationTime: "2024-01-15T12:02:00.000Z",
+        quoteHashes: ["q2"],
+        totalAmountIn: 150n,
+        totalAmountOut: 200n,
+        tokenDeltas: [
+          ["token1", -150n],
+          ["tokenOut", 200n],
+        ],
+      },
     })
   })
 
@@ -203,23 +212,17 @@ describe("queryQuote()", () => {
       .mockImplementationOnce(async () => [])
 
     await expect(queryQuote(input)).resolves.toEqual({
-      amountsIn: {},
-      amountsOut: {},
-      expirationTime: "1970-01-01T00:00:00.000Z",
-      quoteHashes: [],
-      totalAmountIn: 0n,
-      totalAmountOut: 0n,
-      tokenDeltas: [],
+      tag: "err",
+      value: {
+        type: "NO_QUOTES",
+      },
     })
 
     await expect(queryQuote(input)).resolves.toEqual({
-      amountsIn: {},
-      amountsOut: {},
-      expirationTime: "1970-01-01T00:00:00.000Z",
-      quoteHashes: [],
-      totalAmountIn: 0n,
-      totalAmountOut: 0n,
-      tokenDeltas: [],
+      tag: "err",
+      value: {
+        type: "NO_QUOTES",
+      },
     })
   })
 
@@ -245,13 +248,10 @@ describe("queryQuote()", () => {
       .mockImplementationOnce(async () => null)
 
     await expect(queryQuote(input)).resolves.toEqual({
-      amountsIn: {},
-      amountsOut: {},
-      expirationTime: "1970-01-01T00:00:00.000Z",
-      quoteHashes: [],
-      totalAmountIn: 0n,
-      totalAmountOut: 0n,
-      tokenDeltas: [],
+      tag: "err",
+      value: {
+        type: "NO_QUOTES",
+      },
     })
   })
 
@@ -277,7 +277,7 @@ describe("queryQuote()", () => {
     const result = await queryQuote(input)
 
     expect(relayClient.quote).toHaveBeenCalledTimes(1)
-    expect(result.totalAmountIn).toBe(150n)
+    expect(result.tag === "ok" && result.value.totalAmountIn).toBe(150n)
   })
 })
 
@@ -340,17 +340,20 @@ it("aggregateQuotes(): aggregates quotes correctly", () => {
   const result = aggregateQuotes(quotes)
 
   expect(result).toEqual({
-    amountsIn: { token1: 100n, token2: 50n },
-    amountsOut: { tokenOut: 300n },
-    expirationTime: "2024-01-15T12:04:00.000Z",
-    quoteHashes: ["q1", "q2"],
-    totalAmountIn: 150n,
-    totalAmountOut: 300n,
-    tokenDeltas: [
-      ["token1", -100n],
-      ["tokenOut", 200n],
-      ["token2", -50n],
-      ["tokenOut", 100n],
-    ],
+    tag: "ok",
+    value: {
+      amountsIn: { token1: 100n, token2: 50n },
+      amountsOut: { tokenOut: 300n },
+      expirationTime: "2024-01-15T12:04:00.000Z",
+      quoteHashes: ["q1", "q2"],
+      totalAmountIn: 150n,
+      totalAmountOut: 300n,
+      tokenDeltas: [
+        ["token1", -100n],
+        ["tokenOut", 200n],
+        ["token2", -50n],
+        ["tokenOut", 100n],
+      ],
+    },
   })
 })

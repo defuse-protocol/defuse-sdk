@@ -10,10 +10,7 @@ import {
 } from "xstate"
 import { settings } from "../../config/settings"
 import { logger } from "../../logger"
-import {
-  type AggregatedQuote,
-  isAggregatedQuoteEmpty,
-} from "../../services/quoteService"
+import type { QuoteResult } from "../../services/quoteService"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../types/base"
 import type { ChainType, Transaction } from "../../types/deposit"
 import type { SwappableToken } from "../../types/swap"
@@ -39,7 +36,7 @@ import {
 
 export type Context = {
   error: Error | null
-  quote: AggregatedQuote | null
+  quote: QuoteResult | null
   formValues: {
     tokenIn: SwappableToken
     tokenOut: SwappableToken
@@ -154,7 +151,7 @@ export const swapUIMachine = setup({
       throw new Error("not implemented")
     },
     setQuote: assign({
-      quote: (_, value: AggregatedQuote) => value,
+      quote: (_, value: QuoteResult) => value,
     }),
     clearQuote: assign({ quote: null }),
     clearError: assign({ error: null }),
@@ -163,7 +160,6 @@ export const swapUIMachine = setup({
     }),
     clearIntentCreationResult: assign({ intentCreationResult: null }),
     passthroughEvent: emit((_, event: PassthroughEvent) => event),
-
     spawnBackgroundQuoterRef: spawnChild("backgroundQuoterActor", {
       id: "backgroundQuoterRef",
       input: ({ self }) => ({
@@ -257,10 +253,8 @@ export const swapUIMachine = setup({
       logger.warn(
         "Implement real check for fetched quotes if they're expired or not"
       )
-      return context.quote != null && !isAggregatedQuoteEmpty(context.quote)
+      return context.quote != null && context.quote.tag === "ok"
     },
-    isQuoteNotEmpty: (_, quote: AggregatedQuote) =>
-      !isAggregatedQuoteEmpty(quote),
 
     isOk: (_, a: { tag: "err" | "ok" }) => a.tag === "ok",
 
@@ -348,10 +342,6 @@ export const swapUIMachine = setup({
         },
 
         NEW_QUOTE: {
-          guard: {
-            type: "isQuoteNotEmpty",
-            params: ({ event }) => event.params.quote,
-          },
           actions: [
             {
               type: "setQuote",
@@ -406,10 +396,8 @@ export const swapUIMachine = setup({
           assertEvent(event, "submit")
 
           const quote = context.quote
-          if (!quote) {
-            throw new Error("quote not available")
-          }
-
+          assert(quote !== null, "non valid quote")
+          assert(quote.tag === "ok", "non valid quote")
           return {
             userAddress: event.params.userAddress,
             userChainType: event.params.userChainType,
@@ -419,7 +407,10 @@ export const swapUIMachine = setup({
             ),
             nearClient: event.params.nearClient,
             sendNearTransaction: event.params.sendNearTransaction,
-            intentOperationParams: { type: "swap" as const, quote },
+            intentOperationParams: {
+              type: "swap" as const,
+              quote: quote.value,
+            },
           }
         },
 
@@ -464,7 +455,7 @@ export const swapUIMachine = setup({
       on: {
         NEW_QUOTE: {
           guard: {
-            type: "isQuoteNotEmpty",
+            type: "isOk",
             params: ({ event }) => event.params.quote,
           },
           actions: [
