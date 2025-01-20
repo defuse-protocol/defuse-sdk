@@ -20,6 +20,7 @@ import type { SwappableToken } from "../../types/swap"
 import { assert } from "../../utils/assert"
 import { userAddressToDefuseUserId } from "../../utils/defuse"
 import { parseUnits } from "../../utils/parse"
+import { getAnyBaseTokenInfo } from "../../utils/tokenUtils"
 import {
   type Events as BackgroundQuoterEvents,
   type ParentEvents as BackgroundQuoterParentEvents,
@@ -188,8 +189,11 @@ export const swapUIMachine = setup({
           type: "NEW_QUOTE_INPUT",
           params: {
             tokenIn: context.formValues.tokenIn,
-            tokenOut: context.formValues.tokenOut,
-            amountIn: context.parsedFormValues.amountIn,
+            tokenOut: getAnyBaseTokenInfo(context.formValues.tokenOut),
+            amountIn: {
+              amount: context.parsedFormValues.amountIn,
+              decimals: context.formValues.tokenIn.decimals,
+            },
             balances: balances ?? {},
           },
         }

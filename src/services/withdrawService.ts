@@ -104,7 +104,10 @@ export async function prepareWithdraw(
   let swapRequirement: null | SwapRequirement = null
   if (swapNeeded.amount > 0n) {
     const swapParams = {
-      amountIn: swapNeeded.amount,
+      amountIn: {
+        amount: swapNeeded.amount,
+        decimals: formValues.tokenIn.decimals,
+      },
       tokensIn: swapNeeded.tokens,
       tokenOut: formValues.tokenOut,
       balances: balances.value,
