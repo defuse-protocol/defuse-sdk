@@ -57,6 +57,14 @@ export const publicKeyVerifierMachine = setup({
       error: (_, { error }: { error: ErrorCodes }) => error,
     }),
   },
+  guards: {
+    isNonNearAccount: ({ context }) => {
+      // Don't need to check public key if it is not Near account,
+      // because public key cannot change for non-Near accounts.
+      return context.nearAccount == null
+    },
+    isTrue: (_, value: boolean) => value,
+  },
 }).createMachine({
   /** @xstate-layout N4IgpgJg5mDOIC5QAcCuAjANgSwMYGkwBPANTACdsAzbCgOmwkzAGIBtABgF1EUB7WNgAu2PgDteIAB6IAjACYArHQBsigBybZK+QE5dHWQGZ5AGhBFE62XRN7tugOwAWWbsWKVAXy-m0WPEJSCmpacgYmVjZZHiQQZAFhUQk4mQQFZTVNax19QxNzSwR5dSM6DgNdayNnZxLPHz8MHAJiMkoaelwACzBcAGtsMSgWCHEwBjEANz5+iZ6+-oAFDCCAJTAqTlj+QRFxSTSVdXly40NtFRd1WsLEPVPHDgr1FWc1N0UjRvjmwLaQp1wgsBkMRmMxBMhjM5nQQctVsQNlsYpIEntkodEJ5HipdLInrp5G4bs47ggjNZbESCSZtDVHIofv4WkF2qEur1QcMWBRyHxwshMABDIRUAUAWzhXIR6HWm22aMS+xSoDSsg4RmUJKMul1RjxzgN5KUKlUeI47y1VUMjkczL+rWCHTC0sWkBYAEEACLegD6SwAqgAhAAyAEkAMJ+-AAUQAmoq4uikgdUohHLIbCpddpHKUOEpdCpyYo3HRjOpFCUOFdHFqHQEneygXRhRAIGDRuNJjCJu2ICs5UiFdwlRi02q5EZZJkZ4yrcd3Ipyc5XnR3O9nJrnHaFN9fL8m2zAa6B12IVDprN+x2h-KUTt4srMen0ios+V3PInnpM0SyQsRAtzoeQjGeIx-xqWR1F0RtWQBF16HPHk+QFOghVFcVyClAd7xHLYx2TF9J2kOQ3jNPVKT0HNrAqRxyRMZw6FePUdCuAxMxqHxDzEPgIDgNFHRPJDyHHVNVTIhAAFoSyAmTlH0fR1EcFQrg4etTXg-5nQ5cJGGYcSVSxBA6nJKtVC+eRa11fM8mcbTm1PTlFjBIzXynYoVLoRxdDqFSKg8azVJNRRHDoRR8Q-Cp1P0bxDxZHSW1deFIHc0i0i+M1YOcL4FDeSDZFLGCWNratng1d5q0ckS9LbDs3OIidJLSJx1FA2DnieRRnicXRV3cakCTxNQ9Ss+KmmPRC6twPgJSFMAhDSpqJJMy52pONiTBcDSXHJPy6FcbcNCULNiTtHivCAA */
   id: "publicKeyVerifier",
@@ -77,11 +85,7 @@ export const publicKeyVerifierMachine = setup({
       always: [
         {
           target: "completed",
-          guard: ({ context }) => {
-            // Don't need to check public key if it is not Near account,
-            // because public key cannot change for non-Near accounts.
-            return context.nearAccount == null
-          },
+          guard: "isNonNearAccount",
         },
         {
           target: "checking",
@@ -107,7 +111,10 @@ export const publicKeyVerifierMachine = setup({
         onDone: [
           {
             target: "completed",
-            guard: ({ event }) => event.output,
+            guard: {
+              type: "isTrue",
+              params: ({ event }) => event.output,
+            },
           },
           {
             target: "checked",
