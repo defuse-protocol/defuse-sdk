@@ -1,7 +1,11 @@
 import { settings } from "../config/settings"
 import { logger } from "../logger"
 import type { BaseTokenInfo, TokenValue } from "../types/base"
-import { computeTotalBalance } from "../utils/tokenUtils"
+import {
+  adjustDecimals,
+  compareAmounts,
+  computeTotalBalanceDifferentDecimals,
+} from "../utils/tokenUtils"
 import { quote } from "./solverRelayHttpClient"
 import type {
   FailedQuote,
@@ -13,7 +17,7 @@ function isFailedQuote(quote: Quote | FailedQuote): quote is FailedQuote {
   return "type" in quote
 }
 
-type TokenSlice = Pick<BaseTokenInfo, "defuseAssetId">
+type TokenSlice = BaseTokenInfo
 
 export interface AggregatedQuoteParams {
   tokensIn: TokenSlice[] // set of close tokens, e.g. [USDC on Solana, USDC on Ethereum, USDC on Near]
@@ -64,18 +68,26 @@ export async function queryQuote(
   const tokenIn = input.tokensIn[0]
   assert(tokenIn != null, "tokensIn is empty")
 
-  const totalAvailableIn = computeTotalBalance(
-    input.tokensIn.map((t) => t.defuseAssetId),
+  const totalAvailableIn = computeTotalBalanceDifferentDecimals(
+    input.tokensIn,
     input.balances
   )
 
   // If total available is less than requested, just quote the full amount from one token
-  if (totalAvailableIn == null || totalAvailableIn < input.amountIn.amount) {
+  if (
+    totalAvailableIn == null ||
+    compareAmounts(totalAvailableIn, input.amountIn) === -1
+  ) {
+    const exactAmountIn: bigint = adjustDecimals(
+      input.amountIn.amount,
+      input.amountIn.decimals,
+      tokenIn.decimals
+    )
     const q = await quoteWithLog(
       {
         defuse_asset_identifier_in: tokenIn.defuseAssetId,
         defuse_asset_identifier_out: tokenOut.defuseAssetId,
-        exact_amount_in: input.amountIn.amount.toString(),
+        exact_amount_in: exactAmountIn.toString(),
         min_deadline_ms: settings.quoteMinDeadlineMs,
       },
       { signal }
@@ -95,7 +107,7 @@ export async function queryQuote(
 
   const amountsToQuote = calculateSplitAmounts(
     input.tokensIn,
-    input.amountIn.amount,
+    input.amountIn,
     input.balances
   )
 
@@ -215,28 +227,62 @@ function assert(condition: unknown, msg?: string): asserts condition {
  */
 export function calculateSplitAmounts(
   tokensIn: TokenSlice[],
-  amountIn: bigint,
+  amountIn: TokenValue,
   balances: Record<string, bigint>
 ): Record<string, bigint> {
-  let remainingAmountIn = amountIn
   const amountsToQuote: Record<string, bigint> = {}
 
   // Deduplicate tokens
   const uniqueTokensIn = new Set(tokensIn)
 
+  let remainingAmount = amountIn.amount
+  const remainingDecimals = amountIn.decimals
+
   for (const tokenIn of uniqueTokensIn) {
     const availableIn = balances[tokenIn.defuseAssetId] ?? 0n
-    const amountToQuote = min(availableIn, remainingAmountIn)
+
+    // Convert remaining amount to token's decimals
+    const normalizedRemainingAmount = adjustDecimals(
+      remainingAmount,
+      remainingDecimals,
+      tokenIn.decimals
+    )
+
+    const amountToQuote = min(availableIn, normalizedRemainingAmount)
 
     if (amountToQuote > 0n) {
       amountsToQuote[tokenIn.defuseAssetId] = amountToQuote
-      remainingAmountIn -= amountToQuote
+
+      // Convert back to original decimals to subtract from remaining
+      remainingAmount -= adjustDecimals(
+        amountToQuote,
+        tokenIn.decimals,
+        remainingDecimals
+      )
     }
 
-    if (remainingAmountIn === 0n) break
+    if (remainingAmount === 0n) break
+  }
+
+  const totalAmountIn = computeTotalBalanceDifferentDecimals(
+    tokensIn.filter((t) => t.defuseAssetId in amountsToQuote),
+    amountsToQuote
+  )
+
+  if (totalAmountIn == null || compareAmounts(totalAmountIn, amountIn) !== 0) {
+    throw new AmountMismatchError(amountIn)
   }
 
   return amountsToQuote
+}
+
+export class AmountMismatchError extends Error {
+  constructor(requested: TokenValue) {
+    super(
+      `Unable to fulfill requested amount ${requested.amount} (decimals: ${requested.decimals}) from provided tokens`
+    )
+    this.name = "AmountMismatchError"
+  }
 }
 
 export function aggregateQuotes(
@@ -273,6 +319,7 @@ export function aggregateQuotes(
     }
 
     if (q === undefined) continue
+
     const amountOut = BigInt(q.amount_out)
     const amountIn = BigInt(q.amount_in)
 
@@ -285,10 +332,8 @@ export function aggregateQuotes(
     )
 
     amountsIn[q.defuse_asset_identifier_in] ??= 0n
-    //@ts-ignore
     amountsIn[q.defuse_asset_identifier_in] += amountIn
     amountsOut[q.defuse_asset_identifier_out] ??= 0n
-    //@ts-ignore
     amountsOut[q.defuse_asset_identifier_out] += amountOut
 
     tokenDeltas.push([q.defuse_asset_identifier_in, -amountIn])

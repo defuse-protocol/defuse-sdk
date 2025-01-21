@@ -1,24 +1,49 @@
-import { afterEach, describe, expect, it, vi } from "vitest"
+import { assert, afterEach, describe, expect, it, vi } from "vitest"
+import type { BaseTokenInfo, TokenValue } from "../types/base"
 import {
+  adjustDecimals,
+  computeTotalBalanceDifferentDecimals,
+} from "../utils/tokenUtils"
+import {
+  AmountMismatchError,
   aggregateQuotes,
   calculateSplitAmounts,
   queryQuote,
 } from "./quoteService"
-
 import * as relayClient from "./solverRelayHttpClient"
 
 vi.spyOn(relayClient, "quote")
 
+const tokenInfo: BaseTokenInfo = {
+  defuseAssetId: "",
+  address: "",
+  symbol: "",
+  name: "",
+  decimals: 0,
+  icon: "",
+  chainId: "",
+  chainIcon: "",
+  chainName: "eth",
+  routes: [],
+}
+
 const token1 = {
+  ...tokenInfo,
   defuseAssetId: "token1",
+  decimals: 6,
 }
 const token2 = {
+  ...tokenInfo,
   defuseAssetId: "token2",
+  decimals: 8,
 }
 const token3 = {
+  ...tokenInfo,
   defuseAssetId: "token3",
+  decimals: 18,
 }
 const tokenOut = {
+  ...tokenInfo,
   defuseAssetId: "tokenOut",
 }
 
@@ -31,8 +56,8 @@ describe("queryQuote()", () => {
     const input = {
       tokensIn: [token1],
       tokenOut: tokenOut,
-      amountIn: { amount: 150n, decimals: 6 },
-      balances: { token1: 100n },
+      amountIn: { amount: adjustDecimals(150n, 0, 6), decimals: 6 },
+      balances: { token1: adjustDecimals(100n, 0, 6) },
     }
 
     vi.mocked(relayClient.quote).mockImplementationOnce(async () => [
@@ -40,7 +65,7 @@ describe("queryQuote()", () => {
         quote_hash: "q1",
         defuse_asset_identifier_in: "token1",
         defuse_asset_identifier_out: "tokenOut",
-        amount_in: "150",
+        amount_in: "150000000",
         amount_out: "200",
         expiration_time: "2024-01-15T12:02:00.000Z",
       },
@@ -53,7 +78,7 @@ describe("queryQuote()", () => {
       {
         defuse_asset_identifier_in: "token1",
         defuse_asset_identifier_out: "tokenOut",
-        exact_amount_in: "150",
+        exact_amount_in: "150000000",
         min_deadline_ms: 60_000,
       },
       expect.any(Object)
@@ -61,14 +86,14 @@ describe("queryQuote()", () => {
     expect(result).toEqual({
       tag: "ok",
       value: {
-        amountsIn: { token1: 150n },
+        amountsIn: { token1: 150000000n },
         amountsOut: { tokenOut: 200n },
         expirationTime: "2024-01-15T12:02:00.000Z",
         quoteHashes: ["q1"],
-        totalAmountIn: 150n,
+        totalAmountIn: 150000000n,
         totalAmountOut: 200n,
         tokenDeltas: [
-          ["token1", -150n],
+          ["token1", -150000000n],
           ["tokenOut", 200n],
         ],
       },
@@ -79,8 +104,12 @@ describe("queryQuote()", () => {
     const input = {
       tokensIn: [token1, token2, token3],
       tokenOut: tokenOut,
-      amountIn: { amount: 150n, decimals: 6 },
-      balances: { token1: 100n, token2: 100n, token3: 100n },
+      amountIn: { amount: adjustDecimals(150n, 0, 6), decimals: 6 },
+      balances: {
+        token1: adjustDecimals(100n, 0, token1.decimals),
+        token2: adjustDecimals(100n, 0, token2.decimals),
+        token3: adjustDecimals(100n, 0, token3.decimals),
+      },
     }
 
     vi.mocked(relayClient.quote)
@@ -89,7 +118,7 @@ describe("queryQuote()", () => {
           quote_hash: "q1",
           defuse_asset_identifier_in: "token1",
           defuse_asset_identifier_out: "tokenOut",
-          amount_in: "100",
+          amount_in: "100000000",
           amount_out: "20",
           expiration_time: "2024-01-15T12:02:00.000Z",
         },
@@ -99,7 +128,7 @@ describe("queryQuote()", () => {
           quote_hash: "q2",
           defuse_asset_identifier_in: "token2",
           defuse_asset_identifier_out: "tokenOut",
-          amount_in: "50",
+          amount_in: "5000000000",
           amount_out: "10",
           expiration_time: "2024-01-15T12:01:30.000Z",
         },
@@ -112,7 +141,7 @@ describe("queryQuote()", () => {
       {
         defuse_asset_identifier_in: "token1",
         defuse_asset_identifier_out: "tokenOut",
-        exact_amount_in: "100",
+        exact_amount_in: "100000000",
         min_deadline_ms: 60_000,
       },
       expect.any(Object)
@@ -121,7 +150,7 @@ describe("queryQuote()", () => {
       {
         defuse_asset_identifier_in: "token2",
         defuse_asset_identifier_out: "tokenOut",
-        exact_amount_in: "50",
+        exact_amount_in: "5000000000",
         min_deadline_ms: 60_000,
       },
       expect.any(Object)
@@ -129,16 +158,16 @@ describe("queryQuote()", () => {
     expect(result).toEqual({
       tag: "ok",
       value: {
-        amountsIn: { token1: 100n, token2: 50n },
+        amountsIn: { token1: 100000000n, token2: 5000000000n },
         amountsOut: { tokenOut: 30n },
         expirationTime: "2024-01-15T12:01:30.000Z",
         quoteHashes: ["q1", "q2"],
-        totalAmountIn: 150n,
+        totalAmountIn: 5100000000n,
         totalAmountOut: 30n,
         tokenDeltas: [
-          ["token1", -100n],
+          ["token1", -100000000n],
           ["tokenOut", 20n],
-          ["token2", -50n],
+          ["token2", -5000000000n],
           ["tokenOut", 10n],
         ],
       },
@@ -149,8 +178,8 @@ describe("queryQuote()", () => {
     const input = {
       tokensIn: [token1],
       tokenOut: tokenOut,
-      amountIn: { amount: 150n, decimals: 6 },
-      balances: { token1: 100n },
+      amountIn: { amount: adjustDecimals(150n, 0, 6), decimals: 6 },
+      balances: { token1: adjustDecimals(100n, 0, token1.decimals) },
     }
 
     vi.mocked(relayClient.quote).mockImplementationOnce(async () => [
@@ -203,8 +232,8 @@ describe("queryQuote()", () => {
     const input = {
       tokensIn: [token1],
       tokenOut: tokenOut,
-      amountIn: { amount: 150n, decimals: 6 },
-      balances: { token1: 100n },
+      amountIn: { amount: adjustDecimals(150n, 0, 6), decimals: 6 },
+      balances: { token1: adjustDecimals(100n, 0, token1.decimals) },
     }
 
     vi.mocked(relayClient.quote)
@@ -230,8 +259,11 @@ describe("queryQuote()", () => {
     const input = {
       tokensIn: [token1, token2],
       tokenOut: tokenOut,
-      amountIn: { amount: 150n, decimals: 6 },
-      balances: { token1: 100n, token2: 100n },
+      amountIn: { amount: adjustDecimals(150n, 0, 6), decimals: 6 },
+      balances: {
+        token1: adjustDecimals(100n, 0, token1.decimals),
+        token2: adjustDecimals(100n, 0, token2.decimals),
+      },
     }
 
     vi.mocked(relayClient.quote)
@@ -259,8 +291,8 @@ describe("queryQuote()", () => {
     const input = {
       tokensIn: [token1, token1], // Duplicate token
       tokenOut: tokenOut,
-      amountIn: { amount: 150n, decimals: 6 },
-      balances: { token1: 100n },
+      amountIn: { amount: adjustDecimals(150n, 0, 6), decimals: 6 },
+      balances: { token1: adjustDecimals(100n, 0, token1.decimals) },
     }
 
     vi.mocked(relayClient.quote).mockImplementationOnce(async () => [
@@ -281,36 +313,225 @@ describe("queryQuote()", () => {
   })
 })
 
-it("calculateSplitAmounts(): splits amounts correctly", () => {
-  const tokensIn = [token1, token2, token3]
-  const amountIn = 150n
-  const balances = {
-    token1: 100n,
-    token2: 50n,
-    token3: 200n,
-  }
+describe("calculateSplitAmounts", () => {
+  it("splits amounts when same decimals", () => {
+    const tokensIn = [
+      { ...token1, decimals: 0 },
+      { ...token2, decimals: 0 },
+      { ...token3, decimals: 0 },
+    ]
+    const amountIn = { amount: 150n, decimals: 0 }
+    const balances = {
+      token1: 100n,
+      token2: 50n,
+      token3: 200n,
+    }
+    const result = calculateSplitAmounts(tokensIn, amountIn, balances)
+    expect(result).toEqual({
+      token1: 100n,
+      token2: 50n,
+    })
 
-  const result = calculateSplitAmounts(tokensIn, amountIn, balances)
-  expect(result).toEqual({
-    token1: 100n,
-    token2: 50n,
+    const total = sumTotal(tokensIn, result)
+    expect(
+      adjustDecimals(total.amount, total.decimals, amountIn.decimals)
+    ).toEqual(amountIn.amount)
   })
-})
 
-it("calculateSplitAmounts(): only considers each token's balance once when duplicated", () => {
-  const tokensIn = [token1, token1, token2, token2, token3]
-  const amountIn = 150n
-  const balances = {
-    token1: 100n,
-    token2: 50n,
-    token3: 200n,
-  }
+  it("splits amounts when different decimals", () => {
+    const tokensIn = [token1, token2, token3]
+    const amountIn = { amount: adjustDecimals(150n, 0, 6), decimals: 6 }
+    const balances = {
+      token1: adjustDecimals(100n, 0, token1.decimals),
+      token2: adjustDecimals(50n, 0, token2.decimals),
+      token3: adjustDecimals(200n, 0, token3.decimals),
+    }
 
-  const result = calculateSplitAmounts(tokensIn, amountIn, balances)
-  expect(result).toEqual({
-    token1: 100n,
-    token2: 50n,
+    const result = calculateSplitAmounts(tokensIn, amountIn, balances)
+    expect(result).toEqual({
+      token1: 100_000_000n,
+      token2: 5_000_000_000n,
+    })
+
+    const total = sumTotal(tokensIn, result)
+    expect(
+      adjustDecimals(total.amount, total.decimals, amountIn.decimals)
+    ).toEqual(amountIn.amount)
   })
+
+  it("only considers each token's balance once when duplicated", () => {
+    const tokensIn = [token1, token1, token2, token2, token3]
+    const amountIn = { amount: adjustDecimals(150n, 0, 6), decimals: 6 }
+    const balances = {
+      token1: adjustDecimals(100n, 0, token1.decimals),
+      token2: adjustDecimals(50n, 0, token2.decimals),
+      token3: adjustDecimals(200n, 0, token3.decimals),
+    }
+
+    const result = calculateSplitAmounts(tokensIn, amountIn, balances)
+    expect(result).toEqual({
+      token1: 100_000_000n,
+      token2: 5_000_000_000n,
+    })
+
+    const total = sumTotal(tokensIn, result)
+    expect(
+      adjustDecimals(total.amount, total.decimals, amountIn.decimals)
+    ).toEqual(amountIn.amount)
+  })
+
+  it("handles zero amount input", () => {
+    const tokensIn = [token1, token2]
+    const amountIn = { amount: 0n, decimals: 6 }
+    const balances = {
+      token1: adjustDecimals(100n, 0, token1.decimals),
+      token2: adjustDecimals(50n, 0, token2.decimals),
+    }
+
+    const result = calculateSplitAmounts(tokensIn, amountIn, balances)
+    expect(result).toEqual({})
+
+    const total = sumTotal(tokensIn, result)
+    expect(
+      adjustDecimals(total.amount, total.decimals, amountIn.decimals)
+    ).toEqual(amountIn.amount)
+  })
+
+  it("handles missing balances", () => {
+    const tokensIn = [token1, token2]
+    const amountIn = { amount: 100n, decimals: 6 } // 0.0001 with 6 decimals
+    const balances = {
+      token2: 50_000_000n, // 0.5 with 8 decimals
+    }
+
+    const result = calculateSplitAmounts(tokensIn, amountIn, balances)
+    expect(result).toEqual({
+      token2: 10_000n, // 0.0001 with 8 decimals
+    })
+
+    const total = sumTotal(tokensIn, result)
+    expect(
+      adjustDecimals(total.amount, total.decimals, amountIn.decimals)
+    ).toEqual(amountIn.amount)
+  })
+
+  it("handles extreme decimal differences", () => {
+    const smallDecimals = { ...token1, decimals: 0 }
+    const largeDecimals = { ...token2, decimals: 24 }
+    const tokensIn = [smallDecimals, largeDecimals]
+    const amountIn = { amount: 100n, decimals: 12 } // 0.0000000001 with 12 decimals
+    const balances = {
+      [smallDecimals.defuseAssetId]: 1n,
+      [largeDecimals.defuseAssetId]: 1_000_000_000_000_000_000_000_000n, // 1 with 24 decimals
+    }
+
+    const result = calculateSplitAmounts(tokensIn, amountIn, balances)
+    expect(result).toEqual({
+      [largeDecimals.defuseAssetId]: 100_000_000_000_000n, // 0.0000000001 with 24 decimals
+    })
+
+    const total = sumTotal(tokensIn, result)
+    expect(
+      adjustDecimals(total.amount, total.decimals, amountIn.decimals)
+    ).toEqual(amountIn.amount)
+  })
+
+  it("handles very large numbers without overflow", () => {
+    const tokensIn = [token1, token2]
+    const amountIn = { amount: adjustDecimals(2n ** 64n, 0, 6), decimals: 6 }
+    const balances = {
+      token1: adjustDecimals(2n ** 64n, 0, token1.decimals) / 2n,
+      token2: adjustDecimals(2n ** 64n, 0, token2.decimals) / 2n,
+    }
+
+    const result = calculateSplitAmounts(tokensIn, amountIn, balances)
+    expect(result).toEqual(balances)
+
+    const total = sumTotal(tokensIn, result)
+    expect(
+      adjustDecimals(total.amount, total.decimals, amountIn.decimals)
+    ).toEqual(amountIn.amount)
+  })
+
+  it("handles different decimal precision between amount and tokens", () => {
+    const tokensIn = [
+      { ...token1, decimals: 18 },
+      { ...token2, decimals: 6 },
+    ]
+    const amountIn = { amount: 1_000_000n, decimals: 12 } // 0.000001 with 12 decimals
+    const balances = {
+      token1: 1_000_000_000_000_000_000n, // 1 with 18 decimals
+      token2: 1_000_000n, // 1 with 6 decimals
+    }
+
+    const result = calculateSplitAmounts(tokensIn, amountIn, balances)
+    expect(result).toEqual({
+      token1: 1_000_000_000_000n,
+    })
+
+    const total = sumTotal(tokensIn, result)
+    expect(
+      adjustDecimals(total.amount, total.decimals, amountIn.decimals)
+    ).toEqual(amountIn.amount)
+  })
+
+  it("throws AmountMismatchError when available amount is less than requested", () => {
+    const tokensIn = [token1, token2]
+    const amountIn = { amount: adjustDecimals(200n, 0, 6), decimals: 6 }
+    const balances = {
+      token1: adjustDecimals(100n, 0, token1.decimals),
+      token2: adjustDecimals(50n, 0, token2.decimals),
+    }
+
+    expect(() => calculateSplitAmounts(tokensIn, amountIn, balances)).toThrow(
+      AmountMismatchError
+    )
+  })
+
+  it("throws AmountMismatchError when balances are zero", () => {
+    const tokensIn = [token1, token2]
+    const amountIn = { amount: 100n, decimals: 6 }
+    const balances = {
+      token1: 0n,
+      token2: 0n,
+    }
+
+    expect(() => calculateSplitAmounts(tokensIn, amountIn, balances)).toThrow(
+      AmountMismatchError
+    )
+  })
+
+  it("throws AmountMismatchError when no balances available", () => {
+    const tokensIn = [token1, token2]
+    const amountIn = { amount: 100n, decimals: 6 }
+    const balances = {}
+
+    expect(() => calculateSplitAmounts(tokensIn, amountIn, balances)).toThrow(
+      AmountMismatchError
+    )
+  })
+
+  it("throws AmountMismatchError when tokens array is empty", () => {
+    const tokensIn: (typeof token1)[] = []
+    const amountIn = { amount: 100n, decimals: 6 }
+    const balances = {}
+
+    expect(() => calculateSplitAmounts(tokensIn, amountIn, balances)).toThrow(
+      AmountMismatchError
+    )
+  })
+
+  function sumTotal(
+    tokensIn: BaseTokenInfo[],
+    balances: Record<string, bigint>
+  ): TokenValue {
+    const a = computeTotalBalanceDifferentDecimals(
+      tokensIn.filter((t) => Object.keys(balances).includes(t.defuseAssetId)),
+      balances
+    )
+    assert(a != null)
+    return a
+  }
 })
 
 it("aggregateQuotes(): aggregates quotes correctly", () => {
