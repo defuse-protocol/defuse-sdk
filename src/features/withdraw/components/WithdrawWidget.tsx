@@ -124,6 +124,7 @@ export const WithdrawWidget = (props: WithdrawWidgetProps) => {
                         deadlineTimestamp:
                           // Expiry time maybe zero if nothing to swap, so let's just fallback to the default
                           Date.now() + 10 * 60 * 1000,
+                        referral: context.referral,
                       })
 
                       return {
