@@ -73,6 +73,35 @@ describe("makeSwapMessage()", () => {
     expect(msg1.NEP413.nonce).not.toEqual(msg2.NEP413.nonce)
   })
 
+  it("should include referral in token_diff intent", () => {
+    const innerMessage = makeInnerSwapMessage({
+      tokenDeltas: [
+        ["foo.near", -100n],
+        ["bar.near", 200n],
+      ],
+      signerId: userAddressToDefuseUserId("user.near", "near"),
+      deadlineTimestamp: 1704110400000,
+      referral: "referrer.near",
+    })
+
+    expect(innerMessage).toMatchInlineSnapshot(`
+      {
+        "deadline": "2024-01-01T12:00:00.000Z",
+        "intents": [
+          {
+            "diff": {
+              "bar.near": "200",
+              "foo.near": "-100",
+            },
+            "intent": "token_diff",
+            "referral": "referrer.near",
+          },
+        ],
+        "signer_id": "user.near",
+      }
+    `)
+  })
+
   it("should merge amounts in/out with same token", () => {
     const innerMessage = makeInnerSwapMessage({
       tokenDeltas: [
@@ -95,6 +124,7 @@ describe("makeSwapMessage()", () => {
               "foo.near": "-50",
             },
             "intent": "token_diff",
+            "referral": undefined,
           },
         ],
         "signer_id": "user.near",
@@ -133,6 +163,7 @@ describe("makeInnerSwapAndWithdrawMessage()", () => {
               "foo.near": "-100",
             },
             "intent": "token_diff",
+            "referral": undefined,
           },
           {
             "amount": "200",
@@ -264,6 +295,49 @@ describe("makeInnerSwapAndWithdrawMessage()", () => {
             "msg": "deadbeef00000000000000000000000000000001",
             "receiver_id": "foo.cloud.aurora",
             "token": "usdt.near",
+          },
+        ],
+        "signer_id": "user.near",
+      }
+    `)
+  })
+
+  it("should include referral in token_diff intent when swapping and withdrawing", () => {
+    const innerMessage = makeInnerSwapAndWithdrawMessage({
+      tokenDeltas: [
+        ["foo.near", -100n],
+        ["bar.near", 200n],
+      ],
+      withdrawParams: {
+        type: "to_near",
+        amount: 200n,
+        tokenAccountId: "bar.near",
+        receiverId: "receiver.near",
+        storageDeposit: 0n,
+      },
+      signerId: userAddressToDefuseUserId("user.near", "near"),
+      deadlineTimestamp: DEADLINE,
+      referral: "referrer.near",
+    })
+
+    expect(innerMessage).toMatchInlineSnapshot(`
+      {
+        "deadline": "2024-01-01T12:00:00.000Z",
+        "intents": [
+          {
+            "diff": {
+              "bar.near": "200",
+              "foo.near": "-100",
+            },
+            "intent": "token_diff",
+            "referral": "referrer.near",
+          },
+          {
+            "amount": "200",
+            "intent": "ft_withdraw",
+            "receiver_id": "receiver.near",
+            "storage_deposit": undefined,
+            "token": "bar.near",
           },
         ],
         "signer_id": "user.near",

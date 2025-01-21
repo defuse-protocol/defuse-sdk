@@ -40,6 +40,7 @@ export const WithdrawWidget = (props: WithdrawWidgetProps) => {
               tokenIn: initialTokenIn,
               tokenOut: initialTokenOut,
               tokenList: props.tokenList,
+              referral: props.referral,
             },
           }}
           logic={withdrawUIMachine.provide({
@@ -124,6 +125,7 @@ export const WithdrawWidget = (props: WithdrawWidgetProps) => {
                         deadlineTimestamp:
                           // Expiry time maybe zero if nothing to swap, so let's just fallback to the default
                           Date.now() + 10 * 60 * 1000,
+                        referral: context.referral,
                       })
 
                       return {

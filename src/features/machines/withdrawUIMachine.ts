@@ -61,6 +61,7 @@ export type Context = {
     ) => Promise<{ txHash: string } | null>
   } | null
   preparationOutput: PreparationOutput | null
+  referral?: string
 }
 
 type PassthroughEvent = {
@@ -85,6 +86,7 @@ export const withdrawUIMachine = setup({
       tokenIn: BaseTokenInfo | UnifiedTokenInfo
       tokenOut: BaseTokenInfo
       tokenList: (BaseTokenInfo | UnifiedTokenInfo)[]
+      referral?: string
     },
     context: {} as Context,
     events: {} as
@@ -367,6 +369,7 @@ export const withdrawUIMachine = setup({
     nep141StorageOutput: null,
     nep141StorageQuote: null,
     preparationOutput: null,
+    referral: input.referral,
   }),
 
   entry: ["spawnBackgroundQuoterRef", "fetchPOABridgeInfo"],
@@ -561,6 +564,7 @@ export const withdrawUIMachine = setup({
               context.submitDeps.userAddress,
               context.submitDeps.userChainType
             ),
+            referral: context.referral,
             nearClient: context.submitDeps.nearClient,
             sendNearTransaction: context.submitDeps.sendNearTransaction,
             intentOperationParams: {

@@ -19,6 +19,7 @@ export const SwapWidget = ({
   onNavigateDeposit,
   initialTokenIn,
   initialTokenOut,
+  referral,
 }: SwapWidgetProps) => {
   return (
     <WidgetRoot>
@@ -30,6 +31,7 @@ export const SwapWidget = ({
             initialTokenOut={initialTokenOut}
             tokenList={tokenList}
             signMessage={signMessage}
+            referral={referral}
           >
             <SwapUIMachineFormSyncProvider
               userAddress={userAddress}

@@ -48,6 +48,7 @@ export type Context = {
   intentCreationResult: SwapIntentMachineOutput | null
   intentRefs: ActorRefFrom<typeof intentStatusMachine>[]
   tokenList: SwappableToken[]
+  referral?: string
 }
 
 type PassthroughEvent = {
@@ -68,6 +69,7 @@ export const swapUIMachine = setup({
       tokenIn: SwappableToken
       tokenOut: SwappableToken
       tokenList: SwappableToken[]
+      referral?: string
     },
     context: {} as Context,
     events: {} as
@@ -283,6 +285,7 @@ export const swapUIMachine = setup({
     intentCreationResult: null,
     intentRefs: [],
     tokenList: input.tokenList,
+    referral: input.referral,
   }),
 
   entry: ["spawnBackgroundQuoterRef", "spawnDepositedBalanceRef"],
@@ -405,6 +408,7 @@ export const swapUIMachine = setup({
               event.params.userAddress,
               event.params.userChainType
             ),
+            referral: context.referral,
             nearClient: event.params.nearClient,
             sendNearTransaction: event.params.sendNearTransaction,
             intentOperationParams: {
