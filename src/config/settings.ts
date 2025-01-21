@@ -27,7 +27,7 @@ export const settings: Settings = {
    * Minimum deadline for a quote.
    * The server will return quotes with at least this much time remaining.
    */
-  quoteMinDeadlineMs: 120_000,
+  quoteMinDeadlineMs: 60_000,
   /**
    * Max value of minimum deadline for a quote.
    * The server will return quotes with at least this much time remaining.
