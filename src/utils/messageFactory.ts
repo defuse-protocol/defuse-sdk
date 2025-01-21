@@ -14,15 +14,18 @@ import type { DefuseUserId } from "./defuse"
  * @param tokenDeltas
  * @param signerId
  * @param deadlineTimestamp Unix timestamp in milliseconds
+ * @param referral
  */
 export function makeInnerSwapMessage({
   tokenDeltas,
   signerId,
   deadlineTimestamp,
+  referral,
 }: {
   tokenDeltas: [string, bigint][]
   signerId: DefuseUserId
   deadlineTimestamp: number
+  referral?: string
 }): Nep413DefuseMessageFor_DefuseIntents {
   const tokenDiff: Record<string, string> = {}
   const tokenDiffNum: Record<string, bigint> = {}
@@ -49,6 +52,7 @@ export function makeInnerSwapMessage({
       {
         intent: "token_diff",
         diff: tokenDiff,
+        referral,
       },
     ],
     signer_id: signerId,
@@ -60,17 +64,20 @@ export function makeInnerSwapMessage({
  * @param withdrawParams
  * @param signerId
  * @param deadlineTimestamp Unix timestamp in seconds
+ * @param referral
  */
 export function makeInnerSwapAndWithdrawMessage({
   tokenDeltas,
   withdrawParams,
   signerId,
   deadlineTimestamp,
+  referral,
 }: {
   tokenDeltas: [string, bigint][] | null
   withdrawParams: WithdrawParams
   signerId: DefuseUserId
   deadlineTimestamp: number
+  referral?: string
 }): Nep413DefuseMessageFor_DefuseIntents {
   const intents: NonNullable<Nep413DefuseMessageFor_DefuseIntents["intents"]> =
     []
@@ -80,6 +87,7 @@ export function makeInnerSwapAndWithdrawMessage({
       tokenDeltas,
       signerId,
       deadlineTimestamp,
+      referral,
     })
     assert(swapIntents, "swapIntents must be defined")
     intents.push(...swapIntents)

@@ -17,6 +17,7 @@ import type { SwappableToken } from "../../types/swap"
 import { assert } from "../../utils/assert"
 import { userAddressToDefuseUserId } from "../../utils/defuse"
 import { parseUnits } from "../../utils/parse"
+import { getAnyBaseTokenInfo } from "../../utils/tokenUtils"
 import {
   type Events as BackgroundQuoterEvents,
   type ParentEvents as BackgroundQuoterParentEvents,
@@ -47,6 +48,7 @@ export type Context = {
   intentCreationResult: SwapIntentMachineOutput | null
   intentRefs: ActorRefFrom<typeof intentStatusMachine>[]
   tokenList: SwappableToken[]
+  referral?: string
 }
 
 type PassthroughEvent = {
@@ -67,6 +69,7 @@ export const swapUIMachine = setup({
       tokenIn: SwappableToken
       tokenOut: SwappableToken
       tokenList: SwappableToken[]
+      referral?: string
     },
     context: {} as Context,
     events: {} as
@@ -184,8 +187,11 @@ export const swapUIMachine = setup({
           type: "NEW_QUOTE_INPUT",
           params: {
             tokenIn: context.formValues.tokenIn,
-            tokenOut: context.formValues.tokenOut,
-            amountIn: context.parsedFormValues.amountIn,
+            tokenOut: getAnyBaseTokenInfo(context.formValues.tokenOut),
+            amountIn: {
+              amount: context.parsedFormValues.amountIn,
+              decimals: context.formValues.tokenIn.decimals,
+            },
             balances: balances ?? {},
           },
         }
@@ -279,6 +285,7 @@ export const swapUIMachine = setup({
     intentCreationResult: null,
     intentRefs: [],
     tokenList: input.tokenList,
+    referral: input.referral,
   }),
 
   entry: ["spawnBackgroundQuoterRef", "spawnDepositedBalanceRef"],
@@ -401,6 +408,7 @@ export const swapUIMachine = setup({
               event.params.userAddress,
               event.params.userChainType
             ),
+            referral: context.referral,
             nearClient: event.params.nearClient,
             sendNearTransaction: event.params.sendNearTransaction,
             intentOperationParams: {

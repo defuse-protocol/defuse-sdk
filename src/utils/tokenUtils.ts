@@ -1,5 +1,6 @@
 import type { BalanceMapping } from "../features/machines/depositedBalanceMachine"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../types/base"
+import { assert } from "./assert"
 import { isBaseToken } from "./token"
 
 export function computeTotalBalance(
@@ -32,6 +33,18 @@ export function computeTotalBalance(
     token.groupedTokens.map((t) => t.defuseAssetId),
     balances
   )
+}
+
+/**
+ * Convert a unified token to a base token, by getting the first token in the group.
+ * It should be used when you need to get *ANY* single token from a unified token.
+ */
+export function getAnyBaseTokenInfo(
+  token: BaseTokenInfo | UnifiedTokenInfo
+): BaseTokenInfo {
+  const t = isBaseToken(token) ? token : token.groupedTokens[0]
+  assert(t != null, "Token is undefined")
+  return t
 }
 
 export function getDerivedToken(

@@ -348,7 +348,8 @@ export const WithdrawForm = ({
               transitBalance={tokenInTransitBalance ?? undefined}
               register={register}
               usdAmount={
-                tokenToWithdrawUsdAmount
+                tokenToWithdrawUsdAmount !== null &&
+                tokenToWithdrawUsdAmount > 0
                   ? `~${formatUsdAmount(tokenToWithdrawUsdAmount)}`
                   : null
               }

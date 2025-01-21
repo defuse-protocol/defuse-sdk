@@ -76,6 +76,7 @@ type Context = {
   userAddress: string
   userChainType: ChainType
   defuseUserId: DefuseUserId
+  referral?: string
   nearClient: providers.Provider
   sendNearTransaction: SendNearTransaction
   intentOperationParams: IntentOperationParams
@@ -111,6 +112,7 @@ type Input = {
   userAddress: string
   userChainType: ChainType
   defuseUserId: DefuseUserId
+  referral?: string
   nearClient: providers.Provider
   sendNearTransaction: SendNearTransaction
   intentOperationParams: IntentOperationParams
@@ -193,6 +195,7 @@ export const swapIntentMachine = setup({
               context.intentOperationParams.quote.expirationTime
             ).getTime()
           ),
+          referral: context.referral,
         })
 
         return {

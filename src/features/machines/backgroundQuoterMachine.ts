@@ -8,14 +8,14 @@ import { isBaseToken } from "../../utils/token"
 export type QuoteInput =
   | {
       tokenIn: BaseTokenInfo | UnifiedTokenInfo
-      tokenOut: BaseTokenInfo | UnifiedTokenInfo
-      amountIn: bigint
+      tokenOut: BaseTokenInfo
+      amountIn: { amount: bigint; decimals: number }
       balances: Record<BaseTokenInfo["defuseAssetId"], bigint>
     }
   | {
       tokensIn: Array<BaseTokenInfo>
       tokenOut: BaseTokenInfo
-      amountIn: bigint
+      amountIn: { amount: bigint; decimals: number }
       balances: Record<BaseTokenInfo["defuseAssetId"], bigint>
     }
 
@@ -122,10 +122,10 @@ async function pollQuoteLoop(
 
     queryQuote(
       {
-        tokensIn: getUnderlyingDefuseAssetIds(
+        tokensIn: getUnderlyingBaseTokenInfos(
           "tokensIn" in quoteInput ? quoteInput.tokensIn : [quoteInput.tokenIn]
         ),
-        tokensOut: getUnderlyingDefuseAssetIds([quoteInput.tokenOut]),
+        tokenOut: quoteInput.tokenOut,
         amountIn: quoteInput.amountIn,
         balances: quoteInput.balances,
       },
@@ -159,13 +159,11 @@ async function pollQuoteLoop(
   }
 }
 
-function getUnderlyingDefuseAssetIds(
+function getUnderlyingBaseTokenInfos(
   tokens: Array<BaseTokenInfo | UnifiedTokenInfo>
-): BaseTokenInfo["defuseAssetId"][] {
+): BaseTokenInfo[] {
   return tokens.flatMap((token) => {
-    return isBaseToken(token)
-      ? [token.defuseAssetId]
-      : token.groupedTokens.map((token) => token.defuseAssetId)
+    return isBaseToken(token) ? [token] : token.groupedTokens
   })
 }
 

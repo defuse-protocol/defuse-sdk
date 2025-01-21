@@ -7,4 +7,9 @@ export type WithdrawWidgetProps = UserInfo & {
   tokenList: (BaseTokenInfo | UnifiedTokenInfo)[]
   signMessage: (params: WalletMessage) => Promise<WalletSignatureResult | null>
   sendNearTransaction: SendNearTransaction
+  /**
+   * Optional referral code, used for tracking purposes.
+   * Prop is not reactive, set it once when the component is created.
+   */
+  referral?: string
 }

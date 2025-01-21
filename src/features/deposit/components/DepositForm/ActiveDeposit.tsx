@@ -112,7 +112,7 @@ export function ActiveDeposit({
           }
           priceSlot={
             <TokenAmountInputCard.DisplayPrice>
-              {usdAmountToDeposit != null
+              {usdAmountToDeposit !== null && usdAmountToDeposit > 0
                 ? formatUsdAmount(usdAmountToDeposit)
                 : null}
             </TokenAmountInputCard.DisplayPrice>
