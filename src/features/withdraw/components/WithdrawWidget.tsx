@@ -40,6 +40,7 @@ export const WithdrawWidget = (props: WithdrawWidgetProps) => {
               tokenIn: initialTokenIn,
               tokenOut: initialTokenOut,
               tokenList: props.tokenList,
+              referral: props.referral,
             },
           }}
           logic={withdrawUIMachine.provide({
