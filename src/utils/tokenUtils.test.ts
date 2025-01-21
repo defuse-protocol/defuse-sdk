@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../types/base"
 import {
   DuplicateTokenError,
+  adjustDecimals,
   compareAmounts,
   computeTotalBalance,
   computeTotalBalanceDifferentDecimals,
@@ -135,6 +136,13 @@ describe("computeTotalBalanceDifferentDecimals", () => {
     token1: 100n,
     token2: 200n,
   }
+
+  it("should handle empty token array", () => {
+    expect(computeTotalBalanceDifferentDecimals([], balances)).toEqual({
+      amount: 0n,
+      decimals: 0,
+    })
+  })
 
   describe("with base token", () => {
     const baseToken: BaseTokenInfo = {
@@ -547,5 +555,28 @@ describe("compareAmounts", () => {
         { amount: 1000000000000000000n, decimals: 18 }
       )
     ).toBe(0)
+  })
+})
+
+describe("adjustDecimals", () => {
+  it("should return same amount when decimals are equal", () => {
+    expect(adjustDecimals(1000000n, 6, 6)).toBe(1000000n)
+    expect(adjustDecimals(1000000000000000000n, 18, 18)).toBe(
+      1000000000000000000n
+    )
+  })
+
+  it("should scale up when target decimals are higher", () => {
+    // 1.0 with 6 decimals to 18 decimals
+    expect(adjustDecimals(1000000n, 6, 18)).toBe(1000000000000000000n)
+    // 0.5 with 6 decimals to 18 decimals
+    expect(adjustDecimals(500000n, 6, 18)).toBe(500000000000000000n)
+  })
+
+  it("should scale down when target decimals are lower", () => {
+    // 1.0 with 18 decimals to 6 decimals
+    expect(adjustDecimals(1000000000000000000n, 18, 6)).toBe(1000000n)
+    // 0.5 with 18 decimals to 6 decimals
+    expect(adjustDecimals(500000000000000000n, 18, 6)).toBe(500000n)
   })
 })

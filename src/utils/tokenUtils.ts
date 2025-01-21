@@ -44,7 +44,7 @@ export class DuplicateTokenError extends Error {
   }
 }
 
-function adjustDecimals(
+export function adjustDecimals(
   amount: bigint,
   fromDecimals: number,
   toDecimals: number
@@ -95,7 +95,7 @@ export function computeTotalBalanceDifferentDecimals(
   const uniqueTokens = deduplicateTokens(
     Array.isArray(token) ? token : token.groupedTokens
   )
-  const maxDecimals = Math.max(...uniqueTokens.map((t) => t.decimals))
+  const maxDecimals = Math.max(0, ...uniqueTokens.map((t) => t.decimals))
   let total = 0n
 
   for (const t of uniqueTokens) {
