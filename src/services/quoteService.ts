@@ -13,10 +13,16 @@ function isFailedQuote(quote: Quote | FailedQuote): quote is FailedQuote {
   return "type" in quote
 }
 
+type TokenSlice = Pick<BaseTokenInfo, "defuseAssetId">
+type TokenValue = {
+  amount: bigint
+  decimals: number
+}
+
 export interface AggregatedQuoteParams {
-  tokensIn: string[] // set of close tokens, e.g. [USDC on Solana, USDC on Ethereum, USDC on Near]
-  tokensOut: string[] // set of close tokens, e.g. [USDC on Solana, USDC on Ethereum, USDC on Near]
-  amountIn: bigint // total amount in
+  tokensIn: TokenSlice[] // set of close tokens, e.g. [USDC on Solana, USDC on Ethereum, USDC on Near]
+  tokenOut: TokenSlice // set of close tokens, e.g. [USDC on Solana, USDC on Ethereum, USDC on Near]
+  amountIn: TokenValue // total amount in
   balances: Record<string, bigint> // how many tokens of each type are available
 }
 
@@ -57,21 +63,23 @@ export async function queryQuote(
   } = {}
 ): Promise<QuoteResult> {
   // Sanity checks
-  const tokenOut = input.tokensOut[0]
-  assert(tokenOut != null, "tokensOut is empty")
+  const tokenOut = input.tokenOut
 
   const tokenIn = input.tokensIn[0]
   assert(tokenIn != null, "tokensIn is empty")
 
-  const totalAvailableIn = computeTotalBalance(input.tokensIn, input.balances)
+  const totalAvailableIn = computeTotalBalance(
+    input.tokensIn.map((t) => t.defuseAssetId),
+    input.balances
+  )
 
   // If total available is less than requested, just quote the full amount from one token
-  if (totalAvailableIn == null || totalAvailableIn < input.amountIn) {
+  if (totalAvailableIn == null || totalAvailableIn < input.amountIn.amount) {
     const q = await quoteWithLog(
       {
-        defuse_asset_identifier_in: tokenIn,
-        defuse_asset_identifier_out: tokenOut,
-        exact_amount_in: input.amountIn.toString(),
+        defuse_asset_identifier_in: tokenIn.defuseAssetId,
+        defuse_asset_identifier_out: tokenOut.defuseAssetId,
+        exact_amount_in: input.amountIn.amount.toString(),
         min_deadline_ms: settings.quoteMinDeadlineMs,
       },
       { signal }
@@ -91,13 +99,17 @@ export async function queryQuote(
 
   const amountsToQuote = calculateSplitAmounts(
     input.tokensIn,
-    input.amountIn,
+    input.amountIn.amount,
     input.balances
   )
 
-  const quotes = await fetchQuotesForTokens(tokenOut, amountsToQuote, {
-    signal,
-  })
+  const quotes = await fetchQuotesForTokens(
+    tokenOut.defuseAssetId,
+    amountsToQuote,
+    {
+      signal,
+    }
+  )
 
   if (quotes == null) {
     return {
@@ -206,7 +218,7 @@ function assert(condition: unknown, msg?: string): asserts condition {
  * Duplicate tokens are processed only once and their balances are considered only once.
  */
 export function calculateSplitAmounts(
-  tokensIn: string[],
+  tokensIn: TokenSlice[],
   amountIn: bigint,
   balances: Record<string, bigint>
 ): Record<string, bigint> {
@@ -217,11 +229,11 @@ export function calculateSplitAmounts(
   const uniqueTokensIn = new Set(tokensIn)
 
   for (const tokenIn of uniqueTokensIn) {
-    const availableIn = balances[tokenIn] ?? 0n
+    const availableIn = balances[tokenIn.defuseAssetId] ?? 0n
     const amountToQuote = min(availableIn, remainingAmountIn)
 
     if (amountToQuote > 0n) {
-      amountsToQuote[tokenIn] = amountToQuote
+      amountsToQuote[tokenIn.defuseAssetId] = amountToQuote
       remainingAmountIn -= amountToQuote
     }
 

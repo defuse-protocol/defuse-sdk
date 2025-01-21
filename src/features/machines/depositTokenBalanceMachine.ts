@@ -1,5 +1,6 @@
 import type { Address } from "viem"
 import { assign, fromPromise, setup } from "xstate"
+import { logger } from "../../logger"
 import { getWalletRpcUrl } from "../../services/depositService"
 import type { BaseTokenInfo, SupportedChainName } from "../../types/base"
 import { BlockchainEnum } from "../../types/interfaces"
@@ -41,12 +42,14 @@ export const backgroundBalanceActor = fromPromise(
       return result
     }
 
-    const address = isFungibleToken(derivedToken) ? derivedToken.address : null
-    assert(address != null, "Address is not defined")
-
     const networkToSolverFormat = assetNetworkAdapter[blockchain]
     switch (networkToSolverFormat) {
       case BlockchainEnum.NEAR: {
+        const address = isFungibleToken(derivedToken)
+          ? derivedToken.address
+          : null
+        assert(address != null, "Address is not defined")
+
         const [nep141Balance, nativeBalance] = await Promise.all([
           getNearNep141Balance({
             tokenAddress: address,
@@ -223,14 +226,19 @@ export const depositTokenBalanceMachine = setup({
         },
         onError: {
           target: "completed",
-          actions: assign({
-            preparationOutput: {
-              tag: "err",
-              value: {
-                reason: "ERR_FETCH_BALANCE",
-              },
+          actions: [
+            ({ event }) => {
+              logger.error(event.error)
             },
-          }),
+            assign({
+              preparationOutput: {
+                tag: "err",
+                value: {
+                  reason: "ERR_FETCH_BALANCE",
+                },
+              },
+            }),
+          ],
           reenter: true,
         },
       },

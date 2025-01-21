@@ -97,4 +97,10 @@ export type SwapWidgetProps = {
   onNavigateDeposit?: () => void
   initialTokenIn?: SwappableToken
   initialTokenOut?: SwappableToken
+
+  /**
+   * Optional referral code, used for tracking purposes.
+   * Prop is not reactive, set it once when the component is created.
+   */
+  referral?: string
 }

@@ -203,7 +203,11 @@ export const SwapForm = ({ onNavigateDeposit }: SwapFormProps) => {
           className="border border-gray-200/50 rounded-t-xl"
           required
           errors={errors}
-          usdAmount={usdAmountIn ? `~${formatUsdAmount(usdAmountIn)}` : null}
+          usdAmount={
+            usdAmountIn !== null && usdAmountIn > 0
+              ? `~${formatUsdAmount(usdAmountIn)}`
+              : null
+          }
           balance={tokenInBalance}
           transitBalance={tokenInTransitBalance ?? undefined}
         />
@@ -222,7 +226,11 @@ export const SwapForm = ({ onNavigateDeposit }: SwapFormProps) => {
           errors={errors}
           disabled={true}
           isLoading={snapshot.matches({ editing: "waiting_quote" })}
-          usdAmount={usdAmountOut ? `~${formatUsdAmount(usdAmountOut)}` : null}
+          usdAmount={
+            usdAmountOut !== null && usdAmountOut > 0
+              ? `~${formatUsdAmount(usdAmountOut)}`
+              : null
+          }
           balance={tokenOutBalance}
         />
 

@@ -29,7 +29,6 @@ export const depositEstimateMaxValueActor = fromPromise(
   }: {
     input: {
       blockchain: SupportedChainName
-      tokenAddress: string
       userAddress: string
       balance: bigint
       nearBalance: bigint | null
@@ -155,14 +154,7 @@ export const depositEstimationMachine = setup({
       invoke: {
         src: "estimateMaxDepositValueActor",
         input: ({ event }) => {
-          const address = isFungibleToken(event.params.token)
-            ? event.params.token.address
-            : null
-          assert(address != null, "Address is not defined")
-          return {
-            ...event.params,
-            tokenAddress: address,
-          }
+          return event.params
         },
 
         onDone: {
