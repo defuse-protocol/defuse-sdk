@@ -87,8 +87,6 @@ describe("queryQuote()", () => {
     expect(result).toEqual({
       tag: "ok",
       value: {
-        amountsIn: { token1: 150000000n },
-        amountsOut: { tokenOut: 200n },
         expirationTime: "2024-01-15T12:02:00.000Z",
         quoteHashes: ["q1"],
         totalAmountIn: 150000000n,
@@ -159,8 +157,6 @@ describe("queryQuote()", () => {
     expect(result).toEqual({
       tag: "ok",
       value: {
-        amountsIn: { token1: 100000000n, token2: 5000000000n },
-        amountsOut: { tokenOut: 30n },
         expirationTime: "2024-01-15T12:01:30.000Z",
         quoteHashes: ["q1", "q2"],
         totalAmountIn: 5100000000n,
@@ -215,8 +211,6 @@ describe("queryQuote()", () => {
     expect(result).toEqual({
       tag: "ok",
       value: {
-        amountsIn: { token1: 150n },
-        amountsOut: { tokenOut: 200n },
         expirationTime: "2024-01-15T12:02:00.000Z",
         quoteHashes: ["q2"],
         totalAmountIn: 150n,
@@ -565,8 +559,6 @@ describe("aggregateQuotes()", () => {
     expect(result).toEqual({
       tag: "ok",
       value: {
-        amountsIn: { token1: 1000000n, token2: 100000000n },
-        amountsOut: { tokenOut: 3000000n },
         expirationTime: "2024-01-15T12:04:00.000Z",
         quoteHashes: ["q1", "q2"],
         totalAmountIn: 101000000n,

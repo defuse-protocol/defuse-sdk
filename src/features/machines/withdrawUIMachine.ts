@@ -292,7 +292,7 @@ export const withdrawUIMachine = setup({
       if (quote === null) return true
       if (quote.tag === "err") return true
 
-      for (const [token, amount] of Object.entries(quote.value.amountsIn)) {
+      for (const [token, amount] of quote.value.tokenDeltas) {
         // We need to know balances of all tokens involved in the swap
         const balance = balances[token]
         if (balance == null || balance < amount) {
