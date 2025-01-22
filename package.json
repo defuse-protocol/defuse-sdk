@@ -1,6 +1,6 @@
 {
   "name": "@defuse-protocol/defuse-sdk",
-  "version": "2.38.0",
+  "version": "0.0.0",
   "author": "Defuse Protocol",
   "license": "MIT",
   "type": "module",
@@ -17,7 +17,8 @@
   "module": "./dist/index.esm.js",
   "types": "./dist/index.d.ts",
   "files": [
-    "dist"
+    "dist",
+    "README.md"
   ],
   "scripts": {
     "test": "vitest --passWithNoTests",
@@ -81,6 +82,7 @@
     "@types/react-dom": "^18.3.0",
     "@vitest/coverage-v8": "2.1.2",
     "autoprefixer": "^10.4.20",
+    "conventional-changelog-conventionalcommits": "^8.0.0",
     "husky": "^9.1.1",
     "lint-staged": "^15.2.10",
     "postcss": "^8.4.47",
@@ -104,5 +106,8 @@
   },
   "resolutions": {
     "use-sync-external-store": "^1.2.0"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

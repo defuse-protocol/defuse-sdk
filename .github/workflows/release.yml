@@ -27,15 +27,12 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version-file: package.json
-      - name: Setup NPM token
-        run: |
-          echo "//npm.pkg.github.com/:_authToken=${{ secrets.GH_TOKEN }}" >> .npmrc
       - name: Install
         run: yarn install --frozen-lockfile --non-interactive
       - name: Build
         run: yarn run build
       - name: Release
-        run: npx semantic-release
+        run: npx semantic-release --dry-run
         env:
           GITHUB_TOKEN: ${{ secrets.GH_SEMANTIC_RELEASE_TOKEN }}
-          NPM_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
