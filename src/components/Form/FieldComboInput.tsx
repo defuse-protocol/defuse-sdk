@@ -108,43 +108,49 @@ export const FieldComboInput = <T extends FieldValues>({
         className
       )}
     >
-      <div className="w-full flex justify-between items-center gap-2 h-15">
+      <div className="flex justify-between items-center gap-2 h-15">
         {isLoading && <Skeleton className="w-full" height="40px" />}
-
-        <input
-          type="text"
-          inputMode="decimal"
-          pattern="[0-9]*[,.]?[0-9]*"
-          {...reactHookFormRegisterProps}
-          ref={allInputRefs}
-          placeholder={placeholder}
-          disabled={disabled}
-          autoComplete="off"
-          className={clsx(
-            "bg-gray-50 w-full text-3xl font-medium placeholder-black border-transparent focus:border-transparent focus:ring-0 dark:bg-black-900 dark:placeholder-white px-0",
-            disabled &&
-              "text-black-200 pointer-events-none placeholder-black-200",
-            {
-              hidden: isLoading,
-            }
-          )}
-        />
+        <div className="relative flex flex-1 overflow-hidden">
+          <input
+            type="text"
+            inputMode="decimal"
+            pattern="[0-9]*[,.]?[0-9]*"
+            {...reactHookFormRegisterProps}
+            ref={allInputRefs}
+            placeholder={placeholder}
+            disabled={disabled}
+            autoComplete="off"
+            className={clsx(
+              "bg-gray-50 w-full text-3xl font-medium placeholder-black border-transparent focus:border-transparent focus:ring-0 dark:bg-black-900 dark:placeholder-white px-0",
+              disabled &&
+                "text-black-200 pointer-events-none placeholder-black-200",
+              {
+                hidden: isLoading,
+              }
+            )}
+          />
+          <div className="pointer-events-none absolute top-0 right-0 bottom-0 w-12 bg-gradient-to-r from-transparent to-gray-2" />
+        </div>
 
         {selected && (
           <SelectAssets selected={selected} handleSelect={handleSelect} />
         )}
       </div>
 
-      <div className="flex justify-between items-center gap-2 mt-1 min-h-5 w-full max-w-[calc(100vw-106px)]">
-        {fieldError ? (
-          <span className="text-xs sm:text-sm font-medium text-red-400  whitespace-nowrap overflow-hidden">
-            {(fieldError as FieldError).message}
-          </span>
-        ) : usdAmount ? (
-          <span className="text-xs sm:text-sm font-medium text-gray-400 whitespace-nowrap overflow-hidden">
-            {usdAmount}
-          </span>
-        ) : null}
+      <div className="flex justify-between items-center min-h-6 gap-2 min-w-0">
+        <div className="relative flex flex-1 overflow-hidden whitespace-nowrap">
+          {fieldError ? (
+            <span className="text-xs sm:text-sm font-medium text-red-400">
+              {(fieldError as FieldError).message}
+            </span>
+          ) : usdAmount ? (
+            <span className="text-xs sm:text-sm font-medium text-gray-400">
+              {usdAmount}
+            </span>
+          ) : null}
+          <div className="pointer-events-none absolute top-0 right-0 bottom-0 w-12 bg-gradient-to-r from-transparent to-gray-2" />
+        </div>
+
         {balance != null && (
           <BlockMultiBalances
             balance={balance}
