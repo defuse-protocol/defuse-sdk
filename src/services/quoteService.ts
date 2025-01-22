@@ -30,7 +30,9 @@ export interface AggregatedQuote {
   quoteHashes: string[]
   /** Earliest expiration time in ISO-8601 format */
   expirationTime: string
+  /** @deprecated */
   totalAmountIn: bigint
+  /** @deprecated */
   totalAmountOut: bigint
   /** @deprecated */
   amountsIn: Record<string, bigint> // amount in for each token
