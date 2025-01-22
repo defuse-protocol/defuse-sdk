@@ -11,6 +11,7 @@ import {
   queryQuote,
 } from "./quoteService"
 import * as relayClient from "./solverRelayHttpClient"
+import type { QuoteResponse } from "./solverRelayHttpClient/types"
 
 vi.spyOn(relayClient, "quote")
 
@@ -534,47 +535,113 @@ describe("calculateSplitAmounts", () => {
   }
 })
 
-it("aggregateQuotes(): aggregates quotes correctly", () => {
-  const quotes = [
-    [
-      {
-        quote_hash: "q1",
-        defuse_asset_identifier_in: "token1",
-        defuse_asset_identifier_out: "tokenOut",
-        amount_in: "100",
-        amount_out: "200",
-        expiration_time: "2024-01-15T12:05:00.000Z",
-      },
-    ],
-    [
-      {
-        quote_hash: "q2",
-        defuse_asset_identifier_in: "token2",
-        defuse_asset_identifier_out: "tokenOut",
-        amount_in: "50",
-        amount_out: "100",
-        expiration_time: "2024-01-15T12:04:00.000Z",
-      },
-    ],
-  ]
-
-  const result = aggregateQuotes(quotes)
-
-  expect(result).toEqual({
-    tag: "ok",
-    value: {
-      amountsIn: { token1: 100n, token2: 50n },
-      amountsOut: { tokenOut: 300n },
-      expirationTime: "2024-01-15T12:04:00.000Z",
-      quoteHashes: ["q1", "q2"],
-      totalAmountIn: 150n,
-      totalAmountOut: 300n,
-      tokenDeltas: [
-        ["token1", -100n],
-        ["tokenOut", 200n],
-        ["token2", -50n],
-        ["tokenOut", 100n],
+describe("aggregateQuotes()", () => {
+  it("aggregates quotes correctly", () => {
+    const quotes = [
+      [
+        {
+          quote_hash: "q1",
+          defuse_asset_identifier_in: "token1",
+          defuse_asset_identifier_out: "tokenOut",
+          amount_in: "1000000", // 1.0 with 6 decimals
+          amount_out: "2000000", // 2.0 with 6 decimals
+          expiration_time: "2024-01-15T12:05:00.000Z",
+        },
       ],
-    },
+      [
+        {
+          quote_hash: "q2",
+          defuse_asset_identifier_in: "token2",
+          defuse_asset_identifier_out: "tokenOut",
+          amount_in: "100000000", // 1.0 with 8 decimals
+          amount_out: "1000000", // 1.0 with 6 decimals
+          expiration_time: "2024-01-15T12:04:00.000Z",
+        },
+      ],
+    ]
+
+    const result = aggregateQuotes(quotes)
+
+    expect(result).toEqual({
+      tag: "ok",
+      value: {
+        amountsIn: { token1: 1000000n, token2: 100000000n },
+        amountsOut: { tokenOut: 3000000n },
+        expirationTime: "2024-01-15T12:04:00.000Z",
+        quoteHashes: ["q1", "q2"],
+        totalAmountIn: 101000000n,
+        totalAmountOut: 3000000n,
+        tokenDeltas: [
+          ["token1", -1000000n],
+          ["tokenOut", 2000000n],
+          ["token2", -100000000n],
+          ["tokenOut", 1000000n],
+        ],
+      },
+    })
+  })
+
+  it("sorts quotes by amount out with respect to decimals", () => {
+    const quotes = [
+      [
+        {
+          quote_hash: "q1",
+          defuse_asset_identifier_in: "token1",
+          defuse_asset_identifier_out: "tokenOut",
+          amount_in: "1000000", // 1.0 with 6 decimals
+          amount_out: "1000000", // 1.0 with 6 decimals
+          expiration_time: "2024-01-15T12:05:00.000Z",
+        },
+        {
+          quote_hash: "q2",
+          defuse_asset_identifier_in: "token1",
+          defuse_asset_identifier_out: "tokenOut",
+          amount_in: "1000000", // 1.0 with 6 decimals
+          amount_out: "2000000", // 2.0 with 6 decimals
+          expiration_time: "2024-01-15T12:05:00.000Z",
+        },
+      ],
+    ]
+
+    const result = aggregateQuotes(quotes)
+
+    expect(result.tag).toBe("ok")
+    if (result.tag === "ok") {
+      expect(result.value.quoteHashes).toEqual(["q2"]) // Should select q2 with better rate
+    }
+  })
+
+  it("handles failed quotes", () => {
+    const quotes = [
+      [
+        {
+          type: "INSUFFICIENT_AMOUNT" as const,
+          min_amount: "1000000",
+        },
+      ],
+    ]
+
+    const result = aggregateQuotes(quotes)
+
+    expect(result).toEqual({
+      tag: "err",
+      value: {
+        type: "INSUFFICIENT_AMOUNT",
+        min_amount: "1000000",
+      },
+    })
+  })
+
+  it("returns NO_QUOTES when quotes array is empty", () => {
+    const quotes: NonNullable<QuoteResponse["result"]>[] = []
+
+    const result = aggregateQuotes(quotes)
+
+    expect(result).toEqual({
+      tag: "err",
+      value: {
+        type: "NO_QUOTES",
+      },
+    })
   })
 })
