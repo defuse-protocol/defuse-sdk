@@ -9,12 +9,6 @@ The Defuse Protocol SDK is a powerful and flexible package designed to facilitat
 
 ## Getting Started
 
-Create a new ```~/.npmrc``` file if one doesn't exist, replacing TOKEN with your Github personal access token. (Reason - without it you can't install a package from github registry, [details](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-npm-registry#authenticating-with-a-personal-access-token))
-
-```text
-//npm.pkg.github.com/:_authToken=TOKEN
-```
-
 Install the package:
 
 ```text
