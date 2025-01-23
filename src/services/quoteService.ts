@@ -34,10 +34,6 @@ export interface AggregatedQuote {
   totalAmountIn: bigint
   /** @deprecated */
   totalAmountOut: bigint
-  /** @deprecated */
-  amountsIn: Record<string, bigint> // amount in for each token
-  /** @deprecated */
-  amountsOut: Record<string, bigint> // amount out for each token
   tokenDeltas: [string, bigint][]
 }
 
@@ -188,8 +184,6 @@ export async function queryQuoteExactOut(
         expirationTime: bestQuote.expiration_time,
         totalAmountIn: BigInt(bestQuote.amount_in),
         totalAmountOut: BigInt(bestQuote.amount_out),
-        amountsIn: { [input.tokenIn]: BigInt(bestQuote.amount_in) },
-        amountsOut: { [input.tokenOut]: BigInt(bestQuote.amount_out) },
         tokenDeltas: [
           [input.tokenIn, -BigInt(bestQuote.amount_in)],
           [input.tokenOut, BigInt(bestQuote.amount_out)],
@@ -292,8 +286,6 @@ export function aggregateQuotes(
 ): QuoteResult {
   let totalAmountIn = 0n
   let totalAmountOut = 0n
-  const amountsIn: Record<string, bigint> = {}
-  const amountsOut: Record<string, bigint> = {}
   const quoteHashes: string[] = []
   let expirationTime = Number.POSITIVE_INFINITY
   const tokenDeltas: [string, bigint][] = []
@@ -333,11 +325,6 @@ export function aggregateQuotes(
       new Date(q.expiration_time).getTime()
     )
 
-    amountsIn[q.defuse_asset_identifier_in] ??= 0n
-    amountsIn[q.defuse_asset_identifier_in] += amountIn
-    amountsOut[q.defuse_asset_identifier_out] ??= 0n
-    amountsOut[q.defuse_asset_identifier_out] += amountOut
-
     tokenDeltas.push([q.defuse_asset_identifier_in, -amountIn])
     tokenDeltas.push([q.defuse_asset_identifier_out, amountOut])
 
@@ -371,8 +358,6 @@ export function aggregateQuotes(
       ).toISOString(),
       totalAmountIn,
       totalAmountOut,
-      amountsIn,
-      amountsOut,
       tokenDeltas,
     },
   }
