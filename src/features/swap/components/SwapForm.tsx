@@ -12,7 +12,6 @@ import { useFormContext } from "react-hook-form"
 import { useTokensUsdPrices } from "src/hooks/useTokensUsdPrices"
 import { formatUsdAmount } from "src/utils/format"
 import getTokenUsdPrice from "src/utils/getTokenUsdPrice"
-import { isBaseToken } from "src/utils/token"
 import type { ActorRefFrom, SnapshotFrom } from "xstate"
 import { ButtonCustom } from "../../../components/Button/ButtonCustom"
 import { ButtonSwitch } from "../../../components/Button/ButtonSwitch"
@@ -24,10 +23,7 @@ import { useModalStore } from "../../../providers/ModalStoreProvider"
 import { ModalType } from "../../../stores/modalStore"
 import type { SwappableToken } from "../../../types/swap"
 import { computeTotalBalanceDifferentDecimals } from "../../../utils/tokenUtils"
-import type {
-  BalanceMapping,
-  depositedBalanceMachine,
-} from "../../machines/depositedBalanceMachine"
+import type { depositedBalanceMachine } from "../../machines/depositedBalanceMachine"
 import type { intentStatusMachine } from "../../machines/intentStatusMachine"
 import type { Context } from "../../machines/swapUIMachine"
 import { SwapSubmitterContext } from "./SwapSubmitter"
@@ -394,23 +390,17 @@ export function balanceSelector(token: SwappableToken) {
 
 export function transitBalanceSelector(token: SwappableToken) {
   return (state: undefined | SnapshotFrom<typeof depositedBalanceMachine>) => {
-    if (!state) return null
-    return extractTransitBalance(token, state.context.transitBalances)
-  }
-}
+    if (!state) return
 
-export function extractTransitBalance(
-  token: SwappableToken,
-  transits: BalanceMapping
-): bigint | null {
-  if (isBaseToken(token)) {
-    const transitBalance = transits[token.defuseAssetId]
-    return transitBalance ?? null
+    const pending = computeTotalBalanceDifferentDecimals(
+      token,
+      state.context.transitBalances,
+      {
+        strict: false,
+      }
+    )
+
+    if (pending?.amount === 0n) return
+    return pending
   }
-  const derivedToken = token.groupedTokens.find(
-    (t) => transits[t.defuseAssetId]
-  )
-  if (!derivedToken) return null
-  const transitBalance = transits[derivedToken.defuseAssetId]
-  return transitBalance ?? null
 }

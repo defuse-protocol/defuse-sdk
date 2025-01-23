@@ -18,10 +18,9 @@ import { providers } from "near-api-js"
 import { Fragment, type ReactNode, useEffect } from "react"
 import { Controller, useForm } from "react-hook-form"
 import { useTokensUsdPrices } from "src/hooks/useTokensUsdPrices"
-import type { SwappableToken } from "src/types/swap"
 import { formatTokenValue, formatUsdAmount } from "src/utils/format"
 import getTokenUsdPrice from "src/utils/getTokenUsdPrice"
-import type { ActorRefFrom, SnapshotFrom } from "xstate"
+import type { ActorRefFrom } from "xstate"
 import { ButtonCustom } from "../../../../components/Button/ButtonCustom"
 import { EmptyIcon } from "../../../../components/EmptyIcon"
 import { Form } from "../../../../components/Form"
@@ -29,7 +28,6 @@ import { FieldComboInput } from "../../../../components/Form/FieldComboInput"
 import { WithdrawIntentCard } from "../../../../components/IntentCard/WithdrawIntentCard"
 import { NetworkIcon } from "../../../../components/Network/NetworkIcon"
 import { Select } from "../../../../components/Select/Select"
-import type { depositedBalanceMachine } from "../../../../features/machines/depositedBalanceMachine"
 import { useModalController } from "../../../../hooks/useModalController"
 import { logger } from "../../../../logger"
 import { useTokensStore } from "../../../../providers/TokensStoreProvider"
@@ -50,8 +48,8 @@ import type { PreparationOutput } from "../../../machines/prepareWithdrawActor"
 import { parseDestinationMemo } from "../../../machines/withdrawFormReducer"
 import {
   balanceSelector,
-  extractTransitBalance,
   renderIntentCreationResult,
+  transitBalanceSelector,
 } from "../../../swap/components/SwapForm"
 import { usePublicKeyModalOpener } from "../../../swap/hooks/usePublicKeyModalOpener"
 import { WithdrawUIMachineContext } from "../../WithdrawUIMachineContext"
@@ -348,7 +346,7 @@ export const WithdrawForm = ({
               }
               errors={errors}
               balance={tokenInBalance}
-              transitBalance={tokenInTransitBalance ?? undefined}
+              transitBalance={tokenInTransitBalance}
               register={register}
               usdAmount={
                 tokenToWithdrawUsdAmount !== null &&
@@ -763,11 +761,4 @@ function chainTypeSatisfiesChainName(
 
 function truncateUserAddress(hash: string) {
   return `${hash.slice(0, 6)}...${hash.slice(-4)}`
-}
-
-export function transitBalanceSelector(token: SwappableToken) {
-  return (state: undefined | SnapshotFrom<typeof depositedBalanceMachine>) => {
-    if (!state) return null
-    return extractTransitBalance(token, state.context.transitBalances)
-  }
 }

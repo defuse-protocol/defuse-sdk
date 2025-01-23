@@ -31,7 +31,7 @@ interface Props<T extends FieldValues>
   max?: RegisterOptions["max"]
   placeholder?: string
   balance?: TokenValue
-  transitBalance?: bigint
+  transitBalance?: TokenValue
   selected?: BaseTokenInfo | UnifiedTokenInfo
   handleSelect?: () => void
   className?: string
