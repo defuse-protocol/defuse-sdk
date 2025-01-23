@@ -5,6 +5,7 @@ import {
   adjustDecimals,
   compareAmounts,
   computeTotalBalanceDifferentDecimals,
+  deduplicateTokens,
 } from "../utils/tokenUtils"
 import { quote } from "./solverRelayHttpClient"
 import type {
@@ -234,8 +235,7 @@ export function calculateSplitAmounts(
 ): Record<string, bigint> {
   const amountsToQuote: Record<string, bigint> = {}
 
-  // Deduplicate tokens
-  const uniqueTokensIn = new Set(tokensIn)
+  const uniqueTokensIn = deduplicateTokens(tokensIn)
 
   let remainingAmount = amountIn.amount
   const remainingDecimals = amountIn.decimals
@@ -266,22 +266,20 @@ export function calculateSplitAmounts(
     if (remainingAmount === 0n) break
   }
 
-  const totalAmountIn = computeTotalBalanceDifferentDecimals(
-    tokensIn.filter((t) => t.defuseAssetId in amountsToQuote),
-    amountsToQuote
-  )
-
-  if (totalAmountIn == null || compareAmounts(totalAmountIn, amountIn) !== 0) {
-    throw new AmountMismatchError(amountIn)
+  if (remainingAmount !== 0n) {
+    throw new AmountMismatchError(
+      { amount: amountIn.amount, decimals: amountIn.decimals },
+      { amount: remainingAmount, decimals: remainingDecimals }
+    )
   }
 
   return amountsToQuote
 }
 
 export class AmountMismatchError extends Error {
-  constructor(requested: TokenValue) {
+  constructor(requested: TokenValue, remaining: TokenValue) {
     super(
-      `Unable to fulfill requested amount ${requested.amount} (decimals: ${requested.decimals}) from provided tokens`
+      `Unable to fulfill requested amount ${requested.amount} (decimals: ${requested.decimals}) with remaining amount ${remaining.amount} (decimals: ${remaining.decimals})`
     )
     this.name = "AmountMismatchError"
   }

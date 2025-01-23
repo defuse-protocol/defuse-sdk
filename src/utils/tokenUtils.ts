@@ -56,7 +56,7 @@ export function adjustDecimals(
   return amount * BigInt(10 ** (toDecimals - fromDecimals))
 }
 
-function deduplicateTokens(tokens: BaseTokenInfo[]): BaseTokenInfo[] {
+export function deduplicateTokens(tokens: BaseTokenInfo[]): BaseTokenInfo[] {
   const tokenMap = new Map<string, BaseTokenInfo>()
 
   for (const token of tokens) {
