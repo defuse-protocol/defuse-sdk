@@ -3,7 +3,7 @@ name: Build packages - Release
 on:
   push:
     branches:
-      - main
+      - beta
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}

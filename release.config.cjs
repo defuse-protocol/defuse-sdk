@@ -1,6 +1,12 @@
 /** @type {import('semantic-release').Options} */
 const config = {
-  branches: ["main"],
+  branches: [
+    "main",
+    {
+      name: "beta",
+      prerelease: "beta",
+    },
+  ],
   plugins: [
     [
       "@semantic-release/commit-analyzer",
