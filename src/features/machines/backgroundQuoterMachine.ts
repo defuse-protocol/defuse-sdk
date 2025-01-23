@@ -147,7 +147,7 @@ async function pollQuoteLoop(
         }
       },
       (e) => {
-        if (!isTimedOut(e)) {
+        if (isTimedOut(e)) {
           logger.info("Timeout querying quote", { quoteInput })
         } else {
           logger.error(e, { quoteInput })
