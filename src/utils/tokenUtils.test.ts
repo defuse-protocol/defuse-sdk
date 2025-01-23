@@ -137,11 +137,106 @@ describe("computeTotalBalanceDifferentDecimals", () => {
     token2: 200n,
   }
 
+  describe("with empty token list", () => {
+    it("should handle empty unified token", () => {
+      const emptyUnified: UnifiedTokenInfo = {
+        unifiedAssetId: "unified1",
+        symbol: "UTKN",
+        name: "Unified Token",
+        decimals: 18,
+        icon: "icon.png",
+        groupedTokens: [],
+      }
+      expect(
+        computeTotalBalanceDifferentDecimals(emptyUnified, balances)
+      ).toEqual({
+        amount: 0n,
+        decimals: 0,
+      })
+    })
+
+    it("should handle empty array", () => {
+      expect(computeTotalBalanceDifferentDecimals([], balances)).toEqual({
+        amount: 0n,
+        decimals: 0,
+      })
+    })
+  })
+
   it("should handle empty token array", () => {
     expect(computeTotalBalanceDifferentDecimals([], balances)).toEqual({
       amount: 0n,
       decimals: 0,
     })
+  })
+
+  it("should skip missing balances when strict is false", () => {
+    const tokens: BaseTokenInfo[] = [
+      {
+        defuseAssetId: "token1",
+        address: "0x123",
+        symbol: "TKN1",
+        name: "Token1",
+        decimals: 18,
+        icon: "icon1.png",
+        chainId: "",
+        chainIcon: "chain1.png",
+        chainName: "eth",
+        routes: [],
+      },
+      {
+        defuseAssetId: "missing",
+        address: "0x456",
+        symbol: "TKN2",
+        name: "Token2",
+        decimals: 18,
+        icon: "icon2.png",
+        chainId: "",
+        chainIcon: "chain2.png",
+        chainName: "eth",
+        routes: [],
+      },
+    ]
+
+    expect(
+      computeTotalBalanceDifferentDecimals(tokens, balances, { strict: false })
+    ).toEqual({
+      amount: 100n,
+      decimals: 18,
+    })
+  })
+
+  it("should return undefined when all balances are missing even with strict false", () => {
+    const tokens: BaseTokenInfo[] = [
+      {
+        defuseAssetId: "missing1",
+        address: "0x123",
+        symbol: "TKN1",
+        name: "Token1",
+        decimals: 18,
+        icon: "icon1.png",
+        chainId: "",
+        chainIcon: "chain1.png",
+        chainName: "eth",
+        routes: [],
+      },
+      {
+        defuseAssetId: "missing2",
+        address: "0x456",
+        symbol: "TKN2",
+        name: "Token2",
+        decimals: 18,
+        icon: "icon2.png",
+        chainId: "",
+        chainIcon: "chain2.png",
+        chainName: "eth",
+        routes: [],
+      },
+    ]
+
+    expect(
+      computeTotalBalanceDifferentDecimals(tokens, balances, { strict: false })
+    ).toBeUndefined()
   })
 
   describe("with base token", () => {

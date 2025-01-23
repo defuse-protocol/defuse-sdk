@@ -78,32 +78,50 @@ function deduplicateTokens(tokens: BaseTokenInfo[]): BaseTokenInfo[] {
   return Array.from(tokenMap.values())
 }
 
+/**
+ * @param token - The token or array of tokens to compute the balance for.
+ * @param balances - The mapping of token balances.
+ * @param config - Configuration options.
+ * @param config.strict - Ensures all tokens have a balance if `true`, otherwise returns `undefined`.
+ */
 export function computeTotalBalanceDifferentDecimals(
   token: BaseTokenInfo[] | BaseTokenInfo | UnifiedTokenInfo,
-  balances: BalanceMapping
+  balances: BalanceMapping,
+  config: { strict: boolean } = { strict: true }
 ): TokenValue | undefined {
   // Case 1: Base token
   if (!Array.isArray(token) && isBaseToken(token)) {
-    const balance = balances[token.defuseAssetId]
-    if (balance == null) {
-      return undefined
-    }
-    return { amount: balance, decimals: token.decimals }
+    // biome-ignore lint/style/noParameterAssign: This is a valid use case
+    token = [token]
   }
 
   // Case 2: Unified token
   const uniqueTokens = deduplicateTokens(
     Array.isArray(token) ? token : token.groupedTokens
   )
-  const maxDecimals = Math.max(0, ...uniqueTokens.map((t) => t.decimals))
-  let total = 0n
+
+  if (uniqueTokens.length === 0) {
+    return { amount: 0n, decimals: 0 }
+  }
+
+  const maxDecimals = Math.max(...uniqueTokens.map((t) => t.decimals))
+  let total = null
 
   for (const t of uniqueTokens) {
     const balance = balances[t.defuseAssetId]
     if (balance == null) {
-      return undefined
+      if (config.strict) {
+        return undefined
+      }
+      continue
     }
+
+    total ??= 0n
     total += adjustDecimals(balance, t.decimals, maxDecimals)
+  }
+
+  if (total == null) {
+    return undefined
   }
 
   return { amount: total, decimals: maxDecimals }
