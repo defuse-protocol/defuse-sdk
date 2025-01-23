@@ -179,3 +179,49 @@ export function compareAmounts(
   if (normalizedAmount1 > normalizedAmount2) return 1
   return 0
 }
+
+export function minAmounts(value1: TokenValue, value2: TokenValue): TokenValue {
+  return compareAmounts(value1, value2) <= 0 ? value1 : value2
+}
+
+export function subtractAmounts(
+  value1: TokenValue,
+  token2: TokenValue
+): TokenValue {
+  const maxDecimals = Math.max(value1.decimals, token2.decimals)
+  const normalizedAmount1 = adjustDecimals(
+    value1.amount,
+    value1.decimals,
+    maxDecimals
+  )
+  const normalizedAmount2 = adjustDecimals(
+    token2.amount,
+    token2.decimals,
+    maxDecimals
+  )
+
+  return {
+    amount: normalizedAmount1 - normalizedAmount2,
+    decimals: maxDecimals,
+  }
+}
+
+export function adjustDecimalsTokenValue(
+  value: TokenValue,
+  toDecimals: number
+): TokenValue {
+  return {
+    amount: adjustDecimals(value.amount, value.decimals, toDecimals),
+    decimals: toDecimals,
+  }
+}
+
+export function truncateTokenValue(
+  value: TokenValue,
+  decimals: number
+): TokenValue {
+  return adjustDecimalsTokenValue(
+    adjustDecimalsTokenValue(value, decimals),
+    value.decimals
+  )
+}
