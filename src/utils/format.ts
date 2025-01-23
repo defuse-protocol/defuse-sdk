@@ -62,7 +62,7 @@ export function formatUsdAmount(value: number): string {
     let maximumFractionDigits = 2
     // Omit cents for bigger values
     if (value >= 500) maximumFractionDigits = 0
-    // handle tiny amounts to not show $0.00
+    // Handle tiny amounts to not show $0.00
     else if (value < 1) maximumFractionDigits = 7
     return new Intl.NumberFormat("en-US", {
       style: "currency",
