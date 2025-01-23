@@ -136,9 +136,8 @@ export const swapIntentMachine = setup({
     input: {} as Input,
     output: {} as Output,
     events: {} as Events,
-    children: {} as {
-      publicKeyVerifierRef: "publicKeyVerifierActor"
-    },
+    // todo: this bloats size of types, typescript can't produce type definitions
+    // children: {} as { publicKeyVerifierRef: "publicKeyVerifierActor" },
   },
   actions: {
     setError: assign({
