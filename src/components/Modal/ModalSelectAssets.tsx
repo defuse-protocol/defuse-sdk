@@ -5,12 +5,15 @@ import { useModalStore } from "../../providers/ModalStoreProvider"
 import { useTokensStore } from "../../providers/TokensStoreProvider"
 import { ModalType } from "../../stores/modalStore"
 import type {
-  BaseTokenBalance,
   BaseTokenInfo,
+  TokenValue,
   UnifiedTokenInfo,
 } from "../../types/base"
 import { isBaseToken } from "../../utils/token"
-import { computeTotalBalance } from "../../utils/tokenUtils"
+import {
+  compareAmounts,
+  computeTotalBalanceDifferentDecimals,
+} from "../../utils/tokenUtils"
 import { AssetList } from "../Asset/AssetList"
 import { EmptyAssetList } from "../Asset/EmptyAssetList"
 import { SearchBar } from "../SearchBar"
@@ -31,7 +34,7 @@ export type SelectItemToken<T = Token> = {
   token: T
   disabled: boolean
   defuseAssetId?: string
-  balance?: BaseTokenBalance
+  balance?: TokenValue
 }
 
 export const ModalSelectAssets = () => {
@@ -89,37 +92,28 @@ export const ModalSelectAssets = () => {
 
     for (const [tokenId, token] of data) {
       const disabled = selectedTokenId != null && tokenId === selectedTokenId
-      const totalBalance = computeTotalBalance(token, balances)
+      const balance = computeTotalBalanceDifferentDecimals(token, balances)
 
       getAssetList.push({
         itemId: tokenId,
         token,
         disabled,
-        balance:
-          totalBalance == null
-            ? undefined
-            : {
-                balance: totalBalance.toString(),
-                balanceUsd: undefined,
-                convertedLast: undefined,
-              },
+        balance,
       })
     }
 
     // Put tokens with balance on top
     getAssetList.sort((a, b) => {
-      const aBalance = a.balance?.balance ?? "0"
-      const bBalance = b.balance?.balance ?? "0"
-
-      // If both balances are zero or null, maintain original order
-      if (aBalance === "0" && bBalance === "0") return 0
-
-      // Move zero balances to the end
-      if (aBalance === "0") return 1
-      if (bBalance === "0") return -1
-
-      // Both have non-zero balances, maintain original order
-      return 0
+      if (a.balance == null && b.balance == null) {
+        return 0
+      }
+      if (a.balance == null) {
+        return 1
+      }
+      if (b.balance == null) {
+        return -1
+      }
+      return compareAmounts(b.balance, a.balance)
     })
 
     setAssetList(getAssetList)

@@ -1,10 +1,11 @@
 import clsx from "clsx"
 import { TooltipInfo } from "src/components/TooltipInfo"
+import type { TokenValue } from "../../../types/base"
 import { formatTokenValue } from "../../../utils/format"
 
 export interface BlockMultiBalancesProps {
   balance: bigint
-  transitBalance?: bigint
+  transitBalance?: TokenValue
   decimals: number
   handleClick?: () => void
   disabled?: boolean
@@ -54,10 +55,14 @@ export const BlockMultiBalances = ({
             <div className="flex items-center gap-1 rounded-full bg-gray-300/50 px-2 py-0.5">
               <div className="w-3 h-3 bg-[url('/static/images/process.gif')] bg-no-repeat bg-contain" />
               <span className="text-xs font-bold text-gray-600">
-                {formatTokenValue(transitBalance, decimals, {
-                  min: 0.0001,
-                  fractionDigits: 4,
-                })}
+                {formatTokenValue(
+                  transitBalance.amount,
+                  transitBalance.decimals,
+                  {
+                    min: 0.0001,
+                    fractionDigits: 4,
+                  }
+                )}
               </span>
             </div>
           }
