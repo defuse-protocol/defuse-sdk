@@ -470,6 +470,26 @@ describe("calculateSplitAmounts", () => {
     ).toEqual(amountIn.amount)
   })
 
+  it("handles token duplicates", () => {
+    const tokensIn = [{ ...token1 }, { ...token1 }, token2]
+    const amountIn = { amount: adjustDecimals(200n, 0, 6), decimals: 6 }
+    const balances = {
+      token1: adjustDecimals(100n, 0, token1.decimals),
+      token2: adjustDecimals(100n, 0, token2.decimals),
+    }
+
+    const result = calculateSplitAmounts(tokensIn, amountIn, balances)
+    expect(result).toEqual({
+      token1: 100_000_000n,
+      token2: 10_000_000_000n,
+    })
+
+    const total = sumTotal(tokensIn, result)
+    expect(
+      adjustDecimals(total.amount, total.decimals, amountIn.decimals)
+    ).toEqual(amountIn.amount)
+  })
+
   it("throws AmountMismatchError when available amount is less than requested", () => {
     const tokensIn = [token1, token2]
     const amountIn = { amount: adjustDecimals(200n, 0, 6), decimals: 6 }
