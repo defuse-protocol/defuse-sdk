@@ -23,7 +23,7 @@ import type { ModalSelectAssetsPayload } from "../../../components/Modal/ModalSe
 import { useModalStore } from "../../../providers/ModalStoreProvider"
 import { ModalType } from "../../../stores/modalStore"
 import type { SwappableToken } from "../../../types/swap"
-import { computeTotalBalance } from "../../../utils/tokenUtils"
+import { computeTotalBalanceDifferentDecimals } from "../../../utils/tokenUtils"
 import type {
   BalanceMapping,
   depositedBalanceMachine,
@@ -167,11 +167,14 @@ export const SwapForm = ({ onNavigateDeposit }: SwapFormProps) => {
 
   const balanceInsufficient =
     tokenInBalance != null && snapshot.context.parsedFormValues.amountIn != null
-      ? tokenInBalance < snapshot.context.parsedFormValues.amountIn
+      ? // todo: take decimals into account
+        tokenInBalance.amount < snapshot.context.parsedFormValues.amountIn
       : false
 
   const showDepositButton =
-    tokenInBalance != null && tokenInBalance === 0n && onNavigateDeposit != null
+    tokenInBalance != null &&
+    tokenInBalance.amount === 0n &&
+    onNavigateDeposit != null
 
   const usdAmountIn = getTokenUsdPrice(
     getValues().amountIn,
@@ -385,7 +388,7 @@ export function renderIntentCreationResult(
 export function balanceSelector(token: SwappableToken) {
   return (state: undefined | SnapshotFrom<typeof depositedBalanceMachine>) => {
     if (!state) return
-    return computeTotalBalance(token, state.context.balances)
+    return computeTotalBalanceDifferentDecimals(token, state.context.balances)
   }
 }
 

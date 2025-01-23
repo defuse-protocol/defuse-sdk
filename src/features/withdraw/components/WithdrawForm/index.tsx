@@ -338,7 +338,10 @@ export const WithdrawForm = ({
               max={
                 tokenInBalance != null
                   ? {
-                      value: formatTokenValue(tokenInBalance, token.decimals),
+                      value: formatTokenValue(
+                        tokenInBalance.amount,
+                        tokenInBalance.decimals
+                      ),
                       message: "Insufficient balance",
                     }
                   : undefined
