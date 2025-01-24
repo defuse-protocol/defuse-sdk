@@ -22,7 +22,8 @@ import { assert } from "../utils/assert"
 import { isBaseToken, isFungibleToken } from "../utils/token"
 import {
   adjustDecimalsTokenValue,
-  computeTotalBalance,
+  compareAmounts,
+  computeTotalBalanceDifferentDecimals,
   minAmounts,
   subtractAmounts,
   truncateTokenValue,
@@ -320,13 +321,16 @@ function checkBalanceSufficiency({
     } {
   assert(formValues.parsedAmount != null, "parsedAmount is null")
 
-  const totalBalance = computeTotalBalance(formValues.tokenIn, balances)
+  const totalBalance = computeTotalBalanceDifferentDecimals(
+    formValues.tokenIn,
+    balances
+  )
 
   if (totalBalance == null) {
     return { tag: "err", value: { reason: "ERR_BALANCE_MISSING" } }
   }
 
-  if (formValues.parsedAmount > totalBalance) {
+  if (compareAmounts(totalBalance, formValues.parsedAmount) === -1) {
     return { tag: "err", value: { reason: "ERR_BALANCE_INSUFFICIENT" } }
   }
 
@@ -406,8 +410,7 @@ function getWithdrawBreakdown({
   const requiredSwap = getRequiredSwapAmount(
     formValues.tokenIn,
     formValues.tokenOut,
-    // todo: take decimals into account, as tokenIn may have different decimals
-    { amount: formValues.parsedAmount, decimals: formValues.tokenIn.decimals },
+    formValues.parsedAmount,
     balances
   )
 

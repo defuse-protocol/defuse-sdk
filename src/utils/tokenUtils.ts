@@ -159,6 +159,15 @@ export function getDerivedToken(
   return null
 }
 
+export function getTokenMaxDecimals(
+  token: BaseTokenInfo | UnifiedTokenInfo
+): number {
+  if (isBaseToken(token)) {
+    return token.decimals
+  }
+  return Math.max(...token.groupedTokens.map((t) => t.decimals))
+}
+
 export function compareAmounts(
   value1: TokenValue,
   value2: TokenValue

@@ -2,6 +2,7 @@ import { type ActorRef, type Snapshot, fromTransition } from "xstate"
 import type {
   BaseTokenInfo,
   SupportedChainName,
+  TokenValue,
   UnifiedTokenInfo,
 } from "../../types/base"
 import { assert } from "../../utils/assert"
@@ -33,7 +34,7 @@ export type Events =
          * different because of the decimals. We cannot parse it here, because we don't
          * know what format UI uses to display the amount.
          */
-        parsedAmount: bigint | null
+        parsedAmount: TokenValue | null
       }
     }
   | {
@@ -51,7 +52,7 @@ export type Events =
       type: "WITHDRAW_FORM.UPDATE_AMOUNT"
       params: {
         amount: string
-        parsedAmount: bigint | null
+        parsedAmount: TokenValue | null
       }
     }
   | {
@@ -72,7 +73,7 @@ export type State = {
   tokenIn: BaseTokenInfo | UnifiedTokenInfo
   tokenOut: BaseTokenInfo
   amount: string
-  parsedAmount: bigint | null
+  parsedAmount: TokenValue | null
   recipient: string
   parsedRecipient: string | null
   destinationMemo: string
