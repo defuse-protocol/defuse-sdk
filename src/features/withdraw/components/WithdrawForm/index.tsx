@@ -142,7 +142,12 @@ export const WithdrawForm = ({
 
   const minWithdrawalAmount = useSelector(poaBridgeInfoRef, (state) => {
     const bridgedTokenInfo = getPOABridgeInfo(state, tokenOut)
-    return bridgedTokenInfo == null ? null : bridgedTokenInfo.minWithdrawal
+    return bridgedTokenInfo == null
+      ? null
+      : {
+          amount: bridgedTokenInfo.minWithdrawal,
+          decimals: tokenOut.decimals,
+        }
   })
 
   const tokenInBalance = useSelector(
@@ -337,8 +342,8 @@ export const WithdrawForm = ({
                 minWithdrawalAmount != null
                   ? {
                       value: formatTokenValue(
-                        minWithdrawalAmount,
-                        token.decimals
+                        minWithdrawalAmount.amount,
+                        minWithdrawalAmount.decimals
                       ),
                       message: "Amount is too low",
                     }
@@ -665,12 +670,12 @@ const _typeCheck: TypeEqualityGuard<
 > = true
 
 function renderMinWithdrawalAmount(
-  minWithdrawalAmount: bigint | null,
+  minWithdrawalAmount: TokenValue | null,
   tokenOut: BaseTokenInfo
 ) {
   return (
     minWithdrawalAmount != null &&
-    minWithdrawalAmount > 1n && (
+    minWithdrawalAmount.amount > 1n && (
       <Callout.Root size="1" color="gray" variant="surface">
         <Callout.Icon>
           <InfoCircledIcon />
@@ -679,8 +684,11 @@ function renderMinWithdrawalAmount(
           {/* biome-ignore lint/nursery/useConsistentCurlyBraces: space is needed here */}
           Minimal amount to withdraw is{" "}
           <Text size="1" weight="bold">
-            {/* biome-ignore lint/nursery/useConsistentCurlyBraces: space is needed here */}
-            {formatTokenValue(minWithdrawalAmount, tokenOut.decimals)}{" "}
+            {formatTokenValue(
+              minWithdrawalAmount.amount,
+              minWithdrawalAmount.decimals
+              // biome-ignore lint/nursery/useConsistentCurlyBraces: space is needed here
+            )}{" "}
             {tokenOut.symbol}
           </Text>
         </Callout.Text>
