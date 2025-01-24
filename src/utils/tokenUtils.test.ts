@@ -2,11 +2,14 @@ import { describe, expect, it } from "vitest"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../types/base"
 import {
   DuplicateTokenError,
+  addAmounts,
   adjustDecimals,
   compareAmounts,
   computeTotalBalance,
   computeTotalBalanceDifferentDecimals,
+  computeTotalDeltaDifferentDecimals,
   getDerivedToken,
+  subtractAmounts,
 } from "./tokenUtils"
 
 describe("computeTotalBalance", () => {
@@ -673,5 +676,141 @@ describe("adjustDecimals", () => {
     expect(adjustDecimals(1000000000000000000n, 18, 6)).toBe(1000000n)
     // 0.5 with 18 decimals to 6 decimals
     expect(adjustDecimals(500000000000000000n, 18, 6)).toBe(500000n)
+  })
+})
+
+describe("addAmounts", () => {
+  it("should add amounts with same decimals", () => {
+    expect(
+      addAmounts({ amount: 100n, decimals: 18 }, { amount: 200n, decimals: 18 })
+    ).toEqual({
+      amount: 300n,
+      decimals: 18,
+    })
+  })
+
+  it("should add amounts with different decimals", () => {
+    expect(
+      addAmounts(
+        { amount: 1000000n, decimals: 6 }, // 1.0
+        { amount: 1000000000000000000n, decimals: 18 } // 1.0
+      )
+    ).toEqual({
+      amount: 2000000000000000000n,
+      decimals: 18,
+    })
+  })
+
+  it("should add multiple amounts", () => {
+    expect(
+      addAmounts(
+        { amount: 1000000n, decimals: 6 }, // 1.0
+        { amount: 1000000000000000000n, decimals: 18 }, // 1.0
+        { amount: 500000n, decimals: 6 } // 0.5
+      )
+    ).toEqual({
+      amount: 2500000000000000000n,
+      decimals: 18,
+    })
+  })
+})
+
+describe("subtractAmounts", () => {
+  it("should subtract amounts with same decimals", () => {
+    expect(
+      subtractAmounts(
+        { amount: 300n, decimals: 18 },
+        { amount: 100n, decimals: 18 }
+      )
+    ).toEqual({
+      amount: 200n,
+      decimals: 18,
+    })
+  })
+
+  it("should subtract amounts with different decimals", () => {
+    expect(
+      subtractAmounts(
+        { amount: 2000000n, decimals: 6 }, // 2.0
+        { amount: 1000000000000000000n, decimals: 18 } // 1.0
+      )
+    ).toEqual({
+      amount: 1000000000000000000n,
+      decimals: 18,
+    })
+  })
+})
+
+describe("computeTotalDeltaDifferentDecimals", () => {
+  const tokens: BaseTokenInfo[] = [
+    {
+      defuseAssetId: "token1",
+      address: "0x123",
+      symbol: "TKN1",
+      name: "Token1",
+      decimals: 6,
+      icon: "icon1.png",
+      chainId: "",
+      chainIcon: "chain1.png",
+      chainName: "eth",
+      routes: [],
+    },
+    {
+      defuseAssetId: "token2",
+      address: "0x456",
+      symbol: "TKN2",
+      name: "Token2",
+      decimals: 18,
+      icon: "icon2.png",
+      chainId: "",
+      chainIcon: "chain2.png",
+      chainName: "eth",
+      routes: [],
+    },
+  ]
+
+  it("should compute total delta with same token", () => {
+    const deltas: [string, bigint][] = [
+      ["token1", 1000000n], // +1.0 (6 decimals)
+      ["token1", -500000n], // -0.5 (6 decimals)
+    ]
+
+    expect(
+      computeTotalDeltaDifferentDecimals(tokens.slice(0, 1), deltas)
+    ).toEqual({
+      amount: 500000n,
+      decimals: 6,
+    })
+  })
+
+  it("should compute total delta with different tokens and decimals", () => {
+    const deltas: [string, bigint][] = [
+      ["token1", 1000000n], // +1.0 (6 decimals)
+      ["token2", 1000000000000000000n], // +1.0 (18 decimals)
+    ]
+
+    expect(computeTotalDeltaDifferentDecimals(tokens, deltas)).toEqual({
+      amount: 2000000000000000000n,
+      decimals: 18,
+    })
+  })
+
+  it("should handle empty deltas", () => {
+    expect(computeTotalDeltaDifferentDecimals(tokens, [])).toEqual({
+      amount: 0n,
+      decimals: 0,
+    })
+  })
+
+  it("should handle unknown tokens", () => {
+    const deltas: [string, bigint][] = [
+      ["unknown", 1000000n],
+      ["token1", 1000000n],
+    ]
+
+    expect(computeTotalDeltaDifferentDecimals(tokens, deltas)).toEqual({
+      amount: 1000000000000000000n,
+      decimals: 18,
+    })
   })
 })
