@@ -11,13 +11,20 @@ import {
 import { settings } from "../../config/settings"
 import { logger } from "../../logger"
 import type { QuoteResult } from "../../services/quoteService"
-import type { BaseTokenInfo, UnifiedTokenInfo } from "../../types/base"
+import type {
+  BaseTokenInfo,
+  TokenValue,
+  UnifiedTokenInfo,
+} from "../../types/base"
 import type { ChainType, Transaction } from "../../types/deposit"
 import type { SwappableToken } from "../../types/swap"
 import { assert } from "../../utils/assert"
 import { userAddressToDefuseUserId } from "../../utils/defuse"
 import { parseUnits } from "../../utils/parse"
-import { getAnyBaseTokenInfo } from "../../utils/tokenUtils"
+import {
+  getAnyBaseTokenInfo,
+  getTokenMaxDecimals,
+} from "../../utils/tokenUtils"
 import {
   type Events as BackgroundQuoterEvents,
   type ParentEvents as BackgroundQuoterParentEvents,
@@ -43,7 +50,8 @@ export type Context = {
     amountIn: string
   }
   parsedFormValues: {
-    amountIn: bigint | null
+    tokenOut: BaseTokenInfo
+    amountIn: TokenValue | null
   }
   intentCreationResult: SwapIntentMachineOutput | null
   intentRefs: ActorRefFrom<typeof intentStatusMachine>[]
@@ -135,15 +143,20 @@ export const swapUIMachine = setup({
     }),
     parseFormValues: assign({
       parsedFormValues: ({ context }) => {
+        const tokenOut = getAnyBaseTokenInfo(context.formValues.tokenOut)
+
         try {
+          const decimals = getTokenMaxDecimals(context.formValues.tokenIn)
           return {
-            amountIn: parseUnits(
-              context.formValues.amountIn,
-              context.formValues.tokenIn.decimals
-            ),
+            tokenOut,
+            amountIn: {
+              amount: parseUnits(context.formValues.amountIn, decimals),
+              decimals,
+            },
           }
         } catch {
           return {
+            tokenOut,
             amountIn: null,
           }
         }
@@ -187,11 +200,8 @@ export const swapUIMachine = setup({
           type: "NEW_QUOTE_INPUT",
           params: {
             tokenIn: context.formValues.tokenIn,
-            tokenOut: getAnyBaseTokenInfo(context.formValues.tokenOut),
-            amountIn: {
-              amount: context.parsedFormValues.amountIn,
-              decimals: context.formValues.tokenIn.decimals,
-            },
+            tokenOut: context.parsedFormValues.tokenOut,
+            amountIn: context.parsedFormValues.amountIn,
             balances: balances ?? {},
           },
         }
@@ -263,7 +273,7 @@ export const swapUIMachine = setup({
     isFormValid: ({ context }) => {
       return (
         context.parsedFormValues.amountIn != null &&
-        context.parsedFormValues.amountIn > 0n
+        context.parsedFormValues.amountIn.amount > 0n
       )
     },
   },
@@ -280,6 +290,7 @@ export const swapUIMachine = setup({
       amountIn: "",
     },
     parsedFormValues: {
+      tokenOut: getAnyBaseTokenInfo(input.tokenOut),
       amountIn: null,
     },
     intentCreationResult: null,
@@ -413,7 +424,7 @@ export const swapUIMachine = setup({
             sendNearTransaction: event.params.sendNearTransaction,
             intentOperationParams: {
               type: "swap" as const,
-              tokenOut: getAnyBaseTokenInfo(context.formValues.tokenOut),
+              tokenOut: context.parsedFormValues.tokenOut,
               quote: quote.value,
             },
           }
