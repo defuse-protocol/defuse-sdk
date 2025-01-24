@@ -413,6 +413,7 @@ export const swapUIMachine = setup({
             sendNearTransaction: event.params.sendNearTransaction,
             intentOperationParams: {
               type: "swap" as const,
+              tokenOut: getAnyBaseTokenInfo(context.formValues.tokenOut),
               quote: quote.value,
             },
           }

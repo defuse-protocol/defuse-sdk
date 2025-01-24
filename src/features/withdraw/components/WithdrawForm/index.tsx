@@ -511,7 +511,10 @@ export const WithdrawForm = ({
                 ) : totalAmountReceived == null ? (
                   "–"
                 ) : (
-                  formatTokenValue(totalAmountReceived, tokenOut.decimals)
+                  formatTokenValue(
+                    totalAmountReceived.amount,
+                    totalAmountReceived.decimals
+                  )
                   // biome-ignore lint/nursery/useConsistentCurlyBraces: space is needed here
                 )}{" "}
                 {token.symbol}
