@@ -89,7 +89,7 @@ export const depositFormReducer = fromTransition(
         break
       }
       case "DEPOSIT_FORM.UPDATE_AMOUNT": {
-        const token = state.token
+        const token = state.derivedToken
         assert(token != null, "Token not found")
         const amount = event.params.amount
         // Use catch to prevent invalid amount as not numberish string from stopping the deposit UI machine
