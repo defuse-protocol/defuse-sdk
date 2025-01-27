@@ -72,7 +72,6 @@ describe("computeTotalBalance", () => {
       unifiedAssetId: "unified1",
       symbol: "UTKN",
       name: "Unified Token",
-      decimals: 18,
       icon: "icon.png",
       groupedTokens: [
         {
@@ -147,7 +146,6 @@ describe("computeTotalBalanceDifferentDecimals", () => {
         unifiedAssetId: "unified1",
         symbol: "UTKN",
         name: "Unified Token",
-        decimals: 18,
         icon: "icon.png",
         groupedTokens: [],
       }
@@ -279,7 +277,6 @@ describe("computeTotalBalanceDifferentDecimals", () => {
       unifiedAssetId: "unified1",
       symbol: "UTKN",
       name: "Unified Token",
-      decimals: 18,
       icon: "icon.png",
       groupedTokens: [
         {
@@ -363,7 +360,6 @@ describe("computeTotalBalanceDifferentDecimals", () => {
       unifiedAssetId: "unified1",
       symbol: "UTKN",
       name: "Unified Token",
-      decimals: 18,
       icon: "icon.png",
       groupedTokens: [
         {
@@ -415,7 +411,6 @@ describe("computeTotalBalanceDifferentDecimals", () => {
       unifiedAssetId: "unified1",
       symbol: "UTKN",
       name: "Unified Token",
-      decimals: 18,
       icon: "icon.png",
       groupedTokens: [
         {
@@ -834,7 +829,6 @@ describe("getUnderlyingBaseTokenInfos", () => {
     unifiedAssetId: "unified1",
     symbol: "UTKN",
     name: "Unified Token",
-    decimals: 18,
     icon: "icon.png",
     groupedTokens: [
       baseToken,

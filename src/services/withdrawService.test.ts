@@ -33,7 +33,6 @@ const unifiedUsdc: UnifiedTokenInfo = {
   unifiedAssetId: "usdc",
   symbol: "USDC",
   name: "USD Coin",
-  decimals: 6,
   icon: "usdc.svg",
   groupedTokens: [usdcSolana, usdcNear],
 }
@@ -68,7 +67,6 @@ const unifiedTurbo: UnifiedTokenInfo = {
   unifiedAssetId: "turbo",
   symbol: "TURBO",
   name: "Turbo Token",
-  decimals: 24,
   icon: "turbo.svg",
   groupedTokens: [turboSolana, turboEth],
 }
