@@ -151,9 +151,22 @@ export function computeTotalDeltaDifferentDecimals(
 export function getAnyBaseTokenInfo(
   token: BaseTokenInfo | UnifiedTokenInfo
 ): BaseTokenInfo {
-  const t = isBaseToken(token) ? token : token.groupedTokens[0]
+  const t = getUnderlyingBaseTokenInfos(token)[0]
   assert(t != null, "Token is undefined")
   return t
+}
+
+export function getUnderlyingBaseTokenInfos(
+  token: BaseTokenInfo | UnifiedTokenInfo | BaseTokenInfo[]
+): BaseTokenInfo[] {
+  let tokens: BaseTokenInfo[]
+  if (Array.isArray(token)) {
+    tokens = token
+  } else {
+    tokens = isBaseToken(token) ? [token] : token.groupedTokens
+  }
+
+  return deduplicateTokens(tokens)
 }
 
 export function getDerivedToken(
@@ -179,10 +192,8 @@ export function getDerivedToken(
 export function getTokenMaxDecimals(
   token: BaseTokenInfo | UnifiedTokenInfo
 ): number {
-  if (isBaseToken(token)) {
-    return token.decimals
-  }
-  return Math.max(...token.groupedTokens.map((t) => t.decimals))
+  const tokens = getUnderlyingBaseTokenInfos(token)
+  return Math.max(...tokens.map((t) => t.decimals))
 }
 
 export function compareAmounts(
@@ -254,4 +265,11 @@ export function truncateTokenValue(
     adjustDecimalsTokenValue(value, decimals),
     value.decimals
   )
+}
+
+export function negateTokenValue(value: TokenValue): TokenValue {
+  return {
+    amount: -value.amount,
+    decimals: value.decimals,
+  }
 }
