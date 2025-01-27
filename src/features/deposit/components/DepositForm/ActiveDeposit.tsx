@@ -9,7 +9,6 @@ import { TooltipInfo } from "../../../../components/TooltipInfo"
 import { useTokensUsdPrices } from "../../../../hooks/useTokensUsdPrices"
 import type { BaseTokenInfo } from "../../../../types/base"
 import type { BlockchainEnum } from "../../../../types/interfaces"
-import type { SwappableToken } from "../../../../types/swap"
 import { reverseAssetNetworkAdapter } from "../../../../utils/adapters"
 import { formatTokenValue, formatUsdAmount } from "../../../../utils/format"
 import getTokenUsdPrice from "../../../../utils/getTokenUsdPrice"
@@ -197,7 +196,7 @@ function renderDepositButtonText(
   isAmountEmpty: boolean,
   isBalanceInsufficient: boolean,
   network: BlockchainEnum | null,
-  token: SwappableToken | null,
+  token: BaseTokenInfo | null,
   minDepositAmount: bigint | null,
   isDepositAmountHighEnough: boolean,
   isLoading: boolean

@@ -31,10 +31,6 @@ export interface AggregatedQuote {
   quoteHashes: string[]
   /** Earliest expiration time in ISO-8601 format */
   expirationTime: string
-  /** @deprecated */
-  totalAmountIn: bigint
-  /** @deprecated */
-  totalAmountOut: bigint
   tokenDeltas: [string, bigint][]
 }
 
@@ -183,8 +179,6 @@ export async function queryQuoteExactOut(
       value: {
         quoteHashes: [bestQuote.quote_hash],
         expirationTime: bestQuote.expiration_time,
-        totalAmountIn: BigInt(bestQuote.amount_in),
-        totalAmountOut: BigInt(bestQuote.amount_out),
         tokenDeltas: [
           [input.tokenIn, -BigInt(bestQuote.amount_in)],
           [input.tokenOut, BigInt(bestQuote.amount_out)],
@@ -282,8 +276,6 @@ export class AmountMismatchError extends Error {
 export function aggregateQuotes(
   quotes: NonNullable<QuoteResults>[]
 ): QuoteResult {
-  let totalAmountIn = 0n
-  let totalAmountOut = 0n
   const quoteHashes: string[] = []
   let expirationTime = Number.POSITIVE_INFINITY
   const tokenDeltas: [string, bigint][] = []
@@ -314,9 +306,6 @@ export function aggregateQuotes(
 
     const amountOut = BigInt(q.amount_out)
     const amountIn = BigInt(q.amount_in)
-
-    totalAmountIn += amountIn
-    totalAmountOut += amountOut
 
     expirationTime = Math.min(
       expirationTime,
@@ -354,8 +343,6 @@ export function aggregateQuotes(
       expirationTime: new Date(
         expirationTime === Number.POSITIVE_INFINITY ? 0 : expirationTime
       ).toISOString(),
-      totalAmountIn,
-      totalAmountOut,
       tokenDeltas,
     },
   }

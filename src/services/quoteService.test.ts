@@ -89,8 +89,6 @@ describe("queryQuote()", () => {
       value: {
         expirationTime: "2024-01-15T12:02:00.000Z",
         quoteHashes: ["q1"],
-        totalAmountIn: 150000000n,
-        totalAmountOut: 200n,
         tokenDeltas: [
           ["token1", -150000000n],
           ["tokenOut", 200n],
@@ -159,8 +157,6 @@ describe("queryQuote()", () => {
       value: {
         expirationTime: "2024-01-15T12:01:30.000Z",
         quoteHashes: ["q1", "q2"],
-        totalAmountIn: 5100000000n,
-        totalAmountOut: 30n,
         tokenDeltas: [
           ["token1", -100000000n],
           ["tokenOut", 20n],
@@ -213,8 +209,6 @@ describe("queryQuote()", () => {
       value: {
         expirationTime: "2024-01-15T12:02:00.000Z",
         quoteHashes: ["q2"],
-        totalAmountIn: 150n,
-        totalAmountOut: 200n,
         tokenDeltas: [
           ["token1", -150n],
           ["tokenOut", 200n],
@@ -304,7 +298,17 @@ describe("queryQuote()", () => {
     const result = await queryQuote(input)
 
     expect(relayClient.quote).toHaveBeenCalledTimes(1)
-    expect(result.tag === "ok" && result.value.totalAmountIn).toBe(150n)
+    expect(result).toEqual({
+      tag: "ok",
+      value: {
+        expirationTime: expect.any(String),
+        quoteHashes: ["q1"],
+        tokenDeltas: [
+          ["token1", -150n],
+          ["tokenOut", 200n],
+        ],
+      },
+    })
   })
 })
 
@@ -581,8 +585,6 @@ describe("aggregateQuotes()", () => {
       value: {
         expirationTime: "2024-01-15T12:04:00.000Z",
         quoteHashes: ["q1", "q2"],
-        totalAmountIn: 101000000n,
-        totalAmountOut: 3000000n,
         tokenDeltas: [
           ["token1", -1000000n],
           ["tokenOut", 2000000n],
