@@ -24,6 +24,7 @@ import { parseUnits } from "../../utils/parse"
 import {
   getAnyBaseTokenInfo,
   getTokenMaxDecimals,
+  getUnderlyingBaseTokenInfos,
 } from "../../utils/tokenUtils"
 import {
   type Events as BackgroundQuoterEvents,
@@ -424,6 +425,7 @@ export const swapUIMachine = setup({
             sendNearTransaction: event.params.sendNearTransaction,
             intentOperationParams: {
               type: "swap" as const,
+              tokensIn: getUnderlyingBaseTokenInfos(context.formValues.tokenIn),
               tokenOut: context.parsedFormValues.tokenOut,
               quote: quote.value,
             },

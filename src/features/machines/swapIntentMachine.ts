@@ -25,6 +25,7 @@ import {
   addAmounts,
   compareAmounts,
   computeTotalDeltaDifferentDecimals,
+  negateTokenValue,
   subtractAmounts,
 } from "../../utils/tokenUtils"
 import {
@@ -56,6 +57,7 @@ export type NEP141StorageRequirement =
 type IntentOperationParams =
   | {
       type: "swap"
+      tokensIn: BaseTokenInfo[]
       tokenOut: BaseTokenInfo
       quote: AggregatedQuote
     }
@@ -72,11 +74,13 @@ type IntentOperationParams =
 export type IntentDescription =
   | {
       type: "swap"
+      totalAmountIn: TokenValue
+      totalAmountOut: TokenValue
       quote: AggregatedQuote
     }
   | {
       type: "withdraw"
-      amountWithdrawn: bigint
+      amountWithdrawn: TokenValue
     }
 
 type Context = {
@@ -308,7 +312,7 @@ export const swapIntentMachine = setup({
     if (context.intentHash != null) {
       const intentType = context.intentOperationParams.type
       switch (intentType) {
-        case "swap":
+        case "swap": {
           return {
             tag: "ok",
             value: {
@@ -316,9 +320,20 @@ export const swapIntentMachine = setup({
               intentDescription: {
                 type: "swap",
                 quote: context.intentOperationParams.quote,
+                totalAmountIn: negateTokenValue(
+                  computeTotalDeltaDifferentDecimals(
+                    context.intentOperationParams.tokensIn,
+                    context.intentOperationParams.quote.tokenDeltas
+                  )
+                ),
+                totalAmountOut: computeTotalDeltaDifferentDecimals(
+                  [context.intentOperationParams.tokenOut],
+                  context.intentOperationParams.quote.tokenDeltas
+                ),
               },
             },
           }
+        }
         case "withdraw": {
           return {
             tag: "ok",
@@ -326,10 +341,9 @@ export const swapIntentMachine = setup({
               intentHash: context.intentHash,
               intentDescription: {
                 type: "withdraw",
-                // todo: return decimals too
                 amountWithdrawn: calcOperationAmountOut(
                   context.intentOperationParams
-                ).amount,
+                ),
               },
             },
           }
