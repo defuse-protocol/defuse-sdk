@@ -82,7 +82,8 @@ export function SwapUIMachineFormSyncProvider({
     }
   })
 
-  usePublicKeyModalOpener(publicKeyVerifierRef)
+  // biome-ignore lint/suspicious/noExplicitAny: types should've been correct, but `publicKeyVerifierRef` is commented out
+  usePublicKeyModalOpener(publicKeyVerifierRef as any)
 
   return <>{children}</>
 }

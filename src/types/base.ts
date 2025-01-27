@@ -67,7 +67,11 @@ export interface UnifiedTokenInfo {
   unifiedAssetId: string
   symbol: string
   name: string
-  decimals: number
   icon: string
   groupedTokens: BaseTokenInfo[]
+}
+
+export interface TokenValue {
+  amount: bigint
+  decimals: number
 }

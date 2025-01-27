@@ -14,7 +14,6 @@ import type { BaseTokenInfo, UnifiedTokenInfo } from "../../types/base"
 import type { ChainType, Transaction } from "../../types/deposit"
 import { assert } from "../../utils/assert"
 import { userAddressToDefuseUserId } from "../../utils/defuse"
-import { isBaseToken } from "../../utils/token"
 import {
   type Events as BackgroundQuoterEvents,
   type ParentEvents as BackgroundQuoterParentEvents,
@@ -296,37 +295,18 @@ export const withdrawUIMachine = setup({
       if (quote === null) return true
       if (quote.tag === "err") return true
 
-      for (const [token, amount] of Object.entries(quote.value.amountsIn)) {
+      for (const [token, amount] of quote.value.tokenDeltas) {
+        // We only care about negative amounts, because we are withdrawing
+        if (amount >= 0) continue
+
         // We need to know balances of all tokens involved in the swap
         const balance = balances[token]
-        if (balance == null || balance < amount) {
+        if (balance == null || balance < -amount) {
           return false
         }
       }
 
       return true
-    },
-
-    isBalanceSufficientForAmountIn: ({ context }) => {
-      const formContext = context.withdrawFormRef.getSnapshot().context
-      assert(formContext.parsedAmount != null, "parsedAmount is null")
-
-      const balances =
-        context.depositedBalanceRef.getSnapshot().context.balances
-
-      const underlyingTokensIn = isBaseToken(formContext.tokenIn)
-        ? [formContext.tokenIn]
-        : formContext.tokenIn.groupedTokens
-
-      let totalBalance = 0n
-      for (const token of underlyingTokensIn) {
-        const balance = balances[token.defuseAssetId]
-        if (balance != null) {
-          totalBalance += balance
-        }
-      }
-
-      return formContext.parsedAmount <= totalBalance
     },
 
     isWithdrawParamsComplete: ({ context }) => {

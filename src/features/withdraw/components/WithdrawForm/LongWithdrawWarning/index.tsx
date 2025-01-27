@@ -1,14 +1,14 @@
 import { Callout } from "@radix-ui/themes"
 import type { TokenUsdPriceData } from "src/hooks/useTokensUsdPrices"
 import { formatUnits } from "viem"
-import type { BaseTokenInfo } from "../../../../../types/base"
+import type { BaseTokenInfo, TokenValue } from "../../../../../types/base"
 
 export default function LongWithdrawWarning({
   amountIn,
   token,
   tokensUsdPriceData,
 }: {
-  amountIn: bigint | null
+  amountIn: TokenValue | null
   token: BaseTokenInfo
   tokensUsdPriceData?: TokenUsdPriceData
 }) {
@@ -18,7 +18,8 @@ export default function LongWithdrawWarning({
   const tokenPrice = tokensUsdPriceData[token.defuseAssetId]?.price
   if (!tokenPrice) return null
   //4990 is an approximate threshold of what is considered big withdrawal. (As USDT/USDC is ~1$)
-  return Number(formatUnits(amountIn, token.decimals)) * tokenPrice >= 4990 ? (
+  return Number(formatUnits(amountIn.amount, amountIn.decimals)) * tokenPrice >=
+    4990 ? (
     <Callout.Root className="bg-warning px-3 py-2 text-warning-foreground">
       <Callout.Text className="font-bold text-xs">
         Withdrawal over ~5,000$ may take longer to process.

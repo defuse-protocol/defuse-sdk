@@ -1,7 +1,12 @@
 import { settings } from "../config/settings"
 import { logger } from "../logger"
-import type { BaseTokenInfo } from "../types/base"
-import { computeTotalBalance } from "../utils/tokenUtils"
+import type { BaseTokenInfo, TokenValue } from "../types/base"
+import {
+  adjustDecimals,
+  compareAmounts,
+  computeTotalBalanceDifferentDecimals,
+  deduplicateTokens,
+} from "../utils/tokenUtils"
 import { quote } from "./solverRelayHttpClient"
 import type {
   FailedQuote,
@@ -13,11 +18,7 @@ function isFailedQuote(quote: Quote | FailedQuote): quote is FailedQuote {
   return "type" in quote
 }
 
-type TokenSlice = Pick<BaseTokenInfo, "defuseAssetId">
-type TokenValue = {
-  amount: bigint
-  decimals: number
-}
+type TokenSlice = BaseTokenInfo
 
 export interface AggregatedQuoteParams {
   tokensIn: TokenSlice[] // set of close tokens, e.g. [USDC on Solana, USDC on Ethereum, USDC on Near]
@@ -30,12 +31,6 @@ export interface AggregatedQuote {
   quoteHashes: string[]
   /** Earliest expiration time in ISO-8601 format */
   expirationTime: string
-  totalAmountIn: bigint
-  totalAmountOut: bigint
-  /** @deprecated */
-  amountsIn: Record<string, bigint> // amount in for each token
-  /** @deprecated */
-  amountsOut: Record<string, bigint> // amount out for each token
   tokenDeltas: [string, bigint][]
 }
 
@@ -68,18 +63,26 @@ export async function queryQuote(
   const tokenIn = input.tokensIn[0]
   assert(tokenIn != null, "tokensIn is empty")
 
-  const totalAvailableIn = computeTotalBalance(
-    input.tokensIn.map((t) => t.defuseAssetId),
+  const totalAvailableIn = computeTotalBalanceDifferentDecimals(
+    input.tokensIn,
     input.balances
   )
 
   // If total available is less than requested, just quote the full amount from one token
-  if (totalAvailableIn == null || totalAvailableIn < input.amountIn.amount) {
+  if (
+    totalAvailableIn == null ||
+    compareAmounts(totalAvailableIn, input.amountIn) === -1
+  ) {
+    const exactAmountIn: bigint = adjustDecimals(
+      input.amountIn.amount,
+      input.amountIn.decimals,
+      tokenIn.decimals
+    )
     const q = await quoteWithLog(
       {
         defuse_asset_identifier_in: tokenIn.defuseAssetId,
         defuse_asset_identifier_out: tokenOut.defuseAssetId,
-        exact_amount_in: input.amountIn.amount.toString(),
+        exact_amount_in: exactAmountIn.toString(),
         min_deadline_ms: settings.quoteMinDeadlineMs,
       },
       { signal }
@@ -99,7 +102,7 @@ export async function queryQuote(
 
   const amountsToQuote = calculateSplitAmounts(
     input.tokensIn,
-    input.amountIn.amount,
+    input.amountIn,
     input.balances
   )
 
@@ -176,10 +179,6 @@ export async function queryQuoteExactOut(
       value: {
         quoteHashes: [bestQuote.quote_hash],
         expirationTime: bestQuote.expiration_time,
-        totalAmountIn: BigInt(bestQuote.amount_in),
-        totalAmountOut: BigInt(bestQuote.amount_out),
-        amountsIn: { [input.tokenIn]: BigInt(bestQuote.amount_in) },
-        amountsOut: { [input.tokenOut]: BigInt(bestQuote.amount_out) },
         tokenDeltas: [
           [input.tokenIn, -BigInt(bestQuote.amount_in)],
           [input.tokenOut, BigInt(bestQuote.amount_out)],
@@ -219,37 +218,64 @@ function assert(condition: unknown, msg?: string): asserts condition {
  */
 export function calculateSplitAmounts(
   tokensIn: TokenSlice[],
-  amountIn: bigint,
+  amountIn: TokenValue,
   balances: Record<string, bigint>
 ): Record<string, bigint> {
-  let remainingAmountIn = amountIn
   const amountsToQuote: Record<string, bigint> = {}
 
-  // Deduplicate tokens
-  const uniqueTokensIn = new Set(tokensIn)
+  const uniqueTokensIn = deduplicateTokens(tokensIn)
+
+  let remainingAmount = amountIn.amount
+  const remainingDecimals = amountIn.decimals
 
   for (const tokenIn of uniqueTokensIn) {
     const availableIn = balances[tokenIn.defuseAssetId] ?? 0n
-    const amountToQuote = min(availableIn, remainingAmountIn)
+
+    // Convert remaining amount to token's decimals
+    const normalizedRemainingAmount = adjustDecimals(
+      remainingAmount,
+      remainingDecimals,
+      tokenIn.decimals
+    )
+
+    const amountToQuote = min(availableIn, normalizedRemainingAmount)
 
     if (amountToQuote > 0n) {
       amountsToQuote[tokenIn.defuseAssetId] = amountToQuote
-      remainingAmountIn -= amountToQuote
+
+      // Convert back to original decimals to subtract from remaining
+      remainingAmount -= adjustDecimals(
+        amountToQuote,
+        tokenIn.decimals,
+        remainingDecimals
+      )
     }
 
-    if (remainingAmountIn === 0n) break
+    if (remainingAmount === 0n) break
+  }
+
+  if (remainingAmount !== 0n) {
+    throw new AmountMismatchError(
+      { amount: amountIn.amount, decimals: amountIn.decimals },
+      { amount: remainingAmount, decimals: remainingDecimals }
+    )
   }
 
   return amountsToQuote
 }
 
+export class AmountMismatchError extends Error {
+  constructor(requested: TokenValue, remaining: TokenValue) {
+    super(
+      `Unable to fulfill requested amount ${requested.amount} (decimals: ${requested.decimals}) with remaining amount ${remaining.amount} (decimals: ${remaining.decimals})`
+    )
+    this.name = "AmountMismatchError"
+  }
+}
+
 export function aggregateQuotes(
   quotes: NonNullable<QuoteResults>[]
 ): QuoteResult {
-  let totalAmountIn = 0n
-  let totalAmountOut = 0n
-  const amountsIn: Record<string, bigint> = {}
-  const amountsOut: Record<string, bigint> = {}
   const quoteHashes: string[] = []
   let expirationTime = Number.POSITIVE_INFINITY
   const tokenDeltas: [string, bigint][] = []
@@ -277,23 +303,14 @@ export function aggregateQuotes(
     }
 
     if (q === undefined) continue
+
     const amountOut = BigInt(q.amount_out)
     const amountIn = BigInt(q.amount_in)
-
-    totalAmountIn += amountIn
-    totalAmountOut += amountOut
 
     expirationTime = Math.min(
       expirationTime,
       new Date(q.expiration_time).getTime()
     )
-
-    amountsIn[q.defuse_asset_identifier_in] ??= 0n
-    //@ts-ignore
-    amountsIn[q.defuse_asset_identifier_in] += amountIn
-    amountsOut[q.defuse_asset_identifier_out] ??= 0n
-    //@ts-ignore
-    amountsOut[q.defuse_asset_identifier_out] += amountOut
 
     tokenDeltas.push([q.defuse_asset_identifier_in, -amountIn])
     tokenDeltas.push([q.defuse_asset_identifier_out, amountOut])
@@ -326,10 +343,6 @@ export function aggregateQuotes(
       expirationTime: new Date(
         expirationTime === Number.POSITIVE_INFINITY ? 0 : expirationTime
       ).toISOString(),
-      totalAmountIn,
-      totalAmountOut,
-      amountsIn,
-      amountsOut,
       tokenDeltas,
     },
   }

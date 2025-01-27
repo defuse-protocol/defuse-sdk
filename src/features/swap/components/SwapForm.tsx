@@ -12,7 +12,6 @@ import { useFormContext } from "react-hook-form"
 import { useTokensUsdPrices } from "src/hooks/useTokensUsdPrices"
 import { formatUsdAmount } from "src/utils/format"
 import getTokenUsdPrice from "src/utils/getTokenUsdPrice"
-import { isBaseToken } from "src/utils/token"
 import type { ActorRefFrom, SnapshotFrom } from "xstate"
 import { ButtonCustom } from "../../../components/Button/ButtonCustom"
 import { ButtonSwitch } from "../../../components/Button/ButtonSwitch"
@@ -23,11 +22,11 @@ import type { ModalSelectAssetsPayload } from "../../../components/Modal/ModalSe
 import { useModalStore } from "../../../providers/ModalStoreProvider"
 import { ModalType } from "../../../stores/modalStore"
 import type { SwappableToken } from "../../../types/swap"
-import { computeTotalBalance } from "../../../utils/tokenUtils"
-import type {
-  BalanceMapping,
-  depositedBalanceMachine,
-} from "../../machines/depositedBalanceMachine"
+import {
+  compareAmounts,
+  computeTotalBalanceDifferentDecimals,
+} from "../../../utils/tokenUtils"
+import type { depositedBalanceMachine } from "../../machines/depositedBalanceMachine"
 import type { intentStatusMachine } from "../../machines/intentStatusMachine"
 import type { Context } from "../../machines/swapUIMachine"
 import { SwapSubmitterContext } from "./SwapSubmitter"
@@ -167,11 +166,16 @@ export const SwapForm = ({ onNavigateDeposit }: SwapFormProps) => {
 
   const balanceInsufficient =
     tokenInBalance != null && snapshot.context.parsedFormValues.amountIn != null
-      ? tokenInBalance < snapshot.context.parsedFormValues.amountIn
+      ? compareAmounts(
+          tokenInBalance,
+          snapshot.context.parsedFormValues.amountIn
+        ) === -1
       : false
 
   const showDepositButton =
-    tokenInBalance != null && tokenInBalance === 0n && onNavigateDeposit != null
+    tokenInBalance != null &&
+    tokenInBalance.amount === 0n &&
+    onNavigateDeposit != null
 
   const usdAmountIn = getTokenUsdPrice(
     getValues().amountIn,
@@ -385,29 +389,23 @@ export function renderIntentCreationResult(
 export function balanceSelector(token: SwappableToken) {
   return (state: undefined | SnapshotFrom<typeof depositedBalanceMachine>) => {
     if (!state) return
-    return computeTotalBalance(token, state.context.balances)
+    return computeTotalBalanceDifferentDecimals(token, state.context.balances)
   }
 }
 
 export function transitBalanceSelector(token: SwappableToken) {
   return (state: undefined | SnapshotFrom<typeof depositedBalanceMachine>) => {
-    if (!state) return null
-    return extractTransitBalance(token, state.context.transitBalances)
-  }
-}
+    if (!state) return
 
-export function extractTransitBalance(
-  token: SwappableToken,
-  transits: BalanceMapping
-): bigint | null {
-  if (isBaseToken(token)) {
-    const transitBalance = transits[token.defuseAssetId]
-    return transitBalance ?? null
+    const pending = computeTotalBalanceDifferentDecimals(
+      token,
+      state.context.transitBalances,
+      {
+        strict: false,
+      }
+    )
+
+    if (pending?.amount === 0n) return
+    return pending
   }
-  const derivedToken = token.groupedTokens.find(
-    (t) => transits[t.defuseAssetId]
-  )
-  if (!derivedToken) return null
-  const transitBalance = transits[derivedToken.defuseAssetId]
-  return transitBalance ?? null
 }

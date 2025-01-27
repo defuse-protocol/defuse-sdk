@@ -18,10 +18,9 @@ import { providers } from "near-api-js"
 import { Fragment, type ReactNode, useEffect } from "react"
 import { Controller, useForm } from "react-hook-form"
 import { useTokensUsdPrices } from "src/hooks/useTokensUsdPrices"
-import type { SwappableToken } from "src/types/swap"
 import { formatTokenValue, formatUsdAmount } from "src/utils/format"
 import getTokenUsdPrice from "src/utils/getTokenUsdPrice"
-import type { ActorRefFrom, SnapshotFrom } from "xstate"
+import type { ActorRefFrom } from "xstate"
 import { ButtonCustom } from "../../../../components/Button/ButtonCustom"
 import { EmptyIcon } from "../../../../components/EmptyIcon"
 import { Form } from "../../../../components/Form"
@@ -29,7 +28,6 @@ import { FieldComboInput } from "../../../../components/Form/FieldComboInput"
 import { WithdrawIntentCard } from "../../../../components/IntentCard/WithdrawIntentCard"
 import { NetworkIcon } from "../../../../components/Network/NetworkIcon"
 import { Select } from "../../../../components/Select/Select"
-import type { depositedBalanceMachine } from "../../../../features/machines/depositedBalanceMachine"
 import { useModalController } from "../../../../hooks/useModalController"
 import { logger } from "../../../../logger"
 import { useTokensStore } from "../../../../providers/TokensStoreProvider"
@@ -37,12 +35,14 @@ import { ModalType } from "../../../../stores/modalStore"
 import type {
   BaseTokenInfo,
   SupportedChainName,
+  TokenValue,
   UnifiedTokenInfo,
 } from "../../../../types/base"
 import { ChainType } from "../../../../types/deposit"
 import type { WithdrawWidgetProps } from "../../../../types/withdraw"
 import { parseUnits } from "../../../../utils/parse"
 import { isBaseToken } from "../../../../utils/token"
+import { getTokenMaxDecimals } from "../../../../utils/tokenUtils"
 import { validateAddress } from "../../../../utils/validateAddress"
 import type { intentStatusMachine } from "../../../machines/intentStatusMachine"
 import { getPOABridgeInfo } from "../../../machines/poaBridgeInfoActor"
@@ -50,8 +50,8 @@ import type { PreparationOutput } from "../../../machines/prepareWithdrawActor"
 import { parseDestinationMemo } from "../../../machines/withdrawFormReducer"
 import {
   balanceSelector,
-  extractTransitBalance,
   renderIntentCreationResult,
+  transitBalanceSelector,
 } from "../../../swap/components/SwapForm"
 import { usePublicKeyModalOpener } from "../../../swap/hooks/usePublicKeyModalOpener"
 import { WithdrawUIMachineContext } from "../../WithdrawUIMachineContext"
@@ -109,7 +109,9 @@ export const WithdrawForm = ({
       return state.children.publicKeyVerifierRef
     }
   })
-  usePublicKeyModalOpener(publicKeyVerifierRef)
+
+  // biome-ignore lint/suspicious/noExplicitAny: types should've been correct, but `publicKeyVerifierRef` is commented out
+  usePublicKeyModalOpener(publicKeyVerifierRef as any)
 
   useEffect(() => {
     if (userAddress != null && chainType != null) {
@@ -140,7 +142,12 @@ export const WithdrawForm = ({
 
   const minWithdrawalAmount = useSelector(poaBridgeInfoRef, (state) => {
     const bridgedTokenInfo = getPOABridgeInfo(state, tokenOut)
-    return bridgedTokenInfo == null ? null : bridgedTokenInfo.minWithdrawal
+    return bridgedTokenInfo == null
+      ? null
+      : {
+          amount: bridgedTokenInfo.minWithdrawal,
+          decimals: tokenOut.decimals,
+        }
   })
 
   const tokenInBalance = useSelector(
@@ -202,9 +209,12 @@ export const WithdrawForm = ({
     if (modalSelectAssetsData?.token) {
       const token = modalSelectAssetsData.token
       modalSelectAssetsData.token = undefined // consume data, so it won't be triggered again
-      let parsedAmount = 0n
+      const parsedAmount = {
+        amount: 0n,
+        decimals: getTokenMaxDecimals(token),
+      }
       try {
-        parsedAmount = parseUnits(amountIn, token.decimals)
+        parsedAmount.amount = parseUnits(amountIn, parsedAmount.decimals)
       } catch {}
 
       actorRef.send({
@@ -222,9 +232,13 @@ export const WithdrawForm = ({
       if (name === "amountIn") {
         const amount = value[name] ?? ""
 
-        let parsedAmount: bigint | null = null
+        let parsedAmount: TokenValue | null = null
         try {
-          parsedAmount = parseUnits(amount, token.decimals)
+          const decimals = getTokenMaxDecimals(token)
+          parsedAmount = {
+            amount: parseUnits(amount, decimals),
+            decimals: decimals,
+          }
         } catch {}
 
         actorRef.send({
@@ -254,7 +268,7 @@ export const WithdrawForm = ({
     return () => {
       sub.unsubscribe()
     }
-  }, [watch, actorRef, token.decimals])
+  }, [watch, actorRef, token])
 
   useEffect(() => {
     const sub = actorRef.on("INTENT_PUBLISHED", () => {
@@ -328,8 +342,8 @@ export const WithdrawForm = ({
                 minWithdrawalAmount != null
                   ? {
                       value: formatTokenValue(
-                        minWithdrawalAmount,
-                        token.decimals
+                        minWithdrawalAmount.amount,
+                        minWithdrawalAmount.decimals
                       ),
                       message: "Amount is too low",
                     }
@@ -338,14 +352,17 @@ export const WithdrawForm = ({
               max={
                 tokenInBalance != null
                   ? {
-                      value: formatTokenValue(tokenInBalance, token.decimals),
+                      value: formatTokenValue(
+                        tokenInBalance.amount,
+                        tokenInBalance.decimals
+                      ),
                       message: "Insufficient balance",
                     }
                   : undefined
               }
               errors={errors}
               balance={tokenInBalance}
-              transitBalance={tokenInTransitBalance ?? undefined}
+              transitBalance={tokenInTransitBalance}
               register={register}
               usdAmount={
                 tokenToWithdrawUsdAmount !== null &&
@@ -499,7 +516,10 @@ export const WithdrawForm = ({
                 ) : totalAmountReceived == null ? (
                   "–"
                 ) : (
-                  formatTokenValue(totalAmountReceived, tokenOut.decimals)
+                  formatTokenValue(
+                    totalAmountReceived.amount,
+                    totalAmountReceived.decimals
+                  )
                   // biome-ignore lint/nursery/useConsistentCurlyBraces: space is needed here
                 )}{" "}
                 {token.symbol}
@@ -650,12 +670,12 @@ const _typeCheck: TypeEqualityGuard<
 > = true
 
 function renderMinWithdrawalAmount(
-  minWithdrawalAmount: bigint | null,
+  minWithdrawalAmount: TokenValue | null,
   tokenOut: BaseTokenInfo
 ) {
   return (
     minWithdrawalAmount != null &&
-    minWithdrawalAmount > 1n && (
+    minWithdrawalAmount.amount > 1n && (
       <Callout.Root size="1" color="gray" variant="surface">
         <Callout.Icon>
           <InfoCircledIcon />
@@ -664,8 +684,11 @@ function renderMinWithdrawalAmount(
           {/* biome-ignore lint/nursery/useConsistentCurlyBraces: space is needed here */}
           Minimal amount to withdraw is{" "}
           <Text size="1" weight="bold">
-            {/* biome-ignore lint/nursery/useConsistentCurlyBraces: space is needed here */}
-            {formatTokenValue(minWithdrawalAmount, tokenOut.decimals)}{" "}
+            {formatTokenValue(
+              minWithdrawalAmount.amount,
+              minWithdrawalAmount.decimals
+              // biome-ignore lint/nursery/useConsistentCurlyBraces: space is needed here
+            )}{" "}
             {tokenOut.symbol}
           </Text>
         </Callout.Text>
@@ -760,11 +783,4 @@ function chainTypeSatisfiesChainName(
 
 function truncateUserAddress(hash: string) {
   return `${hash.slice(0, 6)}...${hash.slice(-4)}`
-}
-
-export function transitBalanceSelector(token: SwappableToken) {
-  return (state: undefined | SnapshotFrom<typeof depositedBalanceMachine>) => {
-    if (!state) return null
-    return extractTransitBalance(token, state.context.transitBalances)
-  }
 }

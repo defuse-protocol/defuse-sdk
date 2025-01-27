@@ -10,6 +10,7 @@ import {
   makeSwapMessage,
 } from "../../../utils/messageFactory"
 import { isBaseToken } from "../../../utils/token"
+import { adjustDecimals } from "../../../utils/tokenUtils"
 import {
   calcOperationAmountOut,
   swapIntentMachine,
@@ -95,7 +96,11 @@ export const WithdrawWidget = (props: WithdrawWidgetProps) => {
                             case "near":
                               return {
                                 type: "to_near",
-                                amount: totalAmountWithdrawn,
+                                amount: adjustDecimals(
+                                  totalAmountWithdrawn.amount,
+                                  totalAmountWithdrawn.decimals,
+                                  tokenOut.decimals
+                                ),
                                 receiverId: recipient,
                                 tokenAccountId: tokenOutAccountId,
                                 storageDeposit:
@@ -105,7 +110,11 @@ export const WithdrawWidget = (props: WithdrawWidgetProps) => {
                             case "aurora":
                               return {
                                 type: "to_aurora_engine",
-                                amount: totalAmountWithdrawn,
+                                amount: adjustDecimals(
+                                  totalAmountWithdrawn.amount,
+                                  totalAmountWithdrawn.decimals,
+                                  tokenOut.decimals
+                                ),
                                 tokenAccountId: tokenOutAccountId,
                                 auroraEngineContractId:
                                   auroraEngineContractId[tokenOut.chainName],
@@ -114,7 +123,11 @@ export const WithdrawWidget = (props: WithdrawWidgetProps) => {
                             default:
                               return {
                                 type: "via_poa_bridge",
-                                amount: totalAmountWithdrawn,
+                                amount: adjustDecimals(
+                                  totalAmountWithdrawn.amount,
+                                  totalAmountWithdrawn.decimals,
+                                  tokenOut.decimals
+                                ),
                                 tokenAccountId: tokenOutAccountId,
                                 destinationAddress: recipient,
                                 destinationMemo,

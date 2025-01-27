@@ -12,13 +12,13 @@ The Defuse Protocol SDK is a powerful and flexible package designed to facilitat
 Install the package:
 
 ```text
-yarn add @defuse-protocol/defuse-sdk
+yarn add @defuse-protocol/defuse-sdk@beta
 ```
 
 or:
 
 ```text
-npm install @defuse-protocol/defuse-sdk
+npm install @defuse-protocol/defuse-sdk@beta
 ```
 
 ## Use Defuse SDK
