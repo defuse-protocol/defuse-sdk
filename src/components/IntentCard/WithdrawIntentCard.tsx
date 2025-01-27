@@ -114,11 +114,15 @@ export function WithdrawIntentCard({
             }}
           >
             +
-            {formatTokenValue(amountWithdrawn, tokenOut.decimals, {
-              min: 0.0001,
-              fractionDigits: 4,
+            {formatTokenValue(
+              amountWithdrawn.amount,
+              amountWithdrawn.decimals,
+              {
+                min: 0.0001,
+                fractionDigits: 4,
+              }
               // biome-ignore lint/nursery/useConsistentCurlyBraces: space is needed here
-            })}{" "}
+            )}{" "}
             {tokenOut.symbol}
           </Text>
         </Flex>

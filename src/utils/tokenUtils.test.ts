@@ -9,6 +9,7 @@ import {
   computeTotalBalanceDifferentDecimals,
   computeTotalDeltaDifferentDecimals,
   getDerivedToken,
+  getUnderlyingBaseTokenInfos,
   subtractAmounts,
 } from "./tokenUtils"
 
@@ -812,5 +813,79 @@ describe("computeTotalDeltaDifferentDecimals", () => {
       amount: 1000000000000000000n,
       decimals: 18,
     })
+  })
+})
+
+describe("getUnderlyingBaseTokenInfos", () => {
+  const baseToken: BaseTokenInfo = {
+    defuseAssetId: "token1",
+    address: "0x123",
+    symbol: "TKN1",
+    name: "Token1",
+    decimals: 6,
+    icon: "icon1.png",
+    chainId: "",
+    chainIcon: "chain1.png",
+    chainName: "eth",
+    routes: [],
+  }
+
+  const unifiedToken: UnifiedTokenInfo = {
+    unifiedAssetId: "unified1",
+    symbol: "UTKN",
+    name: "Unified Token",
+    decimals: 18,
+    icon: "icon.png",
+    groupedTokens: [
+      baseToken,
+      {
+        defuseAssetId: "token2",
+        address: "0x456",
+        symbol: "TKN2",
+        name: "Token2",
+        decimals: 18,
+        icon: "icon2.png",
+        chainId: "2",
+        chainIcon: "chain2.png",
+        chainName: "base",
+        routes: [],
+      },
+    ],
+  }
+
+  it("should return array with single token for base token input", () => {
+    expect(getUnderlyingBaseTokenInfos(baseToken)).toEqual([baseToken])
+  })
+
+  it("should return all grouped tokens for unified token input", () => {
+    const result = getUnderlyingBaseTokenInfos(unifiedToken)
+    expect(result).toHaveLength(2)
+    expect(result).toEqual(unifiedToken.groupedTokens)
+  })
+
+  it("should return input array for token array input", () => {
+    // biome-ignore lint/style/noNonNullAssertion: <explanation>
+    const tokens = [baseToken, unifiedToken.groupedTokens[1]!]
+    expect(getUnderlyingBaseTokenInfos(tokens)).toEqual(tokens)
+  })
+
+  it("should deduplicate tokens", () => {
+    const tokensWithDuplicate = [
+      baseToken,
+      baseToken,
+      // biome-ignore lint/style/noNonNullAssertion: <explanation>
+      unifiedToken.groupedTokens[1]!,
+    ]
+    const result = getUnderlyingBaseTokenInfos(tokensWithDuplicate)
+    expect(result).toHaveLength(2)
+    expect(result).toEqual([baseToken, unifiedToken.groupedTokens[1]])
+  })
+
+  it("should throw on duplicate tokens with different decimals", () => {
+    const duplicateToken = { ...baseToken, decimals: 18 }
+    const tokensWithConflict = [baseToken, duplicateToken]
+    expect(() => getUnderlyingBaseTokenInfos(tokensWithConflict)).toThrow(
+      DuplicateTokenError
+    )
   })
 })

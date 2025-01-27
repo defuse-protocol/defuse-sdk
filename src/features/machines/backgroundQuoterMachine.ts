@@ -3,7 +3,7 @@ import { settings } from "../../config/settings"
 import { logger } from "../../logger"
 import { type QuoteResult, queryQuote } from "../../services/quoteService"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../types/base"
-import { isBaseToken } from "../../utils/token"
+import { getUnderlyingBaseTokenInfos } from "../../utils/tokenUtils"
 
 export type QuoteInput =
   | {
@@ -123,7 +123,7 @@ async function pollQuoteLoop(
     queryQuote(
       {
         tokensIn: getUnderlyingBaseTokenInfos(
-          "tokensIn" in quoteInput ? quoteInput.tokensIn : [quoteInput.tokenIn]
+          "tokensIn" in quoteInput ? quoteInput.tokensIn : quoteInput.tokenIn
         ),
         tokenOut: quoteInput.tokenOut,
         amountIn: quoteInput.amountIn,
@@ -157,14 +157,6 @@ async function pollQuoteLoop(
 
     await new Promise((resolve) => setTimeout(resolve, delayMs))
   }
-}
-
-function getUnderlyingBaseTokenInfos(
-  tokens: Array<BaseTokenInfo | UnifiedTokenInfo>
-): BaseTokenInfo[] {
-  return tokens.flatMap((token) => {
-    return isBaseToken(token) ? [token] : token.groupedTokens
-  })
 }
 
 function isTimedOut(e: unknown): boolean {
