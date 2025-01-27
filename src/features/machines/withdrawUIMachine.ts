@@ -292,9 +292,12 @@ export const withdrawUIMachine = setup({
       if (quote.tag === "err") return true
 
       for (const [token, amount] of quote.value.tokenDeltas) {
+        // We only care about negative amounts, because we are withdrawing
+        if (amount >= 0) continue
+
         // We need to know balances of all tokens involved in the swap
         const balance = balances[token]
-        if (balance == null || balance < amount) {
+        if (balance == null || balance < -amount) {
           return false
         }
       }
