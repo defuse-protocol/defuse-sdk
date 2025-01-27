@@ -22,7 +22,10 @@ import type { ModalSelectAssetsPayload } from "../../../components/Modal/ModalSe
 import { useModalStore } from "../../../providers/ModalStoreProvider"
 import { ModalType } from "../../../stores/modalStore"
 import type { SwappableToken } from "../../../types/swap"
-import { computeTotalBalanceDifferentDecimals } from "../../../utils/tokenUtils"
+import {
+  compareAmounts,
+  computeTotalBalanceDifferentDecimals,
+} from "../../../utils/tokenUtils"
 import type { depositedBalanceMachine } from "../../machines/depositedBalanceMachine"
 import type { intentStatusMachine } from "../../machines/intentStatusMachine"
 import type { Context } from "../../machines/swapUIMachine"
@@ -163,8 +166,10 @@ export const SwapForm = ({ onNavigateDeposit }: SwapFormProps) => {
 
   const balanceInsufficient =
     tokenInBalance != null && snapshot.context.parsedFormValues.amountIn != null
-      ? // todo: take decimals into account
-        tokenInBalance.amount < snapshot.context.parsedFormValues.amountIn
+      ? compareAmounts(
+          tokenInBalance,
+          snapshot.context.parsedFormValues.amountIn
+        ) === -1
       : false
 
   const showDepositButton =

@@ -23,6 +23,7 @@ import {
 } from "../../utils/messageFactory"
 import {
   addAmounts,
+  compareAmounts,
   computeTotalDeltaDifferentDecimals,
   subtractAmounts,
 } from "../../utils/tokenUtils"
@@ -161,6 +162,7 @@ export const swapIntentMachine = setup({
           return {
             ...context.intentOperationParams,
             quote: determineNewestValidQuote(
+              context.intentOperationParams.tokenOut,
               context.intentOperationParams.quote,
               proposedQuote
             ),
@@ -175,6 +177,7 @@ export const swapIntentMachine = setup({
           return {
             ...context.intentOperationParams,
             quote: determineNewestValidQuote(
+              context.intentOperationParams.tokenOut,
               context.intentOperationParams.quote,
               proposedQuote
             ),
@@ -640,12 +643,20 @@ function toError(error: unknown): Error {
 }
 
 function determineNewestValidQuote(
+  tokenOut: BaseTokenInfo,
   originalQuote: AggregatedQuote,
   proposedQuote: AggregatedQuote
 ): AggregatedQuote {
+  const out1 = computeTotalDeltaDifferentDecimals(
+    [tokenOut],
+    originalQuote.tokenDeltas
+  )
+  const out2 = computeTotalDeltaDifferentDecimals(
+    [tokenOut],
+    proposedQuote.tokenDeltas
+  )
   if (
-    // todo: decimals check
-    originalQuote.totalAmountOut <= proposedQuote.totalAmountOut &&
+    compareAmounts(out1, out2) <= 0 &&
     originalQuote.expirationTime <= proposedQuote.expirationTime
   ) {
     return proposedQuote
