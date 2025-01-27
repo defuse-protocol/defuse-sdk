@@ -58,6 +58,7 @@ export type Context = {
   intentRefs: ActorRefFrom<typeof intentStatusMachine>[]
   tokenList: SwappableToken[]
   referral?: string
+  depositedBalanceRef: ActorRefFrom<typeof depositedBalanceMachine>
 }
 
 type PassthroughEvent = {
@@ -114,7 +115,6 @@ export const swapUIMachine = setup({
     emitted: {} as EmittedEvents,
 
     children: {} as {
-      depositedBalanceRef: "depositedBalanceActor"
       swapRef: "swapActor"
     },
   },
@@ -186,24 +186,16 @@ export const swapUIMachine = setup({
     // Warning: This cannot be properly typed, so you can send an incorrect event
     sendToBackgroundQuoterRefNewQuoteInput: sendTo(
       "backgroundQuoterRef",
-      ({ context, self }): BackgroundQuoterEvents => {
-        const snapshot = self.getSnapshot()
-
-        // However knows how to access the child's state, please update this
-        const depositedBalanceRef:
-          | ActorRefFrom<typeof depositedBalanceMachine>
-          | undefined = snapshot.children.depositedBalanceRef
-        const balances = depositedBalanceRef?.getSnapshot().context.balances
-
+      ({ context }): BackgroundQuoterEvents => {
         assert(context.parsedFormValues.amountIn != null, "amountIn is not set")
-
         return {
           type: "NEW_QUOTE_INPUT",
           params: {
             tokenIn: context.formValues.tokenIn,
             tokenOut: context.parsedFormValues.tokenOut,
             amountIn: context.parsedFormValues.amountIn,
-            balances: balances ?? {},
+            balances:
+              context.depositedBalanceRef.getSnapshot().context.balances,
           },
         }
       }
@@ -282,7 +274,7 @@ export const swapUIMachine = setup({
   /** @xstate-layout N4IgpgJg5mDOIC5SwO4EMAOBaArgSwGIBJAOQBUBRcgfQGUKyyAZCgEQG0AGAXUVAwD2sPABc8AgHZ8QAD0RYArAoAcAOgCMAdgWcALJ04BOZZoBMCgDQgAnvMO7Nq5ac6b1B07oWfDAX19WqJi4hABCAIJM4SQAwhTUMQAS0QDibFy8SCCCwmKS0nIIAMxFCk5GygBsmpqGnJUKlZVWtghYhpWmqtWG6lWuupWcRer+gejY+ARMAPIppBnSOaLiUlmFlUVOvbqmlbpFulpGmi12uoaqRW7Kt-aaRfUKYyBBk4SzKTMAqmSLWcs8mtQIUsKZ1JUNPpDOZwcoFJomsozm17Jdrn07g5Hg0Xm8QqpICsJFACLAcAAjAC2on+-CEK3y60Q6i0qlq7lMhz6Sm0KKwRUMl06HSFpmURiafgCrwmBKJYhJBDwEgwOBEdOyDKBBXkezK4PUOgUEKM4uu-Oul3UB046iKm3tQsqeLl+EJEGJpJIFAA6tQAIrfGaUTWA1a6trY1RC0qCkx1fRFfn7MrqcxNLxwkyjGX490KlVQVQANzQABs8BA0IrSRBJGBVCqSwIANaN-N4D1e0sVqs1osIZsCADGA8kGTD2ojzLaKi2pkMCl0yncVWUu2aNnk2iuCKM6nsnCUxiKruCBc9td7lertYI9YkjeH7dUne717Lt4HJKHEhbY5ApO6iZPSuQziC8gqGUwzHnaK4SoM-I2l0drKEUhq6IMaEunmbpdoWJKqOgXrUAAjjgAgiGABA+v6QYhhQU7gUykGoq4qgKDCEpaFyJhFMi25tKU6iqEch6mtcIzeOe7xvpSNIiPej7Pv+bYdhMABKYAAGbMYywKyIg4mqIuq5YVh66sqcQkCpwXSDBu66HA6RyaLJBLktSoj3mAABOfkCH5qgYOWNY6UFVJvlpun6Tqs4HJchoKCMDRVPYpTIfs7K7PYJq7Hsmi7B57peYp950YGwahjwSzTqxRkIAcMG9Ky4p6Mcli2cujgOouDroZU9idP4MoSAIEBwNInZ1Sxhmgu4wycdxdpmAJDyCa0WASgaRWuJoG5JiMJUEVeRazQZkbtEoy3tbx60CfyJoLkuVpHEMiKmCdH5Fk2EDlmAF3xWxWBeI4Bzit4IwwrUNlbYunCmU6zjLvaWGGGeeEXqdPZfv2tZAxBjVgoKVxmC4CLrkKtz8jUTi1BjpgHXx9qY+M2M-URJG1uRlHUYTDWgoiiO3Me+7wrsEJPboYkNC4DSbJLvS4ezcllT550AvV82IAJZTvfZzistUCL8kcMGmOY6Zco8aO4f4QA */
   id: "swap-ui",
 
-  context: ({ input }) => ({
+  context: ({ input, spawn, self }) => ({
     error: null,
     quote: null,
     formValues: {
@@ -298,9 +290,16 @@ export const swapUIMachine = setup({
     intentRefs: [],
     tokenList: input.tokenList,
     referral: input.referral,
+    depositedBalanceRef: spawn("depositedBalanceActor", {
+      id: "depositedBalanceRef",
+      input: {
+        parentRef: self,
+        tokenList: input.tokenList,
+      },
+    }),
   }),
 
-  entry: ["spawnBackgroundQuoterRef", "spawnDepositedBalanceRef"],
+  entry: ["spawnBackgroundQuoterRef"],
 
   on: {
     INTENT_SETTLED: {
