@@ -55,26 +55,32 @@ export const SwapForm = ({ onNavigateDeposit }: SwapFormProps) => {
   const intentCreationResult = snapshot.context.intentCreationResult
   const { data: tokensUsdPriceData } = useTokensUsdPrices()
 
-  const { tokenIn, tokenOut, noLiquidity, insufficientTokenInAmount } =
-    SwapUIMachineContext.useSelector((snapshot) => {
-      const tokenIn = snapshot.context.formValues.tokenIn
-      const tokenOut = snapshot.context.formValues.tokenOut
-      const noLiquidity =
-        snapshot.context.quote &&
-        snapshot.context.quote.tag === "err" &&
-        snapshot.context.quote.value.type === "NO_QUOTES"
-      const insufficientTokenInAmount =
-        snapshot.context.quote &&
-        snapshot.context.quote.tag === "err" &&
-        snapshot.context.quote.value.type === "INSUFFICIENT_AMOUNT"
+  const {
+    tokenIn,
+    tokenOut,
+    noLiquidity,
+    insufficientTokenInAmount,
+    depositedBalanceRef,
+  } = SwapUIMachineContext.useSelector((snapshot) => {
+    const tokenIn = snapshot.context.formValues.tokenIn
+    const tokenOut = snapshot.context.formValues.tokenOut
+    const noLiquidity =
+      snapshot.context.quote &&
+      snapshot.context.quote.tag === "err" &&
+      snapshot.context.quote.value.type === "NO_QUOTES"
+    const insufficientTokenInAmount =
+      snapshot.context.quote &&
+      snapshot.context.quote.tag === "err" &&
+      snapshot.context.quote.value.type === "INSUFFICIENT_AMOUNT"
 
-      return {
-        tokenIn,
-        tokenOut,
-        noLiquidity: Boolean(noLiquidity),
-        insufficientTokenInAmount: Boolean(insufficientTokenInAmount),
-      }
-    })
+    return {
+      tokenIn,
+      tokenOut,
+      noLiquidity: Boolean(noLiquidity),
+      insufficientTokenInAmount: Boolean(insufficientTokenInAmount),
+      depositedBalanceRef: snapshot.context.depositedBalanceRef,
+    }
+  })
 
   // we need stable references to allow passing to useEffect
   const switchTokens = useCallback(() => {
@@ -143,11 +149,6 @@ export const SwapForm = ({ onNavigateDeposit }: SwapFormProps) => {
   }, [payload, onCloseModal, swapUIActorRef])
 
   const { onSubmit } = useContext(SwapSubmitterContext)
-
-  const depositedBalanceRef = useSelector(
-    swapUIActorRef,
-    (state) => state.children.depositedBalanceRef
-  )
 
   const tokenInBalance = useSelector(
     depositedBalanceRef,
