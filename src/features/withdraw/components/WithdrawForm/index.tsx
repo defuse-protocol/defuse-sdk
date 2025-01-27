@@ -35,12 +35,14 @@ import { ModalType } from "../../../../stores/modalStore"
 import type {
   BaseTokenInfo,
   SupportedChainName,
+  TokenValue,
   UnifiedTokenInfo,
 } from "../../../../types/base"
 import { ChainType } from "../../../../types/deposit"
 import type { WithdrawWidgetProps } from "../../../../types/withdraw"
 import { parseUnits } from "../../../../utils/parse"
 import { isBaseToken } from "../../../../utils/token"
+import { getTokenMaxDecimals } from "../../../../utils/tokenUtils"
 import { validateAddress } from "../../../../utils/validateAddress"
 import type { intentStatusMachine } from "../../../machines/intentStatusMachine"
 import { getPOABridgeInfo } from "../../../machines/poaBridgeInfoActor"
@@ -140,7 +142,12 @@ export const WithdrawForm = ({
 
   const minWithdrawalAmount = useSelector(poaBridgeInfoRef, (state) => {
     const bridgedTokenInfo = getPOABridgeInfo(state, tokenOut)
-    return bridgedTokenInfo == null ? null : bridgedTokenInfo.minWithdrawal
+    return bridgedTokenInfo == null
+      ? null
+      : {
+          amount: bridgedTokenInfo.minWithdrawal,
+          decimals: tokenOut.decimals,
+        }
   })
 
   const tokenInBalance = useSelector(
@@ -202,9 +209,12 @@ export const WithdrawForm = ({
     if (modalSelectAssetsData?.token) {
       const token = modalSelectAssetsData.token
       modalSelectAssetsData.token = undefined // consume data, so it won't be triggered again
-      let parsedAmount = 0n
+      const parsedAmount = {
+        amount: 0n,
+        decimals: getTokenMaxDecimals(token),
+      }
       try {
-        parsedAmount = parseUnits(amountIn, token.decimals)
+        parsedAmount.amount = parseUnits(amountIn, parsedAmount.decimals)
       } catch {}
 
       actorRef.send({
@@ -222,9 +232,13 @@ export const WithdrawForm = ({
       if (name === "amountIn") {
         const amount = value[name] ?? ""
 
-        let parsedAmount: bigint | null = null
+        let parsedAmount: TokenValue | null = null
         try {
-          parsedAmount = parseUnits(amount, token.decimals)
+          const decimals = getTokenMaxDecimals(token)
+          parsedAmount = {
+            amount: parseUnits(amount, decimals),
+            decimals: decimals,
+          }
         } catch {}
 
         actorRef.send({
@@ -254,7 +268,7 @@ export const WithdrawForm = ({
     return () => {
       sub.unsubscribe()
     }
-  }, [watch, actorRef, token.decimals])
+  }, [watch, actorRef, token])
 
   useEffect(() => {
     const sub = actorRef.on("INTENT_PUBLISHED", () => {
@@ -328,8 +342,8 @@ export const WithdrawForm = ({
                 minWithdrawalAmount != null
                   ? {
                       value: formatTokenValue(
-                        minWithdrawalAmount,
-                        token.decimals
+                        minWithdrawalAmount.amount,
+                        minWithdrawalAmount.decimals
                       ),
                       message: "Amount is too low",
                     }
@@ -502,7 +516,10 @@ export const WithdrawForm = ({
                 ) : totalAmountReceived == null ? (
                   "–"
                 ) : (
-                  formatTokenValue(totalAmountReceived, tokenOut.decimals)
+                  formatTokenValue(
+                    totalAmountReceived.amount,
+                    totalAmountReceived.decimals
+                  )
                   // biome-ignore lint/nursery/useConsistentCurlyBraces: space is needed here
                 )}{" "}
                 {token.symbol}
@@ -653,12 +670,12 @@ const _typeCheck: TypeEqualityGuard<
 > = true
 
 function renderMinWithdrawalAmount(
-  minWithdrawalAmount: bigint | null,
+  minWithdrawalAmount: TokenValue | null,
   tokenOut: BaseTokenInfo
 ) {
   return (
     minWithdrawalAmount != null &&
-    minWithdrawalAmount > 1n && (
+    minWithdrawalAmount.amount > 1n && (
       <Callout.Root size="1" color="gray" variant="surface">
         <Callout.Icon>
           <InfoCircledIcon />
@@ -667,8 +684,11 @@ function renderMinWithdrawalAmount(
           {/* biome-ignore lint/nursery/useConsistentCurlyBraces: space is needed here */}
           Minimal amount to withdraw is{" "}
           <Text size="1" weight="bold">
-            {/* biome-ignore lint/nursery/useConsistentCurlyBraces: space is needed here */}
-            {formatTokenValue(minWithdrawalAmount, tokenOut.decimals)}{" "}
+            {formatTokenValue(
+              minWithdrawalAmount.amount,
+              minWithdrawalAmount.decimals
+              // biome-ignore lint/nursery/useConsistentCurlyBraces: space is needed here
+            )}{" "}
             {tokenOut.symbol}
           </Text>
         </Callout.Text>

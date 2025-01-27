@@ -11,7 +11,7 @@ import {
   waitForIntentSettlement,
 } from "../../services/intentService"
 import type { AggregatedQuote } from "../../services/quoteService"
-import type { BaseTokenInfo } from "../../types/base"
+import type { BaseTokenInfo, TokenValue } from "../../types/base"
 import type { Nep413DefuseMessageFor_DefuseIntents } from "../../types/defuse-contracts-types"
 import type { ChainType } from "../../types/deposit"
 import type { WalletMessage, WalletSignatureResult } from "../../types/swap"
@@ -21,6 +21,11 @@ import {
   makeInnerSwapMessage,
   makeSwapMessage,
 } from "../../utils/messageFactory"
+import {
+  addAmounts,
+  computeTotalDeltaDifferentDecimals,
+  subtractAmounts,
+} from "../../utils/tokenUtils"
 import {
   type WalletErrorCode,
   extractWalletErrorCode,
@@ -50,6 +55,7 @@ export type NEP141StorageRequirement =
 type IntentOperationParams =
   | {
       type: "swap"
+      tokenOut: BaseTokenInfo
       quote: AggregatedQuote
     }
   | {
@@ -57,7 +63,7 @@ type IntentOperationParams =
       tokenOut: BaseTokenInfo
       quote: AggregatedQuote | null
       nep141Storage: NEP141StorageRequirement | null
-      directWithdrawalAmount: bigint
+      directWithdrawalAmount: TokenValue
       recipient: string
       destinationMemo: string | null
     }
@@ -317,9 +323,10 @@ export const swapIntentMachine = setup({
               intentHash: context.intentHash,
               intentDescription: {
                 type: "withdraw",
+                // todo: return decimals too
                 amountWithdrawn: calcOperationAmountOut(
                   context.intentOperationParams
-                ),
+                ).amount,
               },
             },
           }
@@ -637,6 +644,7 @@ function determineNewestValidQuote(
   proposedQuote: AggregatedQuote
 ): AggregatedQuote {
   if (
+    // todo: decimals check
     originalQuote.totalAmountOut <= proposedQuote.totalAmountOut &&
     originalQuote.expirationTime <= proposedQuote.expirationTime
   ) {
@@ -681,34 +689,61 @@ async function verifyWalletSignature(
 
 export function calcOperationAmountOut(
   operation: IntentOperationParams
-): bigint {
-  if (operation.type === "swap") {
-    return operation.quote.totalAmountOut
-  }
+): TokenValue {
+  const operationType = operation.type
+  switch (operationType) {
+    case "swap":
+      return computeTotalDeltaDifferentDecimals(
+        [operation.tokenOut],
+        operation.quote.tokenDeltas
+      )
 
-  return calcWithdrawAmount(
-    operation.quote,
-    operation.nep141Storage,
-    operation.directWithdrawalAmount
-  )
+    case "withdraw":
+      return calcWithdrawAmount(
+        operation.tokenOut,
+        operation.quote,
+        operation.nep141Storage,
+        operation.directWithdrawalAmount
+      )
+
+    default:
+      operationType satisfies never
+      throw new Error("exhaustive check failed")
+  }
 }
 
 export function calcWithdrawAmount(
-  swapQuote: AggregatedQuote | null,
+  tokenOut: BaseTokenInfo,
+  swapInfo: AggregatedQuote | null,
   nep141Storage: NEP141StorageRequirement | null,
-  directWithdrawalAmount: bigint
-): bigint {
-  const gotFromSwap = swapQuote?.totalAmountOut ?? 0n
+  directWithdrawalAmount: TokenValue
+): TokenValue {
+  const gotFromSwap =
+    swapInfo == null
+      ? { amount: 0n, decimals: 0 }
+      : computeTotalDeltaDifferentDecimals([tokenOut], swapInfo.tokenDeltas)
 
-  let spentOnStorage = 0n
+  let spentOnStorage: TokenValue = { amount: 0n, decimals: 0 }
   if (nep141Storage != null) {
     if (nep141Storage.type === "no_swap_needed") {
       // Assume that token out is NEAR/wNEAR, so we can just use the required storage
-      spentOnStorage = nep141Storage.requiredStorageNEAR
+      spentOnStorage = {
+        amount: nep141Storage.requiredStorageNEAR,
+        decimals: tokenOut.decimals,
+      }
     } else {
-      spentOnStorage = nep141Storage.quote.totalAmountIn
+      spentOnStorage = computeTotalDeltaDifferentDecimals(
+        [tokenOut],
+        nep141Storage.quote.tokenDeltas
+      )
+      // NEP-141 Storage quote will sell `tokenOut` for storage token (wNEAR), so it will be a negative number.
+      // We need to negate it to get the amount of `tokenOut` spent on storage.
+      spentOnStorage.amount = -spentOnStorage.amount
     }
   }
 
-  return directWithdrawalAmount + gotFromSwap - spentOnStorage
+  return subtractAmounts(
+    addAmounts(directWithdrawalAmount, gotFromSwap),
+    spentOnStorage
+  )
 }

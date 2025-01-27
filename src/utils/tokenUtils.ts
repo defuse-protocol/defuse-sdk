@@ -127,6 +127,23 @@ export function computeTotalBalanceDifferentDecimals(
   return { amount: total, decimals: maxDecimals }
 }
 
+export function computeTotalDeltaDifferentDecimals(
+  tokens: BaseTokenInfo[],
+  tokenDeltas: [string, bigint][]
+): TokenValue {
+  const mapping: Record<string, bigint> = {}
+  for (const [token, amount] of tokenDeltas) {
+    mapping[token] ??= 0n
+    mapping[token] += amount
+  }
+
+  return (
+    computeTotalBalanceDifferentDecimals(tokens, mapping, {
+      strict: false,
+    }) ?? { amount: 0n, decimals: 0 }
+  )
+}
+
 /**
  * Convert a unified token to a base token, by getting the first token in the group.
  * It should be used when you need to get *ANY* single token from a unified token.
@@ -159,6 +176,15 @@ export function getDerivedToken(
   return null
 }
 
+export function getTokenMaxDecimals(
+  token: BaseTokenInfo | UnifiedTokenInfo
+): number {
+  if (isBaseToken(token)) {
+    return token.decimals
+  }
+  return Math.max(...token.groupedTokens.map((t) => t.decimals))
+}
+
 export function compareAmounts(
   value1: TokenValue,
   value2: TokenValue
@@ -184,26 +210,30 @@ export function minAmounts(value1: TokenValue, value2: TokenValue): TokenValue {
   return compareAmounts(value1, value2) <= 0 ? value1 : value2
 }
 
+export function addAmounts(
+  ...values: [TokenValue, TokenValue, ...TokenValue[]]
+): TokenValue {
+  const maxDecimals = Math.max(...values.map((v) => v.decimals))
+
+  let sum = 0n
+  for (const v of values) {
+    sum += adjustDecimals(v.amount, v.decimals, maxDecimals)
+  }
+
+  return {
+    amount: sum,
+    decimals: maxDecimals,
+  }
+}
+
 export function subtractAmounts(
   value1: TokenValue,
   token2: TokenValue
 ): TokenValue {
-  const maxDecimals = Math.max(value1.decimals, token2.decimals)
-  const normalizedAmount1 = adjustDecimals(
-    value1.amount,
-    value1.decimals,
-    maxDecimals
-  )
-  const normalizedAmount2 = adjustDecimals(
-    token2.amount,
-    token2.decimals,
-    maxDecimals
-  )
-
-  return {
-    amount: normalizedAmount1 - normalizedAmount2,
-    decimals: maxDecimals,
-  }
+  return addAmounts(value1, {
+    amount: -token2.amount,
+    decimals: token2.decimals,
+  })
 }
 
 export function adjustDecimalsTokenValue(

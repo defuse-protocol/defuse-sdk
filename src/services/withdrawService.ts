@@ -22,7 +22,8 @@ import { assert } from "../utils/assert"
 import { isBaseToken, isFungibleToken } from "../utils/token"
 import {
   adjustDecimalsTokenValue,
-  computeTotalBalance,
+  compareAmounts,
+  computeTotalBalanceDifferentDecimals,
   minAmounts,
   subtractAmounts,
   truncateTokenValue,
@@ -40,10 +41,10 @@ export type PreparationOutput =
   | {
       tag: "ok"
       value: {
-        directWithdrawAvailable: bigint
+        directWithdrawAvailable: TokenValue
         swap: SwapRequirement | null
         nep141Storage: NEP141StorageRequirement | null
-        receivedAmount: bigint
+        receivedAmount: TokenValue
       }
     }
   | {
@@ -106,12 +107,9 @@ export async function prepareWithdraw(
   const { directWithdrawAvailable, swapNeeded } = breakdown.value
 
   let swapRequirement: null | SwapRequirement = null
-  if (swapNeeded.amount > 0n) {
+  if (swapNeeded.amount.amount > 0n) {
     const swapParams = {
-      amountIn: {
-        amount: swapNeeded.amount,
-        decimals: formValues.tokenIn.decimals,
-      },
+      amountIn: swapNeeded.amount,
       tokensIn: swapNeeded.tokens,
       tokenOut: formValues.tokenOut,
       balances: balances.value,
@@ -159,6 +157,7 @@ export async function prepareWithdraw(
   )
 
   const receivedAmount = calcWithdrawAmount(
+    formValues.tokenOut,
     swapRequirement?.swapQuote?.tag === "ok"
       ? swapRequirement.swapQuote.value
       : null,
@@ -166,13 +165,15 @@ export async function prepareWithdraw(
     directWithdrawAvailable
   )
 
-  if (receivedAmount < minWithdrawal) {
+  if (compareAmounts(receivedAmount, minWithdrawal) === -1) {
     return {
       tag: "err",
       value: {
         reason: "ERR_AMOUNT_TOO_LOW",
-        receivedAmount,
-        minWithdrawalAmount: minWithdrawal,
+        // todo: provide decimals too
+        receivedAmount: receivedAmount.amount,
+        // todo: provide decimals too
+        minWithdrawalAmount: minWithdrawal.amount,
         token: formValues.tokenOut,
       },
     }
@@ -181,10 +182,10 @@ export async function prepareWithdraw(
   return {
     tag: "ok",
     value: {
-      directWithdrawAvailable,
+      directWithdrawAvailable: directWithdrawAvailable,
       swap: swapRequirement,
       nep141Storage: nep141Storage.value,
-      receivedAmount,
+      receivedAmount: receivedAmount,
     },
   }
 }
@@ -285,9 +286,9 @@ async function getMinWithdrawalAmount(
     poaBridgeInfoRef: ActorRefFrom<typeof poaBridgeInfoActor>
   },
   { signal }: { signal: AbortSignal }
-): Promise<bigint> {
+): Promise<TokenValue> {
   if (formValues.tokenOut.chainName === "near") {
-    return 1n
+    return { amount: 1n, decimals: formValues.tokenOut.decimals }
   }
 
   const poaBridgeInfoState = await waitFor(
@@ -303,7 +304,10 @@ async function getMinWithdrawalAmount(
   )
   assert(poaBridgeInfo != null, "poaBridgeInfo is null")
 
-  return poaBridgeInfo.minWithdrawal
+  return {
+    amount: poaBridgeInfo.minWithdrawal,
+    decimals: formValues.tokenOut.decimals,
+  }
 }
 
 function checkBalanceSufficiency({
@@ -320,13 +324,16 @@ function checkBalanceSufficiency({
     } {
   assert(formValues.parsedAmount != null, "parsedAmount is null")
 
-  const totalBalance = computeTotalBalance(formValues.tokenIn, balances)
+  const totalBalance = computeTotalBalanceDifferentDecimals(
+    formValues.tokenIn,
+    balances
+  )
 
   if (totalBalance == null) {
     return { tag: "err", value: { reason: "ERR_BALANCE_MISSING" } }
   }
 
-  if (formValues.parsedAmount > totalBalance) {
+  if (compareAmounts(totalBalance, formValues.parsedAmount) === -1) {
     return { tag: "err", value: { reason: "ERR_BALANCE_INSUFFICIENT" } }
   }
 
@@ -393,10 +400,10 @@ function getWithdrawBreakdown({
   | {
       tag: "ok"
       value: {
-        directWithdrawAvailable: bigint
+        directWithdrawAvailable: TokenValue
         swapNeeded: {
           tokens: BaseTokenInfo[]
-          amount: bigint
+          amount: TokenValue
         }
       }
     }
@@ -406,8 +413,7 @@ function getWithdrawBreakdown({
   const requiredSwap = getRequiredSwapAmount(
     formValues.tokenIn,
     formValues.tokenOut,
-    // todo: take decimals into account, as tokenIn may have different decimals
-    { amount: formValues.parsedAmount, decimals: formValues.tokenIn.decimals },
+    formValues.parsedAmount,
     balances
   )
 
@@ -419,10 +425,10 @@ function getWithdrawBreakdown({
     return {
       tag: "ok",
       value: {
-        directWithdrawAvailable: requiredSwap.directWithdrawalAmount.amount,
+        directWithdrawAvailable: requiredSwap.directWithdrawalAmount,
         swapNeeded: {
           tokens: [],
-          amount: 0n,
+          amount: { amount: 0n, decimals: 0 },
         },
       },
     }
@@ -431,10 +437,10 @@ function getWithdrawBreakdown({
   return {
     tag: "ok",
     value: {
-      directWithdrawAvailable: requiredSwap.directWithdrawalAmount.amount,
+      directWithdrawAvailable: requiredSwap.directWithdrawalAmount,
       swapNeeded: {
         tokens: requiredSwap.swapParams.tokensIn,
-        amount: requiredSwap.swapParams.amountIn.amount,
+        amount: requiredSwap.swapParams.amountIn,
       },
     },
   }

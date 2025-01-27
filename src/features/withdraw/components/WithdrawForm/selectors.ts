@@ -1,4 +1,5 @@
 import type { SnapshotFrom } from "xstate"
+import type { TokenValue } from "../../../../types/base"
 import type { withdrawUIMachine } from "../../../machines/withdrawUIMachine"
 
 export function isLiquidityUnavailableSelector(
@@ -19,11 +20,11 @@ export function isUnsufficientTokenInAmount(
 }
 
 /**
- * @return null | bigint - null if not enough info to determine
+ * @return null | TokenValue - null if not enough info to determine
  */
 export function totalAmountReceivedSelector(
   state: SnapshotFrom<typeof withdrawUIMachine>
-): bigint | null {
+): TokenValue | null {
   if (
     state.context.preparationOutput == null ||
     state.context.preparationOutput.tag !== "ok"
