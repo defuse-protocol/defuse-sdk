@@ -12,6 +12,7 @@ export const assetNetworkAdapter: Record<SupportedChainName, BlockchainEnum> = {
   turbochain: BlockchainEnum.TURBOCHAIN,
   aurora: BlockchainEnum.AURORA,
   xrpledger: BlockchainEnum.XRPLEDGER,
+  zcash: BlockchainEnum.ZCASH,
 }
 
 export const reverseAssetNetworkAdapter: Record<
@@ -28,4 +29,5 @@ export const reverseAssetNetworkAdapter: Record<
   [BlockchainEnum.TURBOCHAIN]: "turbochain",
   [BlockchainEnum.AURORA]: "aurora",
   [BlockchainEnum.XRPLEDGER]: "xrpledger",
+  [BlockchainEnum.ZCASH]: "zcash",
 }

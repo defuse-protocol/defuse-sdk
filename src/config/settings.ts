@@ -52,5 +52,6 @@ export const settings: Settings = {
     turbochain: "https://rpc-0x4e45415f.aurora-cloud.dev",
     aurora: "https://mainnet.aurora.dev",
     xrpledger: "https://xrplcluster.com",
+    zcash: "https://mainnet.lightwalletd.com",
   },
 }

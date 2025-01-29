@@ -374,6 +374,16 @@ function getBlockchainsOptions(): Record<
       ),
       value: BlockchainEnum.XRPLEDGER,
     },
+    [BlockchainEnum.ZCASH]: {
+      label: "Zcash",
+      icon: (
+        <NetworkIcon
+          chainIcon="/static/icons/network/zcash-icon-black.svg"
+          chainName="zcash"
+        />
+      ),
+      value: BlockchainEnum.ZCASH,
+    },
   }
   return options
 }
