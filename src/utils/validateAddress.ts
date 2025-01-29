@@ -41,11 +41,7 @@ export function validateAddress(
       return xrp_isValidClassicAddress(address) || xrp_isValidXAddress(address)
 
     case "zcash":
-      return (
-        /^t[13][a-km-zA-HJ-NP-Z1-9]{33}$/.test(address) || // t-addr (transparent)
-        /^zs[a-km-zA-HJ-NP-Z1-9]{75}$/.test(address) || // z-addr (shielded)
-        /^u1[a-z0-9]{43,88}$/.test(address) // unified address
-      )
+      return /^t[13][a-km-zA-HJ-NP-Z1-9]{33}$/.test(address) // t-addr (transparent)
 
     default:
       blockchain satisfies never
