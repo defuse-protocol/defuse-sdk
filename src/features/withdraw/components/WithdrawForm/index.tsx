@@ -655,6 +655,16 @@ const allBlockchains = [
     ),
     value: "xrpledger",
   },
+  {
+    label: "Zcash",
+    icon: (
+      <NetworkIcon
+        chainIcon="/static/icons/network/zcash-icon-black.svg"
+        chainName="Zcash"
+      />
+    ),
+    value: "zcash",
+  },
 ] as const satisfies Array<{
   label: string
   icon: ReactNode

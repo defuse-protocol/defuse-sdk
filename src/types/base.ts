@@ -22,6 +22,7 @@ export type SupportedChainName =
   | "turbochain"
   | "aurora"
   | "xrpledger"
+  | "zcash"
 
 export interface FungibleTokenInfo extends Partial<BaseTokenBalance> {
   defuseAssetId: string

@@ -22,6 +22,8 @@ export function chainTxExplorer(blockchain: SupportedChainName): string | null {
       return "https://explorer.aurora.dev/tx/"
     case "xrpledger":
       return "https://livenet.xrpl.org/transactions/"
+    case "zcash":
+      return "https://zcash.blockexplorer.com/tx/"
     default:
       blockchain satisfies never
       return null
