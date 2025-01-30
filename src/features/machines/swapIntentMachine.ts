@@ -89,6 +89,7 @@ type Context = {
   userChainType: ChainType
   defuseUserId: DefuseUserId
   referral?: string
+  slippageBasisPoints: number
   nearClient: providers.Provider
   sendNearTransaction: SendNearTransaction
   intentOperationParams: IntentOperationParams
@@ -125,6 +126,7 @@ type Input = {
   userChainType: ChainType
   defuseUserId: DefuseUserId
   referral?: string
+  slippageBasisPoints: number
   nearClient: providers.Provider
   sendNearTransaction: SendNearTransaction
   intentOperationParams: IntentOperationParams
@@ -199,12 +201,10 @@ export const swapIntentMachine = setup({
           "Operation must be swap"
         )
 
-        const slippageBasisPoints = 100 // 1% slippage
-
         const innerMessage = makeInnerSwapMessage({
           tokenDeltas: accountSlippageExactIn(
             context.intentOperationParams.quote.tokenDeltas,
-            slippageBasisPoints
+            context.slippageBasisPoints
           ),
           signerId: context.defuseUserId,
           deadlineTimestamp: Math.min(
