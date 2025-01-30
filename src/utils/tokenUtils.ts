@@ -273,3 +273,21 @@ export function negateTokenValue(value: TokenValue): TokenValue {
     decimals: value.decimals,
   }
 }
+
+/**
+ * Slippage can affect only positive numbers, because positive delta mean
+ * that much will receive, and user can receive a bit less than that
+ * depending on market conditions.
+ */
+export function accountSlippage(
+  delta: [string, bigint][],
+  slippageBasisPoints: number
+): [string, bigint][] {
+  return delta.map(([token, amount]) => {
+    if (amount > 0n) {
+      const slippageAmount = (amount * BigInt(slippageBasisPoints)) / 10000n
+      return [token, amount - slippageAmount]
+    }
+    return [token, amount]
+  })
+}
