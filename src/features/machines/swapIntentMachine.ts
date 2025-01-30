@@ -22,6 +22,7 @@ import {
   makeSwapMessage,
 } from "../../utils/messageFactory"
 import {
+  accountSlippage,
   addAmounts,
   compareAmounts,
   computeTotalDeltaDifferentDecimals,
@@ -198,8 +199,13 @@ export const swapIntentMachine = setup({
           "Operation must be swap"
         )
 
+        const slippageBasisPoints = 100 // 1% slippage
+
         const innerMessage = makeInnerSwapMessage({
-          tokenDeltas: context.intentOperationParams.quote.tokenDeltas,
+          tokenDeltas: accountSlippage(
+            context.intentOperationParams.quote.tokenDeltas,
+            slippageBasisPoints
+          ),
           signerId: context.defuseUserId,
           deadlineTimestamp: Math.min(
             Date.now() + settings.swapExpirySec * 1000,
