@@ -22,7 +22,7 @@ import {
   makeSwapMessage,
 } from "../../utils/messageFactory"
 import {
-  accountSlippage,
+  accountSlippageExactIn,
   addAmounts,
   compareAmounts,
   computeTotalDeltaDifferentDecimals,
@@ -202,7 +202,7 @@ export const swapIntentMachine = setup({
         const slippageBasisPoints = 100 // 1% slippage
 
         const innerMessage = makeInnerSwapMessage({
-          tokenDeltas: accountSlippage(
+          tokenDeltas: accountSlippageExactIn(
             context.intentOperationParams.quote.tokenDeltas,
             slippageBasisPoints
           ),

@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../types/base"
 import {
   DuplicateTokenError,
-  accountSlippage,
+  accountSlippageExactIn,
   addAmounts,
   adjustDecimals,
   compareAmounts,
@@ -885,13 +885,13 @@ describe("getUnderlyingBaseTokenInfos", () => {
   })
 })
 
-describe("accountSlippage", () => {
+describe("accountSlippageExactIn", () => {
   type Delta = [string, bigint][]
 
   it("should apply slippage to positive amounts", () => {
     const delta: Delta = [["token1", 1000n]]
     const slippageBasisPoints = 100 // 1%
-    expect(accountSlippage(delta, slippageBasisPoints)).toEqual([
+    expect(accountSlippageExactIn(delta, slippageBasisPoints)).toEqual([
       ["token1", 990n],
     ])
   })
@@ -899,7 +899,7 @@ describe("accountSlippage", () => {
   it("should not apply slippage to zero amounts", () => {
     const delta: Delta = [["token1", 0n]]
     const slippageBasisPoints = 100 // 1%
-    expect(accountSlippage(delta, slippageBasisPoints)).toEqual([
+    expect(accountSlippageExactIn(delta, slippageBasisPoints)).toEqual([
       ["token1", 0n],
     ])
   })
@@ -907,7 +907,7 @@ describe("accountSlippage", () => {
   it("should not apply slippage to negative amounts", () => {
     const delta: Delta = [["token1", -1000n]]
     const slippageBasisPoints = 100 // 1%
-    expect(accountSlippage(delta, slippageBasisPoints)).toEqual([
+    expect(accountSlippageExactIn(delta, slippageBasisPoints)).toEqual([
       ["token1", -1000n],
     ])
   })
@@ -919,7 +919,7 @@ describe("accountSlippage", () => {
       ["token3", 0n],
     ]
     const slippageBasisPoints = 100 // 1%
-    expect(accountSlippage(delta, slippageBasisPoints)).toEqual([
+    expect(accountSlippageExactIn(delta, slippageBasisPoints)).toEqual([
       ["token1", 990n],
       ["token2", -500n],
       ["token3", 0n],
@@ -929,7 +929,7 @@ describe("accountSlippage", () => {
   it("should handle slippage of 0%", () => {
     const delta: Delta = [["token1", 1000n]]
     const slippageBasisPoints = 0 // 0%
-    expect(accountSlippage(delta, slippageBasisPoints)).toEqual([
+    expect(accountSlippageExactIn(delta, slippageBasisPoints)).toEqual([
       ["token1", 1000n],
     ])
   })
@@ -937,7 +937,7 @@ describe("accountSlippage", () => {
   it("should handle slippage of 100%", () => {
     const delta: Delta = [["token1", 1000n]]
     const slippageBasisPoints = 10000 // 100%
-    expect(accountSlippage(delta, slippageBasisPoints)).toEqual([
+    expect(accountSlippageExactIn(delta, slippageBasisPoints)).toEqual([
       ["token1", 0n],
     ])
   })

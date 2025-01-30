@@ -279,7 +279,7 @@ export function negateTokenValue(value: TokenValue): TokenValue {
  * that much will receive, and user can receive a bit less than that
  * depending on market conditions.
  */
-export function accountSlippage(
+export function accountSlippageExactIn(
   delta: [string, bigint][],
   slippageBasisPoints: number
 ): [string, bigint][] {
