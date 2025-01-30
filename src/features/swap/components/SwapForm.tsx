@@ -1,4 +1,4 @@
-import { ExclamationTriangleIcon } from "@radix-ui/react-icons"
+import { ExclamationTriangleIcon, InfoCircledIcon } from "@radix-ui/react-icons"
 import { Box, Callout, Flex } from "@radix-ui/themes"
 import { useSelector } from "@xstate/react"
 import {
@@ -10,7 +10,7 @@ import {
 } from "react"
 import { useFormContext } from "react-hook-form"
 import { useTokensUsdPrices } from "src/hooks/useTokensUsdPrices"
-import { formatUsdAmount } from "src/utils/format"
+import { formatTokenValue, formatUsdAmount } from "src/utils/format"
 import getTokenUsdPrice from "src/utils/getTokenUsdPrice"
 import type { ActorRefFrom, SnapshotFrom } from "xstate"
 import { ButtonCustom } from "../../../components/Button/ButtonCustom"
@@ -19,16 +19,19 @@ import { Form } from "../../../components/Form"
 import { FieldComboInput } from "../../../components/Form/FieldComboInput"
 import { SwapIntentCard } from "../../../components/IntentCard/SwapIntentCard"
 import type { ModalSelectAssetsPayload } from "../../../components/Modal/ModalSelectAssets"
+import { TooltipInfo } from "../../../components/TooltipInfo"
 import { useModalStore } from "../../../providers/ModalStoreProvider"
 import { ModalType } from "../../../stores/modalStore"
 import type { SwappableToken } from "../../../types/swap"
 import {
+  accountSlippageExactIn,
   compareAmounts,
   computeTotalBalanceDifferentDecimals,
+  computeTotalDeltaDifferentDecimals,
 } from "../../../utils/tokenUtils"
 import type { depositedBalanceMachine } from "../../machines/depositedBalanceMachine"
 import type { intentStatusMachine } from "../../machines/intentStatusMachine"
-import type { Context } from "../../machines/swapUIMachine"
+import type { Context, swapUIMachine } from "../../machines/swapUIMachine"
 import { SwapSubmitterContext } from "./SwapSubmitter"
 import { SwapUIMachineContext } from "./SwapUIMachineProvider"
 
@@ -75,6 +78,9 @@ export const SwapForm = ({ onNavigateDeposit }: SwapFormProps) => {
         insufficientTokenInAmount: Boolean(insufficientTokenInAmount),
       }
     })
+
+  const { minAmountOut, slippageBasisPoints } =
+    SwapUIMachineContext.useSelector(amountOutSelector)
 
   // we need stable references to allow passing to useEffect
   const switchTokens = useCallback(() => {
@@ -268,6 +274,45 @@ export const SwapForm = ({ onNavigateDeposit }: SwapFormProps) => {
             </ButtonCustom>
           )}
         </Flex>
+
+        {minAmountOut != null && (
+          <div className="flex flex-col gap-3.5 font-medium text-gray-11 text-xs mt-5">
+            <div className="flex justify-between">
+              <div className="flex gap-1 items-center">
+                <div>Max slippage</div>
+                <TooltipInfo icon={<InfoCircledIcon />}>
+                  <div className="flex flex-col gap-2">
+                    <div className="text-gray-11">
+                      If the price slips any further, your intent will not be
+                      executed. Below is the minimum amount you are guaranteed
+                      to receive.
+                    </div>
+
+                    <div className="flex justify-between p-2 rounded-md bg-gray-3 text-gray-11">
+                      <div>Receive at least</div>
+                      <div className="text-gray-12">
+                        {formatTokenValue(
+                          minAmountOut.amount,
+                          minAmountOut.decimals,
+                          { fractionDigits: 5 }
+                          // biome-ignore lint/nursery/useConsistentCurlyBraces: space is needed here
+                        )}{" "}
+                        {tokenOut.symbol}
+                      </div>
+                    </div>
+                  </div>
+                </TooltipInfo>
+              </div>
+              <div className="text-label">
+                {Intl.NumberFormat(undefined, {
+                  style: "percent",
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                }).format(slippageBasisPoints / 10_000)}
+              </div>
+            </div>
+          </div>
+        )}
       </Form>
 
       {renderIntentCreationResult(intentCreationResult)}
@@ -408,4 +453,29 @@ export function transitBalanceSelector(token: SwappableToken) {
     if (pending?.amount === 0n) return
     return pending
   }
+}
+
+function amountOutSelector(state: SnapshotFrom<typeof swapUIMachine>) {
+  if (state.context.quote == null || state.context.quote.tag === "err") {
+    return {
+      amountOut: null,
+      minAmountOut: null,
+    }
+  }
+
+  const quote = state.context.quote.value
+
+  const amountOut = computeTotalDeltaDifferentDecimals(
+    [state.context.parsedFormValues.tokenOut],
+    quote.tokenDeltas
+  )
+
+  const minAmountOut = computeTotalDeltaDifferentDecimals(
+    [state.context.parsedFormValues.tokenOut],
+    accountSlippageExactIn(quote.tokenDeltas, state.context.slippageBasisPoints)
+  )
+
+  const slippageBasisPoints = state.context.slippageBasisPoints
+
+  return { amountOut, minAmountOut, slippageBasisPoints }
 }
