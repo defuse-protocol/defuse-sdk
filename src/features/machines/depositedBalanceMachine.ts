@@ -31,7 +31,6 @@ type ParentReceivedEvents = {
   type: "BALANCE_CHANGED"
   params: {
     changedBalanceMapping: BalanceMapping
-    changedTransitBalanceMapping: BalanceMapping
   }
 }
 type ParentActor = ActorRef<Snapshot<unknown>, ParentReceivedEvents>
@@ -55,8 +54,17 @@ export const depositedBalanceMachine = setup({
       parentRef: ParentActor
       defuseTokenIds: string[]
       userAccountId: DefuseUserId | null
+      // CAUTION (OPTIMISTIC BALANCE): This represents the total balance including both:
+      // 1. Settled funds that are confirmed and available on the protocol
+      // 2. Pending/in-transit amounts that are still being processed (e.g. deposits in flight or withdrawals pending)
+      // This optimistic balance may be higher than the actual available balance until all
+      // pending transactions are finalized. For confirmed-only balance, use clearedBalances.
       balances: BalanceMapping
       transitBalances: BalanceMapping
+      // Balance that is already on the protocol, representing fully processed and settled funds
+      // that have been confirmed and are available for use. This excludes any in-transit or
+      // pending balances that have not yet completed processing.
+      clearedBalances: BalanceMapping
     },
     events: {} as Events | SharedEvents,
     input: {} as Input,
@@ -114,18 +122,29 @@ export const depositedBalanceMachine = setup({
           transitBalanceSlice: BalanceMapping
         }
       ) => {
-        const balanceChanged: BalanceMapping = {}
-        const transitBalanceChanged: BalanceMapping = {}
-
+        const clearedBalanceChanged: BalanceMapping = {}
         for (const [key, val] of Object.entries(params.balanceSlice)) {
           if (context.balances[key] !== val) {
-            balanceChanged[key] = val
+            clearedBalanceChanged[key] = val
           }
         }
 
+        const transitBalanceChanged: BalanceMapping = {}
         for (const [key, val] of Object.entries(params.transitBalanceSlice)) {
           if (context.transitBalances[key] !== val) {
             transitBalanceChanged[key] = val
+          }
+        }
+
+        const balanceChanged: BalanceMapping = {}
+        for (const [key, val] of Object.entries(params.balanceSlice)) {
+          if (
+            context.balances[key] !== val ||
+            transitBalanceChanged[key] !== 0n
+          ) {
+            // TODO: Add to total the withdrawal in-flight balance
+            // Note: From this point, the balance becomes optimistic
+            balanceChanged[key] = val + (transitBalanceChanged[key] ?? 0n)
           }
         }
 
@@ -136,7 +155,14 @@ export const depositedBalanceMachine = setup({
           // First update the local state
           enqueue.assign({
             balances: () => ({ ...context.balances, ...balanceChanged }),
-            transitBalances: transitBalanceChanged,
+            transitBalances: () => ({
+              ...context.transitBalances,
+              ...transitBalanceChanged,
+            }),
+            clearedBalances: () => ({
+              ...context.clearedBalances,
+              ...clearedBalanceChanged,
+            }),
           })
           // Then send the event to the parent
           enqueue(({ context }) => {
@@ -144,7 +170,6 @@ export const depositedBalanceMachine = setup({
               type: "BALANCE_CHANGED",
               params: {
                 changedBalanceMapping: balanceChanged,
-                changedTransitBalanceMapping: transitBalanceChanged,
               },
             })
           })
@@ -154,6 +179,7 @@ export const depositedBalanceMachine = setup({
     clearBalance: assign({
       balances: {},
       transitBalances: {},
+      clearedBalances: {},
     }),
   },
   guards: {
@@ -178,6 +204,7 @@ export const depositedBalanceMachine = setup({
       userAccountId: null,
       balances: {},
       transitBalances: {},
+      clearedBalances: {},
       parentRef: input.parentRef,
       defuseTokenIds: input.tokenList.flatMap((token) => {
         return isBaseToken(token)

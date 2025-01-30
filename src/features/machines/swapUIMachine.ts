@@ -241,18 +241,22 @@ export const swapUIMachine = setup({
       ) => {
         if (output.tag !== "ok") return context.intentRefs
 
-        const intentRef = spawn("intentStatusActor", {
-          id: `intent-${output.value.intentHash}`,
-          input: {
-            parentRef: self,
-            intentHash: output.value.intentHash,
-            tokenIn: context.formValues.tokenIn,
-            tokenOut: context.formValues.tokenOut,
-            intentDescription: output.value.intentDescription,
-          },
-        })
+        if (output.value.intentProcess === "standard") {
+          const intentRef = spawn("intentStatusActor", {
+            id: `intent-${output.value.intentHash}`,
+            input: {
+              parentRef: self,
+              intentHash: output.value.intentHash,
+              tokenIn: context.formValues.tokenIn,
+              tokenOut: context.formValues.tokenOut,
+              intentDescription: output.value.intentDescription,
+            },
+          })
 
-        return [intentRef, ...context.intentRefs]
+          return [intentRef, ...context.intentRefs]
+        }
+
+        return context.intentRefs
       },
     }),
 
@@ -279,7 +283,7 @@ export const swapUIMachine = setup({
     },
   },
 }).createMachine({
-  /** @xstate-layout N4IgpgJg5mDOIC5SwO4EMAOBaArgSwGIBJAOQBUBRcgfQGUKyyAZCgEQG0AGAXUVAwD2sPABc8AgHZ8QAD0RYArAoAcAOgCMAdgWcALJ04BOZZoBMCgDQgAnvMO7Nq5ac6b1B07oWfDAX19WqJi4hABCAIJM4SQAwhTUMQAS0QDibFy8SCCCwmKS0nIIAMxFCk5GygBsmpqGnJUKlZVWtghYhpWmqtWG6lWuupWcRer+gejY+ARMAPIppBnSOaLiUlmFlUVOvbqmlbpFulpGmi12uoaqRW7Kt-aaRfUKYyBBk4SzKTMAqmSLWcs8mtQIUsKZ1JUNPpDOZwcoFJomsozm17Jdrn07g5Hg0Xm8QqpICsJFACLAcAAjAC2on+-CEK3y60Q6i0qlq7lMhz6Sm0KKwRUMl06HSFpmURiafgCrwmBKJYhJBDwEgwOBEdOyDKBBXkezK4PUOgUEKM4uu-Oul3UB046iKm3tQsqeLl+EJEGJpJIFAA6tQAIrfGaUTWA1a6trY1RC0qCkx1fRFfn7MrqcxNLxwkyjGX490KlVQVQANzQABs8BA0IrSRBJGBVCqSwIANaN-N4D1e0sVqs1osIZsCADGA8kGTD2ojzLaKi2pkMCl0yncVWUu2aNnk2iuCKM6nsnCUxiKruCBc9td7lertYI9YkjeH7dUne717Lt4HJKHEhbY5ApO6iZPSuQziC8gqGUwzHnaK4SoM-I2l0drKEUhq6IMaEunmbpdoWJKqOgXrUAAjjgAgiGABA+v6QYhhQU7gUykGoq4qgKDCEpaFyJhFMi25tKU6iqEch6mtcIzeOe7xvpSNIiPej7Pv+bYdhMABKYAAGbMYywKyIg4mqIuq5YVh66sqcQkCpwXSDBu66HA6RyaLJBLktSoj3mAABOfkCH5qgYOWNY6UFVJvlpun6Tqs4HJchoKCMDRVPYpTIfs7K7PYJq7Hsmi7B57peYp950YGwahjwSzTqxRkIAcMG9Ky4p6Mcli2cujgOouDroZU9idP4MoSAIEBwNInZ1Sxhmgu4wycdxdpmAJDyCa0WASgaRWuJoG5JiMJUEVeRazQZkbtEoy3tbx60CfyJoLkuVpHEMiKmCdH5Fk2EDlmAF3xWxWBeI4Bzit4IwwrUNlbYunCmU6zjLvaWGGGeeEXqdPZfv2tZAxBjVgoKVxmC4CLrkKtz8jUTi1BjpgHXx9qY+M2M-URJG1uRlHUYTDWgoiiO3Me+7wrsEJPboYkNC4DSbJLvS4ezcllT550AvV82IAJZTvfZzistUCL8kcMGmOY6Zco8aO4f4QA */
+  /** @xstate-layout N4IgpgJg5mDOIC5SwO4EMAOBaArgSwGIBJAOQBUBRcgfQGUKyyAZCgEQG0AGAXUVAwD2sPABc8AgHZ8QAD0RYArAHYlAOgAcAJgAs2gIzq9ndQDYAnHr0AaEAE95Rzms6dNZ9QGZtphds5mAXwCbVExcQgAhAEEmKJIAYQpqeIAJOIBxNi5eJBBBYTFJaTkEDxM9VTLNVwUPJR0zE00bewQsMzMPVQVNE30zXwUjdyCQ9Gx8AiYAeXTSbOl80XEpXJK+yr0PTmVLPTNNXoUW+Q6unr79weH1UZBQicIZ9OmAVTIF3KXC1dASrE0ek0lRMJg8vRUnC2Hi2JzaHTMqi2SnMfkO6nUPTuD3CqkgywkUAIsBwACMALaiT78ITLIprRBAtSNJScLwmJReXwGOFYPycVSaJQYlEcsoDJTY8a4-FiQkEPASDA4ETUvK0n7FeQwtQ6Dz6oaHTgmUweXkedQC5QG+oo7RKCxSsL4PEQAlEkgUADq1AAiq9ppQ1d8Vlq2va1HoHfsLSL9iZeSb1Kp-AYLV4OnoFE7Hq73aoAG5oAA2eAgaDlRODGtDDLaHgUAv8uxUe2UJmOdkQJit5k6nXMWe2JhzMrdlcLJbLFcVVb0ORpBVrf3k2jM2lUPeMUPqMM0Dd5QJTmkxSnt-g5LO0o5dstnqnQ7uoAEccAIRGACJ6ff7AxRq0u9IrvCTjdAclpRvu6icuo5pDKo+j7HoPZ1DCWLBPc0ouiSFKiJWBAQJIYCqIqBYCAA1sRDwAEpgAAZgBdK-LIiCNiYqhKAoFhrh466Yh0natFgyEKJuph6H4nRbCa14YTi2FkpSIj4YREjEaRFFUeMtEMfOiw1kBLEIN4iIDOo2iaD0PScQeXYIEebgmvqvHbCK+o3ngqg4Up+FgAATn5Ah+aoGDFhWdFBeSXnafRjGanWyHJqytQNn4fhMtYdkAhYHFODCAxrpw2gKNmclYZ53l4bOX7en6AZBjw+mAcxJR+F0eUDBJjSWj0vLKBulhmDZa6WnaQQYRIAgQHA0jyXgTVMWGwkuOc4E7lBMG8uZyZcQYmKeMhxp6B5eaVgt8XAe0JVgSe60WptWXcimnINjo9RNCdd6EiREDFmA53LkZfLKAh4KYvu+xCkNvJuAKgK8Vo3JeDxn3jveRaluWZ1fAZLXyPuiJ1EayimOoHQYryKgaA6nRCloFrQqj+aPpWL5vh+AOGf8KIChiOzKMYviAgmj0btoHbVB2YIWUhI5lc6FWKVVhKc3jxnaF0fGNoCbjeOYvL8horgNhyPSHFm40BEAA */
   id: "swap-ui",
 
   context: ({ input }) => ({

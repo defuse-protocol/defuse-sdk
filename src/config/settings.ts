@@ -13,6 +13,9 @@ interface Settings {
   rpcUrls: {
     [key in SupportedChainName]: string
   }
+  optimisticBalances: {
+    enabled: boolean
+  }
 }
 
 export const settings: Settings = {
@@ -53,5 +56,12 @@ export const settings: Settings = {
     aurora: "https://mainnet.aurora.dev",
     xrpledger: "https://xrplcluster.com",
     zcash: "https://mainnet.lightwalletd.com",
+  },
+  /**
+   * When Optimistic balances are enabled, balances will be shown immediately after initiating a deposit or withdrawal,
+   * before the transaction is confirmed on-chain.
+   */
+  optimisticBalances: {
+    enabled: true,
   },
 }

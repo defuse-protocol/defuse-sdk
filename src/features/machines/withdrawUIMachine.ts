@@ -248,20 +248,24 @@ export const withdrawUIMachine = setup({
       ) => {
         if (output.tag !== "ok") return context.intentRefs
 
-        const formValues = context.withdrawFormRef.getSnapshot().context
+        if (output.value.intentProcess === "standard") {
+          const formValues = context.withdrawFormRef.getSnapshot().context
 
-        const intentRef = spawn("intentStatusActor", {
-          id: `intent-${output.value.intentHash}`,
-          input: {
-            parentRef: self,
-            intentHash: output.value.intentHash,
-            tokenIn: formValues.tokenIn,
-            tokenOut: formValues.tokenOut,
-            intentDescription: output.value.intentDescription,
-          },
-        })
+          const intentRef = spawn("intentStatusActor", {
+            id: `intent-${output.value.intentHash}`,
+            input: {
+              parentRef: self,
+              intentHash: output.value.intentHash,
+              tokenIn: formValues.tokenIn,
+              tokenOut: formValues.tokenOut,
+              intentDescription: output.value.intentDescription,
+            },
+          })
 
-        return [intentRef, ...context.intentRefs]
+          return [intentRef, ...context.intentRefs]
+        }
+
+        return context.intentRefs
       },
     }),
 
