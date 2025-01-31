@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../types/base"
 import {
   DuplicateTokenError,
+  accountSlippageExactIn,
   addAmounts,
   adjustDecimals,
   compareAmounts,
@@ -881,5 +882,63 @@ describe("getUnderlyingBaseTokenInfos", () => {
     expect(() => getUnderlyingBaseTokenInfos(tokensWithConflict)).toThrow(
       DuplicateTokenError
     )
+  })
+})
+
+describe("accountSlippageExactIn", () => {
+  type Delta = [string, bigint][]
+
+  it("should apply slippage to positive amounts", () => {
+    const delta: Delta = [["token1", 1000n]]
+    const slippageBasisPoints = 100 // 1%
+    expect(accountSlippageExactIn(delta, slippageBasisPoints)).toEqual([
+      ["token1", 990n],
+    ])
+  })
+
+  it("should not apply slippage to zero amounts", () => {
+    const delta: Delta = [["token1", 0n]]
+    const slippageBasisPoints = 100 // 1%
+    expect(accountSlippageExactIn(delta, slippageBasisPoints)).toEqual([
+      ["token1", 0n],
+    ])
+  })
+
+  it("should not apply slippage to negative amounts", () => {
+    const delta: Delta = [["token1", -1000n]]
+    const slippageBasisPoints = 100 // 1%
+    expect(accountSlippageExactIn(delta, slippageBasisPoints)).toEqual([
+      ["token1", -1000n],
+    ])
+  })
+
+  it("should handle multiple tokens with mixed amounts", () => {
+    const delta: Delta = [
+      ["token1", 1000n],
+      ["token2", -500n],
+      ["token3", 0n],
+    ]
+    const slippageBasisPoints = 100 // 1%
+    expect(accountSlippageExactIn(delta, slippageBasisPoints)).toEqual([
+      ["token1", 990n],
+      ["token2", -500n],
+      ["token3", 0n],
+    ])
+  })
+
+  it("should handle slippage of 0%", () => {
+    const delta: Delta = [["token1", 1000n]]
+    const slippageBasisPoints = 0 // 0%
+    expect(accountSlippageExactIn(delta, slippageBasisPoints)).toEqual([
+      ["token1", 1000n],
+    ])
+  })
+
+  it("should handle slippage of 100%", () => {
+    const delta: Delta = [["token1", 1000n]]
+    const slippageBasisPoints = 10000 // 100%
+    expect(accountSlippageExactIn(delta, slippageBasisPoints)).toEqual([
+      ["token1", 0n],
+    ])
   })
 })

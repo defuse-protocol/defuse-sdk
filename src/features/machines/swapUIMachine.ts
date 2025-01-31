@@ -421,6 +421,7 @@ export const swapUIMachine = setup({
               event.params.userChainType
             ),
             referral: context.referral,
+            slippageBasisPoints: 100,
             nearClient: event.params.nearClient,
             sendNearTransaction: event.params.sendNearTransaction,
             intentOperationParams: {
