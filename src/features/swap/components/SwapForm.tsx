@@ -319,9 +319,11 @@ export const SwapForm = ({ onNavigateDeposit }: SwapFormProps) => {
 
       {renderIntentCreationResult(intentCreationResult)}
 
-      <Box>
-        <Intents intentRefs={snapshot.context.intentRefs} />
-      </Box>
+      {snapshot.context.intentRefs.length > 0 && (
+        <Box>
+          <Intents intentRefs={snapshot.context.intentRefs} />
+        </Box>
+      )}
     </Flex>
   )
 }
