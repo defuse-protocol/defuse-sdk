@@ -941,4 +941,12 @@ describe("accountSlippageExactIn", () => {
       ["token1", 0n],
     ])
   })
+
+  it("should handles rounding for small numbers", () => {
+    const delta: Delta = [["token1", 99n]]
+    const slippageBasisPoints = 100 // 1%
+    expect(accountSlippageExactIn(delta, slippageBasisPoints)).toEqual([
+      ["token1", 99n],
+    ])
+  })
 })
