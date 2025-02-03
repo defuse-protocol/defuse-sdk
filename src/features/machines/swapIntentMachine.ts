@@ -93,6 +93,9 @@ type Context = {
   nearClient: providers.Provider
   sendNearTransaction: SendNearTransaction
   intentOperationParams: IntentOperationParams
+  // The best quote that was actually published or will be published
+  quoteToPublish: AggregatedQuote | null
+  // Queue stores all quotes coming from the background quoter
   quotes: PriorityQueue<AggregatedQuote>
   messageToSign: null | {
     walletMessage: WalletMessage
@@ -212,6 +215,9 @@ export const swapIntentMachine = setup({
     setIntentHash: assign({
       intentHash: (_, intentHash: string) => intentHash,
     }),
+    peekBestQuote: assign({
+      quoteToPublish: ({ context }) => peekBestQuote(context.quotes),
+    }),
   },
   actors: {
     verifySignatureActor: fromPromise(
@@ -261,16 +267,9 @@ export const swapIntentMachine = setup({
       return status === "SETTLED"
     },
     isIntentRelevant: ({ context }) => {
-      if (context.intentOperationParams.quote != null) {
-        // Naively assume that the quote is still relevant if the expiration time is in the future
-        return (
-          new Date(
-            context.intentOperationParams.quote.expirationTime
-          ).getTime() > Date.now()
-        )
-      }
-
-      return true
+      const hadQuote = context.intentOperationParams.quote == null
+      const hasQuote = context.quoteToPublish != null
+      return hadQuote === hasQuote
     },
     isSigned: (_, params: WalletSignatureResult | null) => params != null,
     isTrue: (_, params: boolean) => params,
@@ -293,6 +292,7 @@ export const swapIntentMachine = setup({
       error: null,
       intentHash: null,
       quotes,
+      quoteToPublish: null,
       ...input,
     }
   },
@@ -306,6 +306,9 @@ export const swapIntentMachine = setup({
       const intentType = context.intentOperationParams.type
       switch (intentType) {
         case "swap": {
+          const quote = context.quoteToPublish
+          assert(quote != null, "Quote must be set for swap intent")
+
           return {
             tag: "ok",
             value: {
@@ -315,12 +318,12 @@ export const swapIntentMachine = setup({
                 totalAmountIn: negateTokenValue(
                   computeTotalDeltaDifferentDecimals(
                     context.intentOperationParams.tokensIn,
-                    context.intentOperationParams.quote.tokenDeltas
+                    quote.tokenDeltas
                   )
                 ),
                 totalAmountOut: computeTotalDeltaDifferentDecimals(
                   [context.intentOperationParams.tokenOut],
-                  context.intentOperationParams.quote.tokenDeltas
+                  quote.tokenDeltas
                 ),
               },
             },
@@ -334,7 +337,8 @@ export const swapIntentMachine = setup({
               intentDescription: {
                 type: "withdraw",
                 amountWithdrawn: calcOperationAmountOut(
-                  context.intentOperationParams
+                  context.intentOperationParams,
+                  context.quoteToPublish
                 ),
               },
             },
@@ -537,15 +541,8 @@ export const swapIntentMachine = setup({
           assert(context.messageToSign != null, "Sign message is not set")
 
           let quoteHashes: string[] = []
-          if (context.intentOperationParams.quote) {
-            const quote = peekBestQuote(context.quotes)
-
-            if (quote == null) {
-              // todo: this should be checked in advance (before entering input fn)? Throwing here might cause issues
-              throw new Error("No valid quotes found")
-            }
-
-            quoteHashes = quoteHashes.concat(quote.quoteHashes)
+          if (context.quoteToPublish) {
+            quoteHashes = quoteHashes.concat(context.quoteToPublish.quoteHashes)
           }
 
           if (
@@ -620,6 +617,7 @@ export const swapIntentMachine = setup({
     },
 
     "Verifying Intent": {
+      entry: "peekBestQuote",
       always: [
         {
           target: "Broadcasting Intent",
@@ -731,20 +729,23 @@ async function verifyWalletSignature(
 }
 
 export function calcOperationAmountOut(
-  operation: IntentOperationParams
+  operation: IntentOperationParams,
+  quoteToPublish: AggregatedQuote | null
 ): TokenValue {
   const operationType = operation.type
   switch (operationType) {
-    case "swap":
+    case "swap": {
+      assert(quoteToPublish != null, "Quote must be set for swap operation")
       return computeTotalDeltaDifferentDecimals(
         [operation.tokenOut],
-        operation.quote.tokenDeltas
+        quoteToPublish.tokenDeltas
       )
+    }
 
     case "withdraw":
       return calcWithdrawAmount(
         operation.tokenOut,
-        operation.quote,
+        quoteToPublish,
         operation.nep141Storage,
         operation.directWithdrawalAmount
       )
