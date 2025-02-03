@@ -22,6 +22,7 @@ import {
   makeSwapMessage,
 } from "../../utils/messageFactory"
 import {
+  accountSlippageExactIn,
   addAmounts,
   compareAmounts,
   computeTotalDeltaDifferentDecimals,
@@ -88,6 +89,7 @@ type Context = {
   userChainType: ChainType
   defuseUserId: DefuseUserId
   referral?: string
+  slippageBasisPoints: number
   nearClient: providers.Provider
   sendNearTransaction: SendNearTransaction
   intentOperationParams: IntentOperationParams
@@ -124,6 +126,7 @@ type Input = {
   userChainType: ChainType
   defuseUserId: DefuseUserId
   referral?: string
+  slippageBasisPoints: number
   nearClient: providers.Provider
   sendNearTransaction: SendNearTransaction
   intentOperationParams: IntentOperationParams
@@ -199,7 +202,10 @@ export const swapIntentMachine = setup({
         )
 
         const innerMessage = makeInnerSwapMessage({
-          tokenDeltas: context.intentOperationParams.quote.tokenDeltas,
+          tokenDeltas: accountSlippageExactIn(
+            context.intentOperationParams.quote.tokenDeltas,
+            context.slippageBasisPoints
+          ),
           signerId: context.defuseUserId,
           deadlineTimestamp: Math.min(
             Date.now() + settings.swapExpirySec * 1000,

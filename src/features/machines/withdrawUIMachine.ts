@@ -545,6 +545,7 @@ export const withdrawUIMachine = setup({
               context.submitDeps.userChainType
             ),
             referral: context.referral,
+            slippageBasisPoints: 0,
             nearClient: context.submitDeps.nearClient,
             sendNearTransaction: context.submitDeps.sendNearTransaction,
             intentOperationParams: {
