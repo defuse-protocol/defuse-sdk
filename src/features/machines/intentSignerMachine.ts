@@ -21,6 +21,7 @@ import {
   makeSwapMessage,
 } from "../../utils/messageFactory"
 import {
+  accountSlippageExactIn,
   compareAmounts,
   computeTotalDeltaDifferentDecimals,
 } from "../../utils/tokenUtils"
@@ -81,6 +82,7 @@ type Context = {
   userChainType: ChainType
   defuseUserId: DefuseUserId
   referral?: string
+  slippageBasisPoints: number
   nearClient: providers.Provider
   sendNearTransaction: SendNearTransaction
   intentOperationParams: IntentOperationParams
@@ -97,6 +99,7 @@ type Context = {
         | "ERR_USER_DIDNT_SIGN"
         | "ERR_CANNOT_VERIFY_SIGNATURE"
         | "ERR_SIGNED_DIFFERENT_ACCOUNT"
+        | "ERR_PUBKEY_EXCEPTION"
         | WalletErrorCode
         | PublicKeyVerifierErrorCodes
       error: Error | null
@@ -109,6 +112,7 @@ type Input = {
   userChainType: ChainType
   defuseUserId: DefuseUserId
   referral?: string
+  slippageBasisPoints: number
   nearClient: providers.Provider
   sendNearTransaction: SendNearTransaction
   intentOperationParams: IntentOperationParams
@@ -121,8 +125,17 @@ export type Output =
       value: {
         intentOperationParams: IntentOperationParams
         signature: WalletSignatureResult
+        messageToSign: null | {
+          walletMessage: WalletMessage
+          innerMessage: Nep413DefuseMessageFor_DefuseIntents
+        }
         userAddress: string
         userChainType: ChainType
+        nearClient: providers.Provider
+        sendNearTransaction: SendNearTransaction
+        defuseUserId: DefuseUserId
+        referral?: string
+        slippageBasisPoints: number
       }
     }
 
@@ -134,6 +147,8 @@ export const intentSignerMachine = setup({
     input: {} as Input,
     output: {} as Output,
     events: {} as Events,
+    // todo: this bloats size of types, typescript can't produce type definitions
+    // children: {} as { publicKeyVerifierRef: "publicKeyVerifierActor" },
   },
   actions: {
     setError: assign({
@@ -184,7 +199,10 @@ export const intentSignerMachine = setup({
         )
 
         const innerMessage = makeInnerSwapMessage({
-          tokenDeltas: context.intentOperationParams.quote.tokenDeltas,
+          tokenDeltas: accountSlippageExactIn(
+            context.intentOperationParams.quote.tokenDeltas,
+            context.slippageBasisPoints
+          ),
           signerId: context.defuseUserId,
           deadlineTimestamp: Math.min(
             Date.now() + settings.swapExpirySec * 1000,
@@ -278,7 +296,7 @@ export const intentSignerMachine = setup({
     },
   },
 }).createMachine({
-  /** @xstate-layout N4IgpgJg5mDOIC5QEsB2AXMGC0tlVTACcBiAOQFEB1AfQEUBVAeQBUKBtABgF1FQAHAPZ50yQaj4gAHogCMAJgCcAOgAcAFkUA2AMwB2WYtWy9e+aoA0IAJ6Jsm9cvWddezqvkv1WxeoC+flZomDh4BMTKyBAANmAkXLxIIEIiYhJJMgg6sjrKspyyAKxa8oVWtgjYhnrKnNmlAUEYWOi4+IREygDK7WhQJBDiYJGoAG6CANbDYagAsnCwAIYwCZIpyKLikpnyWoXKOoWF3qp6ZTaImsol+Yr6hY0gwS1t4Z09BH0kxESCnfzRRboABmfwAtsoZvNYEsVjw1sINmltnY9I5OPIdOp7uU7DlcjotAYzPJ1Apbv5Ak9mqF2hEAGrEZDA6x9AAEH1QQIArkQ4oNCCNxlMRiFWjMGUyWezOTy+Qg0OMAMZAtIJVZJdabdKgTLVNSeernCo6bS1OqKFwNKnPWlvZSMojM1moKAc9py-lDIWTYa28V0zqO50yj3oXlgBVjQQq7Xq2SJASI7UoypFRw6HSGhTGxCHGryUxY+6Pf2vDoOqUut2y8N875EX7-QEg8Gil4SoNV0MET1R5Wq8Tq+Ga5PIjJ42RaA6FIolXMIIqca4FYrWqmoQQQOCSMudhGpLYTyqeeQHLN1HO4yqE5dTvTaU4PG00gP2qKxA9Io+6vNTg6+IURrXtghZnloRKPmcpavuWEScn0X4pseniOB46jyLIT4gbIhh5FozjzjBYpwV2TrSq67q9nWYBIeOv4IPISh5CYWFnNeJg1KonAnNBL4kZ2ygAMKCGCAJgJgEB0T+0iIIWuSeG4wEXAgQHLk+xEdoGygAOJYEySpshQjZ-NJOqyZUZy1IYQFXipalqHxARAA */
+  /** @xstate-layout N4IgpgJg5mDOIC5QEsB2AXMGC0tlVTACcBiAOQFEB1AfQEUBVAeQBUKBtABgF1FQAHAPZ50yQaj4gAHogCMAJgCcAOgAcAFkUA2AMwB2WYtWy9e+aoA0IAJ6Jsm9cvWddezqvkv1WxeoC+flZomDh4BMTKyBAANmAkXLxIIEIiYhJJMgg6sjrKspyyAKxa8oVWtgjYhnrKnNmlAUEYWOi4+IREygDK7WhQJBDiYJGoAG6CANbDYagAsnCwAIYwCZIpyKLikpnyWoXKOoWF3qp6ZTaImsol+Yr6hY0gwS1t4Z09BH0kxESCnfzRRboABmfwAtsoZvNYEsVjw1sINmltnY9I5OPIdOp7uU7DlcjotAYzPJ1Apbv5Ak9mqF2hEAGrEZDA6x9AAEH1QQIArkQ4oNCCNxlMRiFWjMGUyWezOTy+Qg0OMAMZAtIJVZJdabdKgTLVNSeernCo6bS1OqKFwNKnPWlvZSMojM1moKAc9py-lDIWTYa28V0zqO50yj3oXlgBVjQQq7Xq2SJASI7UoypFRw6HSGhTGxCHGryUxY+6Pf2vDoOqUut2y8N875EX7-QEg8Gil4SoNV0MET1R5Wq8Tq+Ga5PIjJ42RaA6FIolXMIIqca4FYrWppi8uSp3S11sgAK3IARtFkEq2QBpMDWA982BYJVewWK33KfjH09Kq-WYPA5DEAAlMBgQ1JNUi2CcEHkaC8i0VQjH0M51CUHRcQQM5ZFgwtTkKXxVCxVRSxpAN7V-asDw-M9L2vW84AfJ8-WjEV3xPM9v1-f8iCAkCEwRcCdWkPFClyC13E4XxCk4TgzksC50IUJxCVKbF8OcVQHhtYity7HdyMPVjz2-Wj71QR8GybN8W1BIgIRYz92KlTjuNA5Ixwg3U7EUfZ1GE-IxM4TQdHcNDCiUJxhPUVQtC0WQFAMQjHlQQQIDgSQy07PikXcwTKk8eQDizOoczQ7BCWXKc9EUPRVHw6Czl8IjN07SIYjATKU0g7Jp1NHyjRKwt8uiyq4LORqO0Dbpelddrxw8qCAoNZDZBwkrYpUKdnHnMa7QrMiey5Os2tHfjU2g9aTGWs40JMGpVACkaNI3cbSO7Pd9M-aib33O96Jm7KdhyZQ7kNaDOGOU5ULk44ajnYpltkZxjkpJ6doiABhQQwQBMBMAgP6BJ2RRMOKNF3A8PQdFOLQ0JwoH1B8y0sUKNxMW2kiKwAcSwJlzwoRs-nx1NsDOWpDGEsHiiCs5qbk2nfAZuofJZnQAgCIA */
   context: ({ input }) => {
     return {
       messageToSign: null,
@@ -294,14 +312,20 @@ export const intentSignerMachine = setup({
   initial: "idle",
 
   output: ({ context }): Output => {
-    if (context.signature != null) {
+    if (context.signature != null && context.messageToSign != null) {
       return {
         tag: "ok",
         value: {
           intentOperationParams: context.intentOperationParams,
           signature: context.signature,
+          messageToSign: context.messageToSign,
           userAddress: context.userAddress,
           userChainType: context.userChainType,
+          nearClient: context.nearClient,
+          sendNearTransaction: context.sendNearTransaction,
+          defuseUserId: context.defuseUserId,
+          referral: context.referral,
+          slippageBasisPoints: context.slippageBasisPoints,
         },
       }
     }
@@ -387,7 +411,7 @@ export const intentSignerMachine = setup({
         },
         onDone: [
           {
-            target: "Completed",
+            target: "Verifying Public Key Presence",
 
             guard: {
               type: "isTrue",
@@ -421,6 +445,68 @@ export const intentSignerMachine = setup({
               type: "setError",
               params: ({ event }) => ({
                 reason: "ERR_CANNOT_VERIFY_SIGNATURE",
+                error: toError(event.error),
+              }),
+            },
+          ],
+        },
+      },
+    },
+
+    "Verifying Public Key Presence": {
+      invoke: {
+        id: "publicKeyVerifierRef",
+        src: "publicKeyVerifierActor",
+        input: ({ context }) => {
+          assert(context.signature != null, "Signature is not set")
+
+          return {
+            nearAccount:
+              context.signature.type === "NEP413"
+                ? context.signature.signatureData
+                : null,
+            nearClient: context.nearClient,
+            sendNearTransaction: context.sendNearTransaction,
+          }
+        },
+        onDone: [
+          {
+            target: "Completed",
+
+            guard: {
+              type: "isOk",
+              params: ({ event }) => event.output,
+            },
+          },
+          {
+            target: "Generic Error",
+            description: "ERR_PUBKEY_*",
+
+            actions: {
+              type: "setError",
+              params: ({ event }) => {
+                assert(event.output.tag === "err", "Expected error")
+                return {
+                  reason: event.output.value,
+                  error: null,
+                }
+              },
+            },
+          },
+        ],
+        onError: {
+          target: "Generic Error",
+          description: "ERR_PUBKEY_EXCEPTION",
+
+          actions: [
+            {
+              type: "logError",
+              params: ({ event }) => event,
+            },
+            {
+              type: "setError",
+              params: ({ event }) => ({
+                reason: "ERR_PUBKEY_EXCEPTION",
                 error: toError(event.error),
               }),
             },

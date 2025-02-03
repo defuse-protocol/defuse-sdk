@@ -1,4 +1,5 @@
 import type { providers } from "near-api-js"
+import { userAddressToDefuseUserId } from "src/utils/defuse"
 import {
   type ActorRefFrom,
   assertEvent,
@@ -19,7 +20,6 @@ import type {
 import type { ChainType, Transaction } from "../../types/deposit"
 import type { SwappableToken } from "../../types/swap"
 import { assert } from "../../utils/assert"
-import { userAddressToDefuseUserId } from "../../utils/defuse"
 import { parseUnits } from "../../utils/parse"
 import {
   getAnyBaseTokenInfo,
@@ -36,11 +36,11 @@ import {
   type Events as DepositedBalanceEvents,
   depositedBalanceMachine,
 } from "./depositedBalanceMachine"
-import { intentStatusMachine } from "./intentStatusMachine"
 import {
-  type Output as SwapIntentMachineOutput,
-  swapIntentMachine,
-} from "./swapIntentMachine"
+  type Events as IntentPoolEvents,
+  intentPoolMachine,
+} from "./intentPoolMachine"
+import { intentSignerMachine } from "./intentSignerMachine"
 
 export type Context = {
   error: Error | null
@@ -54,12 +54,11 @@ export type Context = {
     tokenOut: BaseTokenInfo
     amountIn: TokenValue | null
   }
-  intentCreationResult: SwapIntentMachineOutput | null
-  intentRefs: ActorRefFrom<typeof intentStatusMachine>[]
   tokenList: SwappableToken[]
   referral?: string
   slippageBasisPoints: number
   depositedBalanceRef: ActorRefFrom<typeof depositedBalanceMachine>
+  intentPoolRef: ActorRefFrom<typeof intentPoolMachine>
 }
 
 type PassthroughEvent = {
@@ -111,19 +110,17 @@ export const swapUIMachine = setup({
         }
       | BackgroundQuoterParentEvents
       | DepositedBalanceEvents
-      | PassthroughEvent,
+      | PassthroughEvent
+      | IntentPoolEvents,
 
     emitted: {} as EmittedEvents,
-
-    children: {} as {
-      swapRef: "swapActor"
-    },
   },
   actors: {
     backgroundQuoterActor: backgroundQuoterMachine,
     depositedBalanceActor: depositedBalanceMachine,
-    swapActor: swapIntentMachine,
-    intentStatusActor: intentStatusMachine,
+    intentSignerActor: intentSignerMachine,
+    // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+    intentPoolActor: intentPoolMachine as any,
   },
   actions: {
     setFormValues: assign({
@@ -172,10 +169,7 @@ export const swapUIMachine = setup({
     }),
     clearQuote: assign({ quote: null }),
     clearError: assign({ error: null }),
-    setIntentCreationResult: assign({
-      intentCreationResult: (_, value: SwapIntentMachineOutput) => value,
-    }),
-    clearIntentCreationResult: assign({ intentCreationResult: null }),
+
     passthroughEvent: emit((_, event: PassthroughEvent) => event),
     spawnBackgroundQuoterRef: spawnChild("backgroundQuoterActor", {
       id: "backgroundQuoterRef",
@@ -227,28 +221,6 @@ export const swapUIMachine = setup({
       (_, event: BackgroundQuoterParentEvents) => event
     ),
 
-    spawnIntentStatusActor: assign({
-      intentRefs: (
-        { context, spawn, self },
-        output: SwapIntentMachineOutput
-      ) => {
-        if (output.tag !== "ok") return context.intentRefs
-
-        const intentRef = spawn("intentStatusActor", {
-          id: `intent-${output.value.intentHash}`,
-          input: {
-            parentRef: self,
-            intentHash: output.value.intentHash,
-            tokenIn: context.formValues.tokenIn,
-            tokenOut: context.formValues.tokenOut,
-            intentDescription: output.value.intentDescription,
-          },
-        })
-
-        return [intentRef, ...context.intentRefs]
-      },
-    }),
-
     emitEventIntentPublished: emit(() => ({
       type: "INTENT_PUBLISHED" as const,
     })),
@@ -272,7 +244,7 @@ export const swapUIMachine = setup({
     },
   },
 }).createMachine({
-  /** @xstate-layout N4IgpgJg5mDOIC5SwO4EMAOBaArgSwGIBJAOQBUBRcgfQGUKyyAZCgEQG0AGAXUVAwD2sPABc8AgHZ8QAD0RYArAoAcAOgCMAdgWcALJ04BOZZoBMCgDQgAnvMO7Nq5ac6b1B07oWfDAX19WqJi4hABCAIJM4SQAwhTUMQAS0QDibFy8SCCCwmKS0nIIAMxFCk5GygBsmpqGnJUKlZVWtghYhpWmqtWG6lWuupWcRer+gejY+ARMAPIppBnSOaLiUlmFlUVOvbqmlbpFulpGmi12uoaqRW7Kt-aaRfUKYyBBk4SzKTMAqmSLWcs8mtQIUsKZ1JUNPpDOZwcoFJomsozm17Jdrn07g5Hg0Xm8QqpICsJFACLAcAAjAC2on+-CEK3y60Q6i0qlq7lMhz6Sm0KKwRUMl06HSFpmURiafgCrwmBKJYhJBDwEgwOBEdOyDKBBXkezK4PUOgUEKM4uu-Oul3UB046iKm3tQsqeLl+EJEGJpJIFAA6tQAIrfGaUTWA1a6trY1RC0qCkx1fRFfn7MrqcxNLxwkyjGX490KlVQVQANzQABs8BA0IrSRBJGBVCqSwIANaN-N4D1e0sVqs1osIZsCADGA8kGTD2ojzLaKi2pkMCl0yncVWUu2aNnk2iuCKM6nsnCUxiKruCBc9td7lertYI9YkjeH7dUne717Lt4HJKHEhbY5ApO6iZPSuQziC8gqGUwzHnaK4SoM-I2l0drKEUhq6IMaEunmbpdoWJKqOgXrUAAjjgAgiGABA+v6QYhhQU7gUykGoq4qgKDCEpaFyJhFMi25tKU6iqEch6mtcIzeOe7xvpSNIiPej7Pv+bYdhMABKYAAGbMYywKyIg4mqIuq5YVh66sqcQkCpwXSDBu66HA6RyaLJBLktSoj3mAABOfkCH5qgYOWNY6UFVJvlpun6Tqs4HJchoKCMDRVPYpTIfs7K7PYJq7Hsmi7B57peYp950YGwahjwSzTqxRkIAcMG9Ky4p6Mcli2cujgOouDroZU9idP4MoSAIEBwNInZ1Sxhmgu4wycdxdpmAJDyCa0WASgaRWuJoG5JiMJUEVeRazQZkbtEoy3tbx60CfyJoLkuVpHEMiKmCdH5Fk2EDlmAF3xWxWBeI4Bzit4IwwrUNlbYunCmU6zjLvaWGGGeeEXqdPZfv2tZAxBjVgoKVxmC4CLrkKtz8jUTi1BjpgHXx9qY+M2M-URJG1uRlHUYTDWgoiiO3Me+7wrsEJPboYkNC4DSbJLvS4ezcllT550AvV82IAJZTvfZzistUCL8kcMGmOY6Zco8aO4f4QA */
+  /** @xstate-layout N4IgpgJg5mDOIC5SwO4EMAOBaArgSwGIBJAOQBUBRcgfQGUKyyAZCgEQG0AGAXUVAwD2sPABc8AgHZ8QAD0RYArAoAcAOgCMAdgWcALJ04BOZZoBMCgDQgAnvMO7Nq5ac6b1B07oWfDAX19WqJi4hABCAIJM4SQAwhTUMQAS0QDibFy8SCCCwmKS0nIIAMxFCk5GygBsmpqGnJUKlZVWtghYhpWmqtWG6lWuupWcRer+gejY+ARMAPIppBnSOaLiUlmFlUVOvbqmlbpFulpGmi12uoaqRW7Kt-aaRfUKYyBBk4SzKTMAqmSLWcs8mtQIUsKZ1JUNPpDOZwcoFJomsozm17Jdrn07g5Hg0Xm8QqpICsJFACLAcAAjAC2on+-CEK3y60QRXh3W0nG8MM2CiKexRWFZakGiKKhjcpjq4rxEwJRLEJIIeAkGBwIjp2QZQIK8j2ZXB6h0CghRlMymuAuul3UB046iKm3thg6MuC+EJEGJpJIFAA6tQAIrfGaUDWA1Y6trY1TO0pikx1fRFAX7MrqcxNLxwkyjAKvWXu+XKqCqABuaAANngIGgFaSw1qI8y2obVLplIblK4qspnbdkzZECpXe8PV6y5Xq7XiwR2OpMvTck2QfJW+3O93Kr3jOaURCut30888-jC5666p0F7qABHHACERgAg+-1BkMUBtLpkr1GuVQKGEuy0UxWQeZFBzaUp1DbdR1F6IZrhGbwRwJclqVEOsCAgSQwFUZVSwEABrXDlUfCQRFoPAoAkMAACcACUwAAM0-RlgVkRBnEcexWU4ExXAdKoBT2aCTCqIZ7QaOpj3GN08FUNCaRETC6NogRaNUDAK1rJj1KpPDyLAcjKOoujGJYnglkbb8OIQTo1FZFQuychR22aCCwUqUTNHEu0HQAvRdH8PMJAECA4GkU88Csr92NBdxhn-QC7TMUDWQFGpLk6RoagA5QLnsFCzy9GK2MjdolCSs0UpAkx0o840tn2SVjHtTQ9BhIr5KLEk8IgCswFK7VmywLxHAOM1vBGGFalODzJU4VRwXjcwjkOC4ii6scL3LKsazrIbl1ssExSuMwXARHs+3A1osBqJxakMPkfNq+1NpPAtuvPYtLzQa87wfQaAWsuL5ERRbbk5BE+Nc8F3Nu1y2waFwGk2XY4IhLbFIw4tDpsjYAP-dsDEedMzT5AV9C6VznFMcELkqYxBmC3wgA */
   id: "swap-ui",
 
   context: ({ input, spawn, self }) => ({
@@ -288,7 +260,6 @@ export const swapUIMachine = setup({
       amountIn: null,
     },
     intentCreationResult: null,
-    intentRefs: [],
     tokenList: input.tokenList,
     referral: input.referral,
     slippageBasisPoints: 100, // 1%
@@ -297,6 +268,12 @@ export const swapUIMachine = setup({
       input: {
         parentRef: self,
         tokenList: input.tokenList,
+      },
+    }),
+    intentPoolRef: spawn("intentPoolActor", {
+      id: "intentPoolRef",
+      input: {
+        parentRef: self,
       },
     }),
   }),
@@ -339,7 +316,6 @@ export const swapUIMachine = setup({
         submit: {
           target: "submitting",
           guard: "isQuoteRelevant",
-          actions: "clearIntentCreationResult",
         },
 
         input: {
@@ -405,8 +381,8 @@ export const swapUIMachine = setup({
 
     submitting: {
       invoke: {
-        id: "swapRef",
-        src: "swapActor",
+        id: "intentSignerRef",
+        src: "intentSignerActor",
 
         input: ({ context, event }) => {
           assertEvent(event, "submit")
@@ -414,6 +390,7 @@ export const swapUIMachine = setup({
           const quote = context.quote
           assert(quote !== null, "non valid quote")
           assert(quote.tag === "ok", "non valid quote")
+
           return {
             userAddress: event.params.userAddress,
             userChainType: event.params.userChainType,
@@ -433,42 +410,28 @@ export const swapUIMachine = setup({
             },
           }
         },
-
-        onDone: [
-          {
-            target: "editing",
-            guard: { type: "isOk", params: ({ event }) => event.output },
-
-            actions: [
-              {
-                type: "spawnIntentStatusActor",
-                params: ({ event }) => event.output,
+        onDone: {
+          target: "editing",
+          actions: ({ context, event }) => {
+            assert(event.output.tag === "ok", "non valid intent")
+            const intentPoolRef = context.intentPoolRef
+            intentPoolRef.send({
+              type: "ADD_INTENT",
+              params: {
+                ...event.output.value,
+                tokenIn: context.formValues.tokenIn,
+                tokenOut: context.formValues.tokenOut,
+                intentDescription: null,
+                intentHash: null,
               },
-              {
-                type: "setIntentCreationResult",
-                params: ({ event }) => event.output,
-              },
-              "emitEventIntentPublished",
-            ],
+            })
           },
-          {
-            target: "editing",
-
-            actions: [
-              {
-                type: "setIntentCreationResult",
-                params: ({ event }) => event.output,
-              },
-            ],
-          },
-        ],
+          reenter: true,
+        },
 
         onError: {
           target: "editing",
-
-          actions: ({ event }) => {
-            logger.error(event.error)
-          },
+          reenter: true,
         },
       },
 

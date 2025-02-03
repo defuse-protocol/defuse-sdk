@@ -1,6 +1,7 @@
 import { createActorContext } from "@xstate/react"
 import type { PropsWithChildren, ReactElement, ReactNode } from "react"
 import { useFormContext } from "react-hook-form"
+import { intentSignerMachine } from "src/features/machines/intentSignerMachine"
 import { assert } from "src/utils/assert"
 import { formatUnits } from "viem"
 import {
@@ -15,7 +16,6 @@ import type {
   WalletSignatureResult,
 } from "../../../types/swap"
 import { computeTotalDeltaDifferentDecimals } from "../../../utils/tokenUtils"
-import { swapIntentMachine } from "../../machines/swapIntentMachine"
 import { swapUIMachine } from "../../machines/swapUIMachine"
 import type { SwapFormValues } from "./SwapForm"
 
@@ -106,7 +106,7 @@ export function SwapUIMachineProvider({
           },
         },
         actors: {
-          swapActor: swapIntentMachine.provide({
+          intentSignerActor: intentSignerMachine.provide({
             actors: {
               signMessage: fromPromise(({ input }) => signMessage(input)),
             },

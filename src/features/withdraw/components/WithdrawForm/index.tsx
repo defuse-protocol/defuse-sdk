@@ -17,6 +17,7 @@ import { useSelector } from "@xstate/react"
 import { providers } from "near-api-js"
 import { Fragment, type ReactNode, useEffect } from "react"
 import { Controller, useForm } from "react-hook-form"
+import type { IntentCreationResult } from "src/features/machines/intentPoolMachine"
 import { useTokensUsdPrices } from "src/hooks/useTokensUsdPrices"
 import { formatTokenValue, formatUsdAmount } from "src/utils/format"
 import getTokenUsdPrice from "src/utils/getTokenUsdPrice"
@@ -537,7 +538,9 @@ export const WithdrawForm = ({
         </Form>
 
         {renderPreparationResult(state.context.preparationOutput)}
-        {renderIntentCreationResult(intentCreationResult)}
+        {renderIntentCreationResult(
+          intentCreationResult as IntentCreationResult
+        )}
 
         <Intents intentRefs={intentRefs} />
       </Flex>

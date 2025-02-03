@@ -29,58 +29,23 @@ import {
 } from "../../utils/tokenUtils"
 import type { WalletErrorCode } from "../../utils/walletErrorExtractor"
 import type { ParentEvents as BackgroundQuoterEvents } from "./backgroundQuoterMachine"
+import type {
+  IntentDescription,
+  IntentOperationParams,
+  NEP141StorageRequirement,
+} from "./intentSignerMachine"
 import {
   type ErrorCodes as PublicKeyVerifierErrorCodes,
   type SendNearTransaction,
   publicKeyVerifierMachine,
 } from "./publicKeyVerifierMachine"
 
-export type NEP141StorageRequirement =
-  | {
-      type: "swap_needed"
-      requiredStorageNEAR: bigint
-      quote: AggregatedQuote
-    }
-  | {
-      type: "no_swap_needed"
-      requiredStorageNEAR: bigint
-      quote: null
-    }
-
-export type IntentOperationParams =
-  | {
-      type: "swap"
-      tokensIn: BaseTokenInfo[]
-      tokenOut: BaseTokenInfo
-      quote: AggregatedQuote
-    }
-  | {
-      type: "withdraw"
-      tokenOut: BaseTokenInfo
-      quote: AggregatedQuote | null
-      nep141Storage: NEP141StorageRequirement | null
-      directWithdrawalAmount: TokenValue
-      recipient: string
-      destinationMemo: string | null
-    }
-
-export type IntentDescription =
-  | {
-      type: "swap"
-      totalAmountIn: TokenValue
-      totalAmountOut: TokenValue
-      quote: AggregatedQuote
-    }
-  | {
-      type: "withdraw"
-      amountWithdrawn: TokenValue
-    }
-
 type Context = {
   userAddress: string
   userChainType: ChainType
   defuseUserId: DefuseUserId
   referral?: string
+  slippageBasisPoints: number
   nearClient: providers.Provider
   sendNearTransaction: SendNearTransaction
   intentOperationParams: IntentOperationParams
@@ -113,6 +78,7 @@ type Input = {
   userChainType: ChainType
   defuseUserId: DefuseUserId
   referral?: string
+  slippageBasisPoints: number
   nearClient: providers.Provider
   sendNearTransaction: SendNearTransaction
   intentOperationParams: IntentOperationParams
@@ -288,7 +254,7 @@ export const intentPublisherMachine = setup({
     },
   },
 }).createMachine({
-  /** @xstate-layout N4IgpgJg5mDOIC5QEsB2AXMGAKBXARgDbKwAWYATgLICGAxqWmAMQByAogOoD6AigKoB5ACrsA2gAYAuolAAHAPaxk6ZAtSyQAD0QBmCRIB0ADgBM50wDYArMYAsdy7t0AaEAE9E13ccN3dAOwAjACc1o76uv4AvtFuaJg4BMRklLQMTIbIEIQskjJIIIrKquqaOgiBIYYhukGW9eZhQaauHojGQb6OEZbB1qb1lrHxGFjoeEQk5NT0jKhghgBCFAo0EHQ0sKqoUAAEAJJjGMwQ6otoAG4KANYXxxPJ02lzmStrG1s7+0eJ6AhXBSbUqofL5TTFFRqDSFCqmAK6QwBUx2cLIyzGXRhUxuTwIFqowwGAJ2UzGAIhILWMIjEAJcaTFIzdLzRbvdabbZoH4PU7nLKoa53AV-RnPWYZBbLVYcr7cw4PAGCoE0EFgoIFeRKKFlWGIAC0QS6hhalnh5OMGLMDVxiAJ1iJEhJZIpVOxtPpSSmqQlrOlH053wVf2YlFWFEMckIqoAZgoKABbEUMp4+llvGWfLm7YPjJXXYHQsHSCHakHlA1mkzGCRdYwhJ2WoJY6y2-ESBxEoISHwIhzwlEeh5itOvKUANUoyBj7nlv3GzHBhUh5b1lTJhgalIk1jNIUsEk6ljbIU6hhRITsJI7lj61KHotTzLHi0nFGns5z85OYg1pZK0IVggDRGGEEintYJIhAEyKtu0CCXqYhgDKYtSDCEIRWIMsRxCAqAKBAcCaJ6jzes+kpgP+OowqAFSGreJpYQEFpWlYba3kh+gGJhzHUsEIQPimZEvBRWQ5JRy5loBa4+Ii5iogeB4BOBEjHvBUEmAY4EDLYwQBNYglekyIl+uyWZBt+6BUautF6AYhi6FYzY8T43YhG23bBOezbWIeHGWHYmKGaRxm+pkb4fnODzWdJtmVKSRIYo51hBHY0HmG29ZGIMui7iidStKiwUjuRfoAMIKAmUZgJgEAxbqcVREYPbKWYmHeFidgea556DGSuhOJhNYGbhJElSZmQAOJYFOdB7OwFDhvVNHaAa-gmphNiQX5ZjIt1Z7mC0mKDWSO44dEQA */
+  /** @xstate-layout N4IgpgJg5mDOIC5QEsB2AXMGAKBXARgDbKwAWYATgLICGAxqWmAMQByAogOoD6AigKoB5ACrsA2gAYAuolAAHAPaxk6ZAtSyQAD0QBmCRIB0ADgBM50wDYArMYAsdy7t0AaEAE9E13ccN3dAOwAjACc1o76uv4AvtFuaJg4BMRklLQMTIbIEIQskjJIIIrKquqaOgiBIYYhukGW9eZhQaauHojGQb6OEZbB1qb1lrHxGFjoeEQk5NT0jKhghgBCFAo0EHQ0sKqoUAAEAJJjGMwQ6otoAG4KANYXxxPJ02lzmStrG1s7+0eJ6AhXBSbUqofL5TTFFRqDSFCqmAK6QwBUx2cLIyzGXRhUxuTwIFqowwGAJ2UzGAIhILWMIjEAJcaTFIzdLzRbvdabbZoH4PU7nLKoa53AV-RnPWYZBbLVYcr7cw4PAGCoE0EFgoIFeRKKFlWGIAC0QS6hhalnh5OMGLMDVxiAJ1iJEhJZIpVOxtPpSSmqQlrOlH053wVf2YlFWFEMckIqoAZgoKABbEUMp4+llvGWfLm7YPjJXXYHQsHSCHakHlA1mkzGCRdYwhJ2WoJY6y2-ESBxEoISHwIhzwlEeh5itOvKUANUoyBj7nlv3GzHBhUh5b1lTJhgalIk1jNIUsEk6ljbIU6hhRITsJI7lj61KHotTzLHi0nFGns5z85OYg1pZK0IVggB4BOeQwOMY5Lwq27QIJepiGAMZKWL0EimKesRxCAqAKBAcCaJ6jzes+kpgP+OowqAFSGreJpWOaASWpBVhtreCH6AY-hXhiWKmA+KbES8pFZDkZHLmWgFrj4iLmKiB4gRIDbHrBJLVDWBjYrYwQBNY-FekyQl+uyWZBt+6DkauVF6AYhi6FYzYhPCPjdiEbbdsEYG6NYh5sShmJ6URBm+pkb4fnODwWZJVmVKSRI8aY1hBHYITIjisH1kYgxeWa-gtFEulYYRI4kX6ADCCgJlGYCYBAkW6tFURGD2ASHuhCXOJebnOeegxkroTiOTWBWjI+gnBVKADiWBTnQezsBQ4Z1ZR2gGv4JqOTY1gtUxA5dWe5gtJiA1kjumHREAA */
   context: ({ input }) => {
     return {
       messageToSign: null,

@@ -1,5 +1,5 @@
 import { ExclamationTriangleIcon } from "@radix-ui/react-icons"
-import { Box, Callout, Flex } from "@radix-ui/themes"
+import { Callout, Flex } from "@radix-ui/themes"
 import { useSelector } from "@xstate/react"
 import {
   Fragment,
@@ -9,6 +9,7 @@ import {
   useEffect,
 } from "react"
 import { useFormContext } from "react-hook-form"
+import type { IntentCreationResult } from "src/features/machines/intentPoolMachine"
 import { useTokensUsdPrices } from "src/hooks/useTokensUsdPrices"
 import { formatUsdAmount } from "src/utils/format"
 import getTokenUsdPrice from "src/utils/getTokenUsdPrice"
@@ -28,7 +29,6 @@ import {
 } from "../../../utils/tokenUtils"
 import type { depositedBalanceMachine } from "../../machines/depositedBalanceMachine"
 import type { intentStatusMachine } from "../../machines/intentStatusMachine"
-import type { Context } from "../../machines/swapUIMachine"
 import { SwapRateInfo } from "./SwapRateInfo"
 import { SwapSubmitterContext } from "./SwapSubmitter"
 import { SwapUIMachineContext } from "./SwapUIMachineProvider"
@@ -53,8 +53,15 @@ export const SwapForm = ({ onNavigateDeposit }: SwapFormProps) => {
 
   const swapUIActorRef = SwapUIMachineContext.useActorRef()
   const snapshot = SwapUIMachineContext.useSelector((snapshot) => snapshot)
-  const intentCreationResult = snapshot.context.intentCreationResult
+  const intentCreationResult =
+    snapshot.context.intentPoolRef.getSnapshot().context.intentCreationResult
   const { data: tokensUsdPriceData } = useTokensUsdPrices()
+
+  // biome-ignore lint/correctness/noUnusedVariables: <explanation>
+  const intentRefs = useSelector(
+    snapshot.context.intentPoolRef,
+    (state) => state.context.intentRefs
+  )
 
   const {
     tokenIn,
@@ -276,15 +283,16 @@ export const SwapForm = ({ onNavigateDeposit }: SwapFormProps) => {
 
       {renderIntentCreationResult(intentCreationResult)}
 
-      {snapshot.context.intentRefs.length > 0 && (
+      {/* {snapshot.context.intentRefs.length > 0 && (
         <Box>
           <Intents intentRefs={snapshot.context.intentRefs} />
         </Box>
-      )}
+      )} */}
     </Flex>
   )
 }
 
+// biome-ignore lint/correctness/noUnusedVariables: <explanation>
 function Intents({
   intentRefs,
 }: { intentRefs: ActorRefFrom<typeof intentStatusMachine>[] }) {
@@ -313,7 +321,7 @@ function renderSwapButtonText(
 }
 
 export function renderIntentCreationResult(
-  intentCreationResult: Context["intentCreationResult"]
+  intentCreationResult: IntentCreationResult
 ) {
   if (!intentCreationResult || intentCreationResult.tag === "ok") {
     return null
