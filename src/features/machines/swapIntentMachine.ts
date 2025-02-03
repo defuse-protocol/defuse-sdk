@@ -78,7 +78,6 @@ export type IntentDescription =
       type: "swap"
       totalAmountIn: TokenValue
       totalAmountOut: TokenValue
-      quote: AggregatedQuote
     }
   | {
       type: "withdraw"
@@ -313,7 +312,6 @@ export const swapIntentMachine = setup({
               intentHash: context.intentHash,
               intentDescription: {
                 type: "swap",
-                quote: context.intentOperationParams.quote,
                 totalAmountIn: negateTokenValue(
                   computeTotalDeltaDifferentDecimals(
                     context.intentOperationParams.tokensIn,
