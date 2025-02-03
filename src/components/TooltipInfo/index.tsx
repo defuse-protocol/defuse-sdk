@@ -8,9 +8,7 @@ export const TooltipInfo = ({
   return (
     <Popover>
       <PopoverTrigger asChild>{icon}</PopoverTrigger>
-      <PopoverContent>
-        <div className="text-sm">{children}</div>
-      </PopoverContent>
+      <PopoverContent className="text-xs p-3">{children}</PopoverContent>
     </Popover>
   )
 }
