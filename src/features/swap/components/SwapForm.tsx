@@ -19,7 +19,11 @@ import { Form } from "../../../components/Form"
 import { FieldComboInput } from "../../../components/Form/FieldComboInput"
 import { SwapIntentCard } from "../../../components/IntentCard/SwapIntentCard"
 import type { ModalSelectAssetsPayload } from "../../../components/Modal/ModalSelectAssets"
-import { TooltipInfo } from "../../../components/TooltipInfo"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "../../../components/Popover"
 import { useModalStore } from "../../../providers/ModalStoreProvider"
 import { ModalType } from "../../../stores/modalStore"
 import type { SwappableToken } from "../../../types/swap"
@@ -280,8 +284,12 @@ export const SwapForm = ({ onNavigateDeposit }: SwapFormProps) => {
             <div className="flex gap-1 items-center">
               <div>Max slippage</div>
 
-              <TooltipInfo icon={<InfoCircledIcon />}>
-                <div className="flex flex-col gap-2">
+              <Popover>
+                <PopoverTrigger>
+                  <InfoCircledIcon />
+                </PopoverTrigger>
+
+                <PopoverContent className="flex flex-col gap-2 text-sm">
                   <div className="text-gray-11">
                     If the price slips any further, your intent will not be
                     executed. Below is the minimum amount you are guaranteed to
@@ -302,8 +310,8 @@ export const SwapForm = ({ onNavigateDeposit }: SwapFormProps) => {
                       </div>
                     </div>
                   )}
-                </div>
-              </TooltipInfo>
+                </PopoverContent>
+              </Popover>
             </div>
 
             <div className="text-label">
