@@ -562,15 +562,23 @@ export const swapIntentMachine = setup({
 
           let quoteHashes: string[] = []
           if (context.intentOperationParams.quote) {
-            quoteHashes = context.intentOperationParams.quote.quoteHashes
+            const quote = peekBestQuote(context.quotes)
+
+            if (quote == null) {
+              // todo: this should be checked in advance (before entering input fn)? Throwing here might cause issues
+              throw new Error("No valid quotes found")
+            }
+
+            quoteHashes = quoteHashes.concat(quote.quoteHashes)
           }
+
           if (
             context.intentOperationParams.type === "withdraw" &&
             context.intentOperationParams.nep141Storage &&
             context.intentOperationParams.nep141Storage.quote
           ) {
-            quoteHashes.push(
-              ...context.intentOperationParams.nep141Storage.quote.quoteHashes
+            quoteHashes = quoteHashes.concat(
+              context.intentOperationParams.nep141Storage.quote.quoteHashes
             )
           }
 
@@ -670,6 +678,25 @@ export const swapIntentMachine = setup({
 
 function toError(error: unknown): Error {
   return error instanceof Error ? error : new Error("unknown error")
+}
+
+function peekBestQuote(
+  quotes: PriorityQueue<AggregatedQuote>
+): AggregatedQuote | null {
+  const MIN_BUFFER_TIME_MS = 10_000 // 10 seconds
+
+  while (!quotes.isEmpty()) {
+    const quote = quotes.dequeue()
+    if (
+      // We take a quote that won't expire in the next 10 seconds, so we have time to broadcast the intent
+      Date.now() + MIN_BUFFER_TIME_MS <
+      new Date(quote.expirationTime).getTime()
+    ) {
+      return quote
+    }
+  }
+
+  return null
 }
 
 function determineNewestValidQuote(
