@@ -65,9 +65,8 @@ export const WithdrawWidget = (props: WithdrawWidgetProps) => {
                         nep141Storage,
                         recipient,
                         destinationMemo,
+                        quote,
                       } = context.intentOperationParams
-
-                      const quote = context.quoteToPublish
 
                       const totalAmountWithdrawn = calcOperationAmountOut(
                         context.intentOperationParams,
