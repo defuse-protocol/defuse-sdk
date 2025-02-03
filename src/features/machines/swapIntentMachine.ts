@@ -215,8 +215,8 @@ export const swapIntentMachine = setup({
     setIntentHash: assign({
       intentHash: (_, intentHash: string) => intentHash,
     }),
-    peekBestQuote: assign({
-      quoteToPublish: ({ context }) => peekBestQuote(context.quotes),
+    dequeueValidQuote: assign({
+      quoteToPublish: ({ context }) => dequeueValidQuote(context.quotes),
     }),
   },
   actors: {
@@ -617,7 +617,7 @@ export const swapIntentMachine = setup({
     },
 
     "Verifying Intent": {
-      entry: "peekBestQuote",
+      entry: "dequeueValidQuote",
       always: [
         {
           target: "Broadcasting Intent",
@@ -676,7 +676,7 @@ function enqueueBetterQuote(
   }
 }
 
-function peekBestQuote(
+function dequeueValidQuote(
   quotes: PriorityQueue<AggregatedQuote>
 ): AggregatedQuote | null {
   const MIN_BUFFER_TIME_MS = 10_000 // 10 seconds
