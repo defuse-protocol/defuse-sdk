@@ -21,6 +21,7 @@ import {
   makeInnerSwapMessage,
   makeSwapMessage,
 } from "../../utils/messageFactory"
+import { PriorityQueue } from "../../utils/priorityQueue"
 import {
   accountSlippageExactIn,
   addAmounts,
@@ -77,7 +78,6 @@ export type IntentDescription =
       type: "swap"
       totalAmountIn: TokenValue
       totalAmountOut: TokenValue
-      quote: AggregatedQuote
     }
   | {
       type: "withdraw"
@@ -93,6 +93,10 @@ type Context = {
   nearClient: providers.Provider
   sendNearTransaction: SendNearTransaction
   intentOperationParams: IntentOperationParams
+  // The best quote that was actually published or will be published
+  quoteToPublish: AggregatedQuote | null
+  // Queue stores all quotes coming from the background quoter
+  quotes: PriorityQueue<AggregatedQuote>
   messageToSign: null | {
     walletMessage: WalletMessage
     innerMessage: Nep413DefuseMessageFor_DefuseIntents
@@ -163,37 +167,17 @@ export const swapIntentMachine = setup({
     logError: (_, params: { error: unknown }) => {
       logger.error(params.error)
     },
-    proposeQuote: assign({
-      intentOperationParams: ({ context }, proposedQuote: AggregatedQuote) => {
-        if (context.intentOperationParams.type === "swap") {
-          return {
-            ...context.intentOperationParams,
-            quote: determineNewestValidQuote(
-              context.intentOperationParams.tokenOut,
-              context.intentOperationParams.quote,
-              proposedQuote
-            ),
-          }
-        }
-
-        // Quote needs to be updated for withdraw only in case of crosschain withdrawal
-        if (
-          context.intentOperationParams.type === "withdraw" &&
-          context.intentOperationParams.quote !== null
-        ) {
-          return {
-            ...context.intentOperationParams,
-            quote: determineNewestValidQuote(
-              context.intentOperationParams.tokenOut,
-              context.intentOperationParams.quote,
-              proposedQuote
-            ),
-          }
-        }
-
-        return context.intentOperationParams
-      },
-    }),
+    proposeQuote: ({ context }, proposedQuote: AggregatedQuote) => {
+      if (context.intentOperationParams.quote) {
+        enqueueBetterQuote(
+          context.quotes,
+          context.intentOperationParams.quote,
+          proposedQuote,
+          context.intentOperationParams.tokenOut,
+          context.slippageBasisPoints
+        )
+      }
+    },
     assembleSignMessages: assign({
       messageToSign: ({ context }) => {
         assert(
@@ -207,12 +191,7 @@ export const swapIntentMachine = setup({
             context.slippageBasisPoints
           ),
           signerId: context.defuseUserId,
-          deadlineTimestamp: Math.min(
-            Date.now() + settings.swapExpirySec * 1000,
-            new Date(
-              context.intentOperationParams.quote.expirationTime
-            ).getTime()
-          ),
+          deadlineTimestamp: Date.now() + settings.swapExpirySec * 1000,
           referral: context.referral,
         })
 
@@ -230,6 +209,9 @@ export const swapIntentMachine = setup({
     }),
     setIntentHash: assign({
       intentHash: (_, intentHash: string) => intentHash,
+    }),
+    dequeueValidQuote: assign({
+      quoteToPublish: ({ context }) => dequeueValidQuote(context.quotes),
     }),
   },
   actors: {
@@ -280,16 +262,9 @@ export const swapIntentMachine = setup({
       return status === "SETTLED"
     },
     isIntentRelevant: ({ context }) => {
-      if (context.intentOperationParams.quote != null) {
-        // Naively assume that the quote is still relevant if the expiration time is in the future
-        return (
-          new Date(
-            context.intentOperationParams.quote.expirationTime
-          ).getTime() > Date.now()
-        )
-      }
-
-      return true
+      const hadQuote = context.intentOperationParams.quote != null
+      const hasQuote = context.quoteToPublish != null
+      return hadQuote === hasQuote
     },
     isSigned: (_, params: WalletSignatureResult | null) => params != null,
     isTrue: (_, params: boolean) => params,
@@ -301,11 +276,18 @@ export const swapIntentMachine = setup({
 }).createMachine({
   /** @xstate-layout N4IgpgJg5mDOIC5SwO4EMAOBaAlgOwBcxCBiAOQFEB1AfQEUBVAeQBUKBtABgF1FQMA9rBwEcAvHxAAPRACYAnAFYAdPIAcigGyKA7It0BGTcYDMAGhABPRAZOzlJxfJNqdmnTs7zOsgCwBffwtUTFxCYgJlHAgAGzASLl4kEEFhUXFJGQRbNWUfTgNfRVk1eU01Ut8LawQTdWVNP05HfU9fY0Dg9Gx8IkJlAGUcKDx8KBIIcTAovAA3AQBraeERgFk4WDQYRMlUkTEJZKzvZRLdV0bfWVkdAwNqxEaDVSKTO18dK7cTTpAQnvC-SGIzGJDAACdwQJwcoMDE0AQAGbQgC2yhWeHWsE22x4uyE+wyR0QWFkmk4ygqmhM1OMBm8dweCF8vnkyicrLKei0JVsv3+YT6kQAahCcIjLGMAAQABQArgAjGI4ADGUoA0mBLLLwXBiCr4pM8NN8PMlrDFcqVZrLKLweKcBCAEpgRE7ZJ7dKHUBZWQmVT09qFbxvLwGHRMgycHT2WRGErucn0-T87qCiLKO3iyV4KCyy2qjVanV6vAGiZTGZm6YYAvWrVZxGO8Eut0GJL8AlezJyMqUv1qO5RpxqD6aSN3XyqckKTjlQfRn5BP5p3oZxs5vPypWFm0l2D6+IQqEwuEI5HgtG1nf121ipvO13uztpA49hCkk5XeSfZzFOMFFUVg2JwnAqJoUYuDog6KEYHipqEa79AAQlCaAQCqaCwKIuZSgAkoCBAVsaVaLMsq6EcoqECOhmHYdKBFCggpoCJhXqJM+KRdm+xIILclKgS4fqKEU+gFJGHwqIojjRtc8gGBUnABMuApIZE1G0VhOF5oxERgpC0KwvCSKouiFFClRaEYVpDGEcxcysQiBwcXiHrcUSPokiU9g5B4+ilAY+juJGJhRqctxKaUajznoCEAhZG62UKCSuS+hLetIiDReyGiskpCkiWS47Adk1w+Y03yiWoSmKHF6b9IluG6aQ7Dtvir4eZltR+MoLKfBoZLSZo8iyCFPWhm8ziTbIxR1Wpmb3puUrAngCJyrqxEmg55qqZRjV5ita26vZ8xsc5PCcZ6PGed1yjfPksEiSyaijSVGgUmJnh1KB1LOHNe2LdKh0EOthqVixO3meugO4cDoMnY57EXW1bkdRlWRYCYvjPApZJhj+bweEyg72NGOgmHocafM0S5dIhAP2hKQPDKtIMbcehlniZl5mfTCUwwdLNHWACNneILkdlxaPvpjzSnGSFTyKyL2OPcJXGLkmjYxBSuFLY1yBMueACBAcCSLtQrtelMsuGyuPkvJBMUxGJV+myXhuPISgwUUyl0-FGbRHEVvdrxhQUpUrIxl7cbOK9NR2JovWyHOfjtErNxqP9FkrWMIfXV1Ci9VGvkU+Gui+OYJW+C9DhQUUhRlSNfsrnz0OM0t25WkW2oyrqB5lmA+edRjKheBULKBbB4blPITJx6csHDToShlNotOtwHKFWXR2n4YRw-o4guiqHU2gr3oHjlC7NT61O8kQU4dyKGobyaNn7fZklESH++Ub328UcHwTDRgqFoCcbxTguC0OUBQ2gfAf36AAYQECiOEYAiAQF-rxJQDh5xOH6iUGMxVb7Uh0A0cMoUp4iWjIgyIABxYgYo1QUAMuCbBN1SRawaJJCedx5JExKkYCmFDybP30L4WhKkoYNQFstIWbMh6o2trxaSd1mhuEUKBUchUgI1HJvYQcdRX5Y3UB4ZSgQgA */
   context: ({ input }) => {
+    const quotes = makeQuotePriorityQueue(input.intentOperationParams.tokenOut)
+    if (input.intentOperationParams.quote != null) {
+      quotes.enqueue(input.intentOperationParams.quote)
+    }
+
     return {
       messageToSign: null,
       signature: null,
       error: null,
       intentHash: null,
+      quotes,
+      quoteToPublish: null,
       ...input,
     }
   },
@@ -319,22 +301,24 @@ export const swapIntentMachine = setup({
       const intentType = context.intentOperationParams.type
       switch (intentType) {
         case "swap": {
+          const quote = context.quoteToPublish
+          assert(quote != null, "Quote must be set for swap intent")
+
           return {
             tag: "ok",
             value: {
               intentHash: context.intentHash,
               intentDescription: {
                 type: "swap",
-                quote: context.intentOperationParams.quote,
                 totalAmountIn: negateTokenValue(
                   computeTotalDeltaDifferentDecimals(
                     context.intentOperationParams.tokensIn,
-                    context.intentOperationParams.quote.tokenDeltas
+                    quote.tokenDeltas
                   )
                 ),
                 totalAmountOut: computeTotalDeltaDifferentDecimals(
                   [context.intentOperationParams.tokenOut],
-                  context.intentOperationParams.quote.tokenDeltas
+                  quote.tokenDeltas
                 ),
               },
             },
@@ -348,7 +332,8 @@ export const swapIntentMachine = setup({
               intentDescription: {
                 type: "withdraw",
                 amountWithdrawn: calcOperationAmountOut(
-                  context.intentOperationParams
+                  context.intentOperationParams,
+                  context.quoteToPublish
                 ),
               },
             },
@@ -551,16 +536,17 @@ export const swapIntentMachine = setup({
           assert(context.messageToSign != null, "Sign message is not set")
 
           let quoteHashes: string[] = []
-          if (context.intentOperationParams.quote) {
-            quoteHashes = context.intentOperationParams.quote.quoteHashes
+          if (context.quoteToPublish) {
+            quoteHashes = quoteHashes.concat(context.quoteToPublish.quoteHashes)
           }
+
           if (
             context.intentOperationParams.type === "withdraw" &&
             context.intentOperationParams.nep141Storage &&
             context.intentOperationParams.nep141Storage.quote
           ) {
-            quoteHashes.push(
-              ...context.intentOperationParams.nep141Storage.quote.quoteHashes
+            quoteHashes = quoteHashes.concat(
+              context.intentOperationParams.nep141Storage.quote.quoteHashes
             )
           }
 
@@ -626,6 +612,7 @@ export const swapIntentMachine = setup({
     },
 
     "Verifying Intent": {
+      entry: "dequeueValidQuote",
       always: [
         {
           target: "Broadcasting Intent",
@@ -662,27 +649,45 @@ function toError(error: unknown): Error {
   return error instanceof Error ? error : new Error("unknown error")
 }
 
-function determineNewestValidQuote(
-  tokenOut: BaseTokenInfo,
+function enqueueBetterQuote(
+  quotes: PriorityQueue<AggregatedQuote>,
   originalQuote: AggregatedQuote,
-  proposedQuote: AggregatedQuote
-): AggregatedQuote {
-  const out1 = computeTotalDeltaDifferentDecimals(
+  proposedQuote: AggregatedQuote,
+  tokenOut: BaseTokenInfo,
+  slippageBasisPoints: number
+) {
+  const outOriginal = computeTotalDeltaDifferentDecimals(
     [tokenOut],
-    originalQuote.tokenDeltas
+    accountSlippageExactIn(originalQuote.tokenDeltas, slippageBasisPoints)
   )
-  const out2 = computeTotalDeltaDifferentDecimals(
+
+  const outProposed = computeTotalDeltaDifferentDecimals(
     [tokenOut],
     proposedQuote.tokenDeltas
   )
-  if (
-    compareAmounts(out1, out2) <= 0 &&
-    originalQuote.expirationTime <= proposedQuote.expirationTime
-  ) {
-    return proposedQuote
+
+  if (compareAmounts(outOriginal, outProposed) <= 0) {
+    quotes.enqueue(proposedQuote)
+  }
+}
+
+function dequeueValidQuote(
+  quotes: PriorityQueue<AggregatedQuote>
+): AggregatedQuote | null {
+  const MIN_BUFFER_TIME_MS = 10_000 // 10 seconds
+
+  while (!quotes.isEmpty()) {
+    const quote = quotes.dequeue()
+    if (
+      // We take a quote that won't expire in the next 10 seconds, so we have time to broadcast the intent
+      Date.now() + MIN_BUFFER_TIME_MS <
+      new Date(quote.expirationTime).getTime()
+    ) {
+      return quote
+    }
   }
 
-  return originalQuote
+  return null
 }
 
 async function verifyWalletSignature(
@@ -719,20 +724,23 @@ async function verifyWalletSignature(
 }
 
 export function calcOperationAmountOut(
-  operation: IntentOperationParams
+  operation: IntentOperationParams,
+  quoteToPublish: AggregatedQuote | null
 ): TokenValue {
   const operationType = operation.type
   switch (operationType) {
-    case "swap":
+    case "swap": {
+      assert(quoteToPublish != null, "Quote must be set for swap operation")
       return computeTotalDeltaDifferentDecimals(
         [operation.tokenOut],
-        operation.quote.tokenDeltas
+        quoteToPublish.tokenDeltas
       )
+    }
 
     case "withdraw":
       return calcWithdrawAmount(
         operation.tokenOut,
-        operation.quote,
+        quoteToPublish,
         operation.nep141Storage,
         operation.directWithdrawalAmount
       )
@@ -777,4 +785,18 @@ export function calcWithdrawAmount(
     addAmounts(directWithdrawalAmount, gotFromSwap),
     spentOnStorage
   )
+}
+
+function makeQuotePriorityQueue(tokenOut: BaseTokenInfo) {
+  return new PriorityQueue<AggregatedQuote>((quoteA, quoteB) => {
+    const amountOutA = computeTotalDeltaDifferentDecimals(
+      [tokenOut],
+      quoteA.tokenDeltas
+    )
+    const amountOutB = computeTotalDeltaDifferentDecimals(
+      [tokenOut],
+      quoteB.tokenDeltas
+    )
+    return compareAmounts(amountOutA, amountOutB)
+  })
 }
