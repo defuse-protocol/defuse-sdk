@@ -82,7 +82,7 @@ export function SwapRateInfo({ tokenIn, tokenOut }: SwapRateInfoProps) {
                   <PopoverTrigger>
                     <InfoCircledIcon />
                   </PopoverTrigger>
-                  <PopoverContent className="flex flex-col gap-2 text-sm">
+                  <PopoverContent className="flex flex-col gap-2 text-xs">
                     <div className="text-gray-11">
                       If the price slips any further, your intent will not be
                       executed. Below is the minimum amount you are guaranteed
