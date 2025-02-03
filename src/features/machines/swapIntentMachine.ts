@@ -191,12 +191,7 @@ export const swapIntentMachine = setup({
             context.slippageBasisPoints
           ),
           signerId: context.defuseUserId,
-          deadlineTimestamp: Math.min(
-            Date.now() + settings.swapExpirySec * 1000,
-            new Date(
-              context.intentOperationParams.quote.expirationTime
-            ).getTime()
-          ),
+          deadlineTimestamp: Date.now() + settings.swapExpirySec * 1000,
           referral: context.referral,
         })
 
