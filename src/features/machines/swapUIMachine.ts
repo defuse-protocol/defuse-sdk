@@ -58,6 +58,7 @@ export type Context = {
   intentRefs: ActorRefFrom<typeof intentStatusMachine>[]
   tokenList: SwappableToken[]
   referral?: string
+  slippageBasisPoints: number
   depositedBalanceRef: ActorRefFrom<typeof depositedBalanceMachine>
 }
 
@@ -290,6 +291,7 @@ export const swapUIMachine = setup({
     intentRefs: [],
     tokenList: input.tokenList,
     referral: input.referral,
+    slippageBasisPoints: 100, // 1%
     depositedBalanceRef: spawn("depositedBalanceActor", {
       id: "depositedBalanceRef",
       input: {
@@ -420,7 +422,7 @@ export const swapUIMachine = setup({
               event.params.userChainType
             ),
             referral: context.referral,
-            slippageBasisPoints: 100,
+            slippageBasisPoints: context.slippageBasisPoints,
             nearClient: event.params.nearClient,
             sendNearTransaction: event.params.sendNearTransaction,
             intentOperationParams: {
