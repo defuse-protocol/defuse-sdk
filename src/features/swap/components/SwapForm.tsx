@@ -1,4 +1,9 @@
-import { ExclamationTriangleIcon, InfoCircledIcon } from "@radix-ui/react-icons"
+import * as Accordion from "@radix-ui/react-accordion"
+import {
+  CaretDownIcon,
+  ExclamationTriangleIcon,
+  InfoCircledIcon,
+} from "@radix-ui/react-icons"
 import { Box, Callout, Flex } from "@radix-ui/themes"
 import { useSelector } from "@xstate/react"
 import {
@@ -7,6 +12,7 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useReducer,
 } from "react"
 import { useFormContext } from "react-hook-form"
 import { useTokensUsdPrices } from "src/hooks/useTokensUsdPrices"
@@ -83,8 +89,12 @@ export const SwapForm = ({ onNavigateDeposit }: SwapFormProps) => {
       }
     })
 
-  const { minAmountOut, slippageBasisPoints } =
-    SwapUIMachineContext.useSelector(amountOutSelector)
+  const {
+    minAmountOut,
+    slippageBasisPoints,
+    tokenOutPerTokenIn,
+    tokenInPerTokenOut,
+  } = SwapUIMachineContext.useSelector(amountOutSelector)
 
   // we need stable references to allow passing to useEffect
   const switchTokens = useCallback(() => {
@@ -198,6 +208,11 @@ export const SwapForm = ({ onNavigateDeposit }: SwapFormProps) => {
     tokensUsdPriceData
   )
 
+  const [showTokenInPrice, toggleShowTokenInPrice] = useReducer(
+    (state) => !state,
+    false
+  )
+
   return (
     <Flex
       direction="column"
@@ -279,50 +294,125 @@ export const SwapForm = ({ onNavigateDeposit }: SwapFormProps) => {
           )}
         </Flex>
 
-        <div className="flex flex-col gap-3.5 font-medium text-gray-11 text-xs mt-5">
-          <div className="flex justify-between">
-            <div className="flex gap-1 items-center">
-              <div>Max slippage</div>
-
-              <Popover>
-                <PopoverTrigger>
-                  <InfoCircledIcon />
-                </PopoverTrigger>
-
-                <PopoverContent className="flex flex-col gap-2 text-sm">
-                  <div className="text-gray-11">
-                    If the price slips any further, your intent will not be
-                    executed. Below is the minimum amount you are guaranteed to
-                    receive.
-                  </div>
-
-                  {minAmountOut != null && (
-                    <div className="flex justify-between p-2 rounded-md bg-gray-3 text-gray-11">
-                      <div>Receive at least</div>
-                      <div className="text-gray-12">
-                        {formatTokenValue(
-                          minAmountOut.amount,
-                          minAmountOut.decimals,
-                          { fractionDigits: 5 }
-                          // biome-ignore lint/nursery/useConsistentCurlyBraces: space is needed here
-                        )}{" "}
-                        {tokenOut.symbol}
-                      </div>
+        {tokenOutPerTokenIn != null && tokenInPerTokenOut != null && (
+          <Accordion.Root type="single" collapsible className="mt-5">
+            <Accordion.Item value="show">
+              <div className="flex justify-between items-center flex-1 text-gray-11">
+                <button
+                  type="button"
+                  onClick={toggleShowTokenInPrice}
+                  className="text-xs font-medium"
+                >
+                  {showTokenInPrice ? (
+                    <div className="flex gap-1">
+                      {`1 ${tokenIn.symbol} = ${formatTokenValue(
+                        tokenOutPerTokenIn.amount,
+                        tokenOutPerTokenIn.decimals,
+                        { fractionDigits: 5 }
+                      )} ${tokenOut.symbol}`}
+                      {(() => {
+                        const price = getTokenUsdPrice(
+                          formatTokenValue(
+                            tokenOutPerTokenIn.amount,
+                            tokenOutPerTokenIn.decimals
+                          ),
+                          tokenOut,
+                          tokensUsdPriceData
+                        )
+                        if (price != null) {
+                          return (
+                            <span className="text-gray-a9">
+                              ({formatUsdAmount(price)})
+                            </span>
+                          )
+                        }
+                      })()}
+                    </div>
+                  ) : (
+                    <div className="flex gap-1">
+                      {`1 ${tokenOut.symbol} = ${formatTokenValue(
+                        tokenInPerTokenOut.amount,
+                        tokenInPerTokenOut.decimals,
+                        { fractionDigits: 5 }
+                      )} ${tokenIn.symbol}`}
+                      {(() => {
+                        const price = getTokenUsdPrice(
+                          formatTokenValue(
+                            tokenInPerTokenOut.amount,
+                            tokenInPerTokenOut.decimals
+                          ),
+                          tokenIn,
+                          tokensUsdPriceData
+                        )
+                        if (price != null) {
+                          return (
+                            <span className="text-gray-a9">
+                              ({formatUsdAmount(price)})
+                            </span>
+                          )
+                        }
+                      })()}
                     </div>
                   )}
-                </PopoverContent>
-              </Popover>
-            </div>
+                </button>
 
-            <div className="text-label">
-              {Intl.NumberFormat(undefined, {
-                style: "percent",
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2,
-              }).format(slippageBasisPoints / 10_000)}
-            </div>
-          </div>
-        </div>
+                <Accordion.Trigger className="transition-all [&[data-state=open]>svg]:rotate-180">
+                  <CaretDownIcon className="h-5 w-5 transition-transform duration-200" />
+                </Accordion.Trigger>
+              </div>
+
+              <Accordion.Content className="overflow-hidden transition-all data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down">
+                {/* Simple spacing for smooth toggle animation */}
+                <div className="h-4" />
+
+                <div className="flex flex-col gap-3.5 font-medium text-gray-11 text-xs">
+                  <div className="flex justify-between">
+                    <div className="flex gap-1 items-center">
+                      <div>Max slippage</div>
+
+                      <Popover>
+                        <PopoverTrigger>
+                          <InfoCircledIcon />
+                        </PopoverTrigger>
+
+                        <PopoverContent className="flex flex-col gap-2 text-sm">
+                          <div className="text-gray-11">
+                            If the price slips any further, your intent will not
+                            be executed. Below is the minimum amount you are
+                            guaranteed to receive.
+                          </div>
+
+                          {minAmountOut != null && (
+                            <div className="flex justify-between p-2 rounded-md bg-gray-3 text-gray-11">
+                              <div>Receive at least</div>
+                              <div className="text-gray-12">
+                                {formatTokenValue(
+                                  minAmountOut.amount,
+                                  minAmountOut.decimals,
+                                  { fractionDigits: 5 }
+                                  // biome-ignore lint/nursery/useConsistentCurlyBraces: space is needed here
+                                )}{" "}
+                                {tokenOut.symbol}
+                              </div>
+                            </div>
+                          )}
+                        </PopoverContent>
+                      </Popover>
+                    </div>
+
+                    <div className="text-label">
+                      {Intl.NumberFormat(undefined, {
+                        style: "percent",
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      }).format(slippageBasisPoints / 10_000)}
+                    </div>
+                  </div>
+                </div>
+              </Accordion.Content>
+            </Accordion.Item>
+          </Accordion.Root>
+        )}
       </Form>
 
       {renderIntentCreationResult(intentCreationResult)}
@@ -490,5 +580,32 @@ function amountOutSelector(state: SnapshotFrom<typeof swapUIMachine>) {
     accountSlippageExactIn(quote.tokenDeltas, state.context.slippageBasisPoints)
   )
 
-  return { amountOut, minAmountOut, slippageBasisPoints }
+  const amountIn = state.context.parsedFormValues.amountIn
+  const tokenOutPerTokenIn =
+    amountIn != null
+      ? {
+          amount:
+            (amountOut.amount * 10n ** BigInt(amountIn.decimals)) /
+            amountIn.amount,
+          decimals: amountOut.decimals,
+        }
+      : null
+
+  const tokenInPerTokenOut =
+    amountIn != null
+      ? {
+          amount:
+            (amountIn.amount * 10n ** BigInt(amountOut.decimals)) /
+            amountOut.amount,
+          decimals: amountIn.decimals,
+        }
+      : null
+
+  return {
+    amountOut,
+    minAmountOut,
+    slippageBasisPoints,
+    tokenOutPerTokenIn,
+    tokenInPerTokenOut,
+  }
 }
