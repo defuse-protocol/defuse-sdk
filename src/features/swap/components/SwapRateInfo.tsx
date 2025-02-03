@@ -7,7 +7,11 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "../../../components/Popover"
-import { useTokensUsdPrices } from "../../../hooks/useTokensUsdPrices"
+import {
+  type TokenUsdPriceData,
+  useTokensUsdPrices,
+} from "../../../hooks/useTokensUsdPrices"
+import type { TokenValue } from "../../../types/base"
 import type { SwappableToken } from "../../../types/swap"
 import { formatTokenValue, formatUsdAmount } from "../../../utils/format"
 import getTokenUsdPrice from "../../../utils/getTokenUsdPrice"
@@ -43,65 +47,21 @@ export function SwapRateInfo({ tokenIn, tokenOut }: SwapRateInfoProps) {
             onClick={toggleShowTokenInPrice}
             className="text-xs font-medium"
           >
-            {showTokenInPrice ? (
-              <div className="flex gap-1">
-                {tokenOutPerTokenIn != null &&
-                  `1 ${tokenIn.symbol} = ${formatTokenValue(
-                    tokenOutPerTokenIn.amount,
-                    tokenOutPerTokenIn.decimals,
-                    { fractionDigits: 5 }
-                  )} ${tokenOut.symbol}`}
-
-                {tokenOutPerTokenIn != null &&
-                  (() => {
-                    const price = getTokenUsdPrice(
-                      formatTokenValue(
-                        tokenOutPerTokenIn.amount,
-                        tokenOutPerTokenIn.decimals
-                      ),
-                      tokenOut,
-                      tokensUsdPriceData
-                    )
-                    if (price != null) {
-                      return (
-                        <span className="text-gray-a9">
-                          ({formatUsdAmount(price)})
-                        </span>
-                      )
-                    }
-                    return null
-                  })()}
-              </div>
-            ) : (
-              <div className="flex gap-1">
-                {tokenInPerTokenOut != null &&
-                  `1 ${tokenOut.symbol} = ${formatTokenValue(
-                    tokenInPerTokenOut.amount,
-                    tokenInPerTokenOut.decimals,
-                    { fractionDigits: 5 }
-                  )} ${tokenIn.symbol}`}
-
-                {tokenInPerTokenOut != null &&
-                  (() => {
-                    const price = getTokenUsdPrice(
-                      formatTokenValue(
-                        tokenInPerTokenOut.amount,
-                        tokenInPerTokenOut.decimals
-                      ),
-                      tokenIn,
-                      tokensUsdPriceData
-                    )
-                    if (price != null) {
-                      return (
-                        <span className="text-gray-a9">
-                          ({formatUsdAmount(price)})
-                        </span>
-                      )
-                    }
-                    return null
-                  })()}
-              </div>
-            )}
+            {showTokenInPrice
+              ? tokenOutPerTokenIn != null &&
+                renderTokenOutPrice(
+                  tokenOutPerTokenIn,
+                  tokenIn,
+                  tokenOut,
+                  tokensUsdPriceData
+                )
+              : tokenInPerTokenOut != null &&
+                renderTokenInPrice(
+                  tokenInPerTokenOut,
+                  tokenIn,
+                  tokenOut,
+                  tokensUsdPriceData
+                )}
           </button>
 
           <Accordion.Trigger className="transition-all [&[data-state=open]>svg]:rotate-180">
@@ -164,4 +124,60 @@ export function SwapRateInfo({ tokenIn, tokenOut }: SwapRateInfoProps) {
 
 function useToggle(defaultValue = false) {
   return useReducer((state) => !state, defaultValue)
+}
+
+function renderTokenUsdPrice(
+  amount: string,
+  token: SwappableToken,
+  tokensUsdPriceData: TokenUsdPriceData | undefined
+) {
+  const price = getTokenUsdPrice(amount, token, tokensUsdPriceData)
+  if (price != null) {
+    return <span className="text-gray-a9">({formatUsdAmount(price)})</span>
+  }
+  return null
+}
+
+function renderTokenOutPrice(
+  tokenOutPerTokenIn: TokenValue,
+  tokenIn: SwappableToken,
+  tokenOut: SwappableToken,
+  tokensUsdPriceData: TokenUsdPriceData | undefined
+) {
+  const amount = formatTokenValue(
+    tokenOutPerTokenIn.amount,
+    tokenOutPerTokenIn.decimals
+  )
+  return (
+    <div className="flex gap-1">
+      {`1 ${tokenIn.symbol} = ${formatTokenValue(
+        tokenOutPerTokenIn.amount,
+        tokenOutPerTokenIn.decimals,
+        { fractionDigits: 5 }
+      )} ${tokenOut.symbol}`}
+      {renderTokenUsdPrice(amount, tokenOut, tokensUsdPriceData)}
+    </div>
+  )
+}
+
+function renderTokenInPrice(
+  tokenInPerTokenOut: TokenValue,
+  tokenIn: SwappableToken,
+  tokenOut: SwappableToken,
+  tokensUsdPriceData: TokenUsdPriceData | undefined
+) {
+  const amount = formatTokenValue(
+    tokenInPerTokenOut.amount,
+    tokenInPerTokenOut.decimals
+  )
+  return (
+    <div className="flex gap-1">
+      {`1 ${tokenOut.symbol} = ${formatTokenValue(
+        tokenInPerTokenOut.amount,
+        tokenInPerTokenOut.decimals,
+        { fractionDigits: 5 }
+      )} ${tokenIn.symbol}`}
+      {renderTokenUsdPrice(amount, tokenIn, tokensUsdPriceData)}
+    </div>
+  )
 }
