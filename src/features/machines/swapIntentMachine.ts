@@ -167,7 +167,15 @@ export const swapIntentMachine = setup({
     },
     proposeQuote: assign({
       intentOperationParams: ({ context }, proposedQuote: AggregatedQuote) => {
-        context.quotes.enqueue(proposedQuote)
+        if (context.intentOperationParams.quote) {
+          enqueueBetterQuote(
+            context.quotes,
+            context.intentOperationParams.quote,
+            proposedQuote,
+            context.intentOperationParams.tokenOut,
+            context.slippageBasisPoints
+          )
+        }
 
         if (context.intentOperationParams.type === "swap") {
           return {
@@ -678,6 +686,28 @@ export const swapIntentMachine = setup({
 
 function toError(error: unknown): Error {
   return error instanceof Error ? error : new Error("unknown error")
+}
+
+function enqueueBetterQuote(
+  quotes: PriorityQueue<AggregatedQuote>,
+  originalQuote: AggregatedQuote,
+  proposedQuote: AggregatedQuote,
+  tokenOut: BaseTokenInfo,
+  slippageBasisPoints: number
+) {
+  const outOriginal = computeTotalDeltaDifferentDecimals(
+    [tokenOut],
+    accountSlippageExactIn(originalQuote.tokenDeltas, slippageBasisPoints)
+  )
+
+  const outProposed = computeTotalDeltaDifferentDecimals(
+    [tokenOut],
+    proposedQuote.tokenDeltas
+  )
+
+  if (compareAmounts(outOriginal, outProposed) <= 0) {
+    quotes.enqueue(proposedQuote)
+  }
 }
 
 function peekBestQuote(
