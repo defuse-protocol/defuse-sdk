@@ -250,11 +250,13 @@ export const withdrawUIMachine = setup({
 
         const formValues = context.withdrawFormRef.getSnapshot().context
 
+        // @ts-expect-error
         const intentRef = spawn("intentStatusActor", {
           id: `intent-${output.value.intentHash}`,
           input: {
             parentRef: self,
             intentHash: output.value.intentHash,
+            txHash: null,
             tokenIn: formValues.tokenIn,
             tokenOut: formValues.tokenOut,
             intentDescription: output.value.intentDescription,

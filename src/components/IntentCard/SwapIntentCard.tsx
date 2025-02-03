@@ -16,6 +16,7 @@ const NEAR_EXPLORER = "https://nearblocks.io"
 export function SwapIntentCard({ intentStatusActorRef }: SwapIntentCardProps) {
   const state = useSelector(intentStatusActorRef, (state) => state)
   const { tokenIn, tokenOut, intentDescription } = state.context
+  assert(intentDescription !== null, "Intent description is null")
   assert(intentDescription.type === "swap", "Type must be swap")
   const { totalAmountIn, totalAmountOut } = intentDescription
 

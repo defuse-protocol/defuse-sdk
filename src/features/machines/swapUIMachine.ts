@@ -421,8 +421,9 @@ export const swapUIMachine = setup({
                 ...event.output.value,
                 tokenIn: context.formValues.tokenIn,
                 tokenOut: context.formValues.tokenOut,
-                intentDescription: null,
                 intentHash: null,
+                txHash: null,
+                intentDescription: null,
               },
             })
           },

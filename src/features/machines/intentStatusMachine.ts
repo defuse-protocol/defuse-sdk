@@ -12,7 +12,7 @@ import {
   waitForIntentSettlement,
 } from "../../services/intentService"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../types/base"
-import type { IntentDescription } from "./swapIntentMachine"
+import type { IntentRef } from "./intentPoolMachine"
 
 type ChildEvent = {
   type: "INTENT_SETTLED"
@@ -29,19 +29,10 @@ export const intentStatusMachine = setup({
   types: {
     input: {} as {
       parentRef: ParentActor
-      intentHash: string
-      tokenIn: BaseTokenInfo | UnifiedTokenInfo
-      tokenOut: BaseTokenInfo | UnifiedTokenInfo
-      intentDescription: IntentDescription
-    },
+    } & IntentRef,
     context: {} as {
       parentRef: ParentActor
-      intentHash: string
-      tokenIn: BaseTokenInfo | UnifiedTokenInfo
-      tokenOut: BaseTokenInfo | UnifiedTokenInfo
-      txHash: string | null
-      intentDescription: IntentDescription
-    },
+    } & IntentRef,
   },
   actions: {
     logError: (_, params: { error: unknown }) => {
@@ -65,31 +56,35 @@ export const intentStatusMachine = setup({
     ),
   },
   guards: {
+    isPublished: (_, input: { intentHash: string | null }) =>
+      input.intentHash !== null,
     isSettled: (_, settlementResult: IntentSettlementResult) =>
       settlementResult.status === "SETTLED",
   },
 }).createMachine({
-  /** @xstate-layout N4IgpgJg5mDOIC5QEsB2AXMGDK6CG6ArrAHQAOWEaUAxANoAMAuoqGQPazLrLuqsgAHogCMAFgBsJCQCYZDGQFYGigMwiJAdgCcEgDQgAnqIbaSikQ01WJFzQA5tMiQF8XBtJhz4ipAMYAFmB+ANbUNBB8YCRoAG7sIdGeWOi4BMQkgcFhqFAIcex+BLyojExlAhxcPHwCwgiKMvYk9oqKYqqOipoiMmIiBsYI9iIkqnLa4lr2qroybh4YKWm+mUGh4ZGoSajxiTFL3un+6zl5BUU1pcx0IixIIFXcJXWIjaMy6gwikx3WmoNRLoxt11DpGvYmmJ5u4QMkjqsshtcjQwAAnNHsNHkAA2BAAZliALYHLypHwZJFnfK7QrFPhlCoPJ5XV4IGSTEgMMHfEQ9bTctSA9nOEiaSSNVSKCQSSQSESKBZww7k44kdGYtE0ABKAFEACragCaTLYnGetQe9TEimkYgF9hmMk06jaimFqjEzU0zu6KgYDC9srcsNQ7AgcAE8NVvkq5tZVsQAFomiQnNzZo7OpoZbZhUnmo1nfYFPYOmIbfaldGVhkKKgqLk49UXomED8uToZbz5Z9VFLhZYZCQZOJIZ6bdMbdWVbWTtlqM2Lfw286pMpVD1VAwZpDdMKHC0A71xAwJLodNoZ2S5yRYIQ-H44PBmfHW6B6toRiQvWIrNpNxLBV9CMEwGDTCQSzLJx+ilL1r2WClSDDdAAH1YjwHFkAgJcEw-RBtB0H9pX9ewdHsWwxEHACR00Bw6P6SES0UewEIRDINSxXD3yERApVUcwVBlaFRw5ERPQ9L0xm0NpxE9TMfhDFwgA */
+  /** @xstate-layout N4IgpgJg5mDOIC5QEsB2AXMGDK6CG6ArrAHQAOWEaUAxANoAMAuoqGQPazLrLuqsgAHogCMIgOwkALAFZxADgDMIgGwyJiqQE4ZAGhABPUQykkZMhmPXyATIsU2p8gL7P9aTDnxFSAYwAWYL4A1tQ0EHxgJGgAbuzBUR5Y6LgExCQBQaGoUAix7L4EvKiMTKUCHFw8fALCCDI28iTy5lKK8jriIo4i+kYI8iIkDjZaIlIqCopaKjau7hjJqT4ZgSFhEaiJqHEJ0YteaX5r2bn5hdUlzHQiLEggldzFtYgNQ3YilmNt4gzifaIZsM5MpxDpGo0pHM3CAkocVpl1jkaGAAE6o9io8gAGwIADNMQBbfaeFLedKI055HYFIp8Urle6PS4vBCjIYMUGWCQiLScmSKAFsmwqEjiCYNRQyFQqCYqEQyeawg5ko4kNEY1E0ABKAFEACragCajLYnCeNXudUUJC0NlUaikbQkTvEciFmia0xkTnMDDU4zarhhqHYEDgAjhqp8FXNLKtiAAtFJJO0VHabAx5L9GvJZULE0101o8z6VNN7FnxEqo8t0hRUFQcrGqs8EwgGCR5Yo-mDulouiIpf9DMYbMMGNyB7zJtoayq68cstQWxb+O2bOJRRZFF0e0pbDMhQpmpPuuN-TMwVp56TFyRYIRfL44PAmXG26A6iWhk4pH8tF3eRLGlIVPk7GZgPkbQeilJxbyWclSFDdAAH0YjwbFkAgVd4y-RABy0aRpQYCxsxLR0wMAkhNwUcRxREWxgJkFwYVrJD1XRTFcM-IREClG0LGlWUbHtdlNA9Jxhh0dQ2jaH8b2DIA */
   id: "intentStatus",
   initial: "pending",
-  context: ({ input }) => {
-    return {
-      parentRef: input.parentRef,
-      intentHash: input.intentHash,
-      tokenIn: input.tokenIn,
-      tokenOut: input.tokenOut,
-      txHash: null,
-      intentDescription: input.intentDescription,
-    }
-  },
+  context: ({ input }) => input,
   states: {
     pending: {
-      always: "checking",
+      always: {
+        target: "checking",
+        guard: {
+          type: "isPublished",
+          params: ({ context }) => ({
+            intentHash: context.intentHash,
+          }),
+        },
+      },
     },
     checking: {
       invoke: {
         src: "checkIntentStatus",
-        input: ({ context }) => ({ intentHash: context.intentHash }),
+        input: ({ context }) => {
+          assert(context.intentHash !== null, "intentHash is null")
+          return { intentHash: context.intentHash }
+        },
         onDone: [
           {
             target: "success",
@@ -123,6 +118,7 @@ export const intentStatusMachine = setup({
         ({ context }) => context.parentRef,
         ({ context }) => {
           assert(context.txHash != null, "txHash is null")
+          assert(context.intentHash != null, "intentHash is null")
           return {
             type: "INTENT_SETTLED" as const,
             data: {

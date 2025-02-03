@@ -9,10 +9,17 @@ import type {
 } from "src/types/swap"
 import { assert } from "src/utils/assert"
 import { computeTotalBalanceDifferentDecimals } from "src/utils/tokenUtils"
-import { type ActorRef, type Snapshot, assign, setup } from "xstate"
 import type { ChainType } from "../../types/deposit"
 import type { DefuseUserId } from "../../utils/defuse"
 import type { QuoteInput } from "./backgroundQuoterMachine"
+
+import {
+  type ActorRef,
+  type ActorRefFrom,
+  type Snapshot,
+  assign,
+  setup,
+} from "xstate"
 import type { BalanceMapping } from "./depositedBalanceMachine"
 import {
   type Output as IntentPublisherOutput,
@@ -36,8 +43,11 @@ export type IntentCreationResult =
   | null
 
 export type IntentRef = {
+  intentHash: string | null
+  txHash: string | null
   tokenIn: SwappableToken
   tokenOut: SwappableToken
+  intentDescription: IntentDescription | null
   intentOperationParams: IntentOperationParams
   signature: WalletSignatureResult
   messageToSign: null | {
@@ -51,8 +61,6 @@ export type IntentRef = {
   defuseUserId: DefuseUserId
   referral?: string
   slippageBasisPoints: number
-  intentHash: string | null
-  intentDescription: IntentDescription | null
 }
 
 type ParentReceivedEvents = {
@@ -85,9 +93,9 @@ export const intentPoolMachine = setup({
     context: {} as {
       parentRef: ParentActor
       intentCreationResult: IntentCreationResult
-      intentRefs: IntentRef[]
-      executingIntentRef: number | null
-      checkingIntentRef: number | null
+      intentRefs: ActorRefFrom<typeof intentStatusMachine>[]
+      executingIntentRef: string | null
+      checkingIntentRef: string | null
     },
     events: {} as Events | PassthroughEvent,
     input: {} as Input,
@@ -97,17 +105,19 @@ export const intentPoolMachine = setup({
     intentPublisherActor: intentPublisherMachine,
   },
   actions: {
-    addIntent: assign(({ context, event }) => {
-      assert(event.type === "ADD_INTENT", "event is not ADD_INTENT")
-      return {
-        intentRefs: [
-          ...context.intentRefs,
-          {
+    spawnIntentStatusActor: assign({
+      intentRefs: ({ context, event, spawn, self }) => {
+        assert(event.type === "ADD_INTENT", "event is not ADD_INTENT")
+        const id = crypto.randomUUID()
+        const intentRef = spawn("intentStatusActor", {
+          id: `intent-${id}`,
+          input: {
+            parentRef: self,
             ...event.params,
-            intentHash: null,
           },
-        ],
-      }
+        })
+        return [intentRef, ...context.intentRefs]
+      },
     }),
     setExecutingIntentRef: assign({
       executingIntentRef: ({ context }) => {
@@ -123,16 +133,18 @@ export const intentPoolMachine = setup({
             }
           }
         ).context.depositedBalanceRef.getSnapshot().context.balances
-        for (const ref of context.intentRefs) {
-          if (ref.intentHash === null) {
+        for (const intentRef of context.intentRefs) {
+          const intent = intentRef.getSnapshot().context
+
+          if (intent.intentHash === null) {
             const onchainBalance = computeTotalBalanceDifferentDecimals(
-              ref.tokenIn,
+              intent.tokenIn,
               balances
             )
             if (onchainBalance === undefined) {
               continue
             }
-            const tokenDeltas = ref.intentOperationParams.quote?.tokenDeltas
+            const tokenDeltas = intent.intentOperationParams.quote?.tokenDeltas
             if (tokenDeltas === undefined || tokenDeltas.length === 0) {
               continue
             }
@@ -144,7 +156,7 @@ export const intentPoolMachine = setup({
             if (onchainBalance.amount < amount * -1n) {
               continue
             }
-            return context.intentRefs.indexOf(ref)
+            return intentRef.id
           }
         }
         return null
@@ -163,34 +175,37 @@ export const intentPoolMachine = setup({
     clearCheckingIntentRef: assign({
       checkingIntentRef: null,
     }),
-    setIntentHashAndDescription: assign(
-      (
-        { context },
-        intent: {
-          intentHash: string
-          intentDescription: IntentDescription
-        }
-      ) => ({
-        intentRefs: context.intentRefs.map((ref, index) => {
-          assert(
-            context.executingIntentRef !== null,
-            "executingIntentRef is null"
-          )
-          return index === context.executingIntentRef
-            ? {
-                ...ref,
-                intentHash: intent.intentHash,
-                intentDescription: intent.intentDescription,
-              }
-            : ref
-        }),
-      })
-    ),
     clearIntentCreationResult: assign({ intentCreationResult: null }),
+    spawnIntentStatusAndReplaceActor: assign({
+      intentRefs: (
+        { context, spawn },
+        output: { intentHash: string; intentDescription: IntentDescription }
+      ) => {
+        assert(
+          context.executingIntentRef !== null,
+          "executingIntentRef is null"
+        )
+        return context.intentRefs.map((intentRef) => {
+          if (intentRef.id === context.executingIntentRef) {
+            return spawn("intentStatusActor", {
+              id: intentRef.id,
+              input: {
+                ...intentRef.getSnapshot().context,
+                ...output,
+              },
+            })
+          }
+          return intentRef
+        })
+      },
+    }),
   },
   guards: {
     hasUnexecutedIntents: ({ context }) =>
-      context.intentRefs.some((ref) => ref.intentHash === null),
+      context.intentRefs.some((intentRef) => {
+        const intent = intentRef.getSnapshot().context
+        return intent.intentHash === null
+      }),
     hasExecutingIntent: ({ context }) => context.executingIntentRef !== null,
     hasQueueingIntent: ({ context }) => context.checkingIntentRef !== null,
   },
@@ -249,28 +264,32 @@ export const intentPoolMachine = setup({
             context.executingIntentRef !== null,
             "executingIntentRef is null"
           )
-          const intentRef = context.intentRefs[context.executingIntentRef]
-          assert(intentRef !== undefined, "intentRef is undefined")
-          assert(intentRef.signature != null, "signature is null")
-          assert(intentRef.messageToSign != null, "messageToSign is null")
+          const intent = extractIntent({
+            intentRefs: context.intentRefs,
+            id: context.executingIntentRef,
+          })
+          assert(intent !== undefined, "intent is undefined")
+          assert(intent.signature != null, "signature is null")
+          assert(intent.messageToSign != null, "messageToSign is null")
+
           return {
-            userAddress: intentRef.userAddress,
-            userChainType: intentRef.userChainType,
-            nearClient: intentRef.nearClient,
-            sendNearTransaction: intentRef.sendNearTransaction,
-            intentOperationParams: intentRef.intentOperationParams,
-            defuseUserId: intentRef.defuseUserId,
-            referral: intentRef.referral,
-            signature: intentRef.signature,
-            messageToSign: intentRef.messageToSign,
-            slippageBasisPoints: intentRef.slippageBasisPoints,
+            userAddress: intent.userAddress,
+            userChainType: intent.userChainType,
+            nearClient: intent.nearClient,
+            sendNearTransaction: intent.sendNearTransaction,
+            intentOperationParams: intent.intentOperationParams,
+            defuseUserId: intent.defuseUserId,
+            referral: intent.referral,
+            signature: intent.signature,
+            messageToSign: intent.messageToSign,
+            slippageBasisPoints: intent.slippageBasisPoints,
           }
         },
         onDone: {
           target: "verifying",
           actions: [
             {
-              type: "setIntentHashAndDescription",
+              type: "spawnIntentStatusAndReplaceActor",
               params: ({ event }) => {
                 assert(event.output.tag === "ok")
                 return event.output.value
@@ -289,41 +308,25 @@ export const intentPoolMachine = setup({
     },
 
     verifying: {
-      invoke: {
-        id: "intentStatusRef",
-        src: "intentStatusActor",
-        input: ({ context, self }) => {
-          assert(
-            context.checkingIntentRef !== null,
-            "checkingIntentRef is null"
-          )
-          const intentRef = context.intentRefs[context.checkingIntentRef]
-          assert(intentRef !== undefined, "intentRef is undefined")
-          assert(intentRef.intentHash !== null, "intentHash is null")
-          assert(
-            intentRef.intentDescription !== null,
-            "intentDescription is null"
-          )
-          return {
-            parentRef: self,
-            intentHash: intentRef.intentHash,
-            tokenIn: intentRef.tokenIn,
-            tokenOut: intentRef.tokenOut,
-            intentDescription: intentRef.intentDescription,
-          }
-        },
-        onDone: {
-          target: "queueing",
-          actions: ["clearCheckingIntentRef"],
-        },
-      },
+      target: "queueing",
+      actions: ["clearCheckingIntentRef"],
     },
   },
 
   on: {
     ADD_INTENT: {
       target: ".queueing",
-      actions: "addIntent",
+      actions: "spawnIntentStatusActor",
     },
   },
 })
+
+function extractIntent({
+  intentRefs,
+  id,
+}: { intentRefs: ActorRefFrom<typeof intentStatusMachine>[]; id: string }) {
+  const intentRef = intentRefs.find((ref) => ref.id === id)
+  const intent = intentRef?.getSnapshot().context
+  assert(intent !== undefined, "intent is undefined")
+  return intent
+}

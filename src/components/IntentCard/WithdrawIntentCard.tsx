@@ -19,6 +19,7 @@ export function WithdrawIntentCard({
   const state = useSelector(intentStatusActorRef, (state) => state)
   const { tokenOut, intentDescription } = state.context
 
+  assert(intentDescription !== null, "Intent description is null")
   assert(intentDescription.type === "withdraw", "Type must be withdraw")
   const amountWithdrawn = intentDescription.amountWithdrawn
 
