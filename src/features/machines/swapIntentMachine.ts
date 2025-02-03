@@ -165,47 +165,17 @@ export const swapIntentMachine = setup({
     logError: (_, params: { error: unknown }) => {
       logger.error(params.error)
     },
-    proposeQuote: assign({
-      intentOperationParams: ({ context }, proposedQuote: AggregatedQuote) => {
-        if (context.intentOperationParams.quote) {
-          enqueueBetterQuote(
-            context.quotes,
-            context.intentOperationParams.quote,
-            proposedQuote,
-            context.intentOperationParams.tokenOut,
-            context.slippageBasisPoints
-          )
-        }
-
-        if (context.intentOperationParams.type === "swap") {
-          return {
-            ...context.intentOperationParams,
-            quote: determineNewestValidQuote(
-              context.intentOperationParams.tokenOut,
-              context.intentOperationParams.quote,
-              proposedQuote
-            ),
-          }
-        }
-
-        // Quote needs to be updated for withdraw only in case of crosschain withdrawal
-        if (
-          context.intentOperationParams.type === "withdraw" &&
-          context.intentOperationParams.quote !== null
-        ) {
-          return {
-            ...context.intentOperationParams,
-            quote: determineNewestValidQuote(
-              context.intentOperationParams.tokenOut,
-              context.intentOperationParams.quote,
-              proposedQuote
-            ),
-          }
-        }
-
-        return context.intentOperationParams
-      },
-    }),
+    proposeQuote: ({ context }, proposedQuote: AggregatedQuote) => {
+      if (context.intentOperationParams.quote) {
+        enqueueBetterQuote(
+          context.quotes,
+          context.intentOperationParams.quote,
+          proposedQuote,
+          context.intentOperationParams.tokenOut,
+          context.slippageBasisPoints
+        )
+      }
+    },
     assembleSignMessages: assign({
       messageToSign: ({ context }) => {
         assert(
@@ -727,29 +697,6 @@ function peekBestQuote(
   }
 
   return null
-}
-
-function determineNewestValidQuote(
-  tokenOut: BaseTokenInfo,
-  originalQuote: AggregatedQuote,
-  proposedQuote: AggregatedQuote
-): AggregatedQuote {
-  const out1 = computeTotalDeltaDifferentDecimals(
-    [tokenOut],
-    originalQuote.tokenDeltas
-  )
-  const out2 = computeTotalDeltaDifferentDecimals(
-    [tokenOut],
-    proposedQuote.tokenDeltas
-  )
-  if (
-    compareAmounts(out1, out2) <= 0 &&
-    originalQuote.expirationTime <= proposedQuote.expirationTime
-  ) {
-    return proposedQuote
-  }
-
-  return originalQuote
 }
 
 async function verifyWalletSignature(
