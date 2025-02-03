@@ -49,19 +49,19 @@ export function SwapRateInfo({ tokenIn, tokenOut }: SwapRateInfoProps) {
           >
             {showTokenInPrice
               ? exchangeRate != null &&
-                renderTokenOutPrice(
-                  exchangeRate,
-                  tokenIn,
-                  tokenOut,
-                  tokensUsdPriceData
-                )
+                renderExchangeRate({
+                  rate: exchangeRate,
+                  baseToken: tokenIn,
+                  quoteToken: tokenOut,
+                  tokensUsdPriceData,
+                })
               : inverseExchangeRate != null &&
-                renderTokenInPrice(
-                  inverseExchangeRate,
-                  tokenIn,
-                  tokenOut,
-                  tokensUsdPriceData
-                )}
+                renderExchangeRate({
+                  rate: inverseExchangeRate,
+                  baseToken: tokenOut,
+                  quoteToken: tokenIn,
+                  tokensUsdPriceData,
+                })}
           </button>
 
           <Accordion.Trigger className="transition-all [&[data-state=open]>svg]:rotate-180">
@@ -126,52 +126,42 @@ function useToggle(defaultValue = false) {
   return useReducer((state) => !state, defaultValue)
 }
 
+function renderExchangeRate({
+  rate,
+  baseToken,
+  quoteToken,
+  tokensUsdPriceData,
+}: {
+  rate: TokenValue
+  baseToken: SwappableToken
+  quoteToken: SwappableToken
+  tokensUsdPriceData: TokenUsdPriceData | undefined
+}) {
+  return (
+    <div className="flex gap-1">
+      {`1 ${baseToken.symbol} = ${formatTokenValue(rate.amount, rate.decimals, {
+        fractionDigits: 5,
+      })} ${quoteToken.symbol}`}
+
+      {renderTokenUsdPrice(
+        formatTokenValue(rate.amount, rate.decimals),
+        quoteToken,
+        tokensUsdPriceData
+      )}
+    </div>
+  )
+}
+
 function renderTokenUsdPrice(
   amount: string,
   token: SwappableToken,
   tokensUsdPriceData: TokenUsdPriceData | undefined
 ) {
   const price = getTokenUsdPrice(amount, token, tokensUsdPriceData)
+
   if (price != null) {
     return <span className="text-gray-a9">({formatUsdAmount(price)})</span>
   }
+
   return null
-}
-
-function renderTokenOutPrice(
-  exchangeRate: TokenValue,
-  tokenIn: SwappableToken,
-  tokenOut: SwappableToken,
-  tokensUsdPriceData: TokenUsdPriceData | undefined
-) {
-  const amount = formatTokenValue(exchangeRate.amount, exchangeRate.decimals)
-  return (
-    <div className="flex gap-1">
-      {`1 ${tokenIn.symbol} = ${formatTokenValue(
-        exchangeRate.amount,
-        exchangeRate.decimals,
-        { fractionDigits: 5 }
-      )} ${tokenOut.symbol}`}
-      {renderTokenUsdPrice(amount, tokenOut, tokensUsdPriceData)}
-    </div>
-  )
-}
-
-function renderTokenInPrice(
-  exchangeRate: TokenValue,
-  tokenIn: SwappableToken,
-  tokenOut: SwappableToken,
-  tokensUsdPriceData: TokenUsdPriceData | undefined
-) {
-  const amount = formatTokenValue(exchangeRate.amount, exchangeRate.decimals)
-  return (
-    <div className="flex gap-1">
-      {`1 ${tokenOut.symbol} = ${formatTokenValue(
-        exchangeRate.amount,
-        exchangeRate.decimals,
-        { fractionDigits: 5 }
-      )} ${tokenIn.symbol}`}
-      {renderTokenUsdPrice(amount, tokenIn, tokensUsdPriceData)}
-    </div>
-  )
 }
