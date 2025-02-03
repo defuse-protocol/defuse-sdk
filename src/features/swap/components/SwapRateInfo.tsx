@@ -30,7 +30,7 @@ export function SwapRateInfo({ tokenIn, tokenOut }: SwapRateInfoProps) {
     inverseExchangeRate,
   } = useSwapRateData()
   const { data: tokensUsdPriceData } = useTokensUsdPrices()
-  const [showTokenInPrice, toggleShowTokenInPrice] = useToggle()
+  const [showBasePrice, toggleBasePrice] = useToggle()
 
   // todo: might need to handle outside of the component
   const rateIsReady = exchangeRate != null || inverseExchangeRate != null
@@ -44,10 +44,10 @@ export function SwapRateInfo({ tokenIn, tokenOut }: SwapRateInfoProps) {
         <div className="flex justify-between items-center flex-1 text-gray-11">
           <button
             type="button"
-            onClick={toggleShowTokenInPrice}
+            onClick={toggleBasePrice}
             className="text-xs font-medium"
           >
-            {showTokenInPrice
+            {showBasePrice
               ? exchangeRate != null &&
                 renderExchangeRate({
                   rate: exchangeRate,
