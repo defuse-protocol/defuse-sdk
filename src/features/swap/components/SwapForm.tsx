@@ -1,9 +1,4 @@
-import * as Accordion from "@radix-ui/react-accordion"
-import {
-  CaretDownIcon,
-  ExclamationTriangleIcon,
-  InfoCircledIcon,
-} from "@radix-ui/react-icons"
+import { ExclamationTriangleIcon } from "@radix-ui/react-icons"
 import { Box, Callout, Flex } from "@radix-ui/themes"
 import { useSelector } from "@xstate/react"
 import {
@@ -12,11 +7,10 @@ import {
   useCallback,
   useContext,
   useEffect,
-  useReducer,
 } from "react"
 import { useFormContext } from "react-hook-form"
 import { useTokensUsdPrices } from "src/hooks/useTokensUsdPrices"
-import { formatTokenValue, formatUsdAmount } from "src/utils/format"
+import { formatUsdAmount } from "src/utils/format"
 import getTokenUsdPrice from "src/utils/getTokenUsdPrice"
 import type { ActorRefFrom, SnapshotFrom } from "xstate"
 import { ButtonCustom } from "../../../components/Button/ButtonCustom"
@@ -25,23 +19,17 @@ import { Form } from "../../../components/Form"
 import { FieldComboInput } from "../../../components/Form/FieldComboInput"
 import { SwapIntentCard } from "../../../components/IntentCard/SwapIntentCard"
 import type { ModalSelectAssetsPayload } from "../../../components/Modal/ModalSelectAssets"
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "../../../components/Popover"
 import { useModalStore } from "../../../providers/ModalStoreProvider"
 import { ModalType } from "../../../stores/modalStore"
 import type { SwappableToken } from "../../../types/swap"
 import {
-  accountSlippageExactIn,
   compareAmounts,
   computeTotalBalanceDifferentDecimals,
-  computeTotalDeltaDifferentDecimals,
 } from "../../../utils/tokenUtils"
 import type { depositedBalanceMachine } from "../../machines/depositedBalanceMachine"
 import type { intentStatusMachine } from "../../machines/intentStatusMachine"
-import type { Context, swapUIMachine } from "../../machines/swapUIMachine"
+import type { Context } from "../../machines/swapUIMachine"
+import { SwapRateInfo } from "./SwapRateInfo"
 import { SwapSubmitterContext } from "./SwapSubmitter"
 import { SwapUIMachineContext } from "./SwapUIMachineProvider"
 
@@ -88,13 +76,6 @@ export const SwapForm = ({ onNavigateDeposit }: SwapFormProps) => {
         insufficientTokenInAmount: Boolean(insufficientTokenInAmount),
       }
     })
-
-  const {
-    minAmountOut,
-    slippageBasisPoints,
-    tokenOutPerTokenIn,
-    tokenInPerTokenOut,
-  } = SwapUIMachineContext.useSelector(amountOutSelector)
 
   // we need stable references to allow passing to useEffect
   const switchTokens = useCallback(() => {
@@ -208,11 +189,6 @@ export const SwapForm = ({ onNavigateDeposit }: SwapFormProps) => {
     tokensUsdPriceData
   )
 
-  const [showTokenInPrice, toggleShowTokenInPrice] = useReducer(
-    (state) => !state,
-    false
-  )
-
   return (
     <Flex
       direction="column"
@@ -294,125 +270,7 @@ export const SwapForm = ({ onNavigateDeposit }: SwapFormProps) => {
           )}
         </Flex>
 
-        {tokenOutPerTokenIn != null && tokenInPerTokenOut != null && (
-          <Accordion.Root type="single" collapsible className="mt-5">
-            <Accordion.Item value="show">
-              <div className="flex justify-between items-center flex-1 text-gray-11">
-                <button
-                  type="button"
-                  onClick={toggleShowTokenInPrice}
-                  className="text-xs font-medium"
-                >
-                  {showTokenInPrice ? (
-                    <div className="flex gap-1">
-                      {`1 ${tokenIn.symbol} = ${formatTokenValue(
-                        tokenOutPerTokenIn.amount,
-                        tokenOutPerTokenIn.decimals,
-                        { fractionDigits: 5 }
-                      )} ${tokenOut.symbol}`}
-                      {(() => {
-                        const price = getTokenUsdPrice(
-                          formatTokenValue(
-                            tokenOutPerTokenIn.amount,
-                            tokenOutPerTokenIn.decimals
-                          ),
-                          tokenOut,
-                          tokensUsdPriceData
-                        )
-                        if (price != null) {
-                          return (
-                            <span className="text-gray-a9">
-                              ({formatUsdAmount(price)})
-                            </span>
-                          )
-                        }
-                      })()}
-                    </div>
-                  ) : (
-                    <div className="flex gap-1">
-                      {`1 ${tokenOut.symbol} = ${formatTokenValue(
-                        tokenInPerTokenOut.amount,
-                        tokenInPerTokenOut.decimals,
-                        { fractionDigits: 5 }
-                      )} ${tokenIn.symbol}`}
-                      {(() => {
-                        const price = getTokenUsdPrice(
-                          formatTokenValue(
-                            tokenInPerTokenOut.amount,
-                            tokenInPerTokenOut.decimals
-                          ),
-                          tokenIn,
-                          tokensUsdPriceData
-                        )
-                        if (price != null) {
-                          return (
-                            <span className="text-gray-a9">
-                              ({formatUsdAmount(price)})
-                            </span>
-                          )
-                        }
-                      })()}
-                    </div>
-                  )}
-                </button>
-
-                <Accordion.Trigger className="transition-all [&[data-state=open]>svg]:rotate-180">
-                  <CaretDownIcon className="h-5 w-5 transition-transform duration-200" />
-                </Accordion.Trigger>
-              </div>
-
-              <Accordion.Content className="overflow-hidden transition-all data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down">
-                {/* Simple spacing for smooth toggle animation */}
-                <div className="h-4" />
-
-                <div className="flex flex-col gap-3.5 font-medium text-gray-11 text-xs">
-                  <div className="flex justify-between">
-                    <div className="flex gap-1 items-center">
-                      <div>Max slippage</div>
-
-                      <Popover>
-                        <PopoverTrigger>
-                          <InfoCircledIcon />
-                        </PopoverTrigger>
-
-                        <PopoverContent className="flex flex-col gap-2 text-sm">
-                          <div className="text-gray-11">
-                            If the price slips any further, your intent will not
-                            be executed. Below is the minimum amount you are
-                            guaranteed to receive.
-                          </div>
-
-                          {minAmountOut != null && (
-                            <div className="flex justify-between p-2 rounded-md bg-gray-3 text-gray-11">
-                              <div>Receive at least</div>
-                              <div className="text-gray-12">
-                                {formatTokenValue(
-                                  minAmountOut.amount,
-                                  minAmountOut.decimals,
-                                  { fractionDigits: 5 }
-                                  // biome-ignore lint/nursery/useConsistentCurlyBraces: space is needed here
-                                )}{" "}
-                                {tokenOut.symbol}
-                              </div>
-                            </div>
-                          )}
-                        </PopoverContent>
-                      </Popover>
-                    </div>
-
-                    <div className="text-label">
-                      {Intl.NumberFormat(undefined, {
-                        style: "percent",
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2,
-                      }).format(slippageBasisPoints / 10_000)}
-                    </div>
-                  </div>
-                </div>
-              </Accordion.Content>
-            </Accordion.Item>
-          </Accordion.Root>
-        )}
+        <SwapRateInfo tokenIn={tokenIn} tokenOut={tokenOut} />
       </Form>
 
       {renderIntentCreationResult(intentCreationResult)}
@@ -554,58 +412,5 @@ export function transitBalanceSelector(token: SwappableToken) {
 
     if (pending?.amount === 0n) return
     return pending
-  }
-}
-
-function amountOutSelector(state: SnapshotFrom<typeof swapUIMachine>) {
-  const slippageBasisPoints = state.context.slippageBasisPoints
-
-  if (state.context.quote == null || state.context.quote.tag === "err") {
-    return {
-      amountOut: null,
-      minAmountOut: null,
-      slippageBasisPoints,
-    }
-  }
-
-  const quote = state.context.quote.value
-
-  const amountOut = computeTotalDeltaDifferentDecimals(
-    [state.context.parsedFormValues.tokenOut],
-    quote.tokenDeltas
-  )
-
-  const minAmountOut = computeTotalDeltaDifferentDecimals(
-    [state.context.parsedFormValues.tokenOut],
-    accountSlippageExactIn(quote.tokenDeltas, state.context.slippageBasisPoints)
-  )
-
-  const amountIn = state.context.parsedFormValues.amountIn
-  const tokenOutPerTokenIn =
-    amountIn != null
-      ? {
-          amount:
-            (amountOut.amount * 10n ** BigInt(amountIn.decimals)) /
-            amountIn.amount,
-          decimals: amountOut.decimals,
-        }
-      : null
-
-  const tokenInPerTokenOut =
-    amountIn != null
-      ? {
-          amount:
-            (amountIn.amount * 10n ** BigInt(amountOut.decimals)) /
-            amountOut.amount,
-          decimals: amountIn.decimals,
-        }
-      : null
-
-  return {
-    amountOut,
-    minAmountOut,
-    slippageBasisPoints,
-    tokenOutPerTokenIn,
-    tokenInPerTokenOut,
   }
 }
