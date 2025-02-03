@@ -29,6 +29,7 @@ import {
 import type { depositedBalanceMachine } from "../../machines/depositedBalanceMachine"
 import type { intentStatusMachine } from "../../machines/intentStatusMachine"
 import type { Context } from "../../machines/swapUIMachine"
+import { SwapRateInfo } from "./SwapRateInfo"
 import { SwapSubmitterContext } from "./SwapSubmitter"
 import { SwapUIMachineContext } from "./SwapUIMachineProvider"
 
@@ -268,13 +269,17 @@ export const SwapForm = ({ onNavigateDeposit }: SwapFormProps) => {
             </ButtonCustom>
           )}
         </Flex>
+
+        <SwapRateInfo tokenIn={tokenIn} tokenOut={tokenOut} />
       </Form>
 
       {renderIntentCreationResult(intentCreationResult)}
 
-      <Box>
-        <Intents intentRefs={snapshot.context.intentRefs} />
-      </Box>
+      {snapshot.context.intentRefs.length > 0 && (
+        <Box>
+          <Intents intentRefs={snapshot.context.intentRefs} />
+        </Box>
+      )}
     </Flex>
   )
 }
