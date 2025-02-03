@@ -26,14 +26,14 @@ export function SwapRateInfo({ tokenIn, tokenOut }: SwapRateInfoProps) {
   const {
     minAmountOut,
     slippageBasisPoints,
-    tokenOutPerTokenIn,
-    tokenInPerTokenOut,
+    exchangeRate,
+    inverseExchangeRate,
   } = useSwapRateData()
   const { data: tokensUsdPriceData } = useTokensUsdPrices()
   const [showTokenInPrice, toggleShowTokenInPrice] = useToggle()
 
   // todo: might need to handle outside of the component
-  const rateIsReady = tokenOutPerTokenIn != null || tokenInPerTokenOut != null
+  const rateIsReady = exchangeRate != null || inverseExchangeRate != null
   if (!rateIsReady) {
     return null
   }
@@ -48,16 +48,16 @@ export function SwapRateInfo({ tokenIn, tokenOut }: SwapRateInfoProps) {
             className="text-xs font-medium"
           >
             {showTokenInPrice
-              ? tokenOutPerTokenIn != null &&
+              ? exchangeRate != null &&
                 renderTokenOutPrice(
-                  tokenOutPerTokenIn,
+                  exchangeRate,
                   tokenIn,
                   tokenOut,
                   tokensUsdPriceData
                 )
-              : tokenInPerTokenOut != null &&
+              : inverseExchangeRate != null &&
                 renderTokenInPrice(
-                  tokenInPerTokenOut,
+                  inverseExchangeRate,
                   tokenIn,
                   tokenOut,
                   tokensUsdPriceData
@@ -139,20 +139,17 @@ function renderTokenUsdPrice(
 }
 
 function renderTokenOutPrice(
-  tokenOutPerTokenIn: TokenValue,
+  exchangeRate: TokenValue,
   tokenIn: SwappableToken,
   tokenOut: SwappableToken,
   tokensUsdPriceData: TokenUsdPriceData | undefined
 ) {
-  const amount = formatTokenValue(
-    tokenOutPerTokenIn.amount,
-    tokenOutPerTokenIn.decimals
-  )
+  const amount = formatTokenValue(exchangeRate.amount, exchangeRate.decimals)
   return (
     <div className="flex gap-1">
       {`1 ${tokenIn.symbol} = ${formatTokenValue(
-        tokenOutPerTokenIn.amount,
-        tokenOutPerTokenIn.decimals,
+        exchangeRate.amount,
+        exchangeRate.decimals,
         { fractionDigits: 5 }
       )} ${tokenOut.symbol}`}
       {renderTokenUsdPrice(amount, tokenOut, tokensUsdPriceData)}
@@ -161,20 +158,17 @@ function renderTokenOutPrice(
 }
 
 function renderTokenInPrice(
-  tokenInPerTokenOut: TokenValue,
+  exchangeRate: TokenValue,
   tokenIn: SwappableToken,
   tokenOut: SwappableToken,
   tokensUsdPriceData: TokenUsdPriceData | undefined
 ) {
-  const amount = formatTokenValue(
-    tokenInPerTokenOut.amount,
-    tokenInPerTokenOut.decimals
-  )
+  const amount = formatTokenValue(exchangeRate.amount, exchangeRate.decimals)
   return (
     <div className="flex gap-1">
       {`1 ${tokenOut.symbol} = ${formatTokenValue(
-        tokenInPerTokenOut.amount,
-        tokenInPerTokenOut.decimals,
+        exchangeRate.amount,
+        exchangeRate.decimals,
         { fractionDigits: 5 }
       )} ${tokenIn.symbol}`}
       {renderTokenUsdPrice(amount, tokenIn, tokensUsdPriceData)}

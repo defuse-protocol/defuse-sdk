@@ -18,8 +18,8 @@ function swapRateDataSelector(state: SnapshotFrom<typeof swapUIMachine>) {
       amountOut: null,
       minAmountOut: null,
       slippageBasisPoints,
-      tokenOutPerTokenIn: null,
-      tokenInPerTokenOut: null,
+      exchangeRate: null,
+      inverseExchangeRate: null,
     }
   }
 
@@ -36,7 +36,7 @@ function swapRateDataSelector(state: SnapshotFrom<typeof swapUIMachine>) {
   )
 
   const amountIn = state.context.parsedFormValues.amountIn
-  const tokenOutPerTokenIn =
+  const exchangeRate =
     amountIn != null
       ? {
           amount:
@@ -46,7 +46,7 @@ function swapRateDataSelector(state: SnapshotFrom<typeof swapUIMachine>) {
         }
       : null
 
-  const tokenInPerTokenOut =
+  const inverseExchangeRate =
     amountIn != null
       ? {
           amount:
@@ -60,7 +60,7 @@ function swapRateDataSelector(state: SnapshotFrom<typeof swapUIMachine>) {
     amountOut,
     minAmountOut,
     slippageBasisPoints,
-    tokenOutPerTokenIn,
-    tokenInPerTokenOut,
+    exchangeRate,
+    inverseExchangeRate,
   }
 }
