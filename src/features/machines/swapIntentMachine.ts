@@ -267,7 +267,7 @@ export const swapIntentMachine = setup({
       return status === "SETTLED"
     },
     isIntentRelevant: ({ context }) => {
-      const hadQuote = context.intentOperationParams.quote == null
+      const hadQuote = context.intentOperationParams.quote != null
       const hasQuote = context.quoteToPublish != null
       return hadQuote === hasQuote
     },
