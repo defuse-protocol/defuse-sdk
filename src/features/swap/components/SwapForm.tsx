@@ -275,19 +275,20 @@ export const SwapForm = ({ onNavigateDeposit }: SwapFormProps) => {
           )}
         </Flex>
 
-        {minAmountOut != null && (
-          <div className="flex flex-col gap-3.5 font-medium text-gray-11 text-xs mt-5">
-            <div className="flex justify-between">
-              <div className="flex gap-1 items-center">
-                <div>Max slippage</div>
-                <TooltipInfo icon={<InfoCircledIcon />}>
-                  <div className="flex flex-col gap-2">
-                    <div className="text-gray-11">
-                      If the price slips any further, your intent will not be
-                      executed. Below is the minimum amount you are guaranteed
-                      to receive.
-                    </div>
+        <div className="flex flex-col gap-3.5 font-medium text-gray-11 text-xs mt-5">
+          <div className="flex justify-between">
+            <div className="flex gap-1 items-center">
+              <div>Max slippage</div>
 
+              <TooltipInfo icon={<InfoCircledIcon />}>
+                <div className="flex flex-col gap-2">
+                  <div className="text-gray-11">
+                    If the price slips any further, your intent will not be
+                    executed. Below is the minimum amount you are guaranteed to
+                    receive.
+                  </div>
+
+                  {minAmountOut != null && (
                     <div className="flex justify-between p-2 rounded-md bg-gray-3 text-gray-11">
                       <div>Receive at least</div>
                       <div className="text-gray-12">
@@ -300,19 +301,20 @@ export const SwapForm = ({ onNavigateDeposit }: SwapFormProps) => {
                         {tokenOut.symbol}
                       </div>
                     </div>
-                  </div>
-                </TooltipInfo>
-              </div>
-              <div className="text-label">
-                {Intl.NumberFormat(undefined, {
-                  style: "percent",
-                  minimumFractionDigits: 2,
-                  maximumFractionDigits: 2,
-                }).format(slippageBasisPoints / 10_000)}
-              </div>
+                  )}
+                </div>
+              </TooltipInfo>
+            </div>
+
+            <div className="text-label">
+              {Intl.NumberFormat(undefined, {
+                style: "percent",
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              }).format(slippageBasisPoints / 10_000)}
             </div>
           </div>
-        )}
+        </div>
       </Form>
 
       {renderIntentCreationResult(intentCreationResult)}
@@ -456,10 +458,13 @@ export function transitBalanceSelector(token: SwappableToken) {
 }
 
 function amountOutSelector(state: SnapshotFrom<typeof swapUIMachine>) {
+  const slippageBasisPoints = state.context.slippageBasisPoints
+
   if (state.context.quote == null || state.context.quote.tag === "err") {
     return {
       amountOut: null,
       minAmountOut: null,
+      slippageBasisPoints,
     }
   }
 
@@ -474,8 +479,6 @@ function amountOutSelector(state: SnapshotFrom<typeof swapUIMachine>) {
     [state.context.parsedFormValues.tokenOut],
     accountSlippageExactIn(quote.tokenDeltas, state.context.slippageBasisPoints)
   )
-
-  const slippageBasisPoints = state.context.slippageBasisPoints
 
   return { amountOut, minAmountOut, slippageBasisPoints }
 }
