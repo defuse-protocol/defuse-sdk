@@ -52,7 +52,10 @@ export const BlockMultiBalances = ({
       {transitBalance ? (
         <TooltipInfo
           icon={
-            <div className="flex items-center gap-1 rounded-full bg-gray-300/50 px-2 py-0.5">
+            <button
+              type="button"
+              className="flex items-center gap-1 rounded-full bg-gray-300/50 px-2 py-0.5"
+            >
               <div className="w-3 h-3 bg-[url('/static/images/process.gif')] bg-no-repeat bg-contain" />
               <span className="text-xs font-bold text-gray-600">
                 {formatTokenValue(
@@ -64,16 +67,13 @@ export const BlockMultiBalances = ({
                   }
                 )}
               </span>
-            </div>
+            </button>
           }
         >
-          Deposit is in progress and will be
+          Deposit is in progress and will be available shortly.
           <br />
-          available shortly.
           <br />
-          Note: Deposits of the same token are
-          <br />
-          queued and added in order.
+          Note: Deposits of the same token are queued and added in order.
         </TooltipInfo>
       ) : null}
     </div>
