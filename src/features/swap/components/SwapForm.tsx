@@ -1,5 +1,5 @@
 import { ExclamationTriangleIcon } from "@radix-ui/react-icons"
-import { Callout, Flex } from "@radix-ui/themes"
+import { Box, Callout, Flex } from "@radix-ui/themes"
 import { useSelector } from "@xstate/react"
 import {
   Fragment,
@@ -57,7 +57,6 @@ export const SwapForm = ({ onNavigateDeposit }: SwapFormProps) => {
     snapshot.context.intentPoolRef.getSnapshot().context.intentCreationResult
   const { data: tokensUsdPriceData } = useTokensUsdPrices()
 
-  // biome-ignore lint/correctness/noUnusedVariables: <explanation>
   const intentRefs = useSelector(
     snapshot.context.intentPoolRef,
     (state) => state.context.intentRefs
@@ -283,16 +282,15 @@ export const SwapForm = ({ onNavigateDeposit }: SwapFormProps) => {
 
       {renderIntentCreationResult(intentCreationResult)}
 
-      {/* {snapshot.context.intentRefs.length > 0 && (
+      {intentRefs.length > 0 && (
         <Box>
-          <Intents intentRefs={snapshot.context.intentRefs} />
+          <Intents intentRefs={intentRefs} />
         </Box>
-      )} */}
+      )}
     </Flex>
   )
 }
 
-// biome-ignore lint/correctness/noUnusedVariables: <explanation>
 function Intents({
   intentRefs,
 }: { intentRefs: ActorRefFrom<typeof intentStatusMachine>[] }) {

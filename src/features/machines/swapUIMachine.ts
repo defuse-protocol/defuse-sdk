@@ -216,8 +216,8 @@ export const swapUIMachine = setup({
     })),
 
     // Warning: This cannot be properly typed, so you can send an incorrect event
-    sendToSwapRefNewQuote: sendTo(
-      "swapRef",
+    sendToIntentSignerRefNewQuote: sendTo(
+      "intentSignerRef",
       (_, event: BackgroundQuoterParentEvents) => event
     ),
 
@@ -423,7 +423,6 @@ export const swapUIMachine = setup({
                 tokenOut: context.formValues.tokenOut,
                 intentHash: null,
                 txHash: null,
-                intentDescription: null,
               },
             })
           },
@@ -448,7 +447,7 @@ export const swapUIMachine = setup({
               params: ({ event }) => event.params.quote,
             },
             {
-              type: "sendToSwapRefNewQuote",
+              type: "sendToIntentSignerRefNewQuote",
               params: ({ event }) => event,
             },
           ],

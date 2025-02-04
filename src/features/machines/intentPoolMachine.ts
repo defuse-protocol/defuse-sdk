@@ -20,6 +20,7 @@ import {
   assign,
   setup,
 } from "xstate"
+import type { ParentEvents as BackgroundQuoterEvents } from "./backgroundQuoterMachine"
 import type { BalanceMapping } from "./depositedBalanceMachine"
 import {
   type Output as IntentPublisherOutput,
@@ -47,7 +48,7 @@ export type IntentRef = {
   txHash: string | null
   tokenIn: SwappableToken
   tokenOut: SwappableToken
-  intentDescription: IntentDescription | null
+  intentDescription: IntentDescription
   intentOperationParams: IntentOperationParams
   signature: WalletSignatureResult
   messageToSign: null | {
@@ -73,10 +74,12 @@ type ParentReceivedEvents = {
 
 type ParentActor = ActorRef<Snapshot<unknown>, ParentReceivedEvents>
 
-export type Events = {
-  type: "ADD_INTENT"
-  params: IntentRef
-}
+export type Events =
+  | {
+      type: "ADD_INTENT"
+      params: IntentRef
+    }
+  | BackgroundQuoterEvents
 
 type PassthroughEvent = {
   type: "INTENT_SETTLED"
@@ -133,7 +136,13 @@ export const intentPoolMachine = setup({
             }
           }
         ).context.depositedBalanceRef.getSnapshot().context.balances
+
         for (const intentRef of context.intentRefs) {
+          const { value } = intentRef.getSnapshot()
+          // Meaning we already start executing this intent so we should run it again
+          if (!value.match("pending")) {
+            continue
+          }
           const intent = intentRef.getSnapshot().context
 
           if (intent.intentHash === null) {
@@ -175,42 +184,48 @@ export const intentPoolMachine = setup({
     clearCheckingIntentRef: assign({
       checkingIntentRef: null,
     }),
-    clearIntentCreationResult: assign({ intentCreationResult: null }),
+    clearIntentCreationResult: assign({
+      intentCreationResult: null,
+    }),
     spawnIntentStatusAndReplaceActor: assign({
       intentRefs: (
         { context, spawn },
-        output: { intentHash: string; intentDescription: IntentDescription }
+        output: { tag: "ok"; value: { intentHash: string } }
       ) => {
-        assert(
-          context.executingIntentRef !== null,
-          "executingIntentRef is null"
-        )
-        return context.intentRefs.map((intentRef) => {
-          if (intentRef.id === context.executingIntentRef) {
-            return spawn("intentStatusActor", {
-              id: intentRef.id,
-              input: {
-                ...intentRef.getSnapshot().context,
-                ...output,
-              },
-            })
-          }
-          return intentRef
-        })
+        if (output?.tag === "ok" && output?.value?.intentHash) {
+          assert(
+            context.checkingIntentRef !== null,
+            "checkingIntentRef is null"
+          )
+          return context.intentRefs.map((intentRef) => {
+            if (intentRef.id === context.checkingIntentRef) {
+              return spawn("intentStatusActor", {
+                id: intentRef.id,
+                input: {
+                  ...intentRef.getSnapshot().context,
+                  intentHash: output.value.intentHash,
+                },
+              })
+            }
+            return intentRef
+          })
+        }
+        return context.intentRefs
       },
     }),
   },
   guards: {
     hasUnexecutedIntents: ({ context }) =>
       context.intentRefs.some((intentRef) => {
-        const intent = intentRef.getSnapshot().context
-        return intent.intentHash === null
+        const { value } = intentRef.getSnapshot()
+        const isPending = value.match("pending")
+        return isPending
       }),
     hasExecutingIntent: ({ context }) => context.executingIntentRef !== null,
-    hasQueueingIntent: ({ context }) => context.checkingIntentRef !== null,
+    hasCheckingIntent: ({ context }) => context.checkingIntentRef !== null,
   },
 }).createMachine({
-  /** @xstate-layout N4IgpgJg5mDOIC5QEsB2AXMGC0AHA9vgDYDEAggCIUD6AkgHIAqAokwNoAMAuoqAbMnTJ8qXiAAeibABYAjLIB0ADgDMHAKyyAnACYdW+QDZDAGhABPKbKUL16pfPk7pKwxwDs7gL5ezaTDgExArIEERgJJw8SCD8gsKiMZII2DqyKrY6HKo6hmru2rKmFohF0socsu4q6u55ue5a0j5+GFjoeIRECgCOAK5gA2hQkdxicUIiYsky0hwKKlpqKo3qWloF6maWCPoZ6nnu9pXuOosrLSD+7Z3B-YNgw5Gy0Xz4ApOJoDNV7gocTT0SiW6g4HBW0m2iD2tkOxyqZyWl2ugS6vQGQ1QI3EsHQAENMAo8QAzTAAJwAFKCOABKEgojpBbr3TFQKLjd7xKZJKRKQzlQx6bR2ZzOLRKKEIMr-TSnVSGMrqHTeXxXNqo4K4PoAIyIyFgAAsnhARGAQqgAG74ADWZoZAAUdXrDWAyQAlMDE9kxCYJaZWfkKHT2fTB7JqSqS+zlJT2WMcQyaMHrZHqxloi2u5DE8zG03mq2280BdAAZXx6D6sA9XrGPs5n39KXU0hsgtjG2063FUbk-1kAMW2W0KljPlVqHwEDgYgZtyIHI+fp5KQMOgUgrSWhF0jFEpKKQHhhlDmy9hbrek6lTJfnITCYEXXK+EisoIWGnWicqujOOijNhnMYajGGsAL8s0qpzky6IPMMT6Niu2BKuUOjAg4oqjnM7iSrIdj9qoF5aIYSjBsRN43DBWq6vqRpYghy7fFIzjHnyngjioaTSIYuiStIu4KLIuTyE0iYDrk15QWmd6ZmS2a5vR9ZLtyTHNgCG7Kuc4rqConGQgepzlPYCqcYsypKGO45AA */
+  /** @xstate-layout N4IgpgJg5mDOIC5QEsB2AXMGC0AHA9vgDYDEAggCIUD6AkgHIAqAokwNoAMAuoqAbMnTJ8qXiAAeibAFYAjADYAdPIXSAnBwAcHACwBmAExrNAGhABPKbI5rFAdnl29endZ3udTgL5ezaTDgExCT0zADq1ACKAKoA8iycPEgg-ILCosmSCNguOsquRpoGmnY6xRx2ZpbZhrKKeipOstLSegpqsj5+GFjoeIREigCOAK5gY2hQJIliqUIiYlnY8hwGigocKmrOBnI6VYhGeorS8np20tqydgZ6210g-r39xMNjE6hTbLJJfPgC8wyoCW1zsihsZWK22kHA4532FkO2xOZwuVxudz0DyegQGb3GYEmJHEsHQAENMIoyQAzTAAJwAFDCOABKEg4vpBQajAmTGbJObpRZSAwXRQGWTXWQdaV2ay6A7ZHQcdaGEqyNp2LTyeRqeTYnq4164EYAIyIyFgAAsiRARGBFGgAG74ADWDo5AAUzRbrWA6QAlMDU-l-AFCzJSGF1TQlHQlM5lIrnRUNMHOVzM2QGSFqA0BTl4k3my02z4kf10-B0xS4IgU6nVgC2jsN6G9Jb9geDoZS-zSC0jCAUxxUOjOZ1hajKOtT2kUmmsNyKep0lx0+eeXMUTv9yGp5iJvcFg+BUm2SgMRg01gMOs8COqd9smnOEtj8jvWukPl8IFQ+AQHAYgci8RCzP2gLCtkxh5Feag3qs96lIq2CyuKjiGKKHDShCBibkagzIBARBgBB4anhIUhxguOFrg+kL6Iq0hrJoniGM4r52K+1j6n+oHbjyHxQORA5AlR2QsUocryNomjRtYsiPki9TsRqcrSKUOx8d0BZgbWPqlpMolQUO2A5kokquGoLQGDYRiyam3H2CUegcNI44Ia4WL8W2+m7nS+6Hp8JkRmeMEasoRRyHcHTnOoTmaC5ThpvobQ2b+XhAA */
   id: "intent-pool",
 
   initial: "idle",
@@ -224,35 +239,29 @@ export const intentPoolMachine = setup({
   }),
 
   states: {
-    idle: {
-      always: [
-        {
-          guard: "hasUnexecutedIntents",
-          target: "queueing",
-        },
-      ],
-    },
+    idle: {},
 
     queueing: {
       entry: "setExecutingIntentRef",
 
-      after: {
-        500: {
-          target: "queueing",
-          guard: "hasUnexecutedIntents",
-        },
-      },
-
       always: [
         {
-          guard: "hasQueueingIntent",
+          guard: "hasCheckingIntent",
           target: "verifying",
+          reenter: true,
         },
         {
           guard: "hasExecutingIntent",
           target: "publishing",
         },
       ],
+
+      after: {
+        "500": {
+          target: "queueing",
+          guard: "hasUnexecutedIntents",
+        },
+      },
     },
 
     publishing: {
@@ -287,18 +296,7 @@ export const intentPoolMachine = setup({
         },
         onDone: {
           target: "verifying",
-          actions: [
-            {
-              type: "spawnIntentStatusAndReplaceActor",
-              params: ({ event }) => {
-                assert(event.output.tag === "ok")
-                return event.output.value
-              },
-            },
-            "setCheckingIntentRef",
-            "clearExecutingIntentRef",
-          ],
-          reenter: true,
+          actions: ["setCheckingIntentRef", "clearExecutingIntentRef"],
         },
         onError: {
           target: "queueing",
@@ -308,8 +306,20 @@ export const intentPoolMachine = setup({
     },
 
     verifying: {
+      entry: [
+        {
+          type: "spawnIntentStatusAndReplaceActor",
+          // @ts-expect-error
+          params: ({ event }) => event.output,
+        },
+      ],
       target: "queueing",
-      actions: ["clearCheckingIntentRef"],
+
+      always: {
+        target: "idle",
+        actions: ["clearCheckingIntentRef"],
+        reenter: true,
+      },
     },
   },
 
@@ -318,6 +328,7 @@ export const intentPoolMachine = setup({
       target: ".queueing",
       actions: "spawnIntentStatusActor",
     },
+    NEW_QUOTE: {},
   },
 })
 

@@ -24,12 +24,14 @@ import {
   accountSlippageExactIn,
   compareAmounts,
   computeTotalDeltaDifferentDecimals,
+  negateTokenValue,
 } from "../../utils/tokenUtils"
 import {
   type WalletErrorCode,
   extractWalletErrorCode,
 } from "../../utils/walletErrorExtractor"
 import type { ParentEvents as BackgroundQuoterEvents } from "./backgroundQuoterMachine"
+import { calcOperationAmountOut } from "./intentPublisherMachine"
 import {
   type ErrorCodes as PublicKeyVerifierErrorCodes,
   type SendNearTransaction,
@@ -136,6 +138,7 @@ export type Output =
         defuseUserId: DefuseUserId
         referral?: string
         slippageBasisPoints: number
+        intentDescription: IntentDescription
       }
     }
 
@@ -313,20 +316,57 @@ export const intentSignerMachine = setup({
 
   output: ({ context }): Output => {
     if (context.signature != null && context.messageToSign != null) {
-      return {
-        tag: "ok",
-        value: {
-          intentOperationParams: context.intentOperationParams,
-          signature: context.signature,
-          messageToSign: context.messageToSign,
-          userAddress: context.userAddress,
-          userChainType: context.userChainType,
-          nearClient: context.nearClient,
-          sendNearTransaction: context.sendNearTransaction,
-          defuseUserId: context.defuseUserId,
-          referral: context.referral,
-          slippageBasisPoints: context.slippageBasisPoints,
-        },
+      const output = {
+        intentOperationParams: context.intentOperationParams,
+        signature: context.signature,
+        messageToSign: context.messageToSign,
+        userAddress: context.userAddress,
+        userChainType: context.userChainType,
+        nearClient: context.nearClient,
+        sendNearTransaction: context.sendNearTransaction,
+        defuseUserId: context.defuseUserId,
+        referral: context.referral,
+        slippageBasisPoints: context.slippageBasisPoints,
+      }
+      const intentType = context.intentOperationParams.type
+      switch (intentType) {
+        case "swap":
+          return {
+            tag: "ok",
+            value: {
+              ...output,
+              intentDescription: {
+                type: "swap",
+                quote: context.intentOperationParams.quote,
+                totalAmountIn: negateTokenValue(
+                  computeTotalDeltaDifferentDecimals(
+                    context.intentOperationParams.tokensIn,
+                    context.intentOperationParams.quote.tokenDeltas
+                  )
+                ),
+                totalAmountOut: computeTotalDeltaDifferentDecimals(
+                  [context.intentOperationParams.tokenOut],
+                  context.intentOperationParams.quote.tokenDeltas
+                ),
+              },
+            },
+          }
+        case "withdraw":
+          return {
+            tag: "ok",
+            value: {
+              ...output,
+              intentDescription: {
+                type: "withdraw",
+                amountWithdrawn: calcOperationAmountOut(
+                  context.intentOperationParams
+                ),
+              },
+            },
+          }
+        default:
+          intentType satisfies never
+          throw new Error("exhaustive check failed")
       }
     }
 
