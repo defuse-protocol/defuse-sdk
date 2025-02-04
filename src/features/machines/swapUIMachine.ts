@@ -41,6 +41,7 @@ import {
   intentPoolMachine,
 } from "./intentPoolMachine"
 import { intentSignerMachine } from "./intentSignerMachine"
+import type { Output as IntentSignerOutput } from "./intentSignerMachine"
 
 export type Context = {
   error: Error | null
@@ -54,6 +55,7 @@ export type Context = {
     tokenOut: BaseTokenInfo
     amountIn: TokenValue | null
   }
+  intentCreationResult: IntentSignerOutput | null
   tokenList: SwappableToken[]
   referral?: string
   slippageBasisPoints: number
@@ -169,6 +171,10 @@ export const swapUIMachine = setup({
     }),
     clearQuote: assign({ quote: null }),
     clearError: assign({ error: null }),
+    setIntentCreationResult: assign({
+      intentCreationResult: (_, value: IntentSignerOutput) => value,
+    }),
+    clearIntentCreationResult: assign({ intentCreationResult: null }),
 
     passthroughEvent: emit((_, event: PassthroughEvent) => event),
     spawnBackgroundQuoterRef: spawnChild("backgroundQuoterActor", {
@@ -316,6 +322,7 @@ export const swapUIMachine = setup({
         submit: {
           target: "submitting",
           guard: "isQuoteRelevant",
+          actions: "clearIntentCreationResult",
         },
 
         input: {
@@ -410,24 +417,38 @@ export const swapUIMachine = setup({
             },
           }
         },
-        onDone: {
-          target: "editing",
-          actions: ({ context, event }) => {
-            assert(event.output.tag === "ok", "non valid intent")
-            const intentPoolRef = context.intentPoolRef
-            intentPoolRef.send({
-              type: "ADD_INTENT",
-              params: {
-                ...event.output.value,
-                tokenIn: context.formValues.tokenIn,
-                tokenOut: context.formValues.tokenOut,
-                intentHash: null,
-                txHash: null,
-              },
-            })
+        onDone: [
+          {
+            target: "editing",
+            guard: { type: "isOk", params: ({ event }) => event.output },
+
+            actions: ({ context, event }) => {
+              assert(event.output.tag === "ok", "non valid intent")
+              const intentPoolRef = context.intentPoolRef
+              intentPoolRef.send({
+                type: "ADD_INTENT",
+                params: {
+                  ...event.output.value,
+                  tokenIn: context.formValues.tokenIn,
+                  tokenOut: context.formValues.tokenOut,
+                  intentHash: null,
+                  txHash: null,
+                },
+              })
+            },
+            reenter: true,
           },
-          reenter: true,
-        },
+          {
+            target: "editing",
+
+            actions: [
+              {
+                type: "setIntentCreationResult",
+                params: ({ event }) => event.output,
+              },
+            ],
+          },
+        ],
 
         onError: {
           target: "editing",

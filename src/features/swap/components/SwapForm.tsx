@@ -54,7 +54,8 @@ export const SwapForm = ({ onNavigateDeposit }: SwapFormProps) => {
   const swapUIActorRef = SwapUIMachineContext.useActorRef()
   const snapshot = SwapUIMachineContext.useSelector((snapshot) => snapshot)
   const intentCreationResult =
-    snapshot.context.intentPoolRef.getSnapshot().context.intentCreationResult
+    snapshot.context.intentPoolRef.getSnapshot().context.intentCreationResult ??
+    snapshot.context.intentCreationResult
   const { data: tokensUsdPriceData } = useTokensUsdPrices()
 
   const intentRefs = useSelector(
