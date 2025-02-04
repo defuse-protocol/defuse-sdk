@@ -62,14 +62,15 @@ export const WithdrawWidget = (props: WithdrawWidgetProps) => {
 
                       const {
                         tokenOut,
-                        quote,
                         nep141Storage,
                         recipient,
                         destinationMemo,
+                        quote,
                       } = context.intentOperationParams
 
                       const totalAmountWithdrawn = calcOperationAmountOut(
-                        context.intentOperationParams
+                        context.intentOperationParams,
+                        quote
                       )
 
                       const tokenOutAccountId =
