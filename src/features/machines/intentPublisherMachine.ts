@@ -3,36 +3,33 @@ import type { providers } from "near-api-js"
 import { sign } from "tweetnacl"
 import { verifyMessage as verifyMessageViem } from "viem"
 import { assign, fromPromise, setup } from "xstate"
-import { settings } from "../../config/settings"
 import { logger } from "../../logger"
 import {
   publishIntent,
   waitForIntentSettlement,
 } from "../../services/intentService"
 import type { AggregatedQuote } from "../../services/quoteService"
-import type { BaseTokenInfo, TokenValue } from "../../types/base"
+import type { BaseTokenInfo } from "../../types/base"
 import type { Nep413DefuseMessageFor_DefuseIntents } from "../../types/defuse-contracts-types"
 import type { ChainType } from "../../types/deposit"
 import type { WalletMessage, WalletSignatureResult } from "../../types/swap"
 import { assert } from "../../utils/assert"
 import type { DefuseUserId } from "../../utils/defuse"
+import {} from "../../utils/messageFactory"
+import type { PriorityQueue } from "../../utils/priorityQueue"
 import {
-  makeInnerSwapMessage,
-  makeSwapMessage,
-} from "../../utils/messageFactory"
-import {
-  addAmounts,
   compareAmounts,
   computeTotalDeltaDifferentDecimals,
   negateTokenValue,
-  subtractAmounts,
 } from "../../utils/tokenUtils"
 import type { WalletErrorCode } from "../../utils/walletErrorExtractor"
 import type { ParentEvents as BackgroundQuoterEvents } from "./backgroundQuoterMachine"
-import type {
-  IntentDescription,
-  IntentOperationParams,
-  NEP141StorageRequirement,
+import {
+  type IntentDescription,
+  type IntentOperationParams,
+  calcOperationAmountOut,
+  dequeueValidQuote,
+  makeQuotePriorityQueue,
 } from "./intentSignerMachine"
 import {
   type ErrorCodes as PublicKeyVerifierErrorCodes,
@@ -49,6 +46,8 @@ type Context = {
   nearClient: providers.Provider
   sendNearTransaction: SendNearTransaction
   intentOperationParams: IntentOperationParams
+  quoteToPublish: AggregatedQuote | null
+  quotes: PriorityQueue<AggregatedQuote>
   messageToSign: null | {
     walletMessage: WalletMessage
     innerMessage: Nep413DefuseMessageFor_DefuseIntents
@@ -144,39 +143,14 @@ export const intentPublisherMachine = setup({
         return context.intentOperationParams
       },
     }),
-    assembleSignMessages: assign({
-      messageToSign: ({ context }) => {
-        assert(
-          context.intentOperationParams.type === "swap",
-          "Operation must be swap"
-        )
-
-        const innerMessage = makeInnerSwapMessage({
-          tokenDeltas: context.intentOperationParams.quote.tokenDeltas,
-          signerId: context.defuseUserId,
-          deadlineTimestamp: Math.min(
-            Date.now() + settings.swapExpirySec * 1000,
-            new Date(
-              context.intentOperationParams.quote.expirationTime
-            ).getTime()
-          ),
-          referral: context.referral,
-        })
-
-        return {
-          innerMessage,
-          walletMessage: makeSwapMessage({
-            innerMessage,
-            recipient: settings.defuseContractId,
-          }),
-        }
-      },
-    }),
     setSignature: assign({
       signature: (_, signature: WalletSignatureResult | null) => signature,
     }),
     setIntentHash: assign({
       intentHash: (_, intentHash: string) => intentHash,
+    }),
+    dequeueValidQuote: assign({
+      quoteToPublish: ({ context }) => dequeueValidQuote(context.quotes),
     }),
   },
   actors: {
@@ -227,16 +201,9 @@ export const intentPublisherMachine = setup({
       return status === "SETTLED"
     },
     isIntentRelevant: ({ context }) => {
-      if (context.intentOperationParams.quote != null) {
-        // Naively assume that the quote is still relevant if the expiration time is in the future
-        return (
-          new Date(
-            context.intentOperationParams.quote.expirationTime
-          ).getTime() > Date.now()
-        )
-      }
-
-      return true
+      const hadQuote = context.intentOperationParams.quote != null
+      const hasQuote = context.quoteToPublish != null
+      return hadQuote === hasQuote
     },
     isOptimisticIntent: () => {
       // TODO: Ture if is feature enabled and balance isn't sufficient
@@ -256,11 +223,18 @@ export const intentPublisherMachine = setup({
 }).createMachine({
   /** @xstate-layout N4IgpgJg5mDOIC5QEsB2AXMGAKBXARgDbKwAWYATgLICGAxqWmAMQByAogOoD6AigKoB5ACrsA2gAYAuolAAHAPaxk6ZAtSyQAD0QBmCRIB0ADgBM50wDYArMYAsdy7t0AaEAE9E13ccN3dAOwAjACc1o76uv4AvtFuaJg4BMRklLQMTIbIEIQskjJIIIrKquqaOgiBIYYhukGW9eZhQaauHojGQb6OEZbB1qb1lrHxGFjoeEQk5NT0jKhghgBCFAo0EHQ0sKqoUAAEAJJjGMwQ6otoAG4KANYXxxPJ02lzmStrG1s7+0eJ6AhXBSbUqofL5TTFFRqDSFCqmAK6QwBUx2cLIyzGXRhUxuTwIFqowwGAJ2UzGAIhILWMIjEAJcaTFIzdLzRbvdabbZoH4PU7nLKoa53AV-RnPWYZBbLVYcr7cw4PAGCoE0EFgoIFeRKKFlWGIAC0QS6hhalnh5OMGLMDVxiAJ1iJEhJZIpVOxtPpSSmqQlrOlH053wVf2YlFWFEMckIqoAZgoKABbEUMp4+llvGWfLm7YPjJXXYHQsHSCHakHlA1mkzGCRdYwhJ2WoJY6y2-ESBxEoISHwIhzwlEeh5itOvKUANUoyBj7nlv3GzHBhUh5b1lTJhgalIk1jNIUsEk6ljbIU6hhRITsJI7lj61KHotTzLHi0nFGns5z85OYg1pZK0IVggB4BOeQwOMY5Lwq27QIJepiGAMZKWL0EimKesRxCAqAKBAcCaJ6jzes+kpgP+OowqAFSGreJpWOaASWpBVhtreCH6AY-hXhiWKmA+KbES8pFZDkZHLmWgFrj4iLmKiB4gRIDbHrBJLVDWBjYrYwQBNY-FekyQl+uyWZBt+6DkauVF6AYhi6FYzYhPCPjdiEbbdsEYG6NYh5sShmJ6URBm+pkb4fnODwWZJVmVKSRI8aY1hBHYITIjisH1kYgxeWa-gtFEulYYRI4kX6ADCCgJlGYCYBAkW6tFURGD2ASHuhCXOJebnOeegxkroTiOTWBWjI+gnBVKADiWBTnQezsBQ4Z1ZR2gGv4JqOTY1gtUxA5dWe5gtJiA1kjumHREAA */
   context: ({ input }) => {
+    const quotes = makeQuotePriorityQueue(input.intentOperationParams.tokenOut)
+    if (input.intentOperationParams.quote != null) {
+      quotes.enqueue(input.intentOperationParams.quote)
+    }
+
     return {
       messageToSign: null,
       signature: null,
       error: null,
       intentHash: null,
+      quotes,
+      quoteToPublish: null,
       ...input,
     }
   },
@@ -274,22 +248,24 @@ export const intentPublisherMachine = setup({
       const intentType = context.intentOperationParams.type
       switch (intentType) {
         case "swap": {
+          const quote = context.quoteToPublish
+          assert(quote != null, "Quote must be set for swap intent")
+
           return {
             tag: "ok",
             value: {
               intentHash: context.intentHash,
               intentDescription: {
                 type: "swap",
-                quote: context.intentOperationParams.quote,
                 totalAmountIn: negateTokenValue(
                   computeTotalDeltaDifferentDecimals(
                     context.intentOperationParams.tokensIn,
-                    context.intentOperationParams.quote.tokenDeltas
+                    quote.tokenDeltas
                   )
                 ),
                 totalAmountOut: computeTotalDeltaDifferentDecimals(
                   [context.intentOperationParams.tokenOut],
-                  context.intentOperationParams.quote.tokenDeltas
+                  quote.tokenDeltas
                 ),
               },
             },
@@ -303,7 +279,8 @@ export const intentPublisherMachine = setup({
               intentDescription: {
                 type: "withdraw",
                 amountWithdrawn: calcOperationAmountOut(
-                  context.intentOperationParams
+                  context.intentOperationParams,
+                  context.quoteToPublish
                 ),
               },
             },
@@ -335,6 +312,7 @@ export const intentPublisherMachine = setup({
   },
   states: {
     idle: {
+      entry: "dequeueValidQuote",
       always: {
         target: "Verifying Intent",
         reenter: true,
@@ -516,65 +494,4 @@ async function verifyWalletSignature(
       signatureType satisfies never
       throw new Error("exhaustive check failed")
   }
-}
-
-export function calcOperationAmountOut(
-  operation: IntentOperationParams
-): TokenValue {
-  const operationType = operation.type
-  switch (operationType) {
-    case "swap":
-      return computeTotalDeltaDifferentDecimals(
-        [operation.tokenOut],
-        operation.quote.tokenDeltas
-      )
-
-    case "withdraw":
-      return calcWithdrawAmount(
-        operation.tokenOut,
-        operation.quote,
-        operation.nep141Storage,
-        operation.directWithdrawalAmount
-      )
-
-    default:
-      operationType satisfies never
-      throw new Error("exhaustive check failed")
-  }
-}
-
-export function calcWithdrawAmount(
-  tokenOut: BaseTokenInfo,
-  swapInfo: AggregatedQuote | null,
-  nep141Storage: NEP141StorageRequirement | null,
-  directWithdrawalAmount: TokenValue
-): TokenValue {
-  const gotFromSwap =
-    swapInfo == null
-      ? { amount: 0n, decimals: 0 }
-      : computeTotalDeltaDifferentDecimals([tokenOut], swapInfo.tokenDeltas)
-
-  let spentOnStorage: TokenValue = { amount: 0n, decimals: 0 }
-  if (nep141Storage != null) {
-    if (nep141Storage.type === "no_swap_needed") {
-      // Assume that token out is NEAR/wNEAR, so we can just use the required storage
-      spentOnStorage = {
-        amount: nep141Storage.requiredStorageNEAR,
-        decimals: tokenOut.decimals,
-      }
-    } else {
-      spentOnStorage = computeTotalDeltaDifferentDecimals(
-        [tokenOut],
-        nep141Storage.quote.tokenDeltas
-      )
-      // NEP-141 Storage quote will sell `tokenOut` for storage token (wNEAR), so it will be a negative number.
-      // We need to negate it to get the amount of `tokenOut` spent on storage.
-      spentOnStorage.amount = -spentOnStorage.amount
-    }
-  }
-
-  return subtractAmounts(
-    addAmounts(directWithdrawalAmount, gotFromSwap),
-    spentOnStorage
-  )
 }
