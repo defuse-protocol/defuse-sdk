@@ -3032,53 +3032,13 @@
             },
             {
               "type": "object",
-              "anyOf": [
-                {
-                  "description": "[COSE EdDSA (-8) algorithm](https://www.iana.org/assignments/cose/cose.xhtml#algorithms): ed25519 curve",
-                  "type": "object",
-                  "required": [
-                    "public_key",
-                    "signature"
-                  ],
-                  "properties": {
-                    "public_key": {
-                      "type": "string",
-                      "pattern": "^ed25519:",
-                      "contentEncoding": "base58"
-                    },
-                    "signature": {
-                      "type": "string",
-                      "pattern": "^ed25519:",
-                      "contentEncoding": "base58"
-                    }
-                  }
-                },
-                {
-                  "description": "[COSE ES256 (-7) algorithm](https://www.iana.org/assignments/cose/cose.xhtml#algorithms): NIST P-256 curve (a.k.a secp256r1) over SHA-256",
-                  "type": "object",
-                  "required": [
-                    "public_key",
-                    "signature"
-                  ],
-                  "properties": {
-                    "public_key": {
-                      "type": "string",
-                      "pattern": "^p256:",
-                      "contentEncoding": "base58"
-                    },
-                    "signature": {
-                      "type": "string",
-                      "pattern": "^p256:",
-                      "contentEncoding": "base58"
-                    }
-                  }
-                }
-              ],
               "required": [
                 "authenticator_data",
                 "client_data_json",
                 "payload",
-                "standard"
+                "standard",
+                "public_key",
+                "signature"
               ],
               "properties": {
                 "authenticator_data": {
@@ -3098,6 +3058,12 @@
                   "enum": [
                     "webauthn"
                   ]
+                },
+                "public_key": {
+                  "type": "string"
+                },
+                "signature": {
+                  "type": "string"
                 }
               }
             }
