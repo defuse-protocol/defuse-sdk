@@ -1,3 +1,4 @@
+import { intentSignMachine } from "src/features/machines/intentSignMachine"
 import { assign, fromPromise } from "xstate"
 import { WidgetRoot } from "../../../components/WidgetRoot"
 import { settings } from "../../../config/settings"
@@ -11,10 +12,7 @@ import {
 } from "../../../utils/messageFactory"
 import { isBaseToken } from "../../../utils/token"
 import { adjustDecimals } from "../../../utils/tokenUtils"
-import {
-  calcOperationAmountOut,
-  swapIntentMachine,
-} from "../../machines/swapIntentMachine"
+import { calcOperationAmountOut } from "../../machines/intentSignMachine"
 import { withdrawUIMachine } from "../../machines/withdrawUIMachine"
 import { WithdrawUIMachineContext } from "../WithdrawUIMachineContext"
 import { WithdrawForm } from "./WithdrawForm"
@@ -46,7 +44,7 @@ export const WithdrawWidget = (props: WithdrawWidgetProps) => {
           }}
           logic={withdrawUIMachine.provide({
             actors: {
-              swapActor: swapIntentMachine.provide({
+              intentSignActor: intentSignMachine.provide({
                 actors: {
                   signMessage: fromPromise(({ input }) => {
                     return props.signMessage(input)

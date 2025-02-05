@@ -12,7 +12,7 @@ import {
   waitForIntentSettlement,
 } from "../../services/intentService"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../types/base"
-import type { IntentDescription } from "./swapIntentMachine"
+import type { IntentDescription } from "./intentSignMachine"
 
 type ChildEvent = {
   type: "INTENT_SETTLED"

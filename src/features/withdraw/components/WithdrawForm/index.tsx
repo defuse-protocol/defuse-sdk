@@ -81,7 +81,6 @@ export const WithdrawForm = ({
   const {
     state,
     formRef,
-    swapRef,
     depositedBalanceRef,
     poaBridgeInfoRef,
     intentCreationResult,
@@ -93,7 +92,6 @@ export const WithdrawForm = ({
     return {
       state,
       formRef: state.context.withdrawFormRef,
-      swapRef: state.children.swapRef,
       depositedBalanceRef: state.context.depositedBalanceRef,
       poaBridgeInfoRef: state.context.poaBridgeInfoRef,
       intentCreationResult: state.context.intentCreationResult,
@@ -104,7 +102,11 @@ export const WithdrawForm = ({
     }
   })
 
-  const publicKeyVerifierRef = useSelector(swapRef, (state) => {
+  const intentSignRef = useSelector(
+    actorRef,
+    (state) => state.children.intentSignRef
+  )
+  const publicKeyVerifierRef = useSelector(intentSignRef, (state) => {
     if (state) {
       return state.children.publicKeyVerifierRef
     }

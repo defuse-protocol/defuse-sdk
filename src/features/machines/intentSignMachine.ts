@@ -5,10 +5,7 @@ import { verifyMessage as verifyMessageViem } from "viem"
 import { assign, fromPromise, setup } from "xstate"
 import { settings } from "../../config/settings"
 import { logger } from "../../logger"
-import {
-  publishIntent,
-  waitForIntentSettlement,
-} from "../../services/intentService"
+import { publishIntent } from "../../services/intentService"
 import type { AggregatedQuote } from "../../services/quoteService"
 import type { BaseTokenInfo, TokenValue } from "../../types/base"
 import type { Nep413DefuseMessageFor_DefuseIntents } from "../../types/defuse-contracts-types"
@@ -253,15 +250,6 @@ export const intentSignMachine = setup({
       }) =>
         publishIntent(input.signatureData, input.userInfo, input.quoteHashes)
     ),
-    pollIntentStatus: fromPromise(
-      ({
-        input,
-        signal,
-      }: {
-        input: { intentHash: string }
-        signal: AbortSignal
-      }) => waitForIntentSettlement(signal, input.intentHash)
-    ),
   },
   guards: {
     isSettled: (
@@ -275,7 +263,6 @@ export const intentSignMachine = setup({
       const hasQuote = context.quoteToPublish != null
       return hadQuote === hasQuote
     },
-    isSigned: (_, params: WalletSignatureResult | null) => params != null,
     isTrue: (_, params: boolean) => params,
     isOk: (_, params: { tag: "ok" } | { tag: "err" }) => params.tag === "ok",
     isQuoteOk: ({ event }) => {
@@ -555,7 +542,7 @@ function toError(error: unknown): Error {
   return error instanceof Error ? error : new Error("unknown error")
 }
 
-function enqueueBetterQuote(
+export function enqueueBetterQuote(
   quotes: PriorityQueue<AggregatedQuote>,
   originalQuote: AggregatedQuote,
   proposedQuote: AggregatedQuote,
@@ -577,7 +564,7 @@ function enqueueBetterQuote(
   }
 }
 
-function dequeueValidQuote(
+export function dequeueValidQuote(
   quotes: PriorityQueue<AggregatedQuote>
 ): AggregatedQuote | null {
   const MIN_BUFFER_TIME_MS = 10_000 // 10 seconds

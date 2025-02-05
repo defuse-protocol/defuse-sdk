@@ -9,12 +9,12 @@ import type {
   BalanceMapping,
   depositedBalanceMachine,
 } from "../features/machines/depositedBalanceMachine"
-import type { poaBridgeInfoActor } from "../features/machines/poaBridgeInfoActor"
-import { getPOABridgeInfo } from "../features/machines/poaBridgeInfoActor"
 import {
   type NEP141StorageRequirement,
   calcWithdrawAmount,
-} from "../features/machines/swapIntentMachine"
+} from "../features/machines/intentSignMachine"
+import type { poaBridgeInfoActor } from "../features/machines/poaBridgeInfoActor"
+import { getPOABridgeInfo } from "../features/machines/poaBridgeInfoActor"
 import type { State as WithdrawFormContext } from "../features/machines/withdrawFormReducer"
 import { logger } from "../logger"
 import type { BaseTokenInfo, TokenValue, UnifiedTokenInfo } from "../types/base"

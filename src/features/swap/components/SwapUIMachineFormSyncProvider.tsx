@@ -75,8 +75,11 @@ export function SwapUIMachineFormSyncProvider({
     }
   }, [actorRef, setValue])
 
-  const swapRef = useSelector(actorRef, (state) => state.children.swapRef)
-  const publicKeyVerifierRef = useSelector(swapRef, (state) => {
+  const intentSignRef = useSelector(
+    actorRef,
+    (state) => state.children.intentSignRef
+  )
+  const publicKeyVerifierRef = useSelector(intentSignRef, (state) => {
     if (state) {
       return state.children.publicKeyVerifierRef
     }

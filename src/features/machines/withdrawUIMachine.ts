@@ -24,6 +24,14 @@ import {
   type Events as DepositedBalanceEvents,
   depositedBalanceMachine,
 } from "./depositedBalanceMachine"
+import {
+  type Output as IntentBroadcastMachineOutput,
+  intentBroadcastMachine,
+} from "./intentBroadcastMachine"
+import {
+  type Output as IntentSignMachineOutput,
+  intentSignMachine,
+} from "./intentSignMachine"
 import { intentStatusMachine } from "./intentStatusMachine"
 import {
   poaBridgeInfoActor,
@@ -34,10 +42,6 @@ import {
   prepareWithdrawActor,
 } from "./prepareWithdrawActor"
 import {
-  type Output as SwapIntentMachineOutput,
-  swapIntentMachine,
-} from "./swapIntentMachine"
-import {
   type Events as WithdrawFormEvents,
   type ParentEvents as WithdrawFormParentEvents,
   withdrawFormReducer,
@@ -45,7 +49,10 @@ import {
 
 export type Context = {
   error: Error | null
-  intentCreationResult: SwapIntentMachineOutput | null
+  intentCreationResult:
+    | IntentSignMachineOutput
+    | IntentBroadcastMachineOutput
+    | null
   intentRefs: ActorRefFrom<typeof intentStatusMachine>[]
   tokenList: (BaseTokenInfo | UnifiedTokenInfo)[]
   depositedBalanceRef: ActorRefFrom<typeof depositedBalanceMachine>
@@ -61,6 +68,7 @@ export type Context = {
   } | null
   preparationOutput: PreparationOutput | null
   referral?: string
+  intentSignResult: IntentSignMachineOutput | null
 }
 
 type PassthroughEvent = {
@@ -109,18 +117,21 @@ export const withdrawUIMachine = setup({
 
     children: {} as {
       backgroundQuoterRef: "backgroundQuoterActor"
-      swapRef: "swapActor"
+      intentSignRef: "intentSignActor"
+      intentBroadcastRef: "intentBroadcastActor"
     },
   },
   actors: {
     backgroundQuoterActor: backgroundQuoterMachine,
     depositedBalanceActor: depositedBalanceMachine,
-    swapActor: swapIntentMachine,
     intentStatusActor: intentStatusMachine,
     withdrawFormActor: withdrawFormReducer,
     poaBridgeInfoActor: poaBridgeInfoActor,
     waitPOABridgeInfoActor: waitPOABridgeInfoActor,
     prepareWithdrawActor: prepareWithdrawActor,
+    intentSignActor: intentSignMachine,
+    // biome-ignore lint/suspicious/noExplicitAny: Remove `any` once you figure out how to properly type the machine to resolve TypeScript error TS7056 (can't assign machine to actor)
+    intentBroadcastActor: intentBroadcastMachine as any,
   },
   actions: {
     logError: (_, event: { error: unknown }) => {
@@ -176,7 +187,10 @@ export const withdrawUIMachine = setup({
     }),
 
     setIntentCreationResult: assign({
-      intentCreationResult: (_, value: SwapIntentMachineOutput) => value,
+      intentCreationResult: (
+        _,
+        value: IntentBroadcastMachineOutput | IntentSignMachineOutput
+      ) => value,
     }),
     clearIntentCreationResult: assign({ intentCreationResult: null }),
 
@@ -236,15 +250,15 @@ export const withdrawUIMachine = setup({
     })),
 
     // Warning: This cannot be properly typed, so you can send an incorrect event
-    sendToSwapRefNewQuote: sendTo(
-      "swapRef",
+    sendToIntentSignRefNewQuote: sendTo(
+      "intentSignRef",
       (_, event: BackgroundQuoterParentEvents) => event
     ),
 
     spawnIntentStatusActor: assign({
       intentRefs: (
         { context, spawn, self },
-        output: SwapIntentMachineOutput
+        output: IntentBroadcastMachineOutput
       ) => {
         if (output.tag !== "ok") return context.intentRefs
 
@@ -275,6 +289,11 @@ export const withdrawUIMachine = setup({
     })),
 
     fetchPOABridgeInfo: sendTo("poaBridgeInfoRef", { type: "FETCH" }),
+
+    setIntentSignResult: assign({
+      intentSignResult: (_, value: IntentSignMachineOutput) => value,
+    }),
+    clearIntentSignResult: assign({ intentSignResult: null }),
   },
   guards: {
     isTrue: (_, value: boolean) => value,
@@ -350,6 +369,7 @@ export const withdrawUIMachine = setup({
     nep141StorageQuote: null,
     preparationOutput: null,
     referral: input.referral,
+    intentSignResult: null,
   }),
 
   entry: ["spawnBackgroundQuoterRef", "fetchPOABridgeInfo"],
@@ -518,8 +538,8 @@ export const withdrawUIMachine = setup({
 
     submitting: {
       invoke: {
-        id: "swapRef",
-        src: "swapActor",
+        id: "intentSignRef",
+        src: "intentSignActor",
 
         input: ({ context }) => {
           assert(context.submitDeps, "submitDeps is null")
@@ -563,18 +583,18 @@ export const withdrawUIMachine = setup({
 
         onDone: [
           {
-            target: "editing",
+            target: "broadcasting",
             guard: { type: "isOk", params: ({ event }) => event.output },
+
             actions: [
               {
-                type: "spawnIntentStatusActor",
+                type: "setIntentSignResult",
                 params: ({ event }) => event.output,
               },
               {
                 type: "setIntentCreationResult",
                 params: ({ event }) => event.output,
               },
-              "emitEventIntentPublished",
             ],
           },
           {
@@ -610,10 +630,110 @@ export const withdrawUIMachine = setup({
               params: ({ event }) => event.params.quote,
             },
             {
-              type: "sendToSwapRefNewQuote",
+              type: "sendToIntentSignRefNewQuote",
               params: ({ event }) => event,
             },
           ],
+        },
+      },
+    },
+
+    broadcasting: {
+      invoke: {
+        id: "intentBroadcastRef",
+        src: "intentBroadcastActor",
+
+        input: ({ context }: { context: Context }) => {
+          assert(context.intentSignResult !== null, "intentSignResult is null")
+          assert(
+            context.intentSignResult.tag === "ok",
+            "intentSignResult is not ok"
+          )
+          return {
+            ...context.intentSignResult.value,
+          }
+        },
+
+        onDone: [
+          {
+            target: "editing",
+            guard: {
+              type: "isOk",
+              params: ({
+                event,
+              }: { event: { output: IntentBroadcastMachineOutput } }) =>
+                event.output,
+            },
+            actions: [
+              {
+                type: "spawnIntentStatusActor",
+                params: ({
+                  event,
+                }: { event: { output: IntentBroadcastMachineOutput } }) =>
+                  event.output,
+              },
+              {
+                type: "setIntentCreationResult",
+                params: ({
+                  event,
+                }: { event: { output: IntentBroadcastMachineOutput } }) =>
+                  event.output,
+              },
+              "emitEventIntentPublished",
+            ],
+          },
+          {
+            target: "editing",
+            actions: [
+              {
+                type: "setIntentCreationResult",
+                params: ({
+                  event,
+                }: { event: { output: IntentBroadcastMachineOutput } }) =>
+                  event.output,
+              },
+            ],
+          },
+          // biome-ignore lint/suspicious/noExplicitAny: Remove `any` once you figure out how to properly type the machine to resolve TypeScript error TS7056 (can't assign machine to actor)
+        ] as any,
+
+        onError: {
+          target: "editing",
+
+          actions: ({ event }) => {
+            logger.error(event.error)
+          },
+        },
+
+        exit: {
+          actions: "clearIntentSignResult",
+        },
+
+        on: {
+          NEW_QUOTE: {
+            guard: {
+              type: "isOk",
+              params: ({
+                event,
+              }: { event: { params: { quote: QuoteResult } } }) =>
+                event.params.quote,
+            },
+            actions: [
+              {
+                type: "setQuote",
+                params: ({
+                  event,
+                }: { event: { params: { quote: QuoteResult } } }) =>
+                  event.params.quote,
+              },
+              {
+                type: "sendToIntentSignRefNewQuote",
+                params: ({
+                  event,
+                }: { event: { params: { quote: QuoteResult } } }) => event,
+              },
+            ],
+          },
         },
       },
     },

@@ -36,11 +36,15 @@ import {
   type Events as DepositedBalanceEvents,
   depositedBalanceMachine,
 } from "./depositedBalanceMachine"
-import { intentStatusMachine } from "./intentStatusMachine"
 import {
-  type Output as SwapIntentMachineOutput,
-  swapIntentMachine,
-} from "./swapIntentMachine"
+  type Output as IntentBroadcastMachineOutput,
+  intentBroadcastMachine,
+} from "./intentBroadcastMachine"
+import {
+  type Output as IntentSignMachineOutput,
+  intentSignMachine,
+} from "./intentSignMachine"
+import { intentStatusMachine } from "./intentStatusMachine"
 
 export type Context = {
   error: Error | null
@@ -54,11 +58,15 @@ export type Context = {
     tokenOut: BaseTokenInfo
     amountIn: TokenValue | null
   }
-  intentCreationResult: SwapIntentMachineOutput | null
+  intentCreationResult:
+    | IntentSignMachineOutput
+    | IntentBroadcastMachineOutput
+    | null
   intentRefs: ActorRefFrom<typeof intentStatusMachine>[]
   tokenList: SwappableToken[]
   referral?: string
   slippageBasisPoints: number
+  intentSignResult: IntentSignMachineOutput | null
 }
 
 type PassthroughEvent = {
@@ -73,6 +81,36 @@ type PassthroughEvent = {
 
 type EmittedEvents = PassthroughEvent | { type: "INTENT_PUBLISHED" }
 
+type Events =
+  | {
+      type: "input"
+      params: Partial<{
+        tokenIn: SwappableToken
+        tokenOut: SwappableToken
+        amountIn: string
+      }>
+    }
+  | {
+      type: "submit"
+      params: {
+        userAddress: string
+        userChainType: ChainType
+        nearClient: providers.Provider
+        sendNearTransaction: (
+          tx: Transaction["NEAR"]
+        ) => Promise<{ txHash: string } | null>
+      }
+    }
+  | {
+      type: "BALANCE_CHANGED"
+      params: {
+        changedBalanceMapping: BalanceMapping
+      }
+    }
+  | BackgroundQuoterParentEvents
+  | DepositedBalanceEvents
+  | PassthroughEvent
+
 export const swapUIMachine = setup({
   types: {
     input: {} as {
@@ -82,48 +120,23 @@ export const swapUIMachine = setup({
       referral?: string
     },
     context: {} as Context,
-    events: {} as
-      | {
-          type: "input"
-          params: Partial<{
-            tokenIn: SwappableToken
-            tokenOut: SwappableToken
-            amountIn: string
-          }>
-        }
-      | {
-          type: "submit"
-          params: {
-            userAddress: string
-            userChainType: ChainType
-            nearClient: providers.Provider
-            sendNearTransaction: (
-              tx: Transaction["NEAR"]
-            ) => Promise<{ txHash: string } | null>
-          }
-        }
-      | {
-          type: "BALANCE_CHANGED"
-          params: {
-            changedBalanceMapping: BalanceMapping
-          }
-        }
-      | BackgroundQuoterParentEvents
-      | DepositedBalanceEvents
-      | PassthroughEvent,
+    events: {} as Events,
 
     emitted: {} as EmittedEvents,
 
     children: {} as {
       depositedBalanceRef: "depositedBalanceActor"
-      swapRef: "swapActor"
+      intentSignRef: "intentSignActor"
+      intentBroadcastRef: "intentBroadcastActor"
     },
   },
   actors: {
     backgroundQuoterActor: backgroundQuoterMachine,
     depositedBalanceActor: depositedBalanceMachine,
-    swapActor: swapIntentMachine,
     intentStatusActor: intentStatusMachine,
+    intentSignActor: intentSignMachine,
+    // biome-ignore lint/suspicious/noExplicitAny: Remove `any` once you figure out how to properly type the machine to resolve TypeScript error TS7056 (can't assign machine to actor)
+    intentBroadcastActor: intentBroadcastMachine as any,
   },
   actions: {
     setFormValues: assign({
@@ -173,7 +186,10 @@ export const swapUIMachine = setup({
     clearQuote: assign({ quote: null }),
     clearError: assign({ error: null }),
     setIntentCreationResult: assign({
-      intentCreationResult: (_, value: SwapIntentMachineOutput) => value,
+      intentCreationResult: (
+        _,
+        value: IntentBroadcastMachineOutput | IntentSignMachineOutput
+      ) => value,
     }),
     clearIntentCreationResult: assign({ intentCreationResult: null }),
     passthroughEvent: emit((_, event: PassthroughEvent) => event),
@@ -230,15 +246,15 @@ export const swapUIMachine = setup({
     })),
 
     // Warning: This cannot be properly typed, so you can send an incorrect event
-    sendToSwapRefNewQuote: sendTo(
-      "swapRef",
+    sendToIntentSignRefNewQuote: sendTo(
+      "intentSignRef",
       (_, event: BackgroundQuoterParentEvents) => event
     ),
 
     spawnIntentStatusActor: assign({
       intentRefs: (
         { context, spawn, self },
-        output: SwapIntentMachineOutput
+        output: IntentBroadcastMachineOutput
       ) => {
         if (output.tag !== "ok") return context.intentRefs
 
@@ -260,6 +276,10 @@ export const swapUIMachine = setup({
     emitEventIntentPublished: emit(() => ({
       type: "INTENT_PUBLISHED" as const,
     })),
+    setIntentSignResult: assign({
+      intentSignResult: (_, value: IntentSignMachineOutput) => value,
+    }),
+    clearIntentSignResult: assign({ intentSignResult: null }),
   },
   guards: {
     isQuoteRelevant: ({ context }) => {
@@ -280,7 +300,7 @@ export const swapUIMachine = setup({
     },
   },
 }).createMachine({
-  /** @xstate-layout N4IgpgJg5mDOIC5SwO4EMAOBaArgSwGIBJAOQBUBRcgfQGUKyyAZCgEQG0AGAXUVAwD2sPABc8AgHZ8QAD0RYArAoAcAOgCMAdgWcALJ04BOZZoBMCgDQgAnvMO7Nq5ac6b1B07oWfDAX19WqJi4hABCAIJM4SQAwhTUMQAS0QDibFy8SCCCwmKS0nIIAMxFCk5GygBsmpqGnJUKlZVWtghYhpWmqtWG6lWuupWcRer+gejY+ARMAPIppBnSOaLiUlmFlUVOvbqmlbpFulpGmi12uoaqRW7Kt-aaRfUKYyBBk4SzKTMAqmSLWcs8mtQIUsKZ1JUNPpDOZwcoFJomsozm17Jdrn07g5Hg0Xm8QqpICsJFACLAcAAjAC2on+-CEK3y60Q6i0qlq7lMhz6Sm0KKwRUMl06HSFpmURiafgCrwmBKJYhJBDwEgwOBEdOyDKBBXkezK4PUOgUEKM4uu-Oul3UB046iKm3tQsqeLl+EJEGJpJIFAA6tQAIrfGaUTWA1a6trY1RC0qCkx1fRFfn7MrqcxNLxwkyjGX490KlVQVQANzQABs8BA0IrSRBJGBVCqSwIANaN-N4D1e0sVqs1osIZsCADGA8kGTD2ojzLaKi2pkMCl0yncVWUu2aNnk2iuCKM6nsnCUxiKruCBc9td7lertYI9YkjeH7dUne717Lt4HJKHEhbY5ApO6iZPSuQziC8gqGUwzHnaK4SoM-I2l0drKEUhq6IMaEunmbpdoWJKqOgXrUAAjjgAgiGABA+v6QYhhQU7gUykGoq4qgKDCEpaFyJhFMi25tKU6iqEch6mtcIzeOe7xvpSNIiPej7Pv+bYdhMABKYAAGbMYywKyIg4mqIuq5YVh66sqcQkCpwXSDBu66HA6RyaLJBLktSoj3mAABOfkCH5qgYOWNY6UFVJvlpun6Tqs4HJchoKCMDRVPYpTIfs7K7PYJq7Hsmi7B57peYp950YGwahjwSzTqxRkIAcMG9Ky4p6Mcli2cujgOouDroZU9idP4MoSAIEBwNInZ1Sxhmgu4wycdxdpmAJDyCa0WASgaRWuJoG5JiMJUEVeRazQZkbtEoy3tbx60CfyJoLkuVpHEMiKmCdH5Fk2EDlmAF3xWxWBeI4Bzit4IwwrUNlbYunCmU6zjLvaWGGGeeEXqdPZfv2tZAxBjVgoKVxmC4CLrkKtz8jUTi1BjpgHXx9qY+M2M-URJG1uRlHUYTDWgoiiO3Me+7wrsEJPboYkNC4DSbJLvS4ezcllT550AvV82IAJZTvfZzistUCL8kcMGmOY6Zco8aO4f4QA */
+  /** @xstate-layout N4IgpgJg5mDOIC5SwO4EMAOBaArgSwGIBJAOQBUBRcgfQGUKyyAZCgEQG0AGAXUVAwD2sPABc8AgHZ8QAD0RYAzAHZOAOk5KlATgAsADmUA2AKwbjxgDQgAnvK16ATKoUOdO4wq0PDARmV6AXwCrVExcQgAhAEEmKJIAYQpqeIAJOIBxNi5eJBBBYTFJaTkEYy9VBzKHL2N3Hx1fK1sELC1DPVU9HW1OboMehyCQ9Gx8AiYAeXTSbOl80XEpXJLqnVUdBz0tTQUdLVqHByUmu3bO7t1HBr1zBSGQUNHCSfSJgFUyWdz5wqXQEqwDh8qjKnCOui0nGMSmUSj0JxabQ6XW0+lc7Vu90e4VUkAWEigBFgOAARgBbURffhCBZFZaIBRdVRaHz1UyGSGOTg+BFYHQ+Do6BQc1xCrquQbBB4jHF4sQEgh4CQYHAiKl5Gm-YryaqqJSVfaOYUafUOXmMtTQhS7fXuPScXx3KXY-C4iD4wkkCgAdWoAEU3hNKOqfottS0HA71Dcyva9m1jI5eSZDNHNLVhcZKtosTLXXKlVBVAA3NAAGzwEDQ8sJIc1YfpLWhzkM3iUrYdDR0Dt5uvM-W5SiFLk4BlzYXz7prJfLlerhYI7B8OWpBQb-x1vmZcN6hgaClZnChCKcSmhHkMjPM3Q046ebo9qnQHuoAEccAIRGACF7fQGgxQdZrnSG5NrqR5KD4MKGL0PiXieR4gpwWjCiyUKXmexh3jixLkqINYEBAkhgKoSrFgIADWJFKl+EgiLQeBQBIABKYAAGZAbSfyyIgMIdIY2geHo+r2NC8I2DqeyqDBbj7N2jKRom2GurhFIiARYAAE6aQImmqBgZbVmxulkqRdFgHRDFMaxHE8HM9YgTxCBdtJQKcNaDgHu4RzHBJEZwuo3QHtmtQmMJyl4Koqn4Quv7+oGwZ2d8DncSU7bGOohwNLUWbuTcvK1FozKOHorYoQ0e46BFqgkjpaAQAAxmgsAEUREjURI5FUWZtEiBEdWNc1Ig2ZxWqNhyCiqHBngKO53SHAolh+VgwLeBVxisioWjlW41W1QI9VNS1C5tR1XUdb1-UHYNLUjcu9nAaliACamwoHlmfh+MKOgIj4tRTV5vQbV0QpaHtA1HRp2m6fphkiMZmmmTRFl9RDQ0jUlq5ceGbipmejKGByeg+GC3S+c0iipnoBiRl0H3eLUQRShIAgQHA0gungD3Y42WCthlEFQca-LwctxOpommhsiowrVNVBYEtzY2gVg0JKOoGhCzJ00FX96gwrsbjE8YvhVc6eaRQrRaVmWYBK+uTmKI4erQlB0JglmGxLc0loaHsHKEzCbRhfLU6FjOFZVjW9uOSU+hTXUB7Ci9LKLbyrKpp9rJ7O42xwmbwwTpbYcEk+aAvu+n528lj3hi4FQHp2wki8TPJ+d4TgNJUYJHH9F6GNV0XqYWMdPQg7STcKW3XMTmwKOa9p6u03LbaiWYm+D12QyPNc86Be7q5Bo5AjcWXU+nnjSQeGdwZCUHhUzQA */
   id: "swap-ui",
 
   context: ({ input }) => ({
@@ -300,6 +320,7 @@ export const swapUIMachine = setup({
     tokenList: input.tokenList,
     referral: input.referral,
     slippageBasisPoints: 100, // 1%
+    intentSignResult: null,
   }),
 
   entry: ["spawnBackgroundQuoterRef", "spawnDepositedBalanceRef"],
@@ -406,8 +427,8 @@ export const swapUIMachine = setup({
 
     submitting: {
       invoke: {
-        id: "swapRef",
-        src: "swapActor",
+        id: "intentSignRef",
+        src: "intentSignActor",
 
         input: ({ context, event }) => {
           assertEvent(event, "submit")
@@ -437,19 +458,18 @@ export const swapUIMachine = setup({
 
         onDone: [
           {
-            target: "editing",
+            target: "broadcasting",
             guard: { type: "isOk", params: ({ event }) => event.output },
 
             actions: [
               {
-                type: "spawnIntentStatusActor",
+                type: "setIntentSignResult",
                 params: ({ event }) => event.output,
               },
               {
                 type: "setIntentCreationResult",
                 params: ({ event }) => event.output,
               },
-              "emitEventIntentPublished",
             ],
           },
           {
@@ -485,10 +505,110 @@ export const swapUIMachine = setup({
               params: ({ event }) => event.params.quote,
             },
             {
-              type: "sendToSwapRefNewQuote",
+              type: "sendToIntentSignRefNewQuote",
               params: ({ event }) => event,
             },
           ],
+        },
+      },
+    },
+
+    broadcasting: {
+      invoke: {
+        id: "intentBroadcastRef",
+        src: "intentBroadcastActor",
+
+        input: ({ context }: { context: Context }) => {
+          assert(context.intentSignResult !== null, "intentSignResult is null")
+          assert(
+            context.intentSignResult.tag === "ok",
+            "intentSignResult is not ok"
+          )
+          return {
+            ...context.intentSignResult.value,
+          }
+        },
+
+        onDone: [
+          {
+            target: "editing",
+            guard: {
+              type: "isOk",
+              params: ({
+                event,
+              }: { event: { output: IntentBroadcastMachineOutput } }) =>
+                event.output,
+            },
+            actions: [
+              {
+                type: "spawnIntentStatusActor",
+                params: ({
+                  event,
+                }: { event: { output: IntentBroadcastMachineOutput } }) =>
+                  event.output,
+              },
+              {
+                type: "setIntentCreationResult",
+                params: ({
+                  event,
+                }: { event: { output: IntentBroadcastMachineOutput } }) =>
+                  event.output,
+              },
+              "emitEventIntentPublished",
+            ],
+          },
+          {
+            target: "editing",
+            actions: [
+              {
+                type: "setIntentCreationResult",
+                params: ({
+                  event,
+                }: { event: { output: IntentBroadcastMachineOutput } }) =>
+                  event.output,
+              },
+            ],
+          },
+          // biome-ignore lint/suspicious/noExplicitAny: Remove `any` once you figure out how to properly type the machine to resolve TypeScript error TS7056 (can't assign machine to actor)
+        ] as any,
+
+        onError: {
+          target: "editing",
+
+          actions: ({ event }) => {
+            logger.error(event.error)
+          },
+        },
+
+        exit: {
+          actions: "clearIntentSignResult",
+        },
+
+        on: {
+          NEW_QUOTE: {
+            guard: {
+              type: "isOk",
+              params: ({
+                event,
+              }: { event: { params: { quote: QuoteResult } } }) =>
+                event.params.quote,
+            },
+            actions: [
+              {
+                type: "setQuote",
+                params: ({
+                  event,
+                }: { event: { params: { quote: QuoteResult } } }) =>
+                  event.params.quote,
+              },
+              {
+                type: "sendToIntentSignRefNewQuote",
+                params: ({
+                  event,
+                }: { event: { params: { quote: QuoteResult } } }) => event,
+              },
+            ],
+          },
         },
       },
     },
