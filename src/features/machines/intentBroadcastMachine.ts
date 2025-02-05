@@ -261,7 +261,6 @@ export const intentBroadcastMachine = setup({
     },
 
     "Verifying Intent": {
-      entry: "dequeueValidQuote",
       always: [
         {
           target: "Broadcasting Intent",
