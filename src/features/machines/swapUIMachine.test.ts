@@ -7,7 +7,7 @@ import {
   fromPromise,
   getNextSnapshot,
 } from "xstate"
-import type { swapIntentMachine } from "./swapIntentMachine"
+import type { intentSignMachine } from "./intentSignMachine"
 import { swapUIMachine } from "./swapUIMachine"
 
 describe.skip("swapUIMachine", () => {
@@ -18,7 +18,7 @@ describe.skip("swapUIMachine", () => {
     queryQuote: vi.fn(async (): Promise<unknown> => {
       return {}
     }),
-    swap: async (): Promise<OutputFrom<typeof swapIntentMachine>> => {
+    intentSign: async (): Promise<OutputFrom<typeof intentSignMachine>> => {
       // @ts-expect-error
       return {}
     },
@@ -27,7 +27,7 @@ describe.skip("swapUIMachine", () => {
   const defaultActors = {
     formValidation: fromPromise(defaultActorImpls.formValidation),
     queryQuote: fromPromise(defaultActorImpls.queryQuote),
-    swap: fromPromise(defaultActorImpls.swap),
+    intentSign: fromPromise(defaultActorImpls.intentSign),
   }
 
   const defaultActions = {
