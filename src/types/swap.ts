@@ -51,16 +51,34 @@ export type SolanaSignatureData = {
   signedData: SolanaMessage
 }
 
+// WebAuthn
+
+export type WebAuthnMessage = {
+  /** Bytes of UTF-8 JSON string */
+  message: Uint8Array
+}
+
+/** Full response of WebAuthn Login */
+export type WebAuthnSignature = AuthenticatorAssertionResponse
+
+export type WebAuthnSignatureData = {
+  type: "WEBAUTHN"
+  signatureData: WebAuthnSignature
+  signedData: WebAuthnMessage
+}
+
 export type WalletMessage = {
   ERC191: ERC191Message
   NEP413: NEP413Message
   SOLANA: SolanaMessage
+  WEBAUTHN: WebAuthnMessage
 }
 
 export type WalletSignatureResult =
   | ERC191SignatureData
   | NEP413SignatureData
   | SolanaSignatureData
+  | WebAuthnSignatureData
 
 export type SwapEvent = {
   type: string
