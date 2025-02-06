@@ -14,4 +14,6 @@ export enum BlockchainEnum {
   AURORA = "eth:1313161554",
   XRPLEDGER = "xrp:mainnet",
   ZCASH = "zec:mainnet",
+  GNOSIS = "eth:100",
+  BERACHAIN = "eth:80094",
 }
