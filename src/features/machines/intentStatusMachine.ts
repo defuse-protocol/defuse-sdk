@@ -29,19 +29,29 @@ export const intentStatusMachine = setup({
   types: {
     input: {} as {
       parentRef: ParentActor
-      intentHash: string
+      intentHash: string | null
       tokenIn: BaseTokenInfo | UnifiedTokenInfo
       tokenOut: BaseTokenInfo | UnifiedTokenInfo
       intentDescription: IntentDescription
     },
     context: {} as {
       parentRef: ParentActor
-      intentHash: string
+      intentHash: string | null
       tokenIn: BaseTokenInfo | UnifiedTokenInfo
       tokenOut: BaseTokenInfo | UnifiedTokenInfo
       txHash: string | null
       intentDescription: IntentDescription
     },
+    events: {} as
+      | {
+          type: "APPLY_INTENT_HASH"
+          params: {
+            intentHash: string
+          }
+        }
+      | {
+          type: "RETRY"
+        },
   },
   actions: {
     logError: (_, params: { error: unknown }) => {
@@ -67,9 +77,10 @@ export const intentStatusMachine = setup({
   guards: {
     isSettled: (_, settlementResult: IntentSettlementResult) =>
       settlementResult.status === "SETTLED",
+    isReadyToCheck: ({ context }) => context.intentHash != null,
   },
 }).createMachine({
-  /** @xstate-layout N4IgpgJg5mDOIC5QEsB2AXMGDK6CG6ArrAHQAOWEaUAxANoAMAuoqGQPazLrLuqsgAHogCMAFgBsJCQCYZDGQFYGigMwiJAdgCcEgDQgAnqIbaSikQ01WJFzQA5tMiQF8XBtJhz4ipAMYAFmB+ANbUNBB8YCRoAG7sIdGeWOi4BMQkgcFhqFAIcex+BLyojExlAhxcPHwCwgiKMvYk9oqKYqqOipoiMmIiBsYI9iIkqnLa4lr2qroybh4YKWm+mUGh4ZGoSajxiTFL3un+6zl5BUU1pcx0IixIIFXcJXWIjaMy6gwikx3WmoNRLoxt11DpGvYmmJ5u4QMkjqsshtcjQwAAnNHsNHkAA2BAAZliALYHLypHwZJFnfK7QrFPhlCoPJ5XV4IGSTEgMMHfEQ9bTctSA9nOEiaSSNVSKCQSSQSESKBZww7k44kdGYtE0ABKAFEACragCaTLYnGetQe9TEimkYgF9hmMk06jaimFqjEzU0zu6KgYDC9srcsNQ7AgcAE8NVvkq5tZVsQAFomiQnNzZo7OpoZbZhUnmo1nfYFPYOmIbfaldGVhkKKgqLk49UXomED8uToZbz5Z9VFLhZYZCQZOJIZ6bdMbdWVbWTtlqM2Lfw286pMpVD1VAwZpDdMKHC0A71xAwJLodNoZ2S5yRYIQ-H44PBmfHW6B6toRiQvWIrNpNxLBV9CMEwGDTCQSzLJx+ilL1r2WClSDDdAAH1YjwHFkAgJcEw-RBtB0H9pX9ewdHsWwxEHACR00Bw6P6SES0UewEIRDINSxXD3yERApVUcwVBlaFRw5ERPQ9L0xm0NpxE9TMfhDFwgA */
+  /** @xstate-layout N4IgpgJg5mDOIC5QEsB2AXMGDK6CG6ArrAMQCCAChQDICaA+gJIByAKgKJv0ASZ23AbQAMAXUSgADgHtYydMimpxIAB6IATAA51AOgCMAZiF6A7AE4ArABY9VkxfUAaEAE9EAWj3qTO6+oBs6lZCVt7+Vv4mAL5RzmiYOPhEsDoSWBBoUCTCYkgg0rLyispqCJpmOsYR-oFmZgYGFuXObgh6Ib4WVQFGQuoGVjFxGFjouATEOgDGABZgUwDWmSQQimA6aABuUgvr8aPjydNzi5kIW1JTBAqoOTnKBXI3JYgOmjqaFtYG5RYmXjYWohNHodAZ1OozLZIpoDGZAkMQPtEhMUrN5ktUFlVqg9qhtrsNiMUUd0acsed8Zdroo7npcpIZE9inlSg5Qf12nooVYDCYhCYgW14WC-gZTJYtFpQojkWMkpMyZismAAE6qqSq1IAGwIADNNQBbIkJeWo44Ys4XK5FW6ie55R62l4ISGgoTi-l6Uzcj0WAxCiH+HQmCIORo1ap6Cyy4lmo5qjWqkgAJXYrBTtAdjMKz1ZHkaOn85SEQnCkLM2nBQoG7zh1n8hj56gsZjLMViIFQUggcGUcsOxAeTOd+YQ7k0wbq9jq9QCTV5QonRbqmm0JhqfPFBn8sdNg5SaVQGSxw9zLNApXcPx009bdXB-gXViF7V0vVMVjbdUbob3BwVNETmVM9mSUMcwl8D1-iMWFtHhIUTHeTRSy8Wwy3hcwzH-ElJlgQgpimOB4EdEc80vYF6kqIQ-g3SczFCSEhTqW8TH5DctECBwghw+NJm7dB6E2PBtWQCBQNHCiyksHReWsOoWyMadXzMXR-CEOo7CsbQtIMXiDx0RNNQk8jVEQRoDCgixIwhLwoQGGttLBSwLFsAY4RBbCOyAA */
   id: "intentStatus",
   initial: "pending",
   context: ({ input }) => {
@@ -82,14 +93,27 @@ export const intentStatusMachine = setup({
       intentDescription: input.intentDescription,
     }
   },
+  on: {
+    APPLY_INTENT_HASH: {
+      actions: assign({
+        intentHash: ({ event }) => event.params.intentHash,
+      }),
+    },
+  },
   states: {
     pending: {
-      always: "checking",
+      always: {
+        target: "checking",
+        guard: "isReadyToCheck",
+      },
     },
     checking: {
       invoke: {
         src: "checkIntentStatus",
-        input: ({ context }) => ({ intentHash: context.intentHash }),
+        input: ({ context }) => {
+          assert(context.intentHash != null, "intentHash is null")
+          return { intentHash: context.intentHash }
+        },
         onDone: [
           {
             target: "success",
@@ -123,6 +147,7 @@ export const intentStatusMachine = setup({
         ({ context }) => context.parentRef,
         ({ context }) => {
           assert(context.txHash != null, "txHash is null")
+          assert(context.intentHash != null, "intentHash is null")
           return {
             type: "INTENT_SETTLED" as const,
             data: {
