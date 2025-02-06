@@ -83,7 +83,9 @@ export const backgroundBalanceActor = fromPromise(
       case BlockchainEnum.BASE:
       case BlockchainEnum.ARBITRUM:
       case BlockchainEnum.TURBOCHAIN:
-      case BlockchainEnum.AURORA: {
+      case BlockchainEnum.AURORA:
+      case BlockchainEnum.GNOSIS:
+      case BlockchainEnum.BERACHAIN: {
         if (isNativeToken(derivedToken)) {
           const balance = await getEvmNativeBalance({
             userAddress: userAddress as Address,
