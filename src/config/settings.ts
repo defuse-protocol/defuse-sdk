@@ -13,6 +13,7 @@ interface Settings {
   rpcUrls: {
     [key in SupportedChainName]: string
   }
+  optimisticBalanceUpdates: boolean
 }
 
 export const settings: Settings = {
@@ -54,4 +55,10 @@ export const settings: Settings = {
     xrpledger: "https://xrplcluster.com",
     zcash: "https://mainnet.lightwalletd.com",
   },
+  /**
+   * Feature flag for optimistic balance updates.
+   * When true, balance updates will be shown immediately after transaction submission,
+   * before chain confirmation.
+   */
+  optimisticBalanceUpdates: true,
 }

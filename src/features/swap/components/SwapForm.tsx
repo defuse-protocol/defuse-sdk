@@ -9,6 +9,7 @@ import {
   useEffect,
 } from "react"
 import { useFormContext } from "react-hook-form"
+import { settings } from "src/config/settings"
 import { useTokensUsdPrices } from "src/hooks/useTokensUsdPrices"
 import { formatUsdAmount } from "src/utils/format"
 import getTokenUsdPrice from "src/utils/getTokenUsdPrice"
@@ -53,7 +54,14 @@ export const SwapForm = ({ onNavigateDeposit }: SwapFormProps) => {
 
   const swapUIActorRef = SwapUIMachineContext.useActorRef()
   const snapshot = SwapUIMachineContext.useSelector((snapshot) => snapshot)
-  const intentCreationResult = snapshot.context.intentCreationResult
+
+  const intentCreationResult = settings.optimisticBalanceUpdates
+    ? snapshot.context.intentPoolRef.getSnapshot().context.intentCreationResult
+    : snapshot.context.intentCreationResult
+  const intentRefs = settings.optimisticBalanceUpdates
+    ? snapshot.context.intentPoolRef.getSnapshot().context.intentRefs
+    : snapshot.context.intentRefs
+
   const { data: tokensUsdPriceData } = useTokensUsdPrices()
 
   const { tokenIn, tokenOut, noLiquidity, insufficientTokenInAmount } =
@@ -275,9 +283,9 @@ export const SwapForm = ({ onNavigateDeposit }: SwapFormProps) => {
 
       {renderIntentCreationResult(intentCreationResult)}
 
-      {snapshot.context.intentRefs.length > 0 && (
+      {intentRefs.length > 0 && (
         <Box>
-          <Intents intentRefs={snapshot.context.intentRefs} />
+          <Intents intentRefs={intentRefs} />
         </Box>
       )}
     </Flex>

@@ -129,7 +129,7 @@ export const intentPoolMachine = setup({
 
       return {
         intentRefs: [intentRef, ...context.intentRefs],
-        pool: new Map([[id, event.params]]),
+        pool: new Map([[`intent-${id}`, event.params]]),
       }
     }),
     setExecutingIntentRef: assign({
@@ -332,7 +332,7 @@ function findExecutableIntentRef(
     assert(intent !== undefined, "intent is undefined")
 
     const onchainBalance = computeTotalBalanceDifferentDecimals(
-      intent.tokenIn,
+      intentRef.getSnapshot().context.tokenIn,
       balances
     )
     if (onchainBalance === undefined) {

@@ -1,6 +1,7 @@
 import type { providers } from "near-api-js"
 import {
   type ActorRefFrom,
+  and,
   assertEvent,
   assign,
   emit,
@@ -40,6 +41,7 @@ import {
   type Output as IntentBroadcastMachineOutput,
   intentBroadcastMachine,
 } from "./intentBroadcastMachine"
+import { intentPoolMachine } from "./intentPoolMachine"
 import {
   type Output as IntentSignMachineOutput,
   intentSignMachine,
@@ -68,6 +70,7 @@ export type Context = {
   slippageBasisPoints: number
   intentSignResult: IntentSignMachineOutput | null
   depositedBalanceRef: ActorRefFrom<typeof depositedBalanceMachine>
+  intentPoolRef: ActorRefFrom<typeof intentPoolMachine>
 }
 
 type PassthroughEvent = {
@@ -137,6 +140,8 @@ export const swapUIMachine = setup({
     intentSignActor: intentSignMachine,
     // biome-ignore lint/suspicious/noExplicitAny: Remove `any` once you figure out how to properly type the machine to resolve TypeScript error TS7056 (can't assign machine to actor)
     intentBroadcastActor: intentBroadcastMachine as any,
+    // biome-ignore lint/suspicious/noExplicitAny: Remove `any` once you figure out how to properly type the machine to resolve TypeScript error TS7056 (can't assign machine to actor)
+    intentPoolActor: intentPoolMachine as any,
   },
   actions: {
     setFormValues: assign({
@@ -203,7 +208,7 @@ export const swapUIMachine = setup({
     // Warning: This cannot be properly typed, so you can send an incorrect event
     sendToBackgroundQuoterRefNewQuoteInput: sendTo(
       "backgroundQuoterRef",
-      ({ context }): BackgroundQuoterEvents => {
+      ({ context }: { context: Context }): BackgroundQuoterEvents => {
         assert(context.parsedFormValues.amountIn != null, "amountIn is not set")
 
         return {
@@ -266,6 +271,24 @@ export const swapUIMachine = setup({
       intentSignResult: (_, value: IntentSignMachineOutput) => value,
     }),
     clearIntentSignResult: assign({ intentSignResult: null }),
+
+    sendToIntentPoolRefAddIntent: sendTo("intentPoolRef", ({ context }) => {
+      assert(context.intentSignResult !== null, "intentSignResult is null")
+      assert(
+        context.intentSignResult.tag === "ok",
+        "intentSignResult is not ok"
+      )
+      const intent = context.intentSignResult.value
+
+      return {
+        type: "ADD_INTENT",
+        params: {
+          ...intent,
+          tokenIn: context.formValues.tokenIn,
+          tokenOut: context.formValues.tokenOut,
+        },
+      }
+    }),
   },
   guards: {
     isQuoteRelevant: ({ context }) => {
@@ -284,6 +307,7 @@ export const swapUIMachine = setup({
         context.parsedFormValues.amountIn.amount > 0n
       )
     },
+    isOptimisticBalanceUpdatesEnabled: () => settings.optimisticBalanceUpdates,
   },
 }).createMachine({
   /** @xstate-layout N4IgpgJg5mDOIC5SwO4EMAOBaArgSwGIBJAOQBUBRcgfQGUKyyAZCgEQG0AGAXUVAwD2sPABc8AgHZ8QAD0RYAzAHZOAOk5KlATgAsADmUA2AKwbjxgDQgAnvK16ATKoUOdO4wq0PDARmV6AXwCrVExcQgAhAEEmKJIAYQpqeIAJOIBxNi5eJBBBYTFJaTkEYy9VBzKHL2N3Hx1fK1sELC1DPVU9HW1OboMehyCQ9Gx8AiYAeXTSbOl80XEpXJLqnVUdBz0tTQUdLVqHByUmu3bO7t1HBr1zBSGQUNHCSfSJgFUyWdz5wqXQEqwDh8qjKnCOui0nGMSmUSj0JxabQ6XW0+lc7Vu90e4VUkAWEigBFgOAARgBbURffhCBZFZaIBRdVRaHz1UyGSGOTg+BFYHQ+Do6BQc1xCrquQbBB4jHF4sQEgh4CQYHAiKl5Gm-YryaqqJSVfaOYUafUOXmMtTQhS7fXuPScXx3KXY-C4iD4wkkCgAdWoAEU3hNKOqfottS0HA71Dcyva9m1jI5eSZDNHNLVhcZKtosTLXXKlVBVAA3NAAGzwEDQ8sJIc1YfpLWhzkM3iUrYdDR0Dt5uvM-W5SiFLk4BlzYXz7prJfLlerhYI7B8OWpBQb-x1vmZcN6hgaClZnChCKcSmhHkMjPM3Q046ebo9qnQHuoAEccAIRGACF7fQGgxQdZrnSG5NrqR5KD4MKGL0PiXieR4gpwWjCiyUKXmexh3jixLkqINYEBAkhgKoSrFgIADWJFKl+EgiLQeBQBIABKYAAGZAbSfyyIgMIdIY2geHo+r2NC8I2DqeyqDBbj7N2jKRom2GurhFIiARYAAE6aQImmqBgZbVmxulkqRdFgHRDFMaxHE8HM9YgTxCBdtJQKcNaDgHu4RzHBJEZwuo3QHtmtQmMJyl4Koqn4Quv7+oGwZ2d8DncSU7bGOohwNLUWbuTcvK1FozKOHorYoQ0e46BFqgkjpaAQAAxmgsAEUREjURI5FUWZtEiBEdWNc1Ig2ZxWqNhyCiqHBngKO53SHAolh+VgwLeBVxisioWjlW41W1QI9VNS1C5tR1XUdb1-UHYNLUjcu9nAaliACamwoHlmfh+MKOgIj4tRTV5vQbV0QpaHtA1HRp2m6fphkiMZmmmTRFl9RDQ0jUlq5ceGbipmejKGByeg+GC3S+c0iipnoBiRl0H3eLUQRShIAgQHA0gungD3Y42WCthlEFQca-LwctxOpommhsiowrVNVBYEtzY2gVg0JKOoGhCzJ00FX96gwrsbjE8YvhVc6eaRQrRaVmWYBK+uTmKI4erQlB0JglmGxLc0loaHsHKEzCbRhfLU6FjOFZVjW9uOSU+hTXUB7Ci9LKLbyrKpp9rJ7O42xwmbwwTpbYcEk+aAvu+n528lj3hi4FQHp2wki8TPJ+d4TgNJUYJHH9F6GNV0XqYWMdPQg7STcKW3XMTmwKOa9p6u03LbaiWYm+D12QyPNc86Be7q5Bo5AjcWXU+nnjSQeGdwZCUHhUzQA */
@@ -312,6 +336,12 @@ export const swapUIMachine = setup({
       input: {
         parentRef: self,
         tokenList: input.tokenList,
+      },
+    }),
+    intentPoolRef: spawn("intentPoolActor", {
+      id: "intentPoolRef",
+      input: {
+        parentRef: self,
       },
     }),
   }),
@@ -450,6 +480,24 @@ export const swapUIMachine = setup({
         },
 
         onDone: [
+          {
+            target: "pool",
+            guard: and([
+              ({ event }) => event.output.tag === "ok",
+              { type: "isOptimisticBalanceUpdatesEnabled" },
+            ]),
+
+            actions: [
+              {
+                type: "setIntentSignResult",
+                params: ({ event }) => event.output,
+              },
+              {
+                type: "setIntentCreationResult",
+                params: ({ event }) => event.output,
+              },
+            ],
+          },
           {
             target: "broadcasting",
             guard: { type: "isOk", params: ({ event }) => event.output },
@@ -604,6 +652,12 @@ export const swapUIMachine = setup({
           },
         },
       },
+    },
+
+    pool: {
+      entry: ["sendToIntentPoolRefAddIntent"],
+      target: "editing",
+      exit: ["clearIntentSignResult"],
     },
   },
 
