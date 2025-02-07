@@ -15,6 +15,8 @@ const networkSelectToLabel: Record<BlockchainEnum, string> = {
   [BlockchainEnum.AURORA]: "Aurora",
   [BlockchainEnum.XRPLEDGER]: "XRP Ledger",
   [BlockchainEnum.ZCASH]: "Zcash",
+  [BlockchainEnum.GNOSIS]: "Gnosis",
+  [BlockchainEnum.BERACHAIN]: "BeraChain",
 }
 
 export function renderDepositHint(

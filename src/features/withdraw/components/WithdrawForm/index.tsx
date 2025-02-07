@@ -667,6 +667,26 @@ const allBlockchains = [
     ),
     value: "zcash",
   },
+  {
+    label: "Gnosis",
+    icon: (
+      <NetworkIcon
+        chainIcon="/static/icons/network/gnosis.svg"
+        chainName="Gnosis"
+      />
+    ),
+    value: "gnosis",
+  },
+  {
+    label: "BeraChain",
+    icon: (
+      <NetworkIcon
+        chainIcon="/static/icons/network/berachain.svg"
+        chainName="BeraChain"
+      />
+    ),
+    value: "berachain",
+  },
 ] as const satisfies Array<{
   label: string
   icon: ReactNode

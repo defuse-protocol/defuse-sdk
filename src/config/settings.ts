@@ -53,5 +53,7 @@ export const settings: Settings = {
     aurora: "https://mainnet.aurora.dev",
     xrpledger: "https://xrplcluster.com",
     zcash: "https://mainnet.lightwalletd.com",
+    gnosis: "https://rpc.gnosischain.com",
+    berachain: "https://rpc.berachain.com",
   },
 }

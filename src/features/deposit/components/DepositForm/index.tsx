@@ -384,6 +384,26 @@ function getBlockchainsOptions(): Record<
       ),
       value: BlockchainEnum.ZCASH,
     },
+    [BlockchainEnum.GNOSIS]: {
+      label: "Gnosis",
+      icon: (
+        <NetworkIcon
+          chainIcon="/static/icons/network/gnosis.svg"
+          chainName="Gnosis"
+        />
+      ),
+      value: BlockchainEnum.GNOSIS,
+    },
+    [BlockchainEnum.BERACHAIN]: {
+      label: "BeraChain",
+      icon: (
+        <NetworkIcon
+          chainIcon="/static/icons/network/berachain.svg"
+          chainName="BeraChain"
+        />
+      ),
+      value: BlockchainEnum.BERACHAIN,
+    },
   }
   return options
 }
