@@ -17,6 +17,7 @@ import { useSelector } from "@xstate/react"
 import { providers } from "near-api-js"
 import { Fragment, type ReactNode, useEffect } from "react"
 import { Controller, useForm } from "react-hook-form"
+import { settings } from "src/config/settings"
 import { useTokensUsdPrices } from "src/hooks/useTokensUsdPrices"
 import { formatTokenValue, formatUsdAmount } from "src/utils/format"
 import getTokenUsdPrice from "src/utils/getTokenUsdPrice"
@@ -83,8 +84,6 @@ export const WithdrawForm = ({
     formRef,
     depositedBalanceRef,
     poaBridgeInfoRef,
-    intentCreationResult,
-    intentRefs,
     noLiquidity,
     insufficientTokenInAmount,
     totalAmountReceived,
@@ -94,13 +93,20 @@ export const WithdrawForm = ({
       formRef: state.context.withdrawFormRef,
       depositedBalanceRef: state.context.depositedBalanceRef,
       poaBridgeInfoRef: state.context.poaBridgeInfoRef,
-      intentCreationResult: state.context.intentCreationResult,
-      intentRefs: state.context.intentRefs,
       noLiquidity: isLiquidityUnavailableSelector(state),
       insufficientTokenInAmount: isUnsufficientTokenInAmount(state),
       totalAmountReceived: totalAmountReceivedSelector(state),
     }
   })
+
+  const snapshot = WithdrawUIMachineContext.useSelector((snapshot) => snapshot)
+
+  const intentCreationResult = settings.optimisticBalanceUpdates
+    ? snapshot.context.intentPoolRef.getSnapshot().context.intentCreationResult
+    : snapshot.context.intentCreationResult
+  const intentRefs = settings.optimisticBalanceUpdates
+    ? snapshot.context.intentPoolRef.getSnapshot().context.intentRefs
+    : snapshot.context.intentRefs
 
   const intentSignRef = useSelector(
     actorRef,
