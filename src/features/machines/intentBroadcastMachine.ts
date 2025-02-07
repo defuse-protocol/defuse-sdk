@@ -1,5 +1,4 @@
 import type { providers } from "near-api-js"
-import { settings } from "src/config/settings"
 import { assign, fromPromise, setup } from "xstate"
 import { logger } from "../../logger"
 import { publishIntent } from "../../services/intentService"
@@ -9,13 +8,8 @@ import type { ChainType } from "../../types/deposit"
 import type { WalletMessage, WalletSignatureResult } from "../../types/swap"
 import { assert } from "../../utils/assert"
 import type { DefuseUserId } from "../../utils/defuse"
+import {} from "../../utils/messageFactory"
 import {
-  makeInnerSwapMessage,
-  makeSwapMessage,
-} from "../../utils/messageFactory"
-import type { PriorityQueue } from "../../utils/priorityQueue"
-import {
-  accountSlippageExactIn,
   computeTotalDeltaDifferentDecimals,
   negateTokenValue,
 } from "../../utils/tokenUtils"
@@ -25,12 +19,7 @@ import {
   type IntentDescription,
   type IntentOperationParams,
   calcOperationAmountOut,
-  dequeueValidQuote,
 } from "./intentSignMachine"
-import {
-  type SendNearTransaction,
-  publicKeyVerifierMachine,
-} from "./publicKeyVerifierMachine"
 
 type Context = {
   userAddress: string
@@ -39,10 +28,8 @@ type Context = {
   referral?: string
   slippageBasisPoints: number
   nearClient: providers.Provider
-  sendNearTransaction: SendNearTransaction
   intentOperationParams: IntentOperationParams
   quoteToPublish: AggregatedQuote | null
-  quotes: PriorityQueue<AggregatedQuote>
   messageToSign: {
     walletMessage: WalletMessage
     innerMessage: Nep413DefuseMessageFor_DefuseIntents
@@ -60,10 +47,8 @@ type Input = {
   referral?: string
   slippageBasisPoints: number
   nearClient: providers.Provider
-  sendNearTransaction: SendNearTransaction
   intentOperationParams: IntentOperationParams
   quoteToPublish: AggregatedQuote | null
-  quotes: PriorityQueue<AggregatedQuote>
   messageToSign: {
     walletMessage: WalletMessage
     innerMessage: Nep413DefuseMessageFor_DefuseIntents
@@ -101,41 +86,11 @@ export const intentBroadcastMachine = setup({
     logError: (_, params: { error: unknown }) => {
       logger.error(params.error)
     },
-    assembleSignMessages: assign({
-      messageToSign: ({ context }) => {
-        assert(
-          context.intentOperationParams.type === "swap",
-          "Operation must be swap"
-        )
-
-        const innerMessage = makeInnerSwapMessage({
-          tokenDeltas: accountSlippageExactIn(
-            context.intentOperationParams.quote.tokenDeltas,
-            context.slippageBasisPoints
-          ),
-          signerId: context.defuseUserId,
-          deadlineTimestamp: Date.now() + settings.swapExpirySec * 1000,
-          referral: context.referral,
-        })
-
-        return {
-          innerMessage,
-          walletMessage: makeSwapMessage({
-            innerMessage,
-            recipient: settings.defuseContractId,
-          }),
-        }
-      },
-    }),
-    dequeueValidQuote: assign({
-      quoteToPublish: ({ context }) => dequeueValidQuote(context.quotes),
-    }),
     setIntentHash: assign({
       intentHash: (_, intentHash: string) => intentHash,
     }),
   },
   actors: {
-    publicKeyVerifierActor: publicKeyVerifierMachine,
     broadcastMessage: fromPromise(
       async ({
         input,

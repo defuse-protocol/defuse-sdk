@@ -258,11 +258,6 @@ export const intentSignMachine = setup({
     ) => {
       return status === "SETTLED"
     },
-    isIntentRelevant: ({ context }) => {
-      const hadQuote = context.intentOperationParams.quote != null
-      const hasQuote = context.quoteToPublish != null
-      return hadQuote === hasQuote
-    },
     isTrue: (_, params: boolean) => params,
     isOk: (_, params: { tag: "ok" } | { tag: "err" }) => params.tag === "ok",
     isQuoteOk: ({ event }) => {
