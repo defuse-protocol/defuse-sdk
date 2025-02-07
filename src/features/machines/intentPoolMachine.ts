@@ -1,16 +1,4 @@
 import type { providers } from "near-api-js"
-import type { QuoteResult } from "src/services/quoteService"
-import type { BaseTokenInfo, UnifiedTokenInfo } from "src/types/base"
-import type { Nep413DefuseMessageFor_DefuseIntents } from "src/types/defuse-contracts-types"
-import type { WalletMessage, WalletSignatureResult } from "src/types/swap"
-import { assert } from "src/utils/assert"
-import { computeTotalBalanceDifferentDecimals } from "src/utils/tokenUtils"
-import type { AggregatedQuote } from "../../services/quoteService"
-import type { ChainType } from "../../types/deposit"
-import type { DefuseUserId } from "../../utils/defuse"
-import type { PriorityQueue } from "../../utils/priorityQueue"
-import type { QuoteInput } from "./backgroundQuoterMachine"
-
 import {
   type ActorRef,
   type ActorRefFrom,
@@ -18,11 +6,19 @@ import {
   assign,
   setup,
 } from "xstate"
+import { findExecutableIntentRef } from "../../services/poolService"
+import type { QuoteResult } from "../../services/quoteService"
+import type { AggregatedQuote } from "../../services/quoteService"
+import type { BaseTokenInfo, UnifiedTokenInfo } from "../../types/base"
+import type { Nep413DefuseMessageFor_DefuseIntents } from "../../types/defuse-contracts-types"
+import type { ChainType } from "../../types/deposit"
+import type { WalletMessage, WalletSignatureResult } from "../../types/swap"
+import { assert } from "../../utils/assert"
+import type { DefuseUserId } from "../../utils/defuse"
+import type { PriorityQueue } from "../../utils/priorityQueue"
+import type { QuoteInput } from "./backgroundQuoterMachine"
 import type { ParentEvents as BackgroundQuoterEvents } from "./backgroundQuoterMachine"
-import type {
-  BalanceMapping,
-  depositedBalanceMachine,
-} from "./depositedBalanceMachine"
+import type { depositedBalanceMachine } from "./depositedBalanceMachine"
 import {
   type Output as IntentBroadcastMachineOutput,
   intentBroadcastMachine,
@@ -356,41 +352,3 @@ export const intentPoolMachine = setup({
     },
   },
 })
-
-function findExecutableIntentRef(
-  intentRefs: ActorRefFrom<typeof intentStatusMachine>[],
-  pool: Map<string, Intent>,
-  balances: BalanceMapping
-): string | null {
-  for (const intentRef of intentRefs) {
-    const { value } = intentRef.getSnapshot()
-    // Meaning we already start executing this intent so we should run it again
-    if (value !== "pending") {
-      continue
-    }
-    const intent = pool.get(intentRef.id)
-    assert(intent !== undefined, "intent is undefined")
-
-    const onchainBalance = computeTotalBalanceDifferentDecimals(
-      intentRef.getSnapshot().context.tokenIn,
-      balances
-    )
-    if (onchainBalance === undefined) {
-      continue
-    }
-    const tokenDeltas = intent.intentOperationParams.quote?.tokenDeltas
-    if (tokenDeltas === undefined || tokenDeltas.length === 0) {
-      continue
-    }
-    const [_, amount] = tokenDeltas[0] as [string, bigint]
-    if (amount === undefined) {
-      continue
-    }
-    // Multiply amount by -1n because the amount is negative
-    if (onchainBalance.amount < amount * -1n) {
-      continue
-    }
-    return intentRef.id
-  }
-  return null
-}
