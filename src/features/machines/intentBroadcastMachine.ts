@@ -1,5 +1,4 @@
 import type { providers } from "near-api-js"
-import { settings } from "src/config/settings"
 import { assign, fromPromise, setup } from "xstate"
 import { logger } from "../../logger"
 import { publishIntent } from "../../services/intentService"
@@ -9,13 +8,8 @@ import type { ChainType } from "../../types/deposit"
 import type { WalletMessage, WalletSignatureResult } from "../../types/swap"
 import { assert } from "../../utils/assert"
 import type { DefuseUserId } from "../../utils/defuse"
+import {} from "../../utils/messageFactory"
 import {
-  makeInnerSwapMessage,
-  makeSwapMessage,
-} from "../../utils/messageFactory"
-import type { PriorityQueue } from "../../utils/priorityQueue"
-import {
-  accountSlippageExactIn,
   computeTotalDeltaDifferentDecimals,
   negateTokenValue,
 } from "../../utils/tokenUtils"
@@ -25,13 +19,7 @@ import {
   type IntentDescription,
   type IntentOperationParams,
   calcOperationAmountOut,
-  dequeueValidQuote,
-  enqueueBetterQuote,
 } from "./intentSignMachine"
-import {
-  type SendNearTransaction,
-  publicKeyVerifierMachine,
-} from "./publicKeyVerifierMachine"
 
 type Context = {
   userAddress: string
@@ -40,10 +28,8 @@ type Context = {
   referral?: string
   slippageBasisPoints: number
   nearClient: providers.Provider
-  sendNearTransaction: SendNearTransaction
   intentOperationParams: IntentOperationParams
   quoteToPublish: AggregatedQuote | null
-  quotes: PriorityQueue<AggregatedQuote>
   messageToSign: {
     walletMessage: WalletMessage
     innerMessage: Nep413DefuseMessageFor_DefuseIntents
@@ -61,10 +47,8 @@ type Input = {
   referral?: string
   slippageBasisPoints: number
   nearClient: providers.Provider
-  sendNearTransaction: SendNearTransaction
   intentOperationParams: IntentOperationParams
   quoteToPublish: AggregatedQuote | null
-  quotes: PriorityQueue<AggregatedQuote>
   messageToSign: {
     walletMessage: WalletMessage
     innerMessage: Nep413DefuseMessageFor_DefuseIntents
@@ -102,52 +86,11 @@ export const intentBroadcastMachine = setup({
     logError: (_, params: { error: unknown }) => {
       logger.error(params.error)
     },
-    proposeQuote: ({ context }, proposedQuote: AggregatedQuote) => {
-      if (context.intentOperationParams.quote) {
-        enqueueBetterQuote(
-          context.quotes,
-          context.intentOperationParams.quote,
-          proposedQuote,
-          context.intentOperationParams.tokenOut,
-          context.slippageBasisPoints
-        )
-      }
-    },
-    assembleSignMessages: assign({
-      messageToSign: ({ context }) => {
-        assert(
-          context.intentOperationParams.type === "swap",
-          "Operation must be swap"
-        )
-
-        const innerMessage = makeInnerSwapMessage({
-          tokenDeltas: accountSlippageExactIn(
-            context.intentOperationParams.quote.tokenDeltas,
-            context.slippageBasisPoints
-          ),
-          signerId: context.defuseUserId,
-          deadlineTimestamp: Date.now() + settings.swapExpirySec * 1000,
-          referral: context.referral,
-        })
-
-        return {
-          innerMessage,
-          walletMessage: makeSwapMessage({
-            innerMessage,
-            recipient: settings.defuseContractId,
-          }),
-        }
-      },
-    }),
-    dequeueValidQuote: assign({
-      quoteToPublish: ({ context }) => dequeueValidQuote(context.quotes),
-    }),
     setIntentHash: assign({
       intentHash: (_, intentHash: string) => intentHash,
     }),
   },
   actors: {
-    publicKeyVerifierActor: publicKeyVerifierMachine,
     broadcastMessage: fromPromise(
       async ({
         input,
@@ -175,7 +118,7 @@ export const intentBroadcastMachine = setup({
     },
   },
 }).createMachine({
-  /** @xstate-layout N4IgpgJg5mDOIC5QEsB2AXMGC0AjATgPYCGEAxsbOgMQByAogOoD6AigKoDyAKvQNoAGALqJQAB0Kxk6ZIVSiQAD0QAmAGwqAdAFYAjAA4A7AGYNK47pUBObQBoQAT0TZ1AFh2vjn3catXDeq4AvkH2aJg4BCTklOiayBAANmDUgiJIIBJSMnIKyggqrto6VgKuKtrGhoYqKvqu9k4FmmXaAhZWxgJq-mptxiFhGFjoeESkFFSaAGpg+MgAZg5oUAAEAJLDGKnCClnSsvIZ+bpW7irVVroCugaenY2quu7G+moW6gJWfdqGaoMgcIjMbRSZxWbzJYrDZbGh8XTpcSSA65Y6IVwmTTlWpVfTafTdKqPBC6AKaPr+NrXb7afEAoGRcYxKYAISZYOhmwiNAgcjA8VQADdCABrfkM0ZRCaxTRs0GxTmwhBoYUUHKoNJpPbI9V5RA+KyaV7GXFveq+YzEooCI3XNQ+fHWX702Eg6Ws9kK1BrLkjai81DioWioPct3MuJy90yb0w7nK4Nqw6ahHa7KHPUIFzGLRdVyUyzXIwNRzotq27p1eqk1xqATaF1hqUR2WeqiK7nUOZEfCaMSJYjoBaEfAAWwFTbbkanHZGCdVg+Twi1GX2urRWdJhha+P0+h8hiLhhLTTqxk0KgENRUpJz7V0DYBqEIEDgCgl4bBaZRR1A+RcBJGmUBY3gIxbEtgD66Jo1zHhY+7XL8NSNsCzZgvESRgN+65-qorj6Joe4mmcljXvoXgQe85JXq4BjGLSt5gShjLylMEKLMssa+hg2EZhuuhqNutSHq4tEXLU5EnogZwtKJBjaO8XTCfozGSlOrasTGPqwrxqK4SSfSaFY9Q2GoGhkVJCAdDozxeK4NyFFeqmfjKADChCjv2YCYBAum-ko+p+La2i0XZAiXrWKjEho0EhQe9m2WZ-yhICrpoTKADiWBzMgZCrPQ+A9n5maQb8RqHqY9qWNY5F2KWCAxR48U3J4SUhCEQA */
+  /** @xstate-layout N4IgpgJg5mDOIC5QEsB2AXMGC0AjATgPYCGEAxsbOgHTIQA2YAxANoAMAuoqAA6GzJ0yQqm4gAHogBMAFgCs1OQE42MgGxKAzEqnbVAdgA0IAJ6JNCpTKkAOObYCM+rTYfqAvu+NpMOAiXJKGgA1MHxkADMTNCgAAgBJDCx0Vk4xPgEhETFJBAcrail9Zwc2BwcbGW1NYzMEKTdqTRs1TQcpNTYlNTk5fTVPbyS-IlIKKmpQ8KiYhOGUlgcuJBAMwWFRFdyZfSlqGSVXLs1NNm17WsQnBR6lfVP9Ups2R5lBkB9kvFHAiYAhH7jISoOKJXwpCAiMC0VAAN0IAGtoZ8RgEgdQAWigrMwckEGh4RQsqh2BxSel+OtslsrtomjZNDI2MoXjZnDIbJcEDsZNRduo1B0mS9+vp3ij0N8sf9AdiQXNwUxIahkXDEarwVKxkEMbKqDj5vi1USNqTFsteJTiTlENhdHtTgc+ic2J0GUZTIgeXzZGpBWphcVeuL5lrfjRMdr9fLcRgmGEiPhqDx6MR0BFCPgALYwzX+KMRvXA0GGgmEE0iM1pFZra00hDYJz6ajMmwtfRyeQOZRFLlSHRNcpSV2d9m2OSeLwgVCECBwMQSsNAimZDY2hu2NhNVRKZ2nN0yLmNqR7WyyFQ7QUyeSaEN5ou0BhgFdUzagXKyGzUNsnKztXa2IyR6MnyNiyPcDS9CyPR3l8+bhpMYSRNEMbzC+dbvtILw+o8nTdqoGhSFy5S8gc-Zsl0rS6LeU6LvB6KRuGBrguha71g4PTUIcTp+kUJ6VFybRKIobiMky7RMmKtGhvROoAMKEFmKZgJgECsdSmF5EowltJ2DhiWww7qERnoIIKDiKDI+n6OJVR+gM0n3tKNAAOJYEhZCxAAovgibqW+Ei2t2zaaI8mh+kO5EWFy5mWdZtnhX6k7uEAA */
   context: ({ input }) => {
     return {
       ...input,
@@ -244,17 +187,6 @@ export const intentBroadcastMachine = setup({
     throw new Error("Unexpected output")
   },
 
-  on: {
-    NEW_QUOTE: {
-      guard: "isQuoteOk",
-      actions: [
-        {
-          type: "proposeQuote",
-          params: ({ event }) => event.params.quote.value as AggregatedQuote,
-        },
-      ],
-    },
-  },
   states: {
     idle: {
       always: "Verifying Intent",

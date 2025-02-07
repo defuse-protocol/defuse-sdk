@@ -18,6 +18,8 @@ export function validateAddress(
     case "arbitrum":
     case "turbochain":
     case "aurora":
+    case "gnosis":
+    case "berachain":
       // todo: Do we need to check checksum?
       return /^0x[a-fA-F0-9]{40}$/.test(address)
     case "bitcoin":
