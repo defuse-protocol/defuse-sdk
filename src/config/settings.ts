@@ -62,5 +62,5 @@ export const settings: Settings = {
    * When true, balance updates will be shown immediately after transaction submission,
    * before chain confirmation.
    */
-  optimisticBalanceUpdates: true,
+  optimisticBalanceUpdates: false,
 }

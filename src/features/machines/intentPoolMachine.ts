@@ -94,6 +94,7 @@ type Intent = {
   intentDescription: IntentDescription
   tokenIn: BaseTokenInfo | UnifiedTokenInfo
   tokenOut: BaseTokenInfo | UnifiedTokenInfo
+  intentHash: string | null
 }
 
 export type Events = {
@@ -158,9 +159,6 @@ export const intentPoolMachine = setup({
     clearCheckingIntentRef: assign({
       checkingIntentRef: null,
     }),
-    clearIntentCreationResult: assign({
-      intentCreationResult: null,
-    }),
     spawnIntentStatusAndReplaceActor: assign({
       intentRefs: (
         { context, spawn },
@@ -194,16 +192,47 @@ export const intentPoolMachine = setup({
             context.checkingIntentRef !== null,
             "checkingIntentRef is null"
           )
+          const intent = context.pool.get(context.checkingIntentRef)
+          assert(intent !== undefined, "intent is undefined")
+          const intentHash = intent.intentHash
+          assert(intentHash !== null, "intentHash is null")
           if (intentRef.id === context.checkingIntentRef) {
             intentRef.send({
               type: "APPLY_INTENT_HASH",
               params: {
-                intentHash: context.checkingIntentRef,
+                intentHash,
               },
             })
           }
           return intentRef
         })
+      },
+    }),
+    setIntentCreationResult: assign({
+      intentCreationResult: (
+        _,
+        value: IntentBroadcastMachineOutput | IntentSignMachineOutput
+      ) => value,
+    }),
+    clearIntentCreationResult: assign({ intentCreationResult: null }),
+    setIntentHash: assign({
+      pool: ({ context }, output: IntentBroadcastMachineOutput) => {
+        assert(output?.tag === "ok", "output is not ok")
+        assert(
+          context.executingIntentRef !== null,
+          "executingIntentRef is null"
+        )
+        const intent = context.pool.get(context.executingIntentRef)
+        assert(intent !== undefined, "intent is undefined")
+        return new Map([
+          [
+            context.executingIntentRef,
+            {
+              ...intent,
+              intentHash: output.value.intentHash,
+            },
+          ],
+        ])
       },
     }),
   },
@@ -215,9 +244,10 @@ export const intentPoolMachine = setup({
       }),
     hasExecutingIntent: ({ context }) => context.executingIntentRef !== null,
     hasCheckingIntent: ({ context }) => context.checkingIntentRef !== null,
+    isOk: (_, a: { tag: "err" | "ok" }) => a.tag === "ok",
   },
 }).createMachine({
-  /** @xstate-layout N4IgpgJg5mDOIC5QEsB2AXMGC0AHA9vgDYDEAggCIUD6AkgHIAqAokwNoAMAuoqAbMnTJ8qXiAAeibAEYAbABYAdAE4O0gKwAOAEzS9AZnnz1AdgA0IAJ5T5mlZs3SOp-bM3r1ykwF9vFtJg4BMQk9MwA6tQAigCqAPIsnDxIIPyCwqIpkggGirLKmibark756tqaFtYI2LpKmsrlhaby2vLSPn4gAVjoeIREigCOAK5gY2hQJEliaUIiYtnqHYr6Jhya+lvyJtI6+lWIerKK0vqO6hxb5wWavv4Yvf3Ew2MTqFNs0sl8+ALzmVAS2kShM6nk+g2HFarX06kOCG04JUtnyHW0G3a0nu3UeQQGr3GYEmJHEsHQAENMIoKQAzTAAJwAFJcOABKEg9fEvUZEyYzFJzDKLI5yRRggrSZS3cFS+FWI6KYzaRrOZT6JHSbQmToPQJ9YKDXAjABGRGQsAAFiSICIwIo0AA3fAAa3tXPQACEGfgKRAAMYU8kAJTAtIFv3+wqyR2U2hUJi8Kp2ENaygRhn04vkHDU2oc2v0ZxxHueRtN5qtJLADJ9DMUuCIVNp+AZAFsHXivT6-YGQ2GI6k-ukFjGanITCoNY4ZSZ5OrtAjitJFNo11rlgV9NKvCWu2XFI6a8haZYSYOhaOgYhNFdTrZtRDk7I2kuVmcOpC2so9JtfF1UHwCA4DEUtDVmYcARFGpihOdcGgUXQ5FcRcFXHVwlQcJwtE0ecdXVPd9QPZAICIMAIKjK8JBvWRJ1zNYVQqDcdARWxFE2dwGPOZMtlkQinkNQl3igCiR0BajxwcVddAQ1pjhQhFVFWLD51kLQdh1eR+O5cszQta0PlEqCxycScc2UHZkzkPZ0zQtdlFOAo0WhcEMWcbSDQJI8GRPM9DMFSDo2vBA5wcpwf0KMEPDkWQMw8Ryi0hc49g4WQ+P-IA */
+  /** @xstate-layout N4IgpgJg5mDOIC5QEsB2AXMGC0AHA9vgDYDEAggCIUD6AkgHIAqAokwNoAMAuoqAbMnTJ8qXiAAeibAEYAbABYAdAE4O0gKwAOAEzS9AZnnz1AdgA0IAJ5T5mlZs3SOp-bM3r1ykwF9vFtJg4BMQk9MwA6tQAigCqAPIsnDxIIPyCwqIpkggGirLKmibark756tqaFtYI2LpKmsrlhaby2vLSPn4gAVjoeIREigCOAK5gY2hQJEliaUIiYtnqHYr6Jhya+lvyJtI6+lWIerKK0vqO6hxb5wWavv4Yvf3Ew2MTqFNs0sl8+ALzmVAS2kShM6nk+g2HFarX06kOCG04JUtnyHW0G3a0nu3UeQQGr3GYEmJHEsHQAENMIoKQAzTAAJwAFJcOABKEg9fEvUZEyYzFJzDKLI5yRRggrSZS3cFS+FWI6KYzaRrOZT6JHSbQmToPQJ9YKDXAjABGRGQsAAFiSICIwIo0AA3fAAa3tXPQACEGfgKRAAMYU8kAJTAtIFv3+wqyR3Kik0siRbkTmnajlkCP06qVW2U8mU2gxhYqutx+ueRtN5qtNrtDtQzrd9f13t9AaD6FD4e+sz+6QWMZqhfUimWDg0JmUxyc8uq7SUe0TIJ0862OI9FcUxrNFutHxIYAZPoZW6IVNp+AZAFtm71W37AyGwxHUn2ASKanITCoNY4ZSZ8w1BFimkRRiy1ZYCizaVSw3Q1FEdQ9kFpSwSRfIUByBRBNjsbU9DUHRlFkADKgVREITAvMOGcSEMTUToulQfAIDgMQ4IGXso0wiQpG1fRRz2C5J2nZwERkVwlXHM4zhVXQ9HXPEDQJZAICIMBOP7QEeIQVRtFObRZEuWwkTzaQES1fiANheQ1GI4iEwU8t4N5d4oA099BxkBwwN0BoFDk2RXG0BFVFWcd80M1MdQAxynng7dqz3NzBTfaMsJyDhvxsvMilM2Q9mUYCVVOAo0WhcE6PUWLuUGRCGWQ1CPnctLtJMVMwP0KVVEC2wszMsi01WQL8sLIj1EC9R9F8XwgA */
   id: "intent-pool",
 
   initial: "idle",
@@ -234,7 +264,7 @@ export const intentPoolMachine = setup({
   on: {
     ADD_INTENT: {
       target: ".queueing",
-      actions: "spawnIntentStatusActor",
+      actions: ["clearIntentCreationResult", "spawnIntentStatusActor"],
     },
     NEW_QUOTE: {},
   },
@@ -277,26 +307,36 @@ export const intentPoolMachine = setup({
           const intent = context.pool.get(context.executingIntentRef)
           assert(intent !== undefined, "intent is undefined")
 
-          return {
-            userAddress: intent.userAddress,
-            userChainType: intent.userChainType,
-            nearClient: intent.nearClient,
-            sendNearTransaction: intent.sendNearTransaction,
-            intentOperationParams: intent.intentOperationParams,
-            defuseUserId: intent.defuseUserId,
-            referral: intent.referral,
-            signature: intent.signature,
-            messageToSign: intent.messageToSign,
-            slippageBasisPoints: intent.slippageBasisPoints,
-            quoteToPublish: intent.quoteToPublish,
-            quotes: intent.quotes,
-            intentDescription: intent.intentDescription,
-          }
+          return intent
         },
-        onDone: {
-          target: "verifying",
-          actions: ["setCheckingIntentRef", "clearExecutingIntentRef"],
-        },
+        onDone: [
+          {
+            target: "verifying",
+            guard: { type: "isOk", params: ({ event }) => event.output },
+
+            actions: [
+              {
+                type: "setIntentHash",
+                params: ({
+                  event,
+                }: { event: { output: IntentBroadcastMachineOutput } }) =>
+                  event.output,
+              },
+              "setCheckingIntentRef",
+              "clearExecutingIntentRef",
+            ],
+          },
+          {
+            target: "queueing",
+            actions: [
+              {
+                type: "setIntentCreationResult",
+                params: ({ event }) => event.output,
+              },
+              "clearExecutingIntentRef",
+            ],
+          },
+        ],
         onError: {
           target: "queueing",
           actions: "clearExecutingIntentRef",
