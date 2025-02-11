@@ -53,9 +53,25 @@ export type Events =
   | {
       type: "REQUEST_BALANCE_REFRESH"
       // With optimistic balances enabled, we might have pending deltas
-      // that we need to take into token balance calculation
       params?: { pendingDeltaBalance: BalanceMapping }
     }
+
+/**
+ * @note context.balances - might be either on chain balances or optimistic balances
+ * Optimistic balances are the sum of on chain balances, transit balances (in-flight), and pending delta balances (initiated intents in intent pool)
+ *
+ * Example:
+ * - User has 0 USDC on chain
+ * - User has 100 USDC in transit
+ * - User swaps 100 USDC to 20 NEAR (20 NEAR added to pending delta balance at pool)
+ *
+ * - onchainBalances: { "USDC": 0n, "NEAR": 0n }
+ * - transitBalances: { "USDC": 100n, "NEAR": 0n }
+ * - pendingDeltaBalances: { "USDC": -100n, "NEAR": +20n }
+ *
+ * Resulting balances:
+ * - balances: { "USDC": 0n +100n -100n, "NEAR": 0n +0n +20n }
+ */
 
 export const depositedBalanceMachine = setup({
   types: {
@@ -63,10 +79,10 @@ export const depositedBalanceMachine = setup({
       parentRef: ParentActor
       defuseTokenIds: string[]
       userAccountId: DefuseUserId | null
-      // TODO rename balances to onchainBalances
       balances: BalanceMapping
+      onchainBalances: BalanceMapping
       transitBalances: BalanceMapping
-      optimisticBalances: BalanceMapping
+      pendingDeltaBalances: BalanceMapping
     },
     events: {} as Events | SharedEvents,
     input: {} as Input,
@@ -188,6 +204,8 @@ export const depositedBalanceMachine = setup({
       userAccountId: null,
       balances: {},
       transitBalances: {},
+      onchainBalances: {},
+      pendingDeltaBalances: {},
       parentRef: input.parentRef,
       defuseTokenIds: input.tokenList.flatMap((token) => {
         return isBaseToken(token)
