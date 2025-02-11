@@ -799,6 +799,33 @@ export function getAvailableDepositRoutes(
           network satisfies never
           throw new Error("exhaustive check failed")
       }
+    case ChainType.WebAuthn:
+      switch (network) {
+        case BlockchainEnum.NEAR:
+        case BlockchainEnum.TURBOCHAIN:
+        case BlockchainEnum.AURORA:
+          return {
+            activeDeposit: false,
+            passiveDeposit: false,
+          }
+        case BlockchainEnum.ETHEREUM:
+        case BlockchainEnum.BASE:
+        case BlockchainEnum.ARBITRUM:
+        case BlockchainEnum.BITCOIN:
+        case BlockchainEnum.DOGECOIN:
+        case BlockchainEnum.XRPLEDGER:
+        case BlockchainEnum.ZCASH:
+        case BlockchainEnum.GNOSIS:
+        case BlockchainEnum.BERACHAIN:
+        case BlockchainEnum.SOLANA:
+          return {
+            activeDeposit: false,
+            passiveDeposit: true,
+          }
+        default:
+          network satisfies never
+          throw new Error("exhaustive check failed")
+      }
     default:
       chainTypeFromWallet satisfies never
       throw new Error("exhaustive check failed")
