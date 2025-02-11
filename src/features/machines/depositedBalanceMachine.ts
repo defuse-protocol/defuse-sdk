@@ -46,8 +46,16 @@ type SharedEvents = {
 type ThisActor = ActorRef<Snapshot<unknown>, SharedEvents>
 
 export type Events =
-  | { type: "LOGOUT" | "REQUEST_BALANCE_REFRESH" }
+  | {
+      type: "LOGOUT"
+    }
   | { type: "LOGIN"; params: { userAddress: string; userChainType: ChainType } }
+  | {
+      type: "REQUEST_BALANCE_REFRESH"
+      // With optimistic balances enabled, we might have pending deltas
+      // that we need to take into token balance calculation
+      params?: { pendingDeltaBalance: BalanceMapping }
+    }
 
 export const depositedBalanceMachine = setup({
   types: {
@@ -55,8 +63,10 @@ export const depositedBalanceMachine = setup({
       parentRef: ParentActor
       defuseTokenIds: string[]
       userAccountId: DefuseUserId | null
+      // TODO rename balances to onchainBalances
       balances: BalanceMapping
       transitBalances: BalanceMapping
+      optimisticBalances: BalanceMapping
     },
     events: {} as Events | SharedEvents,
     input: {} as Input,
@@ -184,6 +194,7 @@ export const depositedBalanceMachine = setup({
           ? [token.defuseAssetId]
           : token.groupedTokens.map((t) => t.defuseAssetId)
       }),
+      optimisticBalances: {},
     }
   },
 
