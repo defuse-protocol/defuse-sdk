@@ -70,7 +70,7 @@ export type Context = {
   slippageBasisPoints: number
   intentSignResult: IntentSignMachineOutput | null
   depositedBalanceRef: ActorRefFrom<typeof depositedBalanceMachine>
-  intentPoolRef: ActorRefFrom<typeof intentPoolMachine>
+  intentPoolRef: ActorRefFrom<typeof intentPoolMachine> | null
 }
 
 type PassthroughEvent = {
@@ -289,6 +289,18 @@ export const swapUIMachine = setup({
         },
       }
     }),
+    spawnIntentPoolRef: assign({
+      intentPoolRef: ({ context, spawn, self }) => {
+        const intentPoolRef = spawn("intentPoolActor", {
+          id: "intentPoolRef",
+          input: {
+            parentRef: self,
+            depositedBalanceRef: context.depositedBalanceRef,
+          },
+        })
+        return intentPoolRef
+      },
+    }),
   },
   guards: {
     isQuoteRelevant: ({ context }) => {
@@ -338,15 +350,10 @@ export const swapUIMachine = setup({
         tokenList: input.tokenList,
       },
     }),
-    intentPoolRef: spawn("intentPoolActor", {
-      id: "intentPoolRef",
-      input: {
-        parentRef: self,
-      },
-    }),
+    intentPoolRef: null,
   }),
 
-  entry: ["spawnBackgroundQuoterRef"],
+  entry: ["spawnBackgroundQuoterRef", "spawnIntentPoolRef"],
 
   on: {
     INTENT_SETTLED: {
