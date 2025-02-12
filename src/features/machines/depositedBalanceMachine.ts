@@ -280,9 +280,7 @@ export const depositedBalanceMachine = setup({
               actions: [
                 {
                   type: "logError",
-                  params: (error) => {
-                    // biome-ignore lint/suspicious/noConsole: <explanation>
-                    console.log("Error in fetch balance>>>>", error)
+                  params: () => {
                     return {
                       error: new Error("Error in fetch balance"),
                     }

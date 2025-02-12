@@ -12,8 +12,8 @@ import type { ParentActor } from "./depositedBalanceMachine"
 
 describe("depositedBalanceMachine", () => {
   const defaultActorImpls = {
-    fetchBalanceActor: vi.fn(async ({ parentRef }) => {
-      parentRef.send({
+    fetchBalanceActor: vi.fn(async ({ self }) => {
+      self.send({
         type: "UPDATE_BALANCE_SLICE",
         params: {
           balanceSlice: {
