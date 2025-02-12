@@ -806,6 +806,8 @@ function chainTypeSatisfiesChainName(
     case chainType === ChainType.EVM && chainName === "base":
     case chainType === ChainType.EVM && chainName === "turbochain":
     case chainType === ChainType.EVM && chainName === "aurora":
+    case chainType === ChainType.EVM && chainName === "gnosis":
+    case chainType === ChainType.EVM && chainName === "berachain":
     case chainType === ChainType.Solana && chainName === "solana":
       return true
   }

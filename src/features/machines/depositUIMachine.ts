@@ -176,7 +176,9 @@ export const depositUIMachine = setup({
       return (
         blockchain === "eth" ||
         blockchain === "base" ||
-        blockchain === "arbitrum"
+        blockchain === "arbitrum" ||
+        blockchain === "gnosis" ||
+        blockchain === "berachain"
       )
     },
     isChainSolanaSelected: ({ context }) => {
