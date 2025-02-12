@@ -1,5 +1,6 @@
 import { providers } from "near-api-js"
 import { settings } from "src/config/settings"
+import { logger } from "src/logger"
 import {
   type ActorRef,
   type Snapshot,
@@ -35,7 +36,7 @@ type ParentReceivedEvents = {
     changedTransitBalanceMapping: BalanceMapping
   }
 }
-type ParentActor = ActorRef<Snapshot<unknown>, ParentReceivedEvents>
+export type ParentActor = ActorRef<Snapshot<unknown>, ParentReceivedEvents>
 
 type SharedEvents = {
   type: "UPDATE_BALANCE_SLICE"
@@ -84,6 +85,7 @@ export const depositedBalanceMachine = setup({
       onchainBalances: BalanceMapping
       transitBalances: BalanceMapping
       pendingDeltaBalances: BalanceMapping
+      optimisticBalancesEnabled: boolean
     },
     events: {} as Events | SharedEvents,
     input: {} as Input,
@@ -163,7 +165,7 @@ export const depositedBalanceMachine = setup({
           ...balanceChanged,
         }
 
-        if (settings.optimisticBalanceUpdates) {
+        if (context.optimisticBalancesEnabled) {
           optimisticBalanceChanged = prepareOptimisticBalanceUpdate({
             onchainBalances: onchainBalanceChanged,
             transitBalanceChanged,
@@ -171,7 +173,7 @@ export const depositedBalanceMachine = setup({
           })
         }
 
-        const balances = settings.optimisticBalanceUpdates
+        const balances = context.optimisticBalancesEnabled
           ? optimisticBalanceChanged
           : { ...context.onchainBalances, ...balanceChanged }
 
@@ -214,6 +216,9 @@ export const depositedBalanceMachine = setup({
         return context.pendingDeltaBalances
       },
     }),
+    logError: (_, params: { error: unknown }) => {
+      logger.error(params.error)
+    },
   },
   guards: {
     // TODO: Either use this guard or remove it
@@ -227,7 +232,7 @@ export const depositedBalanceMachine = setup({
     },
   },
 }).createMachine({
-  /** @xstate-layout N4IgpgJg5mDOIC5QTABwPawJYBdICEBDAG0IDsBjMAYgBkB5AcQEkA5AbQAYBdRUDbDizoyfEAA9EAWgCMAZk4A6AOwBOAKwyALJ1UA2ZXLnqANCACe0mQA45ivda2G9WgExyt15VoC+PsygCuAQk5FSKhACuOAAWYGRCFIR4EHRM9ACqACpcvEggQUIiYpIIssaKqsq6Mhqunpw2ymaWZR4qWnWOnHKunH3WfgFomMEQRKSUYBHRcQlYSSnUAEoAogCKGasAylkA+vgAgrSHrADCq3trAGJr2wASuWKFwqL5pTKainK2ejI2tXUyiBrhaVj0dh+7lc6nqnGsek4vn8IECoxSEzC0yisXiiWSkEUACcwAAzEmwGJYMhQAAEACNQlNqBARNNqQA3dAAa2mpLAOAoMUxU2WZKe+RexXeiH+qkU6ms1iRCmqcj0MK0YIQf0UjS06us6gN3j0qkGKLRghCk3COLm+JSxLJFKpNIZTKo1AyAAUACKHLKXI4nc6Xba0ZgXCX8dGvEqIWEyFSfGR-VxqWFG7VSAyKBEyJHKQvGLTqPRDVEja3jT3Y2Z4hYEiCKLAQYg0cSwHAEiKkvBEgAU6k4o4AlCzq2MRXaG-NFoS2x2YwU49LQKUPMmtNoNRDNY5QRZELr9YbjXJTea-CiyOgUPB8lbp3Xnmu3hvpD8lOpVB4EUq1R6C4OZGNY3zWO4qZKoWqiuBWlpThidaKJEZD2o2C4QG+gjxjKbS9Aqf6eA4XicMBWrHggSgaD0Zb6B4nDeEaFrDIUNpYjMuLzs2OG4Hhn46nYGh6OomguMoaiuNoOYwkoSrQv02ieJ4riVs+yG2vW3GOoSJLknAbp0oyWl8UUH4SLK-yVOWYlpk4UkyVRubgUqciAvBMIaloyJseiHFTFxDpNk6S5gGZAmWQgrjWMmnC-jFiJKgaRiUa08h2BCqiqJ0kHGuoqo3j4QA */
+  /** @xstate-layout N4IgpgJg5mDOIC5QTABwPawJYBdICEBDAG0IDsBjMAYgBkB5AcQEkA5AbQAYBdRUDbDizoyfEAA9EAWgCMAZk4A6AOwBOAKwyALDM4A2PQCYAHOsMAaEAE9pM1XMWGDyrZ1VGty43vUBfX5YoArgEJORUioQArjgAFmBkQhSEeBB0TPQAqgAqXLxIIMFCImKSCLJy6oqqym52ZlrGnHaWNuWViuqchmqGJjIDcjp+ASBBmCEQRKSUYJEx8YlYyanUAEoAogCKmRsAytkA+vgAgrQnrADCG4ebAGKbewASeWJFwqIFZTKaipxahi0qhkxh+NWMWlatmMyk6jVUTnU9ns8j0-kCaAmqWm4Tm0TiCSSKUgigATmAAGbk2CxLBkKAAAgARmFZtQICI5nSAG7oADWcwpYBwFFiONma0prwK7xKX0QIIcehqXTkgJkhhq+ihCHs1XU8LkCMMXR0MnRY0xglCMwi+MWRNSZMp1Np9OZrKo1DApNJ6FJilQpBwFP9AFtFEKRWLPWBJRTpfwsR9SgqIYo5D5NPZujo+sYdfIlEMDXplJp-vpGhbxtaprH5gSlisSeSqXA3YyWbaaJkAAoAERO2Rup3OVxue1ozGuicKybloDKWj0xgzakzRlUxk1oJ1shhcOMCJ8yLkqJrVsm4rtC0Jy2JEEUWAgxBo4lgOGJkQpeFJAApdE4YCAEp2SvbEG3te8WyfF83znWVPiXRAzFURRdCRYDDAGbRlD0QtYVqJF1DUMtjG8TM5H8UYyHQFB4AKWtr1jN4F2QiRpDkZQZE6dR+Nqew5Ao9RKn3TNDCPBFjCNY9lHkkYMSKG1cUUKIyGg5tHzYwQU3ldpDAcfiBLcORhNMMTrGkVQlBwzw7AUIY9BkNRL2U+se0bB0H1SHTcD0lCED0BwNCzGQ9E8XptH3Hoqn+Y8eiBCKDX4tysRU2YvJgx9nXbGk6S7ViZXY1MEFw-Uwoi+SEWiqzylXRQKPPDQnBNDwtDSusbzxO8tKdeCwD84oOLKA10Ii3R5NMA0NWUQsjUUYKfAirRVpSiiaN8IA */
   id: "depositedBalance",
 
   initial: "unauthenticated",
@@ -245,6 +250,7 @@ export const depositedBalanceMachine = setup({
           ? [token.defuseAssetId]
           : token.groupedTokens.map((t) => t.defuseAssetId)
       }),
+      optimisticBalancesEnabled: settings.optimisticBalanceUpdates,
     }
   },
 
@@ -268,7 +274,24 @@ export const depositedBalanceMachine = setup({
               }
             },
             onDone: "idle",
-            // todo: handle error
+            onError: {
+              target: "idle",
+
+              actions: [
+                {
+                  type: "logError",
+                  params: (error) => {
+                    // biome-ignore lint/suspicious/noConsole: <explanation>
+                    console.log("Error in fetch balance>>>>", error)
+                    return {
+                      error: new Error("Error in fetch balance"),
+                    }
+                  },
+                },
+              ],
+
+              reenter: true,
+            },
           },
 
           on: {
@@ -333,7 +356,7 @@ export const depositedBalanceMachine = setup({
   },
 })
 
-function prepareOptimisticBalanceUpdate({
+export function prepareOptimisticBalanceUpdate({
   onchainBalances,
   transitBalanceChanged,
   pendingDeltaBalance,
