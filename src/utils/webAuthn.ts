@@ -1,13 +1,7 @@
 import { base58 } from "@scure/base"
+import type { CredentialKey, CurveType } from "../types/webAuthn"
 
-export type ParsedPublicKey = {
-  curveType: CurveType
-  publicKey: Uint8Array
-}
-
-type CurveType = "p256" | "ed25519"
-
-export function parsePublicKey(formattedPublicKey: string): ParsedPublicKey {
+export function parsePublicKey(formattedPublicKey: string): CredentialKey {
   const curveType = getCurveType(formattedPublicKey)
 
   switch (curveType) {
