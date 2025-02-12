@@ -1,53 +1,140 @@
+import type { SupportedChainName } from "src/types/base"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 import {
-  type OutputFrom,
-  SimulatedClock,
   type StateValue,
   createActor,
   fromPromise,
   getNextSnapshot,
+  spawnChild,
 } from "xstate"
-import type { intentSignMachine } from "./intentSignMachine"
-import { swapUIMachine } from "./swapUIMachine"
+import { type Context, swapUIMachine } from "./swapUIMachine"
 
-describe.skip("swapUIMachine", () => {
+describe("swapUIMachine", () => {
   const defaultActorImpls = {
-    formValidation: vi.fn(async (): Promise<boolean> => {
-      return true
+    backgroundQuoterActor: vi.fn(async ({ self }) => {
+      self.send({
+        type: "NEW_QUOTE_INPUT",
+        params: {
+          quoteInput: {
+            amountIn: {
+              amount: 1000000n,
+              decimals: 6,
+            },
+            balances: {
+              BTC: 0n,
+              NEAR: 0n,
+              USDT: 0n,
+            },
+            tokenIn: mockTokenIn,
+            tokenOut: mockTokenOut,
+          },
+          quote: {
+            tag: "ok",
+            value: {
+              expirationTime: new Date().toISOString(),
+              quoteHashes: ["hash"],
+              tokenDeltas: [
+                ["NEAR", -1000000n],
+                ["NEAR", 300000000000000000000000n],
+              ],
+            },
+          },
+        },
+      })
     }),
-    queryQuote: vi.fn(async (): Promise<unknown> => {
-      return {}
-    }),
-    intentSign: async (): Promise<OutputFrom<typeof intentSignMachine>> => {
-      // @ts-expect-error
-      return {}
-    },
   }
 
   const defaultActors = {
-    formValidation: fromPromise(defaultActorImpls.formValidation),
-    queryQuote: fromPromise(defaultActorImpls.queryQuote),
-    intentSign: fromPromise(defaultActorImpls.intentSign),
+    backgroundQuoterActor: fromPromise(defaultActorImpls.backgroundQuoterActor),
   }
 
   const defaultActions = {
     updateUIAmountOut: vi.fn(),
+    spawnBackgroundQuoterRef: spawnChild("backgroundQuoterActor", {
+      id: "backgroundQuoterRef",
+      input: defaultActorImpls.backgroundQuoterActor,
+    }),
   }
 
-  const defaultGuards = {
-    isQuoteRelevant: vi.fn(),
+  const defaultGuards = {}
+
+  const mockTokenIn = {
+    unifiedAssetId: "usdc",
+    decimals: 6,
+    symbol: "USDC",
+    name: "USDC",
+    icon: "icon",
+    groupedTokens: [
+      {
+        defuseAssetId: "nep141:1",
+        address: "1",
+        decimals: 6,
+        icon: "icon",
+        chainId: "",
+        chainIcon: "icon",
+        chainName: "near" as SupportedChainName,
+        routes: [],
+        symbol: "USDC",
+        name: "USDC",
+      },
+    ],
+  }
+  const mockTokenOut = {
+    unifiedAssetId: "near",
+    decimals: 24,
+    symbol: "NEAR",
+    name: "Near",
+    icon: "icon",
+    groupedTokens: [
+      {
+        defuseAssetId: "nep141:2",
+        address: "2",
+        decimals: 24,
+        icon: "icon",
+        chainId: "",
+        chainIcon: "icon",
+        chainName: "near" as SupportedChainName,
+        routes: [],
+        symbol: "NEAR",
+        name: "Near",
+      },
+    ],
   }
 
-  const defaultContext = {
+  const defaultContext: Context = {
     error: null,
     quote: null,
-    outcome: null,
+    formValues: {
+      tokenIn: mockTokenIn,
+      tokenOut: mockTokenOut,
+      amountIn: "",
+    },
+    parsedFormValues: {
+      tokenOut: {
+        address: "2",
+        chainIcon: "icon",
+        chainId: "",
+        chainName: "near",
+        decimals: 24,
+        defuseAssetId: "nep141:2",
+        icon: "icon",
+        name: "Near",
+        routes: [],
+        symbol: "NEAR",
+      },
+      amountIn: null,
+    },
+    intentCreationResult: null,
+    intentRefs: [],
+    tokenList: [],
+    referral: undefined,
+    slippageBasisPoints: 100,
+    intentSignResult: null,
   }
 
   let actors: typeof defaultActors
   let actions: typeof defaultActions
   let guards: typeof defaultGuards
-  let simulatedClock: SimulatedClock
 
   function populateMachine() {
     // @ts-expect-error
@@ -55,26 +142,29 @@ describe.skip("swapUIMachine", () => {
   }
 
   function interpret() {
-    // @ts-expect-error
-    return createActor(populateMachine(), { clock: simulatedClock })
+    return createActor(populateMachine(), {
+      input: {
+        tokenIn: mockTokenIn,
+        tokenOut: mockTokenOut,
+        tokenList: [],
+        referral: undefined,
+      },
+    })
   }
 
   beforeEach(() => {
     actors = { ...defaultActors }
     actions = { ...defaultActions }
     guards = { ...defaultGuards }
-    simulatedClock = new SimulatedClock()
   })
 
-  it.each`
+  it.skip.each`
     initialState      | expectedState           | event      | guards  | context
     ${"editing.idle"} | ${"editing.validating"} | ${"input"} | ${null} | ${null}
   `(
     'should reach "$expectedState" given "$initialState" when the "$event" event occurs',
-    ({ initialState, expectedState, event, guards, context }) => {
-      const machine = swapUIMachine.provide({
-        guards: { ...defaultGuards, ...guards },
-      })
+    ({ initialState, expectedState, event, context }) => {
+      const machine = populateMachine()
 
       const actualState = getNextSnapshot(
         machine,
@@ -82,38 +172,23 @@ describe.skip("swapUIMachine", () => {
           value: parseDotNotation(initialState) as StateValue,
           context: context ?? defaultContext,
         }),
-        { type: event, params: {} }
+        {
+          type: event,
+          params: {
+            tokenIn: mockTokenIn,
+            tokenOut: mockTokenOut,
+            amountIn: "1",
+          },
+        }
       )
 
       expect(actualState.matches(expectedState)).toBeTruthy()
     }
   )
 
-  it("should start in the editing state", () => {
+  it("should start in the idle state", () => {
     const service = interpret().start()
     expect(service.getSnapshot().value).toEqual({ editing: "idle" })
-  })
-
-  it("should set and reset the quote querying error", async () => {
-    // arrange
-    const err = new Error("Something went wrong")
-    defaultActorImpls.queryQuote
-      .mockRejectedValueOnce(err)
-      .mockResolvedValueOnce({})
-    const service = interpret().start()
-
-    // act
-    // @ts-expect-error
-    service.send({ type: "input" })
-    simulatedClock.increment(10000)
-    // give some time for machine to transition
-    await new Promise((resolve) => setTimeout(resolve, 0))
-
-    // assert
-    expect(service.getSnapshot().context.error).toBe(err)
-
-    service.send({ type: "input", params: {} })
-    expect(service.getSnapshot().context.error).toBeNull()
   })
 })
 
