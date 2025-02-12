@@ -1,4 +1,5 @@
 import { providers } from "near-api-js"
+import { settings } from "src/config/settings"
 import {
   type ActorRef,
   type Snapshot,
@@ -138,10 +139,12 @@ export const depositedBalanceMachine = setup({
         params: {
           balanceSlice: BalanceMapping
           transitBalanceSlice: BalanceMapping
+          pendingDeltaBalance: BalanceMapping
         }
       ) => {
         const balanceChanged: BalanceMapping = {}
         const transitBalanceChanged: BalanceMapping = {}
+        let optimisticBalanceChanged: BalanceMapping = {}
 
         for (const [key, val] of Object.entries(params.balanceSlice)) {
           if (context.balances[key] !== val) {
@@ -155,14 +158,33 @@ export const depositedBalanceMachine = setup({
           }
         }
 
+        const onchainBalanceChanged = {
+          ...context.onchainBalances,
+          ...balanceChanged,
+        }
+
+        if (settings.optimisticBalanceUpdates) {
+          optimisticBalanceChanged = prepareOptimisticBalanceUpdate({
+            onchainBalances: onchainBalanceChanged,
+            transitBalanceChanged,
+            pendingDeltaBalance: params.pendingDeltaBalance,
+          })
+        }
+
+        const balances = settings.optimisticBalanceUpdates
+          ? optimisticBalanceChanged
+          : { ...context.onchainBalances, ...balanceChanged }
+
         if (
           Object.keys(balanceChanged).length > 0 ||
           Object.keys(transitBalanceChanged).length > 0
         ) {
           // First update the local state
           enqueue.assign({
-            balances: () => ({ ...context.balances, ...balanceChanged }),
+            balances,
             transitBalances: transitBalanceChanged,
+            onchainBalances: onchainBalanceChanged,
+            pendingDeltaBalances: params.pendingDeltaBalance,
           })
           // Then send the event to the parent
           enqueue(({ context }) => {
@@ -180,6 +202,17 @@ export const depositedBalanceMachine = setup({
     clearBalance: assign({
       balances: {},
       transitBalances: {},
+    }),
+    setPendingDeltaBalances: assign({
+      pendingDeltaBalances: ({ context, event }) => {
+        if (
+          event.type === "REQUEST_BALANCE_REFRESH" &&
+          event.params?.pendingDeltaBalance
+        ) {
+          return event.params.pendingDeltaBalance
+        }
+        return context.pendingDeltaBalances
+      },
     }),
   },
   guards: {
@@ -212,7 +245,6 @@ export const depositedBalanceMachine = setup({
           ? [token.defuseAssetId]
           : token.groupedTokens.map((t) => t.defuseAssetId)
       }),
-      optimisticBalances: {},
     }
   },
 
@@ -244,9 +276,10 @@ export const depositedBalanceMachine = setup({
               target: "refreshing balance",
               actions: {
                 type: "updateBalance",
-                params: ({ event }) => ({
+                params: ({ context, event }) => ({
                   balanceSlice: event.params.balanceSlice,
                   transitBalanceSlice: event.params.transitBalanceSlice,
+                  pendingDeltaBalance: context.pendingDeltaBalances,
                 }),
               },
             },
@@ -269,6 +302,12 @@ export const depositedBalanceMachine = setup({
 
         REQUEST_BALANCE_REFRESH: {
           target: ".refreshing balance",
+          actions: [
+            {
+              type: "setPendingDeltaBalances",
+              params: ({ event }) => event,
+            },
+          ],
           reenter: true,
         },
       },
@@ -293,3 +332,24 @@ export const depositedBalanceMachine = setup({
     },
   },
 })
+
+function prepareOptimisticBalanceUpdate({
+  onchainBalances,
+  transitBalanceChanged,
+  pendingDeltaBalance,
+}: {
+  onchainBalances: BalanceMapping
+  transitBalanceChanged: BalanceMapping
+  pendingDeltaBalance: BalanceMapping
+}): BalanceMapping {
+  const optimisticBalanceChanged: BalanceMapping = {}
+
+  for (const [key, val] of Object.entries(onchainBalances)) {
+    optimisticBalanceChanged[key] =
+      val +
+      (transitBalanceChanged[key] || 0n) +
+      (pendingDeltaBalance[key] || 0n)
+  }
+
+  return optimisticBalanceChanged
+}

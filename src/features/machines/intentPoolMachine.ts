@@ -16,6 +16,7 @@ import type { ChainType } from "../../types/deposit"
 import type { WalletMessage, WalletSignatureResult } from "../../types/swap"
 import { assert } from "../../utils/assert"
 import type { DefuseUserId } from "../../utils/defuse"
+import { getPendingDeltaBalances, isOptimisticIntent } from "../../utils/pool"
 import type { PriorityQueue } from "../../utils/priorityQueue"
 import type { QuoteInput } from "./backgroundQuoterMachine"
 import type { ParentEvents as BackgroundQuoterEvents } from "./backgroundQuoterMachine"
@@ -74,7 +75,7 @@ type PassthroughEvent = {
   }
 }
 
-type Intent = {
+export type Intent = {
   userAddress: string
   userChainType: ChainType
   defuseUserId: DefuseUserId
@@ -127,9 +128,38 @@ export const intentPoolMachine = setup({
         },
       })
 
+      const quoteToPublish = event.params.quoteToPublish
+      assert(
+        quoteToPublish !== null && quoteToPublish.tokenDeltas.length > 0,
+        "quoteToPublish is null"
+      )
+      const tokenDeltaIn = quoteToPublish.tokenDeltas[0]
+      assert(tokenDeltaIn !== undefined, "tokenDeltaIn is undefined")
+      assert(
+        context.depositedBalanceRef !== null,
+        "depositedBalanceRef is null"
+      )
+
+      const intentRefs = [intentRef, ...context.intentRefs]
+      const pool = new Map([[`intent-${id}`, event.params], ...context.pool])
+
+      const isOptimistic = isOptimisticIntent(
+        tokenDeltaIn,
+        context.depositedBalanceRef.getSnapshot().context.onchainBalances
+      )
+      if (isOptimistic) {
+        const pendingDeltaBalance = getPendingDeltaBalances(intentRefs, pool)
+        context.depositedBalanceRef.send({
+          type: "REQUEST_BALANCE_REFRESH",
+          params: {
+            pendingDeltaBalance,
+          },
+        })
+      }
+
       return {
-        intentRefs: [intentRef, ...context.intentRefs],
-        pool: new Map([[`intent-${id}`, event.params]]),
+        intentRefs,
+        pool,
       }
     }),
     setExecutingIntentRef: assign({
@@ -141,7 +171,7 @@ export const intentPoolMachine = setup({
         return findExecutableIntentRef(
           context.intentRefs,
           context.pool,
-          context.depositedBalanceRef.getSnapshot().context.balances
+          context.depositedBalanceRef.getSnapshot().context.onchainBalances
         )
       },
     }),
@@ -210,10 +240,18 @@ export const intentPoolMachine = setup({
     }),
     passthroughEventAndRefreshBalances: emit(
       ({ context }, event: PassthroughEvent) => {
-        context.depositedBalanceRef?.send({
+        assert(
+          context.depositedBalanceRef !== null,
+          "depositedBalanceRef is null"
+        )
+        const pendingDeltaBalance = getPendingDeltaBalances(
+          context.intentRefs,
+          context.pool
+        )
+        context.depositedBalanceRef.send({
           type: "REQUEST_BALANCE_REFRESH",
           params: {
-            pendingDeltaBalance: {},
+            pendingDeltaBalance,
           },
         })
         return event
@@ -226,8 +264,8 @@ export const intentPoolMachine = setup({
         const { value } = intentRef.getSnapshot()
         return value === "pending"
       }),
-    hasExecutingIntent: ({ context }) => context.executingIntentRef !== null,
     hasCheckingIntent: ({ context }) => context.checkingIntentRef !== null,
+    hasExecutingIntent: ({ context }) => context.executingIntentRef !== null,
     isOk: (_, a: { tag: "err" | "ok" }) => a.tag === "ok",
   },
 }).createMachine({
