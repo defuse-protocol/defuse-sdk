@@ -1,5 +1,5 @@
 import { base58 } from "@scure/base"
-import type { CredentialKey, CurveType } from "../types/webAuthn"
+import type { CredentialKey } from "../types/webAuthn"
 
 export function parsePublicKey(formattedPublicKey: string): CredentialKey {
   const curveType = getCurveType(formattedPublicKey)
@@ -42,19 +42,14 @@ export function parsePublicKey(formattedPublicKey: string): CredentialKey {
     }
 
     default:
-      curveType satisfies never
       throw new Error(`Unsupported curve type ${curveType}`)
   }
 }
 
-export function getCurveType(publicKey: string): CurveType {
-  if (publicKey.startsWith("p256:")) {
-    return "p256"
+function getCurveType(formattedPublicKey: string): string {
+  const delim = formattedPublicKey.indexOf(":")
+  if (delim === -1) {
+    throw new Error("Invalid public key format")
   }
-
-  if (publicKey.startsWith("ed25519:")) {
-    return "ed25519"
-  }
-
-  throw new Error(`Unsupported public key type ${publicKey.slice(0, 5)}`)
+  return formattedPublicKey.slice(0, delim)
 }
