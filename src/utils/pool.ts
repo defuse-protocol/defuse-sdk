@@ -3,6 +3,7 @@ import type { BalanceMapping } from "../features/machines/depositedBalanceMachin
 import type { Intent } from "../features/machines/intentPoolMachine"
 import type { intentStatusMachine } from "../features/machines/intentStatusMachine"
 import { assert } from "./assert"
+import { accountSlippageExactIn } from "./tokenUtils"
 
 export function isOptimisticIntent(
   requestedDeltaChanges: [string, bigint],
@@ -25,10 +26,17 @@ export function getPendingDeltaBalances(
     const { value } = intentRef.getSnapshot()
     if (value !== "pending") continue
 
-    const intent = pool.get(intentRef.id)
+    const intent: Intent | undefined = pool.get(intentRef.id)
     assert(intent !== undefined, "intent is undefined")
-    const tokenDeltas = intent.quoteToPublish?.tokenDeltas
-    assert(tokenDeltas !== undefined, "tokenDeltas is undefined")
+    assert(intent.quoteToPublish !== null, "quoteToPublish is null")
+
+    // As we might get less token then expected, and due to fluctuation of the token price,
+    // we apply slippage to the waiting intent to decrease operation amount of token befer
+    // it's settled on chain
+    const tokenDeltas = accountSlippageExactIn(
+      intent.quoteToPublish.tokenDeltas,
+      intent.slippageBasisPoints
+    )
 
     for (const [key, value] of tokenDeltas) {
       if (deltas[key] !== undefined) {
