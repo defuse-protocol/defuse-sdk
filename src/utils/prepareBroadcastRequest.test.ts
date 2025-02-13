@@ -4,7 +4,10 @@ import type {
   NEP413SignatureData,
   SolanaSignatureData,
   WalletMessage,
+  WebAuthnSignatureData,
 } from "../types/swap"
+import { userAddressToDefuseUserId } from "./defuse"
+import { makeInnerSwapMessage, makeSwapMessage } from "./messageFactory"
 import { prepareSwapSignedData } from "./prepareBroadcastRequest"
 
 describe("prepareSwapSignedData()", () => {
@@ -25,6 +28,15 @@ describe("prepareSwapSignedData()", () => {
         Buffer.from(JSON.stringify({ foo: "bar" }), "utf8")
       ),
     },
+    WEBAUTHN: makeSwapMessage({
+      innerMessage: makeInnerSwapMessage({
+        tokenDeltas: [["foo.near", 100n]],
+        signerId: userAddressToDefuseUserId("user.near", "near"),
+        deadlineTimestamp: 1704110400000,
+      }),
+      recipient: "recipient.near",
+      nonce: new Uint8Array(32),
+    }).WEBAUTHN,
   }
 
   it("should return the correct signed data for a NEP141 signature", () => {
@@ -72,6 +84,26 @@ describe("prepareSwapSignedData()", () => {
       prepareSwapSignedData(signature, {
         userAddress: "DRpbCBMxVnDK7maPM5tGv6MvB3v1sRMC86PZ8okm21hy",
         userChainType: "solana",
+      })
+    ).toMatchSnapshot()
+  })
+
+  it("should return the correct signed data for a WebAuthn signature", async () => {
+    const signature: WebAuthnSignatureData = {
+      type: "WEBAUTHN",
+      signatureData: {
+        authenticatorData: Buffer.from("dead", "hex"),
+        clientDataJSON: Buffer.from('{"some": "json"}', "utf-8"),
+        signature: Buffer.from("beef", "hex"),
+        userHandle: Buffer.from("1ee7", "hex"),
+      },
+      signedData: walletMessage.WEBAUTHN,
+    }
+
+    expect(
+      prepareSwapSignedData(signature, {
+        userAddress: "ed25519:Gxa24TGbJu4mqdhW3GbvLXmf4bSEyxVicrtpChDWbgga",
+        userChainType: "webauthn",
       })
     ).toMatchSnapshot()
   })
