@@ -14,9 +14,12 @@ import {
 import type { QuoteResult } from "../../services/quoteService"
 import type { BaseTokenInfo, SupportedChainName } from "../../types/base"
 import type { Events, QuoteInput } from "./backgroundQuoterMachine"
-import { type Context, swapUIMachine } from "./swapUIMachine"
+import type { depositedBalanceMachine } from "./depositedBalanceMachine"
+import type { poaBridgeInfoActor } from "./poaBridgeInfoActor"
+import type { withdrawFormReducer } from "./withdrawFormReducer"
+import { type Context, withdrawUIMachine } from "./withdrawUIMachine"
 
-describe("swapUIMachine", () => {
+describe("withdrawUIMachine", () => {
   const mockTokenIn = {
     unifiedAssetId: "usdc",
     decimals: 6,
@@ -186,32 +189,15 @@ describe("swapUIMachine", () => {
 
   const defaultContext: Context = {
     error: null,
-    quote: null,
-    formValues: {
-      tokenIn: mockTokenIn,
-      tokenOut: mockTokenOut,
-      amountIn: "",
-    },
-    parsedFormValues: {
-      tokenOut: {
-        address: "2",
-        chainIcon: "icon",
-        chainId: "",
-        chainName: "near",
-        decimals: 24,
-        defuseAssetId: "nep141:2",
-        icon: "icon",
-        name: "Near",
-        routes: [],
-        symbol: "NEAR",
-      },
-      amountIn: null,
-    },
     intentCreationResult: null,
     intentRefs: [],
     tokenList: [],
+    depositedBalanceRef: {} as ActorRefFrom<typeof depositedBalanceMachine>,
+    withdrawFormRef: {} as ActorRefFrom<typeof withdrawFormReducer>,
+    poaBridgeInfoRef: {} as ActorRefFrom<typeof poaBridgeInfoActor>,
+    submitDeps: null,
+    preparationOutput: null,
     referral: undefined,
-    slippageBasisPoints: 100,
     intentSignResult: null,
   }
 
@@ -221,7 +207,7 @@ describe("swapUIMachine", () => {
 
   function populateMachine() {
     // @ts-expect-error
-    return swapUIMachine.provide({ actors, actions, guards })
+    return withdrawUIMachine.provide({ actors, actions, guards })
   }
 
   function interpret() {
@@ -235,7 +221,7 @@ describe("swapUIMachine", () => {
     })
   }
 
-  let service: ActorRefFrom<typeof swapUIMachine>
+  let service: ActorRefFrom<typeof withdrawUIMachine>
 
   beforeEach(() => {
     actors = { ...defaultActors }
@@ -250,8 +236,8 @@ describe("swapUIMachine", () => {
   })
 
   it.skip.each`
-    initialState      | expectedState           | event      | guards  | context
-    ${"editing.idle"} | ${"editing.validating"} | ${"input"} | ${null} | ${null}
+    initialState      | expectedState           | event                             | guards  | context
+    ${"editing.idle"} | ${"editing.validating"} | ${"WITHDRAW_FORM_FIELDS_CHANGED"} | ${null} | ${null}
   `(
     'should reach "$expectedState" given "$initialState" when the "$event" event occurs',
     ({ initialState, expectedState, event, context }) => {
@@ -265,11 +251,6 @@ describe("swapUIMachine", () => {
         }),
         {
           type: event,
-          params: {
-            tokenIn: mockTokenIn,
-            tokenOut: mockTokenOut,
-            amountIn: "1",
-          },
         }
       )
 
@@ -281,14 +262,6 @@ describe("swapUIMachine", () => {
     expect(service.getSnapshot().value).toEqual({ editing: "idle" })
   })
 
-  it("should transiting to editing.validating when input event occurs", () => {
-    service.send({
-      type: "input",
-      params: { tokenIn: mockTokenIn, tokenOut: mockTokenOut, amountIn: "1" },
-    })
-    expect(service.getSnapshot().value).toEqual({ editing: "waiting_quote" })
-  })
-
   it("should transiting to idle when NEW_QUOTE event occurs", () => {
     service.send({
       type: "NEW_QUOTE",
@@ -298,6 +271,8 @@ describe("swapUIMachine", () => {
   })
 
   it("should transiting to submitting when submit event occurs", () => {
+    expect(service.getSnapshot().value).toEqual({ editing: "idle" })
+
     service.send({
       type: "NEW_QUOTE",
       params: { quoteInput: mockQuoteInput, quote: mockQuote },
@@ -312,7 +287,10 @@ describe("swapUIMachine", () => {
         sendNearTransaction: vi.fn(() => Promise.resolve({ txHash: "txHash" })),
       },
     })
-    expect(service.getSnapshot().value).toEqual("submitting")
+
+    service.subscribe(() => {
+      expect(service.getSnapshot().value).toEqual("submitting")
+    })
   })
 
   it("when submitting state is reached, `intentSignActor()` should be triggered", () => {
@@ -331,14 +309,16 @@ describe("swapUIMachine", () => {
       },
     })
 
-    expect(service.getSnapshot().value).toEqual("submitting")
-    expect(defaultActorImpls.intentSignActor).toHaveBeenCalled()
+    service.subscribe(() => {
+      expect(service.getSnapshot().value).toEqual("submitting")
+      expect(defaultActorImpls.intentSignActor).toHaveBeenCalled()
+    })
   })
 
   it("should transition to broadcasting when intentSignActor completes", () => {
     let broadcastingReached = false
 
-    const listener = (state: SnapshotFrom<typeof swapUIMachine>) => {
+    const listener = (state: SnapshotFrom<typeof withdrawUIMachine>) => {
       if (state.value === "broadcasting") {
         broadcastingReached = true
         service.stop()
@@ -380,14 +360,16 @@ describe("swapUIMachine", () => {
       },
     })
 
-    expect(defaultActorImpls.intentBroadcastActor).toHaveBeenCalled()
+    service.subscribe(() => {
+      expect(defaultActorImpls.intentBroadcastActor).toHaveBeenCalled()
+    })
   })
 
   it("should transition to idle when intentBroadcastActor completes", () => {
     let broadcastingReached = false
     let idleReached = false
 
-    const listener = (state: SnapshotFrom<typeof swapUIMachine>) => {
+    const listener = (state: SnapshotFrom<typeof withdrawUIMachine>) => {
       if (state.value === "broadcasting") {
         broadcastingReached = true
         expect(broadcastingReached).toBeTruthy()
