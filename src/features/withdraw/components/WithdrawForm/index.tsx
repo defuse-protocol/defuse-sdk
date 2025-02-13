@@ -101,12 +101,18 @@ export const WithdrawForm = ({
 
   const snapshot = WithdrawUIMachineContext.useSelector((snapshot) => snapshot)
 
-  const intentCreationResult = settings.optimisticBalanceUpdates
-    ? snapshot.context.intentPoolRef.getSnapshot().context.intentCreationResult
-    : snapshot.context.intentCreationResult
-  const intentRefs = settings.optimisticBalanceUpdates
-    ? snapshot.context.intentPoolRef.getSnapshot().context.intentRefs
-    : snapshot.context.intentRefs
+  const intentPoolRef =
+    snapshot.context.intentPoolRef !== null
+      ? snapshot.context.intentPoolRef
+      : null
+  const intentCreationResult =
+    settings.optimisticBalanceUpdates && intentPoolRef
+      ? intentPoolRef.getSnapshot().context.intentCreationResult
+      : snapshot.context.intentCreationResult
+  const intentRefs =
+    settings.optimisticBalanceUpdates && intentPoolRef
+      ? intentPoolRef.getSnapshot().context.intentRefs
+      : snapshot.context.intentRefs
 
   const intentSignRef = useSelector(
     actorRef,

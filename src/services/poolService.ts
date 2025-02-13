@@ -4,6 +4,8 @@ import type { ActorRefFrom } from "xstate"
 import type { BalanceMapping } from "../features/machines/depositedBalanceMachine"
 import type { Events as IntentPoolEvents } from "../features/machines/intentPoolMachine"
 import type { intentStatusMachine } from "../features/machines/intentStatusMachine"
+import type { TokenValue } from "../types/base"
+import type { AggregatedQuote } from "./quoteService"
 
 export function findExecutableIntentRef(
   intentRefs: ActorRefFrom<typeof intentStatusMachine>[],
@@ -27,20 +29,59 @@ export function findExecutableIntentRef(
     if (onchainBalance === undefined) {
       continue
     }
-    const tokenDeltas = intent.intentOperationParams.quote?.tokenDeltas
-    if (tokenDeltas === undefined || tokenDeltas.length === 0) {
-      continue
-    }
 
-    const [_, amount] = tokenDeltas[0] as [string, bigint]
-    if (amount === undefined) {
-      continue
+    const intentType = intent.intentOperationParams.type
+    switch (intentType) {
+      case "withdraw": {
+        const directWithdrawalAmount =
+          intent.intentOperationParams.directWithdrawalAmount
+        if (onchainBalance.amount < directWithdrawalAmount.amount) {
+          continue
+        }
+        const quote = intent.intentOperationParams.quote
+        if (quote) {
+          if (!hasEnoughBalanceForQuote(quote, onchainBalance)) {
+            continue
+          }
+        }
+        return intentRef.id
+      }
+      case "swap": {
+        const quote = intent.intentOperationParams.quote
+        if (quote === null) {
+          continue
+        }
+        if (!hasEnoughBalanceForQuote(quote, onchainBalance)) {
+          continue
+        }
+        return intentRef.id
+      }
+      default:
+        intentType satisfies never
+        throw new Error("exhaustive check failed")
     }
-    // Multiply amount by -1n because the amount is negative
-    if (onchainBalance.amount < amount * -1n) {
-      continue
-    }
-    return intentRef.id
   }
+
   return null
+}
+
+function hasEnoughBalanceForQuote(
+  quote: AggregatedQuote,
+  onchainBalance: TokenValue
+) {
+  const tokenDeltas = quote.tokenDeltas
+  if (tokenDeltas.length === 0) {
+    return false
+  }
+  const firstTokenDelta = tokenDeltas[0]
+  if (!firstTokenDelta) {
+    return false
+  }
+  const [_, amount] = firstTokenDelta
+  // First token delta amount is always negative since it represents the token being spent
+  // so that we have to multiply it by -1n to get the absolute value
+  if (onchainBalance.amount < amount * -1n) {
+    return false
+  }
+  return true
 }

@@ -71,7 +71,7 @@ export type Context = {
   preparationOutput: PreparationOutput | null
   referral?: string
   intentSignResult: IntentSignMachineOutput | null
-  intentPoolRef: ActorRefFrom<typeof intentPoolMachine>
+  intentPoolRef: ActorRefFrom<typeof intentPoolMachine> | null
 }
 
 type PassthroughEvent = {
@@ -318,6 +318,18 @@ export const withdrawUIMachine = setup({
         },
       }
     }),
+    spawnIntentPoolRef: assign({
+      intentPoolRef: ({ context, spawn, self }) => {
+        const intentPoolRef = spawn("intentPoolActor", {
+          id: "intentPoolRef",
+          input: {
+            parentRef: self,
+            depositedBalanceRef: context.depositedBalanceRef,
+          },
+        })
+        return intentPoolRef
+      },
+    }),
   },
   guards: {
     isTrue: (_, value: boolean) => value,
@@ -395,15 +407,14 @@ export const withdrawUIMachine = setup({
     preparationOutput: null,
     referral: input.referral,
     intentSignResult: null,
-    intentPoolRef: spawn("intentPoolActor", {
-      id: "intentPoolRef",
-      input: {
-        parentRef: self,
-      },
-    }),
+    intentPoolRef: null,
   }),
 
-  entry: ["spawnBackgroundQuoterRef", "fetchPOABridgeInfo"],
+  entry: [
+    "spawnBackgroundQuoterRef",
+    "fetchPOABridgeInfo",
+    "spawnIntentPoolRef",
+  ],
 
   on: {
     INTENT_SETTLED: {

@@ -128,13 +128,6 @@ export const intentPoolMachine = setup({
         },
       })
 
-      const quoteToPublish = event.params.quoteToPublish
-      assert(
-        quoteToPublish !== null && quoteToPublish.tokenDeltas.length > 0,
-        "quoteToPublish is null"
-      )
-      const tokenDeltaIn = quoteToPublish.tokenDeltas[0]
-      assert(tokenDeltaIn !== undefined, "tokenDeltaIn is undefined")
       assert(
         context.depositedBalanceRef !== null,
         "depositedBalanceRef is null"
@@ -143,10 +136,18 @@ export const intentPoolMachine = setup({
       const intentRefs = [intentRef, ...context.intentRefs]
       const pool = new Map([[`intent-${id}`, event.params], ...context.pool])
 
-      const isOptimistic = isOptimisticIntent(
-        tokenDeltaIn,
-        context.depositedBalanceRef.getSnapshot().context.onchainBalances
-      )
+      const quoteToPublish = event.params.quoteToPublish
+      // We might not have a quoteToPublish if the intent type is withdraw
+      const tokenDeltaIn = quoteToPublish?.tokenDeltas
+        ? quoteToPublish.tokenDeltas[0]
+        : undefined
+
+      const isOptimistic =
+        tokenDeltaIn !== undefined &&
+        isOptimisticIntent(
+          tokenDeltaIn,
+          context.depositedBalanceRef.getSnapshot().context.onchainBalances
+        )
       if (isOptimistic) {
         const pendingDeltaBalance = getPendingDeltaBalances(intentRefs, pool)
         context.depositedBalanceRef.send({
@@ -227,15 +228,13 @@ export const intentPoolMachine = setup({
         )
         const intent = context.pool.get(context.executingIntentRef)
         assert(intent !== undefined, "intent is undefined")
-        return new Map([
-          [
-            context.executingIntentRef,
-            {
-              ...intent,
-              intentHash: output.value.intentHash,
-            },
-          ],
-        ])
+
+        const newPool = new Map(context.pool)
+        newPool.set(context.executingIntentRef, {
+          ...intent,
+          intentHash: output.value.intentHash,
+        })
+        return newPool
       },
     }),
     passthroughEventAndRefreshBalances: emit(
