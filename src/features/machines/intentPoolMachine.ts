@@ -268,7 +268,7 @@ export const intentPoolMachine = setup({
     isOk: (_, a: { tag: "err" | "ok" }) => a.tag === "ok",
   },
 }).createMachine({
-  /** @xstate-layout N4IgpgJg5mDOIC5QEsB2AXMGC0AHA9vgDYDEAggCIUD6AkgHIAqAokwNoAMAuoqAbMnTJ8qXiAAeibAEYAbABYAdAE4O0gKwAOAEzS9AZnnz1AdgA0IAJ5T5mlZs3SOp-bM3r1ykwF9vFtJg4BMQkDCxM1ADKzIyMADLMFJw8SCD8gsKiqZII+g6K8iYmyqpyhcqyyhbWCNja8rKK0sra6hwmeZry2tpuvv4YWOh4hKT0zADq1ACKAKoA8izJYulCImI5BoomHEYmmrJuJrJymtVSPfqKup7yhsX6Tsb9IAFDI8SKAI4ArmB-aCgJGWqVWmQ2iHU0hMin0O00+kRhWkOn05wQeka0jyGg4iLyygcLzeQVG3z+ANQQLY0hSfHwAjWWVAOShShM6juHE0u3q2n06nRrSUylslWh2m58j0xMGpM+v3+YEBJHEsHQAENMIoNQAzTAAJwAFG0OABKEgk4bBIjkpWAkH0xng7KITHbTyOEoOTnNQVWN0FdTaZRtTz6VrSbRFWWBa1k3A-ABGRGQsAAFiqICIwIo0AA3fAAa1zVoAQgb8BqIABjDXqgBKYF1jrSDIy61dGODigOrTcsm0XRRcnR+mUVzu4-kLUlPSHPj8rzl8c+iZTaczVJI2dQpdQhZLeZXFartfr6CbLdpK3bTIhtR66kUUIcGmKmKc-pq0qUKMH0i2PUgGIrG7w2oo66phmKpgAalYGpBRBarq+AGgAtsecantWdaNs2rZgp2LJSHIMITkOzQ+iYM4RkKjzXD0UZQoS44lIuAxxh8tr5nByC6pYKqEXeLokQgCJ2NGehqDoFQ0WcAYIPUVwhvIHDOPoHCSmoi5Lqg+AQHAYhWtxt7OsREgXB0L4oo4pjKJ+zjojIrgFG+2IKI4hiGGB8q2sgEBEGAZkdsylkIKo2hNL0bRAbc0jolGVw0d0hhqLIxz7LIvmrraiqUlAIX3l2Mj5ExmgVN0mKuNo6KqLCb4zrIWiFEU8g5dxkHJtBW6FaCIkWZs7QFBwoomKpcgolUik9MoTSEuKuyctp6gdRBvEGvxglUkVonhfsSj8s0qiyIYCIOei0p2K4rhRiGzWneo+i+L4QA */
+  /** @xstate-layout N4IgpgJg5mDOIC5QEsB2AXMGC0AHA9vgDYDEAggCIUD6AkgHIAqAokwNoAMAuoqAbMnTJ8qXiAAeibAEYATAFYAdADYAHPIDMqgJwB2edu3zpGjQBoQATynLlK1buUdVs6Zoe7dAXy8W0mHAJiEgYWJmoAZWZGRgAZZgpOHiQQfkFhURTJBA1dWUVtW2VtDlNlABZtSvMrKVllfOltDXLlOWkOQ0Nynz8MLHQ8QlJ6ZgB1agBFAFUAeRYksTShETFsuV1FUr1nXIrPZXkLawRsWQ1tRVc1A2dy3XLy2R7fEH8BoeJFAEcAVzB-mgoCRFillhk1lJpE0CvJqlppG1KmpjohnnYquUOOd7hwTHlem9+oFhj9-oDUMC2NJknx8AIVplQOt6op1MVZLoHC5Sq1UQh0QVHhwOA9ynJmrlCe8SV8-gCwECQbJaal6elVllELklLoNAotOcXLJVCZ+YLMdiWro8blZNLiYMgkQyQqlWwNKrwZrmYgnpt1BoGk5ZEZdE1+S18p1ZJ0HrITeUWg6Ak7SbhfgAjIjIWAACyVEBEYEUaAAbvgANYlmXoABCACd8ABDCAAY2bsHQACUwAAzUF0hkQrWnRF2TqIoPhkp67H8+TOLYmQzSVQNJqqdQpj7OxQZ7O5guUkhF1A11AV6ulx2Nlvtzs9-vUr3qxmQ07uRT63QlC6tLEI1qBB5FcRRKg4TRnCKKp5B3WUXQPHN8yVMAGybBt9yIZt0D7fAGwAWxvVM71bDsu17AduCWN8R19U5ylUDhFAeJp5FNOFXAuGoTg0eQ7ERNcqg0NxSiReC0y+Ms0OQPtLHdaiwVon0JEQTRowTPF+KY7QE20fk8nKLYg1FNoqmNDQJM+F080ISsSHELscJLZs+0wBsAApFxFABKEha2sxRbKrQc1WHFTsnqZiLhFUxYxcddyn5aElG4x5lD40DOlaHxXlQfAIDgMQAudGjwqZVTP3Xb9OT-KoKjxfTgJkOFFDXRwTAuZouWUKy92QCAiDAMqNQq7JWiUbE3EOWw5FAni-Rab9hQ4Bp3Eg-i+tJeUKSgEb31HGRyiUAx5HWkSE2kY7+RKb9mkeHQOnDNQXj6VNAqQo8gX2ujKrOaFFDhe55H0aQ9W0aEFpyVqTFUVoUuhLk3C2qSZLk76lPKj8ZAeNrRNB9iNFFfUDITZd6iEhxinXFGbLsn6Ir9NoWNUfU6qu7R110ZKTDZe7jGhNR9WMXKvCAA */
   id: "intent-pool",
 
   initial: "idle",
@@ -307,22 +307,25 @@ export const intentPoolMachine = setup({
 
       always: [
         {
+          guard: "hasExecutingIntent",
+          target: "publishing",
+          reenter: true,
+        },
+        {
           guard: "hasCheckingIntent",
           target: "verifying",
           reenter: true,
         },
         {
-          guard: "hasExecutingIntent",
-          target: "publishing",
-        },
-      ],
-
-      after: {
-        "500": {
-          target: "queueing",
+          target: "hook",
+          reenter: true,
           guard: "hasUnexecutedIntents",
         },
-      },
+        {
+          target: "idle",
+          reenter: true,
+        },
+      ],
     },
 
     publishing: {
@@ -379,9 +382,18 @@ export const intentPoolMachine = setup({
       target: "queueing",
 
       always: {
-        target: "idle",
+        target: "hook",
         actions: ["clearCheckingIntentRef"],
         reenter: true,
+      },
+    },
+
+    hook: {
+      after: {
+        "5000": {
+          target: "queueing",
+          reenter: true,
+        },
       },
     },
   },
