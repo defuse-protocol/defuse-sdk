@@ -164,21 +164,24 @@ function extractSignedChallenge(
  * Gets the actual signature from AuthenticatorAssertionResponse#signature bytes
  */
 export function extractRawSignature(
-  signature_: ArrayBuffer,
+  attestationSignature_: ArrayBuffer | Uint8Array,
   curveType: CurveType
 ): Uint8Array {
-  const signature = new Uint8Array(signature_)
+  const attestationSignature = new Uint8Array(attestationSignature_)
 
   switch (curveType) {
     case "ed25519":
-      return signature
+      return attestationSignature
 
     case "p256": {
       // Refer to the WebAuthn specification for signature attestation types:
       // https://www.w3.org/TR/webauthn-3/#sctn-signature-attestation-types
       // For COSEAlgorithmIdentifier -7 (ES256) and other ECDSA-based algorithms,
       // the signature value MUST be encoded as an ASN.1 DER Ecdsa-Sig-Value.
-      const parsedSignature = AsnParser.parse(signature, ECDSASigValue)
+      const parsedSignature = AsnParser.parse(
+        attestationSignature,
+        ECDSASigValue
+      )
       let rBytes = new Uint8Array(parsedSignature.r)
       let sBytes = new Uint8Array(parsedSignature.s)
       if (shouldRemoveLeadingZero(rBytes)) {
