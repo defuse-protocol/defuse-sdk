@@ -62,6 +62,8 @@ const config = [
       "zustand/vanilla",
       "react/jsx-runtime", // Implicitly required by React JSX transform
       "@noble/curves/secp256k1",
+      "@noble/hashes/sha3",
+      "@noble/hashes/sha256",
     ],
   },
   {

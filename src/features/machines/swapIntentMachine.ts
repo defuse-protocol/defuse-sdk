@@ -34,6 +34,10 @@ import {
   type WalletErrorCode,
   extractWalletErrorCode,
 } from "../../utils/walletErrorExtractor"
+import {
+  parsePublicKey,
+  verifyAuthenticatorAssertion,
+} from "../../utils/webAuthn"
 import type { ParentEvents as BackgroundQuoterEvents } from "./backgroundQuoterMachine"
 import {
   type ErrorCodes as PublicKeyVerifierErrorCodes,
@@ -717,6 +721,12 @@ async function verifyWalletSignature(
         base58.decode(userAddress)
       )
     }
+    case "WEBAUTHN":
+      return verifyAuthenticatorAssertion(
+        signature.signatureData,
+        parsePublicKey(userAddress),
+        signature.signedData.challenge
+      )
     default:
       signatureType satisfies never
       throw new Error("exhaustive check failed")

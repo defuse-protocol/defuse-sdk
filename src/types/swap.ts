@@ -1,5 +1,6 @@
 import type { SendNearTransaction } from "../features/machines/publicKeyVerifierMachine"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "./base"
+import type { DefusePayloadFor_DefuseIntents } from "./defuse-contracts-types"
 import type { ChainType } from "./deposit"
 
 // Message for EVM wallets
@@ -51,16 +52,38 @@ export type SolanaSignatureData = {
   signedData: SolanaMessage
 }
 
+// WebAuthn
+
+export type WebAuthnMessage = {
+  /** Hash that needs to be signed */
+  challenge: Uint8Array
+  /** Underlying payload that will be executed onchain */
+  payload: string
+  /** Parsed payload in case UI needs to display it */
+  parsedPayload: DefusePayloadFor_DefuseIntents
+}
+
+/** Full response of WebAuthn Login */
+export type WebAuthnSignature = AuthenticatorAssertionResponse
+
+export type WebAuthnSignatureData = {
+  type: "WEBAUTHN"
+  signatureData: WebAuthnSignature
+  signedData: WebAuthnMessage
+}
+
 export type WalletMessage = {
   ERC191: ERC191Message
   NEP413: NEP413Message
   SOLANA: SolanaMessage
+  WEBAUTHN: WebAuthnMessage
 }
 
 export type WalletSignatureResult =
   | ERC191SignatureData
   | NEP413SignatureData
   | SolanaSignatureData
+  | WebAuthnSignatureData
 
 export type SwapEvent = {
   type: string
