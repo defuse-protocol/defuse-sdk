@@ -801,7 +801,7 @@ export const withdrawUIMachine = setup({
     pool: {
       entry: ["sendToIntentPoolRefAddIntent"],
       target: "editing",
-      exit: ["clearIntentSignResult"],
+      exit: ["clearIntentSignResult", "emitEventIntentPublished"],
 
       always: {
         target: "editing",
