@@ -3,7 +3,10 @@ node_modules/
 package-lock.json
 
 # Build
-dist/
+# Temporary disabled to use it for npm reference to test optimistic balance in test env
+# dist/
+.rollup.cache/
+
 *.tsbuildinfo
 
 # Logs
