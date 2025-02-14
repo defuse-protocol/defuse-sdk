@@ -6,6 +6,7 @@ import {
   assign,
   emit,
   setup,
+  spawnChild,
 } from "xstate"
 import { findExecutableIntentRef } from "../../services/poolService"
 import type { QuoteResult } from "../../services/quoteService"
@@ -18,7 +19,10 @@ import { assert } from "../../utils/assert"
 import type { DefuseUserId } from "../../utils/defuse"
 import { getPendingDeltaBalances, isOptimisticIntent } from "../../utils/pool"
 import type { PriorityQueue } from "../../utils/priorityQueue"
-import type { QuoteInput } from "./backgroundQuoterMachine"
+import {
+  type QuoteInput,
+  backgroundQuoterMachine,
+} from "./backgroundQuoterMachine"
 import type { ParentEvents as BackgroundQuoterEvents } from "./backgroundQuoterMachine"
 import type { depositedBalanceMachine } from "./depositedBalanceMachine"
 import {
@@ -32,6 +36,7 @@ import type {
 } from "./intentSignMachine"
 import { intentStatusMachine } from "./intentStatusMachine"
 import type { SendNearTransaction } from "./publicKeyVerifierMachine"
+import { requoteActor } from "./requoteActor"
 
 type Context = {
   parentRef: ParentActor
@@ -44,6 +49,7 @@ type Context = {
   executingIntentRef: string | null
   checkingIntentRef: string | null
   depositedBalanceRef: ActorRefFrom<typeof depositedBalanceMachine> | null
+  backgroundQuoteRef: ActorRefFrom<typeof backgroundQuoterMachine> | null
 }
 
 type Input = {
@@ -111,6 +117,8 @@ export const intentPoolMachine = setup({
   actors: {
     intentStatusActor: intentStatusMachine,
     intentBroadcastActor: intentBroadcastMachine,
+    backgroundQuoterActor: backgroundQuoterMachine,
+    requoteActor: requoteActor,
   },
   actions: {
     spawnIntentStatusActor: assign(({ context, event, spawn, self }) => {
@@ -256,6 +264,13 @@ export const intentPoolMachine = setup({
         return event
       }
     ),
+    spawnBackgroundQuoterRef: spawnChild("backgroundQuoterActor", {
+      id: "backgroundQuoterRef",
+      input: ({ self }) => ({
+        parentRef: self,
+        delayMs: settings.quotePollingIntervalMs,
+      }),
+    }),
   },
   guards: {
     hasUnexecutedIntents: ({ context }) =>
@@ -266,9 +281,12 @@ export const intentPoolMachine = setup({
     hasCheckingIntent: ({ context }) => context.checkingIntentRef !== null,
     hasExecutingIntent: ({ context }) => context.executingIntentRef !== null,
     isOk: (_, a: { tag: "err" | "ok" }) => a.tag === "ok",
+    isQuoteExpiredOrOutOfPrice: (_, a: IntentBroadcastMachineOutput) => {
+      return a.tag === "err" && a?.value?.reason === "ERR_CANNOT_PUBLISH_INTENT"
+    },
   },
 }).createMachine({
-  /** @xstate-layout N4IgpgJg5mDOIC5QEsB2AXMGC0AHA9vgDYDEAggCIUD6AkgHIAqAokwNoAMAuoqAbMnTJ8qXiAAeibAEYATAFYAdADYAHPIDMqgJwB2edu3zpGjQBoQATynLlK1buUdVs6Zoe7dAXy8W0mHAJiEgYWJmoAZWZGRgAZZgpOHiQQfkFhURTJBA1dWUVtW2VtDlNlABZtSvMrKVllfOltDXLlOWkOQ0Nynz8MLHQ8QlJ6ZgB1agBFAFUAeRYksTShETFsuV1FUr1nXIrPZXkLawRsWQ1tRVc1A2dy3XLy2R7fEH8BoeJFAEcAVzB-mgoCRFillhk1lJpE0CvJqlppG1KmpjohnnYquUOOd7hwTHlem9+oFhj9-oDUMC2NJknx8AIVplQOt6op1MVZLoHC5Sq1UQh0QVHhwOA9ynJmrlCe8SV8-gCwECQbJaal6elVllELklLoNAotOcXLJVCZ+YLMdiWro8blZNLiYMgkQyQqlWwNKrwZrmYgnpt1BoGk5ZEZdE1+S18p1ZJ0HrITeUWg6Ak7SbhfgAjIjIWAACyVEBEYEUaAAbvgANYlmXoABCACd8ABDCAAY2bsHQACUwAAzUF0hkQrWnRF2TqIoPhkp67H8+TOLYmQzSVQNJqqdQpj7OxQZ7O5guUkhF1A11AV6ulx2Nlvtzs9-vUr3qxmQ07uRT63QlC6tLEI1qBB5FcRRKg4TRnCKKp5B3WUXQPHN8yVMAGybBt9yIZt0D7fAGwAWxvVM71bDsu17AduCWN8R19U5ylUDhFAeJp5FNOFXAuGoTg0eQ7ERNcqg0NxSiReC0y+Ms0OQPtLHdaiwVon0JEQTRowTPF+KY7QE20fk8nKLYg1FNoqmNDQJM+F080ISsSHELscJLZs+0wBsAApFxFABKEha2sxRbKrQc1WHFTsnqZiLhFUxYxcddyn5aElG4x5lD40DOlaHxXlQfAIDgMQAudGjwqZVTP3Xb9OT-KoKjxfTgJkOFFDXRwTAuZouWUKy92QCAiDAMqNQq7JWiUbE3EOWw5FAni-Rab9hQ4Bp3Eg-i+tJeUKSgEb31HGRyiUAx5HWkSE2kY7+RKb9mkeHQOnDNQXj6VNAqQo8gX2ujKrOaFFDhe55H0aQ9W0aEFpyVqTFUVoUuhLk3C2qSZLk76lPKj8ZAeNrRNB9iNFFfUDITZd6iEhxinXFGbLsn6Ir9NoWNUfU6qu7R110ZKTDZe7jGhNR9WMXKvCAA */
+  /** @xstate-layout N4IgpgJg5mDOIC5QEsB2AXMGC0AHA9vgDYDEAggCIUD6AkgHIAqAokwNoAMAuoqAbMnTJ8qXiAAeibAEYATAFYAdADYAHPIDMqgJwB2edu3zpGjQBoQATynLlK1buUdVs6Zoe7dAXy8W0mHAJiEgYWJmoAZWZGRgAZZgpOHiQQfkFhURTJBA1dWUVtW2VtDlNlABZtSvMrKVllfOltDXLlOWkOQ0Nynz8MLHQ8QlJ6ZgB1agBFAFUAeRYksTShETFsuV1FUr1nXIrPZXkLawRsWQ1tRVc1A2dy3XLy2R7fEH8BoeJFAEcAVzB-mgoCRFillhk1lJpE0CvJqlppG1KmpjohnnYquUOOd7hwTHlem9+oFhj9-oDUMC2NJknx8AIVplQOt6op1MVZLoHC5Sq1UQh0QVHhwOA9ynJmrlCe8SV8-gCwECQbJaal6elVllELklLoNAotOcXLJVCZ+YLMdiWro8blZNLiYMgkQyQqlWwNKrwZrmYgnpt1BoGk5ZEZdE1+S18p1ZJ0HrITeUWg6Ak7SbhfgAjIjIWAACyVEBEYEUaAAbvgANYlmXoABCACd8ABDCAAY2bsHQACUwAAzUF0hkQrWnRF2TqIoPhkp67H8+TOLYmQzSVQNJqqdQpj7OxQZ7O5guUkhF1A11AV6ulx2Nlvtzs9-vUr3qxmQ05qaSKJNb0NrnRF20Bc8kUTQEz1G1-VsHdZRdA8c3zQtixvK8L1TO9Ww7LtewHFUljfEdfVOBx8nODhDlUbFCio2RzScApVBaaF9HkBN5HXWC0y+BCjyVMAGybBt9yIZt0D7fAGwAWxvDCmywx9cMHNVhx9CQpHKKjFD1Aw3HkNoOEXaRzQeH8DEMVxWhaPEuM+F0ywE5A+0sd1uAI1SmXUhBwK2BM8X0qjtATYDagQPJyi2INRTaKpjQ0Wy9zzQhKxIcQuzEktmz7TAGwACkXEUAEoSFrOzFCSqtlO9TzsnqDhFAuEVTFjFx13KfloSUC4Wis+Q2M6VoEtJBswD+fAhBPAShJEsSJOkxQRrGzAlLcsFCLU7JsAMDRFGkcNpFaLFbA0eRdEjXRLhMVRyjhe4go0NwXleVB8AgOAxFK513I1GqpCC+ryMo6i1HnUKzjxXaHAM06SmMbxXk+0lkAgIgwG+99R1aJRsTcQ5bDkNiahOJMIp6kUGncQz9KGuVyUVSl0aIryZBusCjEph6EwOo5QpKBrmkeHQOnDNQXj6VMyt4pCGbWjyPzOaEwMefR9D2i5oSJ7U4V2rRWk6ljTXkGn7Mc5ygUZjaoVMzrRWMDiNFFfV+TyaM5DaHQoe0TiEcdMqKsrC3foQPXtKY0NtgOr3lDO0KNbZAXjGhNR9WMY2FtG35xvN2WfvljjLmKWxQxNc5wx54nNDA0putFe5ESerwgA */
   id: "intent-pool",
 
   initial: "idle",
@@ -281,7 +299,10 @@ export const intentPoolMachine = setup({
     checkingIntentRef: null,
     executingIntentRef: null,
     depositedBalanceRef: input.depositedBalanceRef,
+    backgroundQuoteRef: null,
   }),
+
+  entry: ["spawnBackgroundQuoterRef"],
 
   on: {
     ADD_INTENT: {
@@ -360,6 +381,14 @@ export const intentPoolMachine = setup({
             ],
           },
           {
+            target: "requoting",
+            guard: {
+              type: "isQuoteExpiredOrOutOfPrice",
+              params: ({ event }) => event.output,
+            },
+            actions: ["clearExecutingIntentRef"],
+          },
+          {
             target: "queueing",
             actions: [
               {
@@ -391,6 +420,44 @@ export const intentPoolMachine = setup({
     hook: {
       after: {
         "5000": {
+          target: "queueing",
+          reenter: true,
+        },
+      },
+    },
+
+    requoting: {
+      invoke: {
+        id: "requoteRef",
+        src: "requoteActor",
+
+        input: ({ context }) => {
+          assert(
+            context.executingIntentRef !== null,
+            "executingIntentRef is null"
+          )
+          const intent = context.pool.get(context.executingIntentRef)
+          assert(intent !== undefined, "intent is undefined")
+          assert(
+            context.backgroundQuoteRef !== null,
+            "backgroundQuoteRef is null"
+          )
+          assert(
+            context.depositedBalanceRef !== null,
+            "depositedBalanceRef is null"
+          )
+          return {
+            quoteParams: {
+              intentDescription: intent.intentDescription,
+              balances:
+                context.depositedBalanceRef.getSnapshot().context
+                  .onchainBalances,
+            },
+            backgroundQuoteRef: context.backgroundQuoteRef,
+          }
+        },
+
+        onError: {
           target: "queueing",
           reenter: true,
         },
