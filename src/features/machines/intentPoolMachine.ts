@@ -1,4 +1,5 @@
 import type { providers } from "near-api-js"
+import { settings } from "src/config/settings"
 import {
   type ActorRef,
   type ActorRefFrom,
@@ -17,7 +18,7 @@ import type { ChainType } from "../../types/deposit"
 import type { WalletMessage, WalletSignatureResult } from "../../types/swap"
 import { assert } from "../../utils/assert"
 import type { DefuseUserId } from "../../utils/defuse"
-import { getPendingDeltaBalances, isOptimisticIntent } from "../../utils/pool"
+import { getPendingDeltaBalances } from "../../utils/pool"
 import type { PriorityQueue } from "../../utils/priorityQueue"
 import {
   type QuoteInput,
@@ -144,27 +145,14 @@ export const intentPoolMachine = setup({
       const intentRefs = [intentRef, ...context.intentRefs]
       const pool = new Map([[`intent-${id}`, event.params], ...context.pool])
 
-      const quoteToPublish = event.params.quoteToPublish
-      // We might not have a quoteToPublish if the intent type is withdraw
-      const tokenDeltaIn = quoteToPublish?.tokenDeltas
-        ? quoteToPublish.tokenDeltas[0]
-        : undefined
+      const pendingDeltaBalance = getPendingDeltaBalances(intentRefs, pool)
 
-      const isOptimistic =
-        tokenDeltaIn !== undefined &&
-        isOptimisticIntent(
-          tokenDeltaIn,
-          context.depositedBalanceRef.getSnapshot().context.onchainBalances
-        )
-      if (isOptimistic) {
-        const pendingDeltaBalance = getPendingDeltaBalances(intentRefs, pool)
-        context.depositedBalanceRef.send({
-          type: "REQUEST_BALANCE_REFRESH",
-          params: {
-            pendingDeltaBalance,
-          },
-        })
-      }
+      context.depositedBalanceRef.send({
+        type: "REQUEST_BALANCE_REFRESH",
+        params: {
+          pendingDeltaBalance,
+        },
+      })
 
       return {
         intentRefs,

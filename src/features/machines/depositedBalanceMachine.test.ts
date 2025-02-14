@@ -6,8 +6,14 @@ import {
   fromPromise,
   getNextSnapshot,
 } from "xstate"
-import { prepareOptimisticBalanceUpdate } from "./depositedBalanceMachine"
-import { depositedBalanceMachine } from "./depositedBalanceMachine"
+import {
+  prepareOptimisticBalanceUpdate,
+  properlyCalculateBalanceChanges,
+} from "./depositedBalanceMachine"
+import {
+  type Context,
+  depositedBalanceMachine,
+} from "./depositedBalanceMachine"
 import type { ParentActor } from "./depositedBalanceMachine"
 
 describe("depositedBalanceMachine", () => {
@@ -175,6 +181,110 @@ describe("prepareOptimisticBalanceUpdate", () => {
       NEAR: 1500000000000000000000000n,
       USDT: 50000n,
     })
+  })
+})
+
+describe("properlyCalculateBalanceChanges", () => {
+  const defaultContext = {
+    balances: { BTC: 0n, NEAR: 0n, USDT: 0n },
+    transitBalances: { BTC: 0n, NEAR: 0n, USDT: 0n },
+    onchainBalances: { BTC: 0n, NEAR: 0n, USDT: 0n },
+  } as unknown as Context
+
+  const defaultBalance = {
+    BTC: 0n,
+    NEAR: 0n,
+    USDT: 0n,
+  }
+
+  const defaultOptimisticBalancesEnabled = true
+
+  it("should return onchain balances if optimistic balances are disabled", () => {
+    const balanceSlice = {
+      BTC: 0n,
+      NEAR: 0n,
+      USDT: 0n,
+    }
+    const transitBalanceSlice = {
+      BTC: 0n,
+      NEAR: 0n,
+      USDT: 10000n,
+    }
+    const pendingDeltaBalance = {
+      NEAR: 5n,
+      USDT: -10000n,
+    }
+
+    const { balances } = properlyCalculateBalanceChanges({
+      context: { ...defaultContext, optimisticBalancesEnabled: false },
+      balances: defaultBalance,
+      balanceSlice,
+      transitBalanceSlice,
+      pendingDeltaBalance,
+      optimisticBalancesEnabled: false,
+    })
+    expect(balances).toEqual(defaultBalance)
+  })
+
+  it("should return balances withing count pending delta updates", () => {
+    const balanceSlice = {
+      BTC: 10000n,
+      NEAR: 0n,
+      USDT: 0n,
+    }
+    const transitBalanceSlice = {
+      BTC: 0n,
+      NEAR: 0n,
+      USDT: 10000n,
+    }
+    const pendingDeltaBalance = {
+      NEAR: 5n,
+      USDT: -10000n,
+    }
+
+    const { balances } = properlyCalculateBalanceChanges({
+      context: defaultContext,
+      balances: defaultBalance,
+      balanceSlice,
+      transitBalanceSlice: transitBalanceSlice,
+      pendingDeltaBalance,
+      optimisticBalancesEnabled: defaultOptimisticBalancesEnabled,
+    })
+
+    expect(balances).toEqual({
+      BTC: 10000n,
+      NEAR: 5n,
+      USDT: 0n,
+    })
+  })
+
+  it("should throw an error if the optimistic balance is negative", () => {
+    const balanceSlice = {
+      BTC: 0n,
+      NEAR: 1n,
+      USDT: 0n,
+    }
+    const transitBalanceSlice = {
+      BTC: 0n,
+      NEAR: 0n,
+      USDT: 50000n,
+    }
+    const pendingDeltaBalance = {
+      NEAR: -1n,
+      USDT: -100000n,
+      BTC: 20000n,
+    }
+
+    expect(() => {
+      properlyCalculateBalanceChanges({
+        context: defaultContext,
+        balances: defaultBalance,
+        balanceSlice,
+        transitBalanceSlice: transitBalanceSlice,
+        pendingDeltaBalance,
+        optimisticBalancesEnabled: defaultOptimisticBalancesEnabled,
+      })
+    }).toThrow("Optimistic balance is negative")
   })
 })
 

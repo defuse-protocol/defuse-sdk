@@ -22,6 +22,16 @@ import {
 } from "../../utils/defuse"
 import { isBaseToken } from "../../utils/token"
 
+export type Context = {
+  parentRef: ParentActor
+  defuseTokenIds: string[]
+  userAccountId: DefuseUserId | null
+  balances: BalanceMapping
+  onchainBalances: BalanceMapping
+  transitBalances: BalanceMapping
+  pendingDeltaBalances: BalanceMapping
+  optimisticBalancesEnabled: boolean
+}
 export interface Input {
   parentRef: ParentActor
   tokenList: (BaseTokenInfo | UnifiedTokenInfo)[]
@@ -77,16 +87,7 @@ export type Events =
 
 export const depositedBalanceMachine = setup({
   types: {
-    context: {} as {
-      parentRef: ParentActor
-      defuseTokenIds: string[]
-      userAccountId: DefuseUserId | null
-      balances: BalanceMapping
-      onchainBalances: BalanceMapping
-      transitBalances: BalanceMapping
-      pendingDeltaBalances: BalanceMapping
-      optimisticBalancesEnabled: boolean
-    },
+    context: {} as Context,
     events: {} as Events | SharedEvents,
     input: {} as Input,
   },
@@ -144,48 +145,25 @@ export const depositedBalanceMachine = setup({
           pendingDeltaBalance: BalanceMapping
         }
       ) => {
-        const balanceChanged: BalanceMapping = {}
-        const transitBalanceChanged: BalanceMapping = {}
-        let optimisticBalanceChanged: BalanceMapping = {}
-
-        for (const [key, val] of Object.entries(params.balanceSlice)) {
-          if (context.balances[key] !== val) {
-            balanceChanged[key] = val
-          }
-        }
-
-        for (const [key, val] of Object.entries(params.transitBalanceSlice)) {
-          if (context.transitBalances[key] !== val) {
-            transitBalanceChanged[key] = val
-          }
-        }
-
-        const onchainBalanceChanged = {
-          ...context.onchainBalances,
-          ...balanceChanged,
-        }
-
-        if (context.optimisticBalancesEnabled) {
-          optimisticBalanceChanged = prepareOptimisticBalanceUpdate({
-            onchainBalances: onchainBalanceChanged,
-            transitBalanceChanged,
+        const { balances, transitBalances, onchainBalances } =
+          properlyCalculateBalanceChanges({
+            context,
+            balances: context.balances,
+            balanceSlice: params.balanceSlice,
+            transitBalanceSlice: params.transitBalanceSlice,
             pendingDeltaBalance: params.pendingDeltaBalance,
+            optimisticBalancesEnabled: context.optimisticBalancesEnabled,
           })
-        }
-
-        const balances = context.optimisticBalancesEnabled
-          ? optimisticBalanceChanged
-          : { ...context.onchainBalances, ...balanceChanged }
 
         if (
-          Object.keys(balanceChanged).length > 0 ||
-          Object.keys(transitBalanceChanged).length > 0
+          Object.keys(onchainBalances).length > 0 ||
+          Object.keys(transitBalances).length > 0
         ) {
           // First update the local state
           enqueue.assign({
             balances,
-            transitBalances: transitBalanceChanged,
-            onchainBalances: onchainBalanceChanged,
+            transitBalances,
+            onchainBalances,
             pendingDeltaBalances: params.pendingDeltaBalance,
           })
           // Then send the event to the parent
@@ -193,8 +171,8 @@ export const depositedBalanceMachine = setup({
             context.parentRef.send({
               type: "BALANCE_CHANGED",
               params: {
-                changedBalanceMapping: balanceChanged,
-                changedTransitBalanceMapping: transitBalanceChanged,
+                changedBalanceMapping: balances,
+                changedTransitBalanceMapping: transitBalances,
               },
             })
           })
@@ -354,23 +332,71 @@ export const depositedBalanceMachine = setup({
   },
 })
 
-export function prepareOptimisticBalanceUpdate({
-  onchainBalances,
-  transitBalanceChanged,
-  pendingDeltaBalance,
-}: {
+export function prepareOptimisticBalanceUpdate(params: {
   onchainBalances: BalanceMapping
   transitBalanceChanged: BalanceMapping
   pendingDeltaBalance: BalanceMapping
 }): BalanceMapping {
   const optimisticBalanceChanged: BalanceMapping = {}
 
-  for (const [key, val] of Object.entries(onchainBalances)) {
-    optimisticBalanceChanged[key] =
+  for (const [key, val] of Object.entries(params.onchainBalances)) {
+    const sum =
       val +
-      (transitBalanceChanged[key] || 0n) +
-      (pendingDeltaBalance[key] || 0n)
+      (params.transitBalanceChanged[key] || 0n) +
+      (params.pendingDeltaBalance[key] || 0n)
+    if (sum < 0n) {
+      throw new Error("Optimistic balance is negative")
+    }
+    optimisticBalanceChanged[key] = sum
   }
 
   return optimisticBalanceChanged
+}
+
+export function properlyCalculateBalanceChanges(params: {
+  context: Context
+  balances: BalanceMapping
+  balanceSlice: BalanceMapping
+  transitBalanceSlice: BalanceMapping
+  pendingDeltaBalance: BalanceMapping
+  optimisticBalancesEnabled: boolean
+}): {
+  balances: BalanceMapping
+  transitBalances: BalanceMapping
+  onchainBalances: BalanceMapping
+} {
+  const onchainBalanceChanged: BalanceMapping = {}
+  const transitBalanceChanged: BalanceMapping = {}
+  const optimisticBalanceChanged: BalanceMapping = {}
+
+  for (const [key, val] of Object.entries(params.balanceSlice)) {
+    onchainBalanceChanged[key] = val ?? 0n
+  }
+
+  for (const [key, val] of Object.entries(params.transitBalanceSlice)) {
+    if (params.context.transitBalances[key] !== val) {
+      transitBalanceChanged[key] = val
+    }
+  }
+
+  for (const [key, val] of Object.entries(onchainBalanceChanged)) {
+    if (params.pendingDeltaBalance[key] !== val) {
+      optimisticBalanceChanged[key] = val
+    }
+    optimisticBalanceChanged[key] = 0n
+  }
+
+  const balances = params.optimisticBalancesEnabled
+    ? prepareOptimisticBalanceUpdate({
+        onchainBalances: onchainBalanceChanged,
+        transitBalanceChanged,
+        pendingDeltaBalance: params.pendingDeltaBalance,
+      })
+    : { ...params.context.onchainBalances, ...onchainBalanceChanged }
+
+  return {
+    balances,
+    transitBalances: transitBalanceChanged,
+    onchainBalances: onchainBalanceChanged,
+  }
 }
