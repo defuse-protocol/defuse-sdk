@@ -58,9 +58,8 @@ export const settings: Settings = {
     berachain: "https://rpc.berachain.com",
   },
   /**
-   * Feature flag for optimistic balance updates.
-   * When true, balance updates will be shown immediately after transaction submission,
-   * before chain confirmation.
+   * When `true`, balance updates will be shown immediately after intent submission,
+   * before transaction settlement.
    */
-  optimisticBalanceUpdates: false,
+  optimisticBalanceUpdates: true,
 }
