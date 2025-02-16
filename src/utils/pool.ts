@@ -28,24 +28,52 @@ export function getPendingDeltaBalances(
 
     const intent: Intent | undefined = pool.get(intentRef.id)
     assert(intent !== undefined, "intent is undefined")
-    assert(intent.quoteToPublish !== null, "quoteToPublish is null")
 
-    // As we might get less token then expected, and due to fluctuation of the token price,
-    // we apply slippage to the waiting intent to decrease operation amount of token befer
-    // it's settled on chain
-    const tokenDeltas = accountSlippageExactIn(
-      intent.quoteToPublish.tokenDeltas,
-      intent.slippageBasisPoints
-    )
+    if (
+      intent.intentDescription.type === "withdraw" &&
+      intent.quoteToPublish === null
+    ) {
+      const tokenDeltas = createDeltasFromDirectWithdraw(intent)
+      for (const [key, value] of Object.entries(tokenDeltas)) {
+        if (deltas[key] !== undefined) {
+          deltas[key] += value
+        } else {
+          deltas[key] = value
+        }
+      }
+    }
 
-    for (const [key, value] of tokenDeltas) {
-      if (deltas[key] !== undefined) {
-        deltas[key] += value
-      } else {
-        deltas[key] = value
+    if (intent.quoteToPublish !== null) {
+      // As we might get less token then expected, and due to fluctuation of the token price,
+      // we apply slippage to the waiting intent to decrease operation amount of token befer
+      // it's settled on chain
+      const tokenDeltas = accountSlippageExactIn(
+        intent.quoteToPublish.tokenDeltas,
+        intent.slippageBasisPoints
+      )
+
+      for (const [key, value] of tokenDeltas) {
+        if (deltas[key] !== undefined) {
+          deltas[key] += value
+        } else {
+          deltas[key] = value
+        }
       }
     }
   }
 
   return deltas
+}
+
+function createDeltasFromDirectWithdraw(
+  intent: Intent
+): Record<string, bigint> {
+  assert(
+    intent.intentDescription.type === "withdraw",
+    "withdraw intent expected"
+  )
+  return {
+    [intent.intentOperationParams.tokenOut.defuseAssetId]:
+      -intent.intentDescription.amountWithdrawn.amount,
+  }
 }

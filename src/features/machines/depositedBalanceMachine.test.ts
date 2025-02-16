@@ -27,7 +27,7 @@ describe("depositedBalanceMachine", () => {
             NEAR: 0n,
             USDT: 0n,
           },
-          transitBalanceSlice: {
+          transitBalances: {
             BTC: 10000n,
             NEAR: 0n,
             USDT: 0n,
@@ -130,20 +130,20 @@ describe("prepareOptimisticBalanceUpdate", () => {
       NEAR: 0n,
       USDT: 0n,
     }
-    const transitBalanceSlice = {
+    const transitBalances = {
       BTC: 10000n,
       NEAR: 0n,
       USDT: 0n,
     }
     // Swap 0.0001 BTC to 3 NEAR
-    const pendingDeltaBalance = {
+    const pendingDeltaBalances = {
       BTC: -10000n,
       NEAR: 3000000000000000000000000n,
     }
     const optimisticBalanceChanged = prepareOptimisticBalanceUpdate({
       onchainBalances,
-      transitBalanceChanged: transitBalanceSlice,
-      pendingDeltaBalance,
+      transitBalances,
+      pendingDeltaBalances,
     })
 
     expect(optimisticBalanceChanged).toEqual({
@@ -165,15 +165,15 @@ describe("prepareOptimisticBalanceUpdate", () => {
       USDT: 0n,
     }
     // Swap half of 0.0001 BTC to 1.5 NEAR and the other half to 0.5 USDT
-    const pendingDeltaBalance = {
+    const pendingDeltaBalances = {
       BTC: -10000n,
       NEAR: 1500000000000000000000000n,
       USDT: 50000n,
     }
     const optimisticBalanceChanged = prepareOptimisticBalanceUpdate({
       onchainBalances,
-      transitBalanceChanged: transitBalanceSlice,
-      pendingDeltaBalance,
+      transitBalances: transitBalanceSlice,
+      pendingDeltaBalances,
     })
 
     expect(optimisticBalanceChanged).toEqual({
@@ -205,12 +205,12 @@ describe("properlyCalculateBalanceChanges", () => {
       NEAR: 0n,
       USDT: 0n,
     }
-    const transitBalanceSlice = {
+    const transitBalances = {
       BTC: 0n,
       NEAR: 0n,
       USDT: 10000n,
     }
-    const pendingDeltaBalance = {
+    const pendingDeltaBalances = {
       NEAR: 5n,
       USDT: -10000n,
     }
@@ -219,8 +219,8 @@ describe("properlyCalculateBalanceChanges", () => {
       context: { ...defaultContext, optimisticBalancesEnabled: false },
       balances: defaultBalance,
       balanceSlice,
-      transitBalanceSlice,
-      pendingDeltaBalance,
+      transitBalances,
+      pendingDeltaBalances,
       optimisticBalancesEnabled: false,
     })
     expect(balances).toEqual(defaultBalance)
@@ -232,12 +232,12 @@ describe("properlyCalculateBalanceChanges", () => {
       NEAR: 0n,
       USDT: 0n,
     }
-    const transitBalanceSlice = {
+    const transitBalances = {
       BTC: 0n,
       NEAR: 0n,
       USDT: 10000n,
     }
-    const pendingDeltaBalance = {
+    const pendingDeltaBalances = {
       NEAR: 5n,
       USDT: -10000n,
     }
@@ -246,8 +246,8 @@ describe("properlyCalculateBalanceChanges", () => {
       context: defaultContext,
       balances: defaultBalance,
       balanceSlice,
-      transitBalanceSlice: transitBalanceSlice,
-      pendingDeltaBalance,
+      transitBalances,
+      pendingDeltaBalances,
       optimisticBalancesEnabled: defaultOptimisticBalancesEnabled,
     })
 
@@ -264,12 +264,12 @@ describe("properlyCalculateBalanceChanges", () => {
       NEAR: 1n,
       USDT: 0n,
     }
-    const transitBalanceSlice = {
+    const transitBalances = {
       BTC: 0n,
       NEAR: 0n,
       USDT: 50000n,
     }
-    const pendingDeltaBalance = {
+    const pendingDeltaBalances = {
       NEAR: -1n,
       USDT: -100000n,
       BTC: 20000n,
@@ -280,8 +280,8 @@ describe("properlyCalculateBalanceChanges", () => {
         context: defaultContext,
         balances: defaultBalance,
         balanceSlice,
-        transitBalanceSlice: transitBalanceSlice,
-        pendingDeltaBalance,
+        transitBalances,
+        pendingDeltaBalances,
         optimisticBalancesEnabled: defaultOptimisticBalancesEnabled,
       })
     }).toThrow("Optimistic balance is negative")

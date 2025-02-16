@@ -52,7 +52,7 @@ type SharedEvents = {
   type: "UPDATE_BALANCE_SLICE"
   params: {
     balanceSlice: BalanceMapping
-    transitBalanceSlice: BalanceMapping
+    transitBalances: BalanceMapping
   }
 }
 type ThisActor = ActorRef<Snapshot<unknown>, SharedEvents>
@@ -123,7 +123,7 @@ export const depositedBalanceMachine = setup({
           type: "UPDATE_BALANCE_SLICE",
           params: {
             balanceSlice: balance,
-            transitBalanceSlice: transitBalances,
+            transitBalances,
           },
         })
       }
@@ -141,30 +141,26 @@ export const depositedBalanceMachine = setup({
         { enqueue, context },
         params: {
           balanceSlice: BalanceMapping
-          transitBalanceSlice: BalanceMapping
-          pendingDeltaBalance: BalanceMapping
+          transitBalances: BalanceMapping
+          pendingDeltaBalances: BalanceMapping
         }
       ) => {
-        const { balances, transitBalances, onchainBalances } =
-          properlyCalculateBalanceChanges({
-            context,
-            balances: context.balances,
-            balanceSlice: params.balanceSlice,
-            transitBalanceSlice: params.transitBalanceSlice,
-            pendingDeltaBalance: params.pendingDeltaBalance,
-            optimisticBalancesEnabled: context.optimisticBalancesEnabled,
-          })
+        const { balances, onchainBalances } = properlyCalculateBalanceChanges({
+          context,
+          balances: context.balances,
+          balanceSlice: params.balanceSlice,
+          transitBalances: params.transitBalances,
+          pendingDeltaBalances: params.pendingDeltaBalances,
+          optimisticBalancesEnabled: context.optimisticBalancesEnabled,
+        })
 
-        if (
-          Object.keys(onchainBalances).length > 0 ||
-          Object.keys(transitBalances).length > 0
-        ) {
+        if (Object.keys(onchainBalances).length > 0) {
           // First update the local state
           enqueue.assign({
             balances,
-            transitBalances,
+            transitBalances: params.transitBalances,
             onchainBalances,
-            pendingDeltaBalances: params.pendingDeltaBalance,
+            pendingDeltaBalances: params.pendingDeltaBalances,
           })
           // Then send the event to the parent
           enqueue(({ context }) => {
@@ -172,7 +168,7 @@ export const depositedBalanceMachine = setup({
               type: "BALANCE_CHANGED",
               params: {
                 changedBalanceMapping: balances,
-                changedTransitBalanceMapping: transitBalances,
+                changedTransitBalanceMapping: params.transitBalances,
               },
             })
           })
@@ -277,8 +273,8 @@ export const depositedBalanceMachine = setup({
                 type: "updateBalance",
                 params: ({ context, event }) => ({
                   balanceSlice: event.params.balanceSlice,
-                  transitBalanceSlice: event.params.transitBalanceSlice,
-                  pendingDeltaBalance: context.pendingDeltaBalances,
+                  transitBalances: event.params.transitBalances,
+                  pendingDeltaBalances: context.pendingDeltaBalances,
                 }),
               },
             },
@@ -334,16 +330,16 @@ export const depositedBalanceMachine = setup({
 
 export function prepareOptimisticBalanceUpdate(params: {
   onchainBalances: BalanceMapping
-  transitBalanceChanged: BalanceMapping
-  pendingDeltaBalance: BalanceMapping
+  transitBalances: BalanceMapping
+  pendingDeltaBalances: BalanceMapping
 }): BalanceMapping {
   const optimisticBalanceChanged: BalanceMapping = {}
 
   for (const [key, val] of Object.entries(params.onchainBalances)) {
     const sum =
       val +
-      (params.transitBalanceChanged[key] || 0n) +
-      (params.pendingDeltaBalance[key] || 0n)
+      (params.transitBalances[key] || 0n) +
+      (params.pendingDeltaBalances[key] || 0n)
     if (sum < 0n) {
       throw new Error("Optimistic balance is negative")
     }
@@ -357,30 +353,22 @@ export function properlyCalculateBalanceChanges(params: {
   context: Context
   balances: BalanceMapping
   balanceSlice: BalanceMapping
-  transitBalanceSlice: BalanceMapping
-  pendingDeltaBalance: BalanceMapping
+  transitBalances: BalanceMapping
+  pendingDeltaBalances: BalanceMapping
   optimisticBalancesEnabled: boolean
 }): {
   balances: BalanceMapping
-  transitBalances: BalanceMapping
   onchainBalances: BalanceMapping
 } {
   const onchainBalanceChanged: BalanceMapping = {}
-  const transitBalanceChanged: BalanceMapping = {}
   const optimisticBalanceChanged: BalanceMapping = {}
 
   for (const [key, val] of Object.entries(params.balanceSlice)) {
     onchainBalanceChanged[key] = val ?? 0n
   }
 
-  for (const [key, val] of Object.entries(params.transitBalanceSlice)) {
-    if (params.context.transitBalances[key] !== val) {
-      transitBalanceChanged[key] = val
-    }
-  }
-
   for (const [key, val] of Object.entries(onchainBalanceChanged)) {
-    if (params.pendingDeltaBalance[key] !== val) {
+    if (params.pendingDeltaBalances[key] !== val) {
       optimisticBalanceChanged[key] = val
     }
     optimisticBalanceChanged[key] = 0n
@@ -389,14 +377,13 @@ export function properlyCalculateBalanceChanges(params: {
   const balances = params.optimisticBalancesEnabled
     ? prepareOptimisticBalanceUpdate({
         onchainBalances: onchainBalanceChanged,
-        transitBalanceChanged,
-        pendingDeltaBalance: params.pendingDeltaBalance,
+        transitBalances: params.transitBalances,
+        pendingDeltaBalances: params.pendingDeltaBalances,
       })
     : { ...params.context.onchainBalances, ...onchainBalanceChanged }
 
   return {
     balances,
-    transitBalances: transitBalanceChanged,
     onchainBalances: onchainBalanceChanged,
   }
 }
