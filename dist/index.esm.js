@@ -6498,7 +6498,13 @@ function prepareOptimisticBalanceUpdate(params) {
             (params.pendingDeltaBalances[key] || 0n);
         if (sum < 0n) {
             // biome-ignore lint/suspicious/noConsole: testing
-            console.log("Optimistic balance is negative, key:", key, "sum:", sum, "onchainBalance:", val, "transitBalance:", params.transitBalances[key], "pendingDeltaBalance:", params.pendingDeltaBalances[key]);
+            console.warn(`[Balance Warning] Negative optimistic balance detected:
+         Token: ${key}
+         Total: ${sum}
+         Details:
+         - Onchain balance: ${val}
+         - Transit balance: ${params.transitBalances[key] || 0n} 
+         - Pending delta: ${params.pendingDeltaBalances[key] || 0n}`);
         }
         optimisticBalanceChanged[key] = sum;
     }
