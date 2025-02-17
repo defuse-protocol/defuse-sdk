@@ -6315,7 +6315,7 @@ const depositedBalanceMachine = setup({
                 type: "UPDATE_BALANCE_SLICE",
                 params: {
                     balanceSlice: balance,
-                    transitBalanceSlice: transitBalances,
+                    transitBalances,
                 },
             });
         }),
@@ -6328,22 +6328,21 @@ const depositedBalanceMachine = setup({
             userAccountId: null,
         }),
         updateBalance: enqueueActions(({ enqueue, context }, params) => {
-            const { balances, transitBalances, onchainBalances } = properlyCalculateBalanceChanges({
+            const { balances, onchainBalances } = properlyCalculateBalanceChanges({
                 context,
                 balances: context.balances,
                 balanceSlice: params.balanceSlice,
-                transitBalanceSlice: params.transitBalanceSlice,
-                pendingDeltaBalance: params.pendingDeltaBalance,
+                transitBalances: params.transitBalances,
+                pendingDeltaBalances: params.pendingDeltaBalances,
                 optimisticBalancesEnabled: context.optimisticBalancesEnabled,
             });
-            if (Object.keys(onchainBalances).length > 0 ||
-                Object.keys(transitBalances).length > 0) {
+            if (Object.keys(onchainBalances).length > 0) {
                 // First update the local state
                 enqueue.assign({
                     balances,
-                    transitBalances,
+                    transitBalances: params.transitBalances,
                     onchainBalances,
-                    pendingDeltaBalances: params.pendingDeltaBalance,
+                    pendingDeltaBalances: params.pendingDeltaBalances,
                 });
                 // Then send the event to the parent
                 enqueue(({ context }) => {
@@ -6351,7 +6350,7 @@ const depositedBalanceMachine = setup({
                         type: "BALANCE_CHANGED",
                         params: {
                             changedBalanceMapping: balances,
-                            changedTransitBalanceMapping: transitBalances,
+                            changedTransitBalanceMapping: params.transitBalances,
                         },
                     });
                 });
@@ -6445,8 +6444,8 @@ const depositedBalanceMachine = setup({
                                 type: "updateBalance",
                                 params: ({ context, event }) => ({
                                     balanceSlice: event.params.balanceSlice,
-                                    transitBalanceSlice: event.params.transitBalanceSlice,
-                                    pendingDeltaBalance: context.pendingDeltaBalances,
+                                    transitBalances: event.params.transitBalances,
+                                    pendingDeltaBalances: context.pendingDeltaBalances,
                                 }),
                             },
                         },
@@ -6495,8 +6494,8 @@ function prepareOptimisticBalanceUpdate(params) {
     const optimisticBalanceChanged = {};
     for (const [key, val] of Object.entries(params.onchainBalances)) {
         const sum = val +
-            (params.transitBalanceChanged[key] || 0n) +
-            (params.pendingDeltaBalance[key] || 0n);
+            (params.transitBalances[key] || 0n) +
+            (params.pendingDeltaBalances[key] || 0n);
         if (sum < 0n) {
             throw new Error("Optimistic balance is negative");
         }
@@ -6506,28 +6505,21 @@ function prepareOptimisticBalanceUpdate(params) {
 }
 function properlyCalculateBalanceChanges(params) {
     const onchainBalanceChanged = {};
-    const transitBalanceChanged = {};
     for (const [key, val] of Object.entries(params.balanceSlice)) {
         onchainBalanceChanged[key] = val ?? 0n;
     }
-    for (const [key, val] of Object.entries(params.transitBalanceSlice)) {
-        if (params.context.transitBalances[key] !== val) {
-            transitBalanceChanged[key] = val;
-        }
-    }
     for (const [key, val] of Object.entries(onchainBalanceChanged)) {
-        if (params.pendingDeltaBalance[key] !== val) ;
+        if (params.pendingDeltaBalances[key] !== val) ;
     }
     const balances = params.optimisticBalancesEnabled
         ? prepareOptimisticBalanceUpdate({
             onchainBalances: onchainBalanceChanged,
-            transitBalanceChanged,
-            pendingDeltaBalance: params.pendingDeltaBalance,
+            transitBalances: params.transitBalances,
+            pendingDeltaBalances: params.pendingDeltaBalances,
         })
         : { ...params.context.onchainBalances, ...onchainBalanceChanged };
     return {
         balances,
-        transitBalances: transitBalanceChanged,
         onchainBalances: onchainBalanceChanged,
     };
 }
@@ -6799,21 +6791,40 @@ function getPendingDeltaBalances(intentRefs, pool) {
             continue;
         const intent = pool.get(intentRef.id);
         assert$2(intent !== undefined, "intent is undefined");
-        assert$2(intent.quoteToPublish !== null, "quoteToPublish is null");
-        // As we might get less token then expected, and due to fluctuation of the token price,
-        // we apply slippage to the waiting intent to decrease operation amount of token befer
-        // it's settled on chain
-        const tokenDeltas = accountSlippageExactIn(intent.quoteToPublish.tokenDeltas, intent.slippageBasisPoints);
-        for (const [key, value] of tokenDeltas) {
-            if (deltas[key] !== undefined) {
-                deltas[key] += value;
+        if (intent.intentDescription.type === "withdraw" &&
+            intent.quoteToPublish === null) {
+            const tokenDeltas = createDeltasFromDirectWithdraw(intent);
+            for (const [key, value] of Object.entries(tokenDeltas)) {
+                if (deltas[key] !== undefined) {
+                    deltas[key] += value;
+                }
+                else {
+                    deltas[key] = value;
+                }
             }
-            else {
-                deltas[key] = value;
+        }
+        if (intent.quoteToPublish !== null) {
+            // As we might get less token then expected, and due to fluctuation of the token price,
+            // we apply slippage to the waiting intent to decrease operation amount of token befer
+            // it's settled on chain
+            const tokenDeltas = accountSlippageExactIn(intent.quoteToPublish.tokenDeltas, intent.slippageBasisPoints);
+            for (const [key, value] of tokenDeltas) {
+                if (deltas[key] !== undefined) {
+                    deltas[key] += value;
+                }
+                else {
+                    deltas[key] = value;
+                }
             }
         }
     }
     return deltas;
+}
+function createDeltasFromDirectWithdraw(intent) {
+    assert$2(intent.intentDescription.type === "withdraw", "withdraw intent expected");
+    return {
+        [intent.intentOperationParams.tokenOut.defuseAssetId]: -intent.intentDescription.amountWithdrawn.amount,
+    };
 }
 
 const intentStatusMachine = setup({
@@ -7049,6 +7060,14 @@ const intentPoolMachine = setup({
                 assert$2(context.executingIntentRef !== null, "executingIntentRef is null");
                 const intent = context.pool.get(context.executingIntentRef);
                 assert$2(intent !== undefined, "intent is undefined");
+                assert$2(context.depositedBalanceRef !== null, "depositedBalanceRef is null");
+                const pendingDeltaBalance = getPendingDeltaBalances(context.intentRefs, context.pool);
+                context.depositedBalanceRef.send({
+                    type: "REQUEST_BALANCE_REFRESH",
+                    params: {
+                        pendingDeltaBalance,
+                    },
+                });
                 const newPool = new Map(context.pool);
                 newPool.set(context.executingIntentRef, {
                     ...intent,
@@ -7089,7 +7108,7 @@ const intentPoolMachine = setup({
         },
     },
 }).createMachine({
-    /** @xstate-layout N4IgpgJg5mDOIC5QEsB2AXMGC0AHA9vgDYDEAggCIUD6AkgHIAqAokwNoAMAuoqAbMnTJ8qXiAAeibAEYATAFYAdADYAHPIDMqgJwB2edu3zpGjQBoQATynLlK1buUdVs6Zoe7dAXy8W0mHAJiEgYWJmoAZWZGRgAZZgpOHiQQfkFhURTJBA1dWUVtW2VtDlNlABZtSvMrKVllfOltDXLlOWkOQ0Nynz8MLHQ8QlJ6ZgB1agBFAFUAeRYksTShETFsuV1FUr1nXIrPZXkLawRsWQ1tRVc1A2dy3XLy2R7fEH8BoeJFAEcAVzB-mgoCRFillhk1lJpE0CvJqlppG1KmpjohnnYquUOOd7hwTHlem9+oFhj9-oDUMC2NJknx8AIVplQOt6op1MVZLoHC5Sq1UQh0QVHhwOA9ynJmrlCe8SV8-gCwECQbJaal6elVllELklLoNAotOcXLJVCZ+YLMdiWro8blZNLiYMgkQyQqlWwNKrwZrmYgnpt1BoGk5ZEZdE1+S18p1ZJ0HrITeUWg6Ak7SbhfgAjIjIWAACyVEBEYEUaAAbvgANYlmXoABCACd8ABDCAAY2bsHQACUwAAzUF0hkQrWnRF2TqIoPhkp67H8+TOLYmQzSVQNJqqdQpj7OxQZ7O5guUkhF1A11AV6ulx2Nlvtzs9-vUr3qxmQ05qaSKJNb0NrnRF20Bc8kUTQEz1G1-VsHdZRdA8c3zQtixvK8L1TO9Ww7LtewHFUljfEdfVOBx8nODhDlUbFCio2RzScApVBaaF9HkBN5HXWC0y+BCjyVMAGybBt9yIZt0D7fAGwAWxvDCmywx9cMHNVhx9CQpHKKjFD1Aw3HkNoOEXaRzQeH8DEMVxWhaPEuM+F0ywE5A+0sd1uAI1SmXUhBwK2BM8X0qjtATYDagQPJyi2INRTaKpjQ0Wy9zzQhKxIcQuzEktmz7TAGwACkXEUAEoSFrOzFCSqtlO9TzsnqDhFAuEVTFjFx13KfloSUC4Wis+Q2M6VoEtJBswD+fAhBPAShJEsSJOkxQRrGzAlLcsFCLU7JsAMDRFGkcNpFaLFbA0eRdEjXRLhMVRyjhe4go0NwXleVB8AgOAxFK513I1GqpCC+ryMo6i1HnUKzjxXaHAM06SmMbxXk+0lkAgIgwG+99R1aJRsTcQ5bDkNiahOJMIp6kUGncQz9KGuVyUVSl0aIryZBusCjEph6EwOo5QpKBrmkeHQOnDNQXj6VMyt4pCGbWjyPzOaEwMefR9D2i5oSJ7U4V2rRWk6ljTXkGn7Mc5ygUZjaoVMzrRWMDiNFFfV+TyaM5DaHQoe0TiEcdMqKsrC3foQPXtKY0NtgOr3lDO0KNbZAXjGhNR9WMY2FtG35xvN2WfvljjLmKWxQxNc5wx54nNDA0putFe5ESerwgA */
+    /** @xstate-layout N4IgpgJg5mDOIC5QEsB2AXMGC0AHA9vgDYDEAggCIUD6AkgHIAqAokwNoAMAuoqAbMnTJ8qXiAAeibAEYATAFYAdADYAHPIDMqgJwB2edu3zpGjQBoQATynLlK1buUdVs6Zoe7dAXy8W0mHAJiEgYWJmoAZWZGRgAZZgpOHiQQfkFhURTJBA1dWUVtW2VtDlNlABZtSvMrKVllfOltDXLlOWkOQ0Nynz8MLHQ8QlJ6ZgB1agBFAFUAeRYksTShETFsuV1FUr1nXIrPZXkLawRsWQ1tRVc1A2dy3XLy2R7fEH8BoeJFAEcAVzB-mgoCRFillhk1lJpE0CvJqlppG1KmpjohnnYquUOOd7hwTHlem9+oFhj9-oDUMC2NJknx8AIVplQOt6op1MVZLoHC5Sq1UQh0QVHhwOA9ynJmrlCe8SV8-gCwECQbJaal6elVllELklLoNAotOcXLJVCZ+YLMdiWro8blZNLiYMgkQyQqlWwNKrwZrmYgnpt1BoGk5ZEZdE1+S18p1ZJ0HrITeUWg6Ak7SbhfgAjIjIWAACyVEBEYEUaAAbvgANYlmXoABCACd8ABDCAAY2bsHQACUwAAzUF0hkQrWnRF2TqIoPhkp67H8+TOLYmQzSVQNJqqdQpj7OxQZ7O5guUkhF1A11AV6ulx2Nlvtzs9-vUr3qxmQ05qaSKJNb0NrnRF20Bc8kUTQEz1G1-VsHdZRdA8c3zQtixvK8L1TO9Ww7LtewHFUljfEdfVOBx8nODhDlUbFCio2RzScApVBaaF9HkBN5HXWC0y+BCjyVMAGybBt9yIZt0D7fAGwAWxvDCmywx9cMHNVhx9CQpHKKjFD1Aw3HkNoOEXaRzQeH8DEMVxWhaPEuM+F0ywE5A+0sd1uAI1SmXUhBwK2BM8X0qjtATYDagQPJyi2INRTaKpjQ0Wy9zzQhKxIcQuzEktmz7TAGwACljEUAEoSFrOzFCSqtlO9TzslcJQGnIgxNKaUxjNC6ElAuFotFKTQepePpUzKhswD+fAhBPAShJEsSJOkxQRrGzAlLcsFCLU7JsAMDRFGkcNpFaLFbA0eRdEjXRLhMVRyjhe4go0NwXleVB8AgOAxFK513I1GqpCCjgrg0CiOOotR51Cs48V2hw2lyBxjGOhLSWQCAiDAb731HVolGxNxDlsOQ2JqE4kwilosQog0qPkfSkblclFUpDGiK8mQbrAox3FKORLKOUKSkULrHh0DpwzUAaiSGvdeKQpm1o8j8zmhMDHn0fQ9ouaFie1OFdq0VoOpY015Dp+zHOcoFmY2qFTI60VjA4oG9To0K8mjOQ2h0GHtE415PtJCrKyt36EAN7SmNDbYDp95Qzvakw2WaG7oURCPjFNhbRt+cbLfln7FY4y5ilsUMTXOcM+ZJzQwNKLrRXuREnq8IA */
     id: "intent-pool",
     initial: "idle",
     context: ({ input }) => ({
@@ -7203,7 +7222,7 @@ const intentPoolMachine = setup({
         },
         hook: {
             after: {
-                "5000": {
+                "2000": {
                     target: "queueing",
                     reenter: true,
                 },
@@ -8194,7 +8213,6 @@ async function prepareWithdraw({ formValues, depositedBalanceRef, poaBridgeInfoR
     const { directWithdrawAvailable, swapNeeded } = breakdown.value;
     let swapRequirement = null;
     if (swapNeeded.amount.amount > 0n) {
-        // Question-1
         const swapParams = {
             amountIn: swapNeeded.amount,
             tokensIn: swapNeeded.tokens,
@@ -8360,7 +8378,6 @@ async function checkNEP141StorageRequirements({ formValues, }) {
 }
 function getWithdrawBreakdown({ formValues, balances, }) {
     assert$2(formValues.parsedAmount != null, "parsedAmount is null");
-    // Question-2
     const requiredSwap = getRequiredSwapAmount(formValues.tokenIn, formValues.tokenOut, formValues.parsedAmount, balances);
     if (requiredSwap == null) {
         return { tag: "err", value: { reason: "ERR_BALANCE_MISSING" } };
@@ -8661,7 +8678,6 @@ const withdrawUIMachine = setup({
         clearPreparationOutput: assign({
             preparationOutput: null,
         }),
-        // Question-3
         spawnBackgroundQuoterRef: spawnChild("backgroundQuoterActor", {
             id: "backgroundQuoterRef",
             input: ({ self }) => ({
