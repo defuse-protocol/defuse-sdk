@@ -7,7 +7,6 @@ import {
   assign,
   emit,
   setup,
-  spawnChild,
 } from "xstate"
 import { findExecutableIntentRef } from "../../services/poolService"
 import type { QuoteResult } from "../../services/quoteService"
@@ -37,7 +36,7 @@ import type {
 } from "./intentSignMachine"
 import { intentStatusMachine } from "./intentStatusMachine"
 import type { SendNearTransaction } from "./publicKeyVerifierMachine"
-import { requoteActor } from "./requoteActor"
+import { type RequoteOutput, requoteActor } from "./requoteActor"
 
 type Context = {
   parentRef: ParentActor
@@ -268,12 +267,39 @@ export const intentPoolMachine = setup({
         return event
       }
     ),
-    spawnBackgroundQuoterRef: spawnChild("backgroundQuoterActor", {
-      id: "backgroundQuoterRef",
-      input: ({ self }) => ({
-        parentRef: self,
-        delayMs: settings.quotePollingIntervalMs,
-      }),
+    spawnBackgroundQuoterRef: assign(({ spawn, self }) => {
+      const backgroundQuoteRef = spawn("backgroundQuoterActor", {
+        id: "backgroundQuoterRef",
+        input: {
+          parentRef: self,
+          delayMs: settings.quotePollingIntervalMs,
+        },
+      })
+      return {
+        backgroundQuoteRef,
+      }
+    }),
+    updateQuote: assign({
+      pool: ({ context }, output: RequoteOutput) => {
+        assert(output?.tag === "ok", "output is not ok")
+        assert(
+          context.executingIntentRef !== null,
+          "executingIntentRef is null"
+        )
+        const intent = context.pool.get(context.executingIntentRef)
+        assert(intent !== undefined, "intent is undefined")
+
+        context.backgroundQuoteRef?.send({
+          type: "PAUSE",
+        })
+
+        const newPool = new Map(context.pool)
+        newPool.set(context.executingIntentRef, {
+          ...intent,
+          quoteToPublish: output.value,
+        })
+        return newPool
+      },
     }),
   },
   guards: {
@@ -390,7 +416,6 @@ export const intentPoolMachine = setup({
               type: "isQuoteExpiredOrOutOfPrice",
               params: ({ event }) => event.output,
             },
-            actions: ["clearExecutingIntentRef"],
           },
           {
             target: "queueing",
@@ -405,7 +430,7 @@ export const intentPoolMachine = setup({
         ],
         onError: {
           target: "queueing",
-          actions: "clearExecutingIntentRef",
+          actions: ["clearExecutingIntentRef"],
         },
       },
     },
@@ -453,6 +478,7 @@ export const intentPoolMachine = setup({
           return {
             quoteParams: {
               intentDescription: intent.intentDescription,
+              intentOperationParams: intent.intentOperationParams,
               balances:
                 context.depositedBalanceRef.getSnapshot().context
                   .onchainBalances,
@@ -461,9 +487,26 @@ export const intentPoolMachine = setup({
           }
         },
 
+        onDone: [
+          {
+            target: "publishing",
+            guard: { type: "isOk", params: ({ event }) => event.output },
+            actions: [
+              {
+                type: "updateQuote",
+                params: ({ event }) => event.output,
+              },
+            ],
+          },
+          {
+            target: "queueing",
+            actions: ["clearExecutingIntentRef"],
+          },
+        ],
+
         onError: {
           target: "queueing",
-          reenter: true,
+          actions: ["clearExecutingIntentRef"],
         },
       },
     },

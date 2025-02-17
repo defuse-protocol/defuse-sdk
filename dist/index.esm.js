@@ -6498,8 +6498,7 @@ function prepareOptimisticBalanceUpdate(params) {
             (params.pendingDeltaBalances[key] || 0n);
         if (sum < 0n) {
             // biome-ignore lint/suspicious/noConsole: testing
-            console.log("onchain balance", val, "transit balance", params.transitBalances[key], "pending delta balance", params.pendingDeltaBalances[key]);
-            throw new Error("Optimistic balance is negative");
+            console.log("Optimistic balance is negative, key:", key, "sum:", sum, "onchainBalance:", val, "transitBalance:", params.transitBalances[key], "pendingDeltaBalance:", params.pendingDeltaBalances[key]);
         }
         optimisticBalanceChanged[key] = sum;
     }
@@ -6947,13 +6946,22 @@ const requoteActor = fromPromise(({ input, }) => {
     return prepareNewQuote(input);
 });
 async function prepareNewQuote({ quoteParams, backgroundQuoteRef, }) {
-    let quote = null;
     let params;
-    if (quoteParams.intentDescription.type === "swap") {
-        throw new Error("Not implemented");
+    if (quoteParams.intentOperationParams.type === "swap" &&
+        quoteParams.intentDescription.type === "swap") {
+        params = {
+            tokensIn: quoteParams.intentOperationParams.tokensIn,
+            tokenOut: quoteParams.intentOperationParams.tokenOut,
+            amountIn: quoteParams.intentDescription.totalAmountIn,
+            balances: quoteParams.balances,
+        };
     }
     if (quoteParams.intentDescription.type === "withdraw") {
-        throw new Error("Not implemented");
+        // TODO: Provide correct params if we want to requote withdraw
+        return {
+            tag: "err",
+            value: { reason: "ERR_REQUOTE_FAILED" },
+        };
     }
     const swapQuote = await new Promise((resolve) => {
         backgroundQuoteRef.send({
@@ -6965,11 +6973,16 @@ async function prepareNewQuote({ quoteParams, backgroundQuoteRef, }) {
             resolve(event.params.quote);
         });
     });
-    quote = swapQuote;
-    if (quote && quote.tag === "err") {
-        return quote;
+    if (swapQuote.tag === "err") {
+        return {
+            tag: "err",
+            value: { reason: "ERR_REQUOTE_FAILED" },
+        };
     }
-    return quote;
+    return {
+        tag: "ok",
+        value: swapQuote.value,
+    };
 }
 
 const intentPoolMachine = setup({
@@ -7089,12 +7102,34 @@ const intentPoolMachine = setup({
             });
             return event;
         }),
-        spawnBackgroundQuoterRef: spawnChild("backgroundQuoterActor", {
-            id: "backgroundQuoterRef",
-            input: ({ self }) => ({
-                parentRef: self,
-                delayMs: settings.quotePollingIntervalMs,
-            }),
+        spawnBackgroundQuoterRef: assign(({ spawn, self }) => {
+            const backgroundQuoteRef = spawn("backgroundQuoterActor", {
+                id: "backgroundQuoterRef",
+                input: {
+                    parentRef: self,
+                    delayMs: settings.quotePollingIntervalMs,
+                },
+            });
+            return {
+                backgroundQuoteRef,
+            };
+        }),
+        updateQuote: assign({
+            pool: ({ context }, output) => {
+                assert$2(output?.tag === "ok", "output is not ok");
+                assert$2(context.executingIntentRef !== null, "executingIntentRef is null");
+                const intent = context.pool.get(context.executingIntentRef);
+                assert$2(intent !== undefined, "intent is undefined");
+                context.backgroundQuoteRef?.send({
+                    type: "PAUSE",
+                });
+                const newPool = new Map(context.pool);
+                newPool.set(context.executingIntentRef, {
+                    ...intent,
+                    quoteToPublish: output.value,
+                });
+                return newPool;
+            },
         }),
     },
     guards: {
@@ -7194,7 +7229,6 @@ const intentPoolMachine = setup({
                             type: "isQuoteExpiredOrOutOfPrice",
                             params: ({ event }) => event.output,
                         },
-                        actions: ["clearExecutingIntentRef"],
                     },
                     {
                         target: "queueing",
@@ -7209,7 +7243,7 @@ const intentPoolMachine = setup({
                 ],
                 onError: {
                     target: "queueing",
-                    actions: "clearExecutingIntentRef",
+                    actions: ["clearExecutingIntentRef"],
                 },
             },
         },
@@ -7243,15 +7277,32 @@ const intentPoolMachine = setup({
                     return {
                         quoteParams: {
                             intentDescription: intent.intentDescription,
+                            intentOperationParams: intent.intentOperationParams,
                             balances: context.depositedBalanceRef.getSnapshot().context
                                 .onchainBalances,
                         },
                         backgroundQuoteRef: context.backgroundQuoteRef,
                     };
                 },
+                onDone: [
+                    {
+                        target: "publishing",
+                        guard: { type: "isOk", params: ({ event }) => event.output },
+                        actions: [
+                            {
+                                type: "updateQuote",
+                                params: ({ event }) => event.output,
+                            },
+                        ],
+                    },
+                    {
+                        target: "queueing",
+                        actions: ["clearExecutingIntentRef"],
+                    },
+                ],
                 onError: {
                     target: "queueing",
-                    reenter: true,
+                    actions: ["clearExecutingIntentRef"],
                 },
             },
         },

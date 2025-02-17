@@ -1,16 +1,30 @@
-import type { QuoteResult } from "src/services/quoteService"
 import { type ActorRefFrom, fromPromise } from "xstate"
+import type { AggregatedQuote, QuoteResult } from "../../services/quoteService"
 import type {
   QuoteInput,
   backgroundQuoterMachine,
 } from "./backgroundQuoterMachine"
 import type { BalanceMapping } from "./depositedBalanceMachine"
-import type { IntentDescription } from "./intentSignMachine"
+import type {
+  IntentDescription,
+  IntentOperationParams,
+} from "./intentSignMachine"
 
 export type QuoteParams = {
   intentDescription: IntentDescription
+  intentOperationParams: IntentOperationParams
   balances: BalanceMapping
 }
+
+export type RequoteOutput =
+  | {
+      tag: "ok"
+      value: AggregatedQuote
+    }
+  | {
+      tag: "err"
+      value: { reason: "ERR_REQUOTE_FAILED" }
+    }
 
 export const requoteActor = fromPromise(
   ({
@@ -28,19 +42,25 @@ async function prepareNewQuote({
 }: {
   quoteParams: QuoteParams
   backgroundQuoteRef: ActorRefFrom<typeof backgroundQuoterMachine>
-}): Promise<QuoteResult | null> {
-  let quote: null | QuoteResult = null
-
+}): Promise<RequoteOutput> {
   let params: QuoteInput
-  if (quoteParams.intentDescription.type === "swap") {
-    throw new Error("Not implemented")
-    // biome-ignore lint/correctness/noUnreachable: <explanation>
-    params = {} as QuoteInput
+  if (
+    quoteParams.intentOperationParams.type === "swap" &&
+    quoteParams.intentDescription.type === "swap"
+  ) {
+    params = {
+      tokensIn: quoteParams.intentOperationParams.tokensIn,
+      tokenOut: quoteParams.intentOperationParams.tokenOut,
+      amountIn: quoteParams.intentDescription.totalAmountIn,
+      balances: quoteParams.balances,
+    }
   }
   if (quoteParams.intentDescription.type === "withdraw") {
-    throw new Error("Not implemented")
-    // biome-ignore lint/correctness/noUnreachable: <explanation>
-    params = {} as QuoteInput
+    // TODO: Provide correct params if we want to requote withdraw
+    return {
+      tag: "err",
+      value: { reason: "ERR_REQUOTE_FAILED" },
+    }
   }
 
   const swapQuote = await new Promise<QuoteResult>((resolve) => {
@@ -55,11 +75,15 @@ async function prepareNewQuote({
     })
   })
 
-  quote = swapQuote
-
-  if (quote && quote.tag === "err") {
-    return quote
+  if (swapQuote.tag === "err") {
+    return {
+      tag: "err",
+      value: { reason: "ERR_REQUOTE_FAILED" },
+    }
   }
 
-  return quote
+  return {
+    tag: "ok",
+    value: swapQuote.value,
+  }
 }

@@ -109,7 +109,7 @@ function pollQuote(
   )
 }
 
-async function pollQuoteLoop(
+export async function pollQuoteLoop(
   signal: AbortSignal,
   quoteInput: QuoteInput,
   delayMs: number,

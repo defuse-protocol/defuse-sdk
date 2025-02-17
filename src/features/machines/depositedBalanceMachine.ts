@@ -343,14 +343,17 @@ export function prepareOptimisticBalanceUpdate(params: {
     if (sum < 0n) {
       // biome-ignore lint/suspicious/noConsole: testing
       console.log(
-        "onchain balance",
+        "Optimistic balance is negative, key:",
+        key,
+        "sum:",
+        sum,
+        "onchainBalance:",
         val,
-        "transit balance",
+        "transitBalance:",
         params.transitBalances[key],
-        "pending delta balance",
+        "pendingDeltaBalance:",
         params.pendingDeltaBalances[key]
       )
-      throw new Error("Optimistic balance is negative")
     }
     optimisticBalanceChanged[key] = sum
   }
