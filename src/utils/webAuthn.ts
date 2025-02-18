@@ -1,6 +1,6 @@
 import { ECDSASigValue } from "@peculiar/asn1-ecc"
 import { AsnParser } from "@peculiar/asn1-schema"
-import { base58 } from "@scure/base"
+import { base58, hex } from "@scure/base"
 import { base64urlnopad } from "@scure/base"
 import { sign } from "tweetnacl"
 import { logger } from "../logger"
@@ -182,14 +182,18 @@ export function extractRawSignature(
         attestationSignature,
         ECDSASigValue
       )
-      let rBytes = new Uint8Array(parsedSignature.r)
-      let sBytes = new Uint8Array(parsedSignature.s)
+      let rBytes: Uint8Array = new Uint8Array(parsedSignature.r)
+      let sBytes: Uint8Array = new Uint8Array(parsedSignature.s)
+
       if (shouldRemoveLeadingZero(rBytes)) {
         rBytes = rBytes.slice(1)
       }
       if (shouldRemoveLeadingZero(sBytes)) {
         sBytes = sBytes.slice(1)
       }
+
+      sBytes = normalizeSignatureS(sBytes)
+
       return concatUint8Arrays([rBytes, sBytes])
     }
 
@@ -206,4 +210,26 @@ export function extractRawSignature(
 function shouldRemoveLeadingZero(bytes: Uint8Array): boolean {
   // biome-ignore lint/style/noNonNullAssertion: trust me bro
   return bytes[0] === 0x0 && (bytes[1]! & (1 << 7)) !== 0
+}
+
+/**
+ * Ensures the signature's s-value is in the lower half of the curve order
+ * to prevent signature malleability.
+ * See: https://github.com/kadenzipfel/smart-contract-vulnerabilities/blob/master/vulnerabilities/signature-malleability.md
+ */
+function normalizeSignatureS(sBytes: Uint8Array): Uint8Array {
+  const P256_N = BigInt(
+    "0xFFFFFFFF00000000FFFFFFFFFFFFFFFFBCE6FAADA7179E84F3B9CAC2FC632551"
+  )
+  const P256_N_HALF = P256_N >> 1n
+
+  const sHex = hex.encode(sBytes)
+  const s = BigInt(`0x${sHex}`)
+
+  if (s > P256_N_HALF) {
+    const sLow = P256_N - s
+    return hex.decode(sLow.toString(16).padStart(64, "0"))
+  }
+
+  return sBytes
 }
