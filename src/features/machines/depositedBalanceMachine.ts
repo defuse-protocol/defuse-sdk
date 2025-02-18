@@ -1,4 +1,5 @@
 import { providers } from "near-api-js"
+import { settings } from "src/config/settings"
 import {
   type ActorRef,
   type Snapshot,
@@ -11,6 +12,7 @@ import {
   getDepositedBalances,
   getTransitBalances,
 } from "../../services/defuseBalanceService"
+import { failover } from "../../services/failover"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../types/base"
 import type { ChainType } from "../../types/deposit"
 import { assert } from "../../utils/assert"
@@ -76,12 +78,14 @@ export const depositedBalanceMachine = setup({
 
         // If the token list is too large (>100 tokens) we should split it into multiple requests
         // and `UPDATE_BALANCE_SLICE` on receiving each response
-        const balance = await getDepositedBalances(
-          userAccountId,
-          input.defuseTokenIds,
-          new providers.JsonRpcProvider({
-            url: "https://nearrpc.aurora.dev",
-          })
+        const balance = await failover(settings.reserveRpcUrls.near, (url) =>
+          getDepositedBalances(
+            userAccountId,
+            input.defuseTokenIds,
+            new providers.JsonRpcProvider({
+              url,
+            })
+          )
         )
 
         const transitBalances = await getTransitBalances(
