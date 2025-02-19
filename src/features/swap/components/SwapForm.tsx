@@ -387,7 +387,8 @@ export function renderIntentCreationResult(
       break
 
     case "ERR_OPTIMISTIC_FULFILLMENT_EXCEEDED":
-      content = "Queue limit reached. Please try again later."
+      content =
+        "Queue limit reached. Please wait intent completion or try again later."
       break
 
     default:

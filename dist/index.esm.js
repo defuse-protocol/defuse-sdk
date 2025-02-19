@@ -6814,7 +6814,8 @@ function getPendingDeltaBalances(intentRefs, pool) {
             // As we might get less token then expected, and due to fluctuation of the token price,
             // we apply slippage to the waiting intent to decrease operation amount of token befer
             // it's settled on chain
-            const tokenDeltas = accountSlippageExactIn(intent.quoteToPublish.tokenDeltas, intent.slippageBasisPoints);
+            const tokenDeltas = accountSlippageExactIn(intent.quoteToPublish.tokenDeltas, 0 // use `intent.slippageBasisPoints` to if you need to apply slippage
+            );
             for (const [key, value] of tokenDeltas) {
                 if (deltas[key] !== undefined) {
                     deltas[key] += value;
@@ -8124,7 +8125,8 @@ function renderIntentCreationResult(intentCreationResult) {
             content = null;
             break;
         case "ERR_OPTIMISTIC_FULFILLMENT_EXCEEDED":
-            content = "Queue limit reached. Please try again later.";
+            content =
+                "Queue limit reached. Please wait intent completion or try again later.";
             break;
         default:
             content = `An error occurred. Please try again. ${status}`;

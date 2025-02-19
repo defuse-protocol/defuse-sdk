@@ -49,7 +49,7 @@ export function getPendingDeltaBalances(
       // it's settled on chain
       const tokenDeltas = accountSlippageExactIn(
         intent.quoteToPublish.tokenDeltas,
-        intent.slippageBasisPoints
+        0 // use `intent.slippageBasisPoints` to if you need to apply slippage
       )
 
       for (const [key, value] of tokenDeltas) {
