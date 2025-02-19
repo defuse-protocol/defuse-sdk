@@ -17,14 +17,13 @@ describe("makeSwapMessage()", () => {
   it("should return a WalletMessage object", () => {
     const message = makeSwapMessage({
       innerMessage,
-      recipient: "recipient.near",
       nonce: new Uint8Array(32),
     })
 
     expect(message).toEqual({
       NEP413: {
         message: `{"deadline":"2024-01-01T12:00:00.000Z","intents":[{"intent":"token_diff","diff":{"foo.near":"100"}}],"signer_id":"user.near"}`,
-        recipient: "recipient.near",
+        recipient: "intents.near",
         nonce: new Uint8Array(32),
       },
       ERC191: {
@@ -61,16 +60,8 @@ describe("makeSwapMessage()", () => {
   })
 
   it("should return a WalletMessage with random nonce", () => {
-    const msg1 = makeSwapMessage({
-      innerMessage,
-      recipient: "recipient.near",
-    })
-
-    const msg2 = makeSwapMessage({
-      innerMessage,
-      recipient: "recipient.near",
-    })
-
+    const msg1 = makeSwapMessage({ innerMessage })
+    const msg2 = makeSwapMessage({ innerMessage })
     expect(msg1.NEP413.nonce).not.toEqual(msg2.NEP413.nonce)
   })
 
@@ -354,14 +345,13 @@ describe("makeEmptyMessage()", () => {
   it("should create message with empty intents array", () => {
     const message = makeEmptyMessage({
       signerId: userAddressToDefuseUserId("user.near", "near"),
-      recipient: "recipient.near",
       deadlineTimestamp: TEST_TIMESTAMP,
       nonce: TEST_NONCE,
     })
 
     expect(message.NEP413).toEqual({
       message: `{"deadline":"2024-01-01T12:00:00.000Z","intents":[],"signer_id":"user.near"}`,
-      recipient: "recipient.near",
+      recipient: "intents.near",
       nonce: TEST_NONCE,
     })
   })
@@ -369,7 +359,6 @@ describe("makeEmptyMessage()", () => {
   it("should use default deadline and nonce when not provided", () => {
     const message = makeEmptyMessage({
       signerId: userAddressToDefuseUserId("user.near", "near"),
-      recipient: "recipient.near",
     })
 
     expect(message.NEP413.nonce).toHaveLength(32)

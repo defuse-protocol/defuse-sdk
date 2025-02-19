@@ -179,17 +179,16 @@ function makeInnerWithdrawMessage(params: WithdrawParams): Intent {
 
 export function makeSwapMessage({
   innerMessage,
-  recipient,
   nonce = randomDefuseNonce(),
 }: {
   innerMessage: Nep413DefuseMessageFor_DefuseIntents
-  recipient: string
   nonce?: Uint8Array
 }): WalletMessage {
   return {
     NEP413: {
       message: JSON.stringify(innerMessage),
-      recipient,
+      // This is who will be verifying the message
+      recipient: settings.defuseContractId,
       nonce,
     },
     ERC191: {
@@ -221,12 +220,10 @@ export function makeSwapMessage({
 
 export function makeEmptyMessage({
   signerId,
-  recipient,
   deadlineTimestamp = Date.now() + 5 * 60 * 1000, // 5 minutes from now
   nonce = randomDefuseNonce(),
 }: {
   signerId: DefuseUserId
-  recipient: string
   deadlineTimestamp?: number
   nonce?: Uint8Array
 }): WalletMessage {
@@ -238,7 +235,6 @@ export function makeEmptyMessage({
 
   return makeSwapMessage({
     innerMessage,
-    recipient,
     nonce,
   })
 }

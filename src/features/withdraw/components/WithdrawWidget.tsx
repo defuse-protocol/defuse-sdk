@@ -1,6 +1,5 @@
 import { assign, fromPromise } from "xstate"
 import { WidgetRoot } from "../../../components/WidgetRoot"
-import { settings } from "../../../config/settings"
 import { auroraEngineContractId } from "../../../constants/aurora"
 import { WithdrawWidgetProvider } from "../../../providers/WithdrawWidgetProvider"
 import type { WithdrawWidgetProps } from "../../../types/withdraw"
@@ -130,10 +129,7 @@ export const WithdrawWidget = (props: WithdrawWidgetProps) => {
 
                       return {
                         innerMessage,
-                        walletMessage: makeSwapMessage({
-                          innerMessage,
-                          recipient: settings.defuseContractId,
-                        }),
+                        walletMessage: makeSwapMessage({ innerMessage }),
                       }
                     },
                   }),
