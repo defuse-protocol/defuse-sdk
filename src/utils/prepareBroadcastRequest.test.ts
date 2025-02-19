@@ -34,7 +34,6 @@ describe("prepareSwapSignedData()", () => {
         signerId: userAddressToDefuseUserId("user.near", "near"),
         deadlineTimestamp: 1704110400000,
       }),
-      recipient: "recipient.near",
       nonce: new Uint8Array(32),
     }).WEBAUTHN,
   }
