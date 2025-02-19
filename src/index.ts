@@ -4,3 +4,18 @@ export { WithdrawWidget } from "./features/withdraw/components/WithdrawWidget"
 export type { BaseTokenInfo, UnifiedTokenInfo } from "./types/base"
 export { ChainType } from "./types/deposit"
 export { isBaseToken, isUnifiedToken } from "./utils/token"
+
+// Message creation utilities
+export {
+  createEmptyIntentMessage,
+  createSwapIntentMessage,
+  createWithdrawIntentMessage,
+} from "./core/messages"
+export type {
+  IntentMessageConfig,
+  WithdrawIntentMessageConfig,
+} from "./core/messages"
+
+// Protocol formatters
+export { formatSignedIntent } from "./core/formatters"
+export type { SignerCredentials } from "./core/formatters"
