@@ -14,6 +14,10 @@ This directory contains fundamental components of the Near Intents protocol impl
   - Withdraw intents
   - Message signing formats (NEP-413, ERC-191, etc.)
 
+- `formatters.ts`: Standardized protocol wire format handling:
+  - Serializes signed intents into protocol-compatible format
+  - Handles intents signed using different singing formats (NEP-413, ERC-191, etc.)
+
 ## Adding New Code
 
 When considering adding new code to this directory, ask:
