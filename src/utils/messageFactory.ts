@@ -219,6 +219,30 @@ export function makeSwapMessage({
   }
 }
 
+export function makeEmptyMessage({
+  signerId,
+  recipient,
+  deadlineTimestamp = Date.now() + 5 * 60 * 1000, // 5 minutes from now
+  nonce = randomDefuseNonce(),
+}: {
+  signerId: DefuseUserId
+  recipient: string
+  deadlineTimestamp?: number
+  nonce?: Uint8Array
+}): WalletMessage {
+  const innerMessage: Nep413DefuseMessageFor_DefuseIntents = {
+    deadline: new Date(deadlineTimestamp).toISOString(),
+    intents: [],
+    signer_id: signerId,
+  }
+
+  return makeSwapMessage({
+    innerMessage,
+    recipient,
+    nonce,
+  })
+}
+
 function randomDefuseNonce(): Uint8Array {
   return randomBytes(32)
 }

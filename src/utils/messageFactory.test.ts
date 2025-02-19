@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest"
 import { userAddressToDefuseUserId } from "./defuse"
 import {
+  makeEmptyMessage, // Add this import
   makeInnerSwapAndWithdrawMessage,
   makeInnerSwapMessage,
   makeSwapMessage,
@@ -343,5 +344,37 @@ describe("makeInnerSwapAndWithdrawMessage()", () => {
         "signer_id": "user.near",
       }
     `)
+  })
+})
+
+describe("makeEmptyMessage()", () => {
+  const TEST_TIMESTAMP = 1704110400000 // 2024-01-01T12:00:00.000Z
+  const TEST_NONCE = new Uint8Array(32)
+
+  it("should create message with empty intents array", () => {
+    const message = makeEmptyMessage({
+      signerId: userAddressToDefuseUserId("user.near", "near"),
+      recipient: "recipient.near",
+      deadlineTimestamp: TEST_TIMESTAMP,
+      nonce: TEST_NONCE,
+    })
+
+    expect(message.NEP413).toEqual({
+      message: `{"deadline":"2024-01-01T12:00:00.000Z","intents":[],"signer_id":"user.near"}`,
+      recipient: "recipient.near",
+      nonce: TEST_NONCE,
+    })
+  })
+
+  it("should use default deadline and nonce when not provided", () => {
+    const message = makeEmptyMessage({
+      signerId: userAddressToDefuseUserId("user.near", "near"),
+      recipient: "recipient.near",
+    })
+
+    expect(message.NEP413.nonce).toHaveLength(32)
+    const parsed = JSON.parse(message.NEP413.message)
+    expect(Date.parse(parsed.deadline)).toBeGreaterThan(Date.now())
+    expect(parsed.intents).toEqual([])
   })
 })
