@@ -314,9 +314,20 @@ export const intentPoolMachine = setup({
     isQuoteExpiredOrOutOfPrice: (_, a: IntentBroadcastMachineOutput) => {
       return a.tag === "err" && a?.value?.reason === "ERR_CANNOT_PUBLISH_INTENT"
     },
+    isWithinQueueLimit: ({ context }) => {
+      const maxQueueLimit = 1
+      let queueLimit = 0
+      for (const intentRef of context.intentRefs) {
+        const { value } = intentRef.getSnapshot()
+        if (value === "pending") {
+          queueLimit++
+        }
+      }
+      return queueLimit < maxQueueLimit
+    },
   },
 }).createMachine({
-  /** @xstate-layout N4IgpgJg5mDOIC5QEsB2AXMGC0AHA9vgDYDEAggCIUD6AkgHIAqAokwNoAMAuoqAbMnTJ8qXiAAeibAEYATAFYAdADYAHPIDMqgJwB2edu3zpGjQBoQATynLlK1buUdVs6Zoe7dAXy8W0mHAJiEgYWJmoAZWZGRgAZZgpOHiQQfkFhURTJBA1dWUVtW2VtDlNlABZtSvMrKVllfOltDXLlOWkOQ0Nynz8MLHQ8QlJ6ZgB1agBFAFUAeRYksTShETFsuV1FUr1nXIrPZXkLawRsWQ1tRVc1A2dy3XLy2R7fEH8BoeJFAEcAVzB-mgoCRFillhk1lJpE0CvJqlppG1KmpjohnnYquUOOd7hwTHlem9+oFhj9-oDUMC2NJknx8AIVplQOt6op1MVZLoHC5Sq1UQh0QVHhwOA9ynJmrlCe8SV8-gCwECQbJaal6elVllELklLoNAotOcXLJVCZ+YLMdiWro8blZNLiYMgkQyQqlWwNKrwZrmYgnpt1BoGk5ZEZdE1+S18p1ZJ0HrITeUWg6Ak7SbhfgAjIjIWAACyVEBEYEUaAAbvgANYlmXoABCACd8ABDCAAY2bsHQACUwAAzUF0hkQrWnRF2TqIoPhkp67H8+TOLYmQzSVQNJqqdQpj7OxQZ7O5guUkhF1A11AV6ulx2Nlvtzs9-vUr3qxmQ05qaSKJNb0NrnRF20Bc8kUTQEz1G1-VsHdZRdA8c3zQtixvK8L1TO9Ww7LtewHFUljfEdfVOBx8nODhDlUbFCio2RzScApVBaaF9HkBN5HXWC0y+BCjyVMAGybBt9yIZt0D7fAGwAWxvDCmywx9cMHNVhx9CQpHKKjFD1Aw3HkNoOEXaRzQeH8DEMVxWhaPEuM+F0ywE5A+0sd1uAI1SmXUhBwK2BM8X0qjtATYDagQPJyi2INRTaKpjQ0Wy9zzQhKxIcQuzEktmz7TAGwACljEUAEoSFrOzFCSqtlO9TzslcJQGnIgxNKaUxjNC6ElAuFotFKTQepePpUzKhswD+fAhBPAShJEsSJOkxQRrGzAlLcsFCLU7JsAMDRFGkcNpFaLFbA0eRdEjXRLhMVRyjhe4go0NwXleVB8AgOAxFK513I1GqpCCjgrg0CiOOotR51Cs48V2hw2lyBxjGOhLSWQCAiDAb731HVolGxNxDlsOQ2JqE4kwilosQog0qPkfSkblclFUpDGiK8mQbrAox3FKORLKOUKSkULrHh0DpwzUAaiSGvdeKQpm1o8j8zmhMDHn0fQ9ouaFie1OFdq0VoOpY015Dp+zHOcoFmY2qFTI60VjA4oG9To0K8mjOQ2h0GHtE415PtJCrKyt36EAN7SmNDbYDp95Qzvakw2WaG7oURCPjFNhbRt+cbLfln7FY4y5ilsUMTXOcM+ZJzQwNKLrRXuREnq8IA */
+  /** @xstate-layout N4IgpgJg5mDOIC5QEsB2AXMGC0AHA9vgDYDEAggCIUD6AkgHIAqAokwNoAMAuoqAbMnTJ8qXiAAeibAEYA7ABYAdAFYAbPIBMATgDMOjsq2y9AGhABPKdI4bF0nbOnXH8jo9kaAvp7NpMOAmJyKjomVkY2aR4kEH5BYVEYyQQ5LUUADg50+X17dI1ldNlVM0sEbHT0xVVVAzVZDhr06ULvXwwsdDxCUgYWJmoAZWZGRgAZZgpOaL58ASERMWSZIsVZZo59WuVpGrVSqR15WTsGjU2NdfkW+Xk2kD9O7qD6ZgB1agBFAFUAeRZpmI4gtEqBlrcdIoCjoNKp0mpzsp5AdyjClNJdKodOktNJ5JUPDp7o8Aj1FABHACuYGpaCgJEBMWBCSWVgxii0SN02N2eK0cJRGnkqg5txsRwa9g8xI6pOIFOptNQ9MiM1ic3iiySiGksIyai0lyK+U2wsFwtFrjct113NkMv8XUCRAVNLAdIZGjVzK1YMQDmUaxhymxGlDGmaOnNIq0YrDxw4Uq8PgesqdZKpbo9bB03o1INZCE0J3hOlUsJsnMcWhRR1sHENDYUGgjOTuKZJ6fluEpACMiMhYAALD0QERgRRoABu+AA1hPOwAhABO+AAhhAAMZr2DoABKYAAZozZvMWdryrsRQ3dmXq259BoUcosopEzotLj0uWMZVlA6nmdRQe37QcR2VEgx1QBdUBnedJzTFd1y3Hd9yPVUgXzc8-XKXRbD0Y5Lg8LR0iOZQUVUFoOQ-fJZCubQ6IAuUXRAgdh1HccELgmDHSQjdt13A9jy9TCz19CQ2VxOxdEKdYsRNdJBXZc5zmuWQkTFewmK7Fi+zY8D6TAZdV2XYCiDXdBD3wZcAFsEN41d+NQoST3VMTQQk1F5EDWNzhaNFYxxciLEQMNbFUOTzjotxcQi7TnhdKcjOQQ9zGzbhRM1DzkhDesW0TNRMkNbQUQ8JRNlqYoMXxFsiQ7NMEsUIdCFnEhxF3CyJzXQ9MGXAAKc4OA4ABKEhO0a5q51cn1stCqjyzDAxAoxPRpBRJxAw-I5sU2EMdvbdpHUa5cwCpfAhAgqCYO4xQTrOzAXIypksPE5ZKMDQpCn0YohtUZQnxChAdDUOxKMNBwNtkTlVHioC7spc6OOgri5wneHzrAFyokygsL2wLF8O-WoGxbHIw0FGFqjkrJYSxaxdFhsl0YuwzjOssyLKs2zbtOhGHvQp7TyywsKhyFR+UqRp31yCnwvWQxlCq0ibH-e5UHwCA4DEcbnRx7DPJkMM0hW2Tv1DLIUWwMMRSxRwlsq7ICkZ+VkAgIgwD117EGFQMbBaP6al1f6o0BttFCOK1yxDTJlDUZ2XUzJUoE92bL288XY52nRdQ0PFgrKLQOHD3RbhxZxdmyePgL0sC6RTkXc+kFRbnU9S5A-JwQ7KYH0WxYUNqcdYWirpLlxStLlXrvG5HRFo3B2L6HwBsoPHrXVKJxIpVBImH6qOoDJtnKecP7tZSO0TZcXkHfZHW+wMhLnYnDhYNpCr5m6+e9yReyIvDAKC+5YI5d29vCDILQ6J52yB4RW3hvBAA */
   id: "intent-pool",
 
   initial: "idle",
@@ -335,10 +346,28 @@ export const intentPoolMachine = setup({
   entry: ["spawnBackgroundQuoterRef"],
 
   on: {
-    ADD_INTENT: {
-      target: ".queueing",
-      actions: ["clearIntentCreationResult", "spawnIntentStatusActor"],
-    },
+    ADD_INTENT: [
+      {
+        target: ".queueing",
+        guard: "isWithinQueueLimit",
+        actions: ["clearIntentCreationResult", "spawnIntentStatusActor"],
+      },
+      {
+        target: ".queueing",
+        actions: [
+          {
+            type: "setIntentCreationResult",
+            params: () => ({
+              tag: "err",
+              value: {
+                reason: "ERR_OPTIMISTIC_FULFILLMENT_EXCEEDED",
+                error: new Error("Queue limit reached"),
+              },
+            }),
+          },
+        ],
+      },
+    ],
     INTENT_SETTLED: {
       actions: [
         {

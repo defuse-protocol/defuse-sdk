@@ -88,6 +88,7 @@ export type Errors = null | {
           | "ERR_PUBKEY_EXCEPTION"
           | "ERR_CANNOT_PUBLISH_INTENT"
           | "ERR_QUOTE_EXPIRED_RETURN_IS_LOWER"
+          | "ERR_OPTIMISTIC_FULFILLMENT_EXCEEDED"
           | WalletErrorCode
           | PublicKeyVerifierErrorCodes
         error: Error | null

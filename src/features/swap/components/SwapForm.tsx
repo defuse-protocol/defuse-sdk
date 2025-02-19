@@ -386,6 +386,10 @@ export function renderIntentCreationResult(
       content = null
       break
 
+    case "ERR_OPTIMISTIC_FULFILLMENT_EXCEEDED":
+      content = "Queue limit reached. Please try again later."
+      break
+
     default:
       status satisfies never
       content = `An error occurred. Please try again. ${status}`
