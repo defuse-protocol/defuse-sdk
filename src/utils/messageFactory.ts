@@ -102,7 +102,7 @@ export function makeInnerSwapAndWithdrawMessage({
   }
 }
 
-type WithdrawParams =
+export type WithdrawParams =
   | {
       type: "to_near"
       amount: bigint
