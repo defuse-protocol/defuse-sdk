@@ -22,6 +22,9 @@ export type SupportedChainName =
   | "turbochain"
   | "aurora"
   | "xrpledger"
+  | "zcash"
+  | "gnosis"
+  | "berachain"
 
 export interface FungibleTokenInfo extends Partial<BaseTokenBalance> {
   defuseAssetId: string
@@ -67,7 +70,11 @@ export interface UnifiedTokenInfo {
   unifiedAssetId: string
   symbol: string
   name: string
-  decimals: number
   icon: string
   groupedTokens: BaseTokenInfo[]
+}
+
+export interface TokenValue {
+  amount: bigint
+  decimals: number
 }

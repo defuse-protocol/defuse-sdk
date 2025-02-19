@@ -11,7 +11,11 @@ import type {
 } from "react-hook-form"
 import { formatUnits } from "viem"
 import useMergedRef from "../../hooks/useMergedRef"
-import type { BaseTokenInfo, UnifiedTokenInfo } from "../../types/base"
+import type {
+  BaseTokenInfo,
+  TokenValue,
+  UnifiedTokenInfo,
+} from "../../types/base"
 import {
   BlockMultiBalances,
   type BlockMultiBalancesProps,
@@ -26,8 +30,8 @@ interface Props<T extends FieldValues>
   min?: RegisterOptions["min"]
   max?: RegisterOptions["max"]
   placeholder?: string
-  balance?: bigint
-  transitBalance?: bigint
+  balance?: TokenValue
+  transitBalance?: TokenValue
   selected?: BaseTokenInfo | UnifiedTokenInfo
   handleSelect?: () => void
   className?: string
@@ -84,7 +88,7 @@ export const FieldComboInput = <T extends FieldValues>({
 
   const handleSetMaxValue = () => {
     if (!disabled && balance != null && selected && inputRef.current) {
-      setInputValue(formatUnits(balance, selected.decimals))
+      setInputValue(formatUnits(balance.amount, balance.decimals))
     }
   }
 
@@ -153,8 +157,8 @@ export const FieldComboInput = <T extends FieldValues>({
 
         {balance != null && (
           <BlockMultiBalances
-            balance={balance}
-            decimals={selected?.decimals ?? 0}
+            balance={balance.amount}
+            decimals={balance.decimals}
             handleClick={handleSetMaxValue}
             disabled={disabled}
             className="ml-auto"

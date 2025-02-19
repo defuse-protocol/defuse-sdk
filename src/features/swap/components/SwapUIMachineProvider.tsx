@@ -14,6 +14,7 @@ import type {
   WalletMessage,
   WalletSignatureResult,
 } from "../../../types/swap"
+import { computeTotalDeltaDifferentDecimals } from "../../../utils/tokenUtils"
 import { swapIntentMachine } from "../../machines/swapIntentMachine"
 import { swapUIMachine } from "../../machines/swapUIMachine"
 import type { SwapFormValues } from "./SwapForm"
@@ -90,9 +91,13 @@ export function SwapUIMachineProvider({
                 shouldValidate: false,
               })
             } else {
+              const totalAmountOut = computeTotalDeltaDifferentDecimals(
+                [context.parsedFormValues.tokenOut],
+                quote.value.tokenDeltas
+              )
               const amountOutFormatted = formatUnits(
-                quote.value.totalAmountOut,
-                context.formValues.tokenOut.decimals
+                totalAmountOut.amount,
+                totalAmountOut.decimals
               )
               setValue("amountOut", amountOutFormatted, {
                 shouldValidate: true,

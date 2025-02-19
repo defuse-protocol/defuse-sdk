@@ -1,4 +1,3 @@
-import { computeTotalBalance } from "src/utils/tokenUtils"
 import { type ActorRefFrom, waitFor } from "xstate"
 import { settings } from "../config/settings"
 import { NEP141_STORAGE_TOKEN } from "../constants/tokens"
@@ -18,9 +17,17 @@ import {
 } from "../features/machines/swapIntentMachine"
 import type { State as WithdrawFormContext } from "../features/machines/withdrawFormReducer"
 import { logger } from "../logger"
-import type { BaseTokenInfo, UnifiedTokenInfo } from "../types/base"
+import type { BaseTokenInfo, TokenValue, UnifiedTokenInfo } from "../types/base"
 import { assert } from "../utils/assert"
 import { isBaseToken, isFungibleToken } from "../utils/token"
+import {
+  adjustDecimalsTokenValue,
+  compareAmounts,
+  computeTotalBalanceDifferentDecimals,
+  minAmounts,
+  subtractAmounts,
+  truncateTokenValue,
+} from "../utils/tokenUtils"
 import { getNEP141StorageRequired } from "./nep141StorageService"
 import { type QuoteResult, queryQuoteExactOut } from "./quoteService"
 import type { FAILED_QUOTES_TYPES } from "./solverRelayHttpClient/types"
@@ -34,10 +41,10 @@ export type PreparationOutput =
   | {
       tag: "ok"
       value: {
-        directWithdrawAvailable: bigint
+        directWithdrawAvailable: TokenValue
         swap: SwapRequirement | null
         nep141Storage: NEP141StorageRequirement | null
-        receivedAmount: bigint
+        receivedAmount: TokenValue
       }
     }
   | {
@@ -100,12 +107,9 @@ export async function prepareWithdraw(
   const { directWithdrawAvailable, swapNeeded } = breakdown.value
 
   let swapRequirement: null | SwapRequirement = null
-  if (swapNeeded.amount > 0n) {
+  if (swapNeeded.amount.amount > 0n) {
     const swapParams = {
-      amountIn: {
-        amount: swapNeeded.amount,
-        decimals: formValues.tokenIn.decimals,
-      },
+      amountIn: swapNeeded.amount,
       tokensIn: swapNeeded.tokens,
       tokenOut: formValues.tokenOut,
       balances: balances.value,
@@ -153,6 +157,7 @@ export async function prepareWithdraw(
   )
 
   const receivedAmount = calcWithdrawAmount(
+    formValues.tokenOut,
     swapRequirement?.swapQuote?.tag === "ok"
       ? swapRequirement.swapQuote.value
       : null,
@@ -160,13 +165,15 @@ export async function prepareWithdraw(
     directWithdrawAvailable
   )
 
-  if (receivedAmount < minWithdrawal) {
+  if (compareAmounts(receivedAmount, minWithdrawal) === -1) {
     return {
       tag: "err",
       value: {
         reason: "ERR_AMOUNT_TOO_LOW",
-        receivedAmount,
-        minWithdrawalAmount: minWithdrawal,
+        // todo: provide decimals too
+        receivedAmount: receivedAmount.amount,
+        // todo: provide decimals too
+        minWithdrawalAmount: minWithdrawal.amount,
         token: formValues.tokenOut,
       },
     }
@@ -175,10 +182,10 @@ export async function prepareWithdraw(
   return {
     tag: "ok",
     value: {
-      directWithdrawAvailable,
+      directWithdrawAvailable: directWithdrawAvailable,
       swap: swapRequirement,
       nep141Storage: nep141Storage.value,
-      receivedAmount,
+      receivedAmount: receivedAmount,
     },
   }
 }
@@ -279,9 +286,9 @@ async function getMinWithdrawalAmount(
     poaBridgeInfoRef: ActorRefFrom<typeof poaBridgeInfoActor>
   },
   { signal }: { signal: AbortSignal }
-): Promise<bigint> {
+): Promise<TokenValue> {
   if (formValues.tokenOut.chainName === "near") {
-    return 1n
+    return { amount: 1n, decimals: formValues.tokenOut.decimals }
   }
 
   const poaBridgeInfoState = await waitFor(
@@ -297,7 +304,10 @@ async function getMinWithdrawalAmount(
   )
   assert(poaBridgeInfo != null, "poaBridgeInfo is null")
 
-  return poaBridgeInfo.minWithdrawal
+  return {
+    amount: poaBridgeInfo.minWithdrawal,
+    decimals: formValues.tokenOut.decimals,
+  }
 }
 
 function checkBalanceSufficiency({
@@ -314,13 +324,16 @@ function checkBalanceSufficiency({
     } {
   assert(formValues.parsedAmount != null, "parsedAmount is null")
 
-  const totalBalance = computeTotalBalance(formValues.tokenIn, balances)
+  const totalBalance = computeTotalBalanceDifferentDecimals(
+    formValues.tokenIn,
+    balances
+  )
 
   if (totalBalance == null) {
     return { tag: "err", value: { reason: "ERR_BALANCE_MISSING" } }
   }
 
-  if (formValues.parsedAmount > totalBalance) {
+  if (compareAmounts(totalBalance, formValues.parsedAmount) === -1) {
     return { tag: "err", value: { reason: "ERR_BALANCE_INSUFFICIENT" } }
   }
 
@@ -387,10 +400,10 @@ function getWithdrawBreakdown({
   | {
       tag: "ok"
       value: {
-        directWithdrawAvailable: bigint
+        directWithdrawAvailable: TokenValue
         swapNeeded: {
           tokens: BaseTokenInfo[]
-          amount: bigint
+          amount: TokenValue
         }
       }
     }
@@ -415,7 +428,7 @@ function getWithdrawBreakdown({
         directWithdrawAvailable: requiredSwap.directWithdrawalAmount,
         swapNeeded: {
           tokens: [],
-          amount: 0n,
+          amount: { amount: 0n, decimals: 0 },
         },
       },
     }
@@ -433,10 +446,10 @@ function getWithdrawBreakdown({
   }
 }
 
-function getRequiredSwapAmount(
+export function getRequiredSwapAmount(
   tokenIn: UnifiedTokenInfo | BaseTokenInfo,
   tokenOut: BaseTokenInfo,
-  totalAmountIn: bigint,
+  totalAmountIn: TokenValue,
   balances: Record<BaseTokenInfo["defuseAssetId"], bigint>
 ) {
   const underlyingTokensIn = isBaseToken(tokenIn)
@@ -480,23 +493,47 @@ function getRequiredSwapAmount(
    * we need to quote for.
    */
   let swapAmount = totalAmountIn
+  let directWithdrawalAmount = {
+    amount: 0n,
+    decimals: tokenOut.decimals,
+  }
   if (underlyingTokensIn.length !== tokensIn.length) {
     const tokenOutBalance = balances[tokenOut.defuseAssetId]
     // Help Typescript
     assert(tokenOutBalance != null, "Token out balance is missing")
-    swapAmount -= min(tokenOutBalance, swapAmount)
+
+    // Determine the amount that can be directly withdrawn
+    directWithdrawalAmount = minAmounts(swapAmount, {
+      decimals: tokenOut.decimals,
+      amount: tokenOutBalance,
+    })
+
+    // The withdrawal is expected to be in `tokenOut` decimals
+    directWithdrawalAmount = adjustDecimalsTokenValue(
+      directWithdrawalAmount,
+      tokenOut.decimals
+    )
+
+    // Determine the amount that needs to be swapped
+    swapAmount = subtractAmounts(swapAmount, directWithdrawalAmount)
+
+    // The swap amount is expected to be in `amountIn` decimals
+    swapAmount = adjustDecimalsTokenValue(swapAmount, totalAmountIn.decimals)
+
+    // Strip dust (if tokenOut has fewer decimals than tokenIn)
+    const isOnlyDust =
+      truncateTokenValue(swapAmount, tokenOut.decimals).amount === 0n
+    if (isOnlyDust) {
+      swapAmount = { amount: 0n, decimals: totalAmountIn.decimals }
+    }
   }
 
   return {
     swapParams:
-      swapAmount > 0n
+      swapAmount.amount > 0n
         ? { tokensIn, tokenOut, amountIn: swapAmount, balances }
         : null,
-    directWithdrawalAmount: totalAmountIn - swapAmount,
+    directWithdrawalAmount: directWithdrawalAmount,
     tokenOut,
   }
-}
-
-function min(a: bigint, b: bigint): bigint {
-  return a < b ? a : b
 }

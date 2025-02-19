@@ -1,3 +1,4 @@
+import { sha256 } from "@noble/hashes/sha256"
 import { base64 } from "@scure/base"
 import { getAddress } from "viem"
 import { settings } from "../config/settings"
@@ -184,6 +185,16 @@ export function makeSwapMessage({
   innerMessage: Nep413DefuseMessageFor_DefuseIntents
   nonce?: Uint8Array
 }): WalletMessage {
+  const payload = {
+    signer_id: innerMessage.signer_id,
+    verifying_contract: settings.defuseContractId,
+    deadline: innerMessage.deadline,
+    nonce: base64.encode(nonce),
+    intents: innerMessage.intents,
+  }
+  const payloadSerialized = JSON.stringify(payload)
+  const payloadBytes = new TextEncoder().encode(payloadSerialized)
+
   return {
     NEP413: {
       message: JSON.stringify(innerMessage),
@@ -192,28 +203,15 @@ export function makeSwapMessage({
       nonce,
     },
     ERC191: {
-      message: JSON.stringify(
-        {
-          signer_id: innerMessage.signer_id,
-          verifying_contract: settings.defuseContractId,
-          deadline: innerMessage.deadline,
-          nonce: base64.encode(nonce),
-          intents: innerMessage.intents,
-        },
-        null,
-        2
-      ),
+      message: JSON.stringify(payload, null, 2),
     },
     SOLANA: {
-      message: new TextEncoder().encode(
-        JSON.stringify({
-          signer_id: innerMessage.signer_id,
-          verifying_contract: settings.defuseContractId,
-          deadline: innerMessage.deadline,
-          nonce: base64.encode(nonce),
-          intents: innerMessage.intents,
-        })
-      ),
+      message: payloadBytes,
+    },
+    WEBAUTHN: {
+      challenge: makeChallenge(payloadBytes),
+      payload: payloadSerialized,
+      parsedPayload: payload,
     },
   }
 }
@@ -254,4 +252,14 @@ function randomBytes(length: number): Uint8Array {
 function makeAuroraEngineDepositMsg(recipientAddress: string): string {
   const parsedRecipientAddress = getAddress(recipientAddress)
   return parsedRecipientAddress.slice(2).toLowerCase()
+}
+
+/**
+ * Converts UTF-8 string to bytes for WebAuthn challenge
+ */
+export function makeChallenge(payload: Uint8Array): Uint8Array {
+  // It's possible to use native crypto, but it's async, and this would break existing flow:
+  // await crypto.subtle.digest("SHA-256", messageBytes)
+  const hash = sha256(payload)
+  return new Uint8Array(hash)
 }

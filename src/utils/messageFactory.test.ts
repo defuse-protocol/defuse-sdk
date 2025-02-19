@@ -56,6 +56,64 @@ describe("makeSwapMessage()", () => {
           )
         ),
       },
+      WEBAUTHN: expect.any(Object),
+    })
+  })
+
+  describe("WEBAUTHN format", () => {
+    const config = {
+      innerMessage: makeInnerSwapMessage({
+        tokenDeltas: [["foo.near", 100n]],
+        signerId: userAddressToDefuseUserId("user.near", "near"),
+        deadlineTimestamp: 1704110400000, // 2024-01-01T12:00:00.000Z,
+      }),
+      recipient: "recipient.near",
+      nonce: new Uint8Array(32),
+    }
+
+    it("should return WEBAUTHN object", () => {
+      const message = makeSwapMessage(config)
+
+      expect(message.WEBAUTHN.payload).toMatchInlineSnapshot(
+        `"{"signer_id":"user.near","verifying_contract":"intents.near","deadline":"2024-01-01T12:00:00.000Z","nonce":"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=","intents":[{"intent":"token_diff","diff":{"foo.near":"100"}}]}"`
+      )
+      expect(message.WEBAUTHN.challenge).toHaveLength(32) // SHA-256 is 32 bytes
+    })
+
+    it("should compute challenge using SHA-256", async () => {
+      const message = makeSwapMessage(config)
+
+      const webauthnPayload = message.WEBAUTHN.payload
+      const webauthnChallenge = message.WEBAUTHN.challenge
+
+      expect(webauthnChallenge).toEqual(
+        new Uint8Array(
+          await crypto.subtle.digest(
+            "SHA-256",
+            Buffer.from(webauthnPayload, "utf-8")
+          )
+        )
+      )
+    })
+
+    it("should generate deterministic challenge for same inputs", () => {
+      const message1 = makeSwapMessage(structuredClone(config))
+      const message2 = makeSwapMessage(structuredClone(config))
+
+      expect(message1.WEBAUTHN.challenge).toEqual(message2.WEBAUTHN.challenge)
+    })
+
+    it("should change challenge when any input field changes", () => {
+      const baseMessage = makeSwapMessage(config)
+
+      const differentDeltasMsg = makeSwapMessage({
+        ...config,
+        nonce: crypto.getRandomValues(new Uint8Array(32)),
+      })
+
+      expect(differentDeltasMsg.WEBAUTHN.challenge).not.toEqual(
+        baseMessage.WEBAUTHN.challenge
+      )
     })
   })
 

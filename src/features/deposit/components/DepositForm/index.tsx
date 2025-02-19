@@ -374,6 +374,36 @@ function getBlockchainsOptions(): Record<
       ),
       value: BlockchainEnum.XRPLEDGER,
     },
+    [BlockchainEnum.ZCASH]: {
+      label: "Zcash",
+      icon: (
+        <NetworkIcon
+          chainIcon="/static/icons/network/zcash-icon-black.svg"
+          chainName="zcash"
+        />
+      ),
+      value: BlockchainEnum.ZCASH,
+    },
+    [BlockchainEnum.GNOSIS]: {
+      label: "Gnosis",
+      icon: (
+        <NetworkIcon
+          chainIcon="/static/icons/network/gnosis.svg"
+          chainName="Gnosis"
+        />
+      ),
+      value: BlockchainEnum.GNOSIS,
+    },
+    [BlockchainEnum.BERACHAIN]: {
+      label: "BeraChain",
+      icon: (
+        <NetworkIcon
+          chainIcon="/static/icons/network/berachain.svg"
+          chainName="BeraChain"
+        />
+      ),
+      value: BlockchainEnum.BERACHAIN,
+    },
   }
   return options
 }

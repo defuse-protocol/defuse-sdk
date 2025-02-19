@@ -23,6 +23,17 @@ exports[`prepareSwapSignedData() > should return the correct signed data for a S
 }
 `;
 
+exports[`prepareSwapSignedData() > should return the correct signed data for a WebAuthn signature 1`] = `
+{
+  "authenticator_data": "3q0",
+  "client_data_json": "{"some": "json"}",
+  "payload": "{"signer_id":"user.near","verifying_contract":"intents.near","deadline":"2024-01-01T12:00:00.000Z","nonce":"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=","intents":[{"intent":"token_diff","diff":{"foo.near":"100"}}]}",
+  "public_key": "ed25519:Gxa24TGbJu4mqdhW3GbvLXmf4bSEyxVicrtpChDWbgga",
+  "signature": "ed25519:FXk",
+  "standard": "webauthn",
+}
+`;
+
 exports[`prepareSwapSignedData() > should return the correct signed data for an ERC191 signature 1`] = `
 {
   "payload": "{"foo":"bar"}",

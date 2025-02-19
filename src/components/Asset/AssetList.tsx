@@ -2,7 +2,11 @@ import { Text } from "@radix-ui/themes"
 import clsx from "clsx"
 import type { ReactNode } from "react"
 
-import type { BaseTokenInfo, UnifiedTokenInfo } from "../../types/base"
+import type {
+  BaseTokenInfo,
+  TokenValue,
+  UnifiedTokenInfo,
+} from "../../types/base"
 import type { SelectItemToken } from "../Modal/ModalSelectAssets"
 
 import { formatTokenValue } from "../../utils/format"
@@ -60,7 +64,7 @@ export const AssetList = <T extends Token>({
               <Text as="span" size="2" weight="medium">
                 {token.name}
               </Text>
-              {renderBalance(balance?.balance, token)}
+              {renderBalance(balance)}
             </div>
             <div className="flex justify-between items-center text-gray-600 dark:text-gray-500">
               <Text as="span" size="2">
@@ -74,14 +78,11 @@ export const AssetList = <T extends Token>({
   )
 }
 
-function renderBalance(
-  balance: string | undefined,
-  token: BaseTokenInfo | UnifiedTokenInfo
-) {
+function renderBalance(balance: TokenValue | undefined) {
   return (
     <Text as="span" size="2" weight="medium">
       {balance != null
-        ? formatTokenValue(balance, token.decimals, {
+        ? formatTokenValue(balance.amount, balance.decimals, {
             min: 0.0001,
             fractionDigits: 4,
           })

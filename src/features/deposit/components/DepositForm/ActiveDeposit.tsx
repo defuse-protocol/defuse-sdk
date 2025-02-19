@@ -9,7 +9,6 @@ import { TooltipInfo } from "../../../../components/TooltipInfo"
 import { useTokensUsdPrices } from "../../../../hooks/useTokensUsdPrices"
 import type { BaseTokenInfo } from "../../../../types/base"
 import type { BlockchainEnum } from "../../../../types/interfaces"
-import type { SwappableToken } from "../../../../types/swap"
 import { reverseAssetNetworkAdapter } from "../../../../utils/adapters"
 import { formatTokenValue, formatUsdAmount } from "../../../../utils/format"
 import getTokenUsdPrice from "../../../../utils/getTokenUsdPrice"
@@ -175,18 +174,20 @@ function Balance({
       {isFungibleToken(token) && token.address === "wrap.near" && (
         <TooltipInfo
           icon={
-            <Text asChild color={accentColor}>
-              <InfoCircledIcon />
-            </Text>
+            <button type="button">
+              <Text asChild color={accentColor}>
+                <InfoCircledIcon />
+              </Text>
+            </button>
           }
         >
-          Combined balance of NEAR and wNEAR.
-          <br /> NEAR will be automatically wrapped to wNEAR
-          <br /> if your wNEAR balance isn't sufficient for the swap.
+          Combined balance of NEAR and wNEAR. NEAR will be automatically wrapped
+          to wNEAR if your wNEAR balance isn't sufficient for the swap.
+          <br />
           <br />
           Note that to cover network fees, we reserve
-          {` ${formatTokenValue(RESERVED_NEAR_BALANCE, token.decimals)} NEAR`}
-          <br /> in your wallet.
+          {` ${formatTokenValue(RESERVED_NEAR_BALANCE, token.decimals)} NEAR `}
+          in your wallet.
         </TooltipInfo>
       )}
     </div>
@@ -197,7 +198,7 @@ function renderDepositButtonText(
   isAmountEmpty: boolean,
   isBalanceInsufficient: boolean,
   network: BlockchainEnum | null,
-  token: SwappableToken | null,
+  token: BaseTokenInfo | null,
   minDepositAmount: bigint | null,
   isDepositAmountHighEnough: boolean,
   isLoading: boolean

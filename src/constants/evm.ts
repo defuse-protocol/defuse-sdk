@@ -15,4 +15,7 @@ export const CHAIN_IDS: Record<SupportedChainName, number | undefined> = {
   turbochain: 1313161567,
   aurora: 1313161554,
   xrpledger: undefined,
+  zcash: undefined,
+  gnosis: 100,
+  berachain: 80094,
 }

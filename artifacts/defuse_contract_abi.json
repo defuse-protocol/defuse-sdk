@@ -4,10 +4,10 @@
     "name": "defuse",
     "version": "0.1.0",
     "build": {
-      "compiler": "rustc 1.82.0",
-      "builder": "cargo-near cargo-near-build 0.3.2"
+      "compiler": "rustc 1.84.1",
+      "builder": "cargo-near cargo-near-build 0.4.3"
     },
-    "wasm_hash": "2QLSTWx4W4aXhd8raRMuA4m1FYSZETpLU7YcvLVXohTE"
+    "wasm_hash": "BCub7PHNoLMZuWTNZ2eNqoTztxfG1FPdF9LrdGGZpe1v"
   },
   "body": {
     "functions": [
@@ -2226,6 +2226,9 @@
       {
         "name": "set_fee",
         "kind": "call",
+        "modifiers": [
+          "payable"
+        ],
         "params": {
           "serialization_type": "json",
           "args": [
@@ -2241,6 +2244,9 @@
       {
         "name": "set_fee_collector",
         "kind": "call",
+        "modifiers": [
+          "payable"
+        ],
         "params": {
           "serialization_type": "json",
           "args": [
@@ -2813,6 +2819,22 @@
                   "enum": [
                     "token_diff"
                   ]
+                },
+                "memo": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "referral": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/definitions/AccountId"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
                 }
               }
             }
@@ -3005,6 +3027,43 @@
                   "enum": [
                     "raw_ed25519"
                   ]
+                }
+              }
+            },
+            {
+              "type": "object",
+              "required": [
+                "authenticator_data",
+                "client_data_json",
+                "payload",
+                "standard",
+                "public_key",
+                "signature"
+              ],
+              "properties": {
+                "authenticator_data": {
+                  "description": "Base64Url-encodded [authenticatorData](https://w3c.github.io/webauthn/#authenticator-data)",
+                  "type": "string",
+                  "contentEncoding": "base64"
+                },
+                "client_data_json": {
+                  "description": "Serialized [clientDataJSON](https://w3c.github.io/webauthn/#dom-authenticatorresponse-clientdatajson)",
+                  "type": "string"
+                },
+                "payload": {
+                  "type": "string"
+                },
+                "standard": {
+                  "type": "string",
+                  "enum": [
+                    "webauthn"
+                  ]
+                },
+                "public_key": {
+                  "type": "string"
+                },
+                "signature": {
+                  "type": "string"
                 }
               }
             }

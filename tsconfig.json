@@ -4,6 +4,7 @@
     "outDir": "./dist",
     "target": "es2020",
     "declaration": true,
+    "noEmit": true,
     "strict": true,
     "esModuleInterop": true,
     "module": "esnext",

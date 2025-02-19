@@ -716,6 +716,9 @@ export function getAvailableDepositRoutes(
         case BlockchainEnum.SOLANA:
         case BlockchainEnum.DOGECOIN:
         case BlockchainEnum.XRPLEDGER:
+        case BlockchainEnum.ZCASH:
+        case BlockchainEnum.GNOSIS:
+        case BlockchainEnum.BERACHAIN:
           return {
             activeDeposit: false,
             passiveDeposit: true,
@@ -746,6 +749,8 @@ export function getAvailableDepositRoutes(
         case BlockchainEnum.ETHEREUM:
         case BlockchainEnum.BASE:
         case BlockchainEnum.ARBITRUM:
+        case BlockchainEnum.GNOSIS:
+        case BlockchainEnum.BERACHAIN:
           return {
             activeDeposit: true,
             passiveDeposit: true,
@@ -754,6 +759,7 @@ export function getAvailableDepositRoutes(
         case BlockchainEnum.SOLANA:
         case BlockchainEnum.DOGECOIN:
         case BlockchainEnum.XRPLEDGER:
+        case BlockchainEnum.ZCASH:
           return {
             activeDeposit: false,
             passiveDeposit: true,
@@ -777,6 +783,9 @@ export function getAvailableDepositRoutes(
         case BlockchainEnum.BITCOIN:
         case BlockchainEnum.DOGECOIN:
         case BlockchainEnum.XRPLEDGER:
+        case BlockchainEnum.ZCASH:
+        case BlockchainEnum.GNOSIS:
+        case BlockchainEnum.BERACHAIN:
           return {
             activeDeposit: false,
             passiveDeposit: true,
@@ -784,6 +793,33 @@ export function getAvailableDepositRoutes(
         case BlockchainEnum.SOLANA:
           return {
             activeDeposit: true,
+            passiveDeposit: true,
+          }
+        default:
+          network satisfies never
+          throw new Error("exhaustive check failed")
+      }
+    case ChainType.WebAuthn:
+      switch (network) {
+        case BlockchainEnum.NEAR:
+        case BlockchainEnum.TURBOCHAIN:
+        case BlockchainEnum.AURORA:
+          return {
+            activeDeposit: false,
+            passiveDeposit: false,
+          }
+        case BlockchainEnum.ETHEREUM:
+        case BlockchainEnum.BASE:
+        case BlockchainEnum.ARBITRUM:
+        case BlockchainEnum.BITCOIN:
+        case BlockchainEnum.DOGECOIN:
+        case BlockchainEnum.XRPLEDGER:
+        case BlockchainEnum.ZCASH:
+        case BlockchainEnum.GNOSIS:
+        case BlockchainEnum.BERACHAIN:
+        case BlockchainEnum.SOLANA:
+          return {
+            activeDeposit: false,
             passiveDeposit: true,
           }
         default:
@@ -819,6 +855,12 @@ export function getWalletRpcUrl(network: BlockchainEnum): string {
       return settings.rpcUrls.aurora
     case BlockchainEnum.XRPLEDGER:
       return settings.rpcUrls.xrpledger
+    case BlockchainEnum.ZCASH:
+      return settings.rpcUrls.zcash
+    case BlockchainEnum.GNOSIS:
+      return settings.rpcUrls.gnosis
+    case BlockchainEnum.BERACHAIN:
+      return settings.rpcUrls.berachain
     default:
       network satisfies never
       throw new Error("exhaustive check failed")

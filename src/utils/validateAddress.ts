@@ -18,6 +18,8 @@ export function validateAddress(
     case "arbitrum":
     case "turbochain":
     case "aurora":
+    case "gnosis":
+    case "berachain":
       // todo: Do we need to check checksum?
       return /^0x[a-fA-F0-9]{40}$/.test(address)
     case "bitcoin":
@@ -39,6 +41,9 @@ export function validateAddress(
 
     case "xrpledger":
       return xrp_isValidClassicAddress(address) || xrp_isValidXAddress(address)
+
+    case "zcash":
+      return /^t[13][a-km-zA-HJ-NP-Z1-9]{33}$/.test(address) // t-addr (transparent)
 
     default:
       blockchain satisfies never

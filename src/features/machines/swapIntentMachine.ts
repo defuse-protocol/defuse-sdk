@@ -11,7 +11,7 @@ import {
   waitForIntentSettlement,
 } from "../../services/intentService"
 import type { AggregatedQuote } from "../../services/quoteService"
-import type { BaseTokenInfo } from "../../types/base"
+import type { BaseTokenInfo, TokenValue } from "../../types/base"
 import type { Nep413DefuseMessageFor_DefuseIntents } from "../../types/defuse-contracts-types"
 import type { ChainType } from "../../types/deposit"
 import type { WalletMessage, WalletSignatureResult } from "../../types/swap"
@@ -21,10 +21,23 @@ import {
   makeInnerSwapMessage,
   makeSwapMessage,
 } from "../../utils/messageFactory"
+import { PriorityQueue } from "../../utils/priorityQueue"
+import {
+  accountSlippageExactIn,
+  addAmounts,
+  compareAmounts,
+  computeTotalDeltaDifferentDecimals,
+  negateTokenValue,
+  subtractAmounts,
+} from "../../utils/tokenUtils"
 import {
   type WalletErrorCode,
   extractWalletErrorCode,
 } from "../../utils/walletErrorExtractor"
+import {
+  parsePublicKey,
+  verifyAuthenticatorAssertion,
+} from "../../utils/webAuthn"
 import type { ParentEvents as BackgroundQuoterEvents } from "./backgroundQuoterMachine"
 import {
   type ErrorCodes as PublicKeyVerifierErrorCodes,
@@ -50,6 +63,8 @@ export type NEP141StorageRequirement =
 type IntentOperationParams =
   | {
       type: "swap"
+      tokensIn: BaseTokenInfo[]
+      tokenOut: BaseTokenInfo
       quote: AggregatedQuote
     }
   | {
@@ -57,7 +72,7 @@ type IntentOperationParams =
       tokenOut: BaseTokenInfo
       quote: AggregatedQuote | null
       nep141Storage: NEP141StorageRequirement | null
-      directWithdrawalAmount: bigint
+      directWithdrawalAmount: TokenValue
       recipient: string
       destinationMemo: string | null
     }
@@ -65,11 +80,12 @@ type IntentOperationParams =
 export type IntentDescription =
   | {
       type: "swap"
-      quote: AggregatedQuote
+      totalAmountIn: TokenValue
+      totalAmountOut: TokenValue
     }
   | {
       type: "withdraw"
-      amountWithdrawn: bigint
+      amountWithdrawn: TokenValue
     }
 
 type Context = {
@@ -77,9 +93,14 @@ type Context = {
   userChainType: ChainType
   defuseUserId: DefuseUserId
   referral?: string
+  slippageBasisPoints: number
   nearClient: providers.Provider
   sendNearTransaction: SendNearTransaction
   intentOperationParams: IntentOperationParams
+  // The best quote that was actually published or will be published
+  quoteToPublish: AggregatedQuote | null
+  // Queue stores all quotes coming from the background quoter
+  quotes: PriorityQueue<AggregatedQuote>
   messageToSign: null | {
     walletMessage: WalletMessage
     innerMessage: Nep413DefuseMessageFor_DefuseIntents
@@ -113,6 +134,7 @@ type Input = {
   userChainType: ChainType
   defuseUserId: DefuseUserId
   referral?: string
+  slippageBasisPoints: number
   nearClient: providers.Provider
   sendNearTransaction: SendNearTransaction
   intentOperationParams: IntentOperationParams
@@ -136,9 +158,8 @@ export const swapIntentMachine = setup({
     input: {} as Input,
     output: {} as Output,
     events: {} as Events,
-    children: {} as {
-      publicKeyVerifierRef: "publicKeyVerifierActor"
-    },
+    // todo: this bloats size of types, typescript can't produce type definitions
+    // children: {} as { publicKeyVerifierRef: "publicKeyVerifierActor" },
   },
   actions: {
     setError: assign({
@@ -150,35 +171,17 @@ export const swapIntentMachine = setup({
     logError: (_, params: { error: unknown }) => {
       logger.error(params.error)
     },
-    proposeQuote: assign({
-      intentOperationParams: ({ context }, proposedQuote: AggregatedQuote) => {
-        if (context.intentOperationParams.type === "swap") {
-          return {
-            ...context.intentOperationParams,
-            quote: determineNewestValidQuote(
-              context.intentOperationParams.quote,
-              proposedQuote
-            ),
-          }
-        }
-
-        // Quote needs to be updated for withdraw only in case of crosschain withdrawal
-        if (
-          context.intentOperationParams.type === "withdraw" &&
-          context.intentOperationParams.quote !== null
-        ) {
-          return {
-            ...context.intentOperationParams,
-            quote: determineNewestValidQuote(
-              context.intentOperationParams.quote,
-              proposedQuote
-            ),
-          }
-        }
-
-        return context.intentOperationParams
-      },
-    }),
+    proposeQuote: ({ context }, proposedQuote: AggregatedQuote) => {
+      if (context.intentOperationParams.quote) {
+        enqueueBetterQuote(
+          context.quotes,
+          context.intentOperationParams.quote,
+          proposedQuote,
+          context.intentOperationParams.tokenOut,
+          context.slippageBasisPoints
+        )
+      }
+    },
     assembleSignMessages: assign({
       messageToSign: ({ context }) => {
         assert(
@@ -187,14 +190,12 @@ export const swapIntentMachine = setup({
         )
 
         const innerMessage = makeInnerSwapMessage({
-          tokenDeltas: context.intentOperationParams.quote.tokenDeltas,
-          signerId: context.defuseUserId,
-          deadlineTimestamp: Math.min(
-            Date.now() + settings.swapExpirySec * 1000,
-            new Date(
-              context.intentOperationParams.quote.expirationTime
-            ).getTime()
+          tokenDeltas: accountSlippageExactIn(
+            context.intentOperationParams.quote.tokenDeltas,
+            context.slippageBasisPoints
           ),
+          signerId: context.defuseUserId,
+          deadlineTimestamp: Date.now() + settings.swapExpirySec * 1000,
           referral: context.referral,
         })
 
@@ -209,6 +210,9 @@ export const swapIntentMachine = setup({
     }),
     setIntentHash: assign({
       intentHash: (_, intentHash: string) => intentHash,
+    }),
+    dequeueValidQuote: assign({
+      quoteToPublish: ({ context }) => dequeueValidQuote(context.quotes),
     }),
   },
   actors: {
@@ -259,16 +263,9 @@ export const swapIntentMachine = setup({
       return status === "SETTLED"
     },
     isIntentRelevant: ({ context }) => {
-      if (context.intentOperationParams.quote != null) {
-        // Naively assume that the quote is still relevant if the expiration time is in the future
-        return (
-          new Date(
-            context.intentOperationParams.quote.expirationTime
-          ).getTime() > Date.now()
-        )
-      }
-
-      return true
+      const hadQuote = context.intentOperationParams.quote != null
+      const hasQuote = context.quoteToPublish != null
+      return hadQuote === hasQuote
     },
     isSigned: (_, params: WalletSignatureResult | null) => params != null,
     isTrue: (_, params: boolean) => params,
@@ -280,11 +277,18 @@ export const swapIntentMachine = setup({
 }).createMachine({
   /** @xstate-layout N4IgpgJg5mDOIC5SwO4EMAOBaAlgOwBcxCBiAOQFEB1AfQEUBVAeQBUKBtABgF1FQMA9rBwEcAvHxAAPRACYAnAFYAdPIAcigGyKA7It0BGTcYDMAGhABPRAZOzlJxfJNqdmnTs7zOsgCwBffwtUTFxCYgJlHAgAGzASLl4kEEFhUXFJGQRbNWUfTgNfRVk1eU01Ut8LawQTdWVNP05HfU9fY0Dg9Gx8IkJlAGUcKDx8KBIIcTAovAA3AQBraeERgFk4WDQYRMlUkTEJZKzvZRLdV0bfWVkdAwNqxEaDVSKTO18dK7cTTpAQnvC-SGIzGJDAACdwQJwcoMDE0AQAGbQgC2yhWeHWsE22x4uyE+wyR0QWFkmk4ygqmhM1OMBm8dweCF8vnkyicrLKei0JVsv3+YT6kQAahCcIjLGMAAQABQArgAjGI4ADGUoA0mBLLLwXBiCr4pM8NN8PMlrDFcqVZrLKLweKcBCAEpgRE7ZJ7dKHUBZWQmVT09qFbxvLwGHRMgycHT2WRGErucn0-T87qCiLKO3iyV4KCyy2qjVanV6vAGiZTGZm6YYAvWrVZxGO8Eut0GJL8AlezJyMqUv1qO5RpxqD6aSN3XyqckKTjlQfRn5BP5p3oZxs5vPypWFm0l2D6+IQqEwuEI5HgtG1nf121ipvO13uztpA49hCkk5XeSfZzFOMFFUVg2JwnAqJoUYuDog6KEYHipqEa79AAQlCaAQCqaCwKIuZSgAkoCBAVsaVaLMsq6EcoqECOhmHYdKBFCggpoCJhXqJM+KRdm+xIILclKgS4fqKEU+gFJGHwqIojjRtc8gGBUnABMuApIZE1G0VhOF5oxERgpC0KwvCSKouiFFClRaEYVpDGEcxcysQiBwcXiHrcUSPokiU9g5B4+ilAY+juJGJhRqctxKaUajznoCEAhZG62UKCSuS+hLetIiDReyGiskpCkiWS47Adk1w+Y03yiWoSmKHF6b9IluG6aQ7Dtvir4eZltR+MoLKfBoZLSZo8iyCFPWhm8ziTbIxR1Wpmb3puUrAngCJyrqxEmg55qqZRjV5ita26vZ8xsc5PCcZ6PGed1yjfPksEiSyaijSVGgUmJnh1KB1LOHNe2LdKh0EOthqVixO3meugO4cDoMnY57EXW1bkdRlWRYCYvjPApZJhj+bweEyg72NGOgmHocafM0S5dIhAP2hKQPDKtIMbcehlniZl5mfTCUwwdLNHWACNneILkdlxaPvpjzSnGSFTyKyL2OPcJXGLkmjYxBSuFLY1yBMueACBAcCSLtQrtelMsuGyuPkvJBMUxGJV+myXhuPISgwUUyl0-FGbRHEVvdrxhQUpUrIxl7cbOK9NR2JovWyHOfjtErNxqP9FkrWMIfXV1Ci9VGvkU+Gui+OYJW+C9DhQUUhRlSNfsrnz0OM0t25WkW2oyrqB5lmA+edRjKheBULKBbB4blPITJx6csHDToShlNotOtwHKFWXR2n4YRw-o4guiqHU2gr3oHjlC7NT61O8kQU4dyKGobyaNn7fZklESH++Ub328UcHwTDRgqFoCcbxTguC0OUBQ2gfAf36AAYQECiOEYAiAQF-rxJQDh5xOH6iUGMxVb7Uh0A0cMoUp4iWjIgyIABxYgYo1QUAMuCbBN1SRawaJJCedx5JExKkYCmFDybP30L4WhKkoYNQFstIWbMh6o2trxaSd1mhuEUKBUchUgI1HJvYQcdRX5Y3UB4ZSgQgA */
   context: ({ input }) => {
+    const quotes = makeQuotePriorityQueue(input.intentOperationParams.tokenOut)
+    if (input.intentOperationParams.quote != null) {
+      quotes.enqueue(input.intentOperationParams.quote)
+    }
+
     return {
       messageToSign: null,
       signature: null,
       error: null,
       intentHash: null,
+      quotes,
+      quoteToPublish: null,
       ...input,
     }
   },
@@ -297,17 +301,30 @@ export const swapIntentMachine = setup({
     if (context.intentHash != null) {
       const intentType = context.intentOperationParams.type
       switch (intentType) {
-        case "swap":
+        case "swap": {
+          const quote = context.quoteToPublish
+          assert(quote != null, "Quote must be set for swap intent")
+
           return {
             tag: "ok",
             value: {
               intentHash: context.intentHash,
               intentDescription: {
                 type: "swap",
-                quote: context.intentOperationParams.quote,
+                totalAmountIn: negateTokenValue(
+                  computeTotalDeltaDifferentDecimals(
+                    context.intentOperationParams.tokensIn,
+                    quote.tokenDeltas
+                  )
+                ),
+                totalAmountOut: computeTotalDeltaDifferentDecimals(
+                  [context.intentOperationParams.tokenOut],
+                  quote.tokenDeltas
+                ),
               },
             },
           }
+        }
         case "withdraw": {
           return {
             tag: "ok",
@@ -316,7 +333,8 @@ export const swapIntentMachine = setup({
               intentDescription: {
                 type: "withdraw",
                 amountWithdrawn: calcOperationAmountOut(
-                  context.intentOperationParams
+                  context.intentOperationParams,
+                  context.quoteToPublish
                 ),
               },
             },
@@ -519,16 +537,17 @@ export const swapIntentMachine = setup({
           assert(context.messageToSign != null, "Sign message is not set")
 
           let quoteHashes: string[] = []
-          if (context.intentOperationParams.quote) {
-            quoteHashes = context.intentOperationParams.quote.quoteHashes
+          if (context.quoteToPublish) {
+            quoteHashes = quoteHashes.concat(context.quoteToPublish.quoteHashes)
           }
+
           if (
             context.intentOperationParams.type === "withdraw" &&
             context.intentOperationParams.nep141Storage &&
             context.intentOperationParams.nep141Storage.quote
           ) {
-            quoteHashes.push(
-              ...context.intentOperationParams.nep141Storage.quote.quoteHashes
+            quoteHashes = quoteHashes.concat(
+              context.intentOperationParams.nep141Storage.quote.quoteHashes
             )
           }
 
@@ -594,6 +613,7 @@ export const swapIntentMachine = setup({
     },
 
     "Verifying Intent": {
+      entry: "dequeueValidQuote",
       always: [
         {
           target: "Broadcasting Intent",
@@ -630,18 +650,45 @@ function toError(error: unknown): Error {
   return error instanceof Error ? error : new Error("unknown error")
 }
 
-function determineNewestValidQuote(
+function enqueueBetterQuote(
+  quotes: PriorityQueue<AggregatedQuote>,
   originalQuote: AggregatedQuote,
-  proposedQuote: AggregatedQuote
-): AggregatedQuote {
-  if (
-    originalQuote.totalAmountOut <= proposedQuote.totalAmountOut &&
-    originalQuote.expirationTime <= proposedQuote.expirationTime
-  ) {
-    return proposedQuote
+  proposedQuote: AggregatedQuote,
+  tokenOut: BaseTokenInfo,
+  slippageBasisPoints: number
+) {
+  const outOriginal = computeTotalDeltaDifferentDecimals(
+    [tokenOut],
+    accountSlippageExactIn(originalQuote.tokenDeltas, slippageBasisPoints)
+  )
+
+  const outProposed = computeTotalDeltaDifferentDecimals(
+    [tokenOut],
+    proposedQuote.tokenDeltas
+  )
+
+  if (compareAmounts(outOriginal, outProposed) <= 0) {
+    quotes.enqueue(proposedQuote)
+  }
+}
+
+function dequeueValidQuote(
+  quotes: PriorityQueue<AggregatedQuote>
+): AggregatedQuote | null {
+  const MIN_BUFFER_TIME_MS = 10_000 // 10 seconds
+
+  while (!quotes.isEmpty()) {
+    const quote = quotes.dequeue()
+    if (
+      // We take a quote that won't expire in the next 10 seconds, so we have time to broadcast the intent
+      Date.now() + MIN_BUFFER_TIME_MS <
+      new Date(quote.expirationTime).getTime()
+    ) {
+      return quote
+    }
   }
 
-  return originalQuote
+  return null
 }
 
 async function verifyWalletSignature(
@@ -671,6 +718,12 @@ async function verifyWalletSignature(
         base58.decode(userAddress)
       )
     }
+    case "WEBAUTHN":
+      return verifyAuthenticatorAssertion(
+        signature.signatureData,
+        parsePublicKey(userAddress),
+        signature.signedData.challenge
+      )
     default:
       signatureType satisfies never
       throw new Error("exhaustive check failed")
@@ -678,35 +731,79 @@ async function verifyWalletSignature(
 }
 
 export function calcOperationAmountOut(
-  operation: IntentOperationParams
-): bigint {
-  if (operation.type === "swap") {
-    return operation.quote.totalAmountOut
-  }
+  operation: IntentOperationParams,
+  quoteToPublish: AggregatedQuote | null
+): TokenValue {
+  const operationType = operation.type
+  switch (operationType) {
+    case "swap": {
+      assert(quoteToPublish != null, "Quote must be set for swap operation")
+      return computeTotalDeltaDifferentDecimals(
+        [operation.tokenOut],
+        quoteToPublish.tokenDeltas
+      )
+    }
 
-  return calcWithdrawAmount(
-    operation.quote,
-    operation.nep141Storage,
-    operation.directWithdrawalAmount
-  )
+    case "withdraw":
+      return calcWithdrawAmount(
+        operation.tokenOut,
+        quoteToPublish,
+        operation.nep141Storage,
+        operation.directWithdrawalAmount
+      )
+
+    default:
+      operationType satisfies never
+      throw new Error("exhaustive check failed")
+  }
 }
 
 export function calcWithdrawAmount(
-  swapQuote: AggregatedQuote | null,
+  tokenOut: BaseTokenInfo,
+  swapInfo: AggregatedQuote | null,
   nep141Storage: NEP141StorageRequirement | null,
-  directWithdrawalAmount: bigint
-): bigint {
-  const gotFromSwap = swapQuote?.totalAmountOut ?? 0n
+  directWithdrawalAmount: TokenValue
+): TokenValue {
+  const gotFromSwap =
+    swapInfo == null
+      ? { amount: 0n, decimals: 0 }
+      : computeTotalDeltaDifferentDecimals([tokenOut], swapInfo.tokenDeltas)
 
-  let spentOnStorage = 0n
+  let spentOnStorage: TokenValue = { amount: 0n, decimals: 0 }
   if (nep141Storage != null) {
     if (nep141Storage.type === "no_swap_needed") {
       // Assume that token out is NEAR/wNEAR, so we can just use the required storage
-      spentOnStorage = nep141Storage.requiredStorageNEAR
+      spentOnStorage = {
+        amount: nep141Storage.requiredStorageNEAR,
+        decimals: tokenOut.decimals,
+      }
     } else {
-      spentOnStorage = nep141Storage.quote.totalAmountIn
+      spentOnStorage = computeTotalDeltaDifferentDecimals(
+        [tokenOut],
+        nep141Storage.quote.tokenDeltas
+      )
+      // NEP-141 Storage quote will sell `tokenOut` for storage token (wNEAR), so it will be a negative number.
+      // We need to negate it to get the amount of `tokenOut` spent on storage.
+      spentOnStorage.amount = -spentOnStorage.amount
     }
   }
 
-  return directWithdrawalAmount + gotFromSwap - spentOnStorage
+  return subtractAmounts(
+    addAmounts(directWithdrawalAmount, gotFromSwap),
+    spentOnStorage
+  )
+}
+
+function makeQuotePriorityQueue(tokenOut: BaseTokenInfo) {
+  return new PriorityQueue<AggregatedQuote>((quoteA, quoteB) => {
+    const amountOutA = computeTotalDeltaDifferentDecimals(
+      [tokenOut],
+      quoteA.tokenDeltas
+    )
+    const amountOutB = computeTotalDeltaDifferentDecimals(
+      [tokenOut],
+      quoteB.tokenDeltas
+    )
+    return compareAmounts(amountOutA, amountOutB)
+  })
 }

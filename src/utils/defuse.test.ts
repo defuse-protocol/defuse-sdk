@@ -24,4 +24,31 @@ describe("userAddressToDefuseUserId", () => {
       "2c1af676c3580b2ecde77673a38886cc16429b4b17744da5985a25152843a570"
     )
   })
+
+  it("returns derived address for 'webauthn' chain type with P-256 curve", () => {
+    const result = userAddressToDefuseUserId(
+      "p256:3NSY8SFTWoPFMrTGdLVqPogirCyt3kMnUajXoDQuVeCsA6wzkMMp5whBqymAPM7xFiBthDKueiUv1zVAj7GDT8rQ",
+      "webauthn"
+    )
+    expect(result).toBe("0xf54df4d2598c83e2293c616384442a70335e7859")
+  })
+
+  it("returns hex encoded public key for 'webauthn' chain type with Ed25519 curve", () => {
+    const result = userAddressToDefuseUserId(
+      "ed25519:Gz9STDrgGWdt2fh1g91v2n6SUsy5QKHbx86Nrjy2kFz5",
+      "webauthn"
+    )
+    expect(result).toBe(
+      "ed82f3aaf32b8825b67d23d1581edee4f90240ee57a2963c46f529c93d6ce5ae"
+    )
+  })
+
+  it("throws if incorrect curve is provided", () => {
+    expect(() =>
+      userAddressToDefuseUserId(
+        "foo:Gz9STDrgGWdt2fh1g91v2n6SUsy5QKHbx86Nrjy2kFz5",
+        "webauthn"
+      )
+    ).toThrow()
+  })
 })

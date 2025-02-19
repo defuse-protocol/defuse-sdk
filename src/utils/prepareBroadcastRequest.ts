@@ -6,6 +6,7 @@ import type {
 import type { ChainType } from "../types/deposit"
 import type { WalletSignatureResult } from "../types/swap"
 import { assert } from "./assert"
+import { makeWebAuthnMultiPayload } from "./multiPayload/webauthn"
 
 export function prepareSwapSignedData(
   signature: WalletSignatureResult,
@@ -45,6 +46,9 @@ export function prepareSwapSignedData(
         public_key: `ed25519:${userInfo.userAddress}`,
         signature: transformSolanaSignature(signature.signatureData),
       }
+    case "WEBAUTHN": {
+      return makeWebAuthnMultiPayload(userInfo, signature)
+    }
     default:
       signatureType satisfies never
       throw new Error("exhaustive check failed")

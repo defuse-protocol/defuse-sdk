@@ -2,12 +2,13 @@ import type { Transaction as TransactionSolana } from "@solana/web3.js"
 import type { Address, Hash } from "viem"
 import type { SwappableToken } from "./swap"
 
-export type ChainType = "near" | "evm" | "solana"
+export type ChainType = "near" | "evm" | "solana" | "webauthn"
 
 export const ChainType = {
   Near: "near",
   EVM: "evm",
   Solana: "solana",
+  WebAuthn: "webauthn",
 } as const
 
 export type UserInfo = {

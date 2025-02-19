@@ -17,7 +17,7 @@ export function SwapIntentCard({ intentStatusActorRef }: SwapIntentCardProps) {
   const state = useSelector(intentStatusActorRef, (state) => state)
   const { tokenIn, tokenOut, intentDescription } = state.context
   assert(intentDescription.type === "swap", "Type must be swap")
-  const { totalAmountIn, totalAmountOut } = intentDescription.quote
+  const { totalAmountIn, totalAmountOut } = intentDescription
 
   const txUrl =
     state.context.txHash != null
@@ -71,7 +71,7 @@ export function SwapIntentCard({ intentStatusActorRef }: SwapIntentCardProps) {
           <Box flexGrow="1">
             <Text size="1" weight="medium" color="gray">
               -
-              {formatTokenValue(totalAmountIn, tokenIn.decimals, {
+              {formatTokenValue(totalAmountIn.amount, totalAmountIn.decimals, {
                 min: 0.0001,
                 fractionDigits: 4,
                 // biome-ignore lint/nursery/useConsistentCurlyBraces: space is needed here
@@ -83,11 +83,15 @@ export function SwapIntentCard({ intentStatusActorRef }: SwapIntentCardProps) {
           <Box>
             <Text size="1" weight="medium" color="green">
               +
-              {formatTokenValue(totalAmountOut, tokenOut.decimals, {
-                min: 0.0001,
-                fractionDigits: 4,
+              {formatTokenValue(
+                totalAmountOut.amount,
+                totalAmountOut.decimals,
+                {
+                  min: 0.0001,
+                  fractionDigits: 4,
+                }
                 // biome-ignore lint/nursery/useConsistentCurlyBraces: space is needed here
-              })}{" "}
+              )}{" "}
               {tokenOut.symbol}
             </Text>
           </Box>
