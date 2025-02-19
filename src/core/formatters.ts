@@ -1,11 +1,14 @@
 import type { ChainType } from "../types/deposit"
 import type { WalletSignatureResult } from "../types/swap"
+import { type DefuseUserId, userAddressToDefuseUserId } from "../utils/defuse"
 import { prepareSwapSignedData } from "../utils/prepareBroadcastRequest"
 
+export type { DefuseUserId }
+
 export interface SignerCredentials {
-  /** The credential (address or public key) that signed the intent */
+  /** The credential (blockchain address or WebAuthn public key) that will sign or has signed the intent */
   credential: string
-  /** The type of credential used for signing */
+  /** The type of credential (chain or authentication method) */
   credentialType: ChainType
 }
 
@@ -26,4 +29,18 @@ export function formatSignedIntent(
     userAddress: credentials.credential,
     userChainType: credentials.credentialType,
   })
+}
+
+/**
+ * Converts a user's blockchain address or WebAuthn credential to a standardized Near Intents protocol ID
+ * @param credentials The signer's credentials
+ * @returns A standardized Near Intents protocol user ID
+ */
+export function formatUserIdentity(
+  credentials: SignerCredentials
+): DefuseUserId {
+  return userAddressToDefuseUserId(
+    credentials.credential,
+    credentials.credentialType
+  )
 }

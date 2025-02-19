@@ -17,5 +17,9 @@ export type {
 } from "./core/messages"
 
 // Protocol formatters
-export { formatSignedIntent } from "./core/formatters"
-export type { SignerCredentials } from "./core/formatters"
+export {
+  formatSignedIntent,
+  formatUserIdentity,
+  type DefuseUserId,
+  type SignerCredentials,
+} from "./core/formatters"
