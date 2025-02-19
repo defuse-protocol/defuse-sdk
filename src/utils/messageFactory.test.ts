@@ -356,14 +356,14 @@ describe("makeEmptyMessage()", () => {
     })
   })
 
-  it("should use default deadline and nonce when not provided", () => {
+  it("should use default nonce when not provided", () => {
     const message = makeEmptyMessage({
       signerId: userAddressToDefuseUserId("user.near", "near"),
+      deadlineTimestamp: TEST_TIMESTAMP,
     })
 
     expect(message.NEP413.nonce).toHaveLength(32)
     const parsed = JSON.parse(message.NEP413.message)
-    expect(Date.parse(parsed.deadline)).toBeGreaterThan(Date.now())
     expect(parsed.intents).toEqual([])
   })
 })
