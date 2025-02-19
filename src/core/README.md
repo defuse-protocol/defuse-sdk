@@ -17,6 +17,7 @@ This directory contains fundamental components of the Near Intents protocol impl
 - `formatters.ts`: Standardized protocol wire format handling:
   - Serializes signed intents into protocol-compatible format
   - Handles intents signed using different singing formats (NEP-413, ERC-191, etc.)
+  - Converts user identities from various chains to protocol format
 
 ## Adding New Code
 
