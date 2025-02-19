@@ -32,7 +32,7 @@ export type WithdrawIntentMessageConfig = WithdrawParams
 function resolveSignerId(
   signerId: DefuseUserId | SignerCredentials
 ): DefuseUserId {
-  return "credential" in signerId ? formatUserIdentity(signerId) : signerId
+  return typeof signerId === "string" ? signerId : formatUserIdentity(signerId)
 }
 
 /**
