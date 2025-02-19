@@ -8,7 +8,7 @@ import {
   makeSwapMessage,
 } from "../utils/messageFactory"
 
-export interface IntentMessageOptions {
+export interface IntentMessageConfig {
   /**
    * User identifier in the format required by Defuse protocol
    */
@@ -24,7 +24,7 @@ export interface IntentMessageOptions {
   referral?: string
 }
 
-export type WithdrawIntentConfig = WithdrawParams
+export type WithdrawIntentMessageConfig = WithdrawParams
 
 /**
  * Creates an intent message for token swaps
@@ -34,7 +34,7 @@ export type WithdrawIntentConfig = WithdrawParams
  */
 export function createSwapIntentMessage(
   swapConfig: [string, bigint][],
-  options: IntentMessageOptions
+  options: IntentMessageConfig
 ): WalletMessage {
   const innerMessage = makeInnerSwapMessage({
     tokenDeltas: swapConfig,
@@ -55,8 +55,8 @@ export function createSwapIntentMessage(
  * @returns Intent message ready to be signed by a wallet
  */
 export function createWithdrawIntentMessage(
-  withdrawConfig: WithdrawIntentConfig,
-  options: IntentMessageOptions
+  withdrawConfig: WithdrawIntentMessageConfig,
+  options: IntentMessageConfig
 ): WalletMessage {
   const innerMessage = makeInnerSwapAndWithdrawMessage({
     tokenDeltas: null,
@@ -76,7 +76,7 @@ export function createWithdrawIntentMessage(
  * @returns Intent message ready to be signed by a wallet
  */
 export function createEmptyIntentMessage(
-  options: IntentMessageOptions
+  options: IntentMessageConfig
 ): WalletMessage {
   return makeEmptyMessage({
     signerId: options.signerId,

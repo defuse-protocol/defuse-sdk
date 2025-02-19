@@ -12,6 +12,6 @@ export {
   createWithdrawIntentMessage,
 } from "./core/messages"
 export type {
-  IntentMessageOptions,
-  WithdrawIntentConfig,
+  IntentMessageConfig,
+  WithdrawIntentMessageConfig,
 } from "./core/messages"
