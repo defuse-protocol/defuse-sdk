@@ -7,12 +7,15 @@ import {
   makeInnerSwapMessage,
   makeSwapMessage,
 } from "../utils/messageFactory"
+import type { SignerCredentials } from "./formatters"
+import { formatUserIdentity } from "./formatters"
 
 export interface IntentMessageConfig {
   /**
-   * User identifier in the format required by Defuse protocol
+   * User identifier either as DefuseUserId or SignerCredentials
+   * If SignerCredentials is provided, it will be converted to DefuseUserId
    */
-  signerId: DefuseUserId
+  signerId: DefuseUserId | SignerCredentials
   /**
    * Optional deadline timestamp in milliseconds
    * @default 5 minutes from now
@@ -26,6 +29,12 @@ export interface IntentMessageConfig {
 
 export type WithdrawIntentMessageConfig = WithdrawParams
 
+function resolveSignerId(
+  signerId: DefuseUserId | SignerCredentials
+): DefuseUserId {
+  return "credential" in signerId ? formatUserIdentity(signerId) : signerId
+}
+
 /**
  * Creates an intent message for token swaps
  * @param swapConfig Array of [tokenAddress, amount] tuples representing the swap
@@ -38,7 +47,7 @@ export function createSwapIntentMessage(
 ): WalletMessage {
   const innerMessage = makeInnerSwapMessage({
     tokenDeltas: swapConfig,
-    signerId: options.signerId,
+    signerId: resolveSignerId(options.signerId),
     deadlineTimestamp: options.deadlineTimestamp ?? minutesFromNow(5),
     referral: options.referral,
   })
@@ -61,7 +70,7 @@ export function createWithdrawIntentMessage(
   const innerMessage = makeInnerSwapAndWithdrawMessage({
     tokenDeltas: null,
     withdrawParams: withdrawConfig,
-    signerId: options.signerId,
+    signerId: resolveSignerId(options.signerId),
     deadlineTimestamp: options.deadlineTimestamp ?? minutesFromNow(5),
   })
 
@@ -79,7 +88,7 @@ export function createEmptyIntentMessage(
   options: IntentMessageConfig
 ): WalletMessage {
   return makeEmptyMessage({
-    signerId: options.signerId,
+    signerId: resolveSignerId(options.signerId),
     deadlineTimestamp: options.deadlineTimestamp ?? minutesFromNow(5),
   })
 }
