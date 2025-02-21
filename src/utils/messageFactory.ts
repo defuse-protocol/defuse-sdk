@@ -237,7 +237,7 @@ export function makeEmptyMessage({
   })
 }
 
-function randomDefuseNonce(): Uint8Array {
+export function randomDefuseNonce(): Uint8Array {
   return randomBytes(32)
 }
 
