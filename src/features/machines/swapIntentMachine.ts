@@ -201,10 +201,7 @@ export const swapIntentMachine = setup({
 
         return {
           innerMessage,
-          walletMessage: makeSwapMessage({
-            innerMessage,
-            recipient: settings.defuseContractId,
-          }),
+          walletMessage: makeSwapMessage({ innerMessage }),
         }
       },
     }),

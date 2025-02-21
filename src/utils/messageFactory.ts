@@ -103,7 +103,7 @@ export function makeInnerSwapAndWithdrawMessage({
   }
 }
 
-type WithdrawParams =
+export type WithdrawParams =
   | {
       type: "to_near"
       amount: bigint
@@ -180,11 +180,9 @@ function makeInnerWithdrawMessage(params: WithdrawParams): Intent {
 
 export function makeSwapMessage({
   innerMessage,
-  recipient,
   nonce = randomDefuseNonce(),
 }: {
   innerMessage: Nep413DefuseMessageFor_DefuseIntents
-  recipient: string
   nonce?: Uint8Array
 }): WalletMessage {
   const payload = {
@@ -200,7 +198,8 @@ export function makeSwapMessage({
   return {
     NEP413: {
       message: JSON.stringify(innerMessage),
-      recipient,
+      // This is who will be verifying the message
+      recipient: settings.defuseContractId,
       nonce,
     },
     ERC191: {
@@ -215,6 +214,27 @@ export function makeSwapMessage({
       parsedPayload: payload,
     },
   }
+}
+
+export function makeEmptyMessage({
+  signerId,
+  deadlineTimestamp,
+  nonce = randomDefuseNonce(),
+}: {
+  signerId: DefuseUserId
+  deadlineTimestamp: number
+  nonce?: Uint8Array
+}): WalletMessage {
+  const innerMessage: Nep413DefuseMessageFor_DefuseIntents = {
+    deadline: new Date(deadlineTimestamp).toISOString(),
+    intents: [],
+    signer_id: signerId,
+  }
+
+  return makeSwapMessage({
+    innerMessage,
+    nonce,
+  })
 }
 
 function randomDefuseNonce(): Uint8Array {
