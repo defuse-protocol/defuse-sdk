@@ -12,7 +12,7 @@ import { useFormContext } from "react-hook-form"
 import { useTokensUsdPrices } from "src/hooks/useTokensUsdPrices"
 import { formatUsdAmount } from "src/utils/format"
 import getTokenUsdPrice from "src/utils/getTokenUsdPrice"
-import type { ActorRefFrom, SnapshotFrom } from "xstate"
+import type { ActorRefFrom } from "xstate"
 import { ButtonCustom } from "../../../components/Button/ButtonCustom"
 import { ButtonSwitch } from "../../../components/Button/ButtonSwitch"
 import { Form } from "../../../components/Form"
@@ -21,12 +21,11 @@ import { SwapIntentCard } from "../../../components/IntentCard/SwapIntentCard"
 import type { ModalSelectAssetsPayload } from "../../../components/Modal/ModalSelectAssets"
 import { useModalStore } from "../../../providers/ModalStoreProvider"
 import { ModalType } from "../../../stores/modalStore"
-import type { SwappableToken } from "../../../types/swap"
+import { compareAmounts } from "../../../utils/tokenUtils"
 import {
-  compareAmounts,
-  computeTotalBalanceDifferentDecimals,
-} from "../../../utils/tokenUtils"
-import type { depositedBalanceMachine } from "../../machines/depositedBalanceMachine"
+  balanceSelector,
+  transitBalanceSelector,
+} from "../../machines/depositedBalanceMachine"
 import type { intentStatusMachine } from "../../machines/intentStatusMachine"
 import type { Context } from "../../machines/swapUIMachine"
 import { SwapRateInfo } from "./SwapRateInfo"
@@ -389,28 +388,4 @@ export function renderIntentCreationResult(
       <Callout.Text>{content}</Callout.Text>
     </Callout.Root>
   )
-}
-
-export function balanceSelector(token: SwappableToken | null | undefined) {
-  return (state: undefined | SnapshotFrom<typeof depositedBalanceMachine>) => {
-    if (!state || !token) return
-    return computeTotalBalanceDifferentDecimals(token, state.context.balances)
-  }
-}
-
-export function transitBalanceSelector(token: SwappableToken) {
-  return (state: undefined | SnapshotFrom<typeof depositedBalanceMachine>) => {
-    if (!state) return
-
-    const pending = computeTotalBalanceDifferentDecimals(
-      token,
-      state.context.transitBalances,
-      {
-        strict: false,
-      }
-    )
-
-    if (pending?.amount === 0n) return
-    return pending
-  }
 }

@@ -2,6 +2,7 @@ import { providers } from "near-api-js"
 import {
   type ActorRef,
   type Snapshot,
+  type SnapshotFrom,
   assign,
   enqueueActions,
   fromPromise,
@@ -19,6 +20,7 @@ import {
   userAddressToDefuseUserId,
 } from "../../utils/defuse"
 import { isBaseToken } from "../../utils/token"
+import { computeTotalBalanceDifferentDecimals } from "../../utils/tokenUtils"
 
 export interface Input {
   parentRef?: ParentActor
@@ -264,3 +266,31 @@ export const depositedBalanceMachine = setup({
     },
   },
 })
+
+export function balanceSelector(
+  token: BaseTokenInfo | UnifiedTokenInfo | null | undefined
+) {
+  return (state: undefined | SnapshotFrom<typeof depositedBalanceMachine>) => {
+    if (!state || !token) return
+    return computeTotalBalanceDifferentDecimals(token, state.context.balances)
+  }
+}
+
+export function transitBalanceSelector(
+  token: BaseTokenInfo | UnifiedTokenInfo | null | undefined
+) {
+  return (state: undefined | SnapshotFrom<typeof depositedBalanceMachine>) => {
+    if (!state || !token) return
+
+    const pending = computeTotalBalanceDifferentDecimals(
+      token,
+      state.context.transitBalances,
+      {
+        strict: false,
+      }
+    )
+
+    if (pending?.amount === 0n) return
+    return pending
+  }
+}
