@@ -21,7 +21,7 @@ import {
 import { isBaseToken } from "../../utils/token"
 
 export interface Input {
-  parentRef: ParentActor
+  parentRef?: ParentActor
   tokenList: (BaseTokenInfo | UnifiedTokenInfo)[]
 }
 
@@ -52,7 +52,7 @@ export type Events =
 export const depositedBalanceMachine = setup({
   types: {
     context: {} as {
-      parentRef: ParentActor
+      parentRef: ParentActor | undefined
       defuseTokenIds: string[]
       userAccountId: DefuseUserId | null
       balances: BalanceMapping
@@ -140,7 +140,7 @@ export const depositedBalanceMachine = setup({
           })
           // Then send the event to the parent
           enqueue(({ context }) => {
-            context.parentRef.send({
+            context.parentRef?.send({
               type: "BALANCE_CHANGED",
               params: {
                 changedBalanceMapping: balanceChanged,
