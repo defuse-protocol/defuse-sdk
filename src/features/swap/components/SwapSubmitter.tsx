@@ -1,5 +1,6 @@
-import { providers } from "near-api-js"
 import { type ReactNode, createContext } from "react"
+import { settings } from "src/config/settings"
+import { failoverRpcProvider } from "src/services/failover"
 import { logger } from "../../../logger"
 import type { ChainType } from "../../../types/deposit"
 import type { SendNearTransaction } from "../../machines/publicKeyVerifierMachine"
@@ -35,8 +36,8 @@ export function SwapSubmitterProvider({
       params: {
         userAddress,
         userChainType,
-        nearClient: new providers.JsonRpcProvider({
-          url: "https://rpc.mainnet.near.org",
+        nearClient: failoverRpcProvider({
+          urls: settings.reserveRpcUrls.near,
         }),
         sendNearTransaction,
       },
