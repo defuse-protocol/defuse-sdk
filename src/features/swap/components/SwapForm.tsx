@@ -391,9 +391,9 @@ export function renderIntentCreationResult(
   )
 }
 
-export function balanceSelector(token: SwappableToken) {
+export function balanceSelector(token: SwappableToken | null | undefined) {
   return (state: undefined | SnapshotFrom<typeof depositedBalanceMachine>) => {
-    if (!state) return
+    if (!state || !token) return
     return computeTotalBalanceDifferentDecimals(token, state.context.balances)
   }
 }
