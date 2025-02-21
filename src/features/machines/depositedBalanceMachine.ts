@@ -12,7 +12,11 @@ import {
   getDepositedBalances,
   getTransitBalances,
 } from "../../services/defuseBalanceService"
-import type { BaseTokenInfo, UnifiedTokenInfo } from "../../types/base"
+import type {
+  BaseTokenInfo,
+  TokenValue,
+  UnifiedTokenInfo,
+} from "../../types/base"
 import type { ChainType } from "../../types/deposit"
 import { assert } from "../../utils/assert"
 import {
@@ -273,6 +277,66 @@ export function balanceSelector(
   return (state: undefined | SnapshotFrom<typeof depositedBalanceMachine>) => {
     if (!state || !token) return
     return computeTotalBalanceDifferentDecimals(token, state.context.balances)
+  }
+}
+
+/**
+ * Usage:
+ * ```tsx
+ * const { tokenInBalance, tokenOutBalance } = useSelector(
+ *   depositedBalanceRef,
+ *   balanceAllSelector({
+ *     tokenInBalance: formValues.tokenIn,
+ *     tokenOutBalance: formValues.tokenOut,
+ *   })
+ * )
+ *
+ * const [tokenInBalance, tokenOutBalance] = useSelector(
+ *   depositedBalanceRef,
+ *   balanceAllSelector([formValues.tokenIn, formValues.tokenOut])
+ * )
+ * ```
+ */
+export function balanceAllSelector<
+  const T extends
+    | Record<PropertyKey, BaseTokenInfo | UnifiedTokenInfo | null>
+    | Array<BaseTokenInfo | UnifiedTokenInfo | null>,
+>(arg: T) {
+  return <S extends undefined | SnapshotFrom<typeof depositedBalanceMachine>>(
+    state: S
+  ): S extends undefined
+    ? undefined
+    : S extends SnapshotFrom<typeof depositedBalanceMachine>
+      ? { [K in keyof T]: TokenValue | undefined }
+      : undefined => {
+    // @ts-expect-error Need TS wizard to help with this
+    if (!state) return
+
+    if (Array.isArray(arg)) {
+      const result = arg.map((token) => {
+        if (token == null) return
+
+        return computeTotalBalanceDifferentDecimals(
+          token,
+          state.context.balances
+        )
+      })
+      // @ts-expect-error Need TS wizard to help with this
+      return result
+    }
+
+    const result = Object.fromEntries(
+      Object.entries(arg).map(([key, token]) => {
+        if (token == null) return [key, undefined]
+
+        return [
+          key,
+          computeTotalBalanceDifferentDecimals(token, state.context.balances),
+        ]
+      })
+    )
+    // @ts-expect-error Need TS wizard to help with this
+    return result
   }
 }
 
