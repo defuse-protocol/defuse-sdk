@@ -6,10 +6,7 @@ import { verifyMessage as verifyMessageViem } from "viem"
 import { assign, fromPromise, setup } from "xstate"
 import { settings } from "../../config/settings"
 import { logger } from "../../logger"
-import {
-  publishIntent,
-  waitForIntentSettlement,
-} from "../../services/intentService"
+import { publishIntent } from "../../services/intentService"
 import type { AggregatedQuote } from "../../services/quoteService"
 import type { BaseTokenInfo, TokenValue } from "../../types/base"
 import type { Nep413DefuseMessageFor_DefuseIntents } from "../../types/defuse-contracts-types"
@@ -241,15 +238,6 @@ export const swapIntentMachine = setup({
         }
       }) =>
         publishIntent(input.signatureData, input.userInfo, input.quoteHashes)
-    ),
-    pollIntentStatus: fromPromise(
-      ({
-        input,
-        signal,
-      }: {
-        input: { intentHash: string }
-        signal: AbortSignal
-      }) => waitForIntentSettlement(signal, input.intentHash)
     ),
   },
   guards: {
