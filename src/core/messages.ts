@@ -22,6 +22,11 @@ export interface IntentMessageConfig {
    */
   deadlineTimestamp?: number
   /**
+   * Optional nonce for tracking
+   * @default random nonce
+   */
+  nonce?: Uint8Array
+  /**
    * Optional referral code for tracking
    */
   referral?: string
@@ -54,6 +59,7 @@ export function createSwapIntentMessage(
 
   return makeSwapMessage({
     innerMessage,
+    nonce: options.nonce,
   })
 }
 
@@ -76,6 +82,7 @@ export function createWithdrawIntentMessage(
 
   return makeSwapMessage({
     innerMessage,
+    nonce: options.nonce,
   })
 }
 
@@ -90,6 +97,7 @@ export function createEmptyIntentMessage(
   return makeEmptyMessage({
     signerId: resolveSignerId(options.signerId),
     deadlineTimestamp: options.deadlineTimestamp ?? minutesFromNow(5),
+    nonce: options.nonce,
   })
 }
 
