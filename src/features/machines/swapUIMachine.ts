@@ -16,7 +16,7 @@ import type {
   TokenValue,
   UnifiedTokenInfo,
 } from "../../types/base"
-import type { ChainType, Transaction } from "../../types/deposit"
+import type { ChainType } from "../../types/deposit"
 import type { SwappableToken } from "../../types/swap"
 import { assert } from "../../utils/assert"
 import { userAddressToDefuseUserId } from "../../utils/defuse"
@@ -97,9 +97,6 @@ export const swapUIMachine = setup({
             userAddress: string
             userChainType: ChainType
             nearClient: providers.Provider
-            sendNearTransaction: (
-              tx: Transaction["NEAR"]
-            ) => Promise<{ txHash: string } | null>
           }
         }
       | {
@@ -425,7 +422,6 @@ export const swapUIMachine = setup({
             referral: context.referral,
             slippageBasisPoints: context.slippageBasisPoints,
             nearClient: event.params.nearClient,
-            sendNearTransaction: event.params.sendNearTransaction,
             intentOperationParams: {
               type: "swap" as const,
               tokensIn: getUnderlyingBaseTokenInfos(context.formValues.tokenIn),

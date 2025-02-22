@@ -11,7 +11,7 @@ import { settings } from "../../config/settings"
 import { logger } from "../../logger"
 import type { QuoteResult } from "../../services/quoteService"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../types/base"
-import type { ChainType, Transaction } from "../../types/deposit"
+import type { ChainType } from "../../types/deposit"
 import { assert } from "../../utils/assert"
 import { userAddressToDefuseUserId } from "../../utils/defuse"
 import {
@@ -55,9 +55,6 @@ export type Context = {
     userAddress: string
     userChainType: ChainType
     nearClient: providers.Provider
-    sendNearTransaction: (
-      tx: Transaction["NEAR"]
-    ) => Promise<{ txHash: string } | null>
   } | null
   preparationOutput: PreparationOutput | null
   referral?: string
@@ -547,7 +544,6 @@ export const withdrawUIMachine = setup({
             referral: context.referral,
             slippageBasisPoints: 0,
             nearClient: context.submitDeps.nearClient,
-            sendNearTransaction: context.submitDeps.sendNearTransaction,
             intentOperationParams: {
               type: "withdraw",
               tokenOut: formValues.tokenOut,

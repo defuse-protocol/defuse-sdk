@@ -11,6 +11,7 @@ type SwapUIMachineFormSyncProviderProps = PropsWithChildren<{
   userAddress: string | null
   userChainType: ChainType | null
   onSuccessSwap: SwapWidgetProps["onSuccessSwap"]
+  sendNearTransaction: SwapWidgetProps["sendNearTransaction"]
 }>
 
 export function SwapUIMachineFormSyncProvider({
@@ -18,6 +19,7 @@ export function SwapUIMachineFormSyncProvider({
   userAddress,
   userChainType,
   onSuccessSwap,
+  sendNearTransaction,
 }: SwapUIMachineFormSyncProviderProps) {
   const { watch, setValue } = useFormContext<SwapFormValues>()
   const actorRef = SwapUIMachineContext.useActorRef()
@@ -83,7 +85,7 @@ export function SwapUIMachineFormSyncProvider({
   })
 
   // biome-ignore lint/suspicious/noExplicitAny: types should've been correct, but `publicKeyVerifierRef` is commented out
-  usePublicKeyModalOpener(publicKeyVerifierRef as any)
+  usePublicKeyModalOpener(publicKeyVerifierRef as any, sendNearTransaction)
 
   return <>{children}</>
 }
