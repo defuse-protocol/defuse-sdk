@@ -41,7 +41,6 @@ import {
 import type { ParentEvents as BackgroundQuoterEvents } from "./backgroundQuoterMachine"
 import {
   type ErrorCodes as PublicKeyVerifierErrorCodes,
-  type SendNearTransaction,
   publicKeyVerifierMachine,
 } from "./publicKeyVerifierMachine"
 
@@ -95,7 +94,6 @@ type Context = {
   referral?: string
   slippageBasisPoints: number
   nearClient: providers.Provider
-  sendNearTransaction: SendNearTransaction
   intentOperationParams: IntentOperationParams
   // The best quote that was actually published or will be published
   quoteToPublish: AggregatedQuote | null
@@ -136,7 +134,6 @@ type Input = {
   referral?: string
   slippageBasisPoints: number
   nearClient: providers.Provider
-  sendNearTransaction: SendNearTransaction
   intentOperationParams: IntentOperationParams
 }
 
@@ -479,7 +476,6 @@ export const swapIntentMachine = setup({
                 ? context.signature.signatureData
                 : null,
             nearClient: context.nearClient,
-            sendNearTransaction: context.sendNearTransaction,
           }
         },
         onDone: [

@@ -111,7 +111,7 @@ export const WithdrawForm = ({
   })
 
   // biome-ignore lint/suspicious/noExplicitAny: types should've been correct, but `publicKeyVerifierRef` is commented out
-  usePublicKeyModalOpener(publicKeyVerifierRef as any)
+  usePublicKeyModalOpener(publicKeyVerifierRef as any, sendNearTransaction)
 
   useEffect(() => {
     if (userAddress != null && chainType != null) {
@@ -323,7 +323,6 @@ export const WithdrawForm = ({
                 nearClient: new providers.JsonRpcProvider({
                   url: "https://nearrpc.aurora.dev",
                 }),
-                sendNearTransaction: sendNearTransaction,
               },
             })
           })}

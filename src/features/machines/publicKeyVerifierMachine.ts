@@ -1,6 +1,6 @@
 import type { providers } from "near-api-js"
 import type { CodeResult } from "near-api-js/lib/providers/provider"
-import { assign, fromPromise, setup } from "xstate"
+import { assertEvent, assign, fromPromise, setup } from "xstate"
 import { settings } from "../../config/settings"
 import { logger } from "../../logger"
 import type { Transaction } from "../../types/deposit"
@@ -16,7 +16,6 @@ export type SendNearTransaction = (
 type Input = {
   nearAccount: { accountId: string; publicKey: string } | null
   nearClient: providers.Provider
-  sendNearTransaction: SendNearTransaction
 }
 
 export type ErrorCodes =
@@ -27,15 +26,20 @@ export type ErrorCodes =
 
 type Output = { tag: "ok" } | { tag: "err"; value: ErrorCodes }
 
-type Context = Input & {
+export interface Context extends Input {
   error: ErrorCodes | null
 }
+
+type Events =
+  | { type: "ADD_PUBLIC_KEY"; sendNearTransaction: SendNearTransaction }
+  | { type: "ABORT_ADD_PUBLIC_KEY" }
 
 export const publicKeyVerifierMachine = setup({
   types: {
     context: {} as Context,
     input: {} as Input,
     output: {} as Output,
+    events: {} as Events,
   },
   actors: {
     checkPubKeyActor: fromPromise(
@@ -105,7 +109,6 @@ export const publicKeyVerifierMachine = setup({
           return {
             nearAccount: context.nearAccount,
             nearClient: context.nearClient,
-            sendNearTransaction: context.sendNearTransaction,
           }
         },
         onDone: [
@@ -159,14 +162,16 @@ export const publicKeyVerifierMachine = setup({
       invoke: {
         id: "addPubKeyRef",
         src: "addPubKeyActor",
-        input: ({ context }) => {
+        input: ({ context, event }) => {
+          assertEvent(event, "ADD_PUBLIC_KEY")
+
           if (context.nearAccount == null) {
             throw new Error("no near account")
           }
 
           return {
             pubKey: context.nearAccount.publicKey,
-            sendNearTransaction: context.sendNearTransaction,
+            sendNearTransaction: event.sendNearTransaction,
           }
         },
         onDone: "completed",

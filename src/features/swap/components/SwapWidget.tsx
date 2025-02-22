@@ -37,11 +37,11 @@ export const SwapWidget = ({
               userAddress={userAddress}
               userChainType={userChainType}
               onSuccessSwap={onSuccessSwap}
+              sendNearTransaction={sendNearTransaction}
             >
               <SwapSubmitterProvider
                 userAddress={userAddress}
                 userChainType={userChainType}
-                sendNearTransaction={sendNearTransaction}
               >
                 <SwapForm onNavigateDeposit={onNavigateDeposit} />
               </SwapSubmitterProvider>
