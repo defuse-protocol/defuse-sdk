@@ -32,10 +32,20 @@ export async function publishIntent(
       minDelay: 1000,
     }
   )
-  if (result.status === "OK") return { tag: "ok", value: result.intent_hash }
-
-  if (result.status === "FAILED" && result.reason === "already processed")
+  if (result.status === "OK") {
     return { tag: "ok", value: result.intent_hash }
+  }
+
+  if (result.status === "FAILED" && result.reason === "already processed") {
+    return { tag: "ok", value: result.intent_hash }
+  }
+
+  if (
+    result.status === "FAILED" &&
+    result.reason.includes("nonce was already used")
+  ) {
+    return { tag: "err", value: { reason: "nonce_used" } }
+  }
 
   return { tag: "err", value: { reason: result.status } }
 }
