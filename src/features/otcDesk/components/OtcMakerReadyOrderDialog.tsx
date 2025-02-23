@@ -4,10 +4,10 @@ import type { ActorRefFrom } from "xstate"
 import { ModalDialog } from "../../../components/Modal/ModalDialog"
 import type { SignerCredentials } from "../../../core/formatters"
 import { formatTokenValue } from "../../../utils/format"
-import { computeTradeBreakdown } from "../../utils/otcMakerBreakdown"
 import type { otcMakerConfigLoadActor } from "../actors/otcMakerConfigLoadActor"
 import type { otcMakerReadyOrderActor } from "../actors/otcMakerReadyOrderActor"
 import type { SignMessage } from "../types/sharedTypes"
+import { computeTradeBreakdown } from "../utils/otcMakerBreakdown"
 
 type OtcMakerReadyOrderDialogProps = {
   configRef: ActorRefFrom<typeof otcMakerConfigLoadActor>

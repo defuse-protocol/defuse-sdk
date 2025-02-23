@@ -1,5 +1,5 @@
-import type { TokenValue } from "../../types/base"
-import { subtractAmounts } from "../../utils/tokenUtils"
+import type { TokenValue } from "../../../types/base"
+import { subtractAmounts } from "../../../utils/tokenUtils"
 
 export function computeTradeBreakdown(params: {
   amountIn: TokenValue
