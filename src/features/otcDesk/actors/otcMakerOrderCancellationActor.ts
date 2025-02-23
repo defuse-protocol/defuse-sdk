@@ -1,0 +1,261 @@
+import { base64 } from "@scure/base"
+import { createEmptyIntentMessage } from "src/core/messages"
+import { type PromiseActorLogic, assertEvent, assign, setup } from "xstate"
+import type { SignerCredentials } from "../../../core/formatters"
+import { logger } from "../../../logger"
+import type { MultiPayload } from "../../../types/defuse-contracts-types"
+import type { WalletSignatureResult } from "../../../types/swap"
+import { assert } from "../../../utils/assert"
+import {
+  type Errors as PublishIntentErrors,
+  type Input as PublishIntentInput,
+  type Output as PublishIntentOutput,
+  publishIntentMachine,
+} from "../../machines/publishIntentMachine"
+import {
+  type Errors as SignIntentErrors,
+  type Input as SignIntentInput,
+  type Output as SignIntentOutput,
+  signIntentMachine,
+} from "../../machines/signIntentMachine"
+import type { SignMessage } from "../types/sharedTypes"
+
+type OTCMakerOrderCancellationActorInput = {
+  nonceBas64: string
+}
+
+type OTCMakerOrderCancellationActorOutput = {
+  orderStatus: "cancelled" | "not_cancelled" | "already_cancelled_or_executed"
+}
+
+type OTCMakerOrderCancellationActorErrors =
+  | SignIntentErrors
+  | PublishIntentErrors
+  | { reason: "EXCEPTION" }
+
+type OTCMakerOrderCancellationActorContext = {
+  nonceBas64: string
+  error: null | OTCMakerOrderCancellationActorErrors
+}
+
+export const otcMakerOrderCancellationActor = setup({
+  types: {
+    input: {} as OTCMakerOrderCancellationActorInput,
+    output: {} as OTCMakerOrderCancellationActorOutput,
+    context: {} as OTCMakerOrderCancellationActorContext,
+    events: {} as
+      | {
+          type: "ABORT_CANCELLATION" | "ACK_CANCELLATION_IMPOSSIBLE"
+        }
+      | {
+          type: "CONFIRM_CANCELLATION"
+          signerCredentials: SignerCredentials
+          signMessage: SignMessage
+        }
+      | {
+          type: "_INTERNAL_SIGNED"
+          multiPayload: MultiPayload
+          signatureResult: WalletSignatureResult
+          signerCredentials: SignerCredentials
+        },
+  },
+  actors: {
+    // `as PromiseActorLogic` helps to overcome XState type bloating
+    signActor: signIntentMachine as unknown as PromiseActorLogic<
+      SignIntentOutput,
+      SignIntentInput
+    >,
+    // `as PromiseActorLogic` helps to overcome XState type bloating
+    publishActor: publishIntentMachine as unknown as PromiseActorLogic<
+      PublishIntentOutput,
+      PublishIntentInput
+    >,
+  },
+  actions: {
+    logError: (_, event: { error: unknown }) => {
+      logger.error(event.error)
+    },
+    setError: assign({
+      error: (_, error: OTCMakerOrderCancellationActorErrors) => error,
+    }),
+    clearError: assign({ error: null }),
+
+    completeSigning: ({ self }, event: { output: SignIntentOutput }) => {
+      assert(event.output.tag === "ok")
+      self.send({ type: "_INTERNAL_SIGNED", ...event.output.value })
+    },
+  },
+  guards: {
+    isOk: (_, params: { tag: "ok" | "err" }) => params.tag === "ok",
+    isNonceUsedError: (
+      _,
+      event: {
+        output: { tag: "err"; value: PublishIntentErrors } | { tag: "ok" }
+      }
+    ) => {
+      return (
+        event.output.tag === "err" &&
+        event.output.value.reason === "ERR_NONCE_USED"
+      )
+    },
+  },
+}).createMachine({
+  context: ({ input }) => ({
+    ...input,
+    error: null,
+  }),
+
+  output: ({ event }) => {
+    return event.output as OTCMakerOrderCancellationActorOutput
+  },
+
+  initial: "idle",
+
+  states: {
+    idle: {
+      on: {
+        CONFIRM_CANCELLATION: "cancelling",
+        ABORT_CANCELLATION: "aborted",
+      },
+    },
+
+    idleUncancellable: {
+      on: {
+        ACK_CANCELLATION_IMPOSSIBLE: "uncancellable",
+      },
+    },
+
+    cancelling: {
+      entry: "clearError",
+
+      initial: "signing",
+
+      states: {
+        signing: {
+          invoke: {
+            src: "signActor",
+
+            input: ({ context, event }) => {
+              assertEvent(event, "CONFIRM_CANCELLATION")
+
+              return {
+                walletMessage: createEmptyIntentMessage({
+                  signerId: event.signerCredentials,
+                  nonce: base64.decode(context.nonceBas64),
+                }),
+                signerCredentials: event.signerCredentials,
+                signMessage: event.signMessage,
+              }
+            },
+
+            onError: {
+              target: "#(machine).idle",
+              actions: [
+                { type: "logError", params: ({ event }) => event },
+                { type: "setError", params: { reason: "EXCEPTION" } },
+              ],
+            },
+
+            onDone: [
+              {
+                guard: { type: "isOk", params: ({ event }) => event.output },
+                actions: {
+                  type: "completeSigning",
+                  params: ({ event }) => event,
+                },
+              },
+              {
+                target: "#(machine).idle",
+                actions: {
+                  type: "setError",
+                  params: ({ event }) => {
+                    assert(event.output.tag === "err")
+                    return event.output.value
+                  },
+                },
+              },
+            ],
+          },
+
+          on: {
+            _INTERNAL_SIGNED: {
+              target: "publishing",
+            },
+          },
+        },
+
+        publishing: {
+          invoke: {
+            src: "publishActor",
+
+            input: ({ event }) => {
+              assertEvent(event, "_INTERNAL_SIGNED")
+
+              return {
+                signerCredentials: event.signerCredentials,
+                signature: event.signatureResult,
+                multiPayload: event.multiPayload,
+              }
+            },
+
+            onError: {
+              target: "#(machine).idle",
+              actions: [
+                { type: "logError", params: ({ event }) => event },
+                { type: "setError", params: { reason: "EXCEPTION" } },
+              ],
+            },
+
+            onDone: [
+              {
+                target: "#(machine).cancelled",
+                guard: {
+                  type: "isOk",
+                  params: ({ event }) => event.output,
+                },
+              },
+              {
+                target: "#(machine).idleUncancellable",
+                guard: {
+                  type: "isNonceUsedError",
+                  params: ({ event }) => event,
+                },
+              },
+              {
+                target: "#(machine).idle",
+                actions: {
+                  type: "setError",
+                  params: ({ event }) => {
+                    assert(event.output.tag === "err")
+                    return event.output.value
+                  },
+                },
+              },
+            ],
+          },
+        },
+      },
+    },
+
+    cancelled: {
+      type: "final",
+      output: {
+        orderStatus: "cancelled",
+      } satisfies OTCMakerOrderCancellationActorOutput,
+    },
+
+    uncancellable: {
+      type: "final",
+      output: {
+        orderStatus: "already_cancelled_or_executed",
+      } satisfies OTCMakerOrderCancellationActorOutput,
+    },
+
+    aborted: {
+      type: "final",
+      output: {
+        orderStatus: "not_cancelled",
+      } satisfies OTCMakerOrderCancellationActorOutput,
+    },
+  },
+})

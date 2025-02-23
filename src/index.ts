@@ -1,6 +1,7 @@
 export { DepositWidget } from "./features/deposit/components/DepositWidget"
 export { SwapWidget } from "./features/swap/components/SwapWidget"
 export { WithdrawWidget } from "./features/withdraw/components/WithdrawWidget"
+export { OtcMakerWidget } from "./features/otcDesk/components/OtcMakerWidget"
 export type { BaseTokenInfo, UnifiedTokenInfo } from "./types/base"
 export { ChainType } from "./types/deposit"
 export { isBaseToken, isUnifiedToken } from "./utils/token"
