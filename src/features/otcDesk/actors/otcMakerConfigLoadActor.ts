@@ -49,7 +49,7 @@ export const otcMakerConfigLoadActor = setup({
   },
 })
 
-async function fetchFee() {
+export async function fetchFee() {
   const nearClient = new providers.JsonRpcProvider({
     url: "https://nearrpc.aurora.dev",
   })
