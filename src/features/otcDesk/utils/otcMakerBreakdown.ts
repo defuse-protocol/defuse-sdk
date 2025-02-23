@@ -26,30 +26,6 @@ export function computeTradeBreakdown(params: {
   }
 }
 
-export function computeTradeTakerBreakdown(params: {
-  amountIn: TokenValue
-  amountOut: TokenValue
-  fee: number
-}): TradeBreakdown {
-  const takerSends = {
-    amount: grossUpAmount(params.amountOut.amount, params.fee),
-    decimals: params.amountOut.decimals,
-  }
-  const takerReceives = {
-    amount: netDownAmount(params.amountIn.amount, params.fee),
-    decimals: params.amountIn.decimals,
-  }
-
-  return {
-    makerSends: params.amountIn,
-    makerReceives: params.amountOut,
-    makerPaysFee: subtractAmounts(params.amountIn, takerReceives),
-    takerSends,
-    takerReceives,
-    takerPaysFee: subtractAmounts(takerSends, params.amountOut),
-  }
-}
-
 // It's 100%
 const BASIS_POINTS_DENOMINATOR = 10_000n
 
