@@ -7,8 +7,14 @@ export function computeTradeBreakdown(params: {
   amountOut: TokenValue
   fee: number
 }): TradeBreakdown {
-  const takerSends = grossUpAmount(params.amountOut, params.fee)
-  const takerReceives = netDownAmount(params.amountIn, params.fee)
+  const takerSends = {
+    amount: grossUpAmount(params.amountOut.amount, params.fee),
+    decimals: params.amountOut.decimals,
+  }
+  const takerReceives = {
+    amount: netDownAmount(params.amountIn.amount, params.fee),
+    decimals: params.amountIn.decimals,
+  }
 
   return {
     makerSends: params.amountIn,
@@ -25,8 +31,14 @@ export function computeTradeTakerBreakdown(params: {
   amountOut: TokenValue
   fee: number
 }): TradeBreakdown {
-  const takerSends = grossUpAmount(params.amountOut, params.fee)
-  const takerReceives = netDownAmount(params.amountIn, params.fee)
+  const takerSends = {
+    amount: grossUpAmount(params.amountOut.amount, params.fee),
+    decimals: params.amountOut.decimals,
+  }
+  const takerReceives = {
+    amount: netDownAmount(params.amountIn.amount, params.fee),
+    decimals: params.amountIn.decimals,
+  }
 
   return {
     makerSends: params.amountIn,
@@ -47,22 +59,19 @@ const BASIS_POINTS_DENOMINATOR = 10_000n
  * // If gross amount is 100000n with 0.3% fee, net amount is 99700n
  * netDownAmount({ amount: 100000n, decimals: 6 }, 30) == 99700n
  */
-export function netDownAmount(amount: TokenValue, feeBip: number): TokenValue {
+export function netDownAmount(amount: bigint, feeBip: number): bigint {
   if (feeBip < 0 || feeBip > Number(BASIS_POINTS_DENOMINATOR)) {
     throw new Error("Invalid feeBip value. It must be between 0 and 10000.")
   }
 
-  if (amount.amount === 0n || feeBip === 0) return amount
+  if (amount === 0n || feeBip === 0) return amount
 
   // Multiply first to maintain precision, then add BASIS_POINTS_DENOMINATOR-1 for ceiling division
   const feeAmount =
-    (amount.amount * BigInt(feeBip) + (BASIS_POINTS_DENOMINATOR - 1n)) /
+    (amount * BigInt(feeBip) + (BASIS_POINTS_DENOMINATOR - 1n)) /
     BASIS_POINTS_DENOMINATOR
 
-  return {
-    amount: amount.amount - feeAmount,
-    decimals: amount.decimals,
-  }
+  return amount - feeAmount
 }
 
 /**
@@ -71,21 +80,17 @@ export function netDownAmount(amount: TokenValue, feeBip: number): TokenValue {
  * // To receive net 100000n after 0.3% fee, gross amount needed is 100300n
  * grossUpAmount({ amount: 100000n, decimals: 6 }, 30) == 100300n
  */
-export function grossUpAmount(amount: TokenValue, feeBip: number): TokenValue {
+export function grossUpAmount(amount: bigint, feeBip: number): bigint {
   if (feeBip < 0 || feeBip > Number(BASIS_POINTS_DENOMINATOR)) {
     throw new Error("Invalid feeBip value. It must be between 0 and 10000.")
   }
 
-  if (amount.amount === 0n || feeBip === 0) return amount
+  if (amount === 0n || feeBip === 0) return amount
 
   const feeMultiplier = BASIS_POINTS_DENOMINATOR - BigInt(feeBip)
   // Multiply first, then add (denominator-1) for ceiling division
   const grossAmount =
-    (amount.amount * BASIS_POINTS_DENOMINATOR + (feeMultiplier - 1n)) /
-    feeMultiplier
+    (amount * BASIS_POINTS_DENOMINATOR + (feeMultiplier - 1n)) / feeMultiplier
 
-  return {
-    amount: grossAmount,
-    decimals: amount.decimals,
-  }
+  return grossAmount
 }

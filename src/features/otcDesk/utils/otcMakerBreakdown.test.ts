@@ -3,12 +3,12 @@ import { grossUpAmount, netDownAmount } from "./otcMakerBreakdown"
 
 describe("netDownAmount", () => {
   it("throws error for invalid feeBip", () => {
-    expect(() => netDownAmount({ amount: 100000n, decimals: 6 }, -1)).toThrow(
+    expect(() => netDownAmount(100000n, -1)).toThrow(
       "Invalid feeBip value. It must be between 0 and 10000."
     )
-    expect(() =>
-      netDownAmount({ amount: 100000n, decimals: 6 }, 10001)
-    ).toThrow("Invalid feeBip value. It must be between 0 and 10000.")
+    expect(() => netDownAmount(100000n, 10001)).toThrow(
+      "Invalid feeBip value. It must be between 0 and 10000."
+    )
   })
 
   /**
@@ -30,21 +30,18 @@ describe("netDownAmount", () => {
     [1n, 1, 0n],
     [0n, 1, 0n],
   ])("reduce amount by fee", (amount, fee, expected) => {
-    expect(netDownAmount({ amount, decimals: 6 }, fee)).toEqual({
-      amount: expected,
-      decimals: 6,
-    })
+    expect(netDownAmount(amount, fee)).toEqual(expected)
   })
 })
 
 describe("grossUpAmount", () => {
   it("throws error for invalid feeBip", () => {
-    expect(() => grossUpAmount({ amount: 100000n, decimals: 6 }, -1)).toThrow(
+    expect(() => grossUpAmount(100000n, -1)).toThrow(
       "Invalid feeBip value. It must be between 0 and 10000."
     )
-    expect(() =>
-      grossUpAmount({ amount: 100000n, decimals: 6 }, 10001)
-    ).toThrow("Invalid feeBip value. It must be between 0 and 10000.")
+    expect(() => grossUpAmount(100000n, 10001)).toThrow(
+      "Invalid feeBip value. It must be between 0 and 10000."
+    )
   })
 
   /**
@@ -65,12 +62,7 @@ describe("grossUpAmount", () => {
   ])(
     "calculate gross amount needed for desired net amount after fee",
     (targetAmount, fee, expectedGross) => {
-      expect(grossUpAmount({ amount: targetAmount, decimals: 6 }, fee)).toEqual(
-        {
-          amount: expectedGross,
-          decimals: 6,
-        }
-      )
+      expect(grossUpAmount(targetAmount, fee)).toEqual(expectedGross)
     }
   )
 })
