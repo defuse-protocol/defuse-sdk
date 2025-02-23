@@ -89,14 +89,19 @@ export const otcMakerSignMachine = setup({
   context: ({ input }) => {
     const nonce = randomDefuseNonce()
 
-    let diff: Record<BaseTokenInfo["defuseAssetId"], bigint>
+    let tokenInDiff: Record<BaseTokenInfo["defuseAssetId"], bigint>
 
     try {
-      diff = calculateSplitAmounts(
+      tokenInDiff = calculateSplitAmounts(
         getUnderlyingBaseTokenInfos(input.parsed.tokenIn),
         input.parsed.amountIn,
         input.balances
       )
+
+      for (const [assetId, amount] of Object.entries(tokenInDiff)) {
+        // We need to negate the amount, as the balance is being reduced
+        tokenInDiff[assetId] = -amount
+      }
     } catch (err: unknown) {
       if (!findError(err, AmountMismatchError)) {
         throw err
@@ -107,9 +112,10 @@ export const otcMakerSignMachine = setup({
        * and let the user know that they have insufficient balance.
        */
       const tokenIn = getAnyBaseTokenInfo(input.parsed.tokenIn)
-      diff = {
+      tokenInDiff = {
         [tokenIn.defuseAssetId]: adjustDecimals(
-          input.parsed.amountIn.amount,
+          // We need to negate the amount, as the balance is being reduced
+          -input.parsed.amountIn.amount,
           input.parsed.amountIn.decimals,
           tokenIn.decimals
         ),
@@ -118,7 +124,7 @@ export const otcMakerSignMachine = setup({
 
     const walletMessage = createSwapIntentMessage(
       [
-        ...Object.entries(diff),
+        ...Object.entries(tokenInDiff),
         [input.parsed.tokenOut.defuseAssetId, input.parsed.amountOut.amount],
       ],
       {
