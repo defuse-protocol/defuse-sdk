@@ -38,7 +38,7 @@ export type OtcMakerWidgetProps = {
   signMessage: SignMessage
 
   /** Function to generate a shareable trade link */
-  generateLink: (multiPayload: MultiPayload) => Promise<string | null>
+  generateLink: (multiPayload: MultiPayload) => string
 
   /** Theme selection */
   theme?: "dark" | "light"
@@ -51,6 +51,7 @@ export function OtcMakerForm({
   initialTokenIn,
   initialTokenOut,
   signMessage,
+  generateLink,
 }: OtcMakerWidgetProps) {
   const signerCredentials: SignerCredentials | null = useMemo(
     () =>
@@ -143,6 +144,7 @@ export function OtcMakerForm({
             readyOrderRef={readyOrderRef}
             signerCredentials={signerCredentials}
             signMessage={signMessage}
+            generateLink={generateLink}
           />
         )}
 

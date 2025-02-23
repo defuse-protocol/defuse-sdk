@@ -3,6 +3,7 @@ import { useSelector } from "@xstate/react"
 import type { ActorRefFrom } from "xstate"
 import { ModalDialog } from "../../../components/Modal/ModalDialog"
 import type { SignerCredentials } from "../../../core/formatters"
+import type { MultiPayload } from "../../../types/defuse-contracts-types"
 import { formatTokenValue } from "../../../utils/format"
 import type { otcMakerConfigLoadActor } from "../actors/otcMakerConfigLoadActor"
 import type { otcMakerReadyOrderActor } from "../actors/otcMakerReadyOrderActor"
@@ -14,6 +15,7 @@ type OtcMakerReadyOrderDialogProps = {
   readyOrderRef: ActorRefFrom<typeof otcMakerReadyOrderActor>
   signerCredentials: SignerCredentials
   signMessage: SignMessage
+  generateLink: (multiPayload: MultiPayload) => string
 }
 
 export function OtcMakerReadyOrderDialog({
@@ -21,6 +23,7 @@ export function OtcMakerReadyOrderDialog({
   readyOrderRef,
   signerCredentials,
   signMessage,
+  generateLink,
 }: OtcMakerReadyOrderDialogProps) {
   const { orderCancellationRef } = useSelector(readyOrderRef, (state) => ({
     orderCancellationRef: state.children.otcMakerOrderCancellationRef,
@@ -33,7 +36,11 @@ export function OtcMakerReadyOrderDialog({
 
   return (
     <>
-      <OrderDialog readyOrderRef={readyOrderRef} configRef={configRef} />
+      <OrderDialog
+        readyOrderRef={readyOrderRef}
+        configRef={configRef}
+        generateLink={generateLink}
+      />
 
       {orderCancellationRef && orderCancellationSnapshot && (
         <ModalDialog
@@ -101,9 +108,11 @@ export function OtcMakerReadyOrderDialog({
 function OrderDialog({
   readyOrderRef,
   configRef,
+  generateLink,
 }: {
   readyOrderRef: ActorRefFrom<typeof otcMakerReadyOrderActor>
   configRef: ActorRefFrom<typeof otcMakerConfigLoadActor>
+  generateLink: (multiPayload: MultiPayload) => string
 }) {
   const { context } = useSelector(readyOrderRef, (state) => ({
     context: state.context,
@@ -195,7 +204,14 @@ function OrderDialog({
         </div>
       )}
 
-      <Button type="button">Copy link</Button>
+      <Button
+        type="button"
+        onClick={() => {
+          navigator.clipboard.writeText(generateLink(context.multiPayload))
+        }}
+      >
+        Copy link
+      </Button>
 
       <Button type="button" onClick={cancelOrder}>
         Cancel order
