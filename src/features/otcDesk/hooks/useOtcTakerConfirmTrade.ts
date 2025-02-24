@@ -1,5 +1,6 @@
 import { useMutation } from "@tanstack/react-query"
 import { Err, type Result } from "@thames/monads"
+import { useContext } from "react"
 import {
   type SignerCredentials,
   formatSignedIntent,
@@ -12,12 +13,15 @@ import {
 } from "../../../services/intentService"
 import type { MultiPayload } from "../../../types/defuse-contracts-types"
 import { userAddressToDefuseUserId } from "../../../utils/defuse"
+import {
+  SignIntentContext,
+  type SignIntentErr,
+} from "../providers/SignIntentActorProvider"
 import type { SignMessage } from "../types/sharedTypes"
 import {
   type AggregatedQuoteErr,
   getFreshQuoteHashes,
 } from "../utils/quoteUtils"
-import { type SignIntentErr, signIntent } from "../utils/signIntent"
 import type { OTCTakerPreparationOk } from "./useOtcTakerPreparation"
 
 export function useOtcTakerConfirmTrade({
@@ -27,6 +31,8 @@ export function useOtcTakerConfirmTrade({
   makerMultiPayloadPlain: MultiPayload | string
   signMessage: SignMessage
 }) {
+  const { signIntent } = useContext(SignIntentContext)
+
   return useMutation({
     mutationKey: ["confirm_swap"],
     mutationFn: async ({
