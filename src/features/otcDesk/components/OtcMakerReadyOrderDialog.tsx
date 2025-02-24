@@ -67,7 +67,13 @@ export function OtcMakerReadyOrderDialog({
             </>
           ) : (
             <>
-              <div>Are you sure you want to cancel the order?</div>
+              <Dialog.Title className="text-2xl font-black text-gray-900 dark:text-gray-100 mb-2">
+                Cancel order?
+              </Dialog.Title>
+              <Dialog.Description className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                The funds will stay safely in your wallet, and the link will no
+                longer work.
+              </Dialog.Description>
 
               {orderCancellationSnapshot.context.error != null && (
                 <div className="text-red-700">
@@ -75,30 +81,40 @@ export function OtcMakerReadyOrderDialog({
                 </div>
               )}
 
-              <Button
-                type="button"
-                onClick={() => {
-                  orderCancellationRef.send({
-                    type: "CONFIRM_CANCELLATION",
-                    signerCredentials,
-                    signMessage,
-                  })
-                }}
-              >
-                <Spinner
-                  loading={orderCancellationSnapshot?.matches("cancelling")}
-                />
-                Yes
-              </Button>
+              <div className="flex flex-col md:flex-row justify-center gap-3 mt-5">
+                <Button
+                  type="button"
+                  size="4"
+                  variant="outline"
+                  className="flex-1 font-bold"
+                  onClick={() =>
+                    orderCancellationRef.send({ type: "ABORT_CANCELLATION" })
+                  }
+                >
+                  Keep
+                </Button>
 
-              <Button
-                type="button"
-                onClick={() =>
-                  orderCancellationRef.send({ type: "ABORT_CANCELLATION" })
-                }
-              >
-                No
-              </Button>
+                <Button
+                  type="button"
+                  size="4"
+                  variant="solid"
+                  className="flex-1 font-bold"
+                  onClick={() =>
+                    orderCancellationRef.send({
+                      type: "CONFIRM_CANCELLATION",
+                      signerCredentials,
+                      signMessage,
+                    })
+                  }
+                >
+                  <Spinner
+                    loading={orderCancellationSnapshot?.matches("cancelling")}
+                  />
+                  {orderCancellationSnapshot?.matches("cancelling")
+                    ? "Cancelling..."
+                    : "Cancel order"}
+                </Button>
+              </div>
             </>
           )}
         </ModalDialog>
