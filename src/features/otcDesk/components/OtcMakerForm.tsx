@@ -193,11 +193,6 @@ export function OtcMakerForm({
 
   return (
     <>
-      {useSelector(
-        useSelector(rootActorRef, (s) => s.children.otcMakerConfigLoadRef),
-        (s) => JSON.stringify(s?.context)
-      )}
-
       {rootSnapshot.matches("signed") &&
         configRef != null &&
         readyOrderRef != null &&
@@ -228,7 +223,7 @@ export function OtcMakerForm({
         <div className="flex flex-col items-center">
           <div className="flex flex-col gap-3">
             <TokenAmountInputCard
-              variant="in"
+              variant="2"
               labelSlot={
                 <label
                   htmlFor="otc-maker-amount-in"
@@ -300,7 +295,7 @@ export function OtcMakerForm({
 
           <div className="flex flex-col gap-3">
             <TokenAmountInputCard
-              variant="out"
+              variant="2"
               labelSlot={
                 <label
                   htmlFor="otc-maker-amount-out"
