@@ -13,7 +13,8 @@ import { formatTokenValue, formatUsdAmount } from "../../../utils/format"
 import getTokenUsdPrice from "../../../utils/getTokenUsdPrice"
 import { computeTotalBalanceDifferentDecimals } from "../../../utils/tokenUtils"
 import { TokenAmountInputCard } from "../../deposit/components/DepositForm/TokenAmountInputCard"
-import { useConfirmSwap } from "../hooks/useConfirmSwap"
+import { useOtcTakerConfirmTrade } from "../hooks/useOtcTakerConfirmTrade"
+import { useOtcTakerPreparation } from "../hooks/useOtcTakerPreparation"
 import type { SignMessage } from "../types/sharedTypes"
 import type { TradeTerms } from "../utils/deriveTradeTerms"
 
@@ -103,11 +104,16 @@ export function OtcTakerForm({
     enabled: signerId != null,
   })
 
-  const confirmSwapMutation = useConfirmSwap({
-    makerMultiPayloadPlain,
-    takerTokenDiff: tradeTerms.takerTokenDiff,
+  const preparation = useOtcTakerPreparation({
     tokenIn: tradeTerms.tokenIn,
+    takerTokenDiff: tradeTerms.takerTokenDiff,
     protocolFee,
+    takerId: signerId,
+  })
+
+  const confirmTradeMutation = useOtcTakerConfirmTrade({
+    preparationResult: preparation.data,
+    makerMultiPayloadPlain,
     signMessage,
     signerCredentials,
   })
@@ -195,10 +201,23 @@ export function OtcTakerForm({
         size="lg"
         type="button"
         onClick={() => {
-          confirmSwapMutation.mutate()
+          if (
+            !confirmTradeMutation.isPending &&
+            signerCredentials != null &&
+            preparation.data != null &&
+            preparation.data.isOk()
+          ) {
+            confirmTradeMutation.mutate({
+              signerCredentials,
+              preparation: preparation.data.unwrap(),
+            })
+          }
         }}
+        isLoading={confirmTradeMutation.isPending}
       >
-        Confirm swap
+        {confirmTradeMutation.isPending
+          ? "Confirm in your wallet..."
+          : "Confirm swap"}
       </ButtonCustom>
     </div>
   )
