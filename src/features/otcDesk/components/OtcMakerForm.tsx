@@ -193,11 +193,6 @@ export function OtcMakerForm({
 
   return (
     <>
-      {useSelector(
-        useSelector(rootActorRef, (s) => s.children.otcMakerConfigLoadRef),
-        (s) => JSON.stringify(s?.context)
-      )}
-
       {rootSnapshot.matches("signed") &&
         configRef != null &&
         readyOrderRef != null &&
