@@ -1,11 +1,15 @@
 import { useMutation } from "@tanstack/react-query"
-import { Err, Ok, type Result } from "@thames/monads"
+import { Err, type Result } from "@thames/monads"
 import {
   type SignerCredentials,
   formatSignedIntent,
 } from "../../../core/formatters"
 import { createSwapIntentMessage } from "../../../core/messages"
-import { publishIntents } from "../../../services/solverRelayHttpClient"
+import {
+  type PublishIntentsErr,
+  type PublishIntentsOk,
+  publishIntents,
+} from "../../../services/intentService"
 import type { MultiPayload } from "../../../types/defuse-contracts-types"
 import { userAddressToDefuseUserId } from "../../../utils/defuse"
 import type { SignMessage } from "../types/sharedTypes"
@@ -69,7 +73,6 @@ export function useOtcTakerConfirmTrade({
         signerCredentials
       )
 
-      // todo: add retry mechanism for publishing for network failures
       return publishIntents({
         quote_hashes: quoteHashesResult.unwrap(),
         signed_datas: [
@@ -78,62 +81,7 @@ export function useOtcTakerConfirmTrade({
             ? JSON.parse(makerMultiPayloadPlain)
             : makerMultiPayloadPlain,
         ],
-      }).then(parsePublishIntentsResponse)
+      })
     },
-  })
-}
-
-type PublishIntentsOk = string[]
-type PublishIntentsErr =
-  | {
-      reason:
-        | "RELAY_PUBLISH_SIGNATURE_EXPIRED"
-        | "RELAY_PUBLISH_INTERNAL_ERROR"
-        | "RELAY_PUBLISH_SIGNATURE_INVALID"
-        | "RELAY_PUBLISH_NONCE_USED"
-        | "RELAY_PUBLISH_INSUFFICIENT_BALANCE"
-    }
-  | {
-      reason: "RELAY_PUBLISH_UNKNOWN_ERROR"
-      serverReason: string
-    }
-
-function parsePublishIntentsResponse(
-  response: Awaited<ReturnType<typeof publishIntents>>
-): Result<PublishIntentsOk, PublishIntentsErr> {
-  if (response.status === "OK") {
-    return Ok(response.intent_hashes)
-  }
-
-  if (response.reason === "already processed") {
-    return Ok(response.intent_hashes)
-  }
-
-  if (
-    response.reason === "expired" ||
-    response.reason.includes("deadline has expired")
-  ) {
-    return Err({ reason: "RELAY_PUBLISH_SIGNATURE_EXPIRED" })
-  }
-
-  if (response.reason === "internal") {
-    return Err({ reason: "RELAY_PUBLISH_INTERNAL_ERROR" })
-  }
-
-  if (response.reason.includes("invalid signature")) {
-    return Err({ reason: "RELAY_PUBLISH_SIGNATURE_INVALID" })
-  }
-
-  if (response.reason.includes("nonce was already used")) {
-    return Err({ reason: "RELAY_PUBLISH_NONCE_USED" })
-  }
-
-  if (response.reason.includes("insufficient balance or overflow")) {
-    return Err({ reason: "RELAY_PUBLISH_INSUFFICIENT_BALANCE" })
-  }
-
-  return Err({
-    reason: "RELAY_PUBLISH_UNKNOWN_ERROR",
-    serverReason: response.reason,
   })
 }
