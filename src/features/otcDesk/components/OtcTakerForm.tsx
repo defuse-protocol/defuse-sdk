@@ -195,10 +195,15 @@ export function OtcTakerForm({
         size="lg"
         type="button"
         onClick={() => {
-          confirmSwapMutation.mutate()
+          if (!confirmSwapMutation.isPending) {
+            confirmSwapMutation.mutate()
+          }
         }}
+        isLoading={confirmSwapMutation.isPending}
       >
-        Confirm swap
+        {confirmSwapMutation.isPending
+          ? "Confirm in your wallet..."
+          : "Confirm swap"}
       </ButtonCustom>
     </div>
   )
