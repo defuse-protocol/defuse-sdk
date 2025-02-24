@@ -113,6 +113,15 @@ const config = {
           a11: "var(--accent-a11)",
           a12: "var(--accent-a12)",
         },
+
+        yellow: {
+          DEFAULT: "var(--yellow-9)",
+          50: "var(--yellow-1)",
+          100: "var(--yellow-2)",
+          200: "var(--yellow-3)",
+          300: "var(--yellow-4)",
+        },
+
         border: "var(--color-border)",
         label: "var(--color-label)",
         warning: "var(--color-warning)",
