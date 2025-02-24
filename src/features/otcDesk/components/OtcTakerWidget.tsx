@@ -11,11 +11,14 @@ import { logger } from "../../../logger"
 import { SwapWidgetProvider } from "../../../providers/SwapWidgetProvider"
 import { getDepositedBalances } from "../../../services/defuseBalanceService"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../../types/base"
-import type { MultiPayload } from "../../../types/defuse-contracts-types"
 import type { ChainType } from "../../../types/deposit"
 import type { SendNearTransaction } from "../../machines/publicKeyVerifierMachine"
 import { fetchFee } from "../actors/otcMakerConfigLoadActor"
 import { SignIntentActorProvider } from "../providers/SignIntentActorProvider"
+import {
+  generateLocalTradeId,
+  useOtcTakerCompletedTrades,
+} from "../stores/otcTakerCompletedTrades"
 import type { SignMessage } from "../types/sharedTypes"
 import { type TradeTerms, deriveTradeTerms } from "../utils/deriveTradeTerms"
 import { OtcTakerForm } from "./OtcTakerForm"
@@ -23,7 +26,7 @@ import { OtcTakerInvalidOrder } from "./OtcTakerInvalidOrder"
 import { OtcTakerSuccessScreen } from "./OtcTakerSuccessScreen"
 
 export type OtcTakerWidgetProps = {
-  multiPayload: MultiPayload | string
+  multiPayload: string
 
   /** List of available tokens for trading */
   tokenList: (BaseTokenInfo | UnifiedTokenInfo)[]
@@ -92,18 +95,35 @@ function OtcTakerScreens({
     intentHashes: string[]
   } | null>(null)
 
+  const tradeId = generateLocalTradeId(multiPayload)
+
+  const knownOtcTakerTrade = useOtcTakerCompletedTrades(
+    (state) => state.trades[tradeId]
+  )
+
   if (tradeTerms == null || protocolFee == null) {
     return loading
   }
 
   return tradeTerms.match({
     ok: (tradeTerms) =>
-      publishResult == null ? (
+      publishResult != null ? (
+        <OtcTakerSuccessScreen
+          tradeTerms={tradeTerms}
+          intentHashes={publishResult.intentHashes}
+        />
+      ) : knownOtcTakerTrade?.status === "completed" ? (
+        <OtcTakerSuccessScreen
+          tradeTerms={tradeTerms}
+          intentHashes={knownOtcTakerTrade.intentHashes}
+        />
+      ) : (
         <OtcTakerValidationOrder tradeTerms={tradeTerms} fallback={loading}>
           <SignIntentActorProvider sendNearTransaction={sendNearTransaction}>
             <OtcTakerForm
+              tradeId={tradeId}
               tradeTerms={tradeTerms}
-              makerMultiPayloadPlain={multiPayload}
+              makerMultiPayload={tradeTerms.makerMultiPayload}
               signerCredentials={signerCredentials}
               signMessage={signMessage}
               protocolFee={protocolFee}
@@ -111,11 +131,6 @@ function OtcTakerScreens({
             />
           </SignIntentActorProvider>
         </OtcTakerValidationOrder>
-      ) : (
-        <OtcTakerSuccessScreen
-          tradeTerms={tradeTerms}
-          intentHashes={publishResult.intentHashes}
-        />
       ),
     err: (error) => <OtcTakerInvalidOrder error={error} />,
   })

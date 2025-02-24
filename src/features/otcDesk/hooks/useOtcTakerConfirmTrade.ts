@@ -8,7 +8,6 @@ import {
 import { createSwapIntentMessage } from "../../../core/messages"
 import {
   type PublishIntentsErr,
-  type PublishIntentsOk,
   publishIntents,
 } from "../../../services/intentService"
 import type { MultiPayload } from "../../../types/defuse-contracts-types"
@@ -17,6 +16,7 @@ import {
   SignIntentContext,
   type SignIntentErr,
 } from "../providers/SignIntentActorProvider"
+import { otcTakerCompletedTradesStore } from "../stores/otcTakerCompletedTrades"
 import type { SignMessage } from "../types/sharedTypes"
 import {
   type AggregatedQuoteErr,
@@ -25,11 +25,13 @@ import {
 import type { OTCTakerPreparationOk } from "./useOtcTakerPreparation"
 
 export function useOtcTakerConfirmTrade({
-  makerMultiPayloadPlain,
+  tradeId,
+  makerMultiPayload,
   signMessage,
   onSuccessTrade,
 }: {
-  makerMultiPayloadPlain: MultiPayload | string
+  tradeId: string
+  makerMultiPayload: MultiPayload
   signMessage: SignMessage
   onSuccessTrade: (arg: { intentHashes: string[] }) => void
 }) {
@@ -45,7 +47,11 @@ export function useOtcTakerConfirmTrade({
       preparation: OTCTakerPreparationOk
     }): Promise<
       Result<
-        PublishIntentsOk,
+        {
+          intentHashes: string[]
+          makerMultiPayload: MultiPayload
+          takerMultiPayload: MultiPayload
+        },
         PublishIntentsErr | SignIntentErr | AggregatedQuoteErr
       >
     > => {
@@ -81,20 +87,27 @@ export function useOtcTakerConfirmTrade({
         signerCredentials
       )
 
-      return publishIntents({
+      const result = await publishIntents({
         quote_hashes: quoteHashesResult.unwrap(),
-        signed_datas: [
-          multiPayload,
-          typeof makerMultiPayloadPlain === "string"
-            ? JSON.parse(makerMultiPayloadPlain)
-            : makerMultiPayloadPlain,
-        ],
+        signed_datas: [multiPayload, makerMultiPayload],
+      })
+
+      return result.map((intentHashes) => {
+        return {
+          intentHashes,
+          makerMultiPayload,
+          takerMultiPayload: multiPayload,
+        }
       })
     },
 
     onSuccess: (data, _variables) => {
-      data.map((intentHashes) => {
-        onSuccessTrade({ intentHashes })
+      data.map((output) => {
+        onSuccessTrade(output)
+        otcTakerCompletedTradesStore.getState().addCompletedTrade({
+          tradeId,
+          ...output,
+        })
         return null
       })
     },

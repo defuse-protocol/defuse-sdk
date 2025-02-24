@@ -10,6 +10,7 @@ export type TradeTerms = {
   tokenDiff: Record<BaseTokenInfo["defuseAssetId"], bigint>
   deadline: string
   nonceBase64: string
+  multiPayload: MultiPayload
 }
 
 export function parseTradeTerms(
@@ -61,6 +62,7 @@ export function parseTradeTerms(
         tokenDiff: intent.diff,
         deadline: payload.deadline,
         nonceBase64: nonce,
+        multiPayload,
       })
     }
   )

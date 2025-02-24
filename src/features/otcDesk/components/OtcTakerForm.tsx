@@ -19,7 +19,8 @@ import type { SignMessage } from "../types/sharedTypes"
 import type { TradeTerms } from "../utils/deriveTradeTerms"
 
 export type OtcTakerFormProps = {
-  makerMultiPayloadPlain: string | MultiPayload
+  tradeId: string
+  makerMultiPayload: MultiPayload
   tradeTerms: TradeTerms
   signerCredentials: SignerCredentials | null
   signMessage: SignMessage
@@ -28,7 +29,8 @@ export type OtcTakerFormProps = {
 }
 
 export function OtcTakerForm({
-  makerMultiPayloadPlain,
+  tradeId,
+  makerMultiPayload,
   tradeTerms,
   protocolFee,
   signerCredentials,
@@ -114,7 +116,8 @@ export function OtcTakerForm({
   })
 
   const confirmTradeMutation = useOtcTakerConfirmTrade({
-    makerMultiPayloadPlain,
+    tradeId,
+    makerMultiPayload,
     signMessage,
     onSuccessTrade,
   })

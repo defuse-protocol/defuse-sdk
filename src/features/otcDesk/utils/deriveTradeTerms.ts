@@ -14,6 +14,7 @@ export type TradeTerms = {
   takerTokenDiff: Record<BaseTokenInfo["defuseAssetId"], bigint>
   tokenIn: BaseTokenInfo | UnifiedTokenInfo
   tokenOut: BaseTokenInfo | UnifiedTokenInfo
+  makerMultiPayload: MultiPayload
 }
 
 export function deriveTradeTerms(
@@ -38,6 +39,7 @@ export function deriveTradeTerms(
       takerTokenDiff: oppositeTokenDiff,
       tokenIn,
       tokenOut,
+      makerMultiPayload: makerTerms.multiPayload,
     }))
   })
 }
