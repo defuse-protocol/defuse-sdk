@@ -1,26 +1,38 @@
 import { useMutation } from "@tanstack/react-query"
-import { Err, Ok } from "@thames/monads"
+import { Err, type Result } from "@thames/monads"
+import { useContext } from "react"
 import {
   type SignerCredentials,
   formatSignedIntent,
 } from "../../../core/formatters"
 import { createSwapIntentMessage } from "../../../core/messages"
-import { publishIntents } from "../../../services/solverRelayHttpClient"
+import {
+  type PublishIntentsErr,
+  type PublishIntentsOk,
+  publishIntents,
+} from "../../../services/intentService"
 import type { MultiPayload } from "../../../types/defuse-contracts-types"
 import { userAddressToDefuseUserId } from "../../../utils/defuse"
-import type { ExtractOk, SignMessage } from "../types/sharedTypes"
-import { getFreshQuoteHashes } from "../utils/quoteUtils"
-import type { OTCTakerPreparationResult } from "./useOtcTakerPreparation"
+import {
+  SignIntentContext,
+  type SignIntentErr,
+} from "../providers/SignIntentActorProvider"
+import type { SignMessage } from "../types/sharedTypes"
+import {
+  type AggregatedQuoteErr,
+  getFreshQuoteHashes,
+} from "../utils/quoteUtils"
+import type { OTCTakerPreparationOk } from "./useOtcTakerPreparation"
 
 export function useOtcTakerConfirmTrade({
   makerMultiPayloadPlain,
   signMessage,
 }: {
-  preparationResult: OTCTakerPreparationResult | undefined
   makerMultiPayloadPlain: MultiPayload | string
   signMessage: SignMessage
-  signerCredentials: SignerCredentials | null
 }) {
+  const { signIntent } = useContext(SignIntentContext)
+
   return useMutation({
     mutationKey: ["confirm_swap"],
     mutationFn: async ({
@@ -28,8 +40,13 @@ export function useOtcTakerConfirmTrade({
       preparation,
     }: {
       signerCredentials: SignerCredentials
-      preparation: ExtractOk<OTCTakerPreparationResult>
-    }) => {
+      preparation: OTCTakerPreparationOk
+    }): Promise<
+      Result<
+        PublishIntentsOk,
+        PublishIntentsErr | SignIntentErr | AggregatedQuoteErr
+      >
+    > => {
       const signerId = userAddressToDefuseUserId(
         signerCredentials.credential,
         signerCredentials.credentialType
@@ -38,70 +55,39 @@ export function useOtcTakerConfirmTrade({
       const { quotes, quoteParams, tokenDiff } = preparation
 
       const walletMessage = createSwapIntentMessage(tokenDiff, {
-        signerId: signerId,
+        signerId,
       })
-      const signatureResult = await signMessage(walletMessage)
-      if (signatureResult == null) {
-        throw new Error("Didn't sign or failed")
+
+      const signatureResult = await signIntent({
+        signerCredentials,
+        signMessage,
+        walletMessage,
+      })
+      if (signatureResult.isErr()) {
+        return Err(signatureResult.unwrapErr())
       }
 
+      // todo: UI performance: add re-quoting in the background
       // It's totally alright do async stuff after singing
-      const quoteHashes = await getFreshQuoteHashes(quotes, quoteParams).then(
-        (r) => r.unwrap()
-      )
+      const quoteHashesResult = await getFreshQuoteHashes(quotes, quoteParams)
+      if (quoteHashesResult.isErr()) {
+        return Err(quoteHashesResult.unwrapErr())
+      }
 
       const multiPayload = formatSignedIntent(
-        signatureResult,
+        signatureResult.unwrap().signatureResult,
         signerCredentials
       )
 
-      const result = await publishIntents({
-        quote_hashes: quoteHashes,
+      return publishIntents({
+        quote_hashes: quoteHashesResult.unwrap(),
         signed_datas: [
           multiPayload,
           typeof makerMultiPayloadPlain === "string"
             ? JSON.parse(makerMultiPayloadPlain)
             : makerMultiPayloadPlain,
         ],
-      }).then(parsePublishIntentsResponse)
-
-      return result.unwrap()
+      })
     },
-  })
-}
-
-function parsePublishIntentsResponse(
-  response: Awaited<ReturnType<typeof publishIntents>>
-) {
-  if (response.status === "OK") {
-    return Ok(response.intent_hashes)
-  }
-
-  if (response.reason === "already processed") {
-    return Ok(response.intent_hashes)
-  }
-
-  if (
-    response.reason === "expired" ||
-    response.reason.includes("deadline has expired")
-  ) {
-    return Err({ reason: "RELAY_PUBLISH_SIGNATURE_EXPIRED" })
-  }
-
-  if (response.reason === "internal") {
-    return Err({ reason: "RELAY_PUBLISH_INTERNAL_ERROR" })
-  }
-
-  if (response.reason.includes("invalid signature")) {
-    return Err({ reason: "RELAY_PUBLISH_SIGNATURE_INVALID" })
-  }
-
-  if (response.reason.includes("nonce was already used")) {
-    return Err({ reason: "RELAY_PUBLISH_NONCE_USED" })
-  }
-
-  return Err({
-    reason: "RELAY_PUBLISH_UNKNOWN_ERROR",
-    serverReason: response.reason,
   })
 }

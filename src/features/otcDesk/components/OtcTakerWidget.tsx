@@ -13,7 +13,9 @@ import { getDepositedBalances } from "../../../services/defuseBalanceService"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../../types/base"
 import type { MultiPayload } from "../../../types/defuse-contracts-types"
 import type { ChainType } from "../../../types/deposit"
+import type { SendNearTransaction } from "../../machines/publicKeyVerifierMachine"
 import { fetchFee } from "../actors/otcMakerConfigLoadActor"
+import { SignIntentActorProvider } from "../providers/SignIntentActorProvider"
 import type { SignMessage } from "../types/sharedTypes"
 import { type TradeTerms, deriveTradeTerms } from "../utils/deriveTradeTerms"
 import { OtcTakerForm } from "./OtcTakerForm"
@@ -31,6 +33,9 @@ export type OtcTakerWidgetProps = {
 
   /** Sign message callback */
   signMessage: SignMessage
+
+  /** Send NEAR transaction callback */
+  sendNearTransaction: SendNearTransaction
 
   /** Theme selection */
   theme?: "dark" | "light"
@@ -54,6 +59,7 @@ function OtcTakerScreens({
   userAddress,
   userChainType,
   signMessage,
+  sendNearTransaction,
 }: OtcTakerWidgetProps) {
   const loading = <div>Loading...</div>
   const signerCredentials: SignerCredentials | null =
@@ -90,13 +96,15 @@ function OtcTakerScreens({
         tradeTerms={tradeTerms}
         fallback={<div>loading</div>}
       >
-        <OtcTakerForm
-          tradeTerms={tradeTerms}
-          makerMultiPayloadPlain={multiPayload}
-          signerCredentials={signerCredentials}
-          signMessage={signMessage}
-          protocolFee={protocolFee}
-        />
+        <SignIntentActorProvider sendNearTransaction={sendNearTransaction}>
+          <OtcTakerForm
+            tradeTerms={tradeTerms}
+            makerMultiPayloadPlain={multiPayload}
+            signerCredentials={signerCredentials}
+            signMessage={signMessage}
+            protocolFee={protocolFee}
+          />
+        </SignIntentActorProvider>
       </OtcTakerValidationOrder>
     ),
     err: (error) => <OtcTakerInvalidOrder error={error} />,

@@ -20,10 +20,13 @@ import { formatTokenValue, formatUsdAmount } from "../../../utils/format"
 import getTokenUsdPrice from "../../../utils/getTokenUsdPrice"
 import { TokenAmountInputCard } from "../../deposit/components/DepositForm/TokenAmountInputCard"
 import { balanceAllSelector } from "../../machines/depositedBalanceMachine"
+import type { SendNearTransaction } from "../../machines/publicKeyVerifierMachine"
+import { usePublicKeyModalOpener } from "../../swap/hooks/usePublicKeyModalOpener"
 import type { otcMakerConfigLoadActor } from "../actors/otcMakerConfigLoadActor"
 import { formValuesSelector } from "../actors/otcMakerFormMachine"
 import type { otcMakerReadyOrderActor } from "../actors/otcMakerReadyOrderActor"
 import { otcMakerRootMachine } from "../actors/otcMakerRootMachine"
+import type { otcMakerSignMachine } from "../actors/otcMakerSignActor"
 import type { SignMessage } from "../types/sharedTypes"
 import { OtcMakerReadyOrderDialog } from "./OtcMakerReadyOrderDialog"
 
@@ -42,6 +45,9 @@ export type OtcMakerWidgetProps = {
   /** Sign message callback */
   signMessage: SignMessage
 
+  /** Send NEAR transaction callback */
+  sendNearTransaction: SendNearTransaction
+
   /** Function to generate a shareable trade link */
   generateLink: (multiPayload: MultiPayload) => string
 
@@ -56,6 +62,7 @@ export function OtcMakerForm({
   initialTokenIn,
   initialTokenOut,
   signMessage,
+  sendNearTransaction,
   generateLink,
 }: OtcMakerWidgetProps) {
   const signerCredentials: SignerCredentials | null = useMemo(
@@ -190,6 +197,31 @@ export function OtcMakerForm({
     formValuesRef.trigger.updateTokenIn,
     formValuesRef.trigger.updateTokenOut,
   ])
+
+  const publicKeyVerifierRef = useSelector(
+    useSelector(
+      useSelector(
+        rootActorRef,
+        (state) =>
+          state.children.signRef as
+            | undefined
+            | ActorRefFrom<typeof otcMakerSignMachine>
+      ),
+      (state) => {
+        if (state) {
+          return state.children.signRef
+        }
+      }
+    ),
+    (state) => {
+      if (state) {
+        return state.children.publicKeyVerifierRef
+      }
+    }
+  )
+
+  // @ts-expect-error ???
+  usePublicKeyModalOpener(publicKeyVerifierRef, sendNearTransaction)
 
   return (
     <>

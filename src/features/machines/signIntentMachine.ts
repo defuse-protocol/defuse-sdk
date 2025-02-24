@@ -1,5 +1,6 @@
 import { secp256k1 } from "@noble/curves/secp256k1"
 import { base58 } from "@scure/base"
+import { providers } from "near-api-js"
 import { sign } from "tweetnacl"
 import { verifyMessage as verifyMessageViem } from "viem"
 import { assertEvent, assign, fromPromise, setup } from "xstate"
@@ -11,6 +12,7 @@ import { logger } from "../../logger"
 import type { MultiPayload } from "../../types/defuse-contracts-types"
 import type { WalletMessage, WalletSignatureResult } from "../../types/swap"
 import { assert } from "../../utils/assert"
+import { toError } from "../../utils/errors"
 import {
   type WalletErrorCode,
   extractWalletErrorCode,
@@ -20,16 +22,22 @@ import {
   verifyAuthenticatorAssertion,
 } from "../../utils/webAuthn"
 import type { SignMessage } from "../otcDesk/types/sharedTypes"
+import {
+  type ErrorCodes as PublicKeyVerifierErr,
+  publicKeyVerifierMachine,
+} from "./publicKeyVerifierMachine"
 
 // No-op usage to prevent tree-shaking. sec256k1 is dynamically loaded by viem.
 const _noop = secp256k1.getPublicKey || null
 
 export type Errors = {
   reason:
+    | "EXCEPTION"
     | "ERR_USER_DIDNT_SIGN"
     | "ERR_CANNOT_VERIFY_SIGNATURE"
     | "ERR_SIGNED_DIFFERENT_ACCOUNT"
     | WalletErrorCode
+    | PublicKeyVerifierErr
   error: Error | null
 }
 
@@ -62,12 +70,12 @@ export const signIntentMachine = setup({
     output: {} as Output,
   },
   actions: {
+    logError: (_, event: { error: unknown }) => {
+      logger.error(event.error)
+    },
     setError: assign({
       error: (_, error: Errors) => error,
     }),
-    logError: (_, params: { error: unknown }) => {
-      logger.error(params.error)
-    },
     setSignature: assign({
       signature: (_, signature: WalletSignatureResult | null) => signature,
     }),
@@ -94,9 +102,11 @@ export const signIntentMachine = setup({
         return input()
       }
     ),
+    publicKeyVerifierActor: publicKeyVerifierMachine,
   },
   guards: {
     isTrue: (_, params: boolean) => params,
+    isOk: (_, params: { tag: "ok" } | { tag: "err" }) => params.tag === "ok",
   },
 }).createMachine({
   context: ({ input }) => {
@@ -190,7 +200,7 @@ export const signIntentMachine = setup({
         },
         onDone: [
           {
-            target: "Completed",
+            target: "Verifying Public Key Presence",
             guard: {
               type: "isTrue",
               params: ({ event }) => event.output,
@@ -230,6 +240,59 @@ export const signIntentMachine = setup({
       },
     },
 
+    "Verifying Public Key Presence": {
+      invoke: {
+        id: "publicKeyVerifierRef",
+        src: "publicKeyVerifierActor",
+
+        input: ({ context }) => {
+          assert(context.signature != null)
+
+          return {
+            nearAccount:
+              context.signature.type === "NEP413"
+                ? context.signature.signatureData
+                : null,
+            nearClient: new providers.JsonRpcProvider({
+              url: "https://nearrpc.aurora.dev",
+            }),
+          }
+        },
+
+        onError: {
+          target: "Generic Error",
+          description: "ERR_PUBKEY_EXCEPTION",
+
+          actions: [
+            { type: "logError", params: ({ event }) => event },
+            { type: "setError", params: { reason: "EXCEPTION", error: null } },
+          ],
+        },
+
+        onDone: [
+          {
+            target: "Completed",
+            guard: {
+              type: "isOk",
+              params: ({ event }) => event.output,
+            },
+          },
+          {
+            target: "Generic Error",
+            description: "ERR_PUBKEY_*",
+
+            actions: {
+              type: "setError",
+              params: ({ event }) => {
+                assert(event.output.tag === "err")
+                return { reason: event.output.value, error: null }
+              },
+            },
+          },
+        ],
+      },
+    },
+
     Completed: {
       type: "final",
     },
@@ -239,10 +302,6 @@ export const signIntentMachine = setup({
     },
   },
 })
-
-function toError(error: unknown): Error {
-  return error instanceof Error ? error : new Error("unknown error")
-}
 
 async function verifyWalletSignature(
   signature: WalletSignatureResult,

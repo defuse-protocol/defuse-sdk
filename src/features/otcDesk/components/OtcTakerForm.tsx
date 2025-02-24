@@ -112,16 +112,19 @@ export function OtcTakerForm({
   })
 
   const confirmTradeMutation = useOtcTakerConfirmTrade({
-    preparationResult: preparation.data,
     makerMultiPayloadPlain,
     signMessage,
-    signerCredentials,
   })
 
   return (
     <div>
       <div>Complete swap</div>
       <div>Pay the specified amount to finalize the transaction.</div>
+
+      {confirmTradeMutation.data?.match({
+        ok: () => <div>Swapped!</div>,
+        err: (err) => <div className="text-red-700">{err.reason}</div>,
+      })}
 
       <div>
         <div className="font-bold text-label text-sm">Pay</div>

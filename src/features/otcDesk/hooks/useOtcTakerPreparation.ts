@@ -10,18 +10,22 @@ import type { DefuseUserId } from "../../../utils/defuse"
 import { getUnderlyingBaseTokenInfos } from "../../../utils/tokenUtils"
 import { fillWithMinimalExchanges } from "../utils/fillWithMinimalExchanges"
 import {
-  type AggregatedQuoteErrors,
+  type AggregatedQuoteErr,
   type QuoteExactInParams,
   manyQuotes,
 } from "../utils/quoteUtils"
 
+export type OTCTakerPreparationOk = {
+  quotes: AggregatedQuote[]
+  quoteParams: QuoteExactInParams[]
+  tokenDiff: [string, bigint][]
+}
+
+export type OTCTakerPreparationErr = { reason: string } | AggregatedQuoteErr
+
 export type OTCTakerPreparationResult = Result<
-  {
-    quotes: AggregatedQuote[]
-    quoteParams: QuoteExactInParams[]
-    tokenDiff: [string, bigint][]
-  },
-  { reason: string } | AggregatedQuoteErrors
+  OTCTakerPreparationOk,
+  OTCTakerPreparationErr
 >
 
 export function useOtcTakerPreparation({

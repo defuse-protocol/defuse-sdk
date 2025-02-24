@@ -31,7 +31,7 @@ import {
 } from "../../machines/signIntentMachine"
 import type { SignMessage } from "../types/sharedTypes"
 
-type OTCMakerSignActorInput = {
+export type OTCMakerSignActorInput = {
   parsed: {
     tokenIn: BaseTokenInfo | UnifiedTokenInfo
     tokenOut: BaseTokenInfo
@@ -148,6 +148,7 @@ export const otcMakerSignMachine = setup({
   states: {
     signing: {
       invoke: {
+        id: "signRef",
         src: "signActor",
 
         input: ({ event, context }) => {

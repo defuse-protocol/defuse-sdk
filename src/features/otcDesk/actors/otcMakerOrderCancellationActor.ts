@@ -1,17 +1,21 @@
 import { base64 } from "@scure/base"
 import { createEmptyIntentMessage } from "src/core/messages"
-import { type PromiseActorLogic, assertEvent, assign, setup } from "xstate"
+import {
+  type PromiseActorLogic,
+  assertEvent,
+  assign,
+  fromPromise,
+  setup,
+} from "xstate"
 import type { SignerCredentials } from "../../../core/formatters"
 import { logger } from "../../../logger"
+import {
+  type PublishIntentsErr,
+  publishIntents,
+} from "../../../services/intentService"
 import type { MultiPayload } from "../../../types/defuse-contracts-types"
 import type { WalletSignatureResult } from "../../../types/swap"
 import { assert } from "../../../utils/assert"
-import {
-  type Errors as PublishIntentErrors,
-  type Input as PublishIntentInput,
-  type Output as PublishIntentOutput,
-  publishIntentMachine,
-} from "../../machines/publishIntentMachine"
 import {
   type Errors as SignIntentErrors,
   type Input as SignIntentInput,
@@ -30,7 +34,7 @@ type OTCMakerOrderCancellationActorOutput = {
 
 type OTCMakerOrderCancellationActorErrors =
   | SignIntentErrors
-  | PublishIntentErrors
+  | PublishIntentsErr
   | { reason: "EXCEPTION" }
 
 type OTCMakerOrderCancellationActorContext = {
@@ -65,11 +69,22 @@ export const otcMakerOrderCancellationActor = setup({
       SignIntentOutput,
       SignIntentInput
     >,
-    // `as PromiseActorLogic` helps to overcome XState type bloating
-    publishActor: publishIntentMachine as unknown as PromiseActorLogic<
-      PublishIntentOutput,
-      PublishIntentInput
-    >,
+    publishActor: fromPromise(
+      ({ input }: { input: { multiPayload: MultiPayload } }) => {
+        return publishIntents({
+          quote_hashes: [],
+          signed_datas: [input.multiPayload],
+        }).then((result) => {
+          if (result.isErr()) {
+            return { tag: "err" as const, value: result.unwrapErr() }
+          }
+          const intentHashes = result.unwrap()
+          const intentHash = intentHashes[0]
+          assert(intentHash != null)
+          return { tag: "ok" as const, value: intentHash }
+        })
+      }
+    ),
   },
   actions: {
     logError: (_, event: { error: unknown }) => {
@@ -90,12 +105,12 @@ export const otcMakerOrderCancellationActor = setup({
     isNonceUsedError: (
       _,
       event: {
-        output: { tag: "err"; value: PublishIntentErrors } | { tag: "ok" }
+        output: { tag: "err"; value: PublishIntentsErr } | { tag: "ok" }
       }
     ) => {
       return (
         event.output.tag === "err" &&
-        event.output.value.reason === "ERR_NONCE_USED"
+        event.output.value.reason === "RELAY_PUBLISH_NONCE_USED"
       )
     },
   },
