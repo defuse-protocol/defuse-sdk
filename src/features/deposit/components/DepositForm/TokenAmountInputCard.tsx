@@ -1,15 +1,17 @@
 import { type InputHTMLAttributes, type ReactNode, forwardRef } from "react"
 import { AssetComboIcon } from "../../../../components/Asset/AssetComboIcon"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../../../types/base"
+import { cn } from "../../../../utils/cn"
 import { isBaseToken } from "../../../../utils/token"
-
 export function TokenAmountInputCard({
+  variant,
   tokenSlot,
   inputSlot,
   balanceSlot,
   priceSlot,
   labelSlot,
 }: {
+  variant?: "in" | "out"
   tokenSlot?: ReactNode
   inputSlot?: ReactNode
   balanceSlot?: ReactNode
@@ -17,7 +19,13 @@ export function TokenAmountInputCard({
   labelSlot?: ReactNode
 }) {
   return (
-    <div className="flex flex-col gap-2.5 rounded-lg border border-border bg-gray-2 p-4">
+    <div
+      className={cn(
+        "flex flex-col gap-2.5 rounded-lg border border-border bg-gray-2 p-4",
+        variant === "in" && "rounded-[10px] border-0 bg-gray-2",
+        variant === "out" && "rounded-[10px] border-0 bg-gray-3"
+      )}
+    >
       <div className="flex items-center justify-between gap-4">
         {/* Label */}
         <div>{labelSlot}</div>
@@ -27,7 +35,13 @@ export function TokenAmountInputCard({
         {/* Amount Input */}
         <div className="relative flex-1">
           <div className="overflow-hidden">{inputSlot}</div>
-          <div className="pointer-events-none absolute top-0 right-0 bottom-0 w-12 bg-gradient-to-r from-transparent to-gray-2" />
+          <div
+            className={cn(
+              "pointer-events-none absolute top-0 right-0 bottom-0 w-12 bg-gradient-to-r from-transparent to-gray-2",
+              variant === "in" && "to-gray-2",
+              variant === "out" && "to-gray-3"
+            )}
+          />
         </div>
 
         {/* Token Selector */}
@@ -38,7 +52,13 @@ export function TokenAmountInputCard({
         {/* Price */}
         <div className="relative flex-1 overflow-hidden whitespace-nowrap">
           <div>{priceSlot}</div>
-          <div className="pointer-events-none absolute top-0 right-0 bottom-0 w-12 bg-gradient-to-r from-transparent to-gray-2" />
+          <div
+            className={cn(
+              "pointer-events-none absolute top-0 right-0 bottom-0 w-12 bg-gradient-to-r from-transparent to-gray-2",
+              variant === "in" && "to-gray-2",
+              variant === "out" && "to-gray-3"
+            )}
+          />
         </div>
 
         {/* Balance */}

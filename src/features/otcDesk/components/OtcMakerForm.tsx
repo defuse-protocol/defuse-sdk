@@ -228,6 +228,7 @@ export function OtcMakerForm({
         <div className="flex flex-col items-center">
           <div className="flex flex-col gap-3">
             <TokenAmountInputCard
+              variant="in"
               labelSlot={
                 <label
                   htmlFor="otc-maker-amount-in"
@@ -292,13 +293,14 @@ export function OtcMakerForm({
               e.preventDefault()
               formValuesRef.trigger.switchTokens()
             }}
-            className="size-10 -my-3.5 rounded-lg bg-gray-50 flex items-center justify-center"
+            className="size-10 -my-3.5 rounded-[10px] bg-accent-1 flex items-center justify-center z-10"
           >
-            <ArrowsDownUp className="size-5" />
+            <ArrowsDownUp className="size-5" weight="bold" />
           </button>
 
           <div className="flex flex-col gap-3">
             <TokenAmountInputCard
+              variant="out"
               labelSlot={
                 <label
                   htmlFor="otc-maker-amount-out"
