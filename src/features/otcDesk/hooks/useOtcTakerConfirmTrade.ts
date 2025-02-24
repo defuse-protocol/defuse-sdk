@@ -31,7 +31,7 @@ export function useOtcTakerConfirmTrade({
 }: {
   makerMultiPayloadPlain: MultiPayload | string
   signMessage: SignMessage
-  onSuccessTrade: (arg: { intentHashes: string[]; txHash: string }) => void
+  onSuccessTrade: (arg: { intentHashes: string[] }) => void
 }) {
   const { signIntent } = useContext(SignIntentContext)
 
@@ -94,7 +94,7 @@ export function useOtcTakerConfirmTrade({
 
     onSuccess: (data, _variables) => {
       data.map((intentHashes) => {
-        onSuccessTrade({ intentHashes, txHash: "" })
+        onSuccessTrade({ intentHashes })
         return null
       })
     },

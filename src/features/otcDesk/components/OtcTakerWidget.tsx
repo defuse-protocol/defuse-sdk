@@ -90,7 +90,6 @@ function OtcTakerScreens({
 
   const [publishResult, setPublishResult] = useState<{
     intentHashes: string[]
-    txHash: string
   } | null>(null)
 
   if (tradeTerms == null || protocolFee == null) {
@@ -116,7 +115,6 @@ function OtcTakerScreens({
         <OtcTakerSuccessScreen
           tradeTerms={tradeTerms}
           intentHashes={publishResult.intentHashes}
-          txHash={publishResult.txHash}
         />
       ),
     err: (error) => <OtcTakerInvalidOrder error={error} />,

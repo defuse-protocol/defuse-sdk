@@ -24,7 +24,7 @@ export type OtcTakerFormProps = {
   signerCredentials: SignerCredentials | null
   signMessage: SignMessage
   protocolFee: number
-  onSuccessTrade: (arg: { intentHashes: string[]; txHash: string }) => void
+  onSuccessTrade: (arg: { intentHashes: string[] }) => void
 }
 
 export function OtcTakerForm({

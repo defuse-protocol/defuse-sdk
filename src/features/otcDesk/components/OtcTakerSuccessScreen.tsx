@@ -1,3 +1,5 @@
+import { useQuery } from "@tanstack/react-query"
+import { waitForIntentSettlement } from "../../../services/intentService"
 import { assert } from "../../../utils/assert"
 import {
   computeTotalBalanceDifferentDecimals,
@@ -12,11 +14,9 @@ const NEAR_EXPLORER = "https://nearblocks.io"
 export function OtcTakerSuccessScreen({
   tradeTerms,
   intentHashes,
-  txHash,
 }: {
   tradeTerms: TradeTerms
   intentHashes: string[]
-  txHash: string
 }) {
   const amountIn = computeTotalBalanceDifferentDecimals(
     getUnderlyingBaseTokenInfos(tradeTerms.tokenIn),
@@ -37,16 +37,34 @@ export function OtcTakerSuccessScreen({
     takerReceives: amountOut,
   }
 
-  const txUrl = `${NEAR_EXPLORER}/txns/${txHash}`
+  const intentStatus = useQuery({
+    queryKey: ["intents_status", intentHashes],
+    queryFn: async ({ signal }) => {
+      const intentHash = intentHashes[0]
+      assert(intentHash != null)
+      return waitForIntentSettlement(signal, intentHash)
+    },
+  })
+
+  const txUrl =
+    intentStatus.data?.txHash != null
+      ? `${NEAR_EXPLORER}/txns/${intentStatus.data.txHash}`
+      : null
 
   return (
     <div>
-      <div>All done!</div>
+      <div>{intentStatus.isPending ? "Almost there" : "All done!"}</div>
 
-      <div>
-        Your swap has been successfully completed, and the funds are now
-        available in your account.
-      </div>
+      {intentStatus.isPending ? (
+        <div>
+          Your swap is being processed. You will receive your funds shortly.
+        </div>
+      ) : (
+        <div>
+          Your swap has been successfully completed, and the funds are now
+          available in your account.
+        </div>
+      )}
 
       <SwapStrip
         tokenIn={tradeTerms.tokenIn}
@@ -63,14 +81,16 @@ export function OtcTakerSuccessScreen({
           ))}
         </div>
       </div>
-      <div>
-        <div>Transaction hash</div>
+      {txUrl != null && (
         <div>
-          <a href={txUrl} rel="noopener noreferrer">
-            {txHash}
-          </a>
+          <div>Transaction hash</div>
+          <div>
+            <a href={txUrl} rel="noopener noreferrer" target="_blank">
+              {intentStatus.data?.txHash}
+            </a>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   )
 }
