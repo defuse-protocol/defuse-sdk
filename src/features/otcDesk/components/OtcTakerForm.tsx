@@ -3,9 +3,10 @@ import clsx from "clsx"
 import { providers } from "near-api-js"
 import { BlockMultiBalances } from "../../../components/Block/BlockMultiBalances"
 import { ButtonCustom } from "../../../components/Button/ButtonCustom"
+import type { SignerCredentials } from "../../../core/formatters"
 import { useTokensUsdPrices } from "../../../hooks/useTokensUsdPrices"
 import { getDepositedBalances } from "../../../services/defuseBalanceService"
-import type { ChainType } from "../../../types/deposit"
+import type { MultiPayload } from "../../../types/defuse-contracts-types"
 import { assert } from "../../../utils/assert"
 import { userAddressToDefuseUserId } from "../../../utils/defuse"
 import { formatTokenValue, formatUsdAmount } from "../../../utils/format"
@@ -17,18 +18,19 @@ import type { SignMessage } from "../types/sharedTypes"
 import type { TradeTerms } from "../utils/deriveTradeTerms"
 
 export type OtcTakerFormProps = {
+  makerMultiPayloadPlain: string | MultiPayload
   tradeTerms: TradeTerms
-  userAddress: string | null | undefined
-  userChainType: ChainType | null | undefined
+  signerCredentials: SignerCredentials | null
   signMessage: SignMessage
   protocolFee: number
 }
 
 export function OtcTakerForm({
+  makerMultiPayloadPlain,
   tradeTerms,
-  userAddress,
-  userChainType,
   protocolFee,
+  signerCredentials,
+  signMessage,
 }: OtcTakerFormProps) {
   const totalAmountIn = computeTotalBalanceDifferentDecimals(
     tradeTerms.tokenIn,
@@ -56,22 +58,25 @@ export function OtcTakerForm({
     tokensUsdPriceData
   )
 
-  const userId =
-    userAddress != null && userChainType != null
-      ? userAddressToDefuseUserId(userAddress, userChainType)
+  const signerId =
+    signerCredentials != null
+      ? userAddressToDefuseUserId(
+          signerCredentials.credential,
+          signerCredentials.credentialType
+        )
       : null
 
   const { data: balances } = useQuery({
     queryKey: [
       "deposited_balance_token_in_out",
-      userId,
+      signerId,
       Object.keys(tradeTerms.takerTokenDiff),
     ],
     queryFn: async () => {
-      assert(userId != null)
+      assert(signerId != null)
 
       const balances = await getDepositedBalances(
-        userId,
+        signerId,
         Object.keys(tradeTerms.takerTokenDiff),
         new providers.JsonRpcProvider({
           url: "https://nearrpc.aurora.dev",
@@ -95,14 +100,16 @@ export function OtcTakerForm({
         tokenOut: tokenOutBalance,
       }
     },
-    enabled: userId != null,
+    enabled: signerId != null,
   })
 
-  useConfirmSwap({
+  const confirmSwapMutation = useConfirmSwap({
+    makerMultiPayloadPlain,
     takerTokenDiff: tradeTerms.takerTokenDiff,
-    takerUserId: userId,
     tokenIn: tradeTerms.tokenIn,
     protocolFee,
+    signMessage,
+    signerCredentials,
   })
 
   return (
@@ -184,7 +191,15 @@ export function OtcTakerForm({
         />
       </div>
 
-      <ButtonCustom size="lg">Confirm swap</ButtonCustom>
+      <ButtonCustom
+        size="lg"
+        type="button"
+        onClick={() => {
+          confirmSwapMutation.mutate()
+        }}
+      >
+        Confirm swap
+      </ButtonCustom>
     </div>
   )
 }

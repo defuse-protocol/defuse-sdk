@@ -6,6 +6,7 @@ import { type ReactNode, useMemo } from "react"
 import * as v from "valibot"
 import { WidgetRoot } from "../../../components/WidgetRoot"
 import { settings } from "../../../config/settings"
+import type { SignerCredentials } from "../../../core/formatters"
 import { logger } from "../../../logger"
 import { SwapWidgetProvider } from "../../../providers/SwapWidgetProvider"
 import { getDepositedBalances } from "../../../services/defuseBalanceService"
@@ -55,6 +56,10 @@ function OtcTakerScreens({
   signMessage,
 }: OtcTakerWidgetProps) {
   const loading = <div>Loading...</div>
+  const signerCredentials: SignerCredentials | null =
+    userAddress != null && userChainType != null
+      ? { credential: userAddress, credentialType: userChainType }
+      : null
 
   const { data: protocolFee } = useQuery({
     queryKey: ["protocol_fee"],
@@ -87,8 +92,8 @@ function OtcTakerScreens({
       >
         <OtcTakerForm
           tradeTerms={tradeTerms}
-          userAddress={userAddress}
-          userChainType={userChainType}
+          makerMultiPayloadPlain={multiPayload}
+          signerCredentials={signerCredentials}
           signMessage={signMessage}
           protocolFee={protocolFee}
         />
