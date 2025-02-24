@@ -10,6 +10,7 @@ export type TradeTerms = {
   deadline: string
   makerUserId: DefuseUserId
   makerTokenDiff: Record<BaseTokenInfo["defuseAssetId"], bigint>
+  makerNonceBase64: string
   takerTokenDiff: Record<BaseTokenInfo["defuseAssetId"], bigint>
   tokenIn: BaseTokenInfo | UnifiedTokenInfo
   tokenOut: BaseTokenInfo | UnifiedTokenInfo
@@ -33,6 +34,7 @@ export function deriveTradeTerms(
       deadline: makerTerms.deadline,
       makerUserId: makerTerms.userId,
       makerTokenDiff: makerTerms.tokenDiff,
+      makerNonceBase64: makerTerms.nonceBase64,
       takerTokenDiff: oppositeTokenDiff,
       tokenIn,
       tokenOut,

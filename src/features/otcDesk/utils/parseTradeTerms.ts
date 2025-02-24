@@ -9,6 +9,7 @@ export type TradeTerms = {
   userId: DefuseUserId
   tokenDiff: Record<BaseTokenInfo["defuseAssetId"], bigint>
   deadline: string
+  nonceBase64: string
 }
 
 export function parseTradeTerms(
@@ -44,10 +45,22 @@ export function parseTradeTerms(
         return Err("NO_TOKEN_DIFF_INTENT")
       }
 
+      const nonce =
+        multiPayload.standard === "nep413"
+          ? multiPayload.payload.nonce
+          : "nonce" in payload
+            ? payload.nonce
+            : null
+
+      if (nonce == null) {
+        return Err("PAYLOAD_HAS_NO_NONCE")
+      }
+
       return Ok({
         userId: payload.signer_id,
         tokenDiff: intent.diff,
         deadline: payload.deadline,
+        nonceBase64: nonce,
       })
     }
   )

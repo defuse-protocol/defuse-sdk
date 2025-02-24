@@ -14,7 +14,9 @@ import type {
   QuoteResponse,
 } from "./solverRelayHttpClient/types"
 
-function isFailedQuote(quote: Quote | FailedQuote): quote is FailedQuote {
+export function isFailedQuote(
+  quote: Quote | FailedQuote
+): quote is FailedQuote {
   return "type" in quote
 }
 

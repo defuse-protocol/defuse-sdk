@@ -1,7 +1,12 @@
 import { useQuery } from "@tanstack/react-query"
+import { Err, Ok, type Result } from "@thames/monads"
 import { providers } from "near-api-js"
+import type { CodeResult } from "near-api-js/lib/providers/provider"
 import { type ReactNode, useMemo } from "react"
+import * as v from "valibot"
 import { WidgetRoot } from "../../../components/WidgetRoot"
+import { settings } from "../../../config/settings"
+import type { SignerCredentials } from "../../../core/formatters"
 import { logger } from "../../../logger"
 import { SwapWidgetProvider } from "../../../providers/SwapWidgetProvider"
 import { getDepositedBalances } from "../../../services/defuseBalanceService"
@@ -51,6 +56,10 @@ function OtcTakerScreens({
   signMessage,
 }: OtcTakerWidgetProps) {
   const loading = <div>Loading...</div>
+  const signerCredentials: SignerCredentials | null =
+    userAddress != null && userChainType != null
+      ? { credential: userAddress, credentialType: userChainType }
+      : null
 
   const { data: protocolFee } = useQuery({
     queryKey: ["protocol_fee"],
@@ -83,8 +92,8 @@ function OtcTakerScreens({
       >
         <OtcTakerForm
           tradeTerms={tradeTerms}
-          userAddress={userAddress}
-          userChainType={userChainType}
+          makerMultiPayloadPlain={multiPayload}
+          signerCredentials={signerCredentials}
           signMessage={signMessage}
           protocolFee={protocolFee}
         />
@@ -99,19 +108,20 @@ function OtcTakerValidationOrder({
   fallback,
   children,
 }: { tradeTerms: TradeTerms; fallback: ReactNode; children: ReactNode }) {
-  let error: string | null = null
+  let error: Result<true, string> = Ok(true)
 
   if (new Date(tradeTerms.deadline) < new Date()) {
-    error = "TRADE_EXPIRED"
+    error = Err("ORDER_EXPIRED")
   }
 
-  const { data: makerTokenBalances, isLoading } = useQuery({
+  const makerBalanceValidation = useQuery({
+    enabled: error.isOk(),
     queryKey: [
       "deposited_balance",
       tradeTerms.makerUserId,
       Object.keys(tradeTerms.makerTokenDiff),
     ],
-    queryFn: async () => {
+    queryFn: () => {
       return getDepositedBalances(
         tradeTerms.makerUserId,
         Object.keys(tradeTerms.makerTokenDiff),
@@ -120,30 +130,72 @@ function OtcTakerValidationOrder({
         })
       )
     },
-    enabled: error == null,
+    select: (makerTokenBalances): Result<true, "MAKER_INSUFFICIENT_FUNDS"> => {
+      for (const [tokenId, amount] of Object.entries(
+        tradeTerms.makerTokenDiff
+      )) {
+        if (amount >= 0) {
+          continue
+        }
+
+        const balance = makerTokenBalances[tokenId]
+
+        if (balance == null || balance < -amount) {
+          return Err("MAKER_INSUFFICIENT_FUNDS")
+        }
+      }
+      return Ok(true)
+    },
   })
 
-  if (isLoading) {
+  const nonceValidation = useQuery({
+    enabled: error.isOk(),
+    queryKey: [
+      "nonce_is_used",
+      tradeTerms.makerUserId,
+      tradeTerms.makerNonceBase64,
+    ],
+    queryFn: async () => {
+      const nearClient = new providers.JsonRpcProvider({
+        url: "https://nearrpc.aurora.dev",
+      })
+      const output = await nearClient.query<CodeResult>({
+        request_type: "call_function",
+        account_id: settings.defuseContractId,
+        method_name: "is_nonce_used",
+        args_base64: btoa(
+          JSON.stringify({
+            account_id: tradeTerms.makerUserId,
+            nonce: tradeTerms.makerNonceBase64,
+          })
+        ),
+        finality: "optimistic",
+      })
+
+      const stringData = String.fromCharCode(...output.result)
+      return v.parse(v.boolean(), JSON.parse(stringData))
+    },
+    select: (nonceIsUsed): Result<true, "NONCE_ALREADY_USED"> => {
+      return nonceIsUsed ? Err("NONCE_ALREADY_USED") : Ok(true)
+    },
+  })
+
+  if (
+    error.isErr() ||
+    makerBalanceValidation.data?.isErr() ||
+    nonceValidation.data?.isErr()
+  ) {
+    error = error
+      .andThen((): typeof error => makerBalanceValidation.data ?? Ok(true))
+      .andThen((): typeof error => nonceValidation.data ?? Ok(true))
+
+    return (
+      <OtcTakerInvalidOrder error={error.unwrapErr()} tradeTerms={tradeTerms} />
+    )
+  }
+
+  if (makerBalanceValidation.data == null || nonceValidation.data == null) {
     return fallback
-  }
-
-  if (makerTokenBalances) {
-    for (const [tokenId, amount] of Object.entries(tradeTerms.makerTokenDiff)) {
-      if (amount >= 0) {
-        continue
-      }
-
-      const balance = makerTokenBalances[tokenId]
-
-      if (balance == null || balance < -amount) {
-        error = "MAKER_INSUFFICIENT_FUNDS"
-        break
-      }
-    }
-  }
-
-  if (error != null) {
-    return <OtcTakerInvalidOrder error={error} tradeTerms={tradeTerms} />
   }
 
   return children
