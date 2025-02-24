@@ -1,5 +1,5 @@
 import { useMutation } from "@tanstack/react-query"
-import { Err, Ok } from "@thames/monads"
+import { Err, Ok, type Result } from "@thames/monads"
 import {
   type SignerCredentials,
   formatSignedIntent,
@@ -8,18 +8,20 @@ import { createSwapIntentMessage } from "../../../core/messages"
 import { publishIntents } from "../../../services/solverRelayHttpClient"
 import type { MultiPayload } from "../../../types/defuse-contracts-types"
 import { userAddressToDefuseUserId } from "../../../utils/defuse"
-import type { ExtractOk, SignMessage } from "../types/sharedTypes"
-import { getFreshQuoteHashes } from "../utils/quoteUtils"
-import type { OTCTakerPreparationResult } from "./useOtcTakerPreparation"
+import type { SignMessage } from "../types/sharedTypes"
+import {
+  type AggregatedQuoteErr,
+  getFreshQuoteHashes,
+} from "../utils/quoteUtils"
+import { type SignIntentErr, signIntent } from "../utils/signIntent"
+import type { OTCTakerPreparationOk } from "./useOtcTakerPreparation"
 
 export function useOtcTakerConfirmTrade({
   makerMultiPayloadPlain,
   signMessage,
 }: {
-  preparationResult: OTCTakerPreparationResult | undefined
   makerMultiPayloadPlain: MultiPayload | string
   signMessage: SignMessage
-  signerCredentials: SignerCredentials | null
 }) {
   return useMutation({
     mutationKey: ["confirm_swap"],
@@ -28,8 +30,13 @@ export function useOtcTakerConfirmTrade({
       preparation,
     }: {
       signerCredentials: SignerCredentials
-      preparation: ExtractOk<OTCTakerPreparationResult>
-    }) => {
+      preparation: OTCTakerPreparationOk
+    }): Promise<
+      Result<
+        PublishIntentsOk,
+        PublishIntentsErr | SignIntentErr | AggregatedQuoteErr
+      >
+    > => {
       const signerId = userAddressToDefuseUserId(
         signerCredentials.credential,
         signerCredentials.credentialType
@@ -38,25 +45,33 @@ export function useOtcTakerConfirmTrade({
       const { quotes, quoteParams, tokenDiff } = preparation
 
       const walletMessage = createSwapIntentMessage(tokenDiff, {
-        signerId: signerId,
+        signerId,
       })
-      const signatureResult = await signMessage(walletMessage)
-      if (signatureResult == null) {
-        throw new Error("Didn't sign or failed")
+
+      const signatureResult = await signIntent({
+        signerCredentials,
+        signMessage,
+        walletMessage,
+      })
+      if (signatureResult.isErr()) {
+        return Err(signatureResult.unwrapErr())
       }
 
+      // todo: UI performance: add re-quoting in the background
       // It's totally alright do async stuff after singing
-      const quoteHashes = await getFreshQuoteHashes(quotes, quoteParams).then(
-        (r) => r.unwrap()
-      )
+      const quoteHashesResult = await getFreshQuoteHashes(quotes, quoteParams)
+      if (quoteHashesResult.isErr()) {
+        return Err(quoteHashesResult.unwrapErr())
+      }
 
       const multiPayload = formatSignedIntent(
-        signatureResult,
+        signatureResult.unwrap().signatureResult,
         signerCredentials
       )
 
-      const result = await publishIntents({
-        quote_hashes: quoteHashes,
+      // todo: add retry mechanism for publishing for network failures
+      return publishIntents({
+        quote_hashes: quoteHashesResult.unwrap(),
         signed_datas: [
           multiPayload,
           typeof makerMultiPayloadPlain === "string"
@@ -64,15 +79,28 @@ export function useOtcTakerConfirmTrade({
             : makerMultiPayloadPlain,
         ],
       }).then(parsePublishIntentsResponse)
-
-      return result.unwrap()
     },
   })
 }
 
+type PublishIntentsOk = string[]
+type PublishIntentsErr =
+  | {
+      reason:
+        | "RELAY_PUBLISH_SIGNATURE_EXPIRED"
+        | "RELAY_PUBLISH_INTERNAL_ERROR"
+        | "RELAY_PUBLISH_SIGNATURE_INVALID"
+        | "RELAY_PUBLISH_NONCE_USED"
+        | "RELAY_PUBLISH_INSUFFICIENT_BALANCE"
+    }
+  | {
+      reason: "RELAY_PUBLISH_UNKNOWN_ERROR"
+      serverReason: string
+    }
+
 function parsePublishIntentsResponse(
   response: Awaited<ReturnType<typeof publishIntents>>
-) {
+): Result<PublishIntentsOk, PublishIntentsErr> {
   if (response.status === "OK") {
     return Ok(response.intent_hashes)
   }
@@ -98,6 +126,10 @@ function parsePublishIntentsResponse(
 
   if (response.reason.includes("nonce was already used")) {
     return Err({ reason: "RELAY_PUBLISH_NONCE_USED" })
+  }
+
+  if (response.reason.includes("insufficient balance or overflow")) {
+    return Err({ reason: "RELAY_PUBLISH_INSUFFICIENT_BALANCE" })
   }
 
   return Err({

@@ -7,7 +7,7 @@ import {
 } from "../../../services/quoteService"
 import type { FailedQuote } from "../../../services/solverRelayHttpClient/types"
 
-export type AggregatedQuoteErrors =
+export type AggregatedQuoteErr =
   | { reason: "NO_QUOTES" }
   | { reason: "INSUFFICIENT_AMOUNT"; minAmount: bigint }
 
@@ -19,7 +19,7 @@ export type QuoteExactInParams = {
 
 export async function manyQuotes(
   swapParams: QuoteExactInParams[]
-): Promise<Result<AggregatedQuote[], AggregatedQuoteErrors>> {
+): Promise<Result<AggregatedQuote[], AggregatedQuoteErr>> {
   const quoteResults = await Promise.all(
     swapParams.map(async ({ tokenIn, tokenOut, amountIn }) => {
       return quoteWithLog(
@@ -46,7 +46,7 @@ export async function manyQuotes(
 
 function handleQuote(
   quotes: Awaited<ReturnType<typeof quoteWithLog>>
-): Result<AggregatedQuote, AggregatedQuoteErrors> {
+): Result<AggregatedQuote, AggregatedQuoteErr> {
   if (quotes == null) {
     return Err({ reason: "NO_QUOTES" })
   }
@@ -103,7 +103,7 @@ export function areQuotesExpired(quotes: AggregatedQuote[]): boolean {
 export async function getFreshQuoteHashes(
   quotes: AggregatedQuote[],
   quoteParams: QuoteExactInParams[]
-): Promise<Result<string[], AggregatedQuoteErrors>> {
+): Promise<Result<string[], AggregatedQuoteErr>> {
   if (areQuotesExpired(quotes)) {
     const newQuotes = await manyQuotes(quoteParams)
     if (newQuotes.isErr()) {
