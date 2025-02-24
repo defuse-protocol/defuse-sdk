@@ -21,6 +21,18 @@ export async function publishIntent(
   return json.result
 }
 
+export async function publishIntents(
+  params: types.PublishIntentsRequest["params"][0],
+  config: types.RequestConfig = {}
+): Promise<types.PublishIntentsResponse["result"]> {
+  const json = await jsonRPCRequest<types.PublishIntentsRequest>(
+    "publish_intents",
+    params,
+    config
+  )
+  return json.result
+}
+
 export async function getStatus(
   params: types.GetStatusRequest["params"][0],
   config: types.RequestConfig = {}
