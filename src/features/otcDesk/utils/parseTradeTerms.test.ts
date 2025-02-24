@@ -16,7 +16,7 @@ vi.mock("../../../logger", () => ({
   logger: { error: vi.fn(), verbose: vi.fn() },
 }))
 
-describe("parseOTCMetadata", () => {
+describe("parseTradeTerms", () => {
   const trader1: SignerCredentials = {
     credential: "joe.near",
     credentialType: "near",
