@@ -10500,6 +10500,55 @@ function OtcMakerForm({ tokenList, userAddress, userChainType, initialTokenIn, i
             });
         }
     }, [rootActorRef, signerCredentials]);
+    const { setModalType, data: modalSelectAssetsData } = useModalController(ModalType.MODAL_SELECT_ASSETS, "token");
+    const updateTokens = useTokensStore((state) => state.updateTokens);
+    const handleSelect = (fieldName) => {
+        updateTokens(tokenList);
+        setModalType(ModalType.MODAL_SELECT_ASSETS, {
+            fieldName,
+            selectToken: undefined,
+            balances: fieldName === "tokenIn" ? tokenInBalance : tokenOutBalance,
+        });
+    };
+    /**
+     * This is ModalSelectAssets "callback"
+     */
+    useEffect(() => {
+        const payload = modalSelectAssetsData;
+        if (payload?.modalType !== ModalType.MODAL_SELECT_ASSETS) {
+            return;
+        }
+        if (payload.token) {
+            const token = payload.token;
+            payload.token = undefined; // consume data, so it won't be triggered again
+            switch (payload.fieldName) {
+                case "tokenIn":
+                    if (formValues.tokenOut === token && formValues.tokenIn !== null) {
+                        formValuesRef.trigger.updateTokenOut({
+                            value: formValues.tokenIn,
+                        });
+                    }
+                    formValuesRef.trigger.updateTokenIn({ value: token });
+                    break;
+                case "tokenOut":
+                    if (formValues.tokenIn === token && formValues.tokenOut !== null) {
+                        formValuesRef.trigger.updateTokenIn({
+                            value: formValues.tokenOut,
+                        });
+                    }
+                    formValuesRef.trigger.updateTokenOut({ value: token });
+                    break;
+                default:
+                    throw new Error("Invalid field name");
+            }
+        }
+    }, [
+        modalSelectAssetsData,
+        formValues.tokenIn,
+        formValues.tokenOut,
+        formValuesRef.trigger.updateTokenIn,
+        formValuesRef.trigger.updateTokenOut,
+    ]);
     return (jsxs(Fragment, { children: [useSelector(useSelector(rootActorRef, (s) => s.children.otcMakerConfigLoadRef), (s) => JSON.stringify(s?.context)), rootSnapshot.matches("signed") &&
                 configRef != null &&
                 readyOrderRef != null &&
@@ -10514,12 +10563,7 @@ function OtcMakerForm({ tokenList, userAddress, userChainType, initialTokenIn, i
                     }
                 }, className: "flex flex-col gap-5", children: [jsxs("div", { className: "flex flex-col items-center", children: [jsxs("div", { className: "flex flex-col gap-3", children: [jsx("label", { htmlFor: "otc-maker-amount-in", className: "font-bold text-label text-sm", children: "Sell" }), jsx(TokenAmountInputCard, { inputSlot: jsx(TokenAmountInputCard.Input, { id: "otc-maker-amount-in", name: "amountIn", value: formValues.amountIn, onChange: (e) => formValuesRef.trigger.updateAmountIn({
                                                 value: e.target.value,
-                                            }) }), tokenSlot: jsx("select", { name: "tokenIn", value: formValues.tokenIn?.symbol, onChange: (e) => {
-                                                const value = tokenList.find((token) => token.symbol === e.target.value);
-                                                if (!value)
-                                                    return;
-                                                formValuesRef.trigger.updateTokenIn({ value });
-                                            }, children: tokenList.map((token) => (jsx("option", { value: token.symbol, children: token.symbol }, token.symbol))) }), balanceSlot: jsx(BlockMultiBalances, { balance: tokenInBalance?.amount ?? 0n, decimals: tokenInBalance?.decimals ?? 0, handleClick: () => {
+                                            }) }), tokenSlot: jsx(SelectAssets, { selected: formValues.tokenIn ?? undefined, handleSelect: () => handleSelect("tokenIn") }), balanceSlot: jsx(BlockMultiBalances, { balance: tokenInBalance?.amount ?? 0n, decimals: tokenInBalance?.decimals ?? 0, handleClick: () => {
                                                 if (tokenInBalance != null) {
                                                     formValuesRef.trigger.updateAmountIn({
                                                         value: formatTokenValue(tokenInBalance.amount, tokenInBalance.decimals),
@@ -10534,12 +10578,7 @@ function OtcMakerForm({ tokenList, userAddress, userChainType, initialTokenIn, i
                                     formValuesRef.trigger.switchTokens();
                                 }, className: "size-10 -my-3.5 rounded-lg bg-gray-50 flex items-center justify-center", children: jsx(ArrowsDownUp, { className: "size-5" }) }), jsxs("div", { className: "flex flex-col gap-3", children: [jsx("label", { htmlFor: "otc-maker-amount-out", className: "font-bold text-label text-sm", children: "Buy" }), jsx(TokenAmountInputCard, { inputSlot: jsx(TokenAmountInputCard.Input, { id: "otc-maker-amount-out", name: "amountOut", value: formValues.amountOut, onChange: (e) => formValuesRef.trigger.updateAmountOut({
                                                 value: e.target.value,
-                                            }) }), tokenSlot: jsx("select", { name: "tokenOut", value: formValues.tokenOut?.symbol, onChange: (e) => {
-                                                const value = tokenList.find((token) => token.symbol === e.target.value);
-                                                if (!value)
-                                                    return;
-                                                formValuesRef.trigger.updateTokenOut({ value });
-                                            }, children: tokenList.map((token) => (jsx("option", { value: token.symbol, children: token.symbol }, token.symbol))) }), balanceSlot: jsx(BlockMultiBalances, { balance: tokenOutBalance?.amount ?? 0n, decimals: tokenOutBalance?.decimals ?? 0, handleClick: () => {
+                                            }) }), tokenSlot: jsx(SelectAssets, { selected: formValues.tokenOut ?? undefined, handleSelect: () => handleSelect("tokenOut") }), balanceSlot: jsx(BlockMultiBalances, { balance: tokenOutBalance?.amount ?? 0n, decimals: tokenOutBalance?.decimals ?? 0, handleClick: () => {
                                                 if (tokenOutBalance != null) {
                                                     formValuesRef.trigger.updateAmountOut({
                                                         value: formatTokenValue(tokenOutBalance.amount, tokenOutBalance.decimals),
@@ -10572,12 +10611,20 @@ function OtcMakerWidget(props) {
 function parseTradeTerms(multiPayloadPlain) {
     const parseResult = v.safeParse(MultiPayloadPlainSchema, multiPayloadPlain);
     if (!parseResult.success) {
+        logger.verbose("Couldn't parse multipayload", {
+            multiPayloadPlain,
+            issues: parseResult.issues,
+        });
         return Err("CANNOT_PARSE_MULTIPAYLOAD");
     }
     const multiPayload = parseResult.output;
     return getPlainPayload(multiPayload).andThen((payloadPlain) => {
         const payloadParseResult = v.safeParse(PayloadPlainSchema, payloadPlain);
         if (!payloadParseResult.success) {
+            logger.verbose("Couldn't parse payload", {
+                payloadPlain,
+                issues: payloadParseResult,
+            });
             return Err("CANNOT_PARSE_PAYLOAD");
         }
         const payload = payloadParseResult.output;
@@ -10612,6 +10659,13 @@ const PayloadSchema = v.object({
     verifying_contract: v.string(), // todo: add contract address validation?
     intents: v.array(IntentSchema),
 });
+const NEP413PayloadSchema = v.object({
+    deadline: DeadlineSchema,
+    signer_id: v.pipe(v.string(), 
+    // todo: add DefuseUserId validation?
+    v.transform((a) => a)),
+    intents: v.array(IntentSchema),
+});
 const PayloadPlainSchema = v.pipe(v.string(), v.transform((a) => {
     try {
         return JSON.parse(a);
@@ -10619,7 +10673,7 @@ const PayloadPlainSchema = v.pipe(v.string(), v.transform((a) => {
     catch {
         return null;
     }
-}), PayloadSchema);
+}), v.union([PayloadSchema, NEP413PayloadSchema]));
 const MultiPayloadSchema = v.variant("standard", [
     v.object({
         standard: v.literal("nep413"),
@@ -10627,7 +10681,7 @@ const MultiPayloadSchema = v.variant("standard", [
             message: v.string(),
             nonce: v.string(),
             recipient: v.string(),
-            callbackUrl: v.string(),
+            callbackUrl: v.optional(v.string()),
         }),
         signature: v.string(),
         public_key: v.string(),

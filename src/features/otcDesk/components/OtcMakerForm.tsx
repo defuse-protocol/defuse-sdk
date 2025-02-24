@@ -2,11 +2,16 @@ import { ArrowsDownUp } from "@phosphor-icons/react"
 import { useActorRef, useSelector } from "@xstate/react"
 import clsx from "clsx"
 import { useEffect, useMemo } from "react"
+import type { ModalSelectAssetsPayload } from "src/components/Modal/ModalSelectAssets"
 import type { ActorRefFrom, SnapshotFrom } from "xstate"
 import { BlockMultiBalances } from "../../../components/Block/BlockMultiBalances"
 import { ButtonCustom } from "../../../components/Button/ButtonCustom"
+import { SelectAssets } from "../../../components/SelectAssets"
 import type { SignerCredentials } from "../../../core/formatters"
+import { useModalController } from "../../../hooks/useModalController"
 import { useTokensUsdPrices } from "../../../hooks/useTokensUsdPrices"
+import { useTokensStore } from "../../../providers/TokensStoreProvider"
+import { ModalType } from "../../../stores/modalStore"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../../types/base"
 import type { MultiPayload } from "../../../types/defuse-contracts-types"
 import type { ChainType } from "../../../types/deposit"
@@ -128,6 +133,64 @@ export function OtcMakerForm({
     }
   }, [rootActorRef, signerCredentials])
 
+  const { setModalType, data: modalSelectAssetsData } = useModalController<{
+    modalType: ModalType.MODAL_SELECT_ASSETS
+    token: BaseTokenInfo | UnifiedTokenInfo | undefined
+  }>(ModalType.MODAL_SELECT_ASSETS, "token")
+
+  const updateTokens = useTokensStore((state) => state.updateTokens)
+
+  const handleSelect = (fieldName: string) => {
+    updateTokens(tokenList)
+    setModalType(ModalType.MODAL_SELECT_ASSETS, {
+      fieldName,
+      selectToken: undefined,
+      balances: fieldName === "tokenIn" ? tokenInBalance : tokenOutBalance,
+    })
+  }
+
+  /**
+   * This is ModalSelectAssets "callback"
+   */
+  useEffect(() => {
+    const payload: ModalSelectAssetsPayload | undefined = modalSelectAssetsData
+    if (payload?.modalType !== ModalType.MODAL_SELECT_ASSETS) {
+      return
+    }
+
+    if (payload.token) {
+      const token = payload.token
+      payload.token = undefined // consume data, so it won't be triggered again
+
+      switch (payload.fieldName) {
+        case "tokenIn":
+          if (formValues.tokenOut === token && formValues.tokenIn !== null) {
+            formValuesRef.trigger.updateTokenOut({
+              value: formValues.tokenIn,
+            })
+          }
+          formValuesRef.trigger.updateTokenIn({ value: token })
+          break
+        case "tokenOut":
+          if (formValues.tokenIn === token && formValues.tokenOut !== null) {
+            formValuesRef.trigger.updateTokenIn({
+              value: formValues.tokenOut,
+            })
+          }
+          formValuesRef.trigger.updateTokenOut({ value: token })
+          break
+        default:
+          throw new Error("Invalid field name")
+      }
+    }
+  }, [
+    modalSelectAssetsData,
+    formValues.tokenIn,
+    formValues.tokenOut,
+    formValuesRef.trigger.updateTokenIn,
+    formValuesRef.trigger.updateTokenOut,
+  ])
+
   return (
     <>
       {useSelector(
@@ -184,23 +247,10 @@ export function OtcMakerForm({
                 />
               }
               tokenSlot={
-                <select
-                  name="tokenIn"
-                  value={formValues.tokenIn?.symbol}
-                  onChange={(e) => {
-                    const value = tokenList.find(
-                      (token) => token.symbol === e.target.value
-                    )
-                    if (!value) return
-                    formValuesRef.trigger.updateTokenIn({ value })
-                  }}
-                >
-                  {tokenList.map((token) => (
-                    <option key={token.symbol} value={token.symbol}>
-                      {token.symbol}
-                    </option>
-                  ))}
-                </select>
+                <SelectAssets
+                  selected={formValues.tokenIn ?? undefined}
+                  handleSelect={() => handleSelect("tokenIn")}
+                />
               }
               balanceSlot={
                 <BlockMultiBalances
@@ -266,23 +316,10 @@ export function OtcMakerForm({
                 />
               }
               tokenSlot={
-                <select
-                  name="tokenOut"
-                  value={formValues.tokenOut?.symbol}
-                  onChange={(e) => {
-                    const value = tokenList.find(
-                      (token) => token.symbol === e.target.value
-                    )
-                    if (!value) return
-                    formValuesRef.trigger.updateTokenOut({ value })
-                  }}
-                >
-                  {tokenList.map((token) => (
-                    <option key={token.symbol} value={token.symbol}>
-                      {token.symbol}
-                    </option>
-                  ))}
-                </select>
+                <SelectAssets
+                  selected={formValues.tokenOut ?? undefined}
+                  handleSelect={() => handleSelect("tokenOut")}
+                />
               }
               balanceSlot={
                 <BlockMultiBalances
