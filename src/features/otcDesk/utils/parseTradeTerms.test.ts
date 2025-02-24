@@ -13,10 +13,10 @@ import { userAddressToDefuseUserId } from "../../../utils/defuse"
 import { parseTradeTerms } from "./parseTradeTerms"
 
 vi.mock("../../../logger", () => ({
-  logger: { error: vi.fn() },
+  logger: { error: vi.fn(), verbose: vi.fn() },
 }))
 
-describe("parseOTCMetadata", () => {
+describe("parseTradeTerms", () => {
   const trader1: SignerCredentials = {
     credential: "joe.near",
     credentialType: "near",
@@ -77,12 +77,12 @@ describe("parseOTCMetadata", () => {
         trader1
       )
 
-      // console.log(JSON.stringify(multiPayload))
-
-      expect(parseTradeTerms(JSON.stringify(multiPayload))).toEqual({
-        diff: Object.fromEntries(inputDiff),
-        deadline: new Date(date1).toISOString(),
-      })
+      expect(parseTradeTerms(JSON.stringify(multiPayload)).unwrap()).toEqual(
+        expect.objectContaining({
+          tokenDiff: Object.fromEntries(inputDiff),
+          deadline: new Date(date1).toISOString(),
+        })
+      )
     }
   )
 
@@ -103,12 +103,13 @@ describe("parseOTCMetadata", () => {
       trader1
     )
 
-    expect(parseTradeTerms(JSON.stringify(multiPayload))).toBeNull()
-    expect(logger.error).toHaveBeenCalledOnce()
+    expect(parseTradeTerms(JSON.stringify(multiPayload)).unwrapErr()).toEqual(
+      "NO_TOKEN_DIFF_INTENT"
+    )
   })
 
   it("returns null if multipayload is malformed", () => {
-    expect(parseTradeTerms("")).toBeNull()
-    expect(logger.error).toHaveBeenCalledOnce()
+    expect(parseTradeTerms("").unwrapErr()).toEqual("CANNOT_PARSE_MULTIPAYLOAD")
+    expect(logger.verbose).toHaveBeenCalledOnce()
   })
 })
