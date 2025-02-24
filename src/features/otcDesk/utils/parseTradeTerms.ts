@@ -1,5 +1,6 @@
 import { Err, Ok, type Result } from "@thames/monads"
 import * as v from "valibot"
+import { logger } from "../../../logger"
 import type { BaseTokenInfo } from "../../../types/base"
 import type { MultiPayload } from "../../../types/defuse-contracts-types"
 import type { DefuseUserId } from "../../../utils/defuse"
@@ -15,6 +16,10 @@ export function parseTradeTerms(
 ): Result<TradeTerms, string> {
   const parseResult = v.safeParse(MultiPayloadPlainSchema, multiPayloadPlain)
   if (!parseResult.success) {
+    logger.verbose("Couldn't parse multipayload", {
+      multiPayloadPlain,
+      issues: parseResult.issues,
+    })
     return Err("CANNOT_PARSE_MULTIPAYLOAD")
   }
   const multiPayload = parseResult.output
@@ -23,6 +28,10 @@ export function parseTradeTerms(
     (payloadPlain): Result<TradeTerms, string> => {
       const payloadParseResult = v.safeParse(PayloadPlainSchema, payloadPlain)
       if (!payloadParseResult.success) {
+        logger.verbose("Couldn't parse payload", {
+          payloadPlain,
+          issues: payloadParseResult,
+        })
         return Err("CANNOT_PARSE_PAYLOAD")
       }
       const payload = payloadParseResult.output
@@ -73,6 +82,16 @@ const PayloadSchema = v.object({
   intents: v.array(IntentSchema),
 })
 
+const NEP413PayloadSchema = v.object({
+  deadline: DeadlineSchema,
+  signer_id: v.pipe(
+    v.string(),
+    // todo: add DefuseUserId validation?
+    v.transform((a): DefuseUserId => a as DefuseUserId)
+  ),
+  intents: v.array(IntentSchema),
+})
+
 const PayloadPlainSchema = v.pipe(
   v.string(),
   v.transform((a) => {
@@ -82,7 +101,7 @@ const PayloadPlainSchema = v.pipe(
       return null
     }
   }),
-  PayloadSchema
+  v.union([PayloadSchema, NEP413PayloadSchema])
 )
 
 const MultiPayloadSchema = v.variant("standard", [
@@ -92,7 +111,7 @@ const MultiPayloadSchema = v.variant("standard", [
       message: v.string(),
       nonce: v.string(),
       recipient: v.string(),
-      callbackUrl: v.string(),
+      callbackUrl: v.optional(v.string()),
     }),
     signature: v.string(),
     public_key: v.string(),
