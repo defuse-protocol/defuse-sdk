@@ -71,7 +71,7 @@ function OtcTakerScreens({
     return tradeTerms
   }, [multiPayload, tokenList, protocolFee])
 
-  if (tradeTerms == null) {
+  if (tradeTerms == null || protocolFee == null) {
     return loading
   }
 
@@ -86,6 +86,7 @@ function OtcTakerScreens({
           userAddress={userAddress}
           userChainType={userChainType}
           signMessage={signMessage}
+          protocolFee={protocolFee}
         />
       </OtcTakerValidationOrder>
     ),

@@ -12,6 +12,7 @@ import { formatTokenValue, formatUsdAmount } from "../../../utils/format"
 import getTokenUsdPrice from "../../../utils/getTokenUsdPrice"
 import { computeTotalBalanceDifferentDecimals } from "../../../utils/tokenUtils"
 import { TokenAmountInputCard } from "../../deposit/components/DepositForm/TokenAmountInputCard"
+import { useConfirmSwap } from "../hooks/useConfirmSwap"
 import type { SignMessage } from "../types/sharedTypes"
 import type { TradeTerms } from "../utils/deriveTradeTerms"
 
@@ -20,12 +21,14 @@ export type OtcTakerFormProps = {
   userAddress: string | null | undefined
   userChainType: ChainType | null | undefined
   signMessage: SignMessage
+  protocolFee: number
 }
 
 export function OtcTakerForm({
   tradeTerms,
   userAddress,
   userChainType,
+  protocolFee,
 }: OtcTakerFormProps) {
   const totalAmountIn = computeTotalBalanceDifferentDecimals(
     tradeTerms.tokenIn,
@@ -93,6 +96,13 @@ export function OtcTakerForm({
       }
     },
     enabled: userId != null,
+  })
+
+  useConfirmSwap({
+    takerTokenDiff: tradeTerms.takerTokenDiff,
+    takerUserId: userId,
+    tokenIn: tradeTerms.tokenIn,
+    protocolFee,
   })
 
   return (

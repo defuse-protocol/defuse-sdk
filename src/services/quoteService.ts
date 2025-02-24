@@ -375,7 +375,7 @@ function ensureAllNonNull<T>(array: (T | null)[]): T[] | null {
   return filtered.length === array.length ? filtered : null
 }
 
-const quoteWithLog = (async (params, config) => {
+export const quoteWithLog = (async (params, config) => {
   const result = await quote(params, config)
   if (result == null) {
     logger.warn("No liquidity", { quoteParams: params })
