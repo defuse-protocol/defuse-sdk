@@ -24,6 +24,7 @@ export type OtcTakerFormProps = {
   signerCredentials: SignerCredentials | null
   signMessage: SignMessage
   protocolFee: number
+  onSuccessTrade: (arg: { intentHashes: string[]; txHash: string }) => void
 }
 
 export function OtcTakerForm({
@@ -32,6 +33,7 @@ export function OtcTakerForm({
   protocolFee,
   signerCredentials,
   signMessage,
+  onSuccessTrade,
 }: OtcTakerFormProps) {
   const totalAmountIn = computeTotalBalanceDifferentDecimals(
     tradeTerms.tokenIn,
@@ -114,6 +116,7 @@ export function OtcTakerForm({
   const confirmTradeMutation = useOtcTakerConfirmTrade({
     makerMultiPayloadPlain,
     signMessage,
+    onSuccessTrade,
   })
 
   return (

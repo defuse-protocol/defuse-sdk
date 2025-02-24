@@ -27,9 +27,11 @@ import type { OTCTakerPreparationOk } from "./useOtcTakerPreparation"
 export function useOtcTakerConfirmTrade({
   makerMultiPayloadPlain,
   signMessage,
+  onSuccessTrade,
 }: {
   makerMultiPayloadPlain: MultiPayload | string
   signMessage: SignMessage
+  onSuccessTrade: (arg: { intentHashes: string[]; txHash: string }) => void
 }) {
   const { signIntent } = useContext(SignIntentContext)
 
@@ -87,6 +89,13 @@ export function useOtcTakerConfirmTrade({
             ? JSON.parse(makerMultiPayloadPlain)
             : makerMultiPayloadPlain,
         ],
+      })
+    },
+
+    onSuccess: (data, _variables) => {
+      data.map((intentHashes) => {
+        onSuccessTrade({ intentHashes, txHash: "" })
+        return null
       })
     },
   })

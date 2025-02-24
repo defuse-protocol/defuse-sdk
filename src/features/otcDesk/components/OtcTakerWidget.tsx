@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query"
 import { Err, Ok, type Result } from "@thames/monads"
 import { providers } from "near-api-js"
 import type { CodeResult } from "near-api-js/lib/providers/provider"
-import { type ReactNode, useMemo } from "react"
+import { type ReactNode, useMemo, useState } from "react"
 import * as v from "valibot"
 import { WidgetRoot } from "../../../components/WidgetRoot"
 import { settings } from "../../../config/settings"
@@ -20,6 +20,7 @@ import type { SignMessage } from "../types/sharedTypes"
 import { type TradeTerms, deriveTradeTerms } from "../utils/deriveTradeTerms"
 import { OtcTakerForm } from "./OtcTakerForm"
 import { OtcTakerInvalidOrder } from "./OtcTakerInvalidOrder"
+import { OtcTakerSuccessScreen } from "./OtcTakerSuccessScreen"
 
 export type OtcTakerWidgetProps = {
   multiPayload: MultiPayload | string
@@ -62,6 +63,7 @@ function OtcTakerScreens({
   sendNearTransaction,
 }: OtcTakerWidgetProps) {
   const loading = <div>Loading...</div>
+
   const signerCredentials: SignerCredentials | null =
     userAddress != null && userChainType != null
       ? { credential: userAddress, credentialType: userChainType }
@@ -86,27 +88,37 @@ function OtcTakerScreens({
     return tradeTerms
   }, [multiPayload, tokenList, protocolFee])
 
+  const [publishResult, setPublishResult] = useState<{
+    intentHashes: string[]
+    txHash: string
+  } | null>(null)
+
   if (tradeTerms == null || protocolFee == null) {
     return loading
   }
 
   return tradeTerms.match({
-    ok: (tradeTerms) => (
-      <OtcTakerValidationOrder
-        tradeTerms={tradeTerms}
-        fallback={<div>loading</div>}
-      >
-        <SignIntentActorProvider sendNearTransaction={sendNearTransaction}>
-          <OtcTakerForm
-            tradeTerms={tradeTerms}
-            makerMultiPayloadPlain={multiPayload}
-            signerCredentials={signerCredentials}
-            signMessage={signMessage}
-            protocolFee={protocolFee}
-          />
-        </SignIntentActorProvider>
-      </OtcTakerValidationOrder>
-    ),
+    ok: (tradeTerms) =>
+      publishResult == null ? (
+        <OtcTakerValidationOrder tradeTerms={tradeTerms} fallback={loading}>
+          <SignIntentActorProvider sendNearTransaction={sendNearTransaction}>
+            <OtcTakerForm
+              tradeTerms={tradeTerms}
+              makerMultiPayloadPlain={multiPayload}
+              signerCredentials={signerCredentials}
+              signMessage={signMessage}
+              protocolFee={protocolFee}
+              onSuccessTrade={setPublishResult}
+            />
+          </SignIntentActorProvider>
+        </OtcTakerValidationOrder>
+      ) : (
+        <OtcTakerSuccessScreen
+          tradeTerms={tradeTerms}
+          intentHashes={publishResult.intentHashes}
+          txHash={publishResult.txHash}
+        />
+      ),
     err: (error) => <OtcTakerInvalidOrder error={error} />,
   })
 }
