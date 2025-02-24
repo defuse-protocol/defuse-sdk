@@ -126,10 +126,22 @@ export async function publishIntents(
     maxAttempts: 7,
     jitter: true,
     minDelay: 1000,
-  }).then(parsePublishIntentsResponse, (err) => {
-    logger.error(new Error("Failed to publish intents", { cause: err }))
-    return Err({ reason: "RELAY_PUBLISH_NETWORK_ERROR" })
   })
+    .then(parsePublishIntentsResponse, (err) => {
+      logger.error(new Error("Failed to publish intents", { cause: err }))
+      return Err<PublishIntentsOk, PublishIntentsErr>({
+        reason: "RELAY_PUBLISH_NETWORK_ERROR",
+      })
+    })
+    .then((result) => {
+      if (result.isErr()) {
+        const err = result.unwrapErr()
+        if (err.reason === "RELAY_PUBLISH_UNKNOWN_ERROR") {
+          logger.error(err.serverReason)
+        }
+      }
+      return result
+    })
 }
 
 export type PublishIntentsOk = string[]
@@ -142,6 +154,7 @@ export type PublishIntentsErr =
         | "RELAY_PUBLISH_NONCE_USED"
         | "RELAY_PUBLISH_INSUFFICIENT_BALANCE"
         | "RELAY_PUBLISH_NETWORK_ERROR"
+        | "RELAY_PUBLISH_PUBLIC_NOT_EXIST"
     }
   | {
       reason: "RELAY_PUBLISH_UNKNOWN_ERROR"
@@ -180,6 +193,10 @@ function parsePublishIntentsResponse(
 
   if (response.reason.includes("insufficient balance or overflow")) {
     return Err({ reason: "RELAY_PUBLISH_INSUFFICIENT_BALANCE" })
+  }
+
+  if (response.reason.includes("public key doesn't exist")) {
+    return Err({ reason: "RELAY_PUBLISH_PUBLIC_NOT_EXIST" })
   }
 
   return Err({
