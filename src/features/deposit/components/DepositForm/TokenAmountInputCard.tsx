@@ -8,14 +8,21 @@ export function TokenAmountInputCard({
   inputSlot,
   balanceSlot,
   priceSlot,
+  labelSlot,
 }: {
   tokenSlot?: ReactNode
   inputSlot?: ReactNode
   balanceSlot?: ReactNode
   priceSlot?: ReactNode
+  labelSlot?: ReactNode
 }) {
   return (
     <div className="flex flex-col gap-2.5 rounded-lg border border-border bg-gray-2 p-4">
+      <div className="flex items-center justify-between gap-4">
+        {/* Label */}
+        <div>{labelSlot}</div>
+      </div>
+
       <div className="flex items-center gap-4">
         {/* Amount Input */}
         <div className="relative flex-1">

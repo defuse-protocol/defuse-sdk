@@ -227,13 +227,15 @@ export function OtcMakerForm({
       >
         <div className="flex flex-col items-center">
           <div className="flex flex-col gap-3">
-            <label
-              htmlFor="otc-maker-amount-in"
-              className="font-bold text-label text-sm"
-            >
-              Sell
-            </label>
             <TokenAmountInputCard
+              labelSlot={
+                <label
+                  htmlFor="otc-maker-amount-in"
+                  className="font-bold text-label text-sm"
+                >
+                  Sell
+                </label>
+              }
               inputSlot={
                 <TokenAmountInputCard.Input
                   id="otc-maker-amount-in"
@@ -296,13 +298,15 @@ export function OtcMakerForm({
           </button>
 
           <div className="flex flex-col gap-3">
-            <label
-              htmlFor="otc-maker-amount-out"
-              className="font-bold text-label text-sm"
-            >
-              Buy
-            </label>
             <TokenAmountInputCard
+              labelSlot={
+                <label
+                  htmlFor="otc-maker-amount-out"
+                  className="font-bold text-label text-sm"
+                >
+                  Buy
+                </label>
+              }
               inputSlot={
                 <TokenAmountInputCard.Input
                   id="otc-maker-amount-out"
