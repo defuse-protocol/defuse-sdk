@@ -25,6 +25,8 @@ import {
 } from "./otcMakerReadyOrderActor"
 import {
   type OTCMakerSignActorErrors,
+  type OTCMakerSignActorInput,
+  type OTCMakerSignActorOutput,
   otcMakerSignMachine,
 } from "./otcMakerSignActor"
 
@@ -68,7 +70,10 @@ export const otcMakerRootMachine = setup({
   actors: {
     formActor: otcMakerFormMachine,
     depositedBalanceActor: depositedBalanceMachine,
-    signActor: otcMakerSignMachine,
+    signActor: otcMakerSignMachine as unknown as PromiseActorLogic<
+      OTCMakerSignActorOutput,
+      OTCMakerSignActorInput
+    >,
     readyOrderActor: otcMakerReadyOrderActor as unknown as PromiseActorLogic<
       void,
       OTCMakerReadyOrderActorInput
@@ -162,6 +167,7 @@ export const otcMakerRootMachine = setup({
       },
 
       invoke: {
+        id: "signRef",
         src: "signActor",
 
         input: ({ context, event }) => {
