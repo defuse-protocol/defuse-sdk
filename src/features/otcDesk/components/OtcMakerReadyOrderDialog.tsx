@@ -1,6 +1,8 @@
-import { Button, Spinner } from "@radix-ui/themes"
+import { Button, Dialog, Spinner } from "@radix-ui/themes"
 import { useSelector } from "@xstate/react"
 import type { ActorRefFrom } from "xstate"
+import { AssetComboIcon } from "../../../components/Asset/AssetComboIcon"
+import { ButtonCustom } from "../../../components/Button/ButtonCustom"
 import { ModalDialog } from "../../../components/Modal/ModalDialog"
 import type { SignerCredentials } from "../../../core/formatters"
 import type { MultiPayload } from "../../../types/defuse-contracts-types"
@@ -139,13 +141,32 @@ function OrderDialog({
 
   return (
     <ModalDialog onClose={finish}>
-      <div>Your order is open</div>
-      <div>Share the link with the recipient to finalize the swap.</div>
+      {/* Header Section */}
+      <div className="flex flex-col items-center text-center mb-6">
+        <div className="w-[64px] h-[64px] mt-5 mb-4 flex items-center justify-center rounded-full bg-yellow-300">
+          <div className="w-[28px] h-[28px] [mask-image:url(/static/icons/HourglassHigh.svg)] bg-no-repeat bg-contain bg-warning-foreground" />
+        </div>
+        <Dialog.Title className="text-2xl font-black text-gray-900 dark:text-gray-100 mb-2">
+          Your order is open
+        </Dialog.Title>
+        <Dialog.Description className="text-sm font-medium text-gray-600 dark:text-gray-400">
+          Share the link with the recipient to finalize the swap.
+        </Dialog.Description>
+      </div>
 
+      {/* Order Section */}
       {breakdown != null && (
-        <div>
-          <div>Swap</div>
-          <div>
+        <div className="flex justify-between items-center gap-2 px-4 py-3.5 rounded-lg bg-gray-50 mb-4">
+          <div className="flex items-center">
+            <div className="flex items-center relative">
+              <AssetComboIcon {...context.parsed.tokenIn} />
+              <div className="flex relative items-center -left-[10px] z-10">
+                <AssetComboIcon {...context.parsed.tokenOut} />
+              </div>
+            </div>
+            <div className="text-sm text-a12 font-bold">Swap</div>
+          </div>
+          <div className="text-xs text-a12">
             {formatTokenValue(
               breakdown.makerSends.amount,
               breakdown.makerSends.decimals
@@ -154,21 +175,23 @@ function OrderDialog({
             {context.parsed.tokenIn.symbol}
             {/* biome-ignore lint/nursery/useConsistentCurlyBraces: <explanation> */}
             {" → "}
-            {formatTokenValue(
-              breakdown.makerReceives.amount,
-              breakdown.makerReceives.decimals
-              // biome-ignore lint/nursery/useConsistentCurlyBraces: <explanation>
-            )}{" "}
-            {context.parsed.tokenOut.symbol}
+            <span className="font-bold">
+              {formatTokenValue(
+                breakdown.makerReceives.amount,
+                breakdown.makerReceives.decimals
+                // biome-ignore lint/nursery/useConsistentCurlyBraces: <explanation>
+              )}{" "}
+              {context.parsed.tokenOut.symbol}
+            </span>
           </div>
         </div>
       )}
 
       {breakdown != null && (
-        <div>
-          <div>
-            <div>You send</div>
-            <div>
+        <div className="flex flex-col gap-3.5 px-4">
+          <div className="flex justify-between items-center">
+            <div className="text-sm text-gray-11 font-medium">You send</div>
+            <div className="text-sm text-gray-12 font-medium">
               {formatTokenValue(
                 breakdown.makerSends.amount,
                 breakdown.makerSends.decimals
@@ -178,9 +201,11 @@ function OrderDialog({
             </div>
           </div>
 
-          <div>
-            <div>Processing fee</div>
-            <div>
+          <div className="flex justify-between items-center">
+            <div className="text-sm text-gray-11 font-medium">
+              Processing fee
+            </div>
+            <div className="text-sm text-gray-12 font-medium">
               {formatTokenValue(
                 breakdown.makerPaysFee.amount,
                 breakdown.makerPaysFee.decimals
@@ -190,9 +215,11 @@ function OrderDialog({
             </div>
           </div>
 
-          <div>
-            <div>Recipient will get</div>
-            <div>
+          <div className="flex justify-between items-center">
+            <div className="text-sm text-gray-11 font-medium">
+              Recipient will get
+            </div>
+            <div className="text-sm text-gray-12 font-medium">
               {formatTokenValue(
                 breakdown.takerReceives.amount,
                 breakdown.takerReceives.decimals
@@ -204,18 +231,27 @@ function OrderDialog({
         </div>
       )}
 
-      <Button
-        type="button"
-        onClick={() => {
-          navigator.clipboard.writeText(generateLink(context.multiPayload))
-        }}
-      >
-        Copy link
-      </Button>
+      <div className="flex flex-col justify-center gap-3 mt-5">
+        <ButtonCustom
+          type="button"
+          size="lg"
+          variant="primary"
+          onClick={() => {
+            navigator.clipboard.writeText(generateLink(context.multiPayload))
+          }}
+        >
+          Copy link
+        </ButtonCustom>
 
-      <Button type="button" onClick={cancelOrder}>
-        Cancel order
-      </Button>
+        <ButtonCustom
+          size="lg"
+          type="button"
+          variant="secondary"
+          onClick={cancelOrder}
+        >
+          Cancel order
+        </ButtonCustom>
+      </div>
     </ModalDialog>
   )
 }
