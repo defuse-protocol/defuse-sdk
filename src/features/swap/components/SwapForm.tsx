@@ -9,6 +9,7 @@ import {
   useEffect,
 } from "react"
 import { useFormContext } from "react-hook-form"
+import { TradeNavigationLinks } from "src/components/TradeNavigationLinks"
 import { useTokensUsdPrices } from "src/hooks/useTokensUsdPrices"
 import { formatUsdAmount } from "src/utils/format"
 import getTokenUsdPrice from "src/utils/getTokenUsdPrice"
@@ -39,9 +40,13 @@ export type SwapFormValues = {
 
 export interface SwapFormProps {
   onNavigateDeposit?: () => void
+  onNavigateOTC?: () => void
 }
 
-export const SwapForm = ({ onNavigateDeposit }: SwapFormProps) => {
+export const SwapForm = ({
+  onNavigateDeposit,
+  onNavigateOTC,
+}: SwapFormProps) => {
   const {
     handleSubmit,
     register,
@@ -192,93 +197,97 @@ export const SwapForm = ({ onNavigateDeposit }: SwapFormProps) => {
     <Flex
       direction="column"
       gap="2"
-      className="widget-container rounded-2xl bg-gray-1 p-5 shadow"
+      className="widget-container rounded-2xl bg-gray-1 shadow gap-0"
     >
-      <Form<SwapFormValues>
-        handleSubmit={handleSubmit(onSubmit)}
-        register={register}
-      >
-        <FieldComboInput<SwapFormValues>
-          fieldName="amountIn"
-          selected={tokenIn}
-          handleSelect={() => {
-            openModalSelectAssets("tokenIn")
-          }}
-          className="border border-gray-200/50 rounded-t-xl"
-          required
-          errors={errors}
-          usdAmount={
-            usdAmountIn !== null && usdAmountIn > 0
-              ? `~${formatUsdAmount(usdAmountIn)}`
-              : null
-          }
-          balance={tokenInBalance}
-          transitBalance={tokenInTransitBalance ?? undefined}
-        />
+      <TradeNavigationLinks onNavigateOTC={onNavigateOTC} />
 
-        <div className="relative w-full">
-          <ButtonSwitch onClick={switchTokens} />
-        </div>
+      <div className="flex flex-col p-5">
+        <Form<SwapFormValues>
+          handleSubmit={handleSubmit(onSubmit)}
+          register={register}
+        >
+          <FieldComboInput<SwapFormValues>
+            fieldName="amountIn"
+            selected={tokenIn}
+            handleSelect={() => {
+              openModalSelectAssets("tokenIn")
+            }}
+            className="border border-gray-200/50 rounded-t-xl"
+            required
+            errors={errors}
+            usdAmount={
+              usdAmountIn !== null && usdAmountIn > 0
+                ? `~${formatUsdAmount(usdAmountIn)}`
+                : null
+            }
+            balance={tokenInBalance}
+            transitBalance={tokenInTransitBalance ?? undefined}
+          />
 
-        <FieldComboInput<SwapFormValues>
-          fieldName="amountOut"
-          selected={tokenOut}
-          handleSelect={() => {
-            openModalSelectAssets("tokenOut")
-          }}
-          className="border border-gray-200/50 rounded-b-xl mb-5"
-          errors={errors}
-          disabled={true}
-          isLoading={snapshot.matches({ editing: "waiting_quote" })}
-          usdAmount={
-            usdAmountOut !== null && usdAmountOut > 0
-              ? `~${formatUsdAmount(usdAmountOut)}`
-              : null
-          }
-          balance={tokenOutBalance}
-        />
+          <div className="relative w-full">
+            <ButtonSwitch onClick={switchTokens} />
+          </div>
 
-        <Flex align="stretch" direction="column">
-          {showDepositButton ? (
-            <ButtonCustom
-              type="button"
-              size="lg"
-              fullWidth
-              onClick={() => {
-                onNavigateDeposit()
-              }}
-            >
-              Go to Deposit
-            </ButtonCustom>
-          ) : (
-            <ButtonCustom
-              type="submit"
-              size="lg"
-              fullWidth
-              isLoading={snapshot.matches("submitting")}
-              disabled={
-                balanceInsufficient || noLiquidity || insufficientTokenInAmount
-              }
-            >
-              {renderSwapButtonText(
-                noLiquidity,
-                balanceInsufficient,
-                insufficientTokenInAmount
-              )}
-            </ButtonCustom>
-          )}
-        </Flex>
+          <FieldComboInput<SwapFormValues>
+            fieldName="amountOut"
+            selected={tokenOut}
+            handleSelect={() => {
+              openModalSelectAssets("tokenOut")
+            }}
+            className="border border-gray-200/50 rounded-b-xl mb-5"
+            errors={errors}
+            disabled={true}
+            isLoading={snapshot.matches({ editing: "waiting_quote" })}
+            usdAmount={
+              usdAmountOut !== null && usdAmountOut > 0
+                ? `~${formatUsdAmount(usdAmountOut)}`
+                : null
+            }
+            balance={tokenOutBalance}
+          />
 
-        <SwapRateInfo tokenIn={tokenIn} tokenOut={tokenOut} />
-      </Form>
+          <Flex align="stretch" direction="column">
+            {showDepositButton ? (
+              <ButtonCustom
+                type="button"
+                size="lg"
+                fullWidth
+                onClick={() => {
+                  onNavigateDeposit()
+                }}
+              >
+                Go to Deposit
+              </ButtonCustom>
+            ) : (
+              <ButtonCustom
+                type="submit"
+                size="lg"
+                fullWidth
+                isLoading={snapshot.matches("submitting")}
+                disabled={
+                  balanceInsufficient ||
+                  noLiquidity ||
+                  insufficientTokenInAmount
+                }
+              >
+                {renderSwapButtonText(
+                  noLiquidity,
+                  balanceInsufficient,
+                  insufficientTokenInAmount
+                )}
+              </ButtonCustom>
+            )}
+          </Flex>
 
-      {renderIntentCreationResult(intentCreationResult)}
-
-      {snapshot.context.intentRefs.length > 0 && (
-        <Box>
-          <Intents intentRefs={snapshot.context.intentRefs} />
-        </Box>
-      )}
+          <SwapRateInfo tokenIn={tokenIn} tokenOut={tokenOut} />
+        </Form>
+        {renderIntentCreationResult(intentCreationResult)}
+        {snapshot.context.intentRefs.length > 0 && (
+          <Box>
+            <Intents intentRefs={snapshot.context.intentRefs} />
+          </Box>
+        )}
+      </div>
     </Flex>
   )
 }

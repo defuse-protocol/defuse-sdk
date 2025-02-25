@@ -53,6 +53,9 @@ export type OtcMakerWidgetProps = {
 
   /** Theme selection */
   theme?: "dark" | "light"
+
+  /** External navigation callback */
+  onNavigateSwap?: () => void
 }
 
 export function OtcMakerForm({
@@ -224,7 +227,7 @@ export function OtcMakerForm({
   usePublicKeyModalOpener(publicKeyVerifierRef, sendNearTransaction)
 
   return (
-    <>
+    <div className="flex flex-col p-5">
       {rootSnapshot.matches("signed") &&
         configRef != null &&
         readyOrderRef != null &&
@@ -388,7 +391,7 @@ export function OtcMakerForm({
 
         {renderSubmitButton(rootSnapshot)}
       </form>
-    </>
+    </div>
   )
 }
 

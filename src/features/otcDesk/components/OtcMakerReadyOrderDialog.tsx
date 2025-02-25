@@ -1,3 +1,4 @@
+import { HourglassHigh } from "@phosphor-icons/react"
 import { Button, Dialog, Spinner } from "@radix-ui/themes"
 import { useSelector } from "@xstate/react"
 import type { ActorRefFrom } from "xstate"
@@ -160,7 +161,10 @@ function OrderDialog({
       {/* Header Section */}
       <div className="flex flex-col items-center text-center mb-6">
         <div className="w-[64px] h-[64px] mt-5 mb-4 flex items-center justify-center rounded-full bg-yellow-300">
-          <div className="w-[28px] h-[28px] [mask-image:url(/static/icons/HourglassHigh.svg)] bg-no-repeat bg-contain bg-warning-foreground" />
+          <HourglassHigh
+            className="size-7 text-warning-foreground"
+            weight="bold"
+          />
         </div>
         <Dialog.Title className="text-2xl font-black text-gray-900 dark:text-gray-100 mb-2">
           Your order is open
