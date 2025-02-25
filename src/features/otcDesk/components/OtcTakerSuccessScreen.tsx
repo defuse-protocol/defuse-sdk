@@ -1,4 +1,6 @@
+import { Check as CheckIcon } from "@phosphor-icons/react"
 import { useQuery } from "@tanstack/react-query"
+import { CopyButton } from "src/components/IntentCard/CopyButton"
 import { waitForIntentSettlement } from "../../../services/intentService"
 import { assert } from "../../../utils/assert"
 import {
@@ -53,19 +55,31 @@ export function OtcTakerSuccessScreen({
 
   return (
     <div>
-      <div>{intentStatus.isPending ? "Almost there" : "All done!"}</div>
-
-      {intentStatus.isPending ? (
-        <div>
-          Your swap is being processed. You will receive your funds shortly.
+      {/* Header Section */}
+      <div className="flex flex-row justify-between mb-5">
+        <div className="flex flex-col items-start gap-1.5">
+          <div className="text-2xl font-black text-gray-900 dark:text-gray-100 mb-2">
+            {intentStatus.isPending ? "Almost there" : "All done!"}
+          </div>
+          {intentStatus.isPending ? (
+            <div className="text-sm font-medium text-gray-600 dark:text-gray-400">
+              Your swap is being processed. You will receive your funds shortly.
+            </div>
+          ) : (
+            <div className="text-sm font-medium text-gray-600 dark:text-gray-400">
+              Your swap has been successfully completed, and the funds are now
+              available in your account.
+            </div>
+          )}
         </div>
-      ) : (
-        <div>
-          Your swap has been successfully completed, and the funds are now
-          available in your account.
+        <div className="flex justify-center items-start">
+          <div className="w-[64px] h-[64px] flex items-center justify-center rounded-full bg-green-4">
+            <CheckIcon weight="bold" className="size-7 text-green-a11" />
+          </div>
         </div>
-      )}
+      </div>
 
+      {/* Order Section */}
       <SwapStrip
         tokenIn={tradeTerms.tokenIn}
         tokenOut={tradeTerms.tokenOut}
@@ -73,24 +87,58 @@ export function OtcTakerSuccessScreen({
         amountOut={breakdown.takerReceives}
       />
 
-      <div>
-        <div>Intents</div>
-        <div>
-          {intentHashes.map((intentHash) => (
-            <div key={intentHash}>{intentHash}</div>
-          ))}
-        </div>
-      </div>
-      {txUrl != null && (
-        <div>
-          <div>Transaction hash</div>
-          <div>
-            <a href={txUrl} rel="noopener noreferrer" target="_blank">
-              {intentStatus.data?.txHash}
-            </a>
+      <div className="flex flex-col gap-3.5 px-4 text-xs mt-4">
+        <div className="flex justify-between items-center">
+          <div className="text-gray-11 font-medium">Intents</div>
+          <div className="flex gap-2.5">
+            {intentHashes.map((intentHash) => (
+              <div
+                key={intentHash}
+                className="flex flex-row items-center gap-1 text-gray-12 font-medium"
+              >
+                <span className="text-gray-12 font-medium">
+                  {truncateHash(intentHash)}
+                </span>
+                <CopyButton text={intentHash} ariaLabel="Copy intent hash" />
+              </div>
+            ))}
           </div>
         </div>
-      )}
+        {txUrl != null && (
+          <div className="flex justify-between items-center">
+            <div className="text-gray-11 font-medium">Transaction hash</div>
+            {intentStatus.data?.txHash && (
+              <div className="flex flex-row items-center gap-1 text-blue-c11 font-medium">
+                <a href={txUrl} rel="noopener noreferrer" target="_blank">
+                  {truncateHash(intentStatus.data.txHash)}
+                </a>
+                <CopyButton
+                  text={intentStatus.data.txHash}
+                  ariaLabel="Copy intent hash"
+                />
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* TODO: Finish withdraw button */}
+      {/* <div className="flex flex-col justify-center gap-3 mt-5">
+        <Button
+          type="button"
+          size="3"
+          variant="outline"
+          color="gray"
+          className="font-bold"
+          onClick={onNavigateWithdraw}
+        >
+          Withdraw
+        </Button>
+      </div> */}
     </div>
   )
+}
+
+function truncateHash(hash: string) {
+  return `${hash.slice(0, 5)}...${hash.slice(-5)}`
 }

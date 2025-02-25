@@ -1,8 +1,6 @@
 import { ExclamationTriangleIcon } from "@radix-ui/react-icons"
 import { Cross2Icon } from "@radix-ui/react-icons"
 import { Callout } from "@radix-ui/themes"
-import { AssetComboIcon } from "src/components/Asset/AssetComboIcon"
-import { formatTokenValue } from "src/utils/format"
 import type { TokenValue } from "../../../types/base"
 import { assert } from "../../../utils/assert"
 import {
@@ -11,6 +9,7 @@ import {
   negateTokenValue,
 } from "../../../utils/tokenUtils"
 import type { TradeTerms } from "../utils/deriveTradeTerms"
+import { SwapStrip } from "./shared/SwapStrip"
 
 export function OtcTakerInvalidOrder({
   error,
@@ -84,37 +83,12 @@ export function OtcTakerInvalidOrder({
 
       {/* Order Section */}
       {tradeTerms != null && breakdown != null && (
-        <div className="flex justify-between items-center gap-2 px-4 py-3.5 rounded-lg bg-gray-3 mt-5">
-          <div className="flex items-center">
-            <div className="flex items-center relative">
-              <AssetComboIcon {...tradeTerms.tokenIn} />
-              <div className="flex relative items-center -left-[10px] z-10">
-                <AssetComboIcon {...tradeTerms.tokenOut} />
-              </div>
-            </div>
-            <div className="text-sm text-a12 font-bold">Swap</div>
-          </div>
-          <div className="text-xs text-a12">
-            {formatTokenValue(
-              breakdown.takerSends.amount,
-              breakdown.takerSends.decimals,
-              { fractionDigits: 4 }
-              // biome-ignore lint/nursery/useConsistentCurlyBraces: <explanation>
-            )}{" "}
-            {tradeTerms.tokenIn.symbol}
-            {/* biome-ignore lint/nursery/useConsistentCurlyBraces: <explanation> */}
-            {" → "}
-            <span className="font-bold">
-              {formatTokenValue(
-                breakdown.takerReceives.amount,
-                breakdown.takerReceives.decimals,
-                { fractionDigits: 4 }
-                // biome-ignore lint/nursery/useConsistentCurlyBraces: <explanation>
-              )}{" "}
-              {tradeTerms.tokenOut.symbol}
-            </span>
-          </div>
-        </div>
+        <SwapStrip
+          tokenIn={tradeTerms.tokenIn}
+          tokenOut={tradeTerms.tokenOut}
+          amountIn={breakdown.takerSends}
+          amountOut={breakdown.takerReceives}
+        />
       )}
     </div>
   )
