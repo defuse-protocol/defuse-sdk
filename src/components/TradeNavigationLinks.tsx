@@ -17,8 +17,8 @@ const TradeNavigationLinks = ({
         disabled={!onNavigateSwap}
         className={cn(
           "flex flex-1 justify-center items-center py-5 hover:bg-gray-3 border-b-[3px] box-border text-2xl font-black leading-7",
-          onNavigateSwap && "border-gray-12",
-          !onNavigateSwap && "border-transparent text-gray-10"
+          !onNavigateSwap && "border-gray-12",
+          onNavigateSwap && "border-transparent text-gray-10"
         )}
       >
         Swap
@@ -29,8 +29,8 @@ const TradeNavigationLinks = ({
         disabled={!onNavigateOTC}
         className={cn(
           "flex flex-1 justify-center items-center py-5 hover:bg-gray-3 border-b-[3px] box-border text-2xl font-black leading-7",
-          onNavigateOTC && "border-gray-12",
-          !onNavigateOTC && "border-transparent text-gray-10"
+          !onNavigateOTC && "border-gray-12",
+          onNavigateOTC && "border-transparent text-gray-10"
         )}
       >
         OTC
