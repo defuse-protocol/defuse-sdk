@@ -67,7 +67,7 @@ export const otcTakerTradesStore = create<Store>()(
       },
     }),
     {
-      name: "near_intents_sdk_otc_taker_completed_trades",
+      name: "intents_sdk.otc_taker_trades",
       storage: createJSONStorage(() => localStorage),
     }
   )
