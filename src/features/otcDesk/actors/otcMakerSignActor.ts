@@ -29,7 +29,9 @@ import {
   type Errors as SignIntentErrors,
   signIntentMachine,
 } from "../../machines/signIntentMachine"
+import { otcMakerTradesStore } from "../stores/otcMakerTrades"
 import type { SignMessage } from "../types/sharedTypes"
+import { genLocalTradeId } from "../utils/genLocalTradeId"
 
 export type OTCMakerSignActorInput = {
   parsed: {
@@ -48,6 +50,7 @@ export type OTCMakerSignActorOutput =
   | { tag: "ok"; value: OTCMakerSignActorSuccess }
 
 export type OTCMakerSignActorSuccess = {
+  tradeId: string
   multiPayload: MultiPayload
   signatureResult: WalletSignatureResult
   signerCredentials: SignerCredentials
@@ -174,10 +177,27 @@ export const otcMakerSignMachine = setup({
 
         // @ts-ignore
         onDone: {
-          actions: {
-            type: "complete",
-            params: ({ event }) => event.output,
-          },
+          actions: [
+            {
+              type: "complete",
+              params: ({ event }) => event.output,
+            },
+            ({ event, context }) => {
+              if (event.output.tag === "ok") {
+                const multiPayload = formatSignedIntent(
+                  event.output.value.signatureResult,
+                  context.signerCredentials
+                )
+
+                const tradeId = genLocalTradeId(JSON.stringify(multiPayload))
+
+                otcMakerTradesStore.getState().addTrade({
+                  tradeId,
+                  makerMultiPayload: multiPayload,
+                })
+              }
+            },
+          ],
         },
       },
 
@@ -195,13 +215,18 @@ export const otcMakerSignMachine = setup({
           return event.output
         }
 
+        const multiPayload = formatSignedIntent(
+          event.output.value.signatureResult,
+          context.signerCredentials
+        )
+
+        const tradeId = genLocalTradeId(JSON.stringify(multiPayload))
+
         return {
           tag: "ok",
           value: {
-            multiPayload: formatSignedIntent(
-              event.output.value.signatureResult,
-              context.signerCredentials
-            ),
+            tradeId,
+            multiPayload,
             signatureResult: event.output.value.signatureResult,
             signerCredentials: context.signerCredentials,
             usedNonceBase64: base64.encode(context.nonce),

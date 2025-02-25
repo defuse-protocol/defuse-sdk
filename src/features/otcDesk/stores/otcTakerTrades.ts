@@ -35,12 +35,12 @@ type Actions = {
 
 type Store = State & Actions
 
-export const otcTakerCompletedTradesStore = create<Store>()(
+export const otcTakerTradesStore = create<Store>()(
   persist(
     (set) => ({
       trades: {},
 
-      addCompletedTrade: async (trade) => {
+      addCompletedTrade: (trade) => {
         set((state) => ({
           trades: {
             ...state.trades,
@@ -53,7 +53,7 @@ export const otcTakerCompletedTradesStore = create<Store>()(
         }))
       },
 
-      addUncompletedTrade: async (trade) => {
+      addUncompletedTrade: (trade) => {
         set((state) => ({
           trades: {
             ...state.trades,
@@ -67,24 +67,10 @@ export const otcTakerCompletedTradesStore = create<Store>()(
       },
     }),
     {
-      name: "near_intents_sdk_otc_taker_completed_trades",
+      name: "intents_sdk.otc_taker_trades",
       storage: createJSONStorage(() => localStorage),
     }
   )
 )
 
-export { otcTakerCompletedTradesStore as useOtcTakerCompletedTrades }
-
-export function generateLocalTradeId(multiPayloadPlain: string): string {
-  const hash = dfjb2(multiPayloadPlain)
-  return Math.abs(hash).toString(16).padStart(8, "0")
-}
-
-function dfjb2(str: string) {
-  let hash = 5381
-  for (let i = 0; i < str.length; i++) {
-    const char = str.charCodeAt(i)
-    hash = (hash << 5) + hash + char // hash * 33 + char
-  }
-  return hash
-}
+export { otcTakerTradesStore as useOtcTakerTrades }

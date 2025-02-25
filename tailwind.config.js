@@ -61,6 +61,36 @@ const config = {
           a12: "var(--sand-a12)",
         },
 
+        red: {
+          ...colors.red,
+
+          1: "var(--red-1)",
+          2: "var(--red-2)",
+          3: "var(--red-3)",
+          4: "var(--red-4)",
+          5: "var(--red-5)",
+          6: "var(--red-6)",
+          7: "var(--red-7)",
+          8: "var(--red-8)",
+          9: "var(--red-9)",
+          10: "var(--red-10)",
+          11: "var(--red-11)",
+          12: "var(--red-12)",
+          // Alpha variants
+          a1: "var(--red-a1)",
+          a2: "var(--red-a2)",
+          a3: "var(--red-a3)",
+          a4: "var(--red-a4)",
+          a5: "var(--red-a5)",
+          a6: "var(--red-a6)",
+          a7: "var(--red-a7)",
+          a8: "var(--red-a8)",
+          a9: "var(--red-a9)",
+          a10: "var(--red-a10)",
+          a11: "var(--red-a11)",
+          a12: "var(--red-a12)",
+        },
+
         accent: {
           DEFAULT: "var(--accent-9)",
           50: "var(--accent-1)",

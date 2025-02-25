@@ -1,12 +1,6 @@
 import { base64 } from "@scure/base"
 import { createEmptyIntentMessage } from "src/core/messages"
-import {
-  type PromiseActorLogic,
-  assertEvent,
-  assign,
-  fromPromise,
-  setup,
-} from "xstate"
+import { assertEvent, assign, fromPromise, setup } from "xstate"
 import type { SignerCredentials } from "../../../core/formatters"
 import { logger } from "../../../logger"
 import {
@@ -18,17 +12,18 @@ import type { WalletSignatureResult } from "../../../types/swap"
 import { assert } from "../../../utils/assert"
 import {
   type Errors as SignIntentErrors,
-  type Input as SignIntentInput,
   type Output as SignIntentOutput,
   signIntentMachine,
 } from "../../machines/signIntentMachine"
+import { otcMakerTradesStore } from "../stores/otcMakerTrades"
 import type { SignMessage } from "../types/sharedTypes"
 
-type OTCMakerOrderCancellationActorInput = {
+export type OTCMakerOrderCancellationActorInput = {
+  tradeId: string
   nonceBas64: string
 }
 
-type OTCMakerOrderCancellationActorOutput = {
+export type OTCMakerOrderCancellationActorOutput = {
   orderStatus: "cancelled" | "not_cancelled" | "already_cancelled_or_executed"
 }
 
@@ -38,6 +33,7 @@ type OTCMakerOrderCancellationActorErrors =
   | { reason: "EXCEPTION" }
 
 type OTCMakerOrderCancellationActorContext = {
+  tradeId: string
   nonceBas64: string
   error: null | OTCMakerOrderCancellationActorErrors
 }
@@ -64,11 +60,7 @@ export const otcMakerOrderCancellationActor = setup({
         },
   },
   actors: {
-    // `as PromiseActorLogic` helps to overcome XState type bloating
-    signActor: signIntentMachine as unknown as PromiseActorLogic<
-      SignIntentOutput,
-      SignIntentInput
-    >,
+    signActor: signIntentMachine,
     publishActor: fromPromise(
       ({ input }: { input: { multiPayload: MultiPayload } }) => {
         return publishIntents({
@@ -98,6 +90,10 @@ export const otcMakerOrderCancellationActor = setup({
     completeSigning: ({ self }, event: { output: SignIntentOutput }) => {
       assert(event.output.tag === "ok")
       self.send({ type: "_INTERNAL_SIGNED", ...event.output.value })
+    },
+
+    removeTrade: ({ context }) => {
+      otcMakerTradesStore.getState().removeTrade(context.tradeId)
     },
   },
   guards: {
@@ -148,6 +144,7 @@ export const otcMakerOrderCancellationActor = setup({
       states: {
         signing: {
           invoke: {
+            id: "signRef",
             src: "signActor",
 
             input: ({ context, event }) => {
@@ -228,6 +225,7 @@ export const otcMakerOrderCancellationActor = setup({
                   type: "isOk",
                   params: ({ event }) => event.output,
                 },
+                actions: "removeTrade",
               },
               {
                 target: "#(machine).idleUncancellable",
@@ -235,6 +233,7 @@ export const otcMakerOrderCancellationActor = setup({
                   type: "isNonceUsedError",
                   params: ({ event }) => event,
                 },
+                actions: "removeTrade",
               },
               {
                 target: "#(machine).idle",

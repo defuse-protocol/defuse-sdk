@@ -28,7 +28,10 @@ export function CopyButton({ text, ariaLabel }: CopyButtonProps) {
 export function Copy({
   children,
   text,
-}: { children: (copied: boolean) => ReactNode; text: string }) {
+}: {
+  children: (copied: boolean) => ReactNode
+  text: string | (() => string)
+}) {
   const [copied, setCopied] = useState(false)
   const abortCtrlRef = useRef<AbortController | null>(null)
 
@@ -44,7 +47,8 @@ export function Copy({
         abortCtrlRef.current?.abort()
         abortCtrlRef.current = new AbortController()
 
-        await navigator.clipboard.writeText(text)
+        const t = typeof text === "function" ? text() : text
+        await navigator.clipboard.writeText(t)
 
         let timerId: ReturnType<typeof setTimeout>
         if (!copied) {
