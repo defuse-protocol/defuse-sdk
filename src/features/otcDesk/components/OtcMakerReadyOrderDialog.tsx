@@ -1,5 +1,5 @@
 import { HourglassHigh } from "@phosphor-icons/react"
-import { Button, Dialog, Spinner } from "@radix-ui/themes"
+import { Dialog } from "@radix-ui/themes"
 import { useSelector } from "@xstate/react"
 import type { ActorRefFrom } from "xstate"
 import { AssetComboIcon } from "../../../components/Asset/AssetComboIcon"
@@ -12,6 +12,7 @@ import type { otcMakerConfigLoadActor } from "../actors/otcMakerConfigLoadActor"
 import type { otcMakerReadyOrderActor } from "../actors/otcMakerReadyOrderActor"
 import type { SignMessage } from "../types/sharedTypes"
 import { computeTradeBreakdown } from "../utils/otcMakerBreakdown"
+import { CancellationDialog } from "./shared/CancellationDialog"
 
 type OtcMakerReadyOrderDialogProps = {
   configRef: ActorRefFrom<typeof otcMakerConfigLoadActor>
@@ -32,11 +33,6 @@ export function OtcMakerReadyOrderDialog({
     orderCancellationRef: state.children.otcMakerOrderCancellationRef,
   }))
 
-  const orderCancellationSnapshot = useSelector(
-    orderCancellationRef,
-    (state) => state
-  )
-
   return (
     <>
       <OrderDialog
@@ -45,80 +41,12 @@ export function OtcMakerReadyOrderDialog({
         generateLink={generateLink}
       />
 
-      {orderCancellationRef && orderCancellationSnapshot && (
-        <ModalDialog
-          onClose={() =>
-            orderCancellationRef.send({ type: "ABORT_CANCELLATION" })
-          }
-        >
-          {orderCancellationSnapshot.matches("idleUncancellable") ? (
-            <>
-              <div>This order is either already cancelled or executed.</div>
-
-              <Button
-                type="button"
-                onClick={() => {
-                  orderCancellationRef.send({
-                    type: "ACK_CANCELLATION_IMPOSSIBLE",
-                  })
-                }}
-              >
-                Ok
-              </Button>
-            </>
-          ) : (
-            <>
-              <Dialog.Title className="text-2xl font-black text-gray-900 dark:text-gray-100 mb-2">
-                Cancel order?
-              </Dialog.Title>
-              <Dialog.Description className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                The funds will stay safely in your wallet, and the link will no
-                longer work.
-              </Dialog.Description>
-
-              {orderCancellationSnapshot.context.error != null && (
-                <div className="text-red-700">
-                  {orderCancellationSnapshot.context.error?.reason}
-                </div>
-              )}
-
-              <div className="flex flex-col md:flex-row justify-center gap-3 mt-5">
-                <Button
-                  type="button"
-                  size="4"
-                  variant="outline"
-                  className="flex-1 font-bold"
-                  onClick={() =>
-                    orderCancellationRef.send({ type: "ABORT_CANCELLATION" })
-                  }
-                >
-                  Keep
-                </Button>
-
-                <Button
-                  type="button"
-                  size="4"
-                  variant="solid"
-                  className="flex-1 font-bold"
-                  onClick={() =>
-                    orderCancellationRef.send({
-                      type: "CONFIRM_CANCELLATION",
-                      signerCredentials,
-                      signMessage,
-                    })
-                  }
-                >
-                  <Spinner
-                    loading={orderCancellationSnapshot?.matches("cancelling")}
-                  />
-                  {orderCancellationSnapshot?.matches("cancelling")
-                    ? "Cancelling..."
-                    : "Cancel order"}
-                </Button>
-              </div>
-            </>
-          )}
-        </ModalDialog>
+      {orderCancellationRef != null && (
+        <CancellationDialog
+          actorRef={orderCancellationRef}
+          signerCredentials={signerCredentials}
+          signMessage={signMessage}
+        />
       )}
     </>
   )
