@@ -1,3 +1,4 @@
+import { ArrowDown } from "@phosphor-icons/react"
 import { useQuery } from "@tanstack/react-query"
 import clsx from "clsx"
 import { providers } from "near-api-js"
@@ -123,92 +124,120 @@ export function OtcTakerForm({
   })
 
   return (
-    <div>
-      <div>Complete swap</div>
-      <div>Pay the specified amount to finalize the transaction.</div>
+    <div className="flex flex-col">
+      {/* Header Section */}
+      <div className="flex flex-col items-start text-center mb-5">
+        <div className="text-2xl font-black text-gray-900 dark:text-gray-100 mb-1.5">
+          Complete swap
+        </div>
+        <div className="text-sm font-medium text-gray-600 dark:text-gray-400">
+          Pay the specified amount to finalize the transaction.
+        </div>
+      </div>
 
       {confirmTradeMutation.data?.match({
         ok: () => <div>Swapped!</div>,
         err: (err) => <div className="text-red-700">{err.reason}</div>,
       })}
 
-      <div>
-        <div className="font-bold text-label text-sm">Pay</div>
+      <div className="flex flex-col items-center">
+        <div className="flex flex-col gap-3">
+          <TokenAmountInputCard
+            variant="2"
+            labelSlot={
+              <label
+                htmlFor="otc-maker-amount-out"
+                className="font-bold text-label text-sm"
+              >
+                Pay
+              </label>
+            }
+            inputSlot={
+              <TokenAmountInputCard.Input
+                readOnly
+                name="amount"
+                value={formatTokenValue(
+                  -totalAmountIn.amount,
+                  totalAmountIn.decimals
+                )}
+              />
+            }
+            tokenSlot={
+              <TokenAmountInputCard.DisplayToken token={tradeTerms.tokenIn} />
+            }
+            balanceSlot={
+              <BlockMultiBalances
+                balance={balances?.tokenIn?.amount ?? 0n}
+                decimals={balances?.tokenIn?.decimals ?? 0}
+                className={clsx(
+                  "!static",
+                  balances?.tokenIn == null && "invisible"
+                )}
+              />
+            }
+            priceSlot={
+              <TokenAmountInputCard.DisplayPrice>
+                {usdAmountIn !== null && usdAmountIn > 0
+                  ? formatUsdAmount(usdAmountIn)
+                  : null}
+              </TokenAmountInputCard.DisplayPrice>
+            }
+          />
+        </div>
 
-        <TokenAmountInputCard
-          inputSlot={
-            <TokenAmountInputCard.Input
-              readOnly
-              name="amount"
-              value={formatTokenValue(
-                -totalAmountIn.amount,
-                totalAmountIn.decimals
-              )}
-            />
-          }
-          tokenSlot={
-            <TokenAmountInputCard.DisplayToken token={tradeTerms.tokenIn} />
-          }
-          balanceSlot={
-            <BlockMultiBalances
-              balance={balances?.tokenIn?.amount ?? 0n}
-              decimals={balances?.tokenIn?.decimals ?? 0}
-              className={clsx(
-                "!static",
-                balances?.tokenIn == null && "invisible"
-              )}
-            />
-          }
-          priceSlot={
-            <TokenAmountInputCard.DisplayPrice>
-              {usdAmountIn !== null && usdAmountIn > 0
-                ? formatUsdAmount(usdAmountIn)
-                : null}
-            </TokenAmountInputCard.DisplayPrice>
-          }
-        />
-      </div>
+        <div className="size-10 -my-3.5 rounded-[10px] bg-accent-1 flex items-center justify-center z-10">
+          <ArrowDown className="size-5" weight="bold" />
+        </div>
 
-      <div>
-        <div className="font-bold text-label text-sm">Receive</div>
-
-        <TokenAmountInputCard
-          inputSlot={
-            <TokenAmountInputCard.Input
-              readOnly
-              name="amount"
-              value={formatTokenValue(
-                totalAmountOut.amount,
-                totalAmountOut.decimals
-              )}
-            />
-          }
-          tokenSlot={
-            <TokenAmountInputCard.DisplayToken token={tradeTerms.tokenOut} />
-          }
-          balanceSlot={
-            <BlockMultiBalances
-              balance={balances?.tokenOut?.amount ?? 0n}
-              decimals={balances?.tokenOut?.decimals ?? 0}
-              className={clsx(
-                "!static",
-                balances?.tokenOut == null && "invisible"
-              )}
-            />
-          }
-          priceSlot={
-            <TokenAmountInputCard.DisplayPrice>
-              {usdAmountOut !== null && usdAmountOut > 0
-                ? formatUsdAmount(usdAmountOut)
-                : null}
-            </TokenAmountInputCard.DisplayPrice>
-          }
-        />
+        <div className="flex flex-col gap-3">
+          <TokenAmountInputCard
+            variant="2"
+            labelSlot={
+              <label
+                htmlFor="otc-maker-amount-out"
+                className="font-bold text-label text-sm"
+              >
+                Receive
+              </label>
+            }
+            inputSlot={
+              <TokenAmountInputCard.Input
+                readOnly
+                name="amount"
+                value={formatTokenValue(
+                  totalAmountOut.amount,
+                  totalAmountOut.decimals
+                )}
+              />
+            }
+            tokenSlot={
+              <TokenAmountInputCard.DisplayToken token={tradeTerms.tokenOut} />
+            }
+            balanceSlot={
+              <BlockMultiBalances
+                balance={balances?.tokenOut?.amount ?? 0n}
+                decimals={balances?.tokenOut?.decimals ?? 0}
+                className={clsx(
+                  "!static",
+                  balances?.tokenOut == null && "invisible"
+                )}
+              />
+            }
+            priceSlot={
+              <TokenAmountInputCard.DisplayPrice>
+                {usdAmountOut !== null && usdAmountOut > 0
+                  ? formatUsdAmount(usdAmountOut)
+                  : null}
+              </TokenAmountInputCard.DisplayPrice>
+            }
+          />
+        </div>
       </div>
 
       <ButtonCustom
         size="lg"
         type="button"
+        className="mt-5"
         onClick={() => {
           if (
             !confirmTradeMutation.isPending &&
