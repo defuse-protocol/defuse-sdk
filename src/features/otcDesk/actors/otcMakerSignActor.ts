@@ -175,7 +175,7 @@ export const otcMakerSignMachine = setup({
           ],
         },
 
-        // @ts-ignore
+        // @ts-expect-error wtf???
         onDone: {
           actions: [
             {
@@ -191,10 +191,13 @@ export const otcMakerSignMachine = setup({
 
                 const tradeId = genLocalTradeId(JSON.stringify(multiPayload))
 
-                otcMakerTradesStore.getState().addTrade({
-                  tradeId,
-                  makerMultiPayload: multiPayload,
-                })
+                otcMakerTradesStore.getState().addTrade(
+                  {
+                    tradeId,
+                    makerMultiPayload: multiPayload,
+                  },
+                  context.signerCredentials
+                )
               }
             },
           ],

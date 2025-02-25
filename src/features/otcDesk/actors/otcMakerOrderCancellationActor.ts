@@ -21,6 +21,7 @@ import type { SignMessage } from "../types/sharedTypes"
 export type OTCMakerOrderCancellationActorInput = {
   tradeId: string
   nonceBas64: string
+  signerCredentials: SignerCredentials
 }
 
 export type OTCMakerOrderCancellationActorOutput = {
@@ -35,6 +36,7 @@ type OTCMakerOrderCancellationActorErrors =
 type OTCMakerOrderCancellationActorContext = {
   tradeId: string
   nonceBas64: string
+  signerCredentials: SignerCredentials
   error: null | OTCMakerOrderCancellationActorErrors
 }
 
@@ -93,7 +95,9 @@ export const otcMakerOrderCancellationActor = setup({
     },
 
     removeTrade: ({ context }) => {
-      otcMakerTradesStore.getState().removeTrade(context.tradeId)
+      otcMakerTradesStore
+        .getState()
+        .removeTrade(context.tradeId, context.signerCredentials)
     },
   },
   guards: {

@@ -28,6 +28,7 @@ import { getDepositedBalances } from "../../../services/defuseBalanceService"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../../types/base"
 import type { MultiPayload } from "../../../types/defuse-contracts-types"
 import { assert } from "../../../utils/assert"
+import { userAddressToDefuseUserId } from "../../../utils/defuse"
 import { formatTokenValue } from "../../../utils/format"
 import { computeTotalBalanceDifferentDecimals } from "../../../utils/tokenUtils"
 import type { SendNearTransaction } from "../../machines/publicKeyVerifierMachine"
@@ -61,7 +62,13 @@ export function OtcMakerTrades({
   signMessage,
   sendNearTransaction,
 }: OtcMakerTradesProps) {
-  const trades = useOtcMakerTrades((s) => s.trades)
+  const trades = useOtcMakerTrades((s) => {
+    const userId = userAddressToDefuseUserId(
+      signerCredentials.credential,
+      signerCredentials.credentialType
+    )
+    return s.trades[userId] ?? []
+  })
 
   if (trades.length === 0) {
     return null
@@ -85,6 +92,7 @@ export function OtcMakerTrades({
               updatedAt={trade.updatedAt}
               tokenList={tokenList}
               generateLink={generateLink}
+              signerCredentials={signerCredentials}
             />
           ))}
         </OtcMakerOrderCancellationProvider>
@@ -99,6 +107,7 @@ interface OtcMakerTradeItemProps {
   updatedAt: number
   tokenList: (BaseTokenInfo | UnifiedTokenInfo)[]
   generateLink: (multiPayload: MultiPayload) => string
+  signerCredentials: SignerCredentials
 }
 
 function OtcMakerTradeItem({
@@ -106,6 +115,7 @@ function OtcMakerTradeItem({
   multiPayload,
   tokenList,
   generateLink,
+  signerCredentials,
 }: OtcMakerTradeItemProps) {
   const tradeTermsResult = deriveTradeTerms(multiPayload, tokenList, 0)
 
@@ -212,7 +222,9 @@ function OtcMakerTradeItem({
             <Button
               type="button"
               onClick={() => {
-                otcMakerTradesStore.getState().removeTrade(tradeId)
+                otcMakerTradesStore
+                  .getState()
+                  .removeTrade(tradeId, signerCredentials)
               }}
               variant="outline"
               color="gray"
@@ -413,6 +425,7 @@ function OtcMakerOrderCancellationProvider({
       input: {
         nonceBas64: arg.nonceBas64,
         tradeId: arg.tradeId,
+        signerCredentials,
       },
     })
 
