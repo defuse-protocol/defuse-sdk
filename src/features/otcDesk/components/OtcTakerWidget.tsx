@@ -215,8 +215,8 @@ function OtcTakerValidationOrder({
     nonceValidation.data?.isErr()
   ) {
     error = error
-      .andThen((): typeof error => makerBalanceValidation.data ?? Ok(true))
-      .andThen((): typeof error => nonceValidation.data ?? Ok(true))
+      .andThen(() => makerBalanceValidation.data ?? error)
+      .andThen(() => nonceValidation.data ?? error)
 
     return (
       <OtcTakerInvalidOrder error={error.unwrapErr()} tradeTerms={tradeTerms} />
