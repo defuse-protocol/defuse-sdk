@@ -52,9 +52,9 @@ export const ModalDialog = ({
     <Dialog.Root open={open} onOpenChange={setOpen}>
       <Dialog.Content
         container={portalContainer}
-        className={`fixed bg-white dark:bg-black-800 shadow-lg p-0 focus:outline-none
+        className={`fixed bg-white dark:bg-black-800 shadow-lg px-4 pt-4 pb-[max(env(safe-area-inset-bottom,0px),theme(spacing.4))] focus:outline-none
           md:w-[90vw] md:max-w-[472px] md:max-h-[85vh] md:p-5 md:top-1/2 md:bottom-auto md:left-1/2 md:right-auto md:-translate-x-1/2 md:-translate-y-1/2 md:rounded-2xl md:animate-content-show
-          bottom-0 left-0 right-0 top-auto max-w-full max-h-[70vh] rounded-t-2xl animate-slide-up`}
+          bottom-0 left-0 right-0 top-auto max-w-full max-h-[70vh] rounded-t-2xl rounded-b-none animate-slide-up`}
         maxWidth={
           containerWidth
             ? containerWidth < 768
