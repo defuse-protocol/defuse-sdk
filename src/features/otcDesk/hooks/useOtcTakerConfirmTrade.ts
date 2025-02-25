@@ -29,11 +29,13 @@ export function useOtcTakerConfirmTrade({
   makerMultiPayload,
   signMessage,
   onSuccessTrade,
+  referral,
 }: {
   tradeId: string
   makerMultiPayload: MultiPayload
   signMessage: SignMessage
   onSuccessTrade: (arg: { intentHashes: string[] }) => void
+  referral: string | undefined
 }) {
   const { signIntent } = useContext(SignIntentContext)
 
@@ -64,6 +66,8 @@ export function useOtcTakerConfirmTrade({
 
       const walletMessage = createSwapIntentMessage(tokenDiff, {
         signerId,
+        referral,
+        memo: "OTC_FILL",
       })
 
       const signatureResult = await signIntent({

@@ -30,6 +30,10 @@ export interface IntentMessageConfig {
    * Optional referral code for tracking
    */
   referral?: string
+  /**
+   * Optional message to attach to the intent
+   */
+  memo?: string
 }
 
 export type WithdrawIntentMessageConfig = WithdrawParams
@@ -55,6 +59,7 @@ export function createSwapIntentMessage(
     signerId: resolveSignerId(options.signerId),
     deadlineTimestamp: options.deadlineTimestamp ?? minutesFromNow(5),
     referral: options.referral,
+    memo: options.memo,
   })
 
   return makeSwapMessage({

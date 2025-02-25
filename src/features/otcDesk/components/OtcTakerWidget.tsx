@@ -41,6 +41,9 @@ export type OtcTakerWidgetProps = {
 
   /** Theme selection */
   theme?: "dark" | "light"
+
+  /** Frontend referral */
+  referral?: string
 }
 
 export function OtcTakerWidget(props: OtcTakerWidgetProps) {
@@ -62,6 +65,7 @@ function OtcTakerScreens({
   userChainType,
   signMessage,
   sendNearTransaction,
+  referral,
 }: OtcTakerWidgetProps) {
   const loading = <div>Loading...</div>
 
@@ -124,6 +128,7 @@ function OtcTakerScreens({
               signMessage={signMessage}
               protocolFee={protocolFee}
               onSuccessTrade={setPublishResult}
+              referral={referral}
             />
           </SignIntentActorProvider>
         </OtcTakerValidationOrder>
