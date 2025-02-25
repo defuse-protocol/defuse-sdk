@@ -66,7 +66,7 @@ export function OtcTakerInvalidOrder({
           </div>
         </div>
         <div className="flex justify-center items-start">
-          <div className="w-[64px] h-[64px] flex items-center justify-center rounded-full bg-red-300">
+          <div className="w-[64px] h-[64px] flex items-center justify-center rounded-full bg-red-4">
             <Cross2Icon className="size-7 text-red-a11" />
           </div>
         </div>

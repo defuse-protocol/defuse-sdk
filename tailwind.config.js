@@ -152,13 +152,6 @@ const config = {
           300: "var(--yellow-4)",
         },
 
-        red: {
-          DEFAULT: "var(--red-9)",
-          300: "var(--red-4)",
-          // Alpha variants
-          a11: "var(--red-a11)",
-        },
-
         border: "var(--color-border)",
         label: "var(--color-label)",
         warning: "var(--color-warning)",
