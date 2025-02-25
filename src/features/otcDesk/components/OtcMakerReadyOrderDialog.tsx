@@ -93,7 +93,7 @@ function OrderDialog({
       : null
 
   return (
-    <ModalDialog onClose={finish}>
+    <ModalDialog onClose={finish} isDismissable>
       {/* Header Section */}
       <div className="flex flex-col items-center text-center mb-6">
         <div className="w-[64px] h-[64px] mt-5 mb-4 flex items-center justify-center rounded-full bg-yellow-300">

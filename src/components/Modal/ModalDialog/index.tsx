@@ -1,3 +1,4 @@
+import { X as CrossIcon } from "@phosphor-icons/react"
 import { Dialog, VisuallyHidden } from "@radix-ui/themes"
 import {
   type PropsWithChildren,
@@ -14,8 +15,10 @@ import { WidgetContext } from "../../WidgetRoot"
 export const ModalDialog = ({
   children,
   onClose,
+  isDismissable,
 }: PropsWithChildren<{
   onClose?: () => void
+  isDismissable?: boolean
 }>) => {
   const { onCloseModal } = useModalStore((state) => state)
   const [open, setOpen] = useState(true)
@@ -52,9 +55,9 @@ export const ModalDialog = ({
     <Dialog.Root open={open} onOpenChange={setOpen}>
       <Dialog.Content
         container={portalContainer}
-        className={`fixed bg-white dark:bg-black-800 shadow-lg p-0 focus:outline-none
+        className={`fixed bg-white dark:bg-black-800 shadow-lg px-5 pt-5 pb-[max(env(safe-area-inset-bottom,0px),theme(spacing.5))] focus:outline-none
           md:w-[90vw] md:max-w-[472px] md:max-h-[85vh] md:p-5 md:top-1/2 md:bottom-auto md:left-1/2 md:right-auto md:-translate-x-1/2 md:-translate-y-1/2 md:rounded-2xl md:animate-content-show
-          bottom-0 left-0 right-0 top-auto max-w-full max-h-[70vh] rounded-t-2xl animate-slide-up`}
+          bottom-0 left-0 right-0 top-auto max-w-full max-h-[70vh] rounded-t-2xl rounded-b-none animate-slide-up`}
         maxWidth={
           containerWidth
             ? containerWidth < 768
@@ -73,6 +76,18 @@ export const ModalDialog = ({
         <VisuallyHidden>
           <Dialog.Title>null</Dialog.Title>
         </VisuallyHidden>
+
+        {isDismissable && (
+          <Dialog.Close>
+            <button
+              type="button"
+              className="flex items-center justify-center absolute top-5 right-5 size-10 rounded-full hover:bg-gray-3 active:bg-gray-4"
+            >
+              <CrossIcon weight="bold" className="size-5" />
+            </button>
+          </Dialog.Close>
+        )}
+
         <div ref={divRef}>{children}</div>
       </Dialog.Content>
     </Dialog.Root>

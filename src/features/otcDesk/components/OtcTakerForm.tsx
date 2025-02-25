@@ -248,9 +248,10 @@ export function OtcTakerForm({
       </div>
 
       <ButtonCustom
-        size="lg"
         type="button"
+        size="lg"
         className="mt-5"
+        variant={confirmTradeMutation.isPending ? "secondary" : "primary"}
         onClick={() => {
           if (
             !confirmTradeMutation.isPending &&
