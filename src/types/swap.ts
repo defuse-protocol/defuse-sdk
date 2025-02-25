@@ -118,6 +118,7 @@ export type SwapWidgetProps = {
   }) => void
 
   onNavigateDeposit?: () => void
+  onNavigateOTC?: () => void
   initialTokenIn?: SwappableToken
   initialTokenOut?: SwappableToken
 

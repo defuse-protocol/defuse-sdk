@@ -17,6 +17,7 @@ export const SwapWidget = ({
   signMessage,
   onSuccessSwap,
   onNavigateDeposit,
+  onNavigateOTC,
   initialTokenIn,
   initialTokenOut,
   referral,
@@ -43,7 +44,10 @@ export const SwapWidget = ({
                 userAddress={userAddress}
                 userChainType={userChainType}
               >
-                <SwapForm onNavigateDeposit={onNavigateDeposit} />
+                <SwapForm
+                  onNavigateDeposit={onNavigateDeposit}
+                  onNavigateOTC={onNavigateOTC}
+                />
               </SwapSubmitterProvider>
             </SwapUIMachineFormSyncProvider>
           </SwapUIMachineProvider>
