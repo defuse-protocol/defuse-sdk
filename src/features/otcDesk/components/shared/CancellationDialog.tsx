@@ -20,7 +20,10 @@ export function CancellationDialog({
   const snapshot = useSelector(actorRef, (state) => state)
 
   return (
-    <ModalDialog onClose={() => actorRef.send({ type: "ABORT_CANCELLATION" })}>
+    <ModalDialog
+      onClose={() => actorRef.send({ type: "ABORT_CANCELLATION" })}
+      isDismissable
+    >
       {snapshot.matches("idleUncancellable") ? (
         <>
           <div>This order is either already cancelled or executed.</div>
