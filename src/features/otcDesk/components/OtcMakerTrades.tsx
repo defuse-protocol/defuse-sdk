@@ -67,10 +67,10 @@ export function OtcMakerTrades({
       signerCredentials.credential,
       signerCredentials.credentialType
     )
-    return s.trades[userId] ?? []
+    return s.trades[userId]
   })
 
-  if (trades.length === 0) {
+  if (trades == null || trades.length === 0) {
     return null
   }
 
@@ -188,9 +188,7 @@ function OtcMakerTradeItem({
               {formatTokenValue(
                 totalAmountOut.amount,
                 totalAmountOut.decimals,
-                {
-                  fractionDigits: 4,
-                }
+                { fractionDigits: 4 }
                 // biome-ignore lint/nursery/useConsistentCurlyBraces: <explanation>
               )}{" "}
               {tokenOut.symbol}
