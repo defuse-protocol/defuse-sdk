@@ -188,9 +188,7 @@ function OtcMakerTradeItem({
               {formatTokenValue(
                 totalAmountOut.amount,
                 totalAmountOut.decimals,
-                {
-                  fractionDigits: 4,
-                }
+                { fractionDigits: 4 }
                 // biome-ignore lint/nursery/useConsistentCurlyBraces: <explanation>
               )}{" "}
               {tokenOut.symbol}
