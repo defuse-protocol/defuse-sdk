@@ -43,6 +43,7 @@ export type OTCMakerSignActorInput = {
   balances: BalanceMapping
   signerCredentials: SignerCredentials
   signMessage: SignMessage
+  referral: string | undefined
 }
 
 export type OTCMakerSignActorOutput =
@@ -133,6 +134,8 @@ export const otcMakerSignMachine = setup({
       {
         signerId: input.signerCredentials,
         nonce: nonce,
+        referral: input.referral,
+        memo: "OTC_CREATE",
       }
     )
 

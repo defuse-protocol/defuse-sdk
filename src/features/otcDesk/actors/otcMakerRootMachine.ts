@@ -36,6 +36,7 @@ export const otcMakerRootMachine = setup({
       tokenList: (BaseTokenInfo | UnifiedTokenInfo)[]
       initialTokenIn: BaseTokenInfo | UnifiedTokenInfo
       initialTokenOut: BaseTokenInfo | UnifiedTokenInfo
+      referral: string | undefined
     },
     events: {} as
       | DepositedBalanceEvents
@@ -62,6 +63,7 @@ export const otcMakerRootMachine = setup({
       formRef: ActorRefFrom<typeof otcMakerFormMachine>
       depositedBalanceRef: ActorRefFrom<typeof depositedBalanceMachine>
       otcMakerConfigLoadRef: ActorRefFrom<typeof otcMakerConfigLoadActor>
+      referral: string | undefined
     },
     children: {} as {
       readyOrderRef: "readyOrderActor"
@@ -136,6 +138,7 @@ export const otcMakerRootMachine = setup({
     otcMakerConfigLoadRef: spawn("otcMakerConfigLoadActor", {
       id: "otcMakerConfigLoadRef",
     }),
+    referral: input.referral,
   }),
 
   initial: "editing",
@@ -188,6 +191,7 @@ export const otcMakerRootMachine = setup({
             },
             balances:
               context.depositedBalanceRef.getSnapshot().context.balances,
+            referral: context.referral,
           }
         },
 
