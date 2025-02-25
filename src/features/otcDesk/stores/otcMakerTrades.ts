@@ -14,16 +14,17 @@ type State = {
 
 type Actions = {
   addTrade: (trade: Omit<OtcMakerTrade, "updatedAt">) => void
+  removeTrade: (tradeId: string) => void
 }
 
 type Store = State & Actions
 
-export const otcTakerTradesStore = create<Store>()(
+export const otcMakerTradesStore = create<Store>()(
   persist(
     (set) => ({
       trades: [],
 
-      addTrade: async (trade) => {
+      addTrade: (trade) => {
         set((state) => ({
           trades: [
             ...state.trades,
@@ -42,10 +43,10 @@ export const otcTakerTradesStore = create<Store>()(
       },
     }),
     {
-      name: "intents_sdk.otc_taker_trades",
+      name: "intents_sdk.otc_maker_trades",
       storage: createJSONStorage(() => localStorage),
     }
   )
 )
 
-export { otcTakerTradesStore as useOtcMakerTrades }
+export { otcMakerTradesStore as useOtcMakerTrades }

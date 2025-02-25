@@ -40,7 +40,7 @@ export const otcTakerTradesStore = create<Store>()(
     (set) => ({
       trades: {},
 
-      addCompletedTrade: async (trade) => {
+      addCompletedTrade: (trade) => {
         set((state) => ({
           trades: {
             ...state.trades,
@@ -53,7 +53,7 @@ export const otcTakerTradesStore = create<Store>()(
         }))
       },
 
-      addUncompletedTrade: async (trade) => {
+      addUncompletedTrade: (trade) => {
         set((state) => ({
           trades: {
             ...state.trades,
