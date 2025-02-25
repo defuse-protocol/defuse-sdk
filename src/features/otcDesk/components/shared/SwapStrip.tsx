@@ -33,7 +33,8 @@ export function SwapStrip({
       <div className="text-xs text-a12">
         {formatTokenValue(
           amountIn.amount,
-          amountIn.decimals
+          amountIn.decimals,
+          { fractionDigits: 4 }
           // biome-ignore lint/nursery/useConsistentCurlyBraces: <explanation>
         )}{" "}
         {tokenIn.symbol}
@@ -42,7 +43,8 @@ export function SwapStrip({
         <span className="font-bold">
           {formatTokenValue(
             amountOut.amount,
-            amountOut.decimals
+            amountOut.decimals,
+            { fractionDigits: 4 }
             // biome-ignore lint/nursery/useConsistentCurlyBraces: <explanation>
           )}{" "}
           {tokenOut.symbol}
