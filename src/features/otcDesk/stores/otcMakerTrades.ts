@@ -1,6 +1,11 @@
 import { create } from "zustand"
 import { createJSONStorage, persist } from "zustand/middleware"
+import type { SignerCredentials } from "../../../core/formatters"
 import type { MultiPayload } from "../../../types/defuse-contracts-types"
+import {
+  type DefuseUserId,
+  userAddressToDefuseUserId,
+} from "../../../utils/defuse"
 
 type OtcMakerTrade = {
   tradeId: string
@@ -9,12 +14,18 @@ type OtcMakerTrade = {
 }
 
 type State = {
-  trades: OtcMakerTrade[]
+  trades: Record<DefuseUserId, OtcMakerTrade[]>
 }
 
 type Actions = {
-  addTrade: (trade: Omit<OtcMakerTrade, "updatedAt">) => void
-  removeTrade: (tradeId: string) => void
+  addTrade: (
+    trade: Omit<OtcMakerTrade, "updatedAt">,
+    userId: DefuseUserId | SignerCredentials
+  ) => void
+  removeTrade: (
+    tradeId: string,
+    userId: DefuseUserId | SignerCredentials
+  ) => void
 }
 
 type Store = State & Actions
@@ -22,23 +33,38 @@ type Store = State & Actions
 export const otcMakerTradesStore = create<Store>()(
   persist(
     (set) => ({
-      trades: [],
+      trades: {},
 
-      addTrade: (trade) => {
+      addTrade: (trade, user) => {
+        const userId =
+          typeof user === "string"
+            ? user
+            : userAddressToDefuseUserId(user.credential, user.credentialType)
+
         set((state) => ({
-          trades: [
+          trades: {
             ...state.trades,
-            {
-              ...trade,
-              updatedAt: Date.now(),
-            },
-          ],
+            [userId]: [
+              ...(state.trades[userId] ?? []),
+              { ...trade, updatedAt: Date.now() },
+            ],
+          },
         }))
       },
 
-      removeTrade: (tradeId: string) => {
+      removeTrade: (tradeId: string, user) => {
+        const userId =
+          typeof user === "string"
+            ? user
+            : userAddressToDefuseUserId(user.credential, user.credentialType)
+
         set((state) => ({
-          trades: state.trades.filter((trade) => trade.tradeId !== tradeId),
+          trades: {
+            ...state.trades,
+            [userId]: (state.trades[userId] ?? []).filter(
+              (trade) => trade.tradeId !== tradeId
+            ),
+          },
         }))
       },
     }),

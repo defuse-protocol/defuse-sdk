@@ -256,6 +256,7 @@ export const otcMakerRootMachine = setup({
             usedNonceBase64: event.usedNonceBase64,
             multiPayload: event.multiPayload,
             tradeId: event.tradeId,
+            signerCredentials: event.signerCredentials,
           }
         },
 

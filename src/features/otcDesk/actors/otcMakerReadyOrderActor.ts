@@ -1,4 +1,5 @@
 import { type PromiseActorLogic, assign, setup } from "xstate"
+import type { SignerCredentials } from "../../../core/formatters"
 import { logger } from "../../../logger"
 import type {
   BaseTokenInfo,
@@ -28,6 +29,7 @@ export type OTCMakerReadyOrderActorInput = {
   tradeId: string
   usedNonceBase64: string
   multiPayload: MultiPayload
+  signerCredentials: SignerCredentials
 }
 
 type OTCMakerReadyOrderActorErrors = { reason: "EXCEPTION" }
@@ -88,6 +90,7 @@ export const otcMakerReadyOrderActor = setup({
         input: ({ context }) => ({
           tradeId: context.tradeId,
           nonceBas64: context.usedNonceBase64,
+          signerCredentials: context.signerCredentials,
         }),
         onDone: [
           {
