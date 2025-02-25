@@ -101,9 +101,9 @@ describe("fillWithMinimalExchanges", () => {
       expect.objectContaining({
         success: true,
         remainingBalances: {
-          A: 500n,
+          A: 448n,
           B: 0n,
-          C: 148n,
+          C: 200n,
         },
       })
     )
@@ -277,6 +277,33 @@ describe("fillWithMinimalExchanges", () => {
 
     fillWithMinimalExchanges(balances, required, 30n)
     expect(balances).toEqual(originalBalances)
+  })
+
+  it("handles zero fee", () => {
+    const balances = {
+      A: 400000n,
+      B: 300000n,
+      C: 0n,
+    }
+    const required = {
+      C: 700000n,
+    }
+
+    const result = fillWithMinimalExchanges(balances, required, 0n)
+
+    expect(result.success).toBe(true)
+    fillInvariant(balances, required, result)
+
+    expect(result).toEqual(
+      expect.objectContaining({
+        success: true,
+        remainingBalances: {
+          A: 0n,
+          B: 0n,
+          C: 0n,
+        },
+      })
+    )
   })
 })
 
