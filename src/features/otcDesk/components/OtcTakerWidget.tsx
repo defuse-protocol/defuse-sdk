@@ -15,12 +15,10 @@ import type { ChainType } from "../../../types/deposit"
 import type { SendNearTransaction } from "../../machines/publicKeyVerifierMachine"
 import { fetchFee } from "../actors/otcMakerConfigLoadActor"
 import { SignIntentActorProvider } from "../providers/SignIntentActorProvider"
-import {
-  generateLocalTradeId,
-  useOtcTakerCompletedTrades,
-} from "../stores/otcTakerCompletedTrades"
+import { useOtcTakerTrades } from "../stores/otcTakerTrades"
 import type { SignMessage } from "../types/sharedTypes"
 import { type TradeTerms, deriveTradeTerms } from "../utils/deriveTradeTerms"
+import { genLocalTradeId } from "../utils/genLocalTradeId"
 import { OtcTakerForm } from "./OtcTakerForm"
 import { OtcTakerInvalidOrder } from "./OtcTakerInvalidOrder"
 import { OtcTakerSuccessScreen } from "./OtcTakerSuccessScreen"
@@ -95,11 +93,9 @@ function OtcTakerScreens({
     intentHashes: string[]
   } | null>(null)
 
-  const tradeId = generateLocalTradeId(multiPayload)
+  const tradeId = genLocalTradeId(multiPayload)
 
-  const knownOtcTakerTrade = useOtcTakerCompletedTrades(
-    (state) => state.trades[tradeId]
-  )
+  const knownOtcTakerTrade = useOtcTakerTrades((state) => state.trades[tradeId])
 
   if (tradeTerms == null || protocolFee == null) {
     return loading
@@ -219,8 +215,8 @@ function OtcTakerValidationOrder({
     nonceValidation.data?.isErr()
   ) {
     error = error
-      .andThen((): typeof error => makerBalanceValidation.data ?? Ok(true))
-      .andThen((): typeof error => nonceValidation.data ?? Ok(true))
+      .andThen(() => makerBalanceValidation.data ?? error)
+      .andThen(() => nonceValidation.data ?? error)
 
     return (
       <OtcTakerInvalidOrder error={error.unwrapErr()} tradeTerms={tradeTerms} />

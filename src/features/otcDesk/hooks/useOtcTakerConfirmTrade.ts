@@ -16,7 +16,7 @@ import {
   SignIntentContext,
   type SignIntentErr,
 } from "../providers/SignIntentActorProvider"
-import { otcTakerCompletedTradesStore } from "../stores/otcTakerCompletedTrades"
+import { otcTakerTradesStore } from "../stores/otcTakerTrades"
 import type { SignMessage } from "../types/sharedTypes"
 import {
   type AggregatedQuoteErr,
@@ -104,7 +104,7 @@ export function useOtcTakerConfirmTrade({
     onSuccess: (data, _variables) => {
       data.map((output) => {
         onSuccessTrade(output)
-        otcTakerCompletedTradesStore.getState().addCompletedTrade({
+        otcTakerTradesStore.getState().addCompletedTrade({
           tradeId,
           ...output,
         })

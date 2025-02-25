@@ -54,6 +54,7 @@ export const otcMakerRootMachine = setup({
           multiPayload: MultiPayload
           signerCredentials: SignerCredentials
           usedNonceBase64: string
+          tradeId: string
         },
 
     context: {} as {
@@ -104,6 +105,7 @@ export const otcMakerRootMachine = setup({
         multiPayload: MultiPayload
         signerCredentials: SignerCredentials
         usedNonceBase64: string
+        tradeId: string
       }
     ) => {
       self.send({ type: "COMPLETE_SIGN", ...event })
@@ -253,6 +255,7 @@ export const otcMakerRootMachine = setup({
             raw: formValues,
             usedNonceBase64: event.usedNonceBase64,
             multiPayload: event.multiPayload,
+            tradeId: event.tradeId,
           }
         },
 

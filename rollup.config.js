@@ -60,6 +60,7 @@ const config = [
 
       // Subfolders are not excluded by default
       "zustand/vanilla",
+      "zustand/middleware",
       "react/jsx-runtime", // Implicitly required by React JSX transform
       "@noble/curves/secp256k1",
       "@noble/hashes/sha3",
