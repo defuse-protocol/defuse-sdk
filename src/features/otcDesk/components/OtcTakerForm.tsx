@@ -12,7 +12,10 @@ import { assert } from "../../../utils/assert"
 import { userAddressToDefuseUserId } from "../../../utils/defuse"
 import { formatTokenValue, formatUsdAmount } from "../../../utils/format"
 import getTokenUsdPrice from "../../../utils/getTokenUsdPrice"
-import { computeTotalBalanceDifferentDecimals } from "../../../utils/tokenUtils"
+import {
+  computeTotalBalanceDifferentDecimals,
+  getUnderlyingBaseTokenInfos,
+} from "../../../utils/tokenUtils"
 import { TokenAmountInputCard } from "../../deposit/components/DepositForm/TokenAmountInputCard"
 import { useOtcTakerConfirmTrade } from "../hooks/useOtcTakerConfirmTrade"
 import { useOtcTakerPreparation } from "../hooks/useOtcTakerPreparation"
@@ -85,7 +88,14 @@ export function OtcTakerForm({
 
       const balances = await getDepositedBalances(
         signerId,
-        Object.keys(tradeTerms.takerTokenDiff),
+        [
+          ...getUnderlyingBaseTokenInfos(tradeTerms.tokenIn).map(
+            (token) => token.defuseAssetId
+          ),
+          ...getUnderlyingBaseTokenInfos(tradeTerms.tokenOut).map(
+            (token) => token.defuseAssetId
+          ),
+        ],
         new providers.JsonRpcProvider({
           url: "https://nearrpc.aurora.dev",
         })
