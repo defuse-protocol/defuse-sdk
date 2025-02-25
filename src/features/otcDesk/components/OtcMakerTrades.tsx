@@ -5,32 +5,57 @@ import {
 } from "@phosphor-icons/react"
 import { Button, IconButton } from "@radix-ui/themes"
 import { useQuery } from "@tanstack/react-query"
-import { None, type Option, Some } from "@thames/monads"
+import { Err, None, Ok, type Option, type Result, Some } from "@thames/monads"
+import { useSelector } from "@xstate/react"
 import clsx from "clsx"
 import { providers } from "near-api-js"
 import type { CodeResult } from "near-api-js/lib/providers/provider"
-import type { ReactElement } from "react"
+import {
+  type ReactElement,
+  type ReactNode,
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+} from "react"
 import * as v from "valibot"
+import { type ActorRefFrom, createActor, toPromise } from "xstate"
 import { AssetComboIcon } from "../../../components/Asset/AssetComboIcon"
 import { Copy } from "../../../components/IntentCard/CopyButton"
 import { settings } from "../../../config/settings"
+import type { SignerCredentials } from "../../../core/formatters"
 import { getDepositedBalances } from "../../../services/defuseBalanceService"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../../types/base"
 import type { MultiPayload } from "../../../types/defuse-contracts-types"
 import { assert } from "../../../utils/assert"
 import { formatTokenValue } from "../../../utils/format"
 import { computeTotalBalanceDifferentDecimals } from "../../../utils/tokenUtils"
+import type { SendNearTransaction } from "../../machines/publicKeyVerifierMachine"
+import type { signIntentMachine } from "../../machines/signIntentMachine"
+import { usePublicKeyModalOpener } from "../../swap/hooks/usePublicKeyModalOpener"
+import {
+  type OTCMakerOrderCancellationActorOutput,
+  otcMakerOrderCancellationActor,
+} from "../actors/otcMakerOrderCancellationActor"
 import { useOtcMakerTrades } from "../stores/otcMakerTrades"
+import type { SignMessage } from "../types/sharedTypes"
 import { type TradeTerms, deriveTradeTerms } from "../utils/deriveTradeTerms"
+import { CancellationDialog } from "./shared/CancellationDialog"
 
 interface OtcMakerTradesProps {
   tokenList: (BaseTokenInfo | UnifiedTokenInfo)[]
   generateLink: (multiPayload: MultiPayload) => string
+  signerCredentials: SignerCredentials
+  signMessage: SignMessage
+  sendNearTransaction: SendNearTransaction
 }
 
 export function OtcMakerTrades({
   tokenList,
   generateLink,
+  signerCredentials,
+  signMessage,
+  sendNearTransaction,
 }: OtcMakerTradesProps) {
   const trades = useOtcMakerTrades((s) => s.trades)
 
@@ -43,16 +68,22 @@ export function OtcMakerTrades({
       <div className="font-bold text-label text-sm">Pending orders</div>
 
       <div className="flex flex-col gap-2.5">
-        {trades.map((trade) => (
-          <OtcMakerTradeItem
-            key={trade.tradeId}
-            tradeId={trade.tradeId}
-            multiPayload={trade.makerMultiPayload}
-            updatedAt={trade.updatedAt}
-            tokenList={tokenList}
-            generateLink={generateLink}
-          />
-        ))}
+        <OtcMakerOrderCancellationProvider
+          signerCredentials={signerCredentials}
+          signMessage={signMessage}
+          sendNearTransaction={sendNearTransaction}
+        >
+          {trades.map((trade) => (
+            <OtcMakerTradeItem
+              key={trade.tradeId}
+              tradeId={trade.tradeId}
+              multiPayload={trade.makerMultiPayload}
+              updatedAt={trade.updatedAt}
+              tokenList={tokenList}
+              generateLink={generateLink}
+            />
+          ))}
+        </OtcMakerOrderCancellationProvider>
       </div>
     </div>
   )
@@ -67,6 +98,7 @@ interface OtcMakerTradeItemProps {
 }
 
 function OtcMakerTradeItem({
+  tradeId,
   multiPayload,
   tokenList,
   generateLink,
@@ -103,6 +135,8 @@ function OtcMakerTradeItem({
   const errIsSoft = err
     .map((e) => e !== "MAKER_INSUFFICIENT_FUNDS")
     .unwrapOr(false)
+
+  const { cancelOrder } = useContext(OtcMakerOrderCancellationContext)
 
   return (
     <div>
@@ -180,7 +214,12 @@ function OtcMakerTradeItem({
           ) : (
             <IconButton
               type="button"
-              onClick={() => {}}
+              onClick={() => {
+                cancelOrder({
+                  nonceBas64: tradeTerms.makerNonceBase64,
+                  tradeId,
+                })
+              }}
               variant="outline"
               color="red"
               className="rounded-lg"
@@ -303,4 +342,105 @@ function useValidateTrade(tradeTerms: TradeTerms) {
     .or(nonceValidation.data ?? error)
 
   return error
+}
+
+const OtcMakerOrderCancellationContext = createContext<{
+  cancelOrder: (arg: { nonceBas64: string; tradeId: string }) => Promise<
+    Result<
+      OTCMakerOrderCancellationActorOutput,
+      { reason: "CANCELLATION_IN_PROGRESS" }
+    >
+  >
+}>({
+  cancelOrder: async () => {
+    throw new Error("not implemented")
+  },
+})
+
+function OtcMakerOrderCancellationProvider({
+  children,
+  signerCredentials,
+  signMessage,
+  sendNearTransaction,
+}: {
+  children: ReactNode
+  signerCredentials: SignerCredentials
+  signMessage: SignMessage
+  sendNearTransaction: SendNearTransaction
+}) {
+  const [actorRef, setActorRef] = useState<ActorRefFrom<
+    typeof otcMakerOrderCancellationActor
+  > | null>(null)
+
+  useEffect(() => {
+    return () => {
+      if (actorRef) {
+        actorRef.stop()
+      }
+    }
+  }, [actorRef])
+
+  const clearActorRef = () => {
+    setActorRef(null)
+  }
+
+  const cancelOrder = async (arg: {
+    nonceBas64: string
+    tradeId: string
+  }): Promise<
+    Result<
+      OTCMakerOrderCancellationActorOutput,
+      { reason: "CANCELLATION_IN_PROGRESS" }
+    >
+  > => {
+    if (actorRef) {
+      return Err({
+        reason: "CANCELLATION_IN_PROGRESS",
+      })
+    }
+
+    const actor = createActor(otcMakerOrderCancellationActor, {
+      input: {
+        nonceBas64: arg.nonceBas64,
+      },
+    })
+
+    setActorRef(actor)
+
+    actor.start()
+
+    return toPromise(actor).then(Ok).finally(clearActorRef)
+  }
+
+  const publicKeyVerifierRef = useSelector(
+    useSelector(
+      actorRef ?? undefined,
+      (state) =>
+        state?.children.signRef as
+          | undefined
+          | ActorRefFrom<typeof signIntentMachine>
+    ),
+    (state) => {
+      if (state) {
+        return state.children.publicKeyVerifierRef
+      }
+    }
+  )
+
+  // @ts-expect-error ???
+  usePublicKeyModalOpener(publicKeyVerifierRef, sendNearTransaction)
+
+  return (
+    <OtcMakerOrderCancellationContext.Provider value={{ cancelOrder }}>
+      {children}
+
+      {actorRef != null && (
+        <CancellationDialog
+          actorRef={actorRef}
+          signerCredentials={signerCredentials}
+          signMessage={signMessage}
+        />
+      )}
+    </OtcMakerOrderCancellationContext.Provider>
+  )
 }
