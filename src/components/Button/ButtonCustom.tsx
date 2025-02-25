@@ -5,7 +5,9 @@ import type { ButtonHTMLAttributes, ReactNode } from "react"
 interface ButtonCustomProps
   extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, "color"> {
   children?: ReactNode
-  variant?: "primary" | "secondary" | "base" | "soft" | "solid"
+  variant?: "primary" | "secondary" | "base" | "soft" | "solid" | "danger"
+  color?: ButtonProps["color"]
+  variantRadix?: ButtonProps["variant"]
   size?: "sm" | "base" | "lg"
   fullWidth?: boolean
   isLoading?: boolean
@@ -14,7 +16,9 @@ interface ButtonCustomProps
 export const ButtonCustom = ({
   children,
   variant = "primary",
+  color,
   size = "base",
+  variantRadix,
   fullWidth,
   disabled,
   isLoading = false,
@@ -34,7 +38,13 @@ export const ButtonCustom = ({
       radixButtonVariant = "solid"
       radixButtonColor = "gray"
       break
+    case "danger":
+      radixButtonVariant = "outline"
+      radixButtonColor = "red"
+      break
   }
+  radixButtonColor = color ?? radixButtonColor
+  radixButtonVariant = variantRadix ?? radixButtonVariant
 
   let radixButtonSize: ButtonProps["size"] | undefined
   switch (size) {
