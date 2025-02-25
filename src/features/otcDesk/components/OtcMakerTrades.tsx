@@ -357,9 +357,11 @@ function useValidateTrade(tradeTerms: TradeTerms) {
     },
   })
 
-  error = error
-    .or(makerBalanceValidation.data ?? error)
-    .or(nonceValidation.data ?? error)
+  const noError = None as typeof error
+  error = noError
+    .or(nonceValidation.data ?? noError)
+    .or(error)
+    .or(makerBalanceValidation.data ?? noError)
 
   return error
 }
