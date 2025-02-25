@@ -97,7 +97,8 @@ export function OtcTakerInvalidOrder({
           <div className="text-xs text-a12">
             {formatTokenValue(
               breakdown.takerSends.amount,
-              breakdown.takerSends.decimals
+              breakdown.takerSends.decimals,
+              { fractionDigits: 4 }
               // biome-ignore lint/nursery/useConsistentCurlyBraces: <explanation>
             )}{" "}
             {tradeTerms.tokenIn.symbol}
@@ -106,7 +107,8 @@ export function OtcTakerInvalidOrder({
             <span className="font-bold">
               {formatTokenValue(
                 breakdown.takerReceives.amount,
-                breakdown.takerReceives.decimals
+                breakdown.takerReceives.decimals,
+                { fractionDigits: 4 }
                 // biome-ignore lint/nursery/useConsistentCurlyBraces: <explanation>
               )}{" "}
               {tradeTerms.tokenOut.symbol}

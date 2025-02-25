@@ -125,7 +125,8 @@ function OrderDialog({
           <div className="text-xs text-a12">
             {formatTokenValue(
               breakdown.makerSends.amount,
-              breakdown.makerSends.decimals
+              breakdown.makerSends.decimals,
+              { fractionDigits: 4 }
               // biome-ignore lint/nursery/useConsistentCurlyBraces: <explanation>
             )}{" "}
             {context.parsed.tokenIn.symbol}
@@ -134,7 +135,8 @@ function OrderDialog({
             <span className="font-bold">
               {formatTokenValue(
                 breakdown.makerReceives.amount,
-                breakdown.makerReceives.decimals
+                breakdown.makerReceives.decimals,
+                { fractionDigits: 4 }
                 // biome-ignore lint/nursery/useConsistentCurlyBraces: <explanation>
               )}{" "}
               {context.parsed.tokenOut.symbol}
@@ -150,7 +152,8 @@ function OrderDialog({
             <div className="text-gray-12 font-medium">
               {formatTokenValue(
                 breakdown.makerSends.amount,
-                breakdown.makerSends.decimals
+                breakdown.makerSends.decimals,
+                { fractionDigits: 4 }
                 // biome-ignore lint/nursery/useConsistentCurlyBraces: <explanation>
               )}{" "}
               {context.parsed.tokenIn.symbol}
@@ -162,7 +165,8 @@ function OrderDialog({
             <div className="text-gray-12 font-medium">
               {formatTokenValue(
                 breakdown.makerPaysFee.amount,
-                breakdown.makerPaysFee.decimals
+                breakdown.makerPaysFee.decimals,
+                { fractionDigits: 4 }
                 // biome-ignore lint/nursery/useConsistentCurlyBraces: <explanation>
               )}{" "}
               {context.parsed.tokenIn.symbol}
@@ -174,7 +178,8 @@ function OrderDialog({
             <div className="text-gray-12 font-medium">
               {formatTokenValue(
                 breakdown.takerReceives.amount,
-                breakdown.takerReceives.decimals
+                breakdown.takerReceives.decimals,
+                { fractionDigits: 4 }
                 // biome-ignore lint/nursery/useConsistentCurlyBraces: <explanation>
               )}{" "}
               {context.parsed.tokenIn.symbol}
