@@ -37,6 +37,7 @@ import {
   type OTCMakerOrderCancellationActorOutput,
   otcMakerOrderCancellationActor,
 } from "../actors/otcMakerOrderCancellationActor"
+import { useCountdownTimer } from "../hooks/useCountdownTimer"
 import {
   otcMakerTradesStore,
   useOtcMakerTrades,
@@ -140,6 +141,7 @@ function OtcMakerTradeItem({
     .unwrapOr(false)
 
   const { cancelOrder } = useContext(OtcMakerOrderCancellationContext)
+  const timeLeft = useCountdownTimer({ deadline: tradeTerms.deadline })
 
   return (
     <div>
@@ -161,7 +163,10 @@ function OtcMakerTradeItem({
         </div>
 
         <div className="flex flex-col gap-1 flex-1">
-          <div className="font-bold text-label text-sm">Swap</div>
+          <div className="font-bold text-label text-sm flex items-center gap-2">
+            Swap
+            <span className="text-xs font-medium text-gray-11">{timeLeft}</span>
+          </div>
           <div className="font-medium text-xs text-gray-11">
             {formatTokenValue(-totalAmountIn.amount, totalAmountIn.decimals, {
               fractionDigits: 4,
