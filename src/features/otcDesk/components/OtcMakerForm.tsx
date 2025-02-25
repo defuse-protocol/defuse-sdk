@@ -56,6 +56,9 @@ export type OtcMakerWidgetProps = {
 
   /** External navigation callback */
   onNavigateSwap?: () => void
+
+  /** Frontend referral */
+  referral?: string
 }
 
 export function OtcMakerForm({
@@ -67,6 +70,7 @@ export function OtcMakerForm({
   signMessage,
   sendNearTransaction,
   generateLink,
+  referral,
 }: OtcMakerWidgetProps) {
   const signerCredentials: SignerCredentials | null = useMemo(
     () =>
@@ -92,6 +96,7 @@ export function OtcMakerForm({
       initialTokenIn: initialTokenIn_,
       initialTokenOut: initialTokenOut_,
       tokenList,
+      referral,
     },
   })
 

@@ -144,6 +144,7 @@ describe("makeSwapMessage()", () => {
               "foo.near": "-100",
             },
             "intent": "token_diff",
+            "memo": undefined,
             "referral": "referrer.near",
           },
         ],
@@ -174,6 +175,7 @@ describe("makeSwapMessage()", () => {
               "foo.near": "-50",
             },
             "intent": "token_diff",
+            "memo": undefined,
             "referral": undefined,
           },
         ],
@@ -213,6 +215,7 @@ describe("makeInnerSwapAndWithdrawMessage()", () => {
               "foo.near": "-100",
             },
             "intent": "token_diff",
+            "memo": undefined,
             "referral": undefined,
           },
           {
@@ -380,6 +383,7 @@ describe("makeInnerSwapAndWithdrawMessage()", () => {
               "foo.near": "-100",
             },
             "intent": "token_diff",
+            "memo": undefined,
             "referral": "referrer.near",
           },
           {

@@ -16,17 +16,20 @@ import type { DefuseUserId } from "./defuse"
  * @param signerId
  * @param deadlineTimestamp Unix timestamp in milliseconds
  * @param referral
+ * @param memo
  */
 export function makeInnerSwapMessage({
   tokenDeltas,
   signerId,
   deadlineTimestamp,
   referral,
+  memo,
 }: {
   tokenDeltas: [string, bigint][]
   signerId: DefuseUserId
   deadlineTimestamp: number
   referral?: string
+  memo?: string
 }): Nep413DefuseMessageFor_DefuseIntents {
   const tokenDiff: Record<string, string> = {}
   const tokenDiffNum: Record<string, bigint> = {}
@@ -54,6 +57,7 @@ export function makeInnerSwapMessage({
         intent: "token_diff",
         diff: tokenDiff,
         referral,
+        memo,
       },
     ],
     signer_id: signerId,
