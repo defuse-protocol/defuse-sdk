@@ -1,4 +1,4 @@
-import { assign, setup } from "xstate"
+import { type PromiseActorLogic, assign, setup } from "xstate"
 import { logger } from "../../../logger"
 import type {
   BaseTokenInfo,
@@ -6,7 +6,11 @@ import type {
   UnifiedTokenInfo,
 } from "../../../types/base"
 import type { MultiPayload } from "../../../types/defuse-contracts-types"
-import { otcMakerOrderCancellationActor } from "./otcMakerOrderCancellationActor"
+import {
+  type OTCMakerOrderCancellationActorInput,
+  type OTCMakerOrderCancellationActorOutput,
+  otcMakerOrderCancellationActor,
+} from "./otcMakerOrderCancellationActor"
 
 export type OTCMakerReadyOrderActorInput = {
   parsed: {
@@ -21,6 +25,7 @@ export type OTCMakerReadyOrderActorInput = {
     amountIn: string
     amountOut: string
   }
+  tradeId: string
   usedNonceBase64: string
   multiPayload: MultiPayload
 }
@@ -28,6 +33,7 @@ export type OTCMakerReadyOrderActorInput = {
 type OTCMakerReadyOrderActorErrors = { reason: "EXCEPTION" }
 
 interface OTCMakerReadyOrderActorContext extends OTCMakerReadyOrderActorInput {
+  tradeId: string
   usedNonceBase64: string
   error: null | OTCMakerReadyOrderActorErrors
 }
@@ -42,7 +48,11 @@ export const otcMakerReadyOrderActor = setup({
     },
   },
   actors: {
-    cancelOrderActor: otcMakerOrderCancellationActor,
+    cancelOrderActor:
+      otcMakerOrderCancellationActor as unknown as PromiseActorLogic<
+        OTCMakerOrderCancellationActorOutput,
+        OTCMakerOrderCancellationActorInput
+      >,
   },
   actions: {
     logError: (_, event: { error: unknown }) => {
@@ -76,6 +86,7 @@ export const otcMakerReadyOrderActor = setup({
         id: "otcMakerOrderCancellationRef",
         src: "cancelOrderActor",
         input: ({ context }) => ({
+          tradeId: context.tradeId,
           nonceBas64: context.usedNonceBase64,
         }),
         onDone: [

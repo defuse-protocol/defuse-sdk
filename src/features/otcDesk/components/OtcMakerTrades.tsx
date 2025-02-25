@@ -37,7 +37,10 @@ import {
   type OTCMakerOrderCancellationActorOutput,
   otcMakerOrderCancellationActor,
 } from "../actors/otcMakerOrderCancellationActor"
-import { useOtcMakerTrades } from "../stores/otcMakerTrades"
+import {
+  otcMakerTradesStore,
+  useOtcMakerTrades,
+} from "../stores/otcMakerTrades"
 import type { SignMessage } from "../types/sharedTypes"
 import { type TradeTerms, deriveTradeTerms } from "../utils/deriveTradeTerms"
 import { CancellationDialog } from "./shared/CancellationDialog"
@@ -203,7 +206,9 @@ function OtcMakerTradeItem({
           {errIsSoft ? (
             <Button
               type="button"
-              onClick={() => {}}
+              onClick={() => {
+                otcMakerTradesStore.getState().removeTrade(tradeId)
+              }}
               variant="outline"
               color="gray"
               size="1"
@@ -402,6 +407,7 @@ function OtcMakerOrderCancellationProvider({
     const actor = createActor(otcMakerOrderCancellationActor, {
       input: {
         nonceBas64: arg.nonceBas64,
+        tradeId: arg.tradeId,
       },
     })
 

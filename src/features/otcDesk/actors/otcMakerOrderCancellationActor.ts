@@ -15,9 +15,11 @@ import {
   type Output as SignIntentOutput,
   signIntentMachine,
 } from "../../machines/signIntentMachine"
+import { otcMakerTradesStore } from "../stores/otcMakerTrades"
 import type { SignMessage } from "../types/sharedTypes"
 
-type OTCMakerOrderCancellationActorInput = {
+export type OTCMakerOrderCancellationActorInput = {
+  tradeId: string
   nonceBas64: string
 }
 
@@ -31,6 +33,7 @@ type OTCMakerOrderCancellationActorErrors =
   | { reason: "EXCEPTION" }
 
 type OTCMakerOrderCancellationActorContext = {
+  tradeId: string
   nonceBas64: string
   error: null | OTCMakerOrderCancellationActorErrors
 }
@@ -87,6 +90,10 @@ export const otcMakerOrderCancellationActor = setup({
     completeSigning: ({ self }, event: { output: SignIntentOutput }) => {
       assert(event.output.tag === "ok")
       self.send({ type: "_INTERNAL_SIGNED", ...event.output.value })
+    },
+
+    removeTrade: ({ context }) => {
+      otcMakerTradesStore.getState().removeTrade(context.tradeId)
     },
   },
   guards: {
@@ -218,6 +225,7 @@ export const otcMakerOrderCancellationActor = setup({
                   type: "isOk",
                   params: ({ event }) => event.output,
                 },
+                actions: "removeTrade",
               },
               {
                 target: "#(machine).idleUncancellable",
@@ -225,6 +233,7 @@ export const otcMakerOrderCancellationActor = setup({
                   type: "isNonceUsedError",
                   params: ({ event }) => event,
                 },
+                actions: "removeTrade",
               },
               {
                 target: "#(machine).idle",

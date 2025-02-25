@@ -9,6 +9,7 @@ import type { SignerCredentials } from "../../../core/formatters"
 import type { MultiPayload } from "../../../types/defuse-contracts-types"
 import { formatTokenValue } from "../../../utils/format"
 import type { otcMakerConfigLoadActor } from "../actors/otcMakerConfigLoadActor"
+import type { otcMakerOrderCancellationActor } from "../actors/otcMakerOrderCancellationActor"
 import type { otcMakerReadyOrderActor } from "../actors/otcMakerReadyOrderActor"
 import type { SignMessage } from "../types/sharedTypes"
 import { computeTradeBreakdown } from "../utils/otcMakerBreakdown"
@@ -30,7 +31,9 @@ export function OtcMakerReadyOrderDialog({
   generateLink,
 }: OtcMakerReadyOrderDialogProps) {
   const { orderCancellationRef } = useSelector(readyOrderRef, (state) => ({
-    orderCancellationRef: state.children.otcMakerOrderCancellationRef,
+    orderCancellationRef: state.children.otcMakerOrderCancellationRef as
+      | undefined
+      | ActorRefFrom<typeof otcMakerOrderCancellationActor>,
   }))
 
   return (
