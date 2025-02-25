@@ -1,3 +1,4 @@
+import { AssetComboIcon } from "../../../../components/Asset/AssetComboIcon"
 import type {
   BaseTokenInfo,
   TokenValue,
@@ -19,9 +20,17 @@ export function SwapStrip({
   amountOut,
 }: SwapStripProps) {
   return (
-    <div>
-      <div>Swap</div>
-      <div>
+    <div className="flex justify-between items-center gap-2 px-4 py-3.5 rounded-lg bg-gray-3 mt-5">
+      <div className="flex items-center">
+        <div className="flex items-center relative">
+          <AssetComboIcon {...tokenIn} />
+          <div className="flex relative items-center -left-[10px] z-10">
+            <AssetComboIcon {...tokenOut} />
+          </div>
+        </div>
+        <div className="text-sm text-a12 font-bold">Swap</div>
+      </div>
+      <div className="text-xs text-a12">
         {formatTokenValue(
           amountIn.amount,
           amountIn.decimals
@@ -30,12 +39,14 @@ export function SwapStrip({
         {tokenIn.symbol}
         {/* biome-ignore lint/nursery/useConsistentCurlyBraces: <explanation> */}
         {" → "}
-        {formatTokenValue(
-          amountOut.amount,
-          amountOut.decimals
-          // biome-ignore lint/nursery/useConsistentCurlyBraces: <explanation>
-        )}{" "}
-        {tokenOut.symbol}
+        <span className="font-bold">
+          {formatTokenValue(
+            amountOut.amount,
+            amountOut.decimals
+            // biome-ignore lint/nursery/useConsistentCurlyBraces: <explanation>
+          )}{" "}
+          {tokenOut.symbol}
+        </span>
       </div>
     </div>
   )
