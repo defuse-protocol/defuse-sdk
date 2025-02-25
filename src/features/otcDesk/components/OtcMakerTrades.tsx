@@ -270,8 +270,8 @@ function OtcMakerTradeItem({
                 <div>
                   {/* biome-ignore lint/nursery/useConsistentCurlyBraces: <explanation> */}
                   <span className="font-bold">The order cannot be filled.</span>{" "}
-                  Your balance is incorrect. Please cancel the order and new
-                  another one.
+                  Your balance is incorrect. Please cancel the order and create
+                  new another one.
                 </div>
               )}
             </div>
