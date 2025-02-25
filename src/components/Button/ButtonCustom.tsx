@@ -1,5 +1,6 @@
 import { ReloadIcon } from "@radix-ui/react-icons"
 import { Button, type ButtonProps, Flex, Text } from "@radix-ui/themes"
+import clsx from "clsx"
 import type { ButtonHTMLAttributes, ReactNode } from "react"
 
 interface ButtonCustomProps
@@ -22,6 +23,7 @@ export const ButtonCustom = ({
   fullWidth,
   disabled,
   isLoading = false,
+  className,
   ...rest
 }: ButtonCustomProps) => {
   let radixButtonVariant: ButtonProps["variant"]
@@ -65,13 +67,10 @@ export const ButtonCustom = ({
         variant={radixButtonVariant}
         size={radixButtonSize}
         disabled={disabled || isLoading}
-        className={
-          {
-            sm: "h-8",
-            base: "h-10",
-            lg: "h-14",
-          }[size]
-        }
+        className={clsx(
+          className,
+          { sm: "h-8", base: "h-10", lg: "h-14" }[size]
+        )}
         {...rest}
       >
         {isLoading ? <ReloadIcon className="size-5 animate-spin" /> : null}
