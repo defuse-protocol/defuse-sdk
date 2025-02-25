@@ -3,7 +3,7 @@ import {
   Copy as CopyIcon,
   X as TimesIcon,
 } from "@phosphor-icons/react"
-import { IconButton } from "@radix-ui/themes"
+import { Button, IconButton } from "@radix-ui/themes"
 import { useQuery } from "@tanstack/react-query"
 import { None, type Option, Some } from "@thames/monads"
 import clsx from "clsx"
@@ -97,15 +97,20 @@ function OtcMakerTradeItem({
   assert(totalAmountOut)
 
   const err = useValidateTrade(tradeTerms)
+  const errIsCritical = err
+    .map((e) => e === "MAKER_INSUFFICIENT_FUNDS")
+    .unwrapOr(false)
+  const errIsSoft = err
+    .map((e) => e !== "MAKER_INSUFFICIENT_FUNDS")
+    .unwrapOr(false)
 
   return (
     <div>
       <div
         className={clsx(
           "px-4 py-2.5 gap-2.5 flex items-center",
-          err.isNone()
-            ? "rounded-lg bg-gray-3"
-            : "rounded-tl-lg rounded-tr-lg bg-red-3"
+          !errIsCritical ? "bg-gray-3" : "bg-red-3",
+          err.isNone() ? "rounded-lg" : "rounded-tl-lg rounded-tr-lg"
         )}
       >
         <div className="flex items-center">
@@ -161,17 +166,28 @@ function OtcMakerTradeItem({
             </Copy>
           )}
 
-          <IconButton
-            type="button"
-            onClick={() => {
-              navigator.clipboard.writeText(generateLink(multiPayload))
-            }}
-            variant="outline"
-            color={err.isNone() ? "gray" : "red"}
-            className="rounded-lg"
-          >
-            <TimesIcon weight="bold" />
-          </IconButton>
+          {errIsSoft ? (
+            <Button
+              type="button"
+              onClick={() => {}}
+              variant="outline"
+              color="gray"
+              size="1"
+              className="rounded-lg"
+            >
+              Remove
+            </Button>
+          ) : (
+            <IconButton
+              type="button"
+              onClick={() => {}}
+              variant="outline"
+              color="red"
+              className="rounded-lg"
+            >
+              <TimesIcon weight="bold" />
+            </IconButton>
+          )}
         </div>
       </div>
 
@@ -179,7 +195,12 @@ function OtcMakerTradeItem({
         .map((err): ReactElement | null => {
           return (
             // biome-ignore lint/correctness/useJsxKeyInIterable: it's not iterating over an array
-            <div className="rounded-br-lg rounded-bl-lg bg-red-9 text-white px-4 py-2 text-xs font-medium">
+            <div
+              className={clsx(
+                "rounded-br-lg rounded-bl-lg px-4 py-2 text-xs font-medium",
+                !errIsCritical ? "bg-gray-6" : "bg-red-9 text-white"
+              )}
+            >
               {err === "ORDER_EXPIRED" && <div>The order is expired</div>}
 
               {err === "NONCE_ALREADY_USED" && (
@@ -189,8 +210,9 @@ function OtcMakerTradeItem({
               {err === "MAKER_INSUFFICIENT_FUNDS" && (
                 <div>
                   {/* biome-ignore lint/nursery/useConsistentCurlyBraces: <explanation> */}
-                  <span className="font-bold">Something went wrong.</span>{" "}
-                  Please cancel the order and create another one.
+                  <span className="font-bold">The order cannot be filled.</span>{" "}
+                  Your balance is incorrect. Please cancel the order and new
+                  another one.
                 </div>
               )}
             </div>
