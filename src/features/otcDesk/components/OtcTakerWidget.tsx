@@ -17,8 +17,8 @@ import { fetchFee } from "../actors/otcMakerConfigLoadActor"
 import { SignIntentActorProvider } from "../providers/SignIntentActorProvider"
 import {
   generateLocalTradeId,
-  useOtcTakerCompletedTrades,
-} from "../stores/otcTakerCompletedTrades"
+  useOtcTakerTrades,
+} from "../stores/otcTakerTrades"
 import type { SignMessage } from "../types/sharedTypes"
 import { type TradeTerms, deriveTradeTerms } from "../utils/deriveTradeTerms"
 import { OtcTakerForm } from "./OtcTakerForm"
@@ -97,9 +97,7 @@ function OtcTakerScreens({
 
   const tradeId = generateLocalTradeId(multiPayload)
 
-  const knownOtcTakerTrade = useOtcTakerCompletedTrades(
-    (state) => state.trades[tradeId]
-  )
+  const knownOtcTakerTrade = useOtcTakerTrades((state) => state.trades[tradeId])
 
   if (tradeTerms == null || protocolFee == null) {
     return loading

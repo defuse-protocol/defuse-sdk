@@ -35,7 +35,7 @@ type Actions = {
 
 type Store = State & Actions
 
-export const otcTakerCompletedTradesStore = create<Store>()(
+export const otcTakerTradesStore = create<Store>()(
   persist(
     (set) => ({
       trades: {},
@@ -73,7 +73,7 @@ export const otcTakerCompletedTradesStore = create<Store>()(
   )
 )
 
-export { otcTakerCompletedTradesStore as useOtcTakerCompletedTrades }
+export { otcTakerTradesStore as useOtcTakerTrades }
 
 export function generateLocalTradeId(multiPayloadPlain: string): string {
   const hash = dfjb2(multiPayloadPlain)
