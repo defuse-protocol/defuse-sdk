@@ -122,7 +122,7 @@ export const ModalSelectAssets = () => {
   return (
     <ModalDialog>
       <div className="flex flex-col min-h-[680px] md:max-h-[680px] h-full">
-        <div className="z-20 h-auto flex-none -mx-4 -mt-4 p-5 border-b border-gray-100 dark:border-black-950 sticky -top-4 bg-white dark:bg-black-800">
+        <div className="z-20 h-auto flex-none -mx-5 -mt-5 p-5 border-b border-gray-100 dark:border-black-950 sticky -top-5 bg-white dark:bg-black-800">
           <SearchBar
             query={searchValue}
             setQuery={setSearchValue}
