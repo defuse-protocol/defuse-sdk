@@ -51,8 +51,9 @@ export function CancellationDialog({
           <div className="flex flex-col md:flex-row justify-center gap-3 mt-5">
             <Button
               type="button"
-              size="4"
+              size="3"
               variant="outline"
+              color="gray"
               className="flex-1 font-bold"
               onClick={() => actorRef.send({ type: "ABORT_CANCELLATION" })}
             >
@@ -61,8 +62,9 @@ export function CancellationDialog({
 
             <Button
               type="button"
-              size="4"
+              size="3"
               variant="solid"
+              color="red"
               className="flex-1 font-bold"
               onClick={() =>
                 actorRef.send({

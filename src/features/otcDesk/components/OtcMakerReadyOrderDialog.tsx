@@ -1,9 +1,14 @@
-import { HourglassHigh } from "@phosphor-icons/react"
+import {
+  Check as CheckIcon,
+  Copy as CopyIcon,
+  HourglassHigh,
+} from "@phosphor-icons/react"
 import { Dialog } from "@radix-ui/themes"
 import { useSelector } from "@xstate/react"
 import type { ActorRefFrom } from "xstate"
 import { AssetComboIcon } from "../../../components/Asset/AssetComboIcon"
 import { ButtonCustom } from "../../../components/Button/ButtonCustom"
+import { Copy } from "../../../components/IntentCard/CopyButton"
 import { ModalDialog } from "../../../components/Modal/ModalDialog"
 import type { SignerCredentials } from "../../../core/formatters"
 import type { MultiPayload } from "../../../types/defuse-contracts-types"
@@ -139,10 +144,10 @@ function OrderDialog({
       )}
 
       {breakdown != null && (
-        <div className="flex flex-col gap-3.5 px-4">
+        <div className="flex flex-col gap-3.5 px-4 text-xs">
           <div className="flex justify-between items-center">
-            <div className="text-sm text-gray-11 font-medium">You send</div>
-            <div className="text-sm text-gray-12 font-medium">
+            <div className="text-gray-11 font-medium">You send</div>
+            <div className="text-gray-12 font-medium">
               {formatTokenValue(
                 breakdown.makerSends.amount,
                 breakdown.makerSends.decimals
@@ -153,10 +158,8 @@ function OrderDialog({
           </div>
 
           <div className="flex justify-between items-center">
-            <div className="text-sm text-gray-11 font-medium">
-              Processing fee
-            </div>
-            <div className="text-sm text-gray-12 font-medium">
+            <div className="text-gray-11 font-medium">Processing fee</div>
+            <div className="text-gray-12 font-medium">
               {formatTokenValue(
                 breakdown.makerPaysFee.amount,
                 breakdown.makerPaysFee.decimals
@@ -167,10 +170,8 @@ function OrderDialog({
           </div>
 
           <div className="flex justify-between items-center">
-            <div className="text-sm text-gray-11 font-medium">
-              Recipient will get
-            </div>
-            <div className="text-sm text-gray-12 font-medium">
+            <div className="text-gray-11 font-medium">Recipient will get</div>
+            <div className="text-gray-12 font-medium">
               {formatTokenValue(
                 breakdown.takerReceives.amount,
                 breakdown.takerReceives.decimals
@@ -183,21 +184,30 @@ function OrderDialog({
       )}
 
       <div className="flex flex-col justify-center gap-3 mt-5">
-        <ButtonCustom
-          type="button"
-          size="lg"
-          variant="primary"
-          onClick={() => {
-            navigator.clipboard.writeText(generateLink(context.multiPayload))
-          }}
-        >
-          Copy link
-        </ButtonCustom>
+        <Copy text={() => generateLink(context.multiPayload)}>
+          {(copied) => (
+            <ButtonCustom
+              type="button"
+              size="lg"
+              variant="primary"
+              variantRadix={copied ? "soft" : undefined}
+            >
+              <div className="flex gap-2 items-center">
+                {copied ? (
+                  <CheckIcon weight="bold" />
+                ) : (
+                  <CopyIcon weight="bold" />
+                )}
+                {copied ? "Copied" : "Copy link"}
+              </div>
+            </ButtonCustom>
+          )}
+        </Copy>
 
         <ButtonCustom
           size="lg"
           type="button"
-          variant="secondary"
+          variant="danger"
           onClick={cancelOrder}
         >
           Cancel order
