@@ -23,6 +23,14 @@ export function computeDoubleSwapResult(
   received: bigint
   totalFee: bigint
 } {
+  // If fee is zero, no fees are charged
+  if (feeBasisPoints === 0n) {
+    return {
+      received: amount,
+      totalFee: 0n,
+    }
+  }
+
   // First swap fee (sending)
   const firstFee = (amount * feeBasisPoints + 9999n) / 10000n
   const afterFirstFee = amount - firstFee
@@ -41,6 +49,11 @@ function calculateRequiredSourceAmount(
   targetAmount: bigint,
   feeBasisPoints: bigint
 ): bigint {
+  // If fee is zero, the required amount is the same as the target amount
+  if (feeBasisPoints === 0n) {
+    return targetAmount
+  }
+
   // We need to solve the equation:
   // sourceAmount - fee1 - fee2 = targetAmount
   // where fee1 = ceil(sourceAmount * feeBps / 10000)
@@ -58,39 +71,86 @@ function calculateRequiredSourceAmount(
   }
 }
 
-function findBestSourceToken(
+// Find best sources combining multiple tokens if necessary
+function findBestSourceTokens(
   remainingBalances: TokenBalances,
   requiredAmount: bigint,
   excludeToken: string,
   feeBasisPoints: bigint
-): { token: string; amount: bigint } | null {
-  let bestToken = ""
-  let bestRequiredAmount = 0n
-  let minExcessBalance = BigInt(Number.MAX_SAFE_INTEGER)
-
+): { steps: FillStep[]; success: boolean } {
   const sourceAmount = calculateRequiredSourceAmount(
     requiredAmount,
     feeBasisPoints
   )
 
+  // Try to find a single token first (original approach)
   for (const [token, balance] of Object.entries(remainingBalances)) {
     if (token !== excludeToken && balance >= sourceAmount) {
-      const excessBalance = balance - sourceAmount
-      if (excessBalance < minExcessBalance) {
-        bestToken = token
-        bestRequiredAmount = sourceAmount
-        minExcessBalance = excessBalance
+      // We found a single token with sufficient balance
+      const swapResult = computeDoubleSwapResult(sourceAmount, feeBasisPoints)
+
+      return {
+        steps: [
+          {
+            fromToken: token,
+            toToken: excludeToken,
+            fromAmount: sourceAmount,
+            toAmount: swapResult.received,
+            fee: swapResult.totalFee,
+          },
+        ],
+        success: true,
       }
     }
   }
 
-  if (bestToken === "") {
-    return null
+  // If no single token is sufficient, try combining tokens
+  // Sort tokens by balance (descending) to use larger balances first
+  const sortedTokens = Object.entries(remainingBalances)
+    .filter(([token]) => token !== excludeToken)
+    .sort(([, a], [, b]) => (b > a ? -1 : b < a ? 1 : 0))
+
+  if (sortedTokens.length === 0) {
+    return { steps: [], success: false }
+  }
+
+  // Calculate total available balance across all tokens
+  const totalAvailable = sortedTokens.reduce(
+    (sum, [, balance]) => sum + balance,
+    0n
+  )
+
+  // If total available is insufficient, we can't satisfy the requirement
+  if (totalAvailable < sourceAmount) {
+    return { steps: [], success: false }
+  }
+
+  // We have enough in total, so use tokens in descending order of balance
+  let remainingNeeded = sourceAmount
+  const steps: FillStep[] = []
+
+  for (const [token, balance] of sortedTokens) {
+    if (remainingNeeded <= 0n) break
+
+    const amountToUse = balance >= remainingNeeded ? remainingNeeded : balance
+    remainingNeeded -= amountToUse
+
+    if (amountToUse > 0n) {
+      const swapResult = computeDoubleSwapResult(amountToUse, feeBasisPoints)
+
+      steps.push({
+        fromToken: token,
+        toToken: excludeToken,
+        fromAmount: amountToUse,
+        toAmount: swapResult.received,
+        fee: swapResult.totalFee,
+      })
+    }
   }
 
   return {
-    token: bestToken,
-    amount: bestRequiredAmount,
+    steps,
+    success: true,
   }
 }
 
@@ -115,6 +175,7 @@ export function fillWithMinimalExchanges(
     const availableAmount = result.remainingBalances[token] ?? 0n
 
     if (availableAmount >= requiredAmount) {
+      // We have enough of this token directly
       result.remainingBalances[token] = availableAmount - requiredAmount
       result.steps.push({
         fromToken: token,
@@ -126,10 +187,11 @@ export function fillWithMinimalExchanges(
       continue
     }
 
+    // Handle case where we have some of the required token but not enough
     const remainingRequired = requiredAmount - availableAmount
-    result.remainingBalances[token] = 0n
 
-    if (availableAmount !== 0n) {
+    // Use whatever amount of the token we do have
+    if (availableAmount > 0n) {
       result.steps.push({
         fromToken: token,
         toToken: token,
@@ -137,35 +199,27 @@ export function fillWithMinimalExchanges(
         toAmount: availableAmount,
         fee: 0n,
       })
+      result.remainingBalances[token] = 0n
     }
 
-    // Find best token to exchange from
-    const bestSource = findBestSourceToken(
+    // Find best sources, possibly combining multiple tokens
+    const sourceResult = findBestSourceTokens(
       result.remainingBalances,
       remainingRequired,
       token,
       feeBasisPoints
     )
 
-    if (!bestSource) {
+    if (!sourceResult.success) {
       result.success = false
       break
     }
 
-    // Execute the swap
-    const swapResult = computeDoubleSwapResult(
-      bestSource.amount,
-      feeBasisPoints
-    )
-    result.remainingBalances[bestSource.token] -= bestSource.amount
-
-    result.steps.push({
-      fromToken: bestSource.token,
-      toToken: token,
-      fromAmount: bestSource.amount,
-      toAmount: swapResult.received,
-      fee: swapResult.totalFee,
-    })
+    // Apply all the steps from the source result
+    for (const step of sourceResult.steps) {
+      result.remainingBalances[step.fromToken] -= step.fromAmount
+      result.steps.push(step)
+    }
   }
 
   return result
