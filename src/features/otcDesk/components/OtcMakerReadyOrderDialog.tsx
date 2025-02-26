@@ -9,7 +9,7 @@ import type { ActorRefFrom } from "xstate"
 import { AssetComboIcon } from "../../../components/Asset/AssetComboIcon"
 import { ButtonCustom } from "../../../components/Button/ButtonCustom"
 import { Copy } from "../../../components/IntentCard/CopyButton"
-import { ModalDialog } from "../../../components/Modal/ModalDialog"
+import { BaseModalDialog } from "../../../components/Modal/ModalDialog"
 import type { SignerCredentials } from "../../../core/formatters"
 import type { MultiPayload } from "../../../types/defuse-contracts-types"
 import { formatTokenValue } from "../../../utils/format"
@@ -93,7 +93,7 @@ function OrderDialog({
       : null
 
   return (
-    <ModalDialog onClose={finish} isDismissable>
+    <BaseModalDialog open={true} onClose={finish} isDismissable>
       {/* Header Section */}
       <div className="flex flex-col items-center text-center mb-6">
         <div className="w-[64px] h-[64px] mt-5 mb-4 flex items-center justify-center rounded-full bg-yellow-300">
@@ -218,6 +218,6 @@ function OrderDialog({
           Cancel order
         </ButtonCustom>
       </div>
-    </ModalDialog>
+    </BaseModalDialog>
   )
 }

@@ -5,7 +5,6 @@ import {
   useCallback,
   useContext,
   useEffect,
-  useRef,
   useState,
 } from "react"
 import { useModalStore } from "../../../providers/ModalStoreProvider"
@@ -21,7 +20,6 @@ export const ModalDialog = ({
 }>) => {
   const { onCloseModal } = useModalStore((state) => state)
   const [open, setOpen] = useState(true)
-  const divRef = useRef<HTMLDivElement>(null)
 
   const handleCloseModal = useCallback(() => {
     if (!open) {
@@ -34,10 +32,41 @@ export const ModalDialog = ({
     handleCloseModal()
   }, [handleCloseModal])
 
+  return (
+    <BaseModalDialog
+      open={open}
+      onClose={() => {
+        setOpen(false)
+        handleCloseModal()
+      }}
+      isDismissable={isDismissable}
+    >
+      {children}
+    </BaseModalDialog>
+  )
+}
+
+export function BaseModalDialog({
+  open,
+  children,
+  onClose,
+  isDismissable,
+}: PropsWithChildren<{
+  open: boolean
+  onClose?: () => void
+  isDismissable?: boolean
+}>) {
   const { portalContainer } = useContext(WidgetContext)
 
   return (
-    <Dialog.Root open={open} onOpenChange={setOpen}>
+    <Dialog.Root
+      open={open}
+      onOpenChange={(open) => {
+        if (!open) {
+          onClose?.()
+        }
+      }}
+    >
       <Dialog.Content
         container={portalContainer}
         className={`fixed bg-white dark:bg-black-800 shadow-lg px-5 pt-5 pb-[max(env(safe-area-inset-bottom,0px),theme(spacing.5))] focus:outline-none
@@ -66,7 +95,7 @@ export const ModalDialog = ({
           </Dialog.Close>
         )}
 
-        <div ref={divRef}>{children}</div>
+        <div>{children}</div>
       </Dialog.Content>
     </Dialog.Root>
   )

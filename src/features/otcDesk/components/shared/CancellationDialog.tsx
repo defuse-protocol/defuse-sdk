@@ -1,7 +1,7 @@
 import { Button, Dialog, Spinner } from "@radix-ui/themes"
 import { useSelector } from "@xstate/react"
 import type { ActorRefFrom } from "xstate"
-import { ModalDialog } from "../../../../components/Modal/ModalDialog"
+import { BaseModalDialog } from "../../../../components/Modal/ModalDialog"
 import type { SignerCredentials } from "../../../../core/formatters"
 import type { otcMakerOrderCancellationActor } from "../../actors/otcMakerOrderCancellationActor"
 import type { SignMessage } from "../../types/sharedTypes"
@@ -20,8 +20,11 @@ export function CancellationDialog({
   const snapshot = useSelector(actorRef, (state) => state)
 
   return (
-    <ModalDialog
-      onClose={() => actorRef.send({ type: "ABORT_CANCELLATION" })}
+    <BaseModalDialog
+      open={true}
+      onClose={() => {
+        actorRef.send({ type: "ABORT_CANCELLATION" })
+      }}
       isDismissable
     >
       {snapshot.matches("idleUncancellable") ? (
@@ -85,6 +88,6 @@ export function CancellationDialog({
           </div>
         </>
       )}
-    </ModalDialog>
+    </BaseModalDialog>
   )
 }
