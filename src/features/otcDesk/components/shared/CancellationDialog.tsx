@@ -1,13 +1,16 @@
 import { Button, Dialog, Spinner } from "@radix-ui/themes"
 import { useSelector } from "@xstate/react"
 import type { ActorRefFrom } from "xstate"
-import { ModalDialog } from "../../../../components/Modal/ModalDialog"
+import { BaseModalDialog } from "../../../../components/Modal/ModalDialog"
 import type { SignerCredentials } from "../../../../core/formatters"
 import type { otcMakerOrderCancellationActor } from "../../actors/otcMakerOrderCancellationActor"
 import type { SignMessage } from "../../types/sharedTypes"
 
 interface CancellationDialogProps {
-  actorRef: ActorRefFrom<typeof otcMakerOrderCancellationActor>
+  actorRef:
+    | ActorRefFrom<typeof otcMakerOrderCancellationActor>
+    | undefined
+    | null
   signerCredentials: SignerCredentials
   signMessage: SignMessage
 }
@@ -17,21 +20,24 @@ export function CancellationDialog({
   signerCredentials,
   signMessage,
 }: CancellationDialogProps) {
-  const snapshot = useSelector(actorRef, (state) => state)
+  const snapshot = useSelector(actorRef ?? undefined, (state) => state)
 
   return (
-    <ModalDialog
-      onClose={() => actorRef.send({ type: "ABORT_CANCELLATION" })}
+    <BaseModalDialog
+      open={!!actorRef}
+      onClose={() => {
+        actorRef?.send({ type: "ABORT_CANCELLATION" })
+      }}
       isDismissable
     >
-      {snapshot.matches("idleUncancellable") ? (
+      {snapshot?.matches("idleUncancellable") ? (
         <>
           <div>This order is either already cancelled or executed.</div>
 
           <Button
             type="button"
             onClick={() => {
-              actorRef.send({ type: "ACK_CANCELLATION_IMPOSSIBLE" })
+              actorRef?.send({ type: "ACK_CANCELLATION_IMPOSSIBLE" })
             }}
           >
             Ok
@@ -47,8 +53,10 @@ export function CancellationDialog({
             longer work.
           </Dialog.Description>
 
-          {snapshot.context.error != null && (
-            <div className="text-red-700">{snapshot.context.error?.reason}</div>
+          {snapshot?.context.error != null && (
+            <div className="text-red-700">
+              {snapshot?.context.error?.reason}
+            </div>
           )}
 
           <div className="flex flex-col md:flex-row justify-center gap-3 mt-5">
@@ -58,7 +66,7 @@ export function CancellationDialog({
               variant="outline"
               color="gray"
               className="md:flex-1 font-bold"
-              onClick={() => actorRef.send({ type: "ABORT_CANCELLATION" })}
+              onClick={() => actorRef?.send({ type: "ABORT_CANCELLATION" })}
             >
               Keep
             </Button>
@@ -70,21 +78,21 @@ export function CancellationDialog({
               color="red"
               className="md:flex-1 font-bold"
               onClick={() =>
-                actorRef.send({
+                actorRef?.send({
                   type: "CONFIRM_CANCELLATION",
                   signerCredentials,
                   signMessage,
                 })
               }
             >
-              <Spinner loading={snapshot.matches("cancelling")} />
-              {snapshot.matches("cancelling")
+              <Spinner loading={!!snapshot?.matches("cancelling")} />
+              {snapshot?.matches("cancelling")
                 ? "Cancelling..."
                 : "Cancel order"}
             </Button>
           </div>
         </>
       )}
-    </ModalDialog>
+    </BaseModalDialog>
   )
 }

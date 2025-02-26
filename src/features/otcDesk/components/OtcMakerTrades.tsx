@@ -458,13 +458,11 @@ function OtcMakerOrderCancellationProvider({
     <OtcMakerOrderCancellationContext.Provider value={{ cancelOrder }}>
       {children}
 
-      {actorRef != null && (
-        <CancellationDialog
-          actorRef={actorRef}
-          signerCredentials={signerCredentials}
-          signMessage={signMessage}
-        />
-      )}
+      <CancellationDialog
+        actorRef={actorRef}
+        signerCredentials={signerCredentials}
+        signMessage={signMessage}
+      />
     </OtcMakerOrderCancellationContext.Provider>
   )
 }
