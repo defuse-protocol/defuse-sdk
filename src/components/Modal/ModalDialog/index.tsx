@@ -1,5 +1,6 @@
 import { X as CrossIcon } from "@phosphor-icons/react"
 import { Dialog, VisuallyHidden } from "@radix-ui/themes"
+import clsx from "clsx"
 import {
   type PropsWithChildren,
   useCallback,
@@ -69,9 +70,19 @@ export function BaseModalDialog({
     >
       <Dialog.Content
         container={portalContainer}
-        className={`fixed bg-white dark:bg-black-800 shadow-lg px-5 pt-5 pb-[max(env(safe-area-inset-bottom,0px),theme(spacing.5))] focus:outline-none
-          md:w-[90vw] md:max-w-[472px] md:max-h-[85vh] md:p-5 md:top-1/2 md:bottom-auto md:left-1/2 md:right-auto md:-translate-x-1/2 md:-translate-y-1/2 md:rounded-2xl md:animate-content-show
-          bottom-0 left-0 right-0 top-auto max-w-full max-h-[70vh] rounded-t-2xl rounded-b-none animate-slide-up`}
+        className={clsx(
+          "bg-white dark:bg-black-800 shadow-lg focus:outline-none",
+          "rounded-t-2xl rounded-b-none md:rounded-2xl",
+          "max-w-full md:w-[90vw] md:max-w-[472px] max-h-[70vh] md:max-h-[85vh]",
+          "px-5 pt-5 pb-[max(env(safe-area-inset-bottom,0px),theme(spacing.5))] md:p-5",
+
+          // Re-position and animate for smaller screens
+          "max-md:absolute max-md:bottom-0 max-md:left-0 max-md:right-0 max-md:top-auto",
+          "max-md:data-[state=open]:animate-in data-[state=closed]:animate-out",
+          "max-md:data-[state=open]:slide-in-from-bottom-full",
+          "max-md:data-[state=closed]:slide-out-to-bottom-full",
+          "max-md:data-[state=open]:duration-300 data-[state=closed]:duration-200"
+        )}
         onOpenAutoFocus={(e) => {
           // This is a workaround for focusing the first input in the modal
           // Focusing first input is annoying for mobile users
