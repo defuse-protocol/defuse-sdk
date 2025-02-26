@@ -31,6 +31,7 @@ import {
 } from "../../machines/signIntentMachine"
 import { otcMakerTradesStore } from "../stores/otcMakerTrades"
 import type { SignMessage } from "../types/sharedTypes"
+import { type Expiry, expiryToSeconds } from "../utils/expiryUtils"
 import { genLocalTradeId } from "../utils/genLocalTradeId"
 
 export type OTCMakerSignActorInput = {
@@ -39,6 +40,7 @@ export type OTCMakerSignActorInput = {
     tokenOut: BaseTokenInfo
     amountIn: TokenValue
     amountOut: TokenValue
+    expiry: Expiry
   }
   balances: BalanceMapping
   signerCredentials: SignerCredentials
@@ -136,6 +138,8 @@ export const otcMakerSignMachine = setup({
         nonce: nonce,
         referral: input.referral,
         memo: "OTC_CREATE",
+        deadlineTimestamp:
+          Date.now() + expiryToSeconds(input.parsed.expiry) * 1000,
       }
     )
 

@@ -392,6 +392,31 @@ export function OtcMakerForm({
               }
             />
           </div>
+
+          <div className="w-full flex items-center justify-between gap-3 mt-4">
+            <label htmlFor="otc-maker-expiry" className="text-gray-11 text-sm">
+              Order expires in
+            </label>
+            <select
+              id="otc-maker-expiry"
+              name="expiry"
+              value={formValues.expiry}
+              onChange={(e) => {
+                formValuesRef.trigger.updateExpiry({ value: e.target.value })
+              }}
+              className="bg-white border border-gray-7 rounded-full text-sm px-3 py-1 font-medium outline-none appearance-none cursor-pointer"
+            >
+              <option value="5m">5 Minutes</option>
+              <option value="30m">30 Minutes</option>
+              <option value="1h">1 Hour</option>
+              <option value="12h">12 Hour</option>
+              <option value="1d">1 Day</option>
+              <option value="3d">3 Days</option>
+              <option value="7d">7 Days</option>
+              <option value="30d">1 Month</option>
+              <option value="365d">1 Year (max)</option>
+            </select>
+          </div>
         </div>
 
         {renderSubmitButton(rootSnapshot)}
