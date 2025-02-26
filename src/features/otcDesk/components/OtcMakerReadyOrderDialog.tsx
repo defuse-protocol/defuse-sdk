@@ -49,13 +49,11 @@ export function OtcMakerReadyOrderDialog({
         generateLink={generateLink}
       />
 
-      {orderCancellationRef != null && (
-        <CancellationDialog
-          actorRef={orderCancellationRef}
-          signerCredentials={signerCredentials}
-          signMessage={signMessage}
-        />
-      )}
+      <CancellationDialog
+        actorRef={orderCancellationRef}
+        signerCredentials={signerCredentials}
+        signMessage={signMessage}
+      />
     </>
   )
 }
