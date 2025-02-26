@@ -9,6 +9,7 @@ import {
   getAnyBaseTokenInfo,
   getTokenMaxDecimals,
 } from "../../../utils/tokenUtils"
+import { type Expiry, parseExpiry } from "../utils/expiryUtils"
 import type { OTCMarkerFormValuesState } from "./otcMakerFormValuesStore"
 
 type State = {
@@ -16,6 +17,7 @@ type State = {
   tokenOut: null | BaseTokenInfo
   amountIn: null | TokenValue
   amountOut: null | TokenValue
+  expiry: null | Expiry
 }
 
 export const createOTCMakerFormParsedValuesStore = () =>
@@ -25,6 +27,7 @@ export const createOTCMakerFormParsedValuesStore = () =>
       amountOut: null,
       tokenIn: null,
       tokenOut: null,
+      expiry: null,
     } as State,
     emits: {
       valuesParsed: (_: { context: State }) => {},
@@ -46,6 +49,7 @@ export const createOTCMakerFormParsedValuesStore = () =>
           amountOut: parseTokenValue(tokenOut, formValues.amountOut),
           tokenIn: formValues.tokenIn,
           tokenOut,
+          expiry: parseExpiry(formValues.expiry),
         }
         enqueue.emit.valuesParsed({ context: newContext })
         return newContext

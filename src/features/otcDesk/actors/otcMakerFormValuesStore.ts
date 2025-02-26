@@ -6,6 +6,7 @@ export type OTCMarkerFormValuesState = {
   amountOut: string
   tokenIn: null | BaseTokenInfo | UnifiedTokenInfo
   tokenOut: null | BaseTokenInfo | UnifiedTokenInfo
+  expiry: string
 }
 
 export const createOTCMakerFormValuesStore = ({
@@ -21,7 +22,8 @@ export const createOTCMakerFormValuesStore = ({
       amountOut: "",
       tokenIn: initialTokenIn,
       tokenOut: initialTokenOut,
-    } as OTCMarkerFormValuesState,
+      expiry: "1d",
+    } satisfies OTCMarkerFormValuesState,
     emits: {
       changed: (_: { context: OTCMarkerFormValuesState }) => {},
     },
@@ -73,6 +75,14 @@ export const createOTCMakerFormValuesStore = ({
           tokenOut: context.tokenIn,
           amountIn: context.amountOut,
           amountOut: context.amountIn,
+        }
+        enqueue.emit.changed({ context: newContext })
+        return newContext
+      },
+      updateExpiry: (context, event: { value: string }, enqueue) => {
+        const newContext = {
+          ...context,
+          expiry: event.value,
         }
         enqueue.emit.changed({ context: newContext })
         return newContext
