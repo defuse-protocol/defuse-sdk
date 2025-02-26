@@ -409,7 +409,7 @@ export function OtcMakerForm({
               <option value="5m">5 Minutes</option>
               <option value="30m">30 Minutes</option>
               <option value="1h">1 Hour</option>
-              <option value="12h">12 Hour</option>
+              <option value="12h">12 Hours</option>
               <option value="1d">1 Day</option>
               <option value="3d">3 Days</option>
               <option value="7d">7 Days</option>
