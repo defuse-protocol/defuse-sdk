@@ -86,7 +86,11 @@ export function BaseModalDialog({
                     "bg-white dark:bg-black-800 shadow-lg focus:outline-none",
                     "rounded-t-2xl md:rounded-2xl",
                     "max-w-full md:w-[90vw] md:max-w-[472px] max-md:max-h-[70vh]",
-                    "px-5 pt-5 pb-[max(env(safe-area-inset-bottom,0px),theme(spacing.5))] md:p-5",
+                    "[--inset-padding-top:theme(spacing.5)]",
+                    "[--inset-padding-right:theme(spacing.5)]",
+                    "[--inset-padding-bottom:max(env(safe-area-inset-bottom,0px),theme(spacing.5))]",
+                    "[--inset-padding-left:theme(spacing.5)]",
+                    "pt-[var(--inset-padding-top)] pr-[var(--inset-padding-right)] pb-[var(--inset-padding-bottom)] pl-[var(--inset-padding-left)]",
 
                     // Animation
                     "data-[state=open]:animate-in data-[state=closed]:animate-out",
