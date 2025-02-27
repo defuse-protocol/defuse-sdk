@@ -79,13 +79,13 @@ export function BaseModalDialog({
             )}
           >
             <div className="flex absolute inset-0 overflow-auto">
-              <div className="m-auto">
+              <div className="m-auto flex-grow py-8 px-4">
                 <Dialog.Content
                   className={clsx(
-                    "relative overflow-auto",
+                    "relative overflow-auto m-auto",
                     "bg-white dark:bg-black-800 shadow-lg focus:outline-none",
                     "rounded-t-2xl md:rounded-2xl",
-                    "max-w-full md:w-[90vw] md:max-w-[472px] max-h-[70vh] md:max-h-[85vh]",
+                    "max-w-full md:w-[90vw] md:max-w-[472px] max-md:max-h-[70vh]",
                     "px-5 pt-5 pb-[max(env(safe-area-inset-bottom,0px),theme(spacing.5))] md:p-5",
 
                     // Re-position on smaller screens
