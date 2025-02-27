@@ -78,8 +78,8 @@ export function BaseModalDialog({
               "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0"
             )}
           >
-            <div className="flex absolute inset-0 overflow-auto">
-              <div className="m-auto flex-grow py-8 px-4">
+            <div className="flex absolute bottom-0 left-0 right-0 md:inset-0 overflow-auto">
+              <div className="flex-grow md:m-auto md:py-8 md:px-4">
                 <Dialog.Content
                   className={clsx(
                     "relative overflow-auto m-auto",
@@ -87,9 +87,6 @@ export function BaseModalDialog({
                     "rounded-t-2xl md:rounded-2xl",
                     "max-w-full md:w-[90vw] md:max-w-[472px] max-md:max-h-[70vh]",
                     "px-5 pt-5 pb-[max(env(safe-area-inset-bottom,0px),theme(spacing.5))] md:p-5",
-
-                    // Re-position on smaller screens
-                    "max-md:absolute max-md:bottom-0 max-md:left-0 max-md:right-0 max-md:top-auto",
 
                     // Animation
                     "data-[state=open]:animate-in data-[state=closed]:animate-out",
