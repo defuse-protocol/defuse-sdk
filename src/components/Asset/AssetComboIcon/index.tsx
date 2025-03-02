@@ -1,9 +1,13 @@
+import type React from "react"
+
 type AssetComboIconProps = {
   icon?: string
   name?: string
   chainIcon?: string
   chainName?: string
   showChainIcon?: boolean
+  className?: React.HTMLAttributes<"div">["className"]
+  style?: React.HTMLAttributes<"div">["style"]
 }
 
 export const AssetComboIcon = ({
@@ -12,9 +16,11 @@ export const AssetComboIcon = ({
   chainIcon,
   chainName,
   showChainIcon = false,
+  className,
+  style,
 }: AssetComboIconProps) => {
   return (
-    <div className="relative inline-block">
+    <div className={`relative inline-block ${className}`} style={style}>
       <div className="relative overflow-hidden size-7 flex justify-center items-center rounded-full">
         {icon ? (
           <img

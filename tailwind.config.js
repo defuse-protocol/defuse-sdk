@@ -61,6 +61,73 @@ const config = {
           a12: "var(--sand-a12)",
         },
 
+        red: {
+          ...colors.red,
+
+          1: "var(--red-1)",
+          2: "var(--red-2)",
+          3: "var(--red-3)",
+          4: "var(--red-4)",
+          5: "var(--red-5)",
+          6: "var(--red-6)",
+          7: "var(--red-7)",
+          8: "var(--red-8)",
+          9: "var(--red-9)",
+          10: "var(--red-10)",
+          11: "var(--red-11)",
+          12: "var(--red-12)",
+          // Alpha variants
+          a1: "var(--red-a1)",
+          a2: "var(--red-a2)",
+          a3: "var(--red-a3)",
+          a4: "var(--red-a4)",
+          a5: "var(--red-a5)",
+          a6: "var(--red-a6)",
+          a7: "var(--red-a7)",
+          a8: "var(--red-a8)",
+          a9: "var(--red-a9)",
+          a10: "var(--red-a10)",
+          a11: "var(--red-a11)",
+          a12: "var(--red-a12)",
+        },
+
+        green: {
+          ...colors.green,
+
+          1: "var(--green-1)",
+          2: "var(--green-2)",
+          3: "var(--green-3)",
+          4: "var(--green-4)",
+          5: "var(--green-5)",
+          6: "var(--green-6)",
+          7: "var(--green-7)",
+          8: "var(--green-8)",
+          9: "var(--green-9)",
+          10: "var(--green-10)",
+          11: "var(--green-11)",
+          12: "var(--green-12)",
+          // Alpha variants
+          a1: "var(--green-a1)",
+          a2: "var(--green-a2)",
+          a3: "var(--green-a3)",
+          a4: "var(--green-a4)",
+          a5: "var(--green-a5)",
+          a6: "var(--green-a6)",
+          a7: "var(--green-a7)",
+          a8: "var(--green-a8)",
+          a9: "var(--green-a9)",
+          a10: "var(--green-a10)",
+          a11: "var(--green-a11)",
+          a12: "var(--green-a12)",
+        },
+
+        blue: {
+          ...colors.blue,
+
+          // Cyan variants
+          c11: "var(--cyan-11)",
+        },
+
         accent: {
           DEFAULT: "var(--accent-9)",
           50: "var(--accent-1)",
@@ -113,6 +180,15 @@ const config = {
           a11: "var(--accent-a11)",
           a12: "var(--accent-a12)",
         },
+
+        yellow: {
+          DEFAULT: "var(--yellow-9)",
+          50: "var(--yellow-1)",
+          100: "var(--yellow-2)",
+          200: "var(--yellow-3)",
+          300: "var(--yellow-4)",
+        },
+
         border: "var(--color-border)",
         label: "var(--color-label)",
         warning: "var(--color-warning)",

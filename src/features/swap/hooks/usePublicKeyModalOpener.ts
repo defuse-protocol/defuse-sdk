@@ -1,17 +1,24 @@
-import { useEffect } from "react"
+import { useEffect, useRef } from "react"
 import type { ActorRefFrom } from "xstate"
 import type { ModalConfirmAddPubkeyPayload } from "../../../components/Modal/ModalConfirmAddPubkey"
 import { useModalStore } from "../../../providers/ModalStoreProvider"
 import { ModalType } from "../../../stores/modalStore"
 import { assert } from "../../../utils/assert"
-import type { publicKeyVerifierMachine } from "../../machines/publicKeyVerifierMachine"
+import type {
+  SendNearTransaction,
+  publicKeyVerifierMachine,
+} from "../../machines/publicKeyVerifierMachine"
 
 export function usePublicKeyModalOpener(
   publicKeyVerifierRef:
     | ActorRefFrom<typeof publicKeyVerifierMachine>
-    | undefined
+    | undefined,
+  sendNearTransaction: SendNearTransaction
 ) {
   const { setModalType, onCloseModal } = useModalStore((state) => state)
+
+  const sendNearTransactionRef = useRef(sendNearTransaction)
+  sendNearTransactionRef.current = sendNearTransaction
 
   useEffect(() => {
     if (!publicKeyVerifierRef) return
@@ -23,7 +30,10 @@ export function usePublicKeyModalOpener(
         setModalType(ModalType.MODAL_CONFIRM_ADD_PUBKEY, {
           accountId: snapshot.context.nearAccount.accountId,
           onConfirm: () => {
-            publicKeyVerifierRef.send({ type: "ADD_PUBLIC_KEY" })
+            publicKeyVerifierRef.send({
+              type: "ADD_PUBLIC_KEY",
+              sendNearTransaction: sendNearTransactionRef.current,
+            })
             onCloseModal()
           },
           onAbort: () => {

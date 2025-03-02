@@ -45,15 +45,15 @@ import { parseUnits } from "../../../../utils/parse"
 import { isBaseToken } from "../../../../utils/token"
 import { getTokenMaxDecimals } from "../../../../utils/tokenUtils"
 import { validateAddress } from "../../../../utils/validateAddress"
+import {
+  balanceSelector,
+  transitBalanceSelector,
+} from "../../../machines/depositedBalanceMachine"
 import type { intentStatusMachine } from "../../../machines/intentStatusMachine"
 import { getPOABridgeInfo } from "../../../machines/poaBridgeInfoActor"
 import type { PreparationOutput } from "../../../machines/prepareWithdrawActor"
 import { parseDestinationMemo } from "../../../machines/withdrawFormReducer"
-import {
-  balanceSelector,
-  renderIntentCreationResult,
-  transitBalanceSelector,
-} from "../../../swap/components/SwapForm"
+import { renderIntentCreationResult } from "../../../swap/components/SwapForm"
 import { usePublicKeyModalOpener } from "../../../swap/hooks/usePublicKeyModalOpener"
 import { WithdrawUIMachineContext } from "../../WithdrawUIMachineContext"
 import LongWithdrawWarning from "./LongWithdrawWarning"
@@ -112,7 +112,7 @@ export const WithdrawForm = ({
   })
 
   // biome-ignore lint/suspicious/noExplicitAny: types should've been correct, but `publicKeyVerifierRef` is commented out
-  usePublicKeyModalOpener(publicKeyVerifierRef as any)
+  usePublicKeyModalOpener(publicKeyVerifierRef as any, sendNearTransaction)
 
   useEffect(() => {
     if (userAddress != null && chainType != null) {
@@ -324,7 +324,6 @@ export const WithdrawForm = ({
                 nearClient: failoverRpcProvider({
                   urls: settings.reserveRpcUrls.near,
                 }),
-                sendNearTransaction: sendNearTransaction,
               },
             })
           })}

@@ -6,10 +6,7 @@ import { verifyMessage as verifyMessageViem } from "viem"
 import { assign, fromPromise, setup } from "xstate"
 import { settings } from "../../config/settings"
 import { logger } from "../../logger"
-import {
-  publishIntent,
-  waitForIntentSettlement,
-} from "../../services/intentService"
+import { publishIntent } from "../../services/intentService"
 import type { AggregatedQuote } from "../../services/quoteService"
 import type { BaseTokenInfo, TokenValue } from "../../types/base"
 import type { Nep413DefuseMessageFor_DefuseIntents } from "../../types/defuse-contracts-types"
@@ -41,7 +38,6 @@ import {
 import type { ParentEvents as BackgroundQuoterEvents } from "./backgroundQuoterMachine"
 import {
   type ErrorCodes as PublicKeyVerifierErrorCodes,
-  type SendNearTransaction,
   publicKeyVerifierMachine,
 } from "./publicKeyVerifierMachine"
 
@@ -95,7 +91,6 @@ type Context = {
   referral?: string
   slippageBasisPoints: number
   nearClient: providers.Provider
-  sendNearTransaction: SendNearTransaction
   intentOperationParams: IntentOperationParams
   // The best quote that was actually published or will be published
   quoteToPublish: AggregatedQuote | null
@@ -136,7 +131,6 @@ type Input = {
   referral?: string
   slippageBasisPoints: number
   nearClient: providers.Provider
-  sendNearTransaction: SendNearTransaction
   intentOperationParams: IntentOperationParams
 }
 
@@ -244,15 +238,6 @@ export const swapIntentMachine = setup({
         }
       }) =>
         publishIntent(input.signatureData, input.userInfo, input.quoteHashes)
-    ),
-    pollIntentStatus: fromPromise(
-      ({
-        input,
-        signal,
-      }: {
-        input: { intentHash: string }
-        signal: AbortSignal
-      }) => waitForIntentSettlement(signal, input.intentHash)
     ),
   },
   guards: {
@@ -479,7 +464,6 @@ export const swapIntentMachine = setup({
                 ? context.signature.signatureData
                 : null,
             nearClient: context.nearClient,
-            sendNearTransaction: context.sendNearTransaction,
           }
         },
         onDone: [

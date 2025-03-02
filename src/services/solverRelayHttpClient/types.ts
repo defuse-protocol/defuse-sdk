@@ -72,6 +72,28 @@ export type PublishIntentResponseFailure = {
   reason: string | "expired" | "internal"
 }
 
+export type PublishIntentsRequest = JSONRPCRequest<
+  "publish_intents",
+  {
+    quote_hashes: string[]
+    signed_datas: MultiPayload[]
+  }
+>
+
+export type PublishIntentsResponse = JSONRPCResponse<
+  PublishIntentsResponseSuccess | PublishIntentsResponseFailure
+>
+
+export type PublishIntentsResponseSuccess = {
+  intent_hashes: string[]
+  status: "OK"
+}
+export type PublishIntentsResponseFailure = {
+  intent_hashes: string[]
+  status: "FAILED"
+  reason: string | "expired" | "internal"
+}
+
 export type GetStatusRequest = JSONRPCRequest<
   "get_status",
   { intent_hash: string }

@@ -1,11 +1,14 @@
 import { ReloadIcon } from "@radix-ui/react-icons"
 import { Button, type ButtonProps, Flex, Text } from "@radix-ui/themes"
+import clsx from "clsx"
 import type { ButtonHTMLAttributes, ReactNode } from "react"
 
 interface ButtonCustomProps
   extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, "color"> {
   children?: ReactNode
-  variant?: "primary" | "secondary" | "base" | "soft" | "solid"
+  variant?: "primary" | "secondary" | "base" | "soft" | "solid" | "danger"
+  color?: ButtonProps["color"]
+  variantRadix?: ButtonProps["variant"]
   size?: "sm" | "base" | "lg"
   fullWidth?: boolean
   isLoading?: boolean
@@ -14,10 +17,13 @@ interface ButtonCustomProps
 export const ButtonCustom = ({
   children,
   variant = "primary",
+  color,
   size = "base",
+  variantRadix,
   fullWidth,
   disabled,
   isLoading = false,
+  className,
   ...rest
 }: ButtonCustomProps) => {
   let radixButtonVariant: ButtonProps["variant"]
@@ -34,7 +40,13 @@ export const ButtonCustom = ({
       radixButtonVariant = "solid"
       radixButtonColor = "gray"
       break
+    case "danger":
+      radixButtonVariant = "outline"
+      radixButtonColor = "red"
+      break
   }
+  radixButtonColor = color ?? radixButtonColor
+  radixButtonVariant = variantRadix ?? radixButtonVariant
 
   let radixButtonSize: ButtonProps["size"] | undefined
   switch (size) {
@@ -55,13 +67,10 @@ export const ButtonCustom = ({
         variant={radixButtonVariant}
         size={radixButtonSize}
         disabled={disabled || isLoading}
-        className={
-          {
-            sm: "h-8",
-            base: "h-10",
-            lg: "h-14",
-          }[size]
-        }
+        className={clsx(
+          className,
+          { sm: "h-8", base: "h-10", lg: "h-14" }[size]
+        )}
         {...rest}
       >
         {isLoading ? <ReloadIcon className="size-5 animate-spin" /> : null}
