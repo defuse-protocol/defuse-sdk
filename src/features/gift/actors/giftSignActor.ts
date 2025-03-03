@@ -30,6 +30,7 @@ import {
   signIntentMachine,
 } from "../../machines/signIntentMachine"
 import type { SignMessage } from "../types/sharedTypes"
+import type { EscrowKeyPair } from "./giftEscrowMachine"
 
 export type GiftSignActorInput = {
   parsed: {
@@ -40,6 +41,7 @@ export type GiftSignActorInput = {
   signerCredentials: SignerCredentials
   signMessage: SignMessage
   referral: string | undefined
+  escrowKeyPair: EscrowKeyPair
 }
 
 export type GiftSignActorOutput =
@@ -130,7 +132,7 @@ export const giftSignMachine = setup({
         nonce: nonce,
         referral: input.referral,
         memo: "", // TODO: gift message or something
-        receiverId: "", // TODO: generate ED25519 keypair
+        receiverId: input.escrowKeyPair.publicKey,
       }
     )
 
