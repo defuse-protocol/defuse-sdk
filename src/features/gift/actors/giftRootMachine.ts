@@ -120,42 +120,33 @@ export const giftRootMachine = setup({
       },
     },
     signing: {
-      id: "signRef",
-      src: "signActor",
+      //   on: {
+      //     COMPLETE_SIGN: "signed",
+      //   },
 
-      input: ({
-        context,
-        event,
-      }: {
-        context: {
-          formRef: ActorRefFrom<typeof giftFormMachine>
-          depositedBalanceRef: ActorRefFrom<typeof depositedBalanceMachine>
-          referral: string | undefined
-        }
-        event: {
-          type: "REQUEST_SIGN"
-          signerCredentials: SignerCredentials
-          signMessage: (
-            params: WalletMessage
-          ) => Promise<WalletSignatureResult | null>
-        }
-      }) => {
-        assertEvent(event, "REQUEST_SIGN")
+      invoke: {
+        id: "signRef",
+        src: "signActor",
 
-        const form = context.formRef.getSnapshot()
-        const parsed = form.context.parsedValues.getSnapshot()
+        input: ({ context, event }) => {
+          assertEvent(event, "REQUEST_SIGN")
 
-        return {
-          signerCredentials: event.signerCredentials,
-          signMessage: event.signMessage,
-          parsed: parsed.context as {
-            [K in keyof typeof parsed.context]: NonNullable<
-              (typeof parsed.context)[K]
-            >
-          },
-          balances: context.depositedBalanceRef.getSnapshot().context.balances,
-          referral: context.referral,
-        }
+          const form = context.formRef.getSnapshot()
+          const parsed = form.context.parsedValues.getSnapshot()
+
+          return {
+            signerCredentials: event.signerCredentials,
+            signMessage: event.signMessage,
+            parsed: parsed.context as {
+              [K in keyof typeof parsed.context]: NonNullable<
+                (typeof parsed.context)[K]
+              >
+            },
+            balances:
+              context.depositedBalanceRef.getSnapshot().context.balances,
+            referral: context.referral,
+          }
+        },
       },
     },
   },
