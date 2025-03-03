@@ -89,7 +89,6 @@ export function GiftForm({
   const formValuesRef = useSelector(formRef, formValuesSelector)
   const formValues = useSelector(formValuesRef, (s) => s.context)
 
-  // biome-ignore lint/correctness/noUnusedVariables: <explanation>
   const { tokenInBalance } = useSelector(
     useSelector(rootActorRef, (s) => s.context.depositedBalanceRef),
     balanceAllSelector({
@@ -164,7 +163,7 @@ export function GiftForm({
                   htmlFor="gift-amount-in"
                   className="font-bold text-label text-sm"
                 >
-                  Sell
+                  Enter gift amount
                 </label>
               }
               inputSlot={
@@ -215,8 +214,9 @@ export function GiftForm({
               }
             />
           </div>
-          {renderSubmitButton(rootSnapshot)}
         </div>
+
+        {renderSubmitButton(rootSnapshot)}
       </form>
     </div>
   )

@@ -4,7 +4,7 @@ import {
   type SignerCredentials,
   formatSignedIntent,
 } from "../../../core/formatters"
-import { createSwapIntentMessage } from "../../../core/messages"
+import { createTransferMessage } from "../../../core/messages"
 import { logger } from "../../../logger"
 import {
   AmountMismatchError,
@@ -123,13 +123,14 @@ export const giftSignMachine = setup({
       }
     }
 
-    const walletMessage = createSwapIntentMessage(
+    const walletMessage = createTransferMessage(
       [...Object.entries(tokenInDiff)],
       {
         signerId: input.signerCredentials,
         nonce: nonce,
         referral: input.referral,
-        memo: "OTC_CREATE",
+        memo: "", // TODO: gift message or something
+        receiverId: "", // TODO: generate ED25519 keypair
       }
     )
 
