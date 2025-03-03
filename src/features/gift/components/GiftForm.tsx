@@ -1,12 +1,23 @@
 import { useActorRef, useSelector } from "@xstate/react"
-import { useMemo } from "react"
+import clsx from "clsx"
+import { useEffect, useMemo } from "react"
 import type { SnapshotFrom } from "xstate"
+import { BlockMultiBalances } from "../../../components/Block/BlockMultiBalances"
 import { ButtonCustom } from "../../../components/Button/ButtonCustom"
+import type { ModalSelectAssetsPayload } from "../../../components/Modal/ModalSelectAssets"
+import { SelectAssets } from "../../../components/SelectAssets"
 import type { SignerCredentials } from "../../../core/formatters"
+import { useModalController } from "../../../hooks/useModalController"
+import { useTokensUsdPrices } from "../../../hooks/useTokensUsdPrices"
+import { useTokensStore } from "../../../providers/TokensStoreProvider"
+import { ModalType } from "../../../stores/modalStore"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../../types/base"
 import type { MultiPayload } from "../../../types/defuse-contracts-types"
 import type { ChainType } from "../../../types/deposit"
 import { assert } from "../../../utils/assert"
+import { formatTokenValue, formatUsdAmount } from "../../../utils/format"
+import getTokenUsdPrice from "../../../utils/getTokenUsdPrice"
+import { TokenAmountInputCard } from "../../deposit/components/DepositForm/TokenAmountInputCard"
 import { balanceAllSelector } from "../../machines/depositedBalanceMachine"
 import type { SendNearTransaction } from "../../machines/publicKeyVerifierMachine"
 import { formValuesSelector } from "../actors/giftFormMachine"
@@ -88,6 +99,46 @@ export function GiftForm({
 
   const rootSnapshot = useSelector(rootActorRef, (s) => s)
 
+  const { setModalType, data: modalSelectAssetsData } = useModalController<{
+    modalType: ModalType.MODAL_SELECT_ASSETS
+    token: BaseTokenInfo | UnifiedTokenInfo | undefined
+  }>(ModalType.MODAL_SELECT_ASSETS, "token")
+
+  const updateTokens = useTokensStore((state) => state.updateTokens)
+
+  const handleSelect = (fieldName: string) => {
+    updateTokens(tokenList)
+    setModalType(ModalType.MODAL_SELECT_ASSETS, {
+      fieldName,
+      selectToken: undefined,
+      balances: tokenInBalance,
+    })
+  }
+
+  const { data: tokensUsdPriceData } = useTokensUsdPrices()
+  const usdAmountIn = getTokenUsdPrice(
+    formValues.amountIn,
+    formValues.tokenIn,
+    tokensUsdPriceData
+  )
+
+  /**
+   * This is ModalSelectAssets "callback"
+   */
+  useEffect(() => {
+    const payload: ModalSelectAssetsPayload | undefined = modalSelectAssetsData
+    if (payload?.modalType !== ModalType.MODAL_SELECT_ASSETS) {
+      return
+    }
+
+    if (payload.token) {
+      const token = payload.token
+      payload.token = undefined // consume data, so it won't be triggered again
+
+      formValuesRef.trigger.updateTokenIn({ value: token })
+    }
+  }, [modalSelectAssetsData, formValuesRef.trigger.updateTokenIn])
+
   return (
     <div className="flex flex-col p-5">
       <form
@@ -106,8 +157,65 @@ export function GiftForm({
       >
         <div className="flex flex-col items-center">
           <div className="flex flex-col gap-3">
-            {renderSubmitButton(rootSnapshot)}
+            <TokenAmountInputCard
+              variant="2"
+              labelSlot={
+                <label
+                  htmlFor="gift-amount-in"
+                  className="font-bold text-label text-sm"
+                >
+                  Sell
+                </label>
+              }
+              inputSlot={
+                <TokenAmountInputCard.Input
+                  id="gift-amount-in"
+                  name="amountIn"
+                  value={formValues.amountIn}
+                  onChange={(e) =>
+                    formValuesRef.trigger.updateAmountIn({
+                      value: e.target.value,
+                    })
+                  }
+                />
+              }
+              tokenSlot={
+                <SelectAssets
+                  selected={formValues.tokenIn ?? undefined}
+                  handleSelect={() => handleSelect("tokenIn")}
+                />
+              }
+              balanceSlot={
+                <BlockMultiBalances
+                  balance={tokenInBalance?.amount ?? 0n}
+                  decimals={tokenInBalance?.decimals ?? 0}
+                  handleClick={() => {
+                    if (tokenInBalance != null) {
+                      formValuesRef.trigger.updateAmountIn({
+                        value: formatTokenValue(
+                          tokenInBalance.amount,
+                          tokenInBalance.decimals
+                        ),
+                      })
+                    }
+                  }}
+                  disabled={tokenInBalance?.amount === 0n}
+                  className={clsx(
+                    "!static",
+                    tokenInBalance == null && "invisible"
+                  )}
+                />
+              }
+              priceSlot={
+                <TokenAmountInputCard.DisplayPrice>
+                  {usdAmountIn !== null && usdAmountIn > 0
+                    ? formatUsdAmount(usdAmountIn)
+                    : null}
+                </TokenAmountInputCard.DisplayPrice>
+              }
+            />
           </div>
+          {renderSubmitButton(rootSnapshot)}
         </div>
       </form>
     </div>
