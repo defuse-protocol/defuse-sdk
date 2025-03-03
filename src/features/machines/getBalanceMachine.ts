@@ -1,14 +1,10 @@
 import { base64 } from "@scure/base"
 import { AccountLayout } from "@solana/spl-token"
 import { Connection, PublicKey } from "@solana/web3.js"
+import { settings } from "src/config/settings"
+import { nearFailoverRpcProvider } from "src/utils/failover"
 import { http, type Address, createPublicClient, erc20Abi } from "viem"
 import { logger } from "../../logger"
-import {
-  getNearBalance,
-  getNearNep141BalanceAccount,
-  getNearNep141StorageBalanceBounds,
-  getNearNep141StorageBalanceOf,
-} from "../../services/nearHttpClient"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../types/base"
 import { Semaphore } from "../../utils/semaphore"
 import { isFungibleToken, isUnifiedToken } from "../../utils/token"
@@ -16,13 +12,27 @@ import { isFungibleToken, isUnifiedToken } from "../../utils/token"
 export const RESERVED_NEAR_BALANCE = 100000000000000000000000n // 0.1 NEAR reserved for transaction fees and storage
 const semaphore = new Semaphore(5, 500) // 5 concurrent request, 0.5 second delay (adjust maxConcurrent and delayMs as needed)
 
+type GetNearBalanceResponse = {
+  amount: string
+  block_hash: string
+  block_height: number
+  code_hash: string
+  locked: string
+  storage_paid_at: number
+  storage_usage: number
+}
+
 export const getNearNativeBalance = async ({
   accountId,
 }: {
   accountId: string
 }): Promise<bigint | null> => {
   try {
-    const response = await getNearBalance({
+    const nearClient = nearFailoverRpcProvider({
+      urls: settings.reserveRpcUrls.near,
+    })
+
+    const response: GetNearBalanceResponse = await nearClient.query({
       request_type: "view_account",
       finality: "final",
       account_id: accountId,
@@ -40,6 +50,13 @@ export const getNearNativeBalance = async ({
   }
 }
 
+type GetNearNep141BalanceAccountResponse = {
+  block_hash: string
+  block_height: number
+  logs: []
+  result: number[]
+}
+
 export const getNearNep141Balance = async ({
   tokenAddress,
   accountId,
@@ -51,13 +68,18 @@ export const getNearNep141Balance = async ({
     const args = { account_id: accountId }
     const argsBase64 = Buffer.from(JSON.stringify(args)).toString("base64")
 
-    const response = await getNearNep141BalanceAccount({
-      request_type: "call_function",
-      method_name: "ft_balance_of",
-      account_id: tokenAddress,
-      args_base64: argsBase64,
-      finality: "optimistic",
+    const nearClient = nearFailoverRpcProvider({
+      urls: settings.reserveRpcUrls.near,
     })
+
+    const response: GetNearNep141BalanceAccountResponse =
+      await nearClient.query({
+        request_type: "call_function",
+        method_name: "ft_balance_of",
+        account_id: tokenAddress,
+        args_base64: argsBase64,
+        finality: "optimistic",
+      })
 
     const uint8Array = new Uint8Array(response.result)
     const decoder = new TextDecoder()
@@ -127,6 +149,13 @@ function mapTokenList(
   }, [])
 }
 
+type GetNearNep141StorageBalanceOfResponse = {
+  block_hash: string
+  block_height: number
+  logs: []
+  result: number[]
+}
+
 export const getNearNep141StorageBalance = async ({
   contractId,
   accountId,
@@ -138,13 +167,18 @@ export const getNearNep141StorageBalance = async ({
     const args = { account_id: accountId }
     const argsBase64 = Buffer.from(JSON.stringify(args)).toString("base64")
 
-    const response = await getNearNep141StorageBalanceOf({
-      request_type: "call_function",
-      method_name: "storage_balance_of",
-      account_id: contractId,
-      args_base64: argsBase64,
-      finality: "optimistic",
+    const nearClient = nearFailoverRpcProvider({
+      urls: settings.reserveRpcUrls.near,
     })
+
+    const response: GetNearNep141StorageBalanceOfResponse =
+      await nearClient.query({
+        request_type: "call_function",
+        method_name: "storage_balance_of",
+        account_id: contractId,
+        args_base64: argsBase64,
+        finality: "optimistic",
+      })
 
     const uint8Array = new Uint8Array(response.result)
     const decoder = new TextDecoder()
@@ -155,18 +189,29 @@ export const getNearNep141StorageBalance = async ({
   }
 }
 
+type GetNearNep141StorageBalanceBoundsResponse = {
+  block_hash: string
+  block_height: number
+  logs: []
+  result: number[]
+}
 export const getNearNep141MinStorageBalance = async ({
   contractId,
 }: {
   contractId: string
 }): Promise<bigint> => {
-  const response = await getNearNep141StorageBalanceBounds({
-    request_type: "call_function",
-    method_name: "storage_balance_bounds",
-    account_id: contractId,
-    args_base64: base64.encode(new TextEncoder().encode(JSON.stringify({}))),
-    finality: "optimistic",
+  const nearClient = nearFailoverRpcProvider({
+    urls: settings.reserveRpcUrls.near,
   })
+
+  const response: GetNearNep141StorageBalanceBoundsResponse =
+    await nearClient.query({
+      request_type: "call_function",
+      method_name: "storage_balance_bounds",
+      account_id: contractId,
+      args_base64: base64.encode(new TextEncoder().encode(JSON.stringify({}))),
+      finality: "optimistic",
+    })
 
   const uint8Array = new Uint8Array(response.result)
   const decoder = new TextDecoder()

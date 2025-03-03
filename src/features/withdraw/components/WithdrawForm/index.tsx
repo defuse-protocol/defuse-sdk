@@ -31,7 +31,6 @@ import { settings } from "../../../../config/settings"
 import { useModalController } from "../../../../hooks/useModalController"
 import { logger } from "../../../../logger"
 import { useTokensStore } from "../../../../providers/TokensStoreProvider"
-import { failoverRpcProvider } from "../../../../services/failover"
 import { ModalType } from "../../../../stores/modalStore"
 import type {
   BaseTokenInfo,
@@ -41,6 +40,7 @@ import type {
 } from "../../../../types/base"
 import { ChainType } from "../../../../types/deposit"
 import type { WithdrawWidgetProps } from "../../../../types/withdraw"
+import { nearFailoverRpcProvider } from "../../../../utils/failover"
 import { parseUnits } from "../../../../utils/parse"
 import { isBaseToken } from "../../../../utils/token"
 import { getTokenMaxDecimals } from "../../../../utils/tokenUtils"
@@ -321,7 +321,7 @@ export const WithdrawForm = ({
               params: {
                 userAddress,
                 userChainType: chainType,
-                nearClient: failoverRpcProvider({
+                nearClient: nearFailoverRpcProvider({
                   urls: settings.reserveRpcUrls.near,
                 }),
               },

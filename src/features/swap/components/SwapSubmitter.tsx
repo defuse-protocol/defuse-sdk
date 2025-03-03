@@ -1,6 +1,6 @@
 import { type ReactNode, createContext } from "react"
 import { settings } from "src/config/settings"
-import { failoverRpcProvider } from "src/services/failover"
+import { nearFailoverRpcProvider } from "src/utils/failover"
 import { logger } from "../../../logger"
 import type { ChainType } from "../../../types/deposit"
 import { SwapUIMachineContext } from "./SwapUIMachineProvider"
@@ -33,7 +33,7 @@ export function SwapSubmitterProvider({
       params: {
         userAddress,
         userChainType,
-        nearClient: failoverRpcProvider({
+        nearClient: nearFailoverRpcProvider({
           urls: settings.reserveRpcUrls.near,
         }),
       },

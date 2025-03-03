@@ -1,5 +1,5 @@
 import { settings } from "src/config/settings"
-import { failoverRpcProvider } from "src/services/failover"
+import { nearFailoverRpcProvider } from "src/utils/failover"
 import {
   type ActorRef,
   type Snapshot,
@@ -86,7 +86,7 @@ export const depositedBalanceMachine = setup({
         const balance = await getDepositedBalances(
           userAccountId,
           input.defuseTokenIds,
-          failoverRpcProvider({ urls: settings.reserveRpcUrls.near })
+          nearFailoverRpcProvider({ urls: settings.reserveRpcUrls.near })
         )
 
         const transitBalances = await getTransitBalances(
