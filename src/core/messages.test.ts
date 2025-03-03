@@ -3,6 +3,7 @@ import { userAddressToDefuseUserId } from "../utils/defuse"
 import {
   createEmptyIntentMessage,
   createSwapIntentMessage,
+  createTransferMessage,
   createWithdrawIntentMessage,
 } from "./messages"
 
@@ -91,5 +92,28 @@ describe("createEmptyIntentMessage()", () => {
     const parsed = JSON.parse(message.NEP413.message)
     expect(Date.parse(parsed.deadline)).toBeGreaterThan(Date.now())
     expect(parsed.intents).toEqual([])
+  })
+})
+
+describe("createTransferMessage()", () => {
+  it("creates a valid transfer intent message", () => {
+    const message = createTransferMessage([["token.near", -100n]], {
+      signerId: TEST_USER,
+      receiverId: "receiver.near",
+      memo: "message",
+    })
+
+    expect(JSON.parse(message.NEP413.message)).toEqual({
+      deadline: new Date(Date.now()).toISOString(),
+      intents: [
+        {
+          intent: "transfer",
+          tokens: { "token.near": "-100" },
+          receiver_id: "receiver.near",
+          memo: "message",
+        },
+      ],
+      signer_id: "user.near",
+    })
   })
 })
