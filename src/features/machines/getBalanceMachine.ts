@@ -167,12 +167,6 @@ export const getNearNep141StorageBalance = async ({
   }
 }
 
-type GetNearNep141StorageBalanceBoundsResponse = {
-  block_hash: string
-  block_height: number
-  logs: []
-  result: number[]
-}
 export const getNearNep141MinStorageBalance = async ({
   contractId,
 }: {
@@ -182,14 +176,13 @@ export const getNearNep141MinStorageBalance = async ({
     urls: settings.reserveRpcUrls.near,
   })
 
-  const response: GetNearNep141StorageBalanceBoundsResponse =
-    await nearClient.query({
-      request_type: "call_function",
-      method_name: "storage_balance_bounds",
-      account_id: contractId,
-      args_base64: base64.encode(new TextEncoder().encode(JSON.stringify({}))),
-      finality: "optimistic",
-    })
+  const response: CodeResult = await nearClient.query({
+    request_type: "call_function",
+    method_name: "storage_balance_bounds",
+    account_id: contractId,
+    args_base64: base64.encode(new TextEncoder().encode(JSON.stringify({}))),
+    finality: "optimistic",
+  })
 
   const uint8Array = new Uint8Array(response.result)
   const decoder = new TextDecoder()
