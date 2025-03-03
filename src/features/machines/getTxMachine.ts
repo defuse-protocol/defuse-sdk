@@ -1,6 +1,14 @@
-import type { providers } from "near-api-js"
+import type { FinalExecutionStatus } from "near-api-js/lib/providers/provider"
 import { settings } from "src/config/settings"
 import { nearFailoverRpcProvider } from "src/utils/failover"
+
+function isSuccessStatus(
+  status: unknown
+): status is FinalExecutionStatus & { SuccessValue: string } {
+  return (
+    typeof status === "object" && status !== null && "SuccessValue" in status
+  )
+}
 
 export const getNearTxSuccessValue = async ({
   txHash,
@@ -14,17 +22,17 @@ export const getNearTxSuccessValue = async ({
       urls: settings.reserveRpcUrls.near,
     })
 
-    const response = (await nearClient.txStatus(
+    const response = await nearClient.txStatus(
       txHash,
       senderAccountId,
       "EXECUTED"
-    )) as providers.FinalExecutionOutcome
+    )
 
-    const status = response.status as { SuccessValue?: string }
-    if (status.SuccessValue) {
-      const decodedValue = Buffer.from(status.SuccessValue, "base64").toString(
-        "utf-8"
-      )
+    if (isSuccessStatus(response.status)) {
+      const decodedValue = Buffer.from(
+        response.status.SuccessValue,
+        "base64"
+      ).toString("utf-8")
       // Parse the JSON string and convert to BigInt
       return BigInt(JSON.parse(decodedValue))
     }
