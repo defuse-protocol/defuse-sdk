@@ -267,3 +267,36 @@ export function makeChallenge(payload: Uint8Array): Uint8Array {
   const hash = sha256(payload)
   return new Uint8Array(hash)
 }
+
+export function makeInnerTransferMessage({
+  tokenDeltas,
+  signerId,
+  deadlineTimestamp,
+  receiverId,
+  memo,
+}: {
+  tokenDeltas: [string, bigint][]
+  signerId: DefuseUserId
+  deadlineTimestamp: number
+  receiverId: string
+  memo?: string
+}): Nep413DefuseMessageFor_DefuseIntents {
+  const tokens: Record<string, string> = {}
+
+  for (const [token, amount] of tokenDeltas) {
+    tokens[token] = amount.toString()
+  }
+
+  return {
+    deadline: new Date(deadlineTimestamp).toISOString(),
+    intents: [
+      {
+        intent: "transfer",
+        tokens,
+        receiver_id: receiverId,
+        memo,
+      },
+    ],
+    signer_id: signerId,
+  }
+}
