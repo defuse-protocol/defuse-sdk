@@ -124,7 +124,7 @@ export function createTransferMessage(
   const innerMessage = makeInnerTransferMessage({
     tokenDeltas,
     signerId: resolveSignerId(options.signerId),
-    deadlineTimestamp: options.deadlineTimestamp ?? minutesFromNow(0),
+    deadlineTimestamp: options.deadlineTimestamp ?? minutesFromNow(5),
     receiverId: options.receiverId,
     memo: options.memo,
   })

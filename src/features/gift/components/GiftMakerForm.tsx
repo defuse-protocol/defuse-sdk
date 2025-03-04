@@ -20,13 +20,13 @@ import getTokenUsdPrice from "../../../utils/getTokenUsdPrice"
 import { TokenAmountInputCard } from "../../deposit/components/DepositForm/TokenAmountInputCard"
 import { balanceAllSelector } from "../../machines/depositedBalanceMachine"
 import type { SendNearTransaction } from "../../machines/publicKeyVerifierMachine"
-import { formValuesSelector } from "../actors/giftFormMachine"
-import type { giftReadyActor } from "../actors/giftReadyActor"
-import { giftRootMachine } from "../actors/giftRootMachine"
+import { formValuesSelector } from "../actors/giftMakerFormMachine"
+import type { giftMakerReadyActor } from "../actors/giftMakerReadyActor"
+import { giftMakerRootMachine } from "../actors/giftMakerRootMachine"
 import type { SignMessage } from "../types/sharedTypes"
-import { GiftReadyDialog } from "./GiftReadyDialog"
+import { GiftMakerReadyDialog } from "./GiftMakerReadyDialog"
 
-export type GiftWidgetProps = {
+export type GiftMakerWidgetProps = {
   /** List of available tokens for trading */
   tokenList: (BaseTokenInfo | UnifiedTokenInfo)[]
 
@@ -53,7 +53,7 @@ export type GiftWidgetProps = {
   referral?: string
 }
 
-export function GiftForm({
+export function GiftMakerForm({
   tokenList,
   userAddress,
   userChainType,
@@ -63,7 +63,7 @@ export function GiftForm({
   sendNearTransaction,
   generateLink,
   referral,
-}: GiftWidgetProps) {
+}: GiftMakerWidgetProps) {
   const signerCredentials: SignerCredentials | null = useMemo(
     () =>
       userAddress != null && userChainType != null
@@ -78,7 +78,7 @@ export function GiftForm({
   const initialTokenIn_ = initialTokenIn ?? tokenList[0]
   assert(initialTokenIn_ !== undefined, "Token list must not be empty")
 
-  const rootActorRef = useActorRef(giftRootMachine, {
+  const rootActorRef = useActorRef(giftMakerRootMachine, {
     input: {
       initialTokenIn: initialTokenIn_,
       tokenList,
@@ -101,7 +101,7 @@ export function GiftForm({
   const { readyGiftRef } = useSelector(rootActorRef, (s) => ({
     readyGiftRef: s.children.readyGiftRef as unknown as
       | undefined
-      | ActorRefFrom<typeof giftReadyActor>,
+      | ActorRefFrom<typeof giftMakerReadyActor>,
   }))
 
   const { setModalType, data: modalSelectAssetsData } = useModalController<{
@@ -149,7 +149,7 @@ export function GiftForm({
       {rootSnapshot.matches("signed") &&
         readyGiftRef != null &&
         signerCredentials != null && (
-          <GiftReadyDialog
+          <GiftMakerReadyDialog
             readyGiftRef={readyGiftRef}
             signerCredentials={signerCredentials}
             signMessage={signMessage}
@@ -239,7 +239,9 @@ export function GiftForm({
   )
 }
 
-function renderSubmitButton(snapshot: SnapshotFrom<typeof giftRootMachine>) {
+function renderSubmitButton(
+  snapshot: SnapshotFrom<typeof giftMakerRootMachine>
+) {
   let caption = "Create swap link"
 
   switch (true) {

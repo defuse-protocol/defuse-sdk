@@ -1,6 +1,6 @@
 import { fromCallback } from "xstate"
-import type { createGiftFormParsedValuesStore } from "./giftFormParsedValues"
-import type { createGiftFormValuesStore } from "./giftFormValuesStore"
+import type { createGiftMakerFormParsedValuesStore } from "./giftMakerFormParsedValues"
+import type { createGiftMakerFormValuesStore } from "./giftMakerFormValuesStore"
 
 export const giftFormSyncActor = fromCallback(
   ({
@@ -8,8 +8,8 @@ export const giftFormSyncActor = fromCallback(
     sendBack,
   }: {
     input: {
-      formValues: ReturnType<typeof createGiftFormValuesStore>
-      parsedValues: ReturnType<typeof createGiftFormParsedValuesStore>
+      formValues: ReturnType<typeof createGiftMakerFormValuesStore>
+      parsedValues: ReturnType<typeof createGiftMakerFormParsedValuesStore>
     }
     sendBack: (event: { type: "VALIDATE" }) => void
   }) => {

@@ -8,7 +8,7 @@ import type {
 } from "../../../types/base"
 import type { MultiPayload } from "../../../types/defuse-contracts-types"
 
-export type GiftReadyActorInput = {
+export type GiftMakerReadyActorInput = {
   parsed: {
     tokenIn: BaseTokenInfo | UnifiedTokenInfo
     amountIn: TokenValue
@@ -23,18 +23,18 @@ export type GiftReadyActorInput = {
   signerCredentials: SignerCredentials
 }
 
-type GiftReadyActorErrors = { reason: "EXCEPTION" }
+type GiftMakerReadyActorErrors = { reason: "EXCEPTION" }
 
-interface GiftReadyActorContext extends GiftReadyActorInput {
+interface GiftMakerReadyActorContext extends GiftMakerReadyActorInput {
   giftId: string
   usedNonceBase64: string
-  error: null | GiftReadyActorErrors
+  error: null | GiftMakerReadyActorErrors
 }
 
-export const giftReadyActor = setup({
+export const giftMakerReadyActor = setup({
   types: {
-    input: {} as GiftReadyActorInput,
-    context: {} as GiftReadyActorContext,
+    input: {} as GiftMakerReadyActorInput,
+    context: {} as GiftMakerReadyActorContext,
     events: {} as { type: "FINISH" | "CANCEL_ORDER" },
     children: {} as {
       otcMakerOrderCancellationRef: "cancelOrderActor"
@@ -48,7 +48,7 @@ export const giftReadyActor = setup({
       logger.error(event.error)
     },
     setError: assign({
-      error: (_, error: GiftReadyActorErrors) => error,
+      error: (_, error: GiftMakerReadyActorErrors) => error,
     }),
   },
   guards: {

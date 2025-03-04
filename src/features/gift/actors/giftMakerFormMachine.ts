@@ -2,20 +2,20 @@ import { type SnapshotFrom, assign, setup, spawnChild } from "xstate"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../../types/base"
 import {
   allSetSelector,
-  createGiftFormParsedValuesStore,
-} from "./giftFormParsedValues"
-import { giftFormSyncActor } from "./giftFormSyncActor"
-import { createGiftFormValuesStore } from "./giftFormValuesStore"
+  createGiftMakerFormParsedValuesStore,
+} from "./giftMakerFormParsedValues"
+import { giftFormSyncActor } from "./giftMakerFormSyncActor"
+import { createGiftMakerFormValuesStore } from "./giftMakerFormValuesStore"
 
-export const giftFormMachine = setup({
+export const giftMakerFormMachine = setup({
   types: {
     input: {} as {
       initialTokenIn: BaseTokenInfo | UnifiedTokenInfo
     },
     context: {} as {
       isValid: boolean
-      formValues: ReturnType<typeof createGiftFormValuesStore>
-      parsedValues: ReturnType<typeof createGiftFormParsedValuesStore>
+      formValues: ReturnType<typeof createGiftMakerFormValuesStore>
+      parsedValues: ReturnType<typeof createGiftMakerFormParsedValuesStore>
     },
   },
   actors: {
@@ -36,8 +36,8 @@ export const giftFormMachine = setup({
 }).createMachine({
   context: ({ input }) => ({
     isValid: false,
-    formValues: createGiftFormValuesStore(input),
-    parsedValues: createGiftFormParsedValuesStore(),
+    formValues: createGiftMakerFormValuesStore(input),
+    parsedValues: createGiftMakerFormParsedValuesStore(),
   }),
   entry: spawnChild("formSyncActor", {
     input: ({ context }) => ({
@@ -57,7 +57,7 @@ export const giftFormMachine = setup({
 })
 
 export function formValuesSelector(
-  snapshot: SnapshotFrom<typeof giftFormMachine>
+  snapshot: SnapshotFrom<typeof giftMakerFormMachine>
 ) {
   return snapshot.context.formValues
 }

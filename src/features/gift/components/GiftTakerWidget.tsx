@@ -1,14 +1,13 @@
 import { WidgetRoot } from "../../../components/WidgetRoot"
 import { SwapWidgetProvider } from "../../../providers/SwapWidgetProvider"
-import { GiftForm } from "./GiftForm"
-import type { GiftWidgetProps } from "./GiftForm"
+import { GiftTakerForm, type GiftTakerWidgetProps } from "./GiftTakerForm"
 
-export function GiftWidget(props: GiftWidgetProps) {
+export function GiftTakerWidget(props: GiftTakerWidgetProps) {
   return (
     <WidgetRoot>
       <SwapWidgetProvider>
         <div className="widget-container rounded-2xl bg-gray-1 p-5 shadow">
-          <GiftForm {...props} />
+          <GiftTakerForm {...props} />
         </div>
       </SwapWidgetProvider>
     </WidgetRoot>

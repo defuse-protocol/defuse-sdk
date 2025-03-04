@@ -30,9 +30,9 @@ import {
   signIntentMachine,
 } from "../../machines/signIntentMachine"
 import type { SignMessage } from "../types/sharedTypes"
-import type { EscrowKeyPair } from "./giftEscrowMachine"
+import type { EscrowKeyPair } from "./giftMakerEscrowActor"
 
-export type GiftSignActorInput = {
+export type GiftMakerSignActorInput = {
   parsed: {
     tokenIn: BaseTokenInfo | UnifiedTokenInfo
     amountIn: TokenValue
@@ -44,34 +44,36 @@ export type GiftSignActorInput = {
   escrowKeyPair: EscrowKeyPair
 }
 
-export type GiftSignActorOutput =
-  | { tag: "err"; value: GiftSignActorErrors }
-  | { tag: "ok"; value: GiftSignActorSuccess }
+export type GiftMakerSignActorOutput =
+  | { tag: "err"; value: GiftMakerSignActorErrors }
+  | { tag: "ok"; value: GiftMakerSignActorSuccess }
 
-export type GiftSignActorSuccess = {
+export type GiftMakerSignActorSuccess = {
   multiPayload: MultiPayload
   signatureResult: WalletSignatureResult
   signerCredentials: SignerCredentials
   usedNonceBase64: string
 }
 
-export type GiftSignActorContext = {
+export type GiftMakerSignActorContext = {
   nonce: Uint8Array
-  parsed: GiftSignActorInput["parsed"]
-  signerCredentials: GiftSignActorInput["signerCredentials"]
+  parsed: GiftMakerSignActorInput["parsed"]
+  signerCredentials: GiftMakerSignActorInput["signerCredentials"]
   walletMessage: WalletMessage
 }
 
-export type GiftSignActorErrors = SignIntentErrors | { reason: "EXCEPTION" }
+export type GiftMakerSignActorErrors =
+  | SignIntentErrors
+  | { reason: "EXCEPTION" }
 
-export const giftSignMachine = setup({
+export const giftMakerSignActor = setup({
   types: {
-    input: {} as GiftSignActorInput,
-    output: {} as GiftSignActorOutput,
-    context: {} as GiftSignActorContext,
+    input: {} as GiftMakerSignActorInput,
+    output: {} as GiftMakerSignActorOutput,
+    context: {} as GiftMakerSignActorContext,
     events: {} as
-      | { type: "xstate.init"; input: GiftSignActorInput }
-      | { type: "COMPLETE"; output: GiftSignActorOutput },
+      | { type: "xstate.init"; input: GiftMakerSignActorInput }
+      | { type: "COMPLETE"; output: GiftMakerSignActorOutput },
   },
   actors: {
     signActor: signIntentMachine,
@@ -80,7 +82,7 @@ export const giftSignMachine = setup({
     logError: (_, event: { error: unknown }) => {
       logger.error(event.error)
     },
-    complete: ({ self }, output: GiftSignActorOutput) => {
+    complete: ({ self }, output: GiftMakerSignActorOutput) => {
       self.send({ type: "COMPLETE", output })
     },
   },
@@ -144,7 +146,7 @@ export const giftSignMachine = setup({
   },
 
   output: ({ event }) => {
-    return event.output as GiftSignActorOutput
+    return event.output as GiftMakerSignActorOutput
   },
 
   states: {
@@ -155,7 +157,7 @@ export const giftSignMachine = setup({
 
         input: ({ event, context }) => {
           assertEvent(event, "xstate.init")
-          const input = event.input as GiftSignActorInput
+          const input = event.input as GiftMakerSignActorInput
 
           return {
             signMessage: input.signMessage,
@@ -192,7 +194,7 @@ export const giftSignMachine = setup({
 
     completed: {
       type: "final",
-      output: ({ context, event }): GiftSignActorOutput => {
+      output: ({ context, event }): GiftMakerSignActorOutput => {
         assertEvent(event, "COMPLETE")
 
         if (event.output.tag === "err") {

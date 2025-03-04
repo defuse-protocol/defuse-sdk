@@ -7,7 +7,7 @@ export type EscrowKeyPair = {
   secretKey: string
 }
 
-export const giftEscrowMachine = setup({
+export const giftMakerEscrowActor = setup({
   types: {
     input: {} as {
       type: "ed25519"

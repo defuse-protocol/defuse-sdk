@@ -11,36 +11,39 @@ import { Copy } from "../../../components/IntentCard/CopyButton"
 import { BaseModalDialog } from "../../../components/Modal/ModalDialog"
 import type { SignerCredentials } from "../../../core/formatters"
 import type { MultiPayload } from "../../../types/defuse-contracts-types"
-import type { giftReadyActor } from "../actors/giftReadyActor"
+import type { giftMakerReadyActor } from "../actors/giftMakerReadyActor"
 import type { SignMessage } from "../types/sharedTypes"
 
-type GiftReadyDialogProps = {
-  readyGiftRef: ActorRefFrom<typeof giftReadyActor>
+type GiftMakerReadyDialogProps = {
+  readyGiftRef: ActorRefFrom<typeof giftMakerReadyActor>
   signerCredentials: SignerCredentials
   signMessage: SignMessage
   generateLink: (multiPayload: MultiPayload) => string
 }
 
-export function GiftReadyDialog({
+export function GiftMakerReadyDialog({
   readyGiftRef,
   // biome-ignore lint/correctness/noUnusedVariables: <explanation>
   signerCredentials,
   // biome-ignore lint/correctness/noUnusedVariables: <explanation>
   signMessage,
   generateLink,
-}: GiftReadyDialogProps) {
+}: GiftMakerReadyDialogProps) {
   return (
     <>
-      <OrderDialog readyGiftRef={readyGiftRef} generateLink={generateLink} />
+      <GiftMakerDialog
+        readyGiftRef={readyGiftRef}
+        generateLink={generateLink}
+      />
     </>
   )
 }
 
-function OrderDialog({
+function GiftMakerDialog({
   readyGiftRef,
   generateLink,
 }: {
-  readyGiftRef: ActorRefFrom<typeof giftReadyActor>
+  readyGiftRef: ActorRefFrom<typeof giftMakerReadyActor>
   generateLink: (multiPayload: MultiPayload) => string
 }) {
   const { context } = useSelector(readyGiftRef, (state) => ({

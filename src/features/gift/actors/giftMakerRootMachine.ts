@@ -17,17 +17,20 @@ import {
   type Events as DepositedBalanceEvents,
   depositedBalanceMachine,
 } from "../../machines/depositedBalanceMachine"
-import { giftEscrowMachine } from "./giftEscrowMachine"
-import { giftFormMachine } from "./giftFormMachine"
-import { type GiftReadyActorInput, giftReadyActor } from "./giftReadyActor"
+import { giftMakerEscrowActor } from "./giftMakerEscrowActor"
+import { giftMakerFormMachine } from "./giftMakerFormMachine"
+import {
+  type GiftMakerReadyActorInput,
+  giftMakerReadyActor,
+} from "./giftMakerReadyActor"
 import type {
-  GiftSignActorErrors,
-  GiftSignActorInput,
-  GiftSignActorOutput,
-} from "./giftSignActor"
-import { giftSignMachine } from "./giftSignActor"
+  GiftMakerSignActorErrors,
+  GiftMakerSignActorInput,
+  GiftMakerSignActorOutput,
+} from "./giftMakerSignActor"
+import { giftMakerSignActor } from "./giftMakerSignActor"
 
-export const giftRootMachine = setup({
+export const giftMakerRootMachine = setup({
   types: {
     input: {} as {
       tokenList: (BaseTokenInfo | UnifiedTokenInfo)[]
@@ -54,10 +57,10 @@ export const giftRootMachine = setup({
           giftId: string
         },
     context: {} as {
-      error: null | GiftSignActorErrors
-      formRef: ActorRefFrom<typeof giftFormMachine>
+      error: null | GiftMakerSignActorErrors
+      formRef: ActorRefFrom<typeof giftMakerFormMachine>
       depositedBalanceRef: ActorRefFrom<typeof depositedBalanceMachine>
-      escrowRef: ActorRefFrom<typeof giftEscrowMachine>
+      escrowRef: ActorRefFrom<typeof giftMakerEscrowActor>
       referral: string | undefined
     },
     children: {} as {
@@ -65,16 +68,16 @@ export const giftRootMachine = setup({
     },
   },
   actors: {
-    formActor: giftFormMachine,
+    formActor: giftMakerFormMachine,
     depositedBalanceActor: depositedBalanceMachine,
-    escrowActor: giftEscrowMachine,
-    signActor: giftSignMachine as unknown as PromiseActorLogic<
-      GiftSignActorOutput,
-      GiftSignActorInput
+    escrowActor: giftMakerEscrowActor,
+    signActor: giftMakerSignActor as unknown as PromiseActorLogic<
+      GiftMakerSignActorOutput,
+      GiftMakerSignActorInput
     >,
-    readyGiftActor: giftReadyActor as unknown as PromiseActorLogic<
+    readyGiftActor: giftMakerReadyActor as unknown as PromiseActorLogic<
       void,
-      GiftReadyActorInput
+      GiftMakerReadyActorInput
     >,
   },
   actions: {
@@ -85,7 +88,7 @@ export const giftRootMachine = setup({
     setError: assign({
       error: (
         _,
-        result: { tag: "err"; value: GiftSignActorErrors } | { tag: "ok" }
+        result: { tag: "err"; value: GiftMakerSignActorErrors } | { tag: "ok" }
       ) => {
         assert(result.tag === "err")
         return result.value
