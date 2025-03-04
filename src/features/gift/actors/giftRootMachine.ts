@@ -9,6 +9,7 @@ import {
 import type { SignerCredentials } from "../../../core/formatters"
 import { logger } from "../../../logger"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../../types/base"
+import type { MultiPayload } from "../../../types/defuse-contracts-types"
 import type { WalletMessage, WalletSignatureResult } from "../../../types/swap"
 import { assert } from "../../../utils/assert"
 import { toError } from "../../../utils/errors"
@@ -18,6 +19,7 @@ import {
 } from "../../machines/depositedBalanceMachine"
 import { giftEscrowMachine } from "./giftEscrowMachine"
 import { giftFormMachine } from "./giftFormMachine"
+import { type GiftReadyActorInput, giftReadyActor } from "./giftReadyActor"
 import type {
   GiftSignActorErrors,
   GiftSignActorInput,
@@ -43,6 +45,13 @@ export const giftRootMachine = setup({
           signMessage: (
             params: WalletMessage
           ) => Promise<WalletSignatureResult | null>
+        }
+      | {
+          type: "COMPLETE_SIGN"
+          multiPayload: MultiPayload
+          signerCredentials: SignerCredentials
+          usedNonceBase64: string
+          giftId: string
         },
     context: {} as {
       error: null | GiftSignActorErrors
@@ -50,6 +59,9 @@ export const giftRootMachine = setup({
       depositedBalanceRef: ActorRefFrom<typeof depositedBalanceMachine>
       escrowRef: ActorRefFrom<typeof giftEscrowMachine>
       referral: string | undefined
+    },
+    children: {} as {
+      readyGiftRef: "readyGiftActor"
     },
   },
   actors: {
@@ -59,6 +71,10 @@ export const giftRootMachine = setup({
     signActor: giftSignMachine as unknown as PromiseActorLogic<
       GiftSignActorOutput,
       GiftSignActorInput
+    >,
+    readyGiftActor: giftReadyActor as unknown as PromiseActorLogic<
+      void,
+      GiftReadyActorInput
     >,
   },
   actions: {
@@ -79,6 +95,20 @@ export const giftRootMachine = setup({
       "depositedBalanceRef",
       (_, event: DepositedBalanceEvents) => event
     ),
+    completeSign: (
+      { self },
+      event: {
+        multiPayload: MultiPayload
+        signerCredentials: SignerCredentials
+        usedNonceBase64: string
+        giftId: string
+      }
+    ) => {
+      self.send({ type: "COMPLETE_SIGN", ...event })
+    },
+  },
+  guards: {
+    isOk: (_, params: { tag: "ok" | "err" }) => params.tag === "ok",
   },
 }).createMachine({
   /** @xstate-layout N4IgpgJg5mDOIC5QAoC2BDAxgCwJYDswBKAYgBkB5AcQEkA5AbQAYBdRUABwHtZcAXXF3zsQAD0QAmAHQSJADgCsANgDsAZgAsTAIwKNcuRIA0IAJ6JtSuVKZylTDQrWy5GjWoC+Hk2ix5CpJRUFACqACrMbEgg3LwCQiLiCBIqSlLaatpMCgYKWWpKEhom5giW1rb2js7ybp7eIL44BMRSkPwEUCRUAKJ0PQBKAIJhPQD6PQDKAMIDFADqkSKxHQnRSdqpUmq2TBIAnCo5hZYliI7aNtpZbo67KfU+GM0BbRAd+F0DPQCKIVNhMaTGhURisZY8VbCdYWNRSOTOJhqFT7BQqbRyFSyBRnBAKBwyQwaJRZZSbRReBr4LgQOAiJr+YgQuKCaGgJIAWnUUg0WKUej27hUDiUuMyl0U+w0+20qLkcoKXiefhaRDeHygzKhiXOKjF+322wUUuNriYKn0FIaDNVUl4UHwnS18TZYkQHIkCh5fIFRWRDmUuONXsMB1sUuyFvqXiAA */
@@ -129,9 +159,14 @@ export const giftRootMachine = setup({
       },
     },
     signing: {
+      on: {
+        COMPLETE_SIGN: "signed",
+      },
+
       invoke: {
         id: "signRef",
         src: "signActor",
+
         input: ({ context, event }) => {
           assertEvent(event, "REQUEST_SIGN")
           const form = context.formRef.getSnapshot()
@@ -149,6 +184,90 @@ export const giftRootMachine = setup({
             referral: context.referral,
             escrowKeyPair: context.escrowRef.getSnapshot().context.keyPair,
           }
+        },
+
+        onError: {
+          target: "editing",
+          actions: [
+            {
+              type: "logError",
+              params: ({ event }) => event,
+            },
+            {
+              type: "setError",
+              params: { tag: "err", value: { reason: "EXCEPTION" } },
+            },
+          ],
+        },
+
+        onDone: [
+          {
+            guard: { type: "isOk", params: ({ event }) => event.output },
+            actions: {
+              type: "completeSign",
+              params: ({ event }) => {
+                assert(event.output.tag === "ok")
+                return {
+                  ...event.output.value,
+                  giftId: `gift-${event.output.value.usedNonceBase64}`,
+                }
+              },
+            },
+          },
+          {
+            target: "editing",
+            actions: {
+              type: "setError",
+              params: ({ event }) => event.output,
+            },
+          },
+        ],
+      },
+    },
+    signed: {
+      invoke: {
+        id: "readyGiftRef",
+        src: "readyGiftActor",
+
+        input: ({ context, event }) => {
+          assertEvent(event, "COMPLETE_SIGN")
+
+          const form = context.formRef.getSnapshot()
+          const formValuesSnapshot = form.context.formValues.getSnapshot()
+          const parsedValuesSnapshot = form.context.parsedValues.getSnapshot()
+
+          const formValues = formValuesSnapshot.context as {
+            [K in keyof typeof formValuesSnapshot.context]: NonNullable<
+              (typeof formValuesSnapshot.context)[K]
+            >
+          }
+
+          const parsedValues = parsedValuesSnapshot.context as {
+            [K in keyof typeof parsedValuesSnapshot.context]: NonNullable<
+              (typeof parsedValuesSnapshot.context)[K]
+            >
+          }
+
+          return {
+            parsed: parsedValues,
+            raw: formValues,
+            usedNonceBase64: event.usedNonceBase64,
+            multiPayload: event.multiPayload,
+            giftId: event.giftId,
+            signerCredentials: event.signerCredentials,
+          }
+        },
+
+        onDone: {
+          target: "editing",
+        },
+
+        onError: {
+          target: "editing",
+          actions: {
+            type: "logError",
+            params: ({ event }) => event,
+          },
         },
       },
     },

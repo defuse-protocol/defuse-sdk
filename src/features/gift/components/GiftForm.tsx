@@ -1,7 +1,7 @@
 import { useActorRef, useSelector } from "@xstate/react"
 import clsx from "clsx"
 import { useEffect, useMemo } from "react"
-import type { SnapshotFrom } from "xstate"
+import type { ActorRefFrom, SnapshotFrom } from "xstate"
 import { BlockMultiBalances } from "../../../components/Block/BlockMultiBalances"
 import { ButtonCustom } from "../../../components/Button/ButtonCustom"
 import type { ModalSelectAssetsPayload } from "../../../components/Modal/ModalSelectAssets"
@@ -21,8 +21,10 @@ import { TokenAmountInputCard } from "../../deposit/components/DepositForm/Token
 import { balanceAllSelector } from "../../machines/depositedBalanceMachine"
 import type { SendNearTransaction } from "../../machines/publicKeyVerifierMachine"
 import { formValuesSelector } from "../actors/giftFormMachine"
+import type { giftReadyActor } from "../actors/giftReadyActor"
 import { giftRootMachine } from "../actors/giftRootMachine"
 import type { SignMessage } from "../types/sharedTypes"
+import { GiftReadyDialog } from "./GiftReadyDialog"
 
 export type GiftWidgetProps = {
   /** List of available tokens for trading */
@@ -59,7 +61,6 @@ export function GiftForm({
   signMessage,
   // biome-ignore lint/correctness/noUnusedVariables: <explanation>
   sendNearTransaction,
-  // biome-ignore lint/correctness/noUnusedVariables: <explanation>
   generateLink,
   referral,
 }: GiftWidgetProps) {
@@ -97,6 +98,11 @@ export function GiftForm({
   )
 
   const rootSnapshot = useSelector(rootActorRef, (s) => s)
+  const { readyGiftRef } = useSelector(rootActorRef, (s) => ({
+    readyGiftRef: s.children.readyGiftRef as unknown as
+      | undefined
+      | ActorRefFrom<typeof giftReadyActor>,
+  }))
 
   const { setModalType, data: modalSelectAssetsData } = useModalController<{
     modalType: ModalType.MODAL_SELECT_ASSETS
@@ -140,6 +146,17 @@ export function GiftForm({
 
   return (
     <div className="flex flex-col p-5">
+      {rootSnapshot.matches("signed") &&
+        readyGiftRef != null &&
+        signerCredentials != null && (
+          <GiftReadyDialog
+            readyGiftRef={readyGiftRef}
+            signerCredentials={signerCredentials}
+            signMessage={signMessage}
+            generateLink={generateLink}
+          />
+        )}
+
       <form
         onSubmit={(e) => {
           e.preventDefault()

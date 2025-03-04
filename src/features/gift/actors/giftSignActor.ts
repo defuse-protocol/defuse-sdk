@@ -49,7 +49,6 @@ export type GiftSignActorOutput =
   | { tag: "ok"; value: GiftSignActorSuccess }
 
 export type GiftSignActorSuccess = {
-  tradeId: string
   multiPayload: MultiPayload
   signatureResult: WalletSignatureResult
   signerCredentials: SignerCredentials
@@ -182,23 +181,6 @@ export const giftSignMachine = setup({
               type: "complete",
               params: ({ event }) => event.output,
             },
-            // biome-ignore lint/correctness/noUnusedVariables: <explanation>
-            ({ event, context }) => {
-              if (event.output.tag === "ok") {
-                // const multiPayload = formatSignedIntent(
-                //   event.output.value.signatureResult,
-                //   context.signerCredentials
-                // )
-                // const tradeId = genLocalTradeId(JSON.stringify(multiPayload))
-                // otcMakerTradesStore.getState().addTrade(
-                //   {
-                //     tradeId,
-                //     makerMultiPayload: multiPayload,
-                //   },
-                //   context.signerCredentials
-                // )
-              }
-            },
           ],
         },
       },
@@ -222,12 +204,9 @@ export const giftSignMachine = setup({
           context.signerCredentials
         )
 
-        // const tradeId = genLocalTradeId(JSON.stringify(multiPayload))
-
         return {
           tag: "ok",
           value: {
-            tradeId: "TODO",
             multiPayload,
             signatureResult: event.output.value.signatureResult,
             signerCredentials: context.signerCredentials,
