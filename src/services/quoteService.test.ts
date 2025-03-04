@@ -11,7 +11,11 @@ import {
   queryQuote,
 } from "./quoteService"
 import * as relayClient from "./solverRelayHttpClient"
-import type { QuoteResponse } from "./solverRelayHttpClient/types"
+import type {
+  FailedQuote,
+  Quote,
+  QuoteResponse,
+} from "./solverRelayHttpClient/types"
 
 vi.spyOn(relayClient, "quote")
 
@@ -625,14 +629,54 @@ describe("aggregateQuotes()", () => {
     }
   })
 
-  it("handles failed quotes", () => {
+  it('continues with valid quotes even when some quotes have failed"', () => {
+    const quotes = [
+      [
+        {
+          type: "INSUFFICIENT_AMOUNT",
+          min_amount: "1000000",
+        } satisfies FailedQuote,
+      ],
+      [
+        {
+          quote_hash: "q1",
+          defuse_asset_identifier_in: "token1",
+          defuse_asset_identifier_out: "token2",
+          amount_in: "1000000",
+          amount_out: "2000000",
+          expiration_time: "2024-01-15T12:05:00.000Z",
+        } satisfies Quote,
+        {
+          type: "INSUFFICIENT_AMOUNT",
+          min_amount: "2000000",
+        } satisfies FailedQuote,
+      ],
+    ]
+
+    const result = aggregateQuotes(quotes)
+
+    expect(result).toEqual({
+      tag: "ok",
+      value: {
+        quoteHashes: ["q1"],
+        expirationTime: "2024-01-15T12:05:00.000Z",
+        tokenDeltas: [
+          ["token1", -1000000n],
+          ["token2", 2000000n],
+        ],
+      },
+    })
+  })
+
+  it("returns error when all quotes have failed", () => {
     const quotes = [
       [
         {
           type: "INSUFFICIENT_AMOUNT" as const,
           min_amount: "1000000",
-        },
+        } satisfies FailedQuote,
       ],
+      [],
     ]
 
     const result = aggregateQuotes(quotes)
