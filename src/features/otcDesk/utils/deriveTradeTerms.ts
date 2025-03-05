@@ -1,4 +1,5 @@
 import { Err, Ok, type Result } from "@thames/monads"
+import { logger } from "../../../logger"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../../types/base"
 import type { MultiPayload } from "../../../types/defuse-contracts-types"
 import type { DefuseUserId } from "../../../utils/defuse"
@@ -47,6 +48,7 @@ export function determineInvolvedTokens(
   tokenDiff: Record<BaseTokenInfo["defuseAssetId"], bigint>
 ) {
   const { tokenIdsIn, tokenIdsOut } = getTokenIds(tokenDiff)
+
   return determineTokenInAndOut(tokenList, tokenIdsIn, tokenIdsOut)
 }
 
@@ -128,6 +130,9 @@ function determineTokenInAndOut(
   const tokenOut = tokensOut[0]
 
   if (tokenIn == null || tokenOut == null) {
+    logger.error("Couldn't find token in or out in token list", {
+      tokens: { in: tokenIdsIn, out: tokenIdsOut },
+    })
     return Err("TOKEN_NOT_FOUND_IN_LIST")
   }
 
