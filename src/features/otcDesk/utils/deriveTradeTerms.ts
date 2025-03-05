@@ -124,17 +124,17 @@ function determineTokenInAndOut(
   const tokensIn = findTokens(tokenList, tokenIdsIn)
   const tokensOut = findTokens(tokenList, tokenIdsOut)
 
-  // We need to ensure that each group of tokens are resolved into a single token,
-  // otherwise it means user needs to sell multiple tokens or buy multiple tokens
-  if (tokensIn.length !== 1 || tokensOut.length !== 1) {
-    return Err("MULTIPLE_TOKENS_NOT_SUPPORTED")
-  }
-
   const tokenIn = tokensIn[0]
   const tokenOut = tokensOut[0]
 
   if (tokenIn == null || tokenOut == null) {
     return Err("TOKEN_NOT_FOUND_IN_LIST")
+  }
+
+  // We need to ensure that each group of tokens are resolved into a single token,
+  // otherwise it means user needs to sell multiple tokens or buy multiple tokens
+  if (tokensIn.length !== 1 || tokensOut.length !== 1) {
+    return Err("MULTIPLE_TOKENS_NOT_SUPPORTED")
   }
 
   return Ok({ tokenIn, tokenOut })
