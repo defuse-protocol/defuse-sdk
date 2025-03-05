@@ -888,65 +888,30 @@ describe("getUnderlyingBaseTokenInfos", () => {
 describe("accountSlippageExactIn", () => {
   type Delta = [string, bigint][]
 
-  it("should apply slippage to positive amounts", () => {
-    const delta: Delta = [["token1", 1000n]]
-    const slippageBasisPoints = 100 // 1%
-    expect(accountSlippageExactIn(delta, slippageBasisPoints)).toEqual([
-      ["token1", 990n],
-    ])
-  })
-
-  it("should not apply slippage to zero amounts", () => {
-    const delta: Delta = [["token1", 0n]]
-    const slippageBasisPoints = 100 // 1%
-    expect(accountSlippageExactIn(delta, slippageBasisPoints)).toEqual([
-      ["token1", 0n],
-    ])
-  })
-
-  it("should not apply slippage to negative amounts", () => {
-    const delta: Delta = [["token1", -1000n]]
-    const slippageBasisPoints = 100 // 1%
-    expect(accountSlippageExactIn(delta, slippageBasisPoints)).toEqual([
-      ["token1", -1000n],
-    ])
-  })
-
-  it("should handle multiple tokens with mixed amounts", () => {
-    const delta: Delta = [
-      ["token1", 1000n],
-      ["token2", -500n],
-      ["token3", 0n],
-    ]
-    const slippageBasisPoints = 100 // 1%
-    expect(accountSlippageExactIn(delta, slippageBasisPoints)).toEqual([
-      ["token1", 990n],
-      ["token2", -500n],
-      ["token3", 0n],
-    ])
-  })
-
-  it("should handle slippage of 0%", () => {
-    const delta: Delta = [["token1", 1000n]]
-    const slippageBasisPoints = 0 // 0%
-    expect(accountSlippageExactIn(delta, slippageBasisPoints)).toEqual([
-      ["token1", 1000n],
-    ])
-  })
-
-  it("should handle slippage of 100%", () => {
-    const delta: Delta = [["token1", 1000n]]
-    const slippageBasisPoints = 10000 // 100%
-    expect(accountSlippageExactIn(delta, slippageBasisPoints)).toEqual([
-      ["token1", 0n],
-    ])
-  })
-
-  it("should handles rounding for small numbers", () => {
-    const delta: Delta = [["token1", 99n]]
-    const slippageBasisPoints = 100 // 1%
-    expect(accountSlippageExactIn(delta, slippageBasisPoints)).toEqual([
-      ["token1", 99n],
-    ])
-  })
+  it.each([
+    [[["token1", 1000n]], 100, [["token1", 990n]]],
+    [[["token1", 0n]], 100, [["token1", 0n]]],
+    [[["token1", -1000n]], 100, [["token1", -1000n]]],
+    [
+      [
+        ["token1", 1000n],
+        ["token2", -500n],
+        ["token3", 0n],
+      ],
+      100,
+      [
+        ["token1", 990n],
+        ["token2", -500n],
+        ["token3", 0n],
+      ],
+    ],
+    [[["token1", 1000n]], 0, [["token1", 1000n]]],
+    [[["token1", 1000n]], 10000, [["token1", 0n]]],
+    [[["token1", 99n]], 100, [["token1", 99n]]],
+  ] satisfies [Delta, number, Delta][])(
+    "applies slippage to positive number",
+    (delta, bip, expected) => {
+      expect(accountSlippageExactIn(delta, bip)).toEqual(expected)
+    }
+  )
 })
