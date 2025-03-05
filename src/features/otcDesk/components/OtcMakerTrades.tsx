@@ -45,9 +45,8 @@ import {
 } from "../stores/otcMakerTrades"
 import type { SignMessage } from "../types/sharedTypes"
 import {
-  type DetermineTokenInAndOutErr,
-  determineTokenInAndOut,
-  getTokenIds,
+  type DetermineInvolvedTokensErr,
+  determineInvolvedTokens,
 } from "../utils/deriveTradeTerms"
 import {
   type ParseTradeTermsErr,
@@ -127,22 +126,16 @@ function OtcMakerTradeItem({
   signerCredentials,
 }: OtcMakerTradeItemProps) {
   const tradeTermsResult = parseTradeTerms(multiPayload)
-    .mapErr<ParseTradeTermsErr | DetermineTokenInAndOutErr>((a) => a)
-    .andThen((tradeTerms) => {
-      const { tokenIdsIn, tokenIdsOut } = getTokenIds(tradeTerms.tokenDiff)
-      const tokensResult = determineTokenInAndOut(
-        tokenList,
-        tokenIdsIn,
-        tokenIdsOut
-      )
-      return tokensResult.map(({ tokenIn, tokenOut }) => {
-        return {
+    .mapErr<ParseTradeTermsErr | DetermineInvolvedTokensErr>((a) => a)
+    .andThen((tradeTerms) =>
+      determineInvolvedTokens(tokenList, tradeTerms.tokenDiff).map(
+        ({ tokenIn, tokenOut }) => ({
           tradeTerms: tradeTerms,
           tokenIn: tokenIn,
           tokenOut: tokenOut,
-        }
-      })
-    })
+        })
+      )
+    )
 
   if (tradeTermsResult.isErr()) {
     return <div>Error: {tradeTermsResult.unwrapErr()}</div>

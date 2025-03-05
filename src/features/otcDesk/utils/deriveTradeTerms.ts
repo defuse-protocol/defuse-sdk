@@ -17,7 +17,7 @@ export type TradeTerms = {
   makerMultiPayload: MultiPayload
 }
 
-type DeriveTradeTermsErr = ParseTradeTermsErr | DetermineTokenInAndOutErr
+type DeriveTradeTermsErr = ParseTradeTermsErr | DetermineInvolvedTokensErr
 
 export function deriveTradeTerms(
   makerMultiPayload: MultiPayload | string,
@@ -56,18 +56,23 @@ function determineOppositeSideTradeDetails(
   protocolFee: number
 ) {
   const oppositeTokenDiff = computeOppositeSideTokenDiff(tokenDiff, protocolFee)
-  const { tokenIdsIn, tokenIdsOut } = getTokenIds(oppositeTokenDiff)
-  const tokensResult = determineTokenInAndOut(
-    tokenList,
-    tokenIdsIn,
-    tokenIdsOut
-  )
+  const tokensResult = determineInvolvedTokens(tokenList, oppositeTokenDiff)
 
   return tokensResult.map(({ tokenIn, tokenOut }) => ({
     oppositeTokenDiff,
-    tokenIn,
-    tokenOut,
+    tokenIn: tokenOut,
+    tokenOut: tokenIn,
   }))
+}
+
+export type DetermineInvolvedTokensErr = DetermineTokenInAndOutErr
+
+export function determineInvolvedTokens(
+  tokenList: (BaseTokenInfo | UnifiedTokenInfo)[],
+  tokenDiff: Record<BaseTokenInfo["defuseAssetId"], bigint>
+) {
+  const { tokenIdsIn, tokenIdsOut } = getTokenIds(tokenDiff)
+  return determineTokenInAndOut(tokenList, tokenIdsIn, tokenIdsOut)
 }
 
 export function computeOppositeSideTokenDiff(
@@ -88,7 +93,7 @@ export function computeOppositeSideTokenDiff(
   return oppositeTokenDiff
 }
 
-export function getTokenIds(
+function getTokenIds(
   tokenDiff: Record<BaseTokenInfo["defuseAssetId"], bigint>
 ) {
   const tokenIdsIn: BaseTokenInfo["defuseAssetId"][] = []
@@ -126,11 +131,11 @@ function findTokens(
   return Array.from(new Set(tokens))
 }
 
-export type DetermineTokenInAndOutErr =
+type DetermineTokenInAndOutErr =
   | "MULTIPLE_TOKENS_NOT_SUPPORTED"
   | "TOKEN_NOT_FOUND_IN_LIST"
 
-export function determineTokenInAndOut(
+function determineTokenInAndOut(
   tokenList: (BaseTokenInfo | UnifiedTokenInfo)[],
   tokenIdsIn: BaseTokenInfo["defuseAssetId"][],
   tokenIdsOut: BaseTokenInfo["defuseAssetId"][]
