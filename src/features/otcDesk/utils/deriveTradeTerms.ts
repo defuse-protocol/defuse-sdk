@@ -4,7 +4,7 @@ import type { MultiPayload } from "../../../types/defuse-contracts-types"
 import type { DefuseUserId } from "../../../utils/defuse"
 import { isBaseToken } from "../../../utils/token"
 import { grossUpAmount, netDownAmount } from "./otcMakerBreakdown"
-import { parseTradeTerms } from "./parseTradeTerms"
+import { type ParseTradeTermsErr, parseTradeTerms } from "./parseTradeTerms"
 
 export type TradeTerms = {
   deadline: string
@@ -17,31 +17,37 @@ export type TradeTerms = {
   makerMultiPayload: MultiPayload
 }
 
+type DeriveTradeTermsErr = ParseTradeTermsErr | DetermineTokenInAndOutErr
+
 export function deriveTradeTerms(
   makerMultiPayload: MultiPayload | string,
   tokenList: (BaseTokenInfo | UnifiedTokenInfo)[],
   fee: number
-): Result<TradeTerms, string> {
+): Result<TradeTerms, DeriveTradeTermsErr> {
   const makerTermsResult = parseTradeTerms(makerMultiPayload)
 
-  return makerTermsResult.andThen((makerTerms) => {
-    const takerTermsResult = determineOppositeSideTradeDetails(
-      tokenList,
-      makerTerms.tokenDiff,
-      fee
-    )
+  return makerTermsResult
+    .mapErr<DeriveTradeTermsErr>((a) => a)
+    .andThen((makerTerms) => {
+      const takerTermsResult = determineOppositeSideTradeDetails(
+        tokenList,
+        makerTerms.tokenDiff,
+        fee
+      )
 
-    return takerTermsResult.map(({ oppositeTokenDiff, tokenIn, tokenOut }) => ({
-      deadline: makerTerms.deadline,
-      makerUserId: makerTerms.userId,
-      makerTokenDiff: makerTerms.tokenDiff,
-      makerNonceBase64: makerTerms.nonceBase64,
-      takerTokenDiff: oppositeTokenDiff,
-      tokenIn,
-      tokenOut,
-      makerMultiPayload: makerTerms.multiPayload,
-    }))
-  })
+      return takerTermsResult.map(
+        ({ oppositeTokenDiff, tokenIn, tokenOut }) => ({
+          deadline: makerTerms.deadline,
+          makerUserId: makerTerms.userId,
+          makerTokenDiff: makerTerms.tokenDiff,
+          makerNonceBase64: makerTerms.nonceBase64,
+          takerTokenDiff: oppositeTokenDiff,
+          tokenIn,
+          tokenOut,
+          makerMultiPayload: makerTerms.multiPayload,
+        })
+      )
+    })
 }
 
 function determineOppositeSideTradeDetails(
@@ -82,7 +88,7 @@ export function computeOppositeSideTokenDiff(
   return oppositeTokenDiff
 }
 
-function getTokenIds(
+export function getTokenIds(
   tokenDiff: Record<BaseTokenInfo["defuseAssetId"], bigint>
 ) {
   const tokenIdsIn: BaseTokenInfo["defuseAssetId"][] = []
@@ -120,7 +126,11 @@ function findTokens(
   return Array.from(new Set(tokens))
 }
 
-function determineTokenInAndOut(
+export type DetermineTokenInAndOutErr =
+  | "MULTIPLE_TOKENS_NOT_SUPPORTED"
+  | "TOKEN_NOT_FOUND_IN_LIST"
+
+export function determineTokenInAndOut(
   tokenList: (BaseTokenInfo | UnifiedTokenInfo)[],
   tokenIdsIn: BaseTokenInfo["defuseAssetId"][],
   tokenIdsOut: BaseTokenInfo["defuseAssetId"][]
@@ -129,7 +139,7 @@ function determineTokenInAndOut(
     tokenIn: BaseTokenInfo | UnifiedTokenInfo
     tokenOut: BaseTokenInfo | UnifiedTokenInfo
   },
-  "MULTIPLE_TOKENS_NOT_SUPPORTED" | "TOKEN_NOT_FOUND_IN_LIST"
+  DetermineTokenInAndOutErr
 > {
   const tokensIn = findTokens(tokenList, tokenIdsIn)
   const tokensOut = findTokens(tokenList, tokenIdsOut)
