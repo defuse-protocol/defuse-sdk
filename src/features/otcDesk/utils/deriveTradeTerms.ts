@@ -3,7 +3,7 @@ import type { BaseTokenInfo, UnifiedTokenInfo } from "../../../types/base"
 import type { MultiPayload } from "../../../types/defuse-contracts-types"
 import type { DefuseUserId } from "../../../utils/defuse"
 import { isBaseToken } from "../../../utils/token"
-import { grossUpAmount, netDownAmount } from "./otcMakerBreakdown"
+import { grossUpAmount, netDownAmount } from "../../../utils/tokenUtils"
 import { type ParseTradeTermsErr, parseTradeTerms } from "./parseTradeTerms"
 
 export type TradeTerms = {
