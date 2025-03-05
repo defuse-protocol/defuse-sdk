@@ -907,7 +907,10 @@ describe("accountSlippageExactIn", () => {
     ],
     [[["token1", 1000n]], 0, [["token1", 1000n]]],
     [[["token1", 1000n]], 10000, [["token1", 0n]]],
-    [[["token1", 99n]], 100, [["token1", 99n]]],
+    [[["token1", 100n]], 1, [["token1", 99n]]],
+    [[["token1", 99n]], 1, [["token1", 98n]]],
+    [[["token1", 2n]], 1, [["token1", 1n]]],
+    [[["token1", 1n]], 1, [["token1", 0n]]],
   ] satisfies [Delta, number, Delta][])(
     "applies slippage to positive number",
     (delta, bip, expected) => {

@@ -1,4 +1,5 @@
 import type { BalanceMapping } from "../features/machines/depositedBalanceMachine"
+import { netDownAmount } from "../features/otcDesk/utils/otcMakerBreakdown"
 import type { BaseTokenInfo, TokenValue, UnifiedTokenInfo } from "../types/base"
 import { assert } from "./assert"
 import { isBaseToken } from "./token"
@@ -285,8 +286,8 @@ export function accountSlippageExactIn(
 ): [string, bigint][] {
   return delta.map(([token, amount]) => {
     if (amount > 0n) {
-      const slippageAmount = (amount * BigInt(slippageBasisPoints)) / 10000n
-      return [token, amount - slippageAmount]
+      const amountWithSlippage = netDownAmount(amount, slippageBasisPoints)
+      return [token, amountWithSlippage]
     }
     return [token, amount]
   })
