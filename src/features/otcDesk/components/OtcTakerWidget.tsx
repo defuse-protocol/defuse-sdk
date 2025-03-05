@@ -17,7 +17,13 @@ import { fetchProtocolFee } from "../actors/otcMakerConfigLoadActor"
 import { SignIntentActorProvider } from "../providers/SignIntentActorProvider"
 import { useOtcTakerTrades } from "../stores/otcTakerTrades"
 import type { SignMessage } from "../types/sharedTypes"
-import { type TradeTerms, deriveTradeTerms } from "../utils/deriveTradeTerms"
+import {
+  type DeriveTradeTermsErr,
+  type DetermineInvolvedTokensErr,
+  type TradeTerms,
+  deriveTradeTerms,
+  determineInvolvedTokens,
+} from "../utils/deriveTradeTerms"
 import { genLocalTradeId } from "../utils/genLocalTradeId"
 import { OtcTakerForm } from "./OtcTakerForm"
 import { OtcTakerInvalidOrder } from "./OtcTakerInvalidOrder"
@@ -79,18 +85,28 @@ function OtcTakerScreens({
     queryFn: fetchProtocolFee,
   })
 
-  const tradeTerms = useMemo(() => {
+  const enrichedTradeTerms = useMemo(() => {
     if (protocolFee == null) {
       return null
     }
 
-    const tradeTerms = deriveTradeTerms(multiPayload, tokenList, protocolFee)
+    const result = deriveTradeTerms(multiPayload, protocolFee)
+      .mapErr<DeriveTradeTermsErr | DetermineInvolvedTokensErr>((a) => a)
+      .andThen((tradeTerms) => {
+        return determineInvolvedTokens(
+          tokenList,
+          tradeTerms.takerTokenDiff
+        ).map((tokens) => ({
+          ...tokens,
+          tradeTerms,
+        }))
+      })
 
-    if (tradeTerms.isErr()) {
-      logger.error(tradeTerms.unwrapErr())
+    if (result.isErr()) {
+      logger.error(result.unwrapErr())
     }
 
-    return tradeTerms
+    return result
   }, [multiPayload, tokenList, protocolFee])
 
   const [publishResult, setPublishResult] = useState<{
@@ -101,28 +117,39 @@ function OtcTakerScreens({
 
   const knownOtcTakerTrade = useOtcTakerTrades((state) => state.trades[tradeId])
 
-  if (tradeTerms == null || protocolFee == null) {
+  if (enrichedTradeTerms == null || protocolFee == null) {
     return loading
   }
 
-  return tradeTerms.match({
-    ok: (tradeTerms) =>
+  return enrichedTradeTerms.match({
+    ok: ({ tradeTerms, tokenIn, tokenOut }) =>
       publishResult != null ? (
         <OtcTakerSuccessScreen
           tradeTerms={tradeTerms}
           intentHashes={publishResult.intentHashes}
+          tokenIn={tokenIn}
+          tokenOut={tokenOut}
         />
       ) : knownOtcTakerTrade?.status === "completed" ? (
         <OtcTakerSuccessScreen
           tradeTerms={tradeTerms}
           intentHashes={knownOtcTakerTrade.intentHashes}
+          tokenIn={tokenIn}
+          tokenOut={tokenOut}
         />
       ) : (
-        <OtcTakerValidationOrder tradeTerms={tradeTerms} fallback={loading}>
+        <OtcTakerValidationOrder
+          tradeTerms={tradeTerms}
+          tokenIn={tokenIn}
+          tokenOut={tokenOut}
+          fallback={loading}
+        >
           <SignIntentActorProvider sendNearTransaction={sendNearTransaction}>
             <OtcTakerForm
               tradeId={tradeId}
               tradeTerms={tradeTerms}
+              tokenIn={tokenIn}
+              tokenOut={tokenOut}
               makerMultiPayload={tradeTerms.makerMultiPayload}
               signerCredentials={signerCredentials}
               signMessage={signMessage}
@@ -139,9 +166,17 @@ function OtcTakerScreens({
 
 function OtcTakerValidationOrder({
   tradeTerms,
+  tokenIn,
+  tokenOut,
   fallback,
   children,
-}: { tradeTerms: TradeTerms; fallback: ReactNode; children: ReactNode }) {
+}: {
+  tradeTerms: TradeTerms
+  tokenIn: BaseTokenInfo | UnifiedTokenInfo
+  tokenOut: BaseTokenInfo | UnifiedTokenInfo
+  fallback: ReactNode
+  children: ReactNode
+}) {
   let error: Result<true, string> = Ok(true)
 
   if (new Date(tradeTerms.deadline) < new Date()) {
@@ -226,7 +261,12 @@ function OtcTakerValidationOrder({
       .andThen(() => makerBalanceValidation.data ?? noError)
 
     return (
-      <OtcTakerInvalidOrder error={error.unwrapErr()} tradeTerms={tradeTerms} />
+      <OtcTakerInvalidOrder
+        error={error.unwrapErr()}
+        tradeTerms={tradeTerms}
+        tokenIn={tokenIn}
+        tokenOut={tokenOut}
+      />
     )
   }
 

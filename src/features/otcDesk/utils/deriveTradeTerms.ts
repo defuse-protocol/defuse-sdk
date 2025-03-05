@@ -12,57 +12,32 @@ export type TradeTerms = {
   makerTokenDiff: Record<BaseTokenInfo["defuseAssetId"], bigint>
   makerNonceBase64: string
   takerTokenDiff: Record<BaseTokenInfo["defuseAssetId"], bigint>
-  tokenIn: BaseTokenInfo | UnifiedTokenInfo
-  tokenOut: BaseTokenInfo | UnifiedTokenInfo
   makerMultiPayload: MultiPayload
 }
 
-type DeriveTradeTermsErr = ParseTradeTermsErr | DetermineInvolvedTokensErr
+export type DeriveTradeTermsErr = ParseTradeTermsErr
 
 export function deriveTradeTerms(
   makerMultiPayload: MultiPayload | string,
-  tokenList: (BaseTokenInfo | UnifiedTokenInfo)[],
   protocolFee: number
 ): Result<TradeTerms, DeriveTradeTermsErr> {
   const makerTermsResult = parseTradeTerms(makerMultiPayload)
 
-  return makerTermsResult
-    .mapErr<DeriveTradeTermsErr>((a) => a)
-    .andThen((makerTerms) => {
-      const takerTermsResult = determineOppositeSideTradeDetails(
-        tokenList,
-        makerTerms.tokenDiff,
-        protocolFee
-      )
+  return makerTermsResult.map((makerTerms) => {
+    const takerTokenDiff = computeOppositeSideTokenDiff(
+      makerTerms.tokenDiff,
+      protocolFee
+    )
 
-      return takerTermsResult.map(
-        ({ oppositeTokenDiff, tokenIn, tokenOut }) => ({
-          deadline: makerTerms.deadline,
-          makerUserId: makerTerms.userId,
-          makerTokenDiff: makerTerms.tokenDiff,
-          makerNonceBase64: makerTerms.nonceBase64,
-          takerTokenDiff: oppositeTokenDiff,
-          tokenIn,
-          tokenOut,
-          makerMultiPayload: makerTerms.multiPayload,
-        })
-      )
-    })
-}
-
-function determineOppositeSideTradeDetails(
-  tokenList: (BaseTokenInfo | UnifiedTokenInfo)[],
-  tokenDiff: Record<BaseTokenInfo["defuseAssetId"], bigint>,
-  protocolFee: number
-) {
-  const oppositeTokenDiff = computeOppositeSideTokenDiff(tokenDiff, protocolFee)
-  const tokensResult = determineInvolvedTokens(tokenList, oppositeTokenDiff)
-
-  return tokensResult.map(({ tokenIn, tokenOut }) => ({
-    oppositeTokenDiff,
-    tokenIn: tokenOut,
-    tokenOut: tokenIn,
-  }))
+    return {
+      deadline: makerTerms.deadline,
+      makerUserId: makerTerms.userId,
+      makerTokenDiff: makerTerms.tokenDiff,
+      makerNonceBase64: makerTerms.nonceBase64,
+      takerTokenDiff,
+      makerMultiPayload: makerTerms.multiPayload,
+    }
+  })
 }
 
 export type DetermineInvolvedTokensErr = DetermineTokenInAndOutErr

@@ -2,6 +2,7 @@ import { Check as CheckIcon } from "@phosphor-icons/react"
 import { useQuery } from "@tanstack/react-query"
 import { CopyButton } from "src/components/IntentCard/CopyButton"
 import { waitForIntentSettlement } from "../../../services/intentService"
+import type { BaseTokenInfo, UnifiedTokenInfo } from "../../../types/base"
 import { assert } from "../../../utils/assert"
 import {
   computeTotalBalanceDifferentDecimals,
@@ -16,18 +17,22 @@ const NEAR_EXPLORER = "https://nearblocks.io"
 export function OtcTakerSuccessScreen({
   tradeTerms,
   intentHashes,
+  tokenIn,
+  tokenOut,
 }: {
   tradeTerms: TradeTerms
   intentHashes: string[]
+  tokenIn: BaseTokenInfo | UnifiedTokenInfo
+  tokenOut: BaseTokenInfo | UnifiedTokenInfo
 }) {
   const amountIn = computeTotalBalanceDifferentDecimals(
-    getUnderlyingBaseTokenInfos(tradeTerms.tokenIn),
+    getUnderlyingBaseTokenInfos(tokenIn),
     tradeTerms.takerTokenDiff,
     { strict: false }
   )
 
   const amountOut = computeTotalBalanceDifferentDecimals(
-    getUnderlyingBaseTokenInfos(tradeTerms.tokenOut),
+    getUnderlyingBaseTokenInfos(tokenOut),
     tradeTerms.takerTokenDiff,
     { strict: false }
   )
@@ -81,8 +86,8 @@ export function OtcTakerSuccessScreen({
 
       {/* Order Section */}
       <SwapStrip
-        tokenIn={tradeTerms.tokenIn}
-        tokenOut={tradeTerms.tokenOut}
+        tokenIn={tokenIn}
+        tokenOut={tokenOut}
         amountIn={breakdown.takerSends}
         amountOut={breakdown.takerReceives}
       />
