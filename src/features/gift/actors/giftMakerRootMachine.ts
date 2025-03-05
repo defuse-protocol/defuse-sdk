@@ -253,6 +253,7 @@ export const giftMakerRootMachine = setup({
             >
           }
 
+          // TODO: we need here only private key
           return {
             parsed: parsedValues,
             raw: formValues,
@@ -261,6 +262,7 @@ export const giftMakerRootMachine = setup({
             giftId: event.giftId,
             signerCredentials: event.signerCredentials,
             signatureResult: event.signatureResult,
+            escrowKeyPair: context.escrowRef.getSnapshot().context.keyPair,
           }
         },
 

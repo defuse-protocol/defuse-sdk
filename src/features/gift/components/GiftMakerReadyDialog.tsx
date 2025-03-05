@@ -10,7 +10,6 @@ import { ButtonCustom } from "../../../components/Button/ButtonCustom"
 import { Copy } from "../../../components/IntentCard/CopyButton"
 import { BaseModalDialog } from "../../../components/Modal/ModalDialog"
 import type { SignerCredentials } from "../../../core/formatters"
-import type { MultiPayload } from "../../../types/defuse-contracts-types"
 import type { giftMakerReadyActor } from "../actors/giftMakerReadyActor"
 import type { SignMessage } from "../types/sharedTypes"
 
@@ -18,7 +17,7 @@ type GiftMakerReadyDialogProps = {
   readyGiftRef: ActorRefFrom<typeof giftMakerReadyActor>
   signerCredentials: SignerCredentials
   signMessage: SignMessage
-  generateLink: (multiPayload: MultiPayload) => string
+  generateLink: (secretKey: string) => string
 }
 
 export function GiftMakerReadyDialog({
@@ -44,7 +43,7 @@ function GiftMakerDialog({
   generateLink,
 }: {
   readyGiftRef: ActorRefFrom<typeof giftMakerReadyActor>
-  generateLink: (multiPayload: MultiPayload) => string
+  generateLink: (secretKey: string) => string
 }) {
   const { context } = useSelector(readyGiftRef, (state) => ({
     context: state.context,
@@ -75,7 +74,7 @@ function GiftMakerDialog({
       </div>
 
       <div className="flex flex-col justify-center gap-3 mt-5">
-        <Copy text={() => generateLink(context.multiPayload)}>
+        <Copy text={() => generateLink(context.escrowKeyPair.secretKey)}>
           {(copied) => (
             <ButtonCustom
               type="button"

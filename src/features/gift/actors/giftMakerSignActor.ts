@@ -49,10 +49,12 @@ export type GiftMakerSignActorOutput =
   | { tag: "ok"; value: GiftMakerSignActorSuccess }
 
 export type GiftMakerSignActorSuccess = {
+  // TODO: we need here only private key
   multiPayload: MultiPayload
   signatureResult: WalletSignatureResult
   signerCredentials: SignerCredentials
   usedNonceBase64: string
+  escrowKeyPair: EscrowKeyPair
 }
 
 export type GiftMakerSignActorContext = {
@@ -60,6 +62,7 @@ export type GiftMakerSignActorContext = {
   parsed: GiftMakerSignActorInput["parsed"]
   signerCredentials: GiftMakerSignActorInput["signerCredentials"]
   walletMessage: WalletMessage
+  escrowKeyPair: EscrowKeyPair
 }
 
 export type GiftMakerSignActorErrors =
@@ -142,6 +145,7 @@ export const giftMakerSignActor = setup({
       walletMessage,
       parsed: input.parsed,
       signerCredentials: input.signerCredentials,
+      escrowKeyPair: input.escrowKeyPair,
     }
   },
 
@@ -213,6 +217,7 @@ export const giftMakerSignActor = setup({
             signatureResult: event.output.value.signatureResult,
             signerCredentials: context.signerCredentials,
             usedNonceBase64: base64.encode(context.nonce),
+            escrowKeyPair: context.escrowKeyPair,
           },
         }
       },

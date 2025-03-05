@@ -8,6 +8,7 @@ import type {
   UnifiedTokenInfo,
 } from "../../../types/base"
 import type { MultiPayload } from "../../../types/defuse-contracts-types"
+import type { EscrowKeyPair } from "./giftMakerEscrowActor"
 import {
   type GiftMakerPublishingActorInput,
   type GiftMakerPublishingActorOutput,
@@ -28,6 +29,7 @@ export type GiftMakerReadyActorInput = {
   multiPayload: MultiPayload
   signerCredentials: SignerCredentials
   signatureResult: WalletSignatureResult
+  escrowKeyPair: EscrowKeyPair
 }
 
 type GiftMakerReadyActorErrors = { reason: "EXCEPTION" }
@@ -88,6 +90,7 @@ export const giftMakerReadyActor = setup({
             multiPayload: context.multiPayload,
             signatureResult: context.signatureResult,
             signerCredentials: context.signerCredentials,
+            escrowKeyPair: context.escrowKeyPair,
           }
         },
         onError: {
