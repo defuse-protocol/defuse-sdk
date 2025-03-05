@@ -12,7 +12,6 @@ import { useTokensUsdPrices } from "../../../hooks/useTokensUsdPrices"
 import { useTokensStore } from "../../../providers/TokensStoreProvider"
 import { ModalType } from "../../../stores/modalStore"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../../types/base"
-import type { MultiPayload } from "../../../types/defuse-contracts-types"
 import type { ChainType } from "../../../types/deposit"
 import { assert } from "../../../utils/assert"
 import { formatTokenValue, formatUsdAmount } from "../../../utils/format"
@@ -44,7 +43,7 @@ export type GiftMakerWidgetProps = {
   sendNearTransaction: SendNearTransaction
 
   /** Function to generate a shareable trade link */
-  generateLink: (multiPayload: MultiPayload) => string
+  generateLink: (secretKey: string) => string
 
   /** Theme selection */
   theme?: "dark" | "light"
