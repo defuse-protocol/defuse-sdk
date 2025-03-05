@@ -13,9 +13,16 @@ export type TradeTerms = {
   multiPayload: MultiPayload
 }
 
+export type ParseTradeTermsErr =
+  | "CANNOT_PARSE_MULTIPAYLOAD"
+  | "CANNOT_PARSE_PAYLOAD"
+  | "NO_TOKEN_DIFF_INTENT"
+  | "PAYLOAD_HAS_NO_NONCE"
+  | GetPlainPayloadErr
+
 export function parseTradeTerms(
   multiPayloadPlain: MultiPayload | object | string
-): Result<TradeTerms, string> {
+): Result<TradeTerms, ParseTradeTermsErr> {
   const parseResult = v.safeParse(MultiPayloadPlainSchema, multiPayloadPlain)
   if (!parseResult.success) {
     logger.verbose("Couldn't parse multipayload", {
@@ -26,8 +33,9 @@ export function parseTradeTerms(
   }
   const multiPayload = parseResult.output
 
-  return getPlainPayload(multiPayload).andThen(
-    (payloadPlain): Result<TradeTerms, string> => {
+  return getPlainPayload(multiPayload)
+    .mapErr<ParseTradeTermsErr>((a) => a)
+    .andThen<TradeTerms>((payloadPlain) => {
       const payloadParseResult = v.safeParse(PayloadPlainSchema, payloadPlain)
       if (!payloadParseResult.success) {
         logger.verbose("Couldn't parse payload", {
@@ -64,8 +72,7 @@ export function parseTradeTerms(
         nonceBase64: nonce,
         multiPayload,
       })
-    }
-  )
+    })
 }
 
 const BigIntSchema = v.pipe(
@@ -164,7 +171,11 @@ const MultiPayloadPlainSchema = v.pipe(
   MultiPayloadSchema
 )
 
-function getPlainPayload(payload: MultiPayload): Result<string, string> {
+type GetPlainPayloadErr = "UNSUPPORTED_PAYLOAD_STANDARD"
+
+function getPlainPayload(
+  payload: MultiPayload
+): Result<string, GetPlainPayloadErr> {
   const payloadStandard = payload.standard
 
   switch (payloadStandard) {

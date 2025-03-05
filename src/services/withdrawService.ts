@@ -30,7 +30,7 @@ import {
 } from "../utils/tokenUtils"
 import { getNEP141StorageRequired } from "./nep141StorageService"
 import { type QuoteResult, queryQuoteExactOut } from "./quoteService"
-import type { FAILED_QUOTES_TYPES } from "./solverRelayHttpClient/types"
+import type { FailedQuote } from "./solverRelayHttpClient/types"
 
 interface SwapRequirement {
   swapParams: QuoteInput
@@ -208,7 +208,7 @@ async function determineNEP141StorageRequirement(
       value: {
         reason:
           | "ERR_NEP141_STORAGE"
-          | FAILED_QUOTES_TYPES
+          | FailedQuote["type"]
           | "NO_QUOTES"
           | "ERR_CANNOT_FETCH_QUOTE"
       }

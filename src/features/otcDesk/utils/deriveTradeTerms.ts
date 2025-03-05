@@ -3,8 +3,8 @@ import type { BaseTokenInfo, UnifiedTokenInfo } from "../../../types/base"
 import type { MultiPayload } from "../../../types/defuse-contracts-types"
 import type { DefuseUserId } from "../../../utils/defuse"
 import { isBaseToken } from "../../../utils/token"
-import { grossUpAmount, netDownAmount } from "./otcMakerBreakdown"
-import { parseTradeTerms } from "./parseTradeTerms"
+import { grossUpAmount, netDownAmount } from "../../../utils/tokenUtils"
+import { type ParseTradeTermsErr, parseTradeTerms } from "./parseTradeTerms"
 
 export type TradeTerms = {
   deadline: string
@@ -17,39 +17,45 @@ export type TradeTerms = {
   makerMultiPayload: MultiPayload
 }
 
+type DeriveTradeTermsErr = ParseTradeTermsErr | DetermineTokenInAndOutErr
+
 export function deriveTradeTerms(
   makerMultiPayload: MultiPayload | string,
   tokenList: (BaseTokenInfo | UnifiedTokenInfo)[],
-  fee: number
-): Result<TradeTerms, string> {
+  protocolFee: number
+): Result<TradeTerms, DeriveTradeTermsErr> {
   const makerTermsResult = parseTradeTerms(makerMultiPayload)
 
-  return makerTermsResult.andThen((makerTerms) => {
-    const takerTermsResult = determineOppositeSideTradeDetails(
-      tokenList,
-      makerTerms.tokenDiff,
-      fee
-    )
+  return makerTermsResult
+    .mapErr<DeriveTradeTermsErr>((a) => a)
+    .andThen((makerTerms) => {
+      const takerTermsResult = determineOppositeSideTradeDetails(
+        tokenList,
+        makerTerms.tokenDiff,
+        protocolFee
+      )
 
-    return takerTermsResult.map(({ oppositeTokenDiff, tokenIn, tokenOut }) => ({
-      deadline: makerTerms.deadline,
-      makerUserId: makerTerms.userId,
-      makerTokenDiff: makerTerms.tokenDiff,
-      makerNonceBase64: makerTerms.nonceBase64,
-      takerTokenDiff: oppositeTokenDiff,
-      tokenIn,
-      tokenOut,
-      makerMultiPayload: makerTerms.multiPayload,
-    }))
-  })
+      return takerTermsResult.map(
+        ({ oppositeTokenDiff, tokenIn, tokenOut }) => ({
+          deadline: makerTerms.deadline,
+          makerUserId: makerTerms.userId,
+          makerTokenDiff: makerTerms.tokenDiff,
+          makerNonceBase64: makerTerms.nonceBase64,
+          takerTokenDiff: oppositeTokenDiff,
+          tokenIn,
+          tokenOut,
+          makerMultiPayload: makerTerms.multiPayload,
+        })
+      )
+    })
 }
 
 function determineOppositeSideTradeDetails(
   tokenList: (BaseTokenInfo | UnifiedTokenInfo)[],
   tokenDiff: Record<BaseTokenInfo["defuseAssetId"], bigint>,
-  fee: number
+  protocolFee: number
 ) {
-  const oppositeTokenDiff = computeOppositeSideTokenDiff(tokenDiff, fee)
+  const oppositeTokenDiff = computeOppositeSideTokenDiff(tokenDiff, protocolFee)
   const { tokenIdsIn, tokenIdsOut } = getTokenIds(oppositeTokenDiff)
   const tokensResult = determineTokenInAndOut(
     tokenList,
@@ -64,25 +70,25 @@ function determineOppositeSideTradeDetails(
   }))
 }
 
-function computeOppositeSideTokenDiff(
+export function computeOppositeSideTokenDiff(
   tokenDiff: Record<BaseTokenInfo["defuseAssetId"], bigint>,
-  fee: number
+  protocolFee: number
 ) {
   const oppositeTokenDiff: Record<BaseTokenInfo["defuseAssetId"], bigint> = {}
 
   for (const [tokenId, makerAmount] of Object.entries(tokenDiff)) {
     const takerAmount =
       makerAmount > 0n
-        ? grossUpAmount(makerAmount, fee)
-        : netDownAmount(makerAmount, fee)
+        ? -grossUpAmount(makerAmount, protocolFee)
+        : netDownAmount(-makerAmount, protocolFee)
 
-    oppositeTokenDiff[tokenId] = -takerAmount
+    oppositeTokenDiff[tokenId] = takerAmount
   }
 
   return oppositeTokenDiff
 }
 
-function getTokenIds(
+export function getTokenIds(
   tokenDiff: Record<BaseTokenInfo["defuseAssetId"], bigint>
 ) {
   const tokenIdsIn: BaseTokenInfo["defuseAssetId"][] = []
@@ -120,7 +126,11 @@ function findTokens(
   return Array.from(new Set(tokens))
 }
 
-function determineTokenInAndOut(
+export type DetermineTokenInAndOutErr =
+  | "MULTIPLE_TOKENS_NOT_SUPPORTED"
+  | "TOKEN_NOT_FOUND_IN_LIST"
+
+export function determineTokenInAndOut(
   tokenList: (BaseTokenInfo | UnifiedTokenInfo)[],
   tokenIdsIn: BaseTokenInfo["defuseAssetId"][],
   tokenIdsOut: BaseTokenInfo["defuseAssetId"][]
@@ -129,7 +139,7 @@ function determineTokenInAndOut(
     tokenIn: BaseTokenInfo | UnifiedTokenInfo
     tokenOut: BaseTokenInfo | UnifiedTokenInfo
   },
-  "MULTIPLE_TOKENS_NOT_SUPPORTED" | "TOKEN_NOT_FOUND_IN_LIST"
+  DetermineTokenInAndOutErr
 > {
   const tokensIn = findTokens(tokenList, tokenIdsIn)
   const tokensOut = findTokens(tokenList, tokenIdsOut)
