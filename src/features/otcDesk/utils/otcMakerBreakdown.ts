@@ -40,6 +40,10 @@ export function netDownAmount(amount: bigint, feeBip: number): bigint {
     throw new Error("Invalid feeBip value. It must be between 0 and 10000.")
   }
 
+  if (amount < 0n) {
+    throw new Error("Amount must be non-negative.")
+  }
+
   if (amount === 0n || feeBip === 0) return amount
 
   // Multiply first to maintain precision, then add BASIS_POINTS_DENOMINATOR-1 for ceiling division
@@ -59,6 +63,10 @@ export function netDownAmount(amount: bigint, feeBip: number): bigint {
 export function grossUpAmount(amount: bigint, feeBip: number): bigint {
   if (feeBip < 0 || feeBip > Number(BASIS_POINTS_DENOMINATOR)) {
     throw new Error("Invalid feeBip value. It must be between 0 and 10000.")
+  }
+
+  if (amount < 0n) {
+    throw new Error("Amount must be non-negative.")
   }
 
   if (amount === 0n || feeBip === 0) return amount

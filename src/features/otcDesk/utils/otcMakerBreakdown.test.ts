@@ -11,12 +11,17 @@ describe("netDownAmount", () => {
     )
   })
 
+  it("throws error for negative amount", () => {
+    expect(() => netDownAmount(-1n, 0)).toThrow("Amount must be non-negative.")
+  })
+
   /**
    * 1 bip = 0.01% = 0.0001
    * 30 bips = 0.3% = 0.003
    * 10000 bips = 100% = 1
    */
   it.each([
+    [1000000n, 1, 999900n],
     [100300n, 30, 99999n],
     [100000n, 30, 99700n],
     [100000n, 0, 100000n],
@@ -42,6 +47,10 @@ describe("grossUpAmount", () => {
     expect(() => grossUpAmount(100000n, 10001)).toThrow(
       "Invalid feeBip value. It must be between 0 and 10000."
     )
+  })
+
+  it("throws error for negative amount", () => {
+    expect(() => grossUpAmount(-1n, 0)).toThrow("Amount must be non-negative.")
   })
 
   /**
