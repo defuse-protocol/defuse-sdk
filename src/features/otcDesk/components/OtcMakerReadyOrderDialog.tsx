@@ -87,8 +87,9 @@ function OrderDialog({
   const breakdown =
     protocolFee != null
       ? computeTradeBreakdown({
-          amountIn: context.parsed.amountIn,
-          amountOut: context.parsed.amountOut,
+          multiPayload: context.multiPayload,
+          tokenIn: context.parsed.tokenIn,
+          tokenOut: context.parsed.tokenOut,
           protocolFee,
         })
       : null

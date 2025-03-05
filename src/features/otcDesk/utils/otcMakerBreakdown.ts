@@ -1,31 +1,57 @@
-import type { TokenValue } from "../../../types/base"
+import type { BaseTokenInfo, UnifiedTokenInfo } from "../../../types/base"
+import type { MultiPayload } from "../../../types/defuse-contracts-types"
+import { assert } from "../../../utils/assert"
 import {
-  grossUpAmount,
-  netDownAmount,
+  computeTotalBalanceDifferentDecimals,
+  negateTokenValue,
   subtractAmounts,
 } from "../../../utils/tokenUtils"
 import type { TradeBreakdown } from "../types/sharedTypes"
+import { deriveTradeTerms } from "./deriveTradeTerms"
 
 export function computeTradeBreakdown(params: {
-  amountIn: TokenValue
-  amountOut: TokenValue
+  multiPayload: MultiPayload
+  tokenIn: BaseTokenInfo | UnifiedTokenInfo
+  tokenOut: BaseTokenInfo | UnifiedTokenInfo
   protocolFee: number
 }): TradeBreakdown {
-  const takerSends = {
-    amount: grossUpAmount(params.amountOut.amount, params.protocolFee),
-    decimals: params.amountOut.decimals,
-  }
-  const takerReceives = {
-    amount: netDownAmount(params.amountIn.amount, params.protocolFee),
-    decimals: params.amountIn.decimals,
-  }
+  const tradeTerms = deriveTradeTerms(
+    params.multiPayload,
+    params.protocolFee
+  ).unwrap()
+
+  let makerSends = computeTotalBalanceDifferentDecimals(
+    params.tokenIn,
+    tradeTerms.makerTokenDiff,
+    { strict: false }
+  )
+  const makerReceives = computeTotalBalanceDifferentDecimals(
+    params.tokenOut,
+    tradeTerms.makerTokenDiff,
+    { strict: false }
+  )
+  assert(makerSends != null && makerReceives != null)
+  makerSends = negateTokenValue(makerSends)
+
+  const takerReceives = computeTotalBalanceDifferentDecimals(
+    params.tokenIn, // tokenOut is tokenIn in the context of the taker
+    tradeTerms.takerTokenDiff,
+    { strict: false }
+  )
+  let takerSends = computeTotalBalanceDifferentDecimals(
+    params.tokenOut, // tokenIn is tokenOut in the context of the taker
+    tradeTerms.takerTokenDiff,
+    { strict: false }
+  )
+  assert(takerSends != null && takerReceives != null)
+  takerSends = negateTokenValue(takerSends)
 
   return {
-    makerSends: params.amountIn,
-    makerReceives: params.amountOut,
-    makerPaysFee: subtractAmounts(params.amountIn, takerReceives),
+    makerSends,
+    makerReceives,
+    makerPaysFee: subtractAmounts(makerSends, takerReceives),
     takerSends,
     takerReceives,
-    takerPaysFee: subtractAmounts(takerSends, params.amountOut),
+    takerPaysFee: subtractAmounts(takerSends, makerReceives),
   }
 }
