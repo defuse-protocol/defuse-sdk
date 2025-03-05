@@ -1,5 +1,6 @@
 import { ArrowDown } from "@phosphor-icons/react"
 import { useQuery } from "@tanstack/react-query"
+import { None } from "@thames/monads"
 import clsx from "clsx"
 import { providers } from "near-api-js"
 import { BlockMultiBalances } from "../../../components/Block/BlockMultiBalances"
@@ -15,7 +16,9 @@ import { formatTokenValue, formatUsdAmount } from "../../../utils/format"
 import getTokenUsdPrice from "../../../utils/getTokenUsdPrice"
 import {
   computeTotalBalanceDifferentDecimals,
+  computeTotalDeltaDifferentDecimals,
   getUnderlyingBaseTokenInfos,
+  negateTokenValue,
 } from "../../../utils/tokenUtils"
 import { TokenAmountInputCard } from "../../deposit/components/DepositForm/TokenAmountInputCard"
 import { useOtcTakerConfirmTrade } from "../hooks/useOtcTakerConfirmTrade"
@@ -48,32 +51,6 @@ export function OtcTakerForm({
   onSuccessTrade,
   referral,
 }: OtcTakerFormProps) {
-  const totalAmountIn = computeTotalBalanceDifferentDecimals(
-    tokenIn,
-    tradeTerms.takerTokenDiff,
-    { strict: false }
-  )
-  assert(totalAmountIn)
-
-  const totalAmountOut = computeTotalBalanceDifferentDecimals(
-    tokenOut,
-    tradeTerms.takerTokenDiff,
-    { strict: false }
-  )
-  assert(totalAmountOut)
-
-  const { data: tokensUsdPriceData } = useTokensUsdPrices()
-  const usdAmountIn = getTokenUsdPrice(
-    formatTokenValue(-totalAmountIn.amount, totalAmountIn.decimals),
-    tokenIn,
-    tokensUsdPriceData
-  )
-  const usdAmountOut = getTokenUsdPrice(
-    formatTokenValue(totalAmountOut.amount, totalAmountOut.decimals),
-    tokenOut,
-    tokensUsdPriceData
-  )
-
   const signerId =
     signerCredentials != null
       ? userAddressToDefuseUserId(
@@ -141,6 +118,59 @@ export function OtcTakerForm({
     referral,
   })
 
+  const { totalAmountIn, totalAmountOut } = (
+    preparation.data?.ok() || None
+  ).match({
+    some: ({ tokenDelta }) => {
+      // This is the actual amount that the taker will send and receive
+
+      const totalAmountIn = negateTokenValue(
+        computeTotalDeltaDifferentDecimals(
+          getUnderlyingBaseTokenInfos(tokenIn),
+          tokenDelta
+        )
+      )
+      const totalAmountOut = computeTotalDeltaDifferentDecimals(
+        getUnderlyingBaseTokenInfos(tokenOut),
+        tokenDelta
+      )
+      return { totalAmountIn, totalAmountOut }
+    },
+
+    none: () => {
+      // This is the fallback amount, since the preparation didn't complete
+
+      let totalAmountIn = computeTotalBalanceDifferentDecimals(
+        tokenIn,
+        tradeTerms.takerTokenDiff,
+        { strict: false }
+      )
+      assert(totalAmountIn)
+      totalAmountIn = negateTokenValue(totalAmountIn)
+
+      const totalAmountOut = computeTotalBalanceDifferentDecimals(
+        tokenOut,
+        tradeTerms.takerTokenDiff,
+        { strict: false }
+      )
+      assert(totalAmountOut)
+
+      return { totalAmountIn, totalAmountOut }
+    },
+  })
+
+  const { data: tokensUsdPriceData } = useTokensUsdPrices()
+  const usdAmountIn = getTokenUsdPrice(
+    formatTokenValue(totalAmountIn.amount, totalAmountIn.decimals),
+    tokenIn,
+    tokensUsdPriceData
+  )
+  const usdAmountOut = getTokenUsdPrice(
+    formatTokenValue(totalAmountOut.amount, totalAmountOut.decimals),
+    tokenOut,
+    tokensUsdPriceData
+  )
+
   return (
     <div className="flex flex-col">
       {/* Header Section */}
@@ -175,7 +205,7 @@ export function OtcTakerForm({
                 readOnly
                 name="amount"
                 value={formatTokenValue(
-                  -totalAmountIn.amount,
+                  totalAmountIn.amount,
                   totalAmountIn.decimals
                 )}
               />

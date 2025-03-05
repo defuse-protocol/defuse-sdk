@@ -62,9 +62,9 @@ export function useOtcTakerConfirmTrade({
         signerCredentials.credentialType
       )
 
-      const { quotes, quoteParams, tokenDiff } = preparation
+      const { quotes, quoteParams, tokenDelta } = preparation
 
-      const walletMessage = createSwapIntentMessage(tokenDiff, {
+      const walletMessage = createSwapIntentMessage(tokenDelta, {
         signerId,
         referral,
         memo: "OTC_FILL",
