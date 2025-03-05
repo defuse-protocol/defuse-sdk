@@ -1,0 +1,36 @@
+import { Err, Ok, type Result } from "@thames/monads"
+import type { BaseTokenInfo, UnifiedTokenInfo } from "../../../types/base"
+import { determineGiftToken } from "./determineGiftToken"
+import { parseGiftSecret } from "./parseGiftSecret"
+
+export type GiftTerms = {
+  tokenDiff: Record<BaseTokenInfo["defuseAssetId"], bigint>
+  tokenIn: BaseTokenInfo | UnifiedTokenInfo
+  secretKey: string
+  walletId: string
+}
+
+export async function deriveGiftTerms(
+  secretKey: string,
+  tokenList: (BaseTokenInfo | UnifiedTokenInfo)[]
+): Promise<Result<GiftTerms, string>> {
+  const parseResult = parseGiftSecret(secretKey)
+  if (parseResult.isErr()) {
+    return Err(parseResult.unwrapErr())
+  }
+
+  const determineResult = await determineGiftToken(
+    tokenList,
+    parseResult.unwrap()
+  )
+  if (determineResult.isErr()) {
+    return Err(determineResult.unwrapErr())
+  }
+
+  return Ok({
+    tokenDiff: determineResult.unwrap().tokenInDiff,
+    tokenIn: determineResult.unwrap().tokenIn,
+    secretKey: parseResult.unwrap().secretKey,
+    walletId: parseResult.unwrap().walletId,
+  })
+}
