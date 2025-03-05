@@ -64,7 +64,7 @@ function determineOppositeSideTradeDetails(
   }))
 }
 
-function computeOppositeSideTokenDiff(
+export function computeOppositeSideTokenDiff(
   tokenDiff: Record<BaseTokenInfo["defuseAssetId"], bigint>,
   fee: number
 ) {
@@ -73,10 +73,10 @@ function computeOppositeSideTokenDiff(
   for (const [tokenId, makerAmount] of Object.entries(tokenDiff)) {
     const takerAmount =
       makerAmount > 0n
-        ? grossUpAmount(makerAmount, fee)
-        : netDownAmount(makerAmount, fee)
+        ? -grossUpAmount(makerAmount, fee)
+        : netDownAmount(-makerAmount, fee)
 
-    oppositeTokenDiff[tokenId] = -takerAmount
+    oppositeTokenDiff[tokenId] = takerAmount
   }
 
   return oppositeTokenDiff
