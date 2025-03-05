@@ -119,7 +119,7 @@ export const giftMakerSignActor = setup({
       tokenInDiff = {
         [tokenIn.defuseAssetId]: adjustDecimals(
           // We need to negate the amount, as the balance is being reduced
-          -input.parsed.amountIn.amount,
+          input.parsed.amountIn.amount,
           input.parsed.amountIn.decimals,
           tokenIn.decimals
         ),
@@ -133,7 +133,7 @@ export const giftMakerSignActor = setup({
         nonce: nonce,
         referral: input.referral,
         memo: "", // TODO: gift message or something
-        receiverId: input.escrowKeyPair.publicKey,
+        receiverId: input.escrowKeyPair.walletId,
       }
     )
 

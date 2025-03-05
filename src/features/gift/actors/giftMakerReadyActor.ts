@@ -1,4 +1,5 @@
-import { assign, setup } from "xstate"
+import type { WalletSignatureResult } from "src/types/swap"
+import { type PromiseActorLogic, assign, setup } from "xstate"
 import type { SignerCredentials } from "../../../core/formatters"
 import { logger } from "../../../logger"
 import type {
@@ -7,6 +8,11 @@ import type {
   UnifiedTokenInfo,
 } from "../../../types/base"
 import type { MultiPayload } from "../../../types/defuse-contracts-types"
+import {
+  type GiftMakerPublishingActorInput,
+  type GiftMakerPublishingActorOutput,
+  giftMakerPublishingActor,
+} from "./giftMakerPublishingActor"
 
 export type GiftMakerReadyActorInput = {
   parsed: {
@@ -21,6 +27,7 @@ export type GiftMakerReadyActorInput = {
   usedNonceBase64: string
   multiPayload: MultiPayload
   signerCredentials: SignerCredentials
+  signatureResult: WalletSignatureResult
 }
 
 type GiftMakerReadyActorErrors = { reason: "EXCEPTION" }
@@ -37,13 +44,16 @@ export const giftMakerReadyActor = setup({
     context: {} as GiftMakerReadyActorContext,
     events: {} as { type: "FINISH" | "CANCEL_ORDER" },
     children: {} as {
-      otcMakerOrderCancellationRef: "cancelOrderActor"
+      giftMakerPublishingRef: "publishingActor"
     },
   },
-  //@ts-expect-error
-  actors: {},
+  actors: {
+    publishingActor: giftMakerPublishingActor as unknown as PromiseActorLogic<
+      GiftMakerPublishingActorOutput,
+      GiftMakerPublishingActorInput
+    >,
+  },
   actions: {
-    //@ts-expect-error
     logError: (_, event: { error: unknown }) => {
       logger.error(event.error)
     },
@@ -52,7 +62,6 @@ export const giftMakerReadyActor = setup({
     }),
   },
   guards: {
-    //@ts-expect-error
     isTrue: (_, value: boolean) => value,
   },
 }).createMachine({
@@ -68,6 +77,26 @@ export const giftMakerReadyActor = setup({
     idle: {
       on: {
         FINISH: "finished",
+      },
+      invoke: {
+        id: "giftMakerPublishingRef",
+        src: "publishingActor",
+        input: ({ context }) => {
+          return {
+            giftId: context.giftId,
+            nonceBas64: context.usedNonceBase64,
+            multiPayload: context.multiPayload,
+            signatureResult: context.signatureResult,
+            signerCredentials: context.signerCredentials,
+          }
+        },
+        onError: {
+          target: "idle",
+          actions: [
+            { type: "logError", params: ({ event }) => event },
+            { type: "setError", params: { reason: "EXCEPTION" } },
+          ],
+        },
       },
     },
 

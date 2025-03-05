@@ -55,6 +55,7 @@ export const giftMakerRootMachine = setup({
           signerCredentials: SignerCredentials
           usedNonceBase64: string
           giftId: string
+          signatureResult: WalletSignatureResult
         },
     context: {} as {
       error: null | GiftMakerSignActorErrors
@@ -103,6 +104,7 @@ export const giftMakerRootMachine = setup({
       event: {
         multiPayload: MultiPayload
         signerCredentials: SignerCredentials
+        signatureResult: WalletSignatureResult
         usedNonceBase64: string
         giftId: string
       }
@@ -258,6 +260,7 @@ export const giftMakerRootMachine = setup({
             multiPayload: event.multiPayload,
             giftId: event.giftId,
             signerCredentials: event.signerCredentials,
+            signatureResult: event.signatureResult,
           }
         },
 
