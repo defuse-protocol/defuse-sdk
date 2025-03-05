@@ -5,14 +5,14 @@ import type { TradeBreakdown } from "../types/sharedTypes"
 export function computeTradeBreakdown(params: {
   amountIn: TokenValue
   amountOut: TokenValue
-  fee: number
+  protocolFee: number
 }): TradeBreakdown {
   const takerSends = {
-    amount: grossUpAmount(params.amountOut.amount, params.fee),
+    amount: grossUpAmount(params.amountOut.amount, params.protocolFee),
     decimals: params.amountOut.decimals,
   }
   const takerReceives = {
-    amount: netDownAmount(params.amountIn.amount, params.fee),
+    amount: netDownAmount(params.amountIn.amount, params.protocolFee),
     decimals: params.amountIn.decimals,
   }
 

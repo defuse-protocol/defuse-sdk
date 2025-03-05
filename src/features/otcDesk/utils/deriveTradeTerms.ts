@@ -22,7 +22,7 @@ type DeriveTradeTermsErr = ParseTradeTermsErr | DetermineTokenInAndOutErr
 export function deriveTradeTerms(
   makerMultiPayload: MultiPayload | string,
   tokenList: (BaseTokenInfo | UnifiedTokenInfo)[],
-  fee: number
+  protocolFee: number
 ): Result<TradeTerms, DeriveTradeTermsErr> {
   const makerTermsResult = parseTradeTerms(makerMultiPayload)
 
@@ -32,7 +32,7 @@ export function deriveTradeTerms(
       const takerTermsResult = determineOppositeSideTradeDetails(
         tokenList,
         makerTerms.tokenDiff,
-        fee
+        protocolFee
       )
 
       return takerTermsResult.map(
@@ -53,9 +53,9 @@ export function deriveTradeTerms(
 function determineOppositeSideTradeDetails(
   tokenList: (BaseTokenInfo | UnifiedTokenInfo)[],
   tokenDiff: Record<BaseTokenInfo["defuseAssetId"], bigint>,
-  fee: number
+  protocolFee: number
 ) {
-  const oppositeTokenDiff = computeOppositeSideTokenDiff(tokenDiff, fee)
+  const oppositeTokenDiff = computeOppositeSideTokenDiff(tokenDiff, protocolFee)
   const { tokenIdsIn, tokenIdsOut } = getTokenIds(oppositeTokenDiff)
   const tokensResult = determineTokenInAndOut(
     tokenList,
@@ -72,15 +72,15 @@ function determineOppositeSideTradeDetails(
 
 export function computeOppositeSideTokenDiff(
   tokenDiff: Record<BaseTokenInfo["defuseAssetId"], bigint>,
-  fee: number
+  protocolFee: number
 ) {
   const oppositeTokenDiff: Record<BaseTokenInfo["defuseAssetId"], bigint> = {}
 
   for (const [tokenId, makerAmount] of Object.entries(tokenDiff)) {
     const takerAmount =
       makerAmount > 0n
-        ? -grossUpAmount(makerAmount, fee)
-        : netDownAmount(-makerAmount, fee)
+        ? -grossUpAmount(makerAmount, protocolFee)
+        : netDownAmount(-makerAmount, protocolFee)
 
     oppositeTokenDiff[tokenId] = takerAmount
   }

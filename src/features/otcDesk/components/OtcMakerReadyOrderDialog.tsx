@@ -71,7 +71,10 @@ function OrderDialog({
     context: state.context,
   }))
 
-  const fee = useSelector(configRef, (state) => state.context.fee)
+  const protocolFee = useSelector(
+    configRef,
+    (state) => state.context.protocolFee
+  )
 
   const finish = () => {
     readyOrderRef.send({ type: "FINISH" })
@@ -82,11 +85,11 @@ function OrderDialog({
   }
 
   const breakdown =
-    fee != null
+    protocolFee != null
       ? computeTradeBreakdown({
           amountIn: context.parsed.amountIn,
           amountOut: context.parsed.amountOut,
-          fee,
+          protocolFee,
         })
       : null
 

@@ -13,7 +13,7 @@ import { getDepositedBalances } from "../../../services/defuseBalanceService"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../../types/base"
 import type { ChainType } from "../../../types/deposit"
 import type { SendNearTransaction } from "../../machines/publicKeyVerifierMachine"
-import { fetchFee } from "../actors/otcMakerConfigLoadActor"
+import { fetchProtocolFee } from "../actors/otcMakerConfigLoadActor"
 import { SignIntentActorProvider } from "../providers/SignIntentActorProvider"
 import { useOtcTakerTrades } from "../stores/otcTakerTrades"
 import type { SignMessage } from "../types/sharedTypes"
@@ -76,7 +76,7 @@ function OtcTakerScreens({
 
   const { data: protocolFee } = useQuery({
     queryKey: ["protocol_fee"],
-    queryFn: fetchFee,
+    queryFn: fetchProtocolFee,
   })
 
   const tradeTerms = useMemo(() => {
