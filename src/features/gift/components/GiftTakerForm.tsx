@@ -2,26 +2,19 @@ import { Err, Ok } from "@thames/monads"
 import { ButtonCustom } from "../../../components/Button/ButtonCustom"
 import type { SignerCredentials } from "../../../core/formatters"
 import { useGiftTakerConfirmClaim } from "../hooks/useGiftTakerConfirmClaim"
-import type { SignMessage } from "../types/sharedTypes"
 import type { GiftTerms } from "../utils/deriveGiftTerms"
 import { signGiftTakerMessage } from "../utils/signGiftTakerMessage"
 
 export type GiftTakerFormProps = {
   giftTerms: GiftTerms
   signerCredentials: SignerCredentials | null
-  signMessage: SignMessage
-  onSuccessClame: (arg: { intentHashes: string[] }) => void
-  referral: string | undefined
+  onSuccessClaim: (arg: { intentHashes: string[] }) => void
 }
 
 export function GiftTakerForm({
   giftTerms,
   signerCredentials,
-  // biome-ignore lint/correctness/noUnusedVariables: <explanation>
-  signMessage,
-  onSuccessClame,
-  // biome-ignore lint/correctness/noUnusedVariables: <explanation>
-  referral,
+  onSuccessClaim,
 }: GiftTakerFormProps) {
   const confirmTradeMutation = useGiftTakerConfirmClaim()
 
@@ -53,7 +46,7 @@ export function GiftTakerForm({
                         const intentHashes = result.unwrap()
                         const intentHash = intentHashes[0]
                         if (intentHash) {
-                          onSuccessClame({ intentHashes: [intentHash] })
+                          onSuccessClaim({ intentHashes: [intentHash] })
                         }
                       }
                       return Ok(signatureResult)

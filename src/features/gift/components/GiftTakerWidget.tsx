@@ -6,11 +6,10 @@ import type { SignerCredentials } from "../../../core/formatters"
 import { SwapWidgetProvider } from "../../../providers/SwapWidgetProvider"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../../types/base"
 import type { ChainType } from "../../../types/deposit"
-import type { SendNearTransaction } from "../../machines/publicKeyVerifierMachine"
-import type { SignMessage } from "../types/sharedTypes"
 import { deriveGiftTerms } from "../utils/deriveGiftTerms"
 import type { GiftTerms } from "../utils/deriveGiftTerms"
 import { GiftTakerForm } from "./GiftTakerForm"
+import { GiftTakerSuccessScreen } from "./GiftTakerSuccessScreen"
 
 export type GiftTakerWidgetProps = {
   secretKey: string
@@ -22,17 +21,8 @@ export type GiftTakerWidgetProps = {
   userAddress: string | null | undefined
   userChainType: ChainType | null | undefined
 
-  /** Sign message callback */
-  signMessage: SignMessage
-
-  /** Send NEAR transaction callback */
-  sendNearTransaction: SendNearTransaction
-
   /** Theme selection */
   theme?: "dark" | "light"
-
-  /** Frontend referral */
-  referral?: string
 }
 
 export function GiftTakerWidget(props: GiftTakerWidgetProps) {
@@ -52,10 +42,6 @@ function GiftTakerScreens({
   tokenList,
   userAddress,
   userChainType,
-  signMessage,
-  // biome-ignore lint/correctness/noUnusedVariables: it's fine
-  sendNearTransaction,
-  referral,
 }: GiftTakerWidgetProps) {
   const loading = <div>Loading...</div>
 
@@ -67,6 +53,10 @@ function GiftTakerScreens({
   const [giftTerms, setGiftTerms] = useState<Result<GiftTerms, string> | null>(
     null
   )
+
+  const [claimResult, setClaimResult] = useState<{
+    intentHashes: string[]
+  } | null>(null)
 
   useEffect(() => {
     deriveGiftTerms(secretKey, tokenList).then((result) => {
@@ -82,15 +72,19 @@ function GiftTakerScreens({
   }
 
   return giftTerms.match({
-    ok: (giftTerms) => (
-      <GiftTakerForm
-        giftTerms={giftTerms}
-        signerCredentials={signerCredentials}
-        signMessage={signMessage}
-        referral={referral}
-        onSuccessClame={() => {}}
-      />
-    ),
+    ok: (giftTerms) =>
+      claimResult !== null ? (
+        <GiftTakerSuccessScreen
+          giftTerms={giftTerms}
+          intentHashes={claimResult.intentHashes}
+        />
+      ) : (
+        <GiftTakerForm
+          giftTerms={giftTerms}
+          signerCredentials={signerCredentials}
+          onSuccessClaim={setClaimResult}
+        />
+      ),
     err: (error) => <div>Error: {error}</div>,
   })
 }
