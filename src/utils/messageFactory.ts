@@ -66,6 +66,7 @@ export function makeInnerSwapMessage({
 
 /**
  * @param tokenDeltas
+ * @param storageTokenDeltas
  * @param withdrawParams
  * @param signerId
  * @param deadlineTimestamp Unix timestamp in seconds
@@ -73,12 +74,14 @@ export function makeInnerSwapMessage({
  */
 export function makeInnerSwapAndWithdrawMessage({
   tokenDeltas,
+  storageTokenDeltas,
   withdrawParams,
   signerId,
   deadlineTimestamp,
   referral,
 }: {
-  tokenDeltas: [string, bigint][] | null
+  tokenDeltas: [string, bigint][]
+  storageTokenDeltas: [string, bigint][]
   withdrawParams: WithdrawParams
   signerId: DefuseUserId
   deadlineTimestamp: number
@@ -87,7 +90,7 @@ export function makeInnerSwapAndWithdrawMessage({
   const intents: NonNullable<Nep413DefuseMessageFor_DefuseIntents["intents"]> =
     []
 
-  if (tokenDeltas && tokenDeltas.length > 0) {
+  if (tokenDeltas.length) {
     const { intents: swapIntents } = makeInnerSwapMessage({
       tokenDeltas,
       signerId,
@@ -96,6 +99,17 @@ export function makeInnerSwapAndWithdrawMessage({
     })
     assert(swapIntents, "swapIntents must be defined")
     intents.push(...swapIntents)
+  }
+
+  if (storageTokenDeltas.length) {
+    const { intents: storageIntents } = makeInnerSwapMessage({
+      tokenDeltas: storageTokenDeltas,
+      signerId,
+      deadlineTimestamp,
+      referral,
+    })
+    assert(storageIntents, "storageIntents must be defined")
+    intents.push(...storageIntents)
   }
 
   intents.push(makeInnerWithdrawMessage(withdrawParams))
