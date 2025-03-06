@@ -19,10 +19,12 @@ export type GiftMakerReadyActorInput = {
   parsed: {
     tokenIn: BaseTokenInfo | UnifiedTokenInfo
     amountIn: TokenValue
+    message: string
   }
   raw: {
     tokenIn: BaseTokenInfo | UnifiedTokenInfo
     amountIn: string
+    message: string
   }
   giftId: string
   usedNonceBase64: string

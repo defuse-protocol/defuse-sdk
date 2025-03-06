@@ -136,7 +136,10 @@ export const giftMakerSignActor = setup({
         signerId: input.signerCredentials,
         nonce: nonce,
         referral: input.referral,
-        memo: input.parsed.message ?? "Enjoy your gift!",
+        memo:
+          input.parsed.message.length > 0
+            ? input.parsed.message
+            : "Enjoy your gift!",
         receiverId: input.escrowKeyPair.walletId,
       }
     )

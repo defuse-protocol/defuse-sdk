@@ -1,8 +1,4 @@
-import {
-  Check as CheckIcon,
-  Copy as CopyIcon,
-  HourglassHigh,
-} from "@phosphor-icons/react"
+import { Check as CheckIcon, Copy as CopyIcon } from "@phosphor-icons/react"
 import { Dialog } from "@radix-ui/themes"
 import { useSelector } from "@xstate/react"
 import type { ActorRefFrom } from "xstate"
@@ -12,6 +8,7 @@ import { BaseModalDialog } from "../../../components/Modal/ModalDialog"
 import type { SignerCredentials } from "../../../core/formatters"
 import type { giftMakerReadyActor } from "../actors/giftMakerReadyActor"
 import type { SignMessage } from "../types/sharedTypes"
+import { ShareableGiftImage } from "./ShareableGiftImage"
 
 type GiftMakerReadyDialogProps = {
   readyGiftRef: ActorRefFrom<typeof giftMakerReadyActor>
@@ -62,16 +59,25 @@ function GiftMakerDialog({
     <BaseModalDialog open={true} onClose={finish} isDismissable>
       {/* Header Section */}
       <div className="flex flex-col items-center text-center mb-6">
-        <div className="w-[64px] h-[64px] mt-5 mb-4 flex items-center justify-center rounded-full bg-yellow-300">
-          <HourglassHigh
-            className="size-7 text-warning-foreground"
-            weight="bold"
-          />
-        </div>
         <Dialog.Title className="text-2xl font-black text-gray-900 dark:text-gray-100 mb-2">
           Share your gift
         </Dialog.Title>
+        <Dialog.Description className="text-sm font-medium text-gray-11 dark:text-gray-400">
+          Your funds are on-chain. The recipient can claim them via the link, or
+          you can reclaim them if needed.
+        </Dialog.Description>
       </div>
+
+      {/* Image Section */}
+      <ShareableGiftImage
+        token={context.parsed.tokenIn}
+        amountIn={context.parsed.amountIn}
+        message={
+          context.parsed.message.length > 0
+            ? context.parsed.message
+            : "Enjoy your gift!"
+        }
+      />
 
       <div className="flex flex-col justify-center gap-3 mt-5">
         <Copy text={() => generateLink(context.escrowKeyPair.secretKey)}>
