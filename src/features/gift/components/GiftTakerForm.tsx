@@ -1,7 +1,11 @@
 import { Err, Ok } from "@thames/monads"
+import { assert } from "src/utils/assert"
+import {
+  computeTotalBalanceDifferentDecimals,
+  getUnderlyingBaseTokenInfos,
+} from "src/utils/tokenUtils"
 import { ButtonCustom } from "../../../components/Button/ButtonCustom"
 import type { SignerCredentials } from "../../../core/formatters"
-import type { TokenValue } from "../../../types/base"
 import { useGiftTakerConfirmClaim } from "../hooks/useGiftTakerConfirmClaim"
 import type { GiftTerms } from "../utils/deriveGiftTerms"
 import { signGiftTakerMessage } from "../utils/signGiftTakerMessage"
@@ -11,15 +15,21 @@ export type GiftTakerFormProps = {
   giftTerms: GiftTerms
   signerCredentials: SignerCredentials | null
   onSuccessClaim: (arg: { intentHashes: string[] }) => void
-  amountIn: TokenValue
 }
 
 export function GiftTakerForm({
   giftTerms,
   signerCredentials,
   onSuccessClaim,
-  amountIn,
 }: GiftTakerFormProps) {
+  const amountIn = computeTotalBalanceDifferentDecimals(
+    getUnderlyingBaseTokenInfos(giftTerms.tokenIn),
+    giftTerms.tokenDiff,
+    { strict: false }
+  )
+
+  assert(amountIn != null)
+
   const confirmTradeMutation = useGiftTakerConfirmClaim()
 
   return (
