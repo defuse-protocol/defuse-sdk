@@ -34,12 +34,14 @@ export function GiftTakerForm({
             signGiftTakerMessage({
               giftTerms,
               signerCredentials,
-            }).andThen((signature) => {
-              confirmTradeMutation.mutate({
-                signature,
-                signerCredentials,
-              })
-              return Ok(signature)
+            }).then((signatureResult) => {
+              if (signatureResult.isOk()) {
+                confirmTradeMutation.mutate({
+                  signature: signatureResult.unwrap(),
+                  signerCredentials,
+                })
+              }
+              return Ok(signatureResult)
             })
           }
         }}

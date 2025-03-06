@@ -10,14 +10,15 @@ import {
 } from "../../../utils/messageFactory"
 import { randomDefuseNonce } from "../../../utils/messageFactory"
 import type { GiftTerms } from "./deriveGiftTerms"
+import { SignStandardEnum, serializeIntent } from "./hashing"
 
-export function signGiftTakerMessage({
+export async function signGiftTakerMessage({
   giftTerms,
   signerCredentials,
 }: {
   giftTerms: GiftTerms
   signerCredentials: SignerCredentials | null
-}): Result<NEP413SignatureData, string> {
+}): Promise<Result<NEP413SignatureData, string>> {
   if (signerCredentials == null) {
     return Err("CREDENTIALS_NOT_FOUND")
   }
@@ -37,10 +38,19 @@ export function signGiftTakerMessage({
 
   try {
     const keyPair = KeyPair.fromString(`ed25519:${giftTerms.secretKey}`)
-    const messageToSign = new TextEncoder().encode(
-      JSON.stringify(walletMessage.NEP413)
+
+    // biome-ignore lint/suspicious/noConsole: <explanation>
+    console.log("walletMessage.NEP413", walletMessage.NEP413)
+
+    const serialize = await serializeIntent(
+      walletMessage.NEP413.message,
+      walletMessage.NEP413.recipient,
+      base64.encode(nonce),
+      SignStandardEnum.nep413
     )
-    const signature = keyPair.sign(messageToSign)
+
+    const signature = keyPair.sign(serialize)
+
     return Ok({
       type: "NEP413",
       signatureData: {
