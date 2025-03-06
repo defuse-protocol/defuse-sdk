@@ -10,6 +10,7 @@ import type { SendNearTransaction } from "../../machines/publicKeyVerifierMachin
 import type { SignMessage } from "../types/sharedTypes"
 import { deriveGiftTerms } from "../utils/deriveGiftTerms"
 import type { GiftTerms } from "../utils/deriveGiftTerms"
+import { GiftTakerForm } from "./GiftTakerForm"
 
 export type GiftTakerWidgetProps = {
   secretKey: string
@@ -51,13 +52,18 @@ function GiftTakerScreens({
   tokenList,
   userAddress,
   userChainType,
-  // biome-ignore lint/correctness/noUnusedVariables: it's fine
   signMessage,
   // biome-ignore lint/correctness/noUnusedVariables: it's fine
   sendNearTransaction,
-  // biome-ignore lint/correctness/noUnusedVariables: it's fine
   referral,
 }: GiftTakerWidgetProps) {
+  const loading = <div>Loading...</div>
+
+  const signerCredentials: SignerCredentials | null =
+    userAddress != null && userChainType != null
+      ? { credential: userAddress, credentialType: userChainType }
+      : null
+
   const [giftTerms, setGiftTerms] = useState<Result<GiftTerms, string> | null>(
     null
   )
@@ -71,14 +77,20 @@ function GiftTakerScreens({
     })
   }, [secretKey, tokenList])
 
-  // biome-ignore lint/suspicious/noConsole: it's fine
-  console.log(giftTerms)
+  if (giftTerms == null) {
+    return loading
+  }
 
-  // biome-ignore lint/correctness/noUnusedVariables: it's fine
-  const signerCredentials: SignerCredentials | null =
-    userAddress != null && userChainType != null
-      ? { credential: userAddress, credentialType: userChainType }
-      : null
-
-  return <div>GiftTakerScreens</div>
+  return giftTerms.match({
+    ok: (giftTerms) => (
+      <GiftTakerForm
+        giftTerms={giftTerms}
+        signerCredentials={signerCredentials}
+        signMessage={signMessage}
+        referral={referral}
+        onSuccessClame={() => {}}
+      />
+    ),
+    err: (error) => <div>Error: {error}</div>,
+  })
 }
