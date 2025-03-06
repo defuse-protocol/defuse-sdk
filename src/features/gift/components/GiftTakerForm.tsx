@@ -1,5 +1,7 @@
+import { Ok } from "@thames/monads"
 import { ButtonCustom } from "../../../components/Button/ButtonCustom"
 import type { SignerCredentials } from "../../../core/formatters"
+import { useGiftTakerConfirmClaim } from "../hooks/useGiftTakerConfirmClaim"
 import type { SignMessage } from "../types/sharedTypes"
 import type { GiftTerms } from "../utils/deriveGiftTerms"
 import { signGiftTakerMessage } from "../utils/signGiftTakerMessage"
@@ -22,15 +24,30 @@ export function GiftTakerForm({
   // biome-ignore lint/correctness/noUnusedVariables: <explanation>
   referral,
 }: GiftTakerFormProps) {
-  const preparation = signGiftTakerMessage({
-    giftTerms,
-    signerCredentials,
-  })
-  // biome-ignore lint/suspicious/noConsole: <explanation>
-  console.log("preparation", preparation)
+  const confirmTradeMutation = useGiftTakerConfirmClaim()
+
   return (
     <div className="flex flex-col">
-      <ButtonCustom type="button" size="lg" className="mt-5" variant="primary">
+      <ButtonCustom
+        onClick={() => {
+          if (!confirmTradeMutation.isPending && signerCredentials != null) {
+            signGiftTakerMessage({
+              giftTerms,
+              signerCredentials,
+            }).andThen((signature) => {
+              confirmTradeMutation.mutate({
+                signature,
+                signerCredentials,
+              })
+              return Ok(signature)
+            })
+          }
+        }}
+        type="button"
+        size="lg"
+        className="mt-5"
+        variant="primary"
+      >
         {signerCredentials ? "Claim gift" : "Sign in"}
       </ButtonCustom>
     </div>

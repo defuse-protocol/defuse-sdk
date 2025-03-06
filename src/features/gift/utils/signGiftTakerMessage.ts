@@ -3,6 +3,7 @@ import { Err, Ok, type Result } from "@thames/monads"
 import { KeyPair } from "near-api-js"
 import type { DefuseUserId, SignerCredentials } from "../../../core/formatters"
 import { formatUserIdentity } from "../../../core/formatters"
+import type { NEP413SignatureData } from "../../../types/swap"
 import {
   makeInnerTransferMessage,
   makeSwapMessage,
@@ -16,7 +17,7 @@ export function signGiftTakerMessage({
 }: {
   giftTerms: GiftTerms
   signerCredentials: SignerCredentials | null
-}): Result<string, string> {
+}): Result<NEP413SignatureData, string> {
   if (signerCredentials == null) {
     return Err("CREDENTIALS_NOT_FOUND")
   }
@@ -35,12 +36,20 @@ export function signGiftTakerMessage({
   })
 
   try {
-    // TODO: generate secret within curve format on creation of gift link
     const keyPair = KeyPair.fromString(`ed25519:${giftTerms.secretKey}`)
-    const signature = keyPair.sign(
-      new TextEncoder().encode(walletMessage.NEP413.message)
+    const messageToSign = new TextEncoder().encode(
+      JSON.stringify(walletMessage.NEP413)
     )
-    return Ok(base64.encode(signature.signature))
+    const signature = keyPair.sign(messageToSign)
+    return Ok({
+      type: "NEP413",
+      signatureData: {
+        accountId: giftTerms.walletId,
+        publicKey: keyPair.getPublicKey().toString(),
+        signature: base64.encode(signature.signature),
+      },
+      signedData: walletMessage.NEP413,
+    })
   } catch (error) {
     return Err(
       `Failed to sign message: ${error instanceof Error ? error.message : String(error)}`
