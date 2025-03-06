@@ -65,20 +65,55 @@ export function makeInnerSwapMessage({
 }
 
 /**
- * @param tokenDeltas
+ * Explanation of `tokenDelta` and `storageTokenDelta`.
+ *
+ * Say we withdraw token $Y, but we have token $X. We need to swap $X to $Y first.
+ * `tokenDelta` represents the swap from $X to $Y.
+ *
+ * Say we withdraw token $Y to Near, and we need to pay for storage.
+ * Storage is paid in token $N.
+ * `storageTokenDelta` represents the swap from $Y to $N.
+ *
+ * Important: We must execute these swaps separately rather than combining them.
+ * This is because protocol fees are applied to each outgoing token in a swap.
+ *
+ * Example of why combining swaps fails when fee is 0.3%:
+ *
+ * User withdraws 1.0 USDC:eth to Near blockchain and pays for storage.
+ * Quote #1: 1.0 USDC:eth -> 0.994009 USDC:near
+ * Quote #2: 0.003866 USDC:near -> 0.00125 NEAR
+ *
+ * User combined diff: [-1000000 USDC:eth, +994009-3866=+990143 USDC:near, +125000 NEAR]
+ *   - Shared pool state: [+997000 USDC:eth, -990143 USDC:near, -125000 NEAR]
+ *   - Note: 1000000*0.003=3000 USDC:eth taken as protocol fee
+ *
+ * Solver #1 diff: [+997000 USDC:eth, -997000 USDC:near, 0 NEAR]
+ *   - Shared pool state: [+997000-997000=0 USDC:eth, -990143+994009=+3866 USDC:near, -125000 NEAR]
+ *
+ * Solver #2 diff: [0 USDC:eth, +3854 USDC:near, -125377 NEAR]
+ *  - Shared pool state: [0 USDC:eth, +3866-3854=12 USDC:near, -125000+125000=0 NEAR]
+ *
+ * Result: 12 USDC:near remains in the pool - violating the invariant that at the end the pool should be empty.
+ *
+ * By executing swaps separately, we properly account for protocol fees at each step.
+ *
+ * @param tokenDeltas - the swap from X to Y, where Y to be withdrawn
+ * @param storageTokenDeltas - the swap from Y to N, where Y to be withdrawn, N to be paid for storage
  * @param withdrawParams
  * @param signerId
- * @param deadlineTimestamp Unix timestamp in seconds
+ * @param deadlineTimestamp - unix timestamp in seconds
  * @param referral
  */
 export function makeInnerSwapAndWithdrawMessage({
   tokenDeltas,
+  storageTokenDeltas,
   withdrawParams,
   signerId,
   deadlineTimestamp,
   referral,
 }: {
-  tokenDeltas: [string, bigint][] | null
+  tokenDeltas: [string, bigint][]
+  storageTokenDeltas: [string, bigint][]
   withdrawParams: WithdrawParams
   signerId: DefuseUserId
   deadlineTimestamp: number
@@ -87,7 +122,7 @@ export function makeInnerSwapAndWithdrawMessage({
   const intents: NonNullable<Nep413DefuseMessageFor_DefuseIntents["intents"]> =
     []
 
-  if (tokenDeltas && tokenDeltas.length > 0) {
+  if (tokenDeltas.length) {
     const { intents: swapIntents } = makeInnerSwapMessage({
       tokenDeltas,
       signerId,
@@ -96,6 +131,17 @@ export function makeInnerSwapAndWithdrawMessage({
     })
     assert(swapIntents, "swapIntents must be defined")
     intents.push(...swapIntents)
+  }
+
+  if (storageTokenDeltas.length) {
+    const { intents: storageIntents } = makeInnerSwapMessage({
+      tokenDeltas: storageTokenDeltas,
+      signerId,
+      deadlineTimestamp,
+      referral,
+    })
+    assert(storageIntents, "storageIntents must be defined")
+    intents.push(...storageIntents)
   }
 
   intents.push(makeInnerWithdrawMessage(withdrawParams))
