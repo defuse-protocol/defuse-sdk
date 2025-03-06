@@ -4,6 +4,7 @@ import type { BaseTokenInfo, UnifiedTokenInfo } from "../../../types/base"
 export type GiftMakerFormValuesState = {
   amountIn: string
   tokenIn: null | BaseTokenInfo | UnifiedTokenInfo
+  message: string
 }
 
 export const createGiftMakerFormValuesStore = ({
@@ -15,6 +16,7 @@ export const createGiftMakerFormValuesStore = ({
     context: {
       amountIn: "",
       tokenIn: initialTokenIn,
+      message: "",
     } satisfies GiftMakerFormValuesState,
     emits: {
       changed: (_: { context: GiftMakerFormValuesState }) => {},
@@ -36,6 +38,14 @@ export const createGiftMakerFormValuesStore = ({
         const newContext = {
           ...context,
           tokenIn: event.value,
+        }
+        enqueue.emit.changed({ context: newContext })
+        return newContext
+      },
+      updateMessage: (context, event: { value: string }, enqueue) => {
+        const newContext = {
+          ...context,
+          message: event.value,
         }
         enqueue.emit.changed({ context: newContext })
         return newContext

@@ -11,6 +11,7 @@ import type { GiftMakerFormValuesState } from "./giftMakerFormValuesStore"
 type State = {
   tokenIn: null | BaseTokenInfo | UnifiedTokenInfo
   amountIn: null | TokenValue
+  message: string
 }
 
 export const createGiftMakerFormParsedValuesStore = () =>
@@ -18,6 +19,7 @@ export const createGiftMakerFormParsedValuesStore = () =>
     context: {
       amountIn: null,
       tokenIn: null,
+      message: "",
     } as State,
     emits: {
       valuesParsed: (_: { context: State }) => {},
@@ -32,6 +34,7 @@ export const createGiftMakerFormParsedValuesStore = () =>
           ...context,
           amountIn: parseTokenValue(formValues.tokenIn, formValues.amountIn),
           tokenIn: formValues.tokenIn,
+          message: formValues.message,
         }
         enqueue.emit.valuesParsed({ context: newContext })
         return newContext

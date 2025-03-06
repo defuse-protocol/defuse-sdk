@@ -24,6 +24,7 @@ import type { giftMakerReadyActor } from "../actors/giftMakerReadyActor"
 import { giftMakerRootMachine } from "../actors/giftMakerRootMachine"
 import type { SignMessage } from "../types/sharedTypes"
 import { GiftMakerReadyDialog } from "./GiftMakerReadyDialog"
+import { GiftMessageInput } from "./GiftMessageInput"
 
 export type GiftMakerWidgetProps = {
   /** List of available tokens for trading */
@@ -144,7 +145,7 @@ export function GiftMakerForm({
   }, [modalSelectAssetsData, formValuesRef.trigger.updateTokenIn])
 
   return (
-    <div className="flex flex-col p-5">
+    <div className="flex flex-col">
       {rootSnapshot.matches("signed") &&
         readyGiftRef != null &&
         signerCredentials != null && (
@@ -155,6 +156,19 @@ export function GiftMakerForm({
             generateLink={generateLink}
           />
         )}
+
+      {/* Header Section */}
+      <div className="flex flex-row justify-between mb-5">
+        <div className="flex flex-col items-start gap-1.5">
+          <div className="text-2xl font-black text-gray-900 dark:text-gray-100 mb-2">
+            Share gift
+          </div>
+          <div className="text-sm font-medium text-gray-600 dark:text-gray-400">
+            Send assets to your friends and help them get started on NEAR
+            Intents, hassle-free.
+          </div>
+        </div>
+      </div>
 
       <form
         onSubmit={(e) => {
@@ -179,7 +193,7 @@ export function GiftMakerForm({
                   htmlFor="gift-amount-in"
                   className="font-bold text-label text-sm"
                 >
-                  Enter gift amount
+                  Gift amount
                 </label>
               }
               inputSlot={
@@ -227,6 +241,22 @@ export function GiftMakerForm({
                     ? formatUsdAmount(usdAmountIn)
                     : null}
                 </TokenAmountInputCard.DisplayPrice>
+              }
+            />
+          </div>
+          <div className="w-full mt-4">
+            <GiftMessageInput
+              inputSlot={
+                <GiftMessageInput.Input
+                  id="gift-message"
+                  name="message"
+                  value={formValues.message}
+                  onChange={(e) =>
+                    formValuesRef.trigger.updateMessage({
+                      value: e.target.value,
+                    })
+                  }
+                />
               }
             />
           </div>

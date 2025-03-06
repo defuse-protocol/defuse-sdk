@@ -36,6 +36,7 @@ export type GiftMakerSignActorInput = {
   parsed: {
     tokenIn: BaseTokenInfo | UnifiedTokenInfo
     amountIn: TokenValue
+    message: string
   }
   balances: BalanceMapping
   signerCredentials: SignerCredentials
@@ -135,7 +136,7 @@ export const giftMakerSignActor = setup({
         signerId: input.signerCredentials,
         nonce: nonce,
         referral: input.referral,
-        memo: "", // TODO: gift message or something
+        memo: input.parsed.message ?? "Enjoy your gift!",
         receiverId: input.escrowKeyPair.walletId,
       }
     )
