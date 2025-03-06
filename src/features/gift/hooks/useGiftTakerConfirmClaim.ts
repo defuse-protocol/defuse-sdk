@@ -17,13 +17,10 @@ export function useGiftTakerConfirmClaim() {
       signerCredentials: SignerCredentials
     }) => {
       const multiPayload = formatSignedIntent(signature, signerCredentials)
-
-      const result = await publishIntents({
+      return await publishIntents({
         quote_hashes: [],
         signed_datas: [multiPayload],
       })
-      // biome-ignore lint/suspicious/noConsole: <explanation>
-      console.log(result)
     },
   })
 }

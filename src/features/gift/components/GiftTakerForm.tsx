@@ -1,4 +1,4 @@
-import { Ok } from "@thames/monads"
+import { Err, Ok } from "@thames/monads"
 import { ButtonCustom } from "../../../components/Button/ButtonCustom"
 import type { SignerCredentials } from "../../../core/formatters"
 import { useGiftTakerConfirmClaim } from "../hooks/useGiftTakerConfirmClaim"
@@ -19,7 +19,6 @@ export function GiftTakerForm({
   signerCredentials,
   // biome-ignore lint/correctness/noUnusedVariables: <explanation>
   signMessage,
-  // biome-ignore lint/correctness/noUnusedVariables: <explanation>
   onSuccessClame,
   // biome-ignore lint/correctness/noUnusedVariables: <explanation>
   referral,
@@ -28,6 +27,10 @@ export function GiftTakerForm({
 
   return (
     <div className="flex flex-col">
+      {confirmTradeMutation.data?.match({
+        ok: () => <div>Gift claimed!</div>,
+        err: (err) => <div className="text-red-700">{err.reason}</div>,
+      })}
       <ButtonCustom
         onClick={() => {
           if (!confirmTradeMutation.isPending && signerCredentials != null) {
@@ -36,21 +39,41 @@ export function GiftTakerForm({
               signerCredentials,
             }).then((signatureResult) => {
               if (signatureResult.isOk()) {
-                confirmTradeMutation.mutate({
-                  signature: signatureResult.unwrap(),
-                  signerCredentials,
-                })
+                confirmTradeMutation.mutate(
+                  {
+                    signature: signatureResult.unwrap(),
+                    signerCredentials,
+                  },
+                  {
+                    onSuccess: (result) => {
+                      if (result.isErr()) {
+                        return Err(result.unwrapErr())
+                      }
+                      if (result.isOk()) {
+                        const intentHashes = result.unwrap()
+                        const intentHash = intentHashes[0]
+                        if (intentHash) {
+                          onSuccessClame({ intentHashes: [intentHash] })
+                        }
+                      }
+                      return Ok(signatureResult)
+                    },
+                  }
+                )
               }
-              return Ok(signatureResult)
+              return signatureResult.isErr()
+                ? Err(signatureResult.unwrapErr())
+                : Ok(signatureResult)
             })
           }
         }}
         type="button"
         size="lg"
         className="mt-5"
-        variant="primary"
+        variant={confirmTradeMutation.isPending ? "secondary" : "primary"}
+        isLoading={confirmTradeMutation.isPending}
       >
-        {signerCredentials ? "Claim gift" : "Sign in"}
+        {confirmTradeMutation.isPending ? "Processing..." : "Claim gift"}
       </ButtonCustom>
     </div>
   )
