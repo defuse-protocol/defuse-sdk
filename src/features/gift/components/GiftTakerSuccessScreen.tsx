@@ -1,11 +1,8 @@
 import { Check as CheckIcon } from "@phosphor-icons/react"
 import { useQuery } from "@tanstack/react-query"
-import { CopyButton } from "src/components/IntentCard/CopyButton"
-import { waitForIntentSettlement } from "src/services/intentService"
-import {
-  computeTotalBalanceDifferentDecimals,
-  getUnderlyingBaseTokenInfos,
-} from "src/utils/tokenUtils"
+import { CopyButton } from "../../../components/IntentCard/CopyButton"
+import { waitForIntentSettlement } from "../../../services/intentService"
+import type { TokenValue } from "../../../types/base"
 import { assert } from "../../../utils/assert"
 import type { GiftTerms } from "../utils/deriveGiftTerms"
 import { GiftStrip } from "./GiftStrip"
@@ -15,20 +12,12 @@ const NEAR_EXPLORER = "https://nearblocks.io"
 export function GiftTakerSuccessScreen({
   giftTerms,
   intentHashes,
+  amountIn,
 }: {
   giftTerms: GiftTerms
   intentHashes: string[]
+  amountIn: TokenValue
 }) {
-  const amountIn = computeTotalBalanceDifferentDecimals(
-    getUnderlyingBaseTokenInfos(giftTerms.tokenIn),
-    giftTerms.tokenDiff,
-    { strict: false }
-  )
-  // biome-ignore lint/suspicious/noConsole: <explanation>
-  console.log("amountIn", amountIn)
-
-  assert(amountIn != null)
-
   const intentStatus = useQuery({
     queryKey: ["intents_status", intentHashes],
     queryFn: async ({ signal }) => {

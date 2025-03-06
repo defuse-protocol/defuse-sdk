@@ -1,6 +1,11 @@
 import type { Result } from "@thames/monads"
 import { useEffect, useState } from "react"
 import { logger } from "src/logger"
+import { assert } from "src/utils/assert"
+import {
+  computeTotalBalanceDifferentDecimals,
+  getUnderlyingBaseTokenInfos,
+} from "src/utils/tokenUtils"
 import { WidgetRoot } from "../../../components/WidgetRoot"
 import type { SignerCredentials } from "../../../core/formatters"
 import { SwapWidgetProvider } from "../../../providers/SwapWidgetProvider"
@@ -71,18 +76,28 @@ function GiftTakerScreens({
     return loading
   }
 
+  const amountIn = computeTotalBalanceDifferentDecimals(
+    getUnderlyingBaseTokenInfos(giftTerms.unwrap().tokenIn),
+    giftTerms.unwrap().tokenDiff,
+    { strict: false }
+  )
+
+  assert(amountIn != null)
+
   return giftTerms.match({
     ok: (giftTerms) =>
       claimResult !== null ? (
         <GiftTakerSuccessScreen
           giftTerms={giftTerms}
           intentHashes={claimResult.intentHashes}
+          amountIn={amountIn}
         />
       ) : (
         <GiftTakerForm
           giftTerms={giftTerms}
           signerCredentials={signerCredentials}
           onSuccessClaim={setClaimResult}
+          amountIn={amountIn}
         />
       ),
     err: (error) => <div>Error: {error}</div>,
