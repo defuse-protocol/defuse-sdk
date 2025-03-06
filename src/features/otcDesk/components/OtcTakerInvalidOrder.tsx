@@ -1,7 +1,11 @@
 import { ExclamationTriangleIcon } from "@radix-ui/react-icons"
 import { Cross2Icon } from "@radix-ui/react-icons"
 import { Callout } from "@radix-ui/themes"
-import type { TokenValue } from "../../../types/base"
+import type {
+  BaseTokenInfo,
+  TokenValue,
+  UnifiedTokenInfo,
+} from "../../../types/base"
 import { assert } from "../../../utils/assert"
 import {
   computeTotalBalanceDifferentDecimals,
@@ -14,9 +18,13 @@ import { SwapStrip } from "./shared/SwapStrip"
 export function OtcTakerInvalidOrder({
   error,
   tradeTerms,
+  tokenIn,
+  tokenOut,
 }: {
   error?: string
   tradeTerms?: TradeTerms
+  tokenIn?: BaseTokenInfo | UnifiedTokenInfo
+  tokenOut?: BaseTokenInfo | UnifiedTokenInfo
 }) {
   let amountIn: TokenValue | undefined
   let amountOut: TokenValue | undefined
@@ -27,15 +35,15 @@ export function OtcTakerInvalidOrder({
       }
     | undefined
 
-  if (tradeTerms != null) {
+  if (tradeTerms != null && tokenIn != null && tokenOut != null) {
     amountIn = computeTotalBalanceDifferentDecimals(
-      getUnderlyingBaseTokenInfos(tradeTerms.tokenIn),
+      getUnderlyingBaseTokenInfos(tokenIn),
       tradeTerms.takerTokenDiff,
       { strict: false }
     )
 
     amountOut = computeTotalBalanceDifferentDecimals(
-      getUnderlyingBaseTokenInfos(tradeTerms.tokenOut),
+      getUnderlyingBaseTokenInfos(tokenOut),
       tradeTerms.takerTokenDiff,
       { strict: false }
     )
@@ -82,14 +90,17 @@ export function OtcTakerInvalidOrder({
       )}
 
       {/* Order Section */}
-      {tradeTerms != null && breakdown != null && (
-        <SwapStrip
-          tokenIn={tradeTerms.tokenIn}
-          tokenOut={tradeTerms.tokenOut}
-          amountIn={breakdown.takerSends}
-          amountOut={breakdown.takerReceives}
-        />
-      )}
+      {tradeTerms != null &&
+        breakdown != null &&
+        tokenIn != null &&
+        tokenOut != null && (
+          <SwapStrip
+            tokenIn={tokenIn}
+            tokenOut={tokenOut}
+            amountIn={breakdown.takerSends}
+            amountOut={breakdown.takerReceives}
+          />
+        )}
     </div>
   )
 }

@@ -1,4 +1,5 @@
 import { Err, Ok, type Result } from "@thames/monads"
+import { logger } from "../../../logger"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../../types/base"
 import type { MultiPayload } from "../../../types/defuse-contracts-types"
 import type { DefuseUserId } from "../../../utils/defuse"
@@ -12,62 +13,43 @@ export type TradeTerms = {
   makerTokenDiff: Record<BaseTokenInfo["defuseAssetId"], bigint>
   makerNonceBase64: string
   takerTokenDiff: Record<BaseTokenInfo["defuseAssetId"], bigint>
-  tokenIn: BaseTokenInfo | UnifiedTokenInfo
-  tokenOut: BaseTokenInfo | UnifiedTokenInfo
   makerMultiPayload: MultiPayload
 }
 
-type DeriveTradeTermsErr = ParseTradeTermsErr | DetermineTokenInAndOutErr
+export type DeriveTradeTermsErr = ParseTradeTermsErr
 
 export function deriveTradeTerms(
   makerMultiPayload: MultiPayload | string,
-  tokenList: (BaseTokenInfo | UnifiedTokenInfo)[],
   protocolFee: number
 ): Result<TradeTerms, DeriveTradeTermsErr> {
   const makerTermsResult = parseTradeTerms(makerMultiPayload)
 
-  return makerTermsResult
-    .mapErr<DeriveTradeTermsErr>((a) => a)
-    .andThen((makerTerms) => {
-      const takerTermsResult = determineOppositeSideTradeDetails(
-        tokenList,
-        makerTerms.tokenDiff,
-        protocolFee
-      )
+  return makerTermsResult.map((makerTerms) => {
+    const takerTokenDiff = computeOppositeSideTokenDiff(
+      makerTerms.tokenDiff,
+      protocolFee
+    )
 
-      return takerTermsResult.map(
-        ({ oppositeTokenDiff, tokenIn, tokenOut }) => ({
-          deadline: makerTerms.deadline,
-          makerUserId: makerTerms.userId,
-          makerTokenDiff: makerTerms.tokenDiff,
-          makerNonceBase64: makerTerms.nonceBase64,
-          takerTokenDiff: oppositeTokenDiff,
-          tokenIn,
-          tokenOut,
-          makerMultiPayload: makerTerms.multiPayload,
-        })
-      )
-    })
+    return {
+      deadline: makerTerms.deadline,
+      makerUserId: makerTerms.userId,
+      makerTokenDiff: makerTerms.tokenDiff,
+      makerNonceBase64: makerTerms.nonceBase64,
+      takerTokenDiff,
+      makerMultiPayload: makerTerms.multiPayload,
+    }
+  })
 }
 
-function determineOppositeSideTradeDetails(
-  tokenList: (BaseTokenInfo | UnifiedTokenInfo)[],
-  tokenDiff: Record<BaseTokenInfo["defuseAssetId"], bigint>,
-  protocolFee: number
-) {
-  const oppositeTokenDiff = computeOppositeSideTokenDiff(tokenDiff, protocolFee)
-  const { tokenIdsIn, tokenIdsOut } = getTokenIds(oppositeTokenDiff)
-  const tokensResult = determineTokenInAndOut(
-    tokenList,
-    tokenIdsIn,
-    tokenIdsOut
-  )
+export type DetermineInvolvedTokensErr = DetermineTokenInAndOutErr
 
-  return tokensResult.map(({ tokenIn, tokenOut }) => ({
-    oppositeTokenDiff,
-    tokenIn,
-    tokenOut,
-  }))
+export function determineInvolvedTokens(
+  tokenList: (BaseTokenInfo | UnifiedTokenInfo)[],
+  tokenDiff: Record<BaseTokenInfo["defuseAssetId"], bigint>
+) {
+  const { tokenIdsIn, tokenIdsOut } = getTokenIds(tokenDiff)
+
+  return determineTokenInAndOut(tokenList, tokenIdsIn, tokenIdsOut)
 }
 
 export function computeOppositeSideTokenDiff(
@@ -88,7 +70,7 @@ export function computeOppositeSideTokenDiff(
   return oppositeTokenDiff
 }
 
-export function getTokenIds(
+function getTokenIds(
   tokenDiff: Record<BaseTokenInfo["defuseAssetId"], bigint>
 ) {
   const tokenIdsIn: BaseTokenInfo["defuseAssetId"][] = []
@@ -126,11 +108,11 @@ function findTokens(
   return Array.from(new Set(tokens))
 }
 
-export type DetermineTokenInAndOutErr =
+type DetermineTokenInAndOutErr =
   | "MULTIPLE_TOKENS_NOT_SUPPORTED"
   | "TOKEN_NOT_FOUND_IN_LIST"
 
-export function determineTokenInAndOut(
+function determineTokenInAndOut(
   tokenList: (BaseTokenInfo | UnifiedTokenInfo)[],
   tokenIdsIn: BaseTokenInfo["defuseAssetId"][],
   tokenIdsOut: BaseTokenInfo["defuseAssetId"][]
@@ -144,17 +126,20 @@ export function determineTokenInAndOut(
   const tokensIn = findTokens(tokenList, tokenIdsIn)
   const tokensOut = findTokens(tokenList, tokenIdsOut)
 
-  // We need to ensure that each group of tokens are resolved into a single token,
-  // otherwise it means user needs to sell multiple tokens or buy multiple tokens
-  if (tokensIn.length !== 1 || tokensOut.length !== 1) {
-    return Err("MULTIPLE_TOKENS_NOT_SUPPORTED")
-  }
-
   const tokenIn = tokensIn[0]
   const tokenOut = tokensOut[0]
 
   if (tokenIn == null || tokenOut == null) {
+    logger.error("Couldn't find token in or out in token list", {
+      tokens: { in: tokenIdsIn, out: tokenIdsOut },
+    })
     return Err("TOKEN_NOT_FOUND_IN_LIST")
+  }
+
+  // We need to ensure that each group of tokens are resolved into a single token,
+  // otherwise it means user needs to sell multiple tokens or buy multiple tokens
+  if (tokensIn.length !== 1 || tokensOut.length !== 1) {
+    return Err("MULTIPLE_TOKENS_NOT_SUPPORTED")
   }
 
   return Ok({ tokenIn, tokenOut })

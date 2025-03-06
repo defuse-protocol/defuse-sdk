@@ -1,5 +1,6 @@
 import { ArrowDown } from "@phosphor-icons/react"
 import { useQuery } from "@tanstack/react-query"
+import { None } from "@thames/monads"
 import clsx from "clsx"
 import { providers } from "near-api-js"
 import { BlockMultiBalances } from "../../../components/Block/BlockMultiBalances"
@@ -7,6 +8,7 @@ import { ButtonCustom } from "../../../components/Button/ButtonCustom"
 import type { SignerCredentials } from "../../../core/formatters"
 import { useTokensUsdPrices } from "../../../hooks/useTokensUsdPrices"
 import { getDepositedBalances } from "../../../services/defuseBalanceService"
+import type { BaseTokenInfo, UnifiedTokenInfo } from "../../../types/base"
 import type { MultiPayload } from "../../../types/defuse-contracts-types"
 import { assert } from "../../../utils/assert"
 import { userAddressToDefuseUserId } from "../../../utils/defuse"
@@ -14,7 +16,9 @@ import { formatTokenValue, formatUsdAmount } from "../../../utils/format"
 import getTokenUsdPrice from "../../../utils/getTokenUsdPrice"
 import {
   computeTotalBalanceDifferentDecimals,
+  computeTotalDeltaDifferentDecimals,
   getUnderlyingBaseTokenInfos,
+  negateTokenValue,
 } from "../../../utils/tokenUtils"
 import { TokenAmountInputCard } from "../../deposit/components/DepositForm/TokenAmountInputCard"
 import { useOtcTakerConfirmTrade } from "../hooks/useOtcTakerConfirmTrade"
@@ -26,6 +30,8 @@ export type OtcTakerFormProps = {
   tradeId: string
   makerMultiPayload: MultiPayload
   tradeTerms: TradeTerms
+  tokenIn: BaseTokenInfo | UnifiedTokenInfo
+  tokenOut: BaseTokenInfo | UnifiedTokenInfo
   signerCredentials: SignerCredentials | null
   signMessage: SignMessage
   protocolFee: number
@@ -37,38 +43,14 @@ export function OtcTakerForm({
   tradeId,
   makerMultiPayload,
   tradeTerms,
+  tokenIn,
+  tokenOut,
   protocolFee,
   signerCredentials,
   signMessage,
   onSuccessTrade,
   referral,
 }: OtcTakerFormProps) {
-  const totalAmountIn = computeTotalBalanceDifferentDecimals(
-    tradeTerms.tokenIn,
-    tradeTerms.takerTokenDiff,
-    { strict: false }
-  )
-  assert(totalAmountIn)
-
-  const totalAmountOut = computeTotalBalanceDifferentDecimals(
-    tradeTerms.tokenOut,
-    tradeTerms.takerTokenDiff,
-    { strict: false }
-  )
-  assert(totalAmountOut)
-
-  const { data: tokensUsdPriceData } = useTokensUsdPrices()
-  const usdAmountIn = getTokenUsdPrice(
-    formatTokenValue(-totalAmountIn.amount, totalAmountIn.decimals),
-    tradeTerms.tokenIn,
-    tokensUsdPriceData
-  )
-  const usdAmountOut = getTokenUsdPrice(
-    formatTokenValue(totalAmountOut.amount, totalAmountOut.decimals),
-    tradeTerms.tokenOut,
-    tokensUsdPriceData
-  )
-
   const signerId =
     signerCredentials != null
       ? userAddressToDefuseUserId(
@@ -89,10 +71,10 @@ export function OtcTakerForm({
       const balances = await getDepositedBalances(
         signerId,
         [
-          ...getUnderlyingBaseTokenInfos(tradeTerms.tokenIn).map(
+          ...getUnderlyingBaseTokenInfos(tokenIn).map(
             (token) => token.defuseAssetId
           ),
-          ...getUnderlyingBaseTokenInfos(tradeTerms.tokenOut).map(
+          ...getUnderlyingBaseTokenInfos(tokenOut).map(
             (token) => token.defuseAssetId
           ),
         ],
@@ -102,13 +84,13 @@ export function OtcTakerForm({
       )
 
       const tokenInBalance = computeTotalBalanceDifferentDecimals(
-        tradeTerms.tokenIn,
+        tokenIn,
         balances,
         { strict: false }
       )
 
       const tokenOutBalance = computeTotalBalanceDifferentDecimals(
-        tradeTerms.tokenOut,
+        tokenOut,
         balances,
         { strict: false }
       )
@@ -122,7 +104,7 @@ export function OtcTakerForm({
   })
 
   const preparation = useOtcTakerPreparation({
-    tokenIn: tradeTerms.tokenIn,
+    tokenIn: tokenIn,
     takerTokenDiff: tradeTerms.takerTokenDiff,
     protocolFee,
     takerId: signerId,
@@ -135,6 +117,59 @@ export function OtcTakerForm({
     onSuccessTrade,
     referral,
   })
+
+  const { totalAmountIn, totalAmountOut } = (
+    preparation.data?.ok() || None
+  ).match({
+    some: ({ tokenDelta }) => {
+      // This is the actual amount that the taker will send and receive
+
+      const totalAmountIn = negateTokenValue(
+        computeTotalDeltaDifferentDecimals(
+          getUnderlyingBaseTokenInfos(tokenIn),
+          tokenDelta
+        )
+      )
+      const totalAmountOut = computeTotalDeltaDifferentDecimals(
+        getUnderlyingBaseTokenInfos(tokenOut),
+        tokenDelta
+      )
+      return { totalAmountIn, totalAmountOut }
+    },
+
+    none: () => {
+      // This is the fallback amount, since the preparation didn't complete
+
+      let totalAmountIn = computeTotalBalanceDifferentDecimals(
+        tokenIn,
+        tradeTerms.takerTokenDiff,
+        { strict: false }
+      )
+      assert(totalAmountIn)
+      totalAmountIn = negateTokenValue(totalAmountIn)
+
+      const totalAmountOut = computeTotalBalanceDifferentDecimals(
+        tokenOut,
+        tradeTerms.takerTokenDiff,
+        { strict: false }
+      )
+      assert(totalAmountOut)
+
+      return { totalAmountIn, totalAmountOut }
+    },
+  })
+
+  const { data: tokensUsdPriceData } = useTokensUsdPrices()
+  const usdAmountIn = getTokenUsdPrice(
+    formatTokenValue(totalAmountIn.amount, totalAmountIn.decimals),
+    tokenIn,
+    tokensUsdPriceData
+  )
+  const usdAmountOut = getTokenUsdPrice(
+    formatTokenValue(totalAmountOut.amount, totalAmountOut.decimals),
+    tokenOut,
+    tokensUsdPriceData
+  )
 
   return (
     <div className="flex flex-col">
@@ -170,14 +205,12 @@ export function OtcTakerForm({
                 readOnly
                 name="amount"
                 value={formatTokenValue(
-                  -totalAmountIn.amount,
+                  totalAmountIn.amount,
                   totalAmountIn.decimals
                 )}
               />
             }
-            tokenSlot={
-              <TokenAmountInputCard.DisplayToken token={tradeTerms.tokenIn} />
-            }
+            tokenSlot={<TokenAmountInputCard.DisplayToken token={tokenIn} />}
             balanceSlot={
               <BlockMultiBalances
                 balance={balances?.tokenIn?.amount ?? 0n}
@@ -223,9 +256,7 @@ export function OtcTakerForm({
                 )}
               />
             }
-            tokenSlot={
-              <TokenAmountInputCard.DisplayToken token={tradeTerms.tokenOut} />
-            }
+            tokenSlot={<TokenAmountInputCard.DisplayToken token={tokenOut} />}
             balanceSlot={
               <BlockMultiBalances
                 balance={balances?.tokenOut?.amount ?? 0n}
