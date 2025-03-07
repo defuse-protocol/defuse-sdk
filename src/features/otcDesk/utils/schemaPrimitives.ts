@@ -36,7 +36,7 @@ export const PublicKeyED25519Schema = v.pipe(
   v.startsWith("ed25519:"),
   v.rawCheck(({ dataset, addIssue }) => {
     if (dataset.typed) {
-      const key = dataset.value.slice(8)
+      const key = dataset.value.split(":")[1] ?? ""
       try {
         const bytes = base58.decode(key)
         if (bytes.length !== 32) {
@@ -54,7 +54,7 @@ export const SignatureED25519Schema = v.pipe(
   v.startsWith("ed25519:"),
   v.rawCheck(({ dataset, addIssue }) => {
     if (dataset.typed) {
-      const key = dataset.value.slice(8)
+      const key = dataset.value.split(":")[1] ?? ""
       try {
         const bytes = base58.decode(key)
         if (bytes.length !== 64) {
@@ -72,7 +72,7 @@ export const SignatureSecp256k1Schema = v.pipe(
   v.startsWith("secp256k1:"),
   v.rawCheck(({ dataset, addIssue }) => {
     if (dataset.typed) {
-      const key = dataset.value.slice(10)
+      const key = dataset.value.split(":")[1] ?? ""
       try {
         const bytes = base58.decode(key)
         if (bytes.length !== 65) {
