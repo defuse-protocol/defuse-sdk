@@ -2,7 +2,6 @@ import { base64 } from "@scure/base"
 import { Keypair } from "@solana/web3.js"
 import nacl from "tweetnacl"
 import * as v from "valibot"
-import { stringify } from "viem"
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts"
 import { describe, expect, it } from "vitest"
 import {
@@ -13,7 +12,7 @@ import { createSwapIntentMessage } from "../../../core/messages"
 import type { MultiPayload } from "../../../types/defuse-contracts-types"
 import type { WalletMessage } from "../../../types/swap"
 import { assert } from "../../../utils/assert"
-import { MultiPayloadDeepSchema } from "./schemas"
+import { MultiPayloadDeepSchema, PayloadObjectSchema } from "./schemas"
 
 describe("mulltipayload schemas", async () => {
   it.each([await fakeSwapERC191(), await fakeSwapRawED25519()])(
@@ -22,7 +21,9 @@ describe("mulltipayload schemas", async () => {
       expect(() => v.parse(MultiPayloadDeepSchema, multipayload)).not.toThrow()
     }
   )
+})
 
+describe("PayloadObjectSchema", () => {
   it.each([
     ["incorrect nonce", "Invalid base64 encoding"],
     [
@@ -31,19 +32,38 @@ describe("mulltipayload schemas", async () => {
     ],
   ])("incorrect nonce", async (invalidNonce, err) => {
     const multipayload = await fakeSwapERC191()
-    const parsedPayload = v.parse(MultiPayloadDeepSchema, multipayload)
+    assert(multipayload.standard === "erc191")
+    const payloadObj = JSON.parse(multipayload.payload)
 
-    assert(parsedPayload.standard === "erc191")
-    parsedPayload.payload.nonce = invalidNonce
+    expect(() =>
+      v.parse(PayloadObjectSchema, { ...payloadObj, nonce: invalidNonce })
+    ).toThrow(err)
+  })
 
-    const invalidMultipayload = {
-      ...parsedPayload,
-      payload: stringify(parsedPayload.payload),
-    }
+  it("incorrect signer_id", async () => {
+    const multipayload = await fakeSwapERC191()
+    assert(multipayload.standard === "erc191")
+    const payloadObj = JSON.parse(multipayload.payload)
 
-    expect(() => v.parse(MultiPayloadDeepSchema, invalidMultipayload)).toThrow(
-      err
-    )
+    expect(() =>
+      v.parse(PayloadObjectSchema, {
+        ...payloadObj,
+        signer_id: "invalid-signer-",
+      })
+    ).toThrow('Invalid input: Received "invalid-signer-"')
+  })
+
+  it("incorrect verifying_contract", async () => {
+    const multipayload = await fakeSwapERC191()
+    assert(multipayload.standard === "erc191")
+    const payloadObj = JSON.parse(multipayload.payload)
+
+    expect(() =>
+      v.parse(PayloadObjectSchema, {
+        ...payloadObj,
+        verifying_contract: "invalid-contract-name-",
+      })
+    ).toThrow('Invalid input: Received "invalid-contract-name-"')
   })
 })
 

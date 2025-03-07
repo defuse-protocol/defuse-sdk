@@ -1,11 +1,13 @@
 import { base64 } from "@scure/base"
 import * as v from "valibot"
-import type { DefuseUserId } from "../../../utils/defuse"
+import { isLegitAccountId } from "../../../utils/near"
 
 const BigIntSchema = v.pipe(
   v.string(),
   v.transform((a) => BigInt(a))
 )
+
+const NearAccountIdSchema = v.pipe(v.string(), v.check(isLegitAccountId))
 
 // It doesn't implement all possible intents, just `token_diff`
 const IntentSchema = v.variant("intent", [
@@ -13,7 +15,7 @@ const IntentSchema = v.variant("intent", [
     intent: v.literal("token_diff"),
     diff: v.pipe(v.record(v.string(), BigIntSchema)),
     memo: v.optional(v.string()),
-    referral: v.optional(v.string()),
+    referral: v.optional(NearAccountIdSchema),
   }),
 ])
 
@@ -39,25 +41,17 @@ const NonceSchema = v.pipe(
   })
 )
 
-const PayloadObjectSchema = v.object({
+export const PayloadObjectSchema = v.object({
   deadline: DeadlineSchema,
   nonce: NonceSchema,
-  signer_id: v.pipe(
-    v.string(),
-    // todo: add DefuseUserId validation?
-    v.transform((a): DefuseUserId => a as DefuseUserId)
-  ),
-  verifying_contract: v.string(), // todo: add contract address validation?
+  signer_id: NearAccountIdSchema,
+  verifying_contract: NearAccountIdSchema,
   intents: v.array(IntentSchema),
 })
 
 const NEP413PayloadObjectSchema = v.object({
   deadline: DeadlineSchema,
-  signer_id: v.pipe(
-    v.string(),
-    // todo: add DefuseUserId validation?
-    v.transform((a): DefuseUserId => a as DefuseUserId)
-  ),
+  signer_id: NearAccountIdSchema,
   intents: v.array(IntentSchema),
 })
 
@@ -73,7 +67,7 @@ const NEP413PayloadStringSchema = v.pipe(
   NEP413PayloadObjectSchema
 )
 
-const GeneralPayloadStringSchema = v.pipe(
+export const GeneralPayloadStringSchema = v.pipe(
   v.string(),
   v.transform((a) => {
     try {
@@ -96,7 +90,7 @@ export const MultiPayloadSchema = v.variant("standard", [
     payload: v.object({
       message: v.string(),
       nonce: NonceSchema,
-      recipient: v.string(),
+      recipient: NearAccountIdSchema,
       callbackUrl: v.optional(v.string()),
     }),
     signature: v.string(),
@@ -129,7 +123,7 @@ export const MultiPayloadDeepSchema = v.variant("standard", [
     payload: v.object({
       message: NEP413PayloadStringSchema,
       nonce: NonceSchema,
-      recipient: v.string(),
+      recipient: NearAccountIdSchema,
       callbackUrl: v.optional(v.string()),
     }),
     signature: v.string(),
