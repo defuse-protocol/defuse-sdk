@@ -1,4 +1,4 @@
-import { base64 } from "@scure/base"
+import { base58, base64 } from "@scure/base"
 import * as v from "valibot"
 import { isLegitAccountId } from "../../../utils/near"
 
@@ -26,6 +26,42 @@ export const NonceSchema = v.pipe(
         addIssue({
           message: "Invalid base64 encoding",
         })
+      }
+    }
+  })
+)
+
+export const PublicKeyED25519Schema = v.pipe(
+  v.string(),
+  v.startsWith("ed25519:"),
+  v.rawCheck(({ dataset, addIssue }) => {
+    if (dataset.typed) {
+      const key = dataset.value.slice(8)
+      try {
+        const bytes = base58.decode(key)
+        if (bytes.length !== 32) {
+          addIssue({ message: "Invalid length (32 bytes expected)" })
+        }
+      } catch {
+        addIssue({ message: "Invalid base58 encoding" })
+      }
+    }
+  })
+)
+
+export const SignatureED25519Schema = v.pipe(
+  v.string(),
+  v.startsWith("ed25519:"),
+  v.rawCheck(({ dataset, addIssue }) => {
+    if (dataset.typed) {
+      const key = dataset.value.slice(8)
+      try {
+        const bytes = base58.decode(key)
+        if (bytes.length !== 64) {
+          addIssue({ message: "Invalid length (64 bytes expected)" })
+        }
+      } catch {
+        addIssue({ message: "Invalid base58 encoding" })
       }
     }
   })

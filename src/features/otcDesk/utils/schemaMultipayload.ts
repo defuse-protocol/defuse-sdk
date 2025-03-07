@@ -4,6 +4,8 @@ import {
   DeadlineSchema,
   NearAccountIdSchema,
   NonceSchema,
+  PublicKeyED25519Schema,
+  SignatureED25519Schema,
 } from "./schemaPrimitives"
 
 export const GeneralPayloadObjectSchema = v.object({
@@ -58,8 +60,8 @@ export const MultiPayloadSchema = v.variant("standard", [
       recipient: NearAccountIdSchema,
       callbackUrl: v.optional(v.string()),
     }),
-    signature: v.string(),
-    public_key: v.string(),
+    signature: SignatureED25519Schema,
+    public_key: PublicKeyED25519Schema,
   }),
   v.object({
     standard: v.literal("erc191"),
@@ -69,8 +71,8 @@ export const MultiPayloadSchema = v.variant("standard", [
   v.object({
     standard: v.literal("raw_ed25519"),
     payload: v.string(),
-    signature: v.string(),
-    public_key: v.string(),
+    signature: SignatureED25519Schema,
+    public_key: PublicKeyED25519Schema,
   }),
   v.object({
     standard: v.literal("webauthn"),
@@ -91,8 +93,8 @@ export const MultiPayloadDeepSchema = v.variant("standard", [
       recipient: NearAccountIdSchema,
       callbackUrl: v.optional(v.string()),
     }),
-    signature: v.string(),
-    public_key: v.string(),
+    signature: SignatureED25519Schema,
+    public_key: PublicKeyED25519Schema,
   }),
   v.object({
     standard: v.literal("erc191"),
@@ -102,8 +104,8 @@ export const MultiPayloadDeepSchema = v.variant("standard", [
   v.object({
     standard: v.literal("raw_ed25519"),
     payload: GeneralPayloadStringSchema,
-    signature: v.string(),
-    public_key: v.string(),
+    signature: SignatureED25519Schema,
+    public_key: PublicKeyED25519Schema,
   }),
   v.object({
     standard: v.literal("webauthn"),
