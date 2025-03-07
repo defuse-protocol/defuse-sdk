@@ -1,3 +1,4 @@
+import { base64 } from "@scure/base"
 import * as v from "valibot"
 import type { DefuseUserId } from "../../../utils/defuse"
 
@@ -18,9 +19,29 @@ const IntentSchema = v.variant("intent", [
 
 const DeadlineSchema = v.pipe(v.string(), v.isoTimestamp())
 
+const NonceSchema = v.pipe(
+  v.string(),
+  v.rawCheck(({ dataset, addIssue }) => {
+    if (dataset.typed) {
+      try {
+        const bytes = base64.decode(dataset.value)
+        if (bytes.length !== 32) {
+          addIssue({
+            message: "Invalid length (32 bytes expected)",
+          })
+        }
+      } catch {
+        addIssue({
+          message: "Invalid base64 encoding",
+        })
+      }
+    }
+  })
+)
+
 const PayloadObjectSchema = v.object({
   deadline: DeadlineSchema,
-  nonce: v.string(), // todo: add base64 validation?
+  nonce: NonceSchema,
   signer_id: v.pipe(
     v.string(),
     // todo: add DefuseUserId validation?
@@ -74,7 +95,7 @@ export const MultiPayloadSchema = v.variant("standard", [
     standard: v.literal("nep413"),
     payload: v.object({
       message: v.string(),
-      nonce: v.string(),
+      nonce: NonceSchema,
       recipient: v.string(),
       callbackUrl: v.optional(v.string()),
     }),
@@ -107,7 +128,7 @@ export const MultiPayloadDeepSchema = v.variant("standard", [
     standard: v.literal("nep413"),
     payload: v.object({
       message: NEP413PayloadStringSchema,
-      nonce: v.string(),
+      nonce: NonceSchema,
       recipient: v.string(),
       callbackUrl: v.optional(v.string()),
     }),

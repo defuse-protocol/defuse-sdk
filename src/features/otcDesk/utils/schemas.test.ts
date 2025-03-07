@@ -1,6 +1,8 @@
+import { base64 } from "@scure/base"
 import { Keypair } from "@solana/web3.js"
 import nacl from "tweetnacl"
 import * as v from "valibot"
+import { stringify } from "viem"
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts"
 import { describe, expect, it } from "vitest"
 import {
@@ -10,6 +12,7 @@ import {
 import { createSwapIntentMessage } from "../../../core/messages"
 import type { MultiPayload } from "../../../types/defuse-contracts-types"
 import type { WalletMessage } from "../../../types/swap"
+import { assert } from "../../../utils/assert"
 import { MultiPayloadDeepSchema } from "./schemas"
 
 describe("mulltipayload schemas", async () => {
@@ -19,6 +22,29 @@ describe("mulltipayload schemas", async () => {
       expect(() => v.parse(MultiPayloadDeepSchema, multipayload)).not.toThrow()
     }
   )
+
+  it.each([
+    ["incorrect nonce", "Invalid base64 encoding"],
+    [
+      base64.encode(crypto.getRandomValues(new Uint8Array(64))),
+      "Invalid length (32 bytes expected)",
+    ],
+  ])("incorrect nonce", async (invalidNonce, err) => {
+    const multipayload = await fakeSwapERC191()
+    const parsedPayload = v.parse(MultiPayloadDeepSchema, multipayload)
+
+    assert(parsedPayload.standard === "erc191")
+    parsedPayload.payload.nonce = invalidNonce
+
+    const invalidMultipayload = {
+      ...parsedPayload,
+      payload: stringify(parsedPayload.payload),
+    }
+
+    expect(() => v.parse(MultiPayloadDeepSchema, invalidMultipayload)).toThrow(
+      err
+    )
+  })
 })
 
 function fakeSwapERC191() {
