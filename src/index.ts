@@ -25,3 +25,6 @@ export {
   type DefuseUserId,
   type SignerCredentials,
 } from "./core/formatters"
+
+// Validation utilities
+export { MultiPayloadDeepSchema } from "./features/otcDesk/utils/schemaMultipayload"
