@@ -28,6 +28,14 @@ export type GiftMakerCancellationActorOutput = {
   giftStatus: "cancelled" | "not_cancelled" | "already_cancelled_or_executed"
 }
 
+type CancellationErrors = {
+  reason:
+    | "EXCEPTION"
+    | "CANNOT_PARSE_GIFT_MULTIPAYLOAD"
+    | "CANNOT_PARSE_SECRET_KEY"
+    | "CANNOT_FORMAT_SIGNED_INTENT"
+}
+
 type GiftMakerSignCancellationOutput =
   | {
       tag: "ok"
@@ -39,14 +47,10 @@ type GiftMakerSignCancellationOutput =
     }
   | {
       tag: "err"
-      value: {
-        reason: "CANNOT_PARSE_GIFT_MULTIPAYLOAD" | "CANNOT_PARSE_SECRET_KEY"
-      }
+      value: CancellationErrors
     }
 
-type GiftMakerCancellationActorErrors =
-  | PublishIntentsErr
-  | { reason: "EXCEPTION" }
+type GiftMakerCancellationActorErrors = PublishIntentsErr | CancellationErrors
 
 type GiftMakerCancellationActorContext = {
   giftId: string
@@ -92,7 +96,7 @@ export const giftMakerCancellationActor = setup({
         if (input.multiPayload.standard !== "nep413") {
           return {
             tag: "err" as const,
-            value: "CANNOT_PARSE_GIFT_MULTIPAYLOAD",
+            value: { reason: "CANNOT_PARSE_GIFT_MULTIPAYLOAD" as const },
           }
         }
 
@@ -102,7 +106,10 @@ export const giftMakerCancellationActor = setup({
 
         const parseResult = parseGiftSecret(input.secretKey)
         if (parseResult.isErr()) {
-          return { tag: "err" as const, value: "CANNOT_PARSE_SECRET_KEY" }
+          return {
+            tag: "err" as const,
+            value: { reason: "CANNOT_PARSE_SECRET_KEY" as const },
+          }
         }
 
         const giftTerms = {
@@ -122,7 +129,10 @@ export const giftMakerCancellationActor = setup({
           input.signerCredentials
         )
         if (signature.isErr()) {
-          return { tag: "err" as const, value: "CANNOT_FORMAT_SIGNED_INTENT" }
+          return {
+            tag: "err" as const,
+            value: { reason: "CANNOT_FORMAT_SIGNED_INTENT" as const },
+          }
         }
         return {
           tag: "ok" as const,
@@ -240,15 +250,18 @@ export const giftMakerCancellationActor = setup({
             },
 
             onDone: [
-              // @ts-expect-error
               {
-                guard: { type: "isOk", params: ({ event }) => event.output },
+                guard: {
+                  type: "isOk",
+                  params: ({ event }) => ({ tag: event.output.tag }),
+                },
                 actions: {
                   type: "completeSigning",
-                  params: ({ event }) => event,
+                  params: ({ event }) => ({
+                    output: event.output,
+                  }),
                 },
               },
-              // @ts-expect-error
               {
                 target: "#(machine).idle",
                 actions: {

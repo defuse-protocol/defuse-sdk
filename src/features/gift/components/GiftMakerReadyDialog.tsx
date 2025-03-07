@@ -134,7 +134,6 @@ function CancellationDialog({ actorRef }: CancellationDialogProps) {
       }}
       isDismissable
     >
-      {/* @ts-expect-error */}
       {snapshot?.matches("idleUncancellable") ? (
         <>
           <div>This gift is either already cancelled or executed.</div>
@@ -188,9 +187,7 @@ function CancellationDialog({ actorRef }: CancellationDialogProps) {
                 })
               }
             >
-              {/* @ts-expect-error */}
               <Spinner loading={!!snapshot?.matches("cancelling")} />
-              {/* @ts-expect-error */}
               {snapshot?.matches("cancelling")
                 ? "Cancelling..."
                 : "Cancel gift"}
