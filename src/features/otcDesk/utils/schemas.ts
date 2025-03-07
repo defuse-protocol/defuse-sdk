@@ -52,7 +52,7 @@ export const PayloadPlainSchema = v.pipe(
   v.union([PayloadSchema, NEP413PayloadSchema])
 )
 
-const MultiPayloadSchema = v.variant("standard", [
+export const MultiPayloadSchema = v.variant("standard", [
   v.object({
     standard: v.literal("nep413"),
     payload: v.object({
