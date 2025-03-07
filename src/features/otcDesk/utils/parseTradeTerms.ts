@@ -4,7 +4,7 @@ import { logger } from "../../../logger"
 import type { BaseTokenInfo } from "../../../types/base"
 import type { MultiPayload } from "../../../types/defuse-contracts-types"
 import type { DefuseUserId } from "../../../utils/defuse"
-import { MultiPayloadPlainSchema, PayloadPlainSchema } from "./schemas"
+import { MultiPayloadPlainSchema, PayloadStringSchema } from "./schemas"
 
 export type TradeTerms = {
   userId: DefuseUserId
@@ -37,7 +37,7 @@ export function parseTradeTerms(
   return getPlainPayload(multiPayload)
     .mapErr<ParseTradeTermsErr>((a) => a)
     .andThen<TradeTerms>((payloadPlain) => {
-      const payloadParseResult = v.safeParse(PayloadPlainSchema, payloadPlain)
+      const payloadParseResult = v.safeParse(PayloadStringSchema, payloadPlain)
       if (!payloadParseResult.success) {
         logger.verbose("Couldn't parse payload", {
           payloadPlain,

@@ -18,7 +18,7 @@ const IntentSchema = v.variant("intent", [
 
 const DeadlineSchema = v.pipe(v.string(), v.isoTimestamp())
 
-const PayloadSchema = v.object({
+const PayloadObjectSchema = v.object({
   deadline: DeadlineSchema,
   nonce: v.string(), // todo: add base64 validation?
   signer_id: v.pipe(
@@ -30,7 +30,7 @@ const PayloadSchema = v.object({
   intents: v.array(IntentSchema),
 })
 
-const NEP413PayloadSchema = v.object({
+const NEP413PayloadObjectSchema = v.object({
   deadline: DeadlineSchema,
   signer_id: v.pipe(
     v.string(),
@@ -40,7 +40,7 @@ const NEP413PayloadSchema = v.object({
   intents: v.array(IntentSchema),
 })
 
-export const PayloadPlainSchema = v.pipe(
+const NEP413PayloadStringSchema = v.pipe(
   v.string(),
   v.transform((a) => {
     try {
@@ -49,8 +49,25 @@ export const PayloadPlainSchema = v.pipe(
       return null
     }
   }),
-  v.union([PayloadSchema, NEP413PayloadSchema])
+  NEP413PayloadObjectSchema
 )
+
+const GeneralPayloadStringSchema = v.pipe(
+  v.string(),
+  v.transform((a) => {
+    try {
+      return JSON.parse(a)
+    } catch {
+      return null
+    }
+  }),
+  PayloadObjectSchema
+)
+
+export const PayloadStringSchema = v.union([
+  GeneralPayloadStringSchema,
+  NEP413PayloadStringSchema,
+])
 
 export const MultiPayloadSchema = v.variant("standard", [
   v.object({
@@ -78,6 +95,39 @@ export const MultiPayloadSchema = v.variant("standard", [
   v.object({
     standard: v.literal("webauthn"),
     payload: v.string(),
+    signature: v.string(),
+    public_key: v.string(),
+    authenticator_data: v.string(),
+    client_data_json: v.string(),
+  }),
+])
+
+export const MultiPayloadDeepSchema = v.variant("standard", [
+  v.object({
+    standard: v.literal("nep413"),
+    payload: v.object({
+      message: NEP413PayloadStringSchema,
+      nonce: v.string(),
+      recipient: v.string(),
+      callbackUrl: v.optional(v.string()),
+    }),
+    signature: v.string(),
+    public_key: v.string(),
+  }),
+  v.object({
+    standard: v.literal("erc191"),
+    payload: GeneralPayloadStringSchema,
+    signature: v.string(),
+  }),
+  v.object({
+    standard: v.literal("raw_ed25519"),
+    payload: GeneralPayloadStringSchema,
+    signature: v.string(),
+    public_key: v.string(),
+  }),
+  v.object({
+    standard: v.literal("webauthn"),
+    payload: GeneralPayloadStringSchema,
     signature: v.string(),
     public_key: v.string(),
     authenticator_data: v.string(),

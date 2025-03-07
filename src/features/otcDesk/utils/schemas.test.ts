@@ -10,13 +10,13 @@ import {
 import { createSwapIntentMessage } from "../../../core/messages"
 import type { MultiPayload } from "../../../types/defuse-contracts-types"
 import type { WalletMessage } from "../../../types/swap"
-import { MultiPayloadSchema } from "./schemas"
+import { MultiPayloadDeepSchema } from "./schemas"
 
 describe("mulltipayload schemas", async () => {
   it.each([await fakeSwapERC191(), await fakeSwapRawED25519()])(
     "should parse multipayload",
     (multipayload) => {
-      expect(() => v.parse(MultiPayloadSchema, multipayload)).not.toThrow()
+      expect(() => v.parse(MultiPayloadDeepSchema, multipayload)).not.toThrow()
     }
   )
 })
