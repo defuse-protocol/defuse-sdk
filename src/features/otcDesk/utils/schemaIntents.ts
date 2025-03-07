@@ -1,11 +1,15 @@
 import * as v from "valibot"
-import { NearAccountIdSchema, ToBigIntSchema } from "./schemaPrimitives"
+import {
+  NearAccountIdSchema,
+  ToBigIntSchema,
+  TokenIdSchema,
+} from "./schemaPrimitives"
 
 // It doesn't implement all possible intents, just `token_diff`
 export const IntentSchema = v.variant("intent", [
   v.object({
     intent: v.literal("token_diff"),
-    diff: v.pipe(v.record(v.string(), ToBigIntSchema)),
+    diff: v.pipe(v.record(TokenIdSchema, ToBigIntSchema)),
     memo: v.optional(v.string()),
     referral: v.optional(NearAccountIdSchema),
   }),

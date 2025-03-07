@@ -31,6 +31,19 @@ export const NonceSchema = v.pipe(
   })
 )
 
+export const TokenIdSchema = v.pipe(
+  v.string(),
+  v.startsWith("nep141:"),
+  v.rawCheck(({ dataset, addIssue }) => {
+    if (dataset.typed) {
+      const key = dataset.value.split(":")[1] ?? ""
+      if (!isLegitAccountId(key)) {
+        addIssue({ message: "Invalid NEP-141 token account ID" })
+      }
+    }
+  })
+)
+
 export const PublicKeyED25519Schema = v.pipe(
   v.string(),
   v.startsWith("ed25519:"),
