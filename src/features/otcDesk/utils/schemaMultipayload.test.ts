@@ -75,13 +75,13 @@ describe("PayloadObjectSchema", () => {
 
 function fakeSwapERC191() {
   return signERC191((signerId) =>
-    createSwapIntentMessage([["token1", 3n]], { signerId })
+    createSwapIntentMessage([["nep141:token1", 3n]], { signerId })
   )
 }
 
 function fakeSwapRawED25519() {
   return signRawED25519((signerId) =>
-    createSwapIntentMessage([["token1", 3n]], { signerId })
+    createSwapIntentMessage([["nep141:token1", 3n]], { signerId })
   )
 }
 

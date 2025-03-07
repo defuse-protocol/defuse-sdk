@@ -13,4 +13,25 @@ export const IntentSchema = v.variant("intent", [
     memo: v.optional(v.string()),
     referral: v.optional(NearAccountIdSchema),
   }),
+  v.object({
+    intent: v.literal("native_withdraw"),
+    receiver_id: NearAccountIdSchema,
+    amount: ToBigIntSchema,
+  }),
+  v.object({
+    intent: v.literal("ft_withdraw"),
+    token_id: v.pipe(
+      v.string(),
+      v.custom(
+        (a) => (typeof a === "string" ? !a.startsWith("nep141:") : false),
+        "Token ID must not start with 'nep141:'"
+      ),
+      NearAccountIdSchema
+    ),
+    receiver_id: NearAccountIdSchema,
+    amount: ToBigIntSchema,
+    storage_deposit: v.optional(ToBigIntSchema),
+    memo: v.optional(v.string()),
+    msg: v.optional(v.string()),
+  }),
 ])
