@@ -6,6 +6,7 @@ import {
   NonceSchema,
   PublicKeyED25519Schema,
   SignatureED25519Schema,
+  SignatureSecp256k1Schema,
 } from "./schemaPrimitives"
 
 export const GeneralPayloadObjectSchema = v.object({
@@ -66,7 +67,7 @@ export const MultiPayloadSchema = v.variant("standard", [
   v.object({
     standard: v.literal("erc191"),
     payload: v.string(),
-    signature: v.string(),
+    signature: SignatureSecp256k1Schema,
   }),
   v.object({
     standard: v.literal("raw_ed25519"),
@@ -99,7 +100,7 @@ export const MultiPayloadDeepSchema = v.variant("standard", [
   v.object({
     standard: v.literal("erc191"),
     payload: GeneralPayloadStringSchema,
-    signature: v.string(),
+    signature: SignatureSecp256k1Schema,
   }),
   v.object({
     standard: v.literal("raw_ed25519"),

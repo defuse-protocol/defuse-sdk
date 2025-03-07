@@ -1,11 +1,14 @@
-import { base58 } from "@scure/base"
+import { base58, hex } from "@scure/base"
 import { Keypair } from "@solana/web3.js"
 import nacl from "tweetnacl"
 import * as v from "valibot"
+import { generatePrivateKey, privateKeyToAccount } from "viem/accounts"
 import { describe, expect, it } from "vitest"
+import { transformERC191Signature } from "../../../utils/prepareBroadcastRequest"
 import {
   PublicKeyED25519Schema,
   SignatureED25519Schema,
+  SignatureSecp256k1Schema,
 } from "./schemaPrimitives"
 
 describe("PublicKeyED25519Schema", () => {
@@ -35,9 +38,33 @@ describe("SignatureED25519Schema", () => {
   it("invalid signature", () => {
     const keypair = Keypair.generate()
     const signature = nacl.sign.detached(new Uint8Array(32), keypair.secretKey)
+
     const formatted1 = "ed25519:foo"
     const formatted2 = base58.encode(signature)
+
     expect(() => v.parse(SignatureED25519Schema, formatted1)).toThrow()
     expect(() => v.parse(SignatureED25519Schema, formatted2)).toThrow()
+  })
+})
+
+describe("SignatureSecp256k1Schema", () => {
+  it("valid signature", async () => {
+    const signer = privateKeyToAccount(generatePrivateKey())
+    const formatted = transformERC191Signature(
+      await signer.signMessage({ message: "0x" })
+    )
+    expect(() => v.parse(SignatureSecp256k1Schema, formatted)).not.toThrow()
+  })
+
+  it("invalid signature", async () => {
+    const signer = privateKeyToAccount(generatePrivateKey())
+    const hexSignature = await signer.signMessage({ message: "0x" })
+    const signature = hex.decode(hexSignature.slice(2))
+
+    const formatted1 = "secp256k1:foo"
+    const formatted2 = base58.encode(signature)
+
+    expect(() => v.parse(SignatureSecp256k1Schema, formatted1)).toThrow()
+    expect(() => v.parse(SignatureSecp256k1Schema, formatted2)).toThrow()
   })
 })

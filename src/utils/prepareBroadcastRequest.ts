@@ -60,7 +60,7 @@ function transformNEP141Signature(signature: string) {
   return `ed25519:${encoded}`
 }
 
-function transformERC191Signature(signature: string) {
+export function transformERC191Signature(signature: string) {
   const normalizedSignature = normalizeERC191Signature(signature)
   const bytes = hex.decode(
     normalizedSignature.startsWith("0x")

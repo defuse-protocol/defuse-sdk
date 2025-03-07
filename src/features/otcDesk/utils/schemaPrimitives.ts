@@ -66,3 +66,21 @@ export const SignatureED25519Schema = v.pipe(
     }
   })
 )
+
+export const SignatureSecp256k1Schema = v.pipe(
+  v.string(),
+  v.startsWith("secp256k1:"),
+  v.rawCheck(({ dataset, addIssue }) => {
+    if (dataset.typed) {
+      const key = dataset.value.slice(10)
+      try {
+        const bytes = base58.decode(key)
+        if (bytes.length !== 65) {
+          addIssue({ message: "Invalid length (65 bytes expected)" })
+        }
+      } catch {
+        addIssue({ message: "Invalid base58 encoding" })
+      }
+    }
+  })
+)
