@@ -12,7 +12,7 @@ import { createSwapIntentMessage } from "../../../core/messages"
 import type { MultiPayload } from "../../../types/defuse-contracts-types"
 import type { WalletMessage } from "../../../types/swap"
 import { assert } from "../../../utils/assert"
-import { MultiPayloadDeepSchema, PayloadObjectSchema } from "./schemas"
+import { GeneralPayloadObjectSchema, MultiPayloadDeepSchema } from "./schemas"
 
 describe("mulltipayload schemas", async () => {
   it.each([await fakeSwapERC191(), await fakeSwapRawED25519()])(
@@ -36,7 +36,10 @@ describe("PayloadObjectSchema", () => {
     const payloadObj = JSON.parse(multipayload.payload)
 
     expect(() =>
-      v.parse(PayloadObjectSchema, { ...payloadObj, nonce: invalidNonce })
+      v.parse(GeneralPayloadObjectSchema, {
+        ...payloadObj,
+        nonce: invalidNonce,
+      })
     ).toThrow(err)
   })
 
@@ -46,7 +49,7 @@ describe("PayloadObjectSchema", () => {
     const payloadObj = JSON.parse(multipayload.payload)
 
     expect(() =>
-      v.parse(PayloadObjectSchema, {
+      v.parse(GeneralPayloadObjectSchema, {
         ...payloadObj,
         signer_id: "invalid-signer-",
       })
@@ -59,7 +62,7 @@ describe("PayloadObjectSchema", () => {
     const payloadObj = JSON.parse(multipayload.payload)
 
     expect(() =>
-      v.parse(PayloadObjectSchema, {
+      v.parse(GeneralPayloadObjectSchema, {
         ...payloadObj,
         verifying_contract: "invalid-contract-name-",
       })

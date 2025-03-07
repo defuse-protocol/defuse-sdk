@@ -16,13 +16,25 @@ const IntentSchema = v.variant("intent", [
   }),
 ])
 
-export const PayloadObjectSchema = v.object({
+export const GeneralPayloadObjectSchema = v.object({
   deadline: DeadlineSchema,
   nonce: NonceSchema,
   signer_id: NearAccountIdSchema,
   verifying_contract: NearAccountIdSchema,
   intents: v.array(IntentSchema),
 })
+
+export const GeneralPayloadStringSchema = v.pipe(
+  v.string(),
+  v.transform((a) => {
+    try {
+      return JSON.parse(a)
+    } catch {
+      return null
+    }
+  }),
+  GeneralPayloadObjectSchema
+)
 
 const NEP413PayloadObjectSchema = v.object({
   deadline: DeadlineSchema,
@@ -40,18 +52,6 @@ const NEP413PayloadStringSchema = v.pipe(
     }
   }),
   NEP413PayloadObjectSchema
-)
-
-export const GeneralPayloadStringSchema = v.pipe(
-  v.string(),
-  v.transform((a) => {
-    try {
-      return JSON.parse(a)
-    } catch {
-      return null
-    }
-  }),
-  PayloadObjectSchema
 )
 
 export const PayloadStringSchema = v.union([
