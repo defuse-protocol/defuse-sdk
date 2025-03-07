@@ -9,6 +9,7 @@ import type { ChainType } from "../../../types/deposit"
 import { deriveGiftTerms } from "../utils/deriveGiftTerms"
 import type { GiftTerms } from "../utils/deriveGiftTerms"
 import { GiftTakerForm } from "./GiftTakerForm"
+import { GiftTakerInvalidClaim } from "./GiftTakerInvalidClaim"
 import { GiftTakerSuccessScreen } from "./GiftTakerSuccessScreen"
 
 export type GiftTakerWidgetProps = {
@@ -85,6 +86,6 @@ function GiftTakerScreens({
           onSuccessClaim={setClaimResult}
         />
       ),
-    err: (error) => <div>Error: {error}</div>,
+    err: (error) => <GiftTakerInvalidClaim error={error} />,
   })
 }
