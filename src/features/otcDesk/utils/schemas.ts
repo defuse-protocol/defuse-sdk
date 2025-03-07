@@ -1,45 +1,20 @@
-import { base64 } from "@scure/base"
 import * as v from "valibot"
-import { isLegitAccountId } from "../../../utils/near"
-
-const BigIntSchema = v.pipe(
-  v.string(),
-  v.transform((a) => BigInt(a))
-)
-
-const NearAccountIdSchema = v.pipe(v.string(), v.check(isLegitAccountId))
+import {
+  DeadlineSchema,
+  NearAccountIdSchema,
+  NonceSchema,
+  ToBigIntSchema,
+} from "./schemaPrimitives"
 
 // It doesn't implement all possible intents, just `token_diff`
 const IntentSchema = v.variant("intent", [
   v.object({
     intent: v.literal("token_diff"),
-    diff: v.pipe(v.record(v.string(), BigIntSchema)),
+    diff: v.pipe(v.record(v.string(), ToBigIntSchema)),
     memo: v.optional(v.string()),
     referral: v.optional(NearAccountIdSchema),
   }),
 ])
-
-const DeadlineSchema = v.pipe(v.string(), v.isoTimestamp())
-
-const NonceSchema = v.pipe(
-  v.string(),
-  v.rawCheck(({ dataset, addIssue }) => {
-    if (dataset.typed) {
-      try {
-        const bytes = base64.decode(dataset.value)
-        if (bytes.length !== 32) {
-          addIssue({
-            message: "Invalid length (32 bytes expected)",
-          })
-        }
-      } catch {
-        addIssue({
-          message: "Invalid base64 encoding",
-        })
-      }
-    }
-  })
-)
 
 export const PayloadObjectSchema = v.object({
   deadline: DeadlineSchema,
