@@ -12,7 +12,10 @@ import { createSwapIntentMessage } from "../../../core/messages"
 import type { MultiPayload } from "../../../types/defuse-contracts-types"
 import type { WalletMessage } from "../../../types/swap"
 import { assert } from "../../../utils/assert"
-import { GeneralPayloadObjectSchema, MultiPayloadDeepSchema } from "./schemas"
+import {
+  GeneralPayloadObjectSchema,
+  MultiPayloadDeepSchema,
+} from "./schemaMultipayload"
 
 describe("mulltipayload schemas", async () => {
   it.each([await fakeSwapERC191(), await fakeSwapRawED25519()])(

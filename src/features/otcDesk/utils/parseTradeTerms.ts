@@ -4,7 +4,10 @@ import { logger } from "../../../logger"
 import type { BaseTokenInfo } from "../../../types/base"
 import type { MultiPayload } from "../../../types/defuse-contracts-types"
 import type { DefuseUserId } from "../../../utils/defuse"
-import { MultiPayloadPlainSchema, PayloadStringSchema } from "./schemas"
+import {
+  MultiPayloadPlainSchema,
+  PayloadStringSchema,
+} from "./schemaMultipayload"
 
 export type TradeTerms = {
   userId: DefuseUserId
