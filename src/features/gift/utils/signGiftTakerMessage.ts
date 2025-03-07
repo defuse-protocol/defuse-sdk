@@ -39,9 +39,6 @@ export async function signGiftTakerMessage({
   try {
     const keyPair = KeyPair.fromString(`ed25519:${giftTerms.secretKey}`)
 
-    // biome-ignore lint/suspicious/noConsole: <explanation>
-    console.log("walletMessage.NEP413", walletMessage.NEP413)
-
     const serialize = await serializeIntent(
       walletMessage.NEP413.message,
       walletMessage.NEP413.recipient,

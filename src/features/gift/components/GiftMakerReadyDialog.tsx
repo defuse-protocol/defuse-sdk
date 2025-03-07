@@ -1,11 +1,12 @@
 import { Check as CheckIcon, Copy as CopyIcon } from "@phosphor-icons/react"
-import { Dialog } from "@radix-ui/themes"
+import { Button, Dialog, Spinner } from "@radix-ui/themes"
 import { useSelector } from "@xstate/react"
 import type { ActorRefFrom } from "xstate"
 import { ButtonCustom } from "../../../components/Button/ButtonCustom"
 import { Copy } from "../../../components/IntentCard/CopyButton"
 import { BaseModalDialog } from "../../../components/Modal/ModalDialog"
 import type { SignerCredentials } from "../../../core/formatters"
+import type { giftMakerCancellationActor } from "../actors/giftMakerCancellationActor"
 import type { giftMakerReadyActor } from "../actors/giftMakerReadyActor"
 import type { SignMessage } from "../types/sharedTypes"
 import { ShareableGiftImage } from "./ShareableGiftImage"
@@ -25,12 +26,18 @@ export function GiftMakerReadyDialog({
   signMessage,
   generateLink,
 }: GiftMakerReadyDialogProps) {
+  const { giftCancellationRef } = useSelector(readyGiftRef, (state) => ({
+    giftCancellationRef: state.children.giftMakerCancellationRef as
+      | undefined
+      | ActorRefFrom<typeof giftMakerCancellationActor>,
+  }))
   return (
     <>
       <GiftMakerDialog
         readyGiftRef={readyGiftRef}
         generateLink={generateLink}
       />
+      <CancellationDialog actorRef={giftCancellationRef} />
     </>
   )
 }
@@ -50,8 +57,7 @@ function GiftMakerDialog({
     readyGiftRef.send({ type: "FINISH" })
   }
 
-  // biome-ignore lint/correctness/noUnusedVariables: <explanation>
-  const cancelOrder = () => {
+  const cancelGift = () => {
     readyGiftRef.send({ type: "CANCEL_ORDER" })
   }
 
@@ -99,7 +105,99 @@ function GiftMakerDialog({
             </ButtonCustom>
           )}
         </Copy>
+
+        <ButtonCustom
+          size="lg"
+          type="button"
+          variant="danger"
+          onClick={cancelGift}
+        >
+          Cancel gift
+        </ButtonCustom>
       </div>
+    </BaseModalDialog>
+  )
+}
+
+interface CancellationDialogProps {
+  actorRef: ActorRefFrom<typeof giftMakerCancellationActor> | undefined | null
+}
+
+function CancellationDialog({ actorRef }: CancellationDialogProps) {
+  const snapshot = useSelector(actorRef ?? undefined, (state) => state)
+
+  return (
+    <BaseModalDialog
+      open={!!actorRef}
+      onClose={() => {
+        actorRef?.send({ type: "ABORT_CANCELLATION" })
+      }}
+      isDismissable
+    >
+      {/* @ts-expect-error */}
+      {snapshot?.matches("idleUncancellable") ? (
+        <>
+          <div>This gift is either already cancelled or executed.</div>
+
+          <Button
+            type="button"
+            onClick={() => {
+              actorRef?.send({ type: "ACK_CANCELLATION_IMPOSSIBLE" })
+            }}
+          >
+            Ok
+          </Button>
+        </>
+      ) : (
+        <>
+          <Dialog.Title className="text-2xl font-black text-gray-900 dark:text-gray-100 mb-2">
+            Cancel gift?
+          </Dialog.Title>
+          <Dialog.Description className="text-sm font-medium text-gray-600 dark:text-gray-400">
+            The funds will return to your account, and the link will no longer
+            work.
+          </Dialog.Description>
+
+          {snapshot?.context.error != null && (
+            <div className="text-red-700">
+              {snapshot?.context.error?.reason}
+            </div>
+          )}
+
+          <div className="flex flex-col md:flex-row justify-center gap-3 mt-5">
+            <Button
+              type="button"
+              size="4"
+              variant="outline"
+              color="gray"
+              className="md:flex-1 font-bold"
+              onClick={() => actorRef?.send({ type: "ABORT_CANCELLATION" })}
+            >
+              Keep
+            </Button>
+
+            <Button
+              type="button"
+              size="4"
+              variant="solid"
+              color="red"
+              className="md:flex-1 font-bold"
+              onClick={() =>
+                actorRef?.send({
+                  type: "CONFIRM_CANCELLATION",
+                })
+              }
+            >
+              {/* @ts-expect-error */}
+              <Spinner loading={!!snapshot?.matches("cancelling")} />
+              {/* @ts-expect-error */}
+              {snapshot?.matches("cancelling")
+                ? "Cancelling..."
+                : "Cancel gift"}
+            </Button>
+          </div>
+        </>
+      )}
     </BaseModalDialog>
   )
 }

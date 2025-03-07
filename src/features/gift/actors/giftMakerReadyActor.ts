@@ -8,6 +8,11 @@ import type {
   UnifiedTokenInfo,
 } from "../../../types/base"
 import type { MultiPayload } from "../../../types/defuse-contracts-types"
+import { giftMakerCancellationActor } from "./giftMakerCancellationActor"
+import type {
+  GiftMakerCancellationActorInput,
+  GiftMakerCancellationActorOutput,
+} from "./giftMakerCancellationActor"
 import type { EscrowKeyPair } from "./giftMakerEscrowActor"
 import {
   type GiftMakerPublishingActorInput,
@@ -56,6 +61,10 @@ export const giftMakerReadyActor = setup({
       GiftMakerPublishingActorOutput,
       GiftMakerPublishingActorInput
     >,
+    cancelGiftActor: giftMakerCancellationActor as unknown as PromiseActorLogic<
+      GiftMakerCancellationActorOutput,
+      GiftMakerCancellationActorInput
+    >,
   },
   actions: {
     logError: (_, event: { error: unknown }) => {
@@ -81,6 +90,7 @@ export const giftMakerReadyActor = setup({
     idle: {
       on: {
         FINISH: "finished",
+        CANCEL_ORDER: "cancellingGift",
       },
       invoke: {
         id: "giftMakerPublishingRef",
@@ -95,6 +105,41 @@ export const giftMakerReadyActor = setup({
             escrowKeyPair: context.escrowKeyPair,
           }
         },
+        onError: {
+          target: "idle",
+          actions: [
+            { type: "logError", params: ({ event }) => event },
+            { type: "setError", params: { reason: "EXCEPTION" } },
+          ],
+        },
+      },
+    },
+
+    cancellingGift: {
+      invoke: {
+        id: "giftMakerCancellationRef",
+        src: "cancelGiftActor",
+        input: ({ context }) => {
+          return {
+            giftId: context.giftId,
+            secretKey: context.escrowKeyPair.secretKey,
+            signerCredentials: context.signerCredentials,
+            multiPayload: context.multiPayload,
+            tokenIn: context.parsed.tokenIn,
+          }
+        },
+        onDone: [
+          {
+            target: "finished",
+            guard: {
+              type: "isTrue",
+              params: ({ event }) =>
+                event.output.giftStatus === "cancelled" ||
+                event.output.giftStatus === "already_cancelled_or_executed",
+            },
+          },
+          "idle",
+        ],
         onError: {
           target: "idle",
           actions: [
