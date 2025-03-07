@@ -101,10 +101,11 @@ describe("createTransferMessage()", () => {
       signerId: TEST_USER,
       receiverId: "receiver.near",
       memo: "message",
+      deadlineTimestamp: TEST_TIMESTAMP,
     })
 
     expect(JSON.parse(message.NEP413.message)).toEqual({
-      deadline: new Date(Date.now()).toISOString(),
+      deadline: new Date(TEST_TIMESTAMP).toISOString(),
       intents: [
         {
           intent: "transfer",
