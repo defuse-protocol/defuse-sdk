@@ -1,43 +1,9 @@
 import { describe, expect, it } from "vitest"
 import {
   type FillResult,
-  computeDoubleSwapResult,
   fillWithMinimalExchanges,
 } from "./fillWithMinimalExchanges"
 import type { TokenBalances } from "./fillWithMinimalExchanges"
-
-describe("computeDoubleSwapResult", () => {
-  it("calculates fees correctly for round numbers", () => {
-    const result = computeDoubleSwapResult(1000n, 30n) // 0.3% fee
-    expect(result.received).toBeLessThan(1000n)
-    expect(result.totalFee).toBe(6n) // 3n + 3n for both sides
-    expect(result.received + result.totalFee).toBe(1000n)
-  })
-
-  it("rounds fees up", () => {
-    const result = computeDoubleSwapResult(1001n, 30n)
-    expect(result.totalFee).toBe(7n) // Rounds up 3.003 to 4 for first swap, 3 for second
-    expect(result.received).toBe(994n)
-  })
-
-  it("handles small amounts correctly", () => {
-    const result = computeDoubleSwapResult(10n, 30n)
-    expect(result.totalFee).toBe(2n)
-    expect(result.received).toBe(8n)
-  })
-
-  it("handles zero amount", () => {
-    const result = computeDoubleSwapResult(0n, 30n)
-    expect(result.totalFee).toBe(0n)
-    expect(result.received).toBe(0n)
-  })
-
-  it("handles high fee percentage", () => {
-    const result = computeDoubleSwapResult(1000n, 500n) // 5% fee
-    expect(result.totalFee).toBe(98n)
-    expect(result.received).toBe(902n)
-  })
-})
 
 describe("fillWithMinimalExchanges", () => {
   it("handles direct fills without exchanges", () => {
@@ -101,7 +67,7 @@ describe("fillWithMinimalExchanges", () => {
       expect.objectContaining({
         success: true,
         remainingBalances: {
-          A: 448n,
+          A: 449n,
           B: 0n,
           C: 200n,
         },
@@ -148,8 +114,8 @@ describe("fillWithMinimalExchanges", () => {
           "toToken": "B",
         },
         {
-          "fee": 2n,
-          "fromAmount": 92n,
+          "fee": 1n,
+          "fromAmount": 91n,
           "fromToken": "A",
           "toAmount": 90n,
           "toToken": "B",
@@ -162,8 +128,8 @@ describe("fillWithMinimalExchanges", () => {
           "toToken": "C",
         },
         {
-          "fee": 2n,
-          "fromAmount": 92n,
+          "fee": 1n,
+          "fromAmount": 91n,
           "fromToken": "A",
           "toAmount": 90n,
           "toToken": "C",
@@ -219,11 +185,11 @@ describe("fillWithMinimalExchanges", () => {
 
   it("verifies fee calculation in exchanges", () => {
     const balances: TokenBalances = {
-      A: 1000n,
+      A: 500000n,
       B: 0n,
     }
     const required: TokenBalances = {
-      B: 100n,
+      B: 250000n,
     }
     const result = fillWithMinimalExchanges(balances, required, 30n)
 
@@ -234,9 +200,9 @@ describe("fillWithMinimalExchanges", () => {
       {
         fromToken: "A",
         toToken: "B",
-        fromAmount: 102n,
-        toAmount: 100n,
-        fee: 2n,
+        fromAmount: 250753n,
+        toAmount: 250000n,
+        fee: 753n,
       },
     ])
   })
@@ -258,9 +224,9 @@ describe("fillWithMinimalExchanges", () => {
       {
         fromToken: "A",
         toToken: "B",
-        fromAmount: 112n,
+        fromAmount: 106n,
         toAmount: 100n,
-        fee: 12n,
+        fee: 6n,
       },
     ])
   })

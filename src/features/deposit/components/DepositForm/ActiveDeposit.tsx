@@ -124,13 +124,15 @@ export function ActiveDeposit({
       <ButtonCustom
         size="lg"
         disabled={
-          !watch("amount") || balanceInsufficient || !isDepositAmountHighEnough
+          !Number(watch("amount")) ||
+          balanceInsufficient ||
+          !isDepositAmountHighEnough
         }
         isLoading={isLoading}
       >
         {renderDepositButtonText(
           watch("amount") === "",
-          watch("amount") >= "0" &&
+          Number(watch("amount")) > 0 &&
             (balanceInsufficient !== null ? balanceInsufficient : false),
           network,
           token,

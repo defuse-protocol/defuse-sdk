@@ -44,7 +44,15 @@ import {
   useOtcMakerTrades,
 } from "../stores/otcMakerTrades"
 import type { SignMessage } from "../types/sharedTypes"
-import { type TradeTerms, deriveTradeTerms } from "../utils/deriveTradeTerms"
+import {
+  type DetermineInvolvedTokensErr,
+  determineInvolvedTokens,
+} from "../utils/deriveTradeTerms"
+import {
+  type ParseTradeTermsErr,
+  type TradeTerms,
+  parseTradeTerms,
+} from "../utils/parseTradeTerms"
 import { CancellationDialog } from "./shared/CancellationDialog"
 
 interface OtcMakerTradesProps {
@@ -117,27 +125,34 @@ function OtcMakerTradeItem({
   generateLink,
   signerCredentials,
 }: OtcMakerTradeItemProps) {
-  const tradeTermsResult = deriveTradeTerms(multiPayload, tokenList, 0)
+  const tradeTermsResult = parseTradeTerms(multiPayload)
+    .mapErr<ParseTradeTermsErr | DetermineInvolvedTokensErr>((a) => a)
+    .andThen((tradeTerms) =>
+      determineInvolvedTokens(tokenList, tradeTerms.tokenDiff).map(
+        ({ tokenIn, tokenOut }) => ({
+          tradeTerms: tradeTerms,
+          tokenIn: tokenIn,
+          tokenOut: tokenOut,
+        })
+      )
+    )
 
   if (tradeTermsResult.isErr()) {
     return <div>Error: {tradeTermsResult.unwrapErr()}</div>
   }
 
-  const tradeTerms = tradeTermsResult.unwrap()
-
-  // Need to flip tokens, because `deriveTradeTerms` computes the taker side
-  const { tokenIn: tokenOut, tokenOut: tokenIn } = tradeTerms
+  const { tradeTerms, tokenIn, tokenOut } = tradeTermsResult.unwrap()
 
   const totalAmountIn = computeTotalBalanceDifferentDecimals(
     tokenIn,
-    tradeTerms.makerTokenDiff,
+    tradeTerms.tokenDiff,
     { strict: false }
   )
   assert(totalAmountIn)
 
   const totalAmountOut = computeTotalBalanceDifferentDecimals(
     tokenOut,
-    tradeTerms.makerTokenDiff,
+    tradeTerms.tokenDiff,
     { strict: false }
   )
   assert(totalAmountOut)
@@ -236,7 +251,7 @@ function OtcMakerTradeItem({
               type="button"
               onClick={() => {
                 cancelOrder({
-                  nonceBas64: tradeTerms.makerNonceBase64,
+                  nonceBas64: tradeTerms.nonceBase64,
                   tradeId,
                 })
               }}
@@ -295,22 +310,20 @@ function useValidateTrade(tradeTerms: TradeTerms) {
     enabled: error.isNone(),
     queryKey: [
       "deposited_balance",
-      tradeTerms.makerUserId,
-      Object.keys(tradeTerms.makerTokenDiff),
+      tradeTerms.userId,
+      Object.keys(tradeTerms.tokenDiff),
     ],
     queryFn: () => {
       return getDepositedBalances(
-        tradeTerms.makerUserId,
-        Object.keys(tradeTerms.makerTokenDiff),
+        tradeTerms.userId,
+        Object.keys(tradeTerms.tokenDiff),
         new providers.JsonRpcProvider({
           url: "https://nearrpc.aurora.dev",
         })
       )
     },
     select: (makerTokenBalances): Option<"MAKER_INSUFFICIENT_FUNDS"> => {
-      for (const [tokenId, amount] of Object.entries(
-        tradeTerms.makerTokenDiff
-      )) {
+      for (const [tokenId, amount] of Object.entries(tradeTerms.tokenDiff)) {
         if (amount >= 0) {
           continue
         }
@@ -327,11 +340,7 @@ function useValidateTrade(tradeTerms: TradeTerms) {
 
   const nonceValidation = useQuery({
     enabled: error.isNone(),
-    queryKey: [
-      "nonce_is_used",
-      tradeTerms.makerUserId,
-      tradeTerms.makerNonceBase64,
-    ],
+    queryKey: ["nonce_is_used", tradeTerms.userId, tradeTerms.nonceBase64],
     queryFn: async () => {
       const nearClient = new providers.JsonRpcProvider({
         url: "https://nearrpc.aurora.dev",
@@ -342,8 +351,8 @@ function useValidateTrade(tradeTerms: TradeTerms) {
         method_name: "is_nonce_used",
         args_base64: btoa(
           JSON.stringify({
-            account_id: tradeTerms.makerUserId,
-            nonce: tradeTerms.makerNonceBase64,
+            account_id: tradeTerms.userId,
+            nonce: tradeTerms.nonceBase64,
           })
         ),
         finality: "optimistic",

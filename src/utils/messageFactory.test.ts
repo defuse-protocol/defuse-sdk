@@ -194,6 +194,7 @@ describe("makeInnerSwapAndWithdrawMessage()", () => {
         ["foo.near", -100n],
         ["bar.near", 200n],
       ],
+      storageTokenDeltas: [],
       withdrawParams: {
         type: "to_near",
         amount: 200n,
@@ -231,9 +232,67 @@ describe("makeInnerSwapAndWithdrawMessage()", () => {
     `)
   })
 
+  it("generates message with regular swap and storage swap", () => {
+    const innerMessage = makeInnerSwapAndWithdrawMessage({
+      tokenDeltas: [
+        ["foo.near", -100n],
+        ["bar.near", 200n],
+      ],
+      storageTokenDeltas: [
+        ["bar.near", -7n],
+        ["wrap.near", 125n],
+      ],
+      withdrawParams: {
+        type: "to_near",
+        amount: 193n,
+        tokenAccountId: "bar.near",
+        receiverId: "receiver.near",
+        storageDeposit: 125n,
+      },
+      signerId: userAddressToDefuseUserId("user.near", "near"),
+      deadlineTimestamp: DEADLINE,
+      referral: "referrer.near",
+    })
+
+    expect(innerMessage).toMatchInlineSnapshot(`
+      {
+        "deadline": "2024-01-01T12:00:00.000Z",
+        "intents": [
+          {
+            "diff": {
+              "bar.near": "200",
+              "foo.near": "-100",
+            },
+            "intent": "token_diff",
+            "memo": undefined,
+            "referral": "referrer.near",
+          },
+          {
+            "diff": {
+              "bar.near": "-7",
+              "wrap.near": "125",
+            },
+            "intent": "token_diff",
+            "memo": undefined,
+            "referral": "referrer.near",
+          },
+          {
+            "amount": "193",
+            "intent": "ft_withdraw",
+            "receiver_id": "receiver.near",
+            "storage_deposit": "125",
+            "token": "bar.near",
+          },
+        ],
+        "signer_id": "user.near",
+      }
+    `)
+  })
+
   it("generates message without swaps", () => {
     const innerMessage = makeInnerSwapAndWithdrawMessage({
-      tokenDeltas: null,
+      tokenDeltas: [],
+      storageTokenDeltas: [],
       withdrawParams: {
         type: "to_near",
         amount: 200n,
@@ -264,7 +323,8 @@ describe("makeInnerSwapAndWithdrawMessage()", () => {
 
   it("generates message for withdrawing via POA Bridge", () => {
     const innerMessage = makeInnerSwapAndWithdrawMessage({
-      tokenDeltas: null,
+      tokenDeltas: [],
+      storageTokenDeltas: [],
       withdrawParams: {
         type: "via_poa_bridge",
         amount: 200n,
@@ -295,7 +355,8 @@ describe("makeInnerSwapAndWithdrawMessage()", () => {
 
   it("generates message for withdrawing via POA Bridge to XRP Ledger", () => {
     const innerMessage = makeInnerSwapAndWithdrawMessage({
-      tokenDeltas: null,
+      tokenDeltas: [],
+      storageTokenDeltas: [],
       withdrawParams: {
         type: "via_poa_bridge",
         amount: 200n,
@@ -326,7 +387,8 @@ describe("makeInnerSwapAndWithdrawMessage()", () => {
 
   it("generates message for withdrawing to AuroraEngine powered blockchains", () => {
     const innerMessage = makeInnerSwapAndWithdrawMessage({
-      tokenDeltas: null,
+      tokenDeltas: [],
+      storageTokenDeltas: [],
       withdrawParams: {
         type: "to_aurora_engine",
         amount: 200n,
@@ -361,6 +423,7 @@ describe("makeInnerSwapAndWithdrawMessage()", () => {
         ["foo.near", -100n],
         ["bar.near", 200n],
       ],
+      storageTokenDeltas: [],
       withdrawParams: {
         type: "to_near",
         amount: 200n,

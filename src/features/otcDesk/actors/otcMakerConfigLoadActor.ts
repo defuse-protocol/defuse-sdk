@@ -6,20 +6,20 @@ import { settings } from "../../../config/settings"
 export const otcMakerConfigLoadActor = setup({
   types: {
     context: {} as {
-      fee: null | number
+      protocolFee: null | number
     },
   },
   actors: {
-    loadFee: fromPromise(fetchFee),
+    loadProtocolFee: fromPromise(fetchProtocolFee),
   },
   actions: {
-    setFee: assign({
-      fee: (_, event: { output: number }) => event.output,
+    setProtocolFee: assign({
+      protocolFee: (_, event: { output: number }) => event.output,
     }),
   },
 }).createMachine({
   context: {
-    fee: null,
+    protocolFee: null,
   },
 
   initial: "loading",
@@ -27,11 +27,11 @@ export const otcMakerConfigLoadActor = setup({
   states: {
     loading: {
       invoke: {
-        src: "loadFee",
+        src: "loadProtocolFee",
         onDone: {
           target: "loaded",
           actions: {
-            type: "setFee",
+            type: "setProtocolFee",
             params: ({ event }) => event,
           },
         },
@@ -49,7 +49,7 @@ export const otcMakerConfigLoadActor = setup({
   },
 })
 
-export async function fetchFee() {
+export async function fetchProtocolFee() {
   const nearClient = new providers.JsonRpcProvider({
     url: "https://nearrpc.aurora.dev",
   })

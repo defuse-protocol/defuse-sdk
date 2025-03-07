@@ -80,7 +80,8 @@ export function createWithdrawIntentMessage(
   options: IntentMessageConfig
 ): WalletMessage {
   const innerMessage = makeInnerSwapAndWithdrawMessage({
-    tokenDeltas: null,
+    tokenDeltas: [],
+    storageTokenDeltas: [],
     withdrawParams: withdrawConfig,
     signerId: resolveSignerId(options.signerId),
     deadlineTimestamp: options.deadlineTimestamp ?? minutesFromNow(5),
