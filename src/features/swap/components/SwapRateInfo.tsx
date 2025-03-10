@@ -15,6 +15,7 @@ import type { TokenValue } from "../../../types/base"
 import type { SwappableToken } from "../../../types/swap"
 import { formatTokenValue, formatUsdAmount } from "../../../utils/format"
 import getTokenUsdPrice from "../../../utils/getTokenUsdPrice"
+import { BASIS_POINTS_DENOMINATOR } from "../../../utils/tokenUtils"
 import { useSwapRateData } from "../hooks/useSwapRateData"
 
 interface SwapRateInfoProps {
@@ -112,7 +113,9 @@ export function SwapRateInfo({ tokenIn, tokenOut }: SwapRateInfoProps) {
                   style: "percent",
                   minimumFractionDigits: 2,
                   maximumFractionDigits: 2,
-                }).format(slippageBasisPoints / 10_000)}
+                }).format(
+                  slippageBasisPoints / Number(BASIS_POINTS_DENOMINATOR)
+                )}
               </div>
             </div>
           </div>
