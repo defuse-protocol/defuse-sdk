@@ -11,25 +11,7 @@ export const NearAccountIdSchema = v.pipe(v.string(), v.check(isLegitAccountId))
 
 export const DeadlineSchema = v.pipe(v.string(), v.isoTimestamp())
 
-export const NonceSchema = v.pipe(
-  v.string(),
-  v.rawCheck(({ dataset, addIssue }) => {
-    if (dataset.typed) {
-      try {
-        const bytes = base64.decode(dataset.value)
-        if (bytes.length !== 32) {
-          addIssue({
-            message: "Invalid length (32 bytes expected)",
-          })
-        }
-      } catch {
-        addIssue({
-          message: "Invalid base64 encoding",
-        })
-      }
-    }
-  })
-)
+export const NonceSchema = createBytesSchema("", "base64", base64, 32)
 
 export const TokenIdSchema = v.pipe(
   v.string(),
@@ -44,56 +26,52 @@ export const TokenIdSchema = v.pipe(
   })
 )
 
-export const PublicKeyED25519Schema = v.pipe(
-  v.string(),
-  v.startsWith("ed25519:"),
-  v.rawCheck(({ dataset, addIssue }) => {
-    if (dataset.typed) {
-      const key = dataset.value.split(":")[1] ?? ""
-      try {
-        const bytes = base58.decode(key)
-        if (bytes.length !== 32) {
-          addIssue({ message: "Invalid length (32 bytes expected)" })
-        }
-      } catch {
-        addIssue({ message: "Invalid base58 encoding" })
-      }
-    }
-  })
+export const PublicKeyED25519Schema = createBytesSchema(
+  "ed25519:",
+  "base58",
+  base58,
+  32
 )
 
-export const SignatureED25519Schema = v.pipe(
-  v.string(),
-  v.startsWith("ed25519:"),
-  v.rawCheck(({ dataset, addIssue }) => {
-    if (dataset.typed) {
-      const key = dataset.value.split(":")[1] ?? ""
-      try {
-        const bytes = base58.decode(key)
-        if (bytes.length !== 64) {
-          addIssue({ message: "Invalid length (64 bytes expected)" })
-        }
-      } catch {
-        addIssue({ message: "Invalid base58 encoding" })
-      }
-    }
-  })
+export const SignatureED25519Schema = createBytesSchema(
+  "ed25519:",
+  "base58",
+  base58,
+  64
 )
 
-export const SignatureSecp256k1Schema = v.pipe(
-  v.string(),
-  v.startsWith("secp256k1:"),
-  v.rawCheck(({ dataset, addIssue }) => {
-    if (dataset.typed) {
-      const key = dataset.value.split(":")[1] ?? ""
-      try {
-        const bytes = base58.decode(key)
-        if (bytes.length !== 65) {
-          addIssue({ message: "Invalid length (65 bytes expected)" })
-        }
-      } catch {
-        addIssue({ message: "Invalid base58 encoding" })
-      }
-    }
-  })
+export const SignatureSecp256k1Schema = createBytesSchema(
+  "secp256k1:",
+  "base58",
+  base58,
+  65
 )
+
+export function createBytesSchema(
+  prefix: string,
+  encodingName: string,
+  bytesCoder: { decode: (val: string) => Uint8Array },
+  length: number
+) {
+  return v.pipe(
+    v.string(),
+    v.startsWith(prefix),
+    v.rawTransform(({ dataset, addIssue, NEVER }) => {
+      if (dataset.typed) {
+        const key = dataset.value.slice(prefix.length)
+        try {
+          const bytes = bytesCoder.decode(key)
+          if (bytes.length === length) {
+            return bytes
+          }
+          addIssue({
+            message: `Invalid length (${length} bytes expected, got ${bytes.length})`,
+          })
+        } catch {
+          addIssue({ message: `Invalid ${encodingName} encoding` })
+        }
+      }
+      return NEVER
+    })
+  )
+}

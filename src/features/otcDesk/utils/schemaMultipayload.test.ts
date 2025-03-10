@@ -43,7 +43,7 @@ describe("PayloadObjectSchema", () => {
     ["incorrect nonce", "Invalid base64 encoding"],
     [
       base64.encode(crypto.getRandomValues(new Uint8Array(64))),
-      "Invalid length (32 bytes expected)",
+      "Invalid length (32 bytes expected, got 64)",
     ],
   ])("incorrect nonce", async (invalidNonce, err) => {
     const walletMessage = genSwapIntent(signer1)
