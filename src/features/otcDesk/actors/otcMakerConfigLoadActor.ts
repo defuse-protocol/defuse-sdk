@@ -70,6 +70,6 @@ export async function fetchProtocolFee() {
     throw new Error(`Expected number, got ${typeof value}`)
   }
 
-  // in bip: 1 bip = 0.01% = 0.0001
+  // in bip: 1 bip = 0.0001% = 0.000001
   return value
 }

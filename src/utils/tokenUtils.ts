@@ -274,18 +274,24 @@ export function negateTokenValue(value: TokenValue): TokenValue {
   }
 }
 
-// It's 100%
-const BASIS_POINTS_DENOMINATOR = 10_000n
+/**
+ * 1 bip = 0.0001% = 0.000001
+ * 3000 bips = 0.3% = 0.003
+ * 1000000 bips = 100% = 1
+ */
+const BASIS_POINTS_DENOMINATOR = 1_000_000n
 
 /**
  * Calculates net amount by deducting fee from gross amount.
  * @example
  * // If gross amount is 100000n with 0.3% fee, net amount is 99700n
- * netDownAmount({ amount: 100000n, decimals: 6 }, 30) == 99700n
+ * netDownAmount(100000n, 3000) == 99700n
  */
 export function netDownAmount(amount: bigint, feeBip: number): bigint {
   if (feeBip < 0 || feeBip > Number(BASIS_POINTS_DENOMINATOR)) {
-    throw new Error("Invalid feeBip value. It must be between 0 and 10000.")
+    throw new Error(
+      `Invalid feeBip value. It must be between 0 and ${BASIS_POINTS_DENOMINATOR}.`
+    )
   }
 
   if (amount < 0n) {
@@ -306,11 +312,13 @@ export function netDownAmount(amount: bigint, feeBip: number): bigint {
  * Calculates gross amount needed to achieve desired net amount after fee.
  * @example
  * // To receive net 100000n after 0.3% fee, gross amount needed is 100300n
- * grossUpAmount({ amount: 100000n, decimals: 6 }, 30) == 100300n
+ * grossUpAmount(100000n, 3000) == 100300n
  */
 export function grossUpAmount(amount: bigint, feeBip: number): bigint {
   if (feeBip < 0 || feeBip > Number(BASIS_POINTS_DENOMINATOR)) {
-    throw new Error("Invalid feeBip value. It must be between 0 and 10000.")
+    throw new Error(
+      `Invalid feeBip value. It must be between 0 and ${BASIS_POINTS_DENOMINATOR}.`
+    )
   }
 
   if (amount < 0n) {
