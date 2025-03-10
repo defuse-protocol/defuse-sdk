@@ -15,6 +15,8 @@ import {
 } from "../../../core/messages"
 import type { MultiPayload } from "../../../types/defuse-contracts-types"
 import type { WalletMessage } from "../../../types/swap"
+import { normalizeERC191Signature } from "../../../utils/prepareBroadcastRequest"
+import { normalizeSignatureS } from "../../../utils/webAuthn"
 import {
   GeneralPayloadObjectSchema,
   MultiPayloadDeepSchema,
@@ -34,7 +36,7 @@ describe("mulltipayload schemas", async () => {
     ),
     // WebAuth-Ed25519 (token_diff)
     JSON.parse(
-      '{"standard":"webauthn","public_key":"ed25519:CP5RBUrhgnrGdzGb1edscihGuP9gFuUcKjH22gKYYzbZ","payload":"{\\"signer_id\\":\\"a91854052c1a404575c5fdf762bbaa6f69c2061182b0d1ca05add2b40ff48120\\",\\"verifying_contract\\":\\"intents.near\\",\\"deadline\\":\\"2025-03-11T19:10:40.031Z\\",\\"nonce\\":\\"1hl2lsecoS7c3IX8/OU4Y44cq2X6vto1V3YGjG7bzSU=\\",\\"intents\\":[{\\"intent\\":\\"token_diff\\",\\"diff\\":{\\"nep141:eth-0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48.omft.near\\":\\"-1000000\\",\\"nep141:wrap.near\\":\\"2000000000000000000000000\\"},\\"referral\\":\\"near-intents.intents-referral.near\\",\\"memo\\":\\"OTC_CREATE\\"}]}","signature":"ed25519:4bveGbK4iMB7FvGmeufSvAgK7CwYsEJY48fr29kRjajSmdwxZjazfgER6uDhLCLRr5ns4D8tL5rbdvfJaXVZZtV3","client_data_json":"{\\"type\\":\\"webauthn.get\\",\\"challenge\\":\\"dRY33X035EPrQjE7-GdKAwVrnlj7qhKUfrp9ECGIJYg\\",\\"origin\\":\\"http://localhost:3000\\"}","authenticator_data":"SZYN5YgOjGh0NBcPZHZgW4_krrmihjLHmVzzuoMdl2MFZ50EAA"}'
+      '{"standard":"webauthn","payload":"{\\"signer_id\\":\\"a91854052c1a404575c5fdf762bbaa6f69c2061182b0d1ca05add2b40ff48120\\",\\"verifying_contract\\":\\"intents.near\\",\\"deadline\\":\\"2025-03-11T21:26:43.506Z\\",\\"nonce\\":\\"mAtdDYjs1p58/zWwaWqk91VduXWO7ds2FbkMlBT97hc=\\",\\"intents\\":[{\\"intent\\":\\"token_diff\\",\\"diff\\":{\\"nep141:eth-0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48.omft.near\\":\\"-1000000\\",\\"nep141:wrap.near\\":\\"1000000000000000000000000\\"},\\"referral\\":\\"near-intents.intents-referral.near\\",\\"memo\\":\\"OTC_CREATE\\"}]}","public_key":"ed25519:CP5RBUrhgnrGdzGb1edscihGuP9gFuUcKjH22gKYYzbZ","signature":"ed25519:3QpBR9SFxvRhzKt8xzt7dvPCtBtdFhfQbx7uuXMv2dVPjXJUv3GyU94Rzz5FxMvou41orVNkkbVd8P4cYKFgqLH8","client_data_json":"{\\"type\\":\\"webauthn.get\\",\\"challenge\\":\\"vIDcfLTZBT3GYlGT6yK0dPt_xzp_ZQlo9aFt8jzAfGM\\",\\"origin\\":\\"http://localhost:3000\\"}","authenticator_data":"SZYN5YgOjGh0NBcPZHZgW4_krrmihjLHmVzzuoMdl2MFZ50EBQ"}'
     ),
   ])("should parse multipayload", (multipayload) => {
     expect(() => v.parse(MultiPayloadDeepSchema, multipayload)).not.toThrow()
@@ -127,7 +129,9 @@ const signERC191: FakeSign = async (walletMessageFactory) => {
   return formatSignedIntent(
     {
       type: "ERC191",
-      signatureData: await signer.signMessage(walletMessage.ERC191),
+      signatureData: normalizeERC191Signature(
+        await signer.signMessage(walletMessage.ERC191)
+      ),
       signedData: walletMessage.ERC191,
     },
     signerCreds
@@ -143,13 +147,18 @@ const signRawED25519: FakeSign = async (walletMessageFactory) => {
 
   const walletMessage = walletMessageFactory(signerCreds)
 
+  let signature = nacl.sign.detached(
+    walletMessage.SOLANA.message,
+    keypair.secretKey
+  )
+  const sBytes = signature.slice(32, 64)
+  const sBytesNormalized = normalizeSignatureS(sBytes)
+  signature = new Uint8Array([...signature.slice(0, 32), ...sBytesNormalized])
+
   return formatSignedIntent(
     {
       type: "SOLANA",
-      signatureData: nacl.sign.detached(
-        walletMessage.SOLANA.message,
-        keypair.secretKey
-      ),
+      signatureData: signature,
       signedData: walletMessage.SOLANA,
     },
     signerCreds
