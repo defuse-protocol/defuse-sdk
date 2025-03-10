@@ -70,7 +70,7 @@ export function transformERC191Signature(signature: string) {
   return `secp256k1:${base58.encode(bytes)}`
 }
 
-function normalizeERC191Signature(signature: string): string {
+export function normalizeERC191Signature(signature: string): string {
   // Get `v` from the last two characters
   let v = Number.parseInt(signature.slice(-2), 16)
 

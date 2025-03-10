@@ -1,6 +1,7 @@
-import { base58, base64, base64urlnopad } from "@scure/base"
+import { base58, base64, base64urlnopad, hex } from "@scure/base"
 import * as v from "valibot"
 import { isLegitAccountId } from "../../../utils/near"
+import { normalizeERC191Signature } from "../../../utils/prepareBroadcastRequest"
 
 export const ToBigIntSchema = v.pipe(
   v.string(),
@@ -40,11 +41,21 @@ export const SignatureED25519Schema = createBytesSchema(
   64
 )
 
-export const SignatureSecp256k1Schema = createBytesSchema(
-  "secp256k1:",
-  "base58",
-  base58,
-  65
+export const SignatureSecp256k1Schema = v.pipe(
+  createBytesSchema("secp256k1:", "base58", base58, 65),
+  v.rawCheck(({ dataset, addIssue }) => {
+    if (dataset.typed) {
+      const signatureHex = hex.encode(dataset.value)
+      const normalizedSignature = normalizeERC191Signature(signatureHex)
+      if (signatureHex !== normalizedSignature) {
+        addIssue({
+          message:
+            "Signature is not normalized (recovery bit is expected to be 1 or 0)",
+          expected: normalizedSignature,
+        })
+      }
+    }
+  })
 )
 
 export const SignatureP256Schema = createBytesSchema(
