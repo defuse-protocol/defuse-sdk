@@ -9,26 +9,31 @@ export type GiftSecret = {
   userId: string
 }
 
-export function parseGiftSecret(secretKey: string): Result<GiftSecret, string> {
-  if (secretKey.length === 0) {
-    return Err("SECRET_KEY_EMPTY")
-  }
+export type GiftSecretError =
+  | "SECRET_KEY_EMPTY"
+  | "CANNOT_PARSE_SECRET_KEY"
+  | "ACCOUNT_NOT_FOUND"
 
-  const parseResult = v.safeParse(SecretKeyPlainSchema, secretKey)
-  if (!parseResult.success) {
-    return Err("CANNOT_PARSE_SECRET_KEY")
-  }
+export function parseGiftSecret(
+  secretKey: string
+): Result<GiftSecret, GiftSecretError> {
+  try {
+    const parseResult = v.safeParse(v.string(), secretKey)
+    if (!parseResult.success) {
+      return Err("CANNOT_PARSE_SECRET_KEY")
+    }
 
-  return Ok({
-    secretKey: parseResult.output,
-    userId: deriveUserId(parseResult.output),
-  })
+    return Ok({
+      secretKey: parseResult.output,
+      userId: deriveUserId(parseResult.output),
+    })
+  } catch {
+    return Err("ACCOUNT_NOT_FOUND")
+  }
 }
 
-const SecretKeyPlainSchema = v.string()
-
-function deriveUserId(secretKeyBase58: string): string {
-  const secretKey = bs58.decode(secretKeyBase58)
-  const keyPair = sign.keyPair.fromSecretKey(secretKey)
+function deriveUserId(secretKey: string): string {
+  const secretKeyBase58 = bs58.decode(secretKey)
+  const keyPair = sign.keyPair.fromSecretKey(secretKeyBase58)
   return hex.encode(keyPair.publicKey)
 }
