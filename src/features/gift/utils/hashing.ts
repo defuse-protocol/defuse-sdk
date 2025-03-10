@@ -1,24 +1,6 @@
+import { base64 } from "@scure/base"
 import { BorshSchema, borshSerialize } from "borsher"
 
-interface ITokenDiff {
-  intent: "token_diff"
-  diff: { [key: string]: string }
-}
-
-type IIntent = ITokenDiff
-
-/**
- * Message structure for signing
- */
-export interface IMessage {
-  signer_id: string
-  deadline: string
-  intents: IIntent[]
-}
-
-/**
- * Borsh schema for NEP-413 payload serialization
- */
 const nep413PayloadSchema = BorshSchema.Struct({
   message: BorshSchema.String,
   nonce: BorshSchema.Array(BorshSchema.u8, 32),
@@ -32,7 +14,7 @@ const nep413PayloadSchema = BorshSchema.Struct({
  * @see https://github.com/near/NEPs/blob/master/neps/nep-0413.md#specification
  *
  * The resulting hash should be used with EdDSA signing to create a valid NEP-413 signature.
- * Note: This is a browser-only implementation using Web Crypto API.
+ * Note: This is a browser-only implementation.
  *
  * @param intentMessage - Message content to be signed
  * @param recipient - Recipient account ID
@@ -45,18 +27,17 @@ export async function hashing(
   recipient: string,
   nonce: string,
   standard: number
-): Promise<Buffer> {
+): Promise<Uint8Array> {
   if (standard !== 413) {
     throw new Error(`Unsupported standard: ${standard}`)
   }
 
-  // Prepare payload with fixed-size nonce array
   const payload = {
     message: intentMessage,
     nonce: new Uint8Array(32),
     recipient,
   }
-  const nonceData = Buffer.from(nonce, "base64")
+  const nonceData = base64.decode(nonce)
   payload.nonce.set(nonceData.subarray(0, 32))
 
   // Serialize payload and combine with standard identifier
@@ -67,5 +48,5 @@ export async function hashing(
 
   // Hash the combined data
   const hashBuffer = await crypto.subtle.digest("SHA-256", combinedData)
-  return Buffer.from(hashBuffer)
+  return new Uint8Array(hashBuffer)
 }
