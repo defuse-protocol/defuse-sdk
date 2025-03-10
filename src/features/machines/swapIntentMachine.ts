@@ -1,8 +1,5 @@
 import { secp256k1 } from "@noble/curves/secp256k1"
-import { base58 } from "@scure/base"
 import type { providers } from "near-api-js"
-import { sign } from "tweetnacl"
-import { verifyMessage as verifyMessageViem } from "viem"
 import { assign, fromPromise, setup } from "xstate"
 import { settings } from "../../config/settings"
 import { logger } from "../../logger"
@@ -27,14 +24,11 @@ import {
   negateTokenValue,
   subtractAmounts,
 } from "../../utils/tokenUtils"
+import { verifyWalletSignature } from "../../utils/verifyWalletSignature"
 import {
   type WalletErrorCode,
   extractWalletErrorCode,
 } from "../../utils/walletErrorExtractor"
-import {
-  parsePublicKey,
-  verifyAuthenticatorAssertion,
-} from "../../utils/webAuthn"
 import type { ParentEvents as BackgroundQuoterEvents } from "./backgroundQuoterMachine"
 import {
   type ErrorCodes as PublicKeyVerifierErrorCodes,
@@ -673,45 +667,6 @@ function dequeueValidQuote(
   }
 
   return null
-}
-
-async function verifyWalletSignature(
-  signature: WalletSignatureResult,
-  userAddress: string
-) {
-  if (signature == null) return false
-
-  const signatureType = signature.type
-  switch (signatureType) {
-    case "NEP413":
-      return (
-        // For NEP-413, it's enough to ensure user didn't switch the account
-        signature.signatureData.accountId === userAddress
-      )
-    case "ERC191": {
-      return verifyMessageViem({
-        address: userAddress as "0x${string}",
-        message: signature.signedData.message,
-        signature: signature.signatureData as "0x${string}",
-      })
-    }
-    case "SOLANA": {
-      return sign.detached.verify(
-        signature.signedData.message,
-        signature.signatureData,
-        base58.decode(userAddress)
-      )
-    }
-    case "WEBAUTHN":
-      return verifyAuthenticatorAssertion(
-        signature.signatureData,
-        parsePublicKey(userAddress),
-        signature.signedData.challenge
-      )
-    default:
-      signatureType satisfies never
-      throw new Error("exhaustive check failed")
-  }
 }
 
 export function calcOperationAmountOut(
