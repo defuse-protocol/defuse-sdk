@@ -5,14 +5,20 @@ import {
   TokenIdSchema,
 } from "./schemaPrimitives"
 
-// It doesn't implement all possible intents, just `token_diff`
+const IntentTokenDiffSchema = v.object({
+  intent: v.literal("token_diff"),
+  diff: v.pipe(v.record(TokenIdSchema, ToBigIntSchema)),
+  memo: v.optional(v.string()),
+  referral: v.optional(NearAccountIdSchema),
+})
+
+export type IntentTokenDiffSchemaOutput = v.InferOutput<
+  typeof IntentTokenDiffSchema
+>
+
+// It doesn't implement all possible intents
 export const IntentSchema = v.variant("intent", [
-  v.object({
-    intent: v.literal("token_diff"),
-    diff: v.pipe(v.record(TokenIdSchema, ToBigIntSchema)),
-    memo: v.optional(v.string()),
-    referral: v.optional(NearAccountIdSchema),
-  }),
+  IntentTokenDiffSchema,
   v.object({
     intent: v.literal("native_withdraw"),
     receiver_id: NearAccountIdSchema,

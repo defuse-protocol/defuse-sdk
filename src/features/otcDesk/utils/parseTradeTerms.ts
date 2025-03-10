@@ -1,10 +1,13 @@
+import { base64 } from "@scure/base"
 import { Err, Ok, type Result } from "@thames/monads"
 import * as v from "valibot"
 import { logger } from "../../../logger"
 import type { BaseTokenInfo } from "../../../types/base"
 import type { MultiPayload } from "../../../types/defuse-contracts-types"
+import type { IntentTokenDiffSchemaOutput } from "./schemaIntents"
 import {
   MultiPayloadPlainSchema,
+  type MultiPayloadSchemaOutput,
   PayloadStringSchema,
 } from "./schemaMultipayload"
 
@@ -36,6 +39,12 @@ export function parseTradeTerms(
   }
   const multiPayload = parseResult.output
 
+  // We can be sure that `multiPayloadPlain` is MultiPayload, because we've just parsed it
+  const multiPayloadObj: MultiPayload =
+    typeof multiPayloadPlain === "string"
+      ? JSON.parse(multiPayloadPlain)
+      : multiPayloadPlain
+
   return getPlainPayload(multiPayload)
     .mapErr<ParseTradeTermsErr>((a) => a)
     .andThen<TradeTerms>((payloadPlain) => {
@@ -50,7 +59,8 @@ export function parseTradeTerms(
       const payload = payloadParseResult.output
 
       const intent = payload.intents.find(
-        (intent) => intent.intent === "token_diff"
+        (intent): intent is IntentTokenDiffSchemaOutput =>
+          intent.intent === "token_diff"
       )
 
       if (intent === undefined) {
@@ -72,8 +82,8 @@ export function parseTradeTerms(
         userId: payload.signer_id,
         tokenDiff: intent.diff,
         deadline: payload.deadline,
-        nonceBase64: nonce,
-        multiPayload,
+        nonceBase64: base64.encode(nonce),
+        multiPayload: multiPayloadObj,
       })
     })
 }
@@ -81,7 +91,7 @@ export function parseTradeTerms(
 type GetPlainPayloadErr = "UNSUPPORTED_PAYLOAD_STANDARD"
 
 function getPlainPayload(
-  payload: MultiPayload
+  payload: MultiPayloadSchemaOutput
 ): Result<string, GetPlainPayloadErr> {
   const payloadStandard = payload.standard
 
