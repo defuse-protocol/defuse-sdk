@@ -235,7 +235,7 @@ function shouldRemoveLeadingZero(bytes: Uint8Array): boolean {
  * to prevent signature malleability.
  * See: https://github.com/kadenzipfel/smart-contract-vulnerabilities/blob/master/vulnerabilities/signature-malleability.md
  */
-function normalizeSignatureS(sBytes: Uint8Array): Uint8Array {
+export function normalizeSignatureS(sBytes: Uint8Array): Uint8Array {
   const P256_N = BigInt(
     "0xFFFFFFFF00000000FFFFFFFFFFFFFFFFBCE6FAADA7179E84F3B9CAC2FC632551"
   )

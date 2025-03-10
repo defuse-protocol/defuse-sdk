@@ -2,6 +2,7 @@ import { base58, base64, base64urlnopad, hex } from "@scure/base"
 import * as v from "valibot"
 import { isLegitAccountId } from "../../../utils/near"
 import { normalizeERC191Signature } from "../../../utils/prepareBroadcastRequest"
+import { normalizeSignatureS } from "../../../utils/webAuthn"
 
 export const ToBigIntSchema = v.pipe(
   v.string(),
@@ -34,11 +35,20 @@ export const PublicKeyED25519Schema = createBytesSchema(
   32
 )
 
-export const SignatureED25519Schema = createBytesSchema(
-  "ed25519:",
-  "base58",
-  base58,
-  64
+export const SignatureED25519Schema = v.pipe(
+  createBytesSchema("ed25519:", "base58", base58, 64),
+  v.rawCheck(({ dataset, addIssue }) => {
+    if (dataset.typed) {
+      const sBytes = dataset.value.slice(32, 64)
+      const sBytesNormalized = normalizeSignatureS(sBytes)
+      if (hex.encode(sBytes) !== hex.encode(sBytesNormalized)) {
+        addIssue({
+          message: "Signature malleability issue (S byte must be low)",
+          expected: hex.encode(sBytesNormalized),
+        })
+      }
+    }
+  })
 )
 
 export const SignatureSecp256k1Schema = v.pipe(
@@ -46,13 +56,17 @@ export const SignatureSecp256k1Schema = v.pipe(
   v.rawCheck(({ dataset, addIssue }) => {
     if (dataset.typed) {
       const signatureHex = hex.encode(dataset.value)
-      const normalizedSignature = normalizeERC191Signature(signatureHex)
-      if (signatureHex !== normalizedSignature) {
-        addIssue({
-          message:
-            "Signature is not normalized (recovery bit is expected to be 1 or 0)",
-          expected: normalizedSignature,
-        })
+      try {
+        const normalizedSignature = normalizeERC191Signature(signatureHex)
+        if (signatureHex !== normalizedSignature) {
+          addIssue({
+            message:
+              "Signature is not normalized (recovery bit is expected to be 1 or 0)",
+            expected: normalizedSignature,
+          })
+        }
+      } catch {
+        addIssue({ message: "Invalid signature format" })
       }
     }
   })

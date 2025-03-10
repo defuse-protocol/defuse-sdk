@@ -41,9 +41,14 @@ describe("SignatureED25519Schema", () => {
 
     const formatted1 = "ed25519:foo"
     const formatted2 = base58.encode(signature)
+    // Malleable signature
+    const formatted3 = `ed25519:${base58.encode(hex.decode("01c42949178201fd9bcddff0415d4f0323431e1d02ed71d09a98882cb2bf3a4daef1075c0c4d06e9879fef30169e107677e31efe2e653e00deefa11527df9b2c"))}`
 
     expect(() => v.parse(SignatureED25519Schema, formatted1)).toThrow()
     expect(() => v.parse(SignatureED25519Schema, formatted2)).toThrow()
+    expect(() => v.parse(SignatureED25519Schema, formatted3)).toThrow(
+      "Signature malleability issue (S byte must be low)"
+    )
   })
 })
 
@@ -64,7 +69,12 @@ describe("SignatureSecp256k1Schema", () => {
     const formatted1 = "secp256k1:foo"
     const formatted2 = base58.encode(signature)
 
+    const invalidRecoveryBit = Uint8Array.from(signature)
+    invalidRecoveryBit[invalidRecoveryBit.length - 1] = 27
+    const formatted3 = `secp256k1:${base58.encode(invalidRecoveryBit)}`
+
     expect(() => v.parse(SignatureSecp256k1Schema, formatted1)).toThrow()
     expect(() => v.parse(SignatureSecp256k1Schema, formatted2)).toThrow()
+    expect(() => v.parse(SignatureSecp256k1Schema, formatted3)).toThrow()
   })
 })
