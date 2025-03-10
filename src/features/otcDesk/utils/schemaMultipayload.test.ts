@@ -28,6 +28,14 @@ describe("mulltipayload schemas", async () => {
     await signERC191(genWithdrawIntent),
     await signRawED25519(genEmptyIntent),
     await signERC191(genEmptyIntent),
+    // WebAuthn-P256 (empty intent)
+    JSON.parse(
+      '{"standard":"webauthn","public_key":"p256:QXi4C3LumN7Nk3Xh9fkwaiQWzMtK9Aeq1ZmHVx6dvgVK4ybEsYNsWgqDP3mXn3DABctvW4AWrfiHHsZfuLFejaK","authenticator_data":"e_38lYTpqGj6nGFLqMy9rPqabbuZNCeaNA7P6uNCpKwdAAAAAA","client_data_json":"{\\"type\\":\\"webauthn.get\\",\\"challenge\\":\\"UIJDmOpoatVOk9R3Wknw7Wkudm6yL0wclFUizAS7tZ8\\",\\"origin\\":\\"https://app.near-intents.org\\"}","payload":"{\\"signer_id\\":\\"0x2af28c6d39befc4486b94d247771b12370584718\\",\\"verifying_contract\\":\\"intents.near\\",\\"deadline\\":\\"2025-03-10T18:49:46.700Z\\",\\"nonce\\":\\"i5O1Z9ZyMz0HBJeLaracQfJOhame11//Mxgg+g9gbd0=\\",\\"intents\\":[]}","signature":"p256:4eMvwkk4YyfFXqs5g6TeaxfBjGCUkmqrsEyu47niHa2nsMwi9VDWTFA849KQCYAh8WC2DYbVyKNyMH7afvVxHFkp"}'
+    ),
+    // WebAuth-Ed25519 (token_diff)
+    JSON.parse(
+      '{"standard":"webauthn","public_key":"ed25519:CP5RBUrhgnrGdzGb1edscihGuP9gFuUcKjH22gKYYzbZ","payload":"{\\"signer_id\\":\\"a91854052c1a404575c5fdf762bbaa6f69c2061182b0d1ca05add2b40ff48120\\",\\"verifying_contract\\":\\"intents.near\\",\\"deadline\\":\\"2025-03-11T19:10:40.031Z\\",\\"nonce\\":\\"1hl2lsecoS7c3IX8/OU4Y44cq2X6vto1V3YGjG7bzSU=\\",\\"intents\\":[{\\"intent\\":\\"token_diff\\",\\"diff\\":{\\"nep141:eth-0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48.omft.near\\":\\"-1000000\\",\\"nep141:wrap.near\\":\\"2000000000000000000000000\\"},\\"referral\\":\\"near-intents.intents-referral.near\\",\\"memo\\":\\"OTC_CREATE\\"}]}","signature":"ed25519:4bveGbK4iMB7FvGmeufSvAgK7CwYsEJY48fr29kRjajSmdwxZjazfgER6uDhLCLRr5ns4D8tL5rbdvfJaXVZZtV3","client_data_json":"{\\"type\\":\\"webauthn.get\\",\\"challenge\\":\\"dRY33X035EPrQjE7-GdKAwVrnlj7qhKUfrp9ECGIJYg\\",\\"origin\\":\\"http://localhost:3000\\"}","authenticator_data":"SZYN5YgOjGh0NBcPZHZgW4_krrmihjLHmVzzuoMdl2MFZ50EAA"}'
+    ),
   ])("should parse multipayload", (multipayload) => {
     expect(() => v.parse(MultiPayloadDeepSchema, multipayload)).not.toThrow()
   })

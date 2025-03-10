@@ -5,8 +5,12 @@ import {
   NearAccountIdSchema,
   NonceSchema,
   PublicKeyED25519Schema,
+  PublicKeyP256Schema,
   SignatureED25519Schema,
+  SignatureP256Schema,
   SignatureSecp256k1Schema,
+  WebAuthnAuthenticatorData,
+  WebAuthnClientDataJson,
 } from "./schemaPrimitives"
 
 export const GeneralPayloadObjectSchema = v.object({
@@ -75,15 +79,38 @@ export const MultiPayloadSchema = v.variant("standard", [
     signature: SignatureED25519Schema,
     public_key: PublicKeyED25519Schema,
   }),
-  v.object({
-    standard: v.literal("webauthn"),
-    payload: v.string(),
-    signature: v.string(),
-    public_key: v.string(),
-    authenticator_data: v.string(),
-    client_data_json: v.string(),
-  }),
+  v.pipe(
+    v.looseObject({
+      standard: v.literal("webauthn"),
+      public_key: v.string(),
+    }),
+    v.transform((a) => {
+      return { ...a, curveType: a.public_key.split(":")[0] }
+    }),
+    v.variant("curveType", [
+      v.object({
+        standard: v.literal("webauthn"),
+        curveType: v.literal("p256"),
+        payload: v.string(),
+        signature: SignatureP256Schema,
+        public_key: PublicKeyP256Schema,
+        authenticator_data: WebAuthnAuthenticatorData,
+        client_data_json: WebAuthnClientDataJson,
+      }),
+      v.object({
+        standard: v.literal("webauthn"),
+        curveType: v.literal("ed25519"),
+        payload: v.string(),
+        signature: SignatureED25519Schema,
+        public_key: PublicKeyED25519Schema,
+        authenticator_data: WebAuthnAuthenticatorData,
+        client_data_json: WebAuthnClientDataJson,
+      }),
+    ])
+  ),
 ])
+
+export type MultiPayloadSchemaOutput = v.InferOutput<typeof MultiPayloadSchema>
 
 export const MultiPayloadDeepSchema = v.variant("standard", [
   v.object({
@@ -108,14 +135,35 @@ export const MultiPayloadDeepSchema = v.variant("standard", [
     signature: SignatureED25519Schema,
     public_key: PublicKeyED25519Schema,
   }),
-  v.object({
-    standard: v.literal("webauthn"),
-    payload: GeneralPayloadStringSchema,
-    signature: v.string(),
-    public_key: v.string(),
-    authenticator_data: v.string(),
-    client_data_json: v.string(),
-  }),
+  v.pipe(
+    v.looseObject({
+      standard: v.literal("webauthn"),
+      public_key: v.string(),
+    }),
+    v.transform((a) => {
+      return { ...a, curveType: a.public_key.split(":")[0] }
+    }),
+    v.variant("curveType", [
+      v.object({
+        standard: v.literal("webauthn"),
+        curveType: v.literal("p256"),
+        payload: GeneralPayloadStringSchema,
+        signature: SignatureP256Schema,
+        public_key: PublicKeyP256Schema,
+        authenticator_data: WebAuthnAuthenticatorData,
+        client_data_json: WebAuthnClientDataJson,
+      }),
+      v.object({
+        standard: v.literal("webauthn"),
+        curveType: v.literal("ed25519"),
+        payload: GeneralPayloadStringSchema,
+        signature: SignatureED25519Schema,
+        public_key: PublicKeyED25519Schema,
+        authenticator_data: WebAuthnAuthenticatorData,
+        client_data_json: WebAuthnClientDataJson,
+      }),
+    ])
+  ),
 ])
 
 export const MultiPayloadPlainSchema = v.pipe(

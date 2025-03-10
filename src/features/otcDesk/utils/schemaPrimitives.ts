@@ -1,4 +1,4 @@
-import { base58, base64 } from "@scure/base"
+import { base58, base64, base64urlnopad } from "@scure/base"
 import * as v from "valibot"
 import { isLegitAccountId } from "../../../utils/near"
 
@@ -45,6 +45,48 @@ export const SignatureSecp256k1Schema = createBytesSchema(
   "base58",
   base58,
   65
+)
+
+export const SignatureP256Schema = createBytesSchema(
+  "p256:",
+  "base58",
+  base58,
+  64
+)
+
+export const PublicKeyP256Schema = createBytesSchema(
+  "p256:",
+  "base58",
+  base58,
+  64
+)
+
+export const WebAuthnAuthenticatorData = v.pipe(
+  v.string(),
+  v.rawTransform(({ dataset, addIssue, NEVER }) => {
+    if (dataset.typed) {
+      try {
+        return base64urlnopad.decode(dataset.value)
+      } catch {
+        addIssue({ message: "Invalid base64 urlsafe nopad encoding" })
+      }
+    }
+    return NEVER
+  })
+)
+
+export const WebAuthnClientDataJson = v.pipe(
+  v.string(),
+  v.rawTransform(({ dataset, addIssue, NEVER }) => {
+    if (dataset.typed) {
+      try {
+        return new TextEncoder().encode(dataset.value)
+      } catch {
+        addIssue({ message: "Invalid JSON encoding" })
+      }
+    }
+    return NEVER
+  })
 )
 
 export function createBytesSchema(
