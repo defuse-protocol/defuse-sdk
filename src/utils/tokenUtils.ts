@@ -279,7 +279,7 @@ export function negateTokenValue(value: TokenValue): TokenValue {
  * 3000 bips = 0.3% = 0.003
  * 1000000 bips = 100% = 1
  */
-const BASIS_POINTS_DENOMINATOR = 1_000_000n
+export const BASIS_POINTS_DENOMINATOR = 1_000_000n
 
 /**
  * Calculates net amount by deducting fee from gross amount.
