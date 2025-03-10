@@ -140,7 +140,7 @@ export const giftMakerSignActor = setup({
           input.parsed.message.length > 0
             ? input.parsed.message
             : "Enjoy your gift!",
-        receiverId: input.escrowKeyPair.walletId,
+        receiverId: input.escrowKeyPair.userId,
       }
     )
 

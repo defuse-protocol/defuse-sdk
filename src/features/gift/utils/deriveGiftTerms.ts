@@ -7,7 +7,7 @@ export type GiftTerms = {
   tokenDiff: Record<BaseTokenInfo["defuseAssetId"], bigint>
   tokenIn: BaseTokenInfo | UnifiedTokenInfo
   secretKey: string
-  walletId: string
+  userId: string
 }
 
 export async function deriveGiftTerms(
@@ -21,7 +21,7 @@ export async function deriveGiftTerms(
 
   const determineResult = await determineGiftToken(
     tokenList,
-    parseResult.unwrap()
+    parseResult.unwrap().userId
   )
   if (determineResult.isErr()) {
     return Err(determineResult.unwrapErr())
@@ -31,6 +31,6 @@ export async function deriveGiftTerms(
     tokenDiff: determineResult.unwrap().tokenInDiff,
     tokenIn: determineResult.unwrap().tokenIn,
     secretKey: parseResult.unwrap().secretKey,
-    walletId: parseResult.unwrap().walletId,
+    userId: parseResult.unwrap().userId,
   })
 }

@@ -4,6 +4,7 @@ import { KeyPair } from "near-api-js"
 import type { DefuseUserId, SignerCredentials } from "../../../core/formatters"
 import { formatUserIdentity } from "../../../core/formatters"
 import type { NEP413SignatureData } from "../../../types/swap"
+import { userAddressToDefuseUserId } from "../../../utils/defuse"
 import {
   makeInnerTransferMessage,
   makeSwapMessage,
@@ -26,7 +27,9 @@ export async function signGiftTakerMessage({
 
   const innerMessage = makeInnerTransferMessage({
     tokenDeltas: [...Object.entries(giftTerms.tokenDiff)],
-    signerId: resolveSignerId(giftTerms.walletId as DefuseUserId),
+    signerId: resolveSignerId(
+      userAddressToDefuseUserId(giftTerms.userId, "near")
+    ),
     deadlineTimestamp: minutesFromNow(5),
     receiverId: signerCredentials.credential,
     memo: "GIFT_FILL",
@@ -51,7 +54,7 @@ export async function signGiftTakerMessage({
     return Ok({
       type: "NEP413",
       signatureData: {
-        accountId: giftTerms.walletId,
+        accountId: giftTerms.userId,
         publicKey: keyPair.getPublicKey().toString(),
         signature: base64.encode(signature.signature),
       },

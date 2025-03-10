@@ -5,7 +5,7 @@ import { setup } from "xstate"
 export type EscrowKeyPair = {
   publicKey: string
   secretKey: string
-  walletId: string
+  userId: string
 }
 
 export const giftMakerEscrowActor = setup({
@@ -29,7 +29,7 @@ export const giftMakerEscrowActor = setup({
             keyPair: {
               publicKey: `ed25519:${base58.encode(keyPair.publicKey)}`,
               secretKey: base58.encode(keyPair.secretKey),
-              walletId: hex.encode(keyPair.publicKey),
+              userId: hex.encode(keyPair.publicKey),
             },
           }
         }

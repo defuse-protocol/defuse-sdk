@@ -6,7 +6,7 @@ import * as v from "valibot"
 
 export type GiftSecret = {
   secretKey: string
-  walletId: string
+  userId: string
 }
 
 export function parseGiftSecret(secretKey: string): Result<GiftSecret, string> {
@@ -21,13 +21,13 @@ export function parseGiftSecret(secretKey: string): Result<GiftSecret, string> {
 
   return Ok({
     secretKey: parseResult.output,
-    walletId: deriveWalletId(parseResult.output),
+    userId: deriveUserId(parseResult.output),
   })
 }
 
 const SecretKeyPlainSchema = v.string()
 
-function deriveWalletId(secretKeyBase58: string): string {
+function deriveUserId(secretKeyBase58: string): string {
   const secretKey = bs58.decode(secretKeyBase58)
   const keyPair = sign.keyPair.fromSecretKey(secretKey)
   return hex.encode(keyPair.publicKey)

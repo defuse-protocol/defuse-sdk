@@ -116,7 +116,7 @@ export const giftMakerCancellationActor = setup({
           tokenDiff,
           tokenIn: input.tokenIn,
           secretKey: parseResult.unwrap().secretKey,
-          walletId: parseResult.unwrap().walletId,
+          userId: parseResult.unwrap().userId,
         }
 
         const signature = await signGiftTakerMessage({

@@ -5,17 +5,20 @@ import type { BaseTokenInfo, UnifiedTokenInfo } from "../../../types/base"
 import { userAddressToDefuseUserId } from "../../../utils/defuse"
 import { isBaseToken } from "../../../utils/token"
 import { getAnyBaseTokenInfo } from "../../../utils/tokenUtils"
-import type { GiftSecret } from "./parseGiftSecret"
 
 type GiftToken = {
   tokenInDiff: Record<BaseTokenInfo["defuseAssetId"], bigint>
   tokenIn: BaseTokenInfo
 }
 
+export type DetermineGiftTokenErr =
+  | "NO_TOKEN_OR_GIFT_HAS_BEEN_CLAIMED"
+  | "ERR_GETTING_BALANCES"
+
 export async function determineGiftToken(
   tokenList: (BaseTokenInfo | UnifiedTokenInfo)[],
-  giftSecret: GiftSecret
-): Promise<Result<GiftToken, string>> {
+  userId: string
+): Promise<Result<GiftToken, DetermineGiftTokenErr>> {
   try {
     const tokenIds = tokenList.flatMap((token) => {
       return isBaseToken(token)
@@ -24,7 +27,7 @@ export async function determineGiftToken(
     })
 
     const balances = await getDepositedBalances(
-      userAddressToDefuseUserId(giftSecret.walletId, "near"),
+      userAddressToDefuseUserId(userId, "near"),
       tokenIds,
       new providers.JsonRpcProvider({
         url: "https://nearrpc.aurora.dev",
@@ -44,7 +47,7 @@ export async function determineGiftToken(
     )
 
     if (!tokenIn_) {
-      return Err("NO_BALANCE_OR_GIFT_HAS_BEEN_TAKEN")
+      return Err("NO_TOKEN_OR_GIFT_HAS_BEEN_CLAIMED")
     }
 
     const tokenIn = getAnyBaseTokenInfo(tokenIn_)
@@ -53,9 +56,7 @@ export async function determineGiftToken(
       tokenInDiff,
       tokenIn,
     })
-  } catch (error) {
-    return Err(
-      `ERR_GETTING_BALANCES: ${error instanceof Error ? error.message : String(error)}`
-    )
+  } catch {
+    return Err("ERR_GETTING_BALANCES")
   }
 }
