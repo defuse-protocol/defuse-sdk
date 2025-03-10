@@ -296,7 +296,7 @@ export const swapUIMachine = setup({
     intentRefs: [],
     tokenList: input.tokenList,
     referral: input.referral,
-    slippageBasisPoints: 100, // 1%
+    slippageBasisPoints: 10_000, // 1%
   }),
 
   entry: ["spawnBackgroundQuoterRef", "spawnDepositedBalanceRef"],
