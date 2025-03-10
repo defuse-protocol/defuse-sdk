@@ -890,10 +890,10 @@ describe("getUnderlyingBaseTokenInfos", () => {
 describe("netDownAmount", () => {
   it("throws error for invalid feeBip", () => {
     expect(() => netDownAmount(100000n, -1)).toThrow(
-      "Invalid feeBip value. It must be between 0 and 10000."
+      "Invalid feeBip value. It must be between 0 and 1000000."
     )
-    expect(() => netDownAmount(100000n, 10001)).toThrow(
-      "Invalid feeBip value. It must be between 0 and 10000."
+    expect(() => netDownAmount(100000n, 1000001)).toThrow(
+      "Invalid feeBip value. It must be between 0 and 1000000."
     )
   })
 
@@ -902,18 +902,19 @@ describe("netDownAmount", () => {
   })
 
   /**
-   * 1 bip = 0.01% = 0.0001
-   * 30 bips = 0.3% = 0.003
-   * 10000 bips = 100% = 1
+   * 1 bip = 0.0001% = 0.000001
+   * 3000 bips = 0.3% = 0.003
+   * 1000000 bips = 100% = 1
    */
   it.each([
-    [1000000n, 1, 999900n],
-    [100300n, 30, 99999n],
-    [100000n, 30, 99700n],
+    [10000000n, 1, 9999990n],
+    [1000000n, 1, 999999n],
+    [100300n, 30, 100296n],
+    [100000n, 30, 99997n],
     [100000n, 0, 100000n],
-    [100000n, 10000, 0n],
-    [10002n, 1, 10000n],
-    [10001n, 1, 9999n],
+    [100000n, 1000000, 0n],
+    [10002n, 1, 10001n],
+    [10001n, 1, 10000n],
     [10000n, 1, 9999n],
     [1000n, 1, 999n],
     [100n, 1, 99n],
@@ -928,10 +929,10 @@ describe("netDownAmount", () => {
 describe("grossUpAmount", () => {
   it("throws error for invalid feeBip", () => {
     expect(() => grossUpAmount(100000n, -1)).toThrow(
-      "Invalid feeBip value. It must be between 0 and 10000."
+      "Invalid feeBip value. It must be between 0 and 1000000."
     )
-    expect(() => grossUpAmount(100000n, 10001)).toThrow(
-      "Invalid feeBip value. It must be between 0 and 10000."
+    expect(() => grossUpAmount(100000n, 1000001)).toThrow(
+      "Invalid feeBip value. It must be between 0 and 1000000."
     )
   })
 
@@ -940,15 +941,17 @@ describe("grossUpAmount", () => {
   })
 
   /**
-   * 1 bip = 0.01% = 0.0001
-   * 30 bips = 0.3% = 0.003
-   * 10000 bips = 100% = 1
+   * 1 bip = 0.0001% = 0.000001
+   * 3000 bips = 0.3% = 0.003
+   * 1000000 bips = 100% = 1
    */
   it.each([
-    [99999n, 30, 100300n],
-    [99700n, 30, 100000n],
+    [1_000_000n, 1, 1_000_002n],
+    [999_999n, 1, 1_000_000n],
+    [999999n, 30, 1000030n],
+    [99700n, 30, 99703n],
     [100000n, 0, 100000n],
-    [10000n, 1, 10002n],
+    [10000n, 1, 10001n],
     [9999n, 1, 10000n],
     [999n, 1, 1000n],
     [99n, 1, 100n],
@@ -966,16 +969,16 @@ describe("accountSlippageExactIn", () => {
   type Delta = [string, bigint][]
 
   it.each([
-    [[["token1", 1000n]], 100, [["token1", 990n]]],
-    [[["token1", 0n]], 100, [["token1", 0n]]],
-    [[["token1", -1000n]], 100, [["token1", -1000n]]],
+    [[["token1", 1000n]], 10000, [["token1", 990n]]],
+    [[["token1", 0n]], 10000, [["token1", 0n]]],
+    [[["token1", -1000n]], 10000, [["token1", -1000n]]],
     [
       [
         ["token1", 1000n],
         ["token2", -500n],
         ["token3", 0n],
       ],
-      100,
+      10000,
       [
         ["token1", 990n],
         ["token2", -500n],
@@ -983,11 +986,11 @@ describe("accountSlippageExactIn", () => {
       ],
     ],
     [[["token1", 1000n]], 0, [["token1", 1000n]]],
-    [[["token1", 1000n]], 10000, [["token1", 0n]]],
-    [[["token1", 100n]], 1, [["token1", 99n]]],
-    [[["token1", 99n]], 1, [["token1", 98n]]],
-    [[["token1", 2n]], 1, [["token1", 1n]]],
-    [[["token1", 1n]], 1, [["token1", 0n]]],
+    [[["token1", 1000n]], 1000000, [["token1", 0n]]],
+    [[["token1", 100n]], 100, [["token1", 99n]]],
+    [[["token1", 99n]], 100, [["token1", 98n]]],
+    [[["token1", 2n]], 100, [["token1", 1n]]],
+    [[["token1", 1n]], 100, [["token1", 0n]]],
   ] satisfies [Delta, number, Delta][])(
     "applies slippage to positive number",
     (delta, bip, expected) => {
