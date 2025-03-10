@@ -74,17 +74,35 @@ export async function verifyAuthenticatorAssertion(
     return false
   }
 
-  const clientDataHash = await crypto.subtle.digest(
-    "SHA-256",
-    assertation.clientDataJSON
-  )
+  return verifyWebAuthnSignature({
+    clientDataJSON: assertation.clientDataJSON,
+    authenticatorData: assertation.authenticatorData,
+    signature: extractRawSignature(assertation.signature, curveType),
+    curveType,
+    publicKey,
+  })
+}
+
+export async function verifyWebAuthnSignature({
+  clientDataJSON,
+  authenticatorData,
+  signature,
+  curveType,
+  publicKey,
+}: {
+  clientDataJSON: Uint8Array | ArrayBuffer
+  authenticatorData: Uint8Array | ArrayBuffer
+  signature: Uint8Array
+  curveType: CurveType
+  publicKey: Uint8Array
+}) {
+  const clientDataHash = await crypto.subtle.digest("SHA-256", clientDataJSON)
 
   const signedBytes = concatUint8Arrays([
-    new Uint8Array(assertation.authenticatorData),
+    new Uint8Array(authenticatorData),
     new Uint8Array(clientDataHash),
   ])
 
-  const signature = extractRawSignature(assertation.signature, curveType)
   const publicKeyWebCryptoAPI = reconstructWebCryptoAPIPublicKey(
     publicKey,
     curveType
