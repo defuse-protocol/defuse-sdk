@@ -1,13 +1,5 @@
 import { BorshSchema, borshSerialize } from "borsher"
 
-export enum SignStandardEnum {
-  nep413 = "nep413",
-}
-
-const standardNumber = {
-  [SignStandardEnum.nep413]: 413,
-}
-
 interface ITokenDiff {
   intent: "token_diff"
   diff: { [key: string]: string }
@@ -48,13 +40,13 @@ const nep413PayloadSchema = BorshSchema.Struct({
  * @param standard - Signature standard (currently only NEP-413)
  * @returns Promise resolving to Buffer containing message hash for signing
  */
-export async function serializeIntent(
+export async function hashing(
   intentMessage: unknown,
   recipient: string,
   nonce: string,
-  standard: SignStandardEnum
+  standard: number
 ): Promise<Buffer> {
-  if (!standardNumber[standard]) {
+  if (standard !== 413) {
     throw new Error(`Unsupported standard: ${standard}`)
   }
 
@@ -69,7 +61,7 @@ export async function serializeIntent(
 
   // Serialize payload and combine with standard identifier
   const payloadSerialized = borshSerialize(nep413PayloadSchema, payload)
-  const baseInt = 2 ** 31 + standardNumber[standard]
+  const baseInt = 2 ** 31 + standard
   const baseIntSerialized = borshSerialize(BorshSchema.u32, baseInt)
   const combinedData = Buffer.concat([baseIntSerialized, payloadSerialized])
 
