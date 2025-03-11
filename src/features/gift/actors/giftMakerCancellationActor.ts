@@ -22,7 +22,7 @@ export type GiftMakerCancellationActorInput = {
   signerCredentials: SignerCredentials
   escrowCredentials: EscrowCredentials
   multiPayload: MultiPayload
-  tokenIn: BaseTokenInfo | UnifiedTokenInfo
+  token: BaseTokenInfo | UnifiedTokenInfo
 }
 
 export type GiftMakerCancellationActorOutput = {
@@ -58,7 +58,7 @@ type GiftMakerCancellationActorContext = {
   escrowCredentials: EscrowCredentials
   signerCredentials: SignerCredentials
   multiPayload: MultiPayload
-  tokenIn: BaseTokenInfo | UnifiedTokenInfo
+  token: BaseTokenInfo | UnifiedTokenInfo
   error: null | GiftMakerCancellationActorErrors
 }
 
@@ -90,7 +90,7 @@ export const giftMakerCancellationActor = setup({
           signerCredentials: SignerCredentials
           escrowCredentials: EscrowCredentials
           multiPayload: MultiPayload
-          tokenIn: BaseTokenInfo | UnifiedTokenInfo
+          token: BaseTokenInfo | UnifiedTokenInfo
         }
       }) => {
         // We need to extract tokenDiff from the original gift intent to reclaim it
@@ -117,7 +117,7 @@ export const giftMakerCancellationActor = setup({
 
         const giftTerms = {
           tokenDiff,
-          tokenIn: input.tokenIn,
+          token: input.token,
           secretKey: parseResult.unwrap().secretKey,
           userId: parseResult.unwrap().userId,
         }
@@ -240,7 +240,7 @@ export const giftMakerCancellationActor = setup({
                 multiPayload: context.multiPayload,
                 signerCredentials: context.signerCredentials,
                 escrowCredentials: context.escrowCredentials,
-                tokenIn: context.tokenIn,
+                token: context.token,
               }
             },
 

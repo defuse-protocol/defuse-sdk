@@ -9,7 +9,7 @@ import { getTokenMaxDecimals } from "../../../utils/tokenUtils"
 import type { GiftMakerFormValuesState } from "./giftMakerFormValuesStore"
 
 type State = {
-  tokenIn: null | BaseTokenInfo | UnifiedTokenInfo
+  token: null | BaseTokenInfo | UnifiedTokenInfo
   amount: null | TokenValue
   message: string
 }
@@ -18,7 +18,7 @@ export const createGiftMakerFormParsedValuesStore = () =>
   createStore({
     context: {
       amount: null,
-      tokenIn: null,
+      token: null,
       message: "",
     } as State,
     emits: {
@@ -32,8 +32,8 @@ export const createGiftMakerFormParsedValuesStore = () =>
       ) => {
         const newContext = {
           ...context,
-          amount: parseTokenValue(formValues.tokenIn, formValues.amount),
-          tokenIn: formValues.tokenIn,
+          amount: parseTokenValue(formValues.token, formValues.amount),
+          token: formValues.token,
           message: formValues.message,
         }
         enqueue.emit.valuesParsed({ context: newContext })
@@ -61,5 +61,5 @@ function parseTokenValue(
 export function allSetSelector(
   s: SnapshotFromStore<ReturnType<typeof createGiftMakerFormParsedValuesStore>>
 ) {
-  return s.context.tokenIn != null && s.context.amount != null
+  return s.context.token != null && s.context.amount != null
 }

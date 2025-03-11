@@ -7,8 +7,8 @@ import { isBaseToken } from "../../../utils/token"
 import { getAnyBaseTokenInfo } from "../../../utils/tokenUtils"
 
 type GiftToken = {
-  tokenInDiff: Record<BaseTokenInfo["defuseAssetId"], bigint>
-  tokenIn: BaseTokenInfo
+  tokenDiff: Record<BaseTokenInfo["defuseAssetId"], bigint>
+  token: BaseTokenInfo
 }
 
 export type DetermineGiftTokenErr =
@@ -35,26 +35,26 @@ export async function determineGiftToken(
     )
 
     // Currently there will be only one token with balance, but in future we may support multiple tokens in a gift
-    const tokenInDiff = Object.fromEntries(
+    const tokenDiff = Object.fromEntries(
       Object.entries(balances).filter(([_, balance]) => balance > 0n)
     )
-    const tokenIn_ = tokenList.find((token) =>
+    const token_ = tokenList.find((token) =>
       isBaseToken(token)
-        ? tokenInDiff[token.defuseAssetId] !== undefined
+        ? tokenDiff[token.defuseAssetId] !== undefined
         : token.groupedTokens.some(
-            (gt) => tokenInDiff[gt.defuseAssetId] !== undefined
+            (gt) => tokenDiff[gt.defuseAssetId] !== undefined
           )
     )
 
-    if (!tokenIn_) {
+    if (!token_) {
       return Err("NO_TOKEN_OR_GIFT_HAS_BEEN_CLAIMED")
     }
 
-    const tokenIn = getAnyBaseTokenInfo(tokenIn_)
+    const token = getAnyBaseTokenInfo(token_)
 
     return Ok({
-      tokenInDiff,
-      tokenIn,
+      tokenDiff,
+      token,
     })
   } catch {
     return Err("ERR_GETTING_BALANCES")

@@ -35,7 +35,7 @@ export type GiftMakerWidgetProps = {
   userChainType: ChainType | null | undefined
 
   /** Initial tokens for pre-filling the form */
-  initialTokenIn?: BaseTokenInfo | UnifiedTokenInfo
+  initialToken?: BaseTokenInfo | UnifiedTokenInfo
 
   /** Sign message callback */
   signMessage: SignMessage
@@ -57,7 +57,7 @@ export function GiftMakerForm({
   tokenList,
   userAddress,
   userChainType,
-  initialTokenIn,
+  initialToken,
   signMessage,
   // biome-ignore lint/correctness/noUnusedVariables: <explanation>
   sendNearTransaction,
@@ -75,12 +75,12 @@ export function GiftMakerForm({
     [userAddress, userChainType]
   )
 
-  const initialTokenIn_ = initialTokenIn ?? tokenList[0]
-  assert(initialTokenIn_ !== undefined, "Token list must not be empty")
+  const initialToken_ = initialToken ?? tokenList[0]
+  assert(initialToken_ !== undefined, "Token list must not be empty")
 
   const rootActorRef = useActorRef(giftMakerRootMachine, {
     input: {
-      initialTokenIn: initialTokenIn_,
+      initialToken: initialToken_,
       tokenList,
       referral,
     },
@@ -90,10 +90,10 @@ export function GiftMakerForm({
   const formValuesRef = useSelector(formRef, formValuesSelector)
   const formValues = useSelector(formValuesRef, (s) => s.context)
 
-  const { tokenInBalance } = useSelector(
+  const { tokenBalance } = useSelector(
     useSelector(rootActorRef, (s) => s.context.depositedBalanceRef),
     balanceAllSelector({
-      tokenInBalance: formValues.tokenIn,
+      tokenBalance: formValues.token,
     })
   )
 
@@ -116,14 +116,14 @@ export function GiftMakerForm({
     setModalType(ModalType.MODAL_SELECT_ASSETS, {
       fieldName,
       selectToken: undefined,
-      balances: tokenInBalance,
+      balances: tokenBalance,
     })
   }
 
   const { data: tokensUsdPriceData } = useTokensUsdPrices()
   const usdAmount = getTokenUsdPrice(
     formValues.amount,
-    formValues.tokenIn,
+    formValues.token,
     tokensUsdPriceData
   )
 
@@ -140,9 +140,9 @@ export function GiftMakerForm({
       const token = payload.token
       payload.token = undefined // consume data, so it won't be triggered again
 
-      formValuesRef.trigger.updateTokenIn({ value: token })
+      formValuesRef.trigger.updateToken({ value: token })
     }
-  }, [modalSelectAssetsData, formValuesRef.trigger.updateTokenIn])
+  }, [modalSelectAssetsData, formValuesRef.trigger.updateToken])
 
   return (
     <div className="flex flex-col">
@@ -210,28 +210,28 @@ export function GiftMakerForm({
               }
               tokenSlot={
                 <SelectAssets
-                  selected={formValues.tokenIn ?? undefined}
-                  handleSelect={() => handleSelect("tokenIn")}
+                  selected={formValues.token ?? undefined}
+                  handleSelect={() => handleSelect("token")}
                 />
               }
               balanceSlot={
                 <BlockMultiBalances
-                  balance={tokenInBalance?.amount ?? 0n}
-                  decimals={tokenInBalance?.decimals ?? 0}
+                  balance={tokenBalance?.amount ?? 0n}
+                  decimals={tokenBalance?.decimals ?? 0}
                   handleClick={() => {
-                    if (tokenInBalance != null) {
+                    if (tokenBalance != null) {
                       formValuesRef.trigger.updateAmount({
                         value: formatTokenValue(
-                          tokenInBalance.amount,
-                          tokenInBalance.decimals
+                          tokenBalance.amount,
+                          tokenBalance.decimals
                         ),
                       })
                     }
                   }}
-                  disabled={tokenInBalance?.amount === 0n}
+                  disabled={tokenBalance?.amount === 0n}
                   className={clsx(
                     "!static",
-                    tokenInBalance == null && "invisible"
+                    tokenBalance == null && "invisible"
                   )}
                 />
               }

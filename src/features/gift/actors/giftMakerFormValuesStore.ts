@@ -3,19 +3,19 @@ import type { BaseTokenInfo, UnifiedTokenInfo } from "../../../types/base"
 
 export type GiftMakerFormValuesState = {
   amount: string
-  tokenIn: null | BaseTokenInfo | UnifiedTokenInfo
+  token: null | BaseTokenInfo | UnifiedTokenInfo
   message: string
 }
 
 export const createGiftMakerFormValuesStore = ({
-  initialTokenIn,
+  initialToken,
 }: {
-  initialTokenIn: BaseTokenInfo | UnifiedTokenInfo
+  initialToken: BaseTokenInfo | UnifiedTokenInfo
 }) =>
   createStore({
     context: {
       amount: "",
-      tokenIn: initialTokenIn,
+      token: initialToken,
       message: "",
     } satisfies GiftMakerFormValuesState,
     emits: {
@@ -30,14 +30,14 @@ export const createGiftMakerFormValuesStore = ({
         enqueue.emit.changed({ context: newContext })
         return newContext
       },
-      updateTokenIn: (
+      updateToken: (
         context,
         event: { value: BaseTokenInfo | UnifiedTokenInfo },
         enqueue
       ) => {
         const newContext = {
           ...context,
-          tokenIn: event.value,
+          token: event.value,
         }
         enqueue.emit.changed({ context: newContext })
         return newContext

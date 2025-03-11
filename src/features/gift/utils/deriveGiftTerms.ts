@@ -5,7 +5,7 @@ import { parseGiftSecret } from "./parseGiftSecret"
 
 export type GiftTerms = {
   tokenDiff: Record<BaseTokenInfo["defuseAssetId"], bigint>
-  tokenIn: BaseTokenInfo | UnifiedTokenInfo
+  token: BaseTokenInfo | UnifiedTokenInfo
   secretKey: string
   userId: string
 }
@@ -28,8 +28,8 @@ export async function deriveGiftTerms(
   }
 
   return Ok({
-    tokenDiff: determineResult.unwrap().tokenInDiff,
-    tokenIn: determineResult.unwrap().tokenIn,
+    tokenDiff: determineResult.unwrap().tokenDiff,
+    token: determineResult.unwrap().token,
     secretKey: parseResult.unwrap().secretKey,
     userId: parseResult.unwrap().userId,
   })

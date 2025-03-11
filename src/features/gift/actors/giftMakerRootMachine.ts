@@ -37,7 +37,7 @@ export const giftMakerRootMachine = setup({
   types: {
     input: {} as {
       tokenList: (BaseTokenInfo | UnifiedTokenInfo)[]
-      initialTokenIn: BaseTokenInfo | UnifiedTokenInfo
+      initialToken: BaseTokenInfo | UnifiedTokenInfo
       referral: string | undefined
     },
     events: {} as
@@ -123,7 +123,7 @@ export const giftMakerRootMachine = setup({
     error: null,
     formRef: spawn("formActor", {
       input: {
-        initialTokenIn: input.initialTokenIn,
+        initialToken: input.initialToken,
       },
     }),
     depositedBalanceRef: spawn("depositedBalanceActor", {

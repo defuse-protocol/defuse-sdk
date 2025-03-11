@@ -34,7 +34,7 @@ import type { EscrowCredentials } from "../utils/generateEscrowCredentials"
 
 export type GiftMakerSignActorInput = {
   parsed: {
-    tokenIn: BaseTokenInfo | UnifiedTokenInfo
+    token: BaseTokenInfo | UnifiedTokenInfo
     amount: TokenValue
     message: string
   }
@@ -97,18 +97,18 @@ export const giftMakerSignActor = setup({
   context: ({ input }) => {
     const nonce = randomDefuseNonce()
 
-    let tokenInDiff: Record<BaseTokenInfo["defuseAssetId"], bigint>
+    let tokenDiff: Record<BaseTokenInfo["defuseAssetId"], bigint>
 
     try {
-      tokenInDiff = calculateSplitAmounts(
-        getUnderlyingBaseTokenInfos(input.parsed.tokenIn),
+      tokenDiff = calculateSplitAmounts(
+        getUnderlyingBaseTokenInfos(input.parsed.token),
         input.parsed.amount,
         input.balances
       )
 
-      for (const [assetId, amount] of Object.entries(tokenInDiff)) {
+      for (const [assetId, amount] of Object.entries(tokenDiff)) {
         // We need to negate the amount, as the balance is being reduced
-        tokenInDiff[assetId] = -amount
+        tokenDiff[assetId] = -amount
       }
     } catch (err: unknown) {
       if (!findError(err, AmountMismatchError)) {
@@ -119,19 +119,19 @@ export const giftMakerSignActor = setup({
        * If user has insufficient balance, we will generate a message with the full amount,
        * and let the user know that they have insufficient balance.
        */
-      const tokenIn = getAnyBaseTokenInfo(input.parsed.tokenIn)
-      tokenInDiff = {
-        [tokenIn.defuseAssetId]: adjustDecimals(
+      const token = getAnyBaseTokenInfo(input.parsed.token)
+      tokenDiff = {
+        [token.defuseAssetId]: adjustDecimals(
           // We need to negate the amount, as the balance is being reduced
           input.parsed.amount.amount,
           input.parsed.amount.decimals,
-          tokenIn.decimals
+          token.decimals
         ),
       }
     }
 
     const walletMessage = createTransferMessage(
-      [...Object.entries(tokenInDiff)],
+      [...Object.entries(tokenDiff)],
       {
         signerId: input.signerCredentials,
         nonce: nonce,

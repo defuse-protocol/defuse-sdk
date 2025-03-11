@@ -31,7 +31,7 @@ export function ShareableGiftImage({
       <div className="flex flex-col items-center gap-4 z-10">
         {/* Asset Component */}
         <div className="flex items-center gap-4 z-10 bg-white rounded-full p-1.5">
-          <GiftStrip tokenIn={token} amount={amount} />
+          <GiftStrip token={token} amount={amount} />
         </div>
 
         {/* Message Text */}

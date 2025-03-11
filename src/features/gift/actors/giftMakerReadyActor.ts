@@ -22,12 +22,12 @@ import {
 
 export type GiftMakerReadyActorInput = {
   parsed: {
-    tokenIn: BaseTokenInfo | UnifiedTokenInfo
+    token: BaseTokenInfo | UnifiedTokenInfo
     amount: TokenValue
     message: string
   }
   raw: {
-    tokenIn: BaseTokenInfo | UnifiedTokenInfo
+    token: BaseTokenInfo | UnifiedTokenInfo
     amount: string
     message: string
   }
@@ -125,7 +125,7 @@ export const giftMakerReadyActor = setup({
             escrowCredentials: context.escrowCredentials,
             signerCredentials: context.signerCredentials,
             multiPayload: context.multiPayload,
-            tokenIn: context.parsed.tokenIn,
+            token: context.parsed.token,
           }
         },
         onDone: [

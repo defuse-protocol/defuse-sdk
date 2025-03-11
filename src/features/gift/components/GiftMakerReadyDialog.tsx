@@ -76,7 +76,7 @@ function GiftMakerDialog({
 
       {/* Image Section */}
       <ShareableGiftImage
-        token={context.parsed.tokenIn}
+        token={context.parsed.token}
         amount={context.parsed.amount}
         message={
           context.parsed.message.length > 0

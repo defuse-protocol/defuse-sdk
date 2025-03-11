@@ -10,7 +10,7 @@ import { createGiftMakerFormValuesStore } from "./giftMakerFormValuesStore"
 export const giftMakerFormMachine = setup({
   types: {
     input: {} as {
-      initialTokenIn: BaseTokenInfo | UnifiedTokenInfo
+      initialToken: BaseTokenInfo | UnifiedTokenInfo
     },
     context: {} as {
       isValid: boolean
