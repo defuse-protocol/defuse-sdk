@@ -1,4 +1,3 @@
-import { base64 } from "@scure/base"
 import { BorshSchema, borshSerialize } from "borsher"
 
 const nep413PayloadSchema = BorshSchema.Struct({
@@ -25,7 +24,7 @@ const nep413PayloadSchema = BorshSchema.Struct({
 export async function hashing(
   intentMessage: unknown,
   recipient: string,
-  nonce: string,
+  nonce: Uint8Array,
   standard: number
 ): Promise<Uint8Array> {
   if (standard !== 413) {
@@ -37,8 +36,7 @@ export async function hashing(
     nonce: new Uint8Array(32),
     recipient,
   }
-  const nonceData = base64.decode(nonce)
-  payload.nonce.set(nonceData.subarray(0, 32))
+  payload.nonce.set(nonce.subarray(0, 32))
 
   // Serialize payload and combine with standard identifier
   const payloadSerialized = borshSerialize(nep413PayloadSchema, payload)

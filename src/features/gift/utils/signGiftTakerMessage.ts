@@ -42,7 +42,7 @@ export async function signGiftTakerMessage({
     const messageHash = await hashing(
       walletMessage.NEP413.message,
       walletMessage.NEP413.recipient,
-      base64.encode(nonce),
+      walletMessage.NEP413.nonce,
       413
     )
 
