@@ -13,28 +13,16 @@ import { randomDefuseNonce } from "../../../utils/messageFactory"
 import type { GiftTerms } from "./deriveGiftTerms"
 import { hashing } from "./hashing"
 
+type GiftTakerMessage = {
+  giftTerms: GiftTerms
+  signerCredentials: SignerCredentials
+}
+
 export async function signGiftTakerMessage({
   giftTerms,
   signerCredentials,
-}: {
-  giftTerms: GiftTerms
-  signerCredentials: SignerCredentials
-}): Promise<Result<NEP413SignatureData, string>> {
-  const nonce = randomDefuseNonce()
-
-  const innerMessage = makeInnerTransferMessage({
-    tokenDeltas: [...Object.entries(giftTerms.tokenDiff)],
-    signerId: resolveSignerId(
-      userAddressToDefuseUserId(giftTerms.userId, "near")
-    ),
-    deadlineTimestamp: minutesFromNow(5),
-    receiverId: signerCredentials.credential,
-    memo: "GIFT_CLAIM",
-  })
-  const walletMessage = makeSwapMessage({
-    innerMessage,
-    nonce: nonce,
-  })
+}: GiftTakerMessage): Promise<Result<NEP413SignatureData, string>> {
+  const walletMessage = assembleWalletMessage({ giftTerms, signerCredentials })
 
   try {
     // With different types of escrow accounts this should be updated
@@ -57,11 +45,30 @@ export async function signGiftTakerMessage({
       },
       signedData: walletMessage.NEP413,
     })
-  } catch (error) {
-    return Err(
-      `Failed to sign message: ${error instanceof Error ? error.message : String(error)}`
-    )
+  } catch {
+    return Err("CANNOT_SIGN_GIFT_TAKER_MESSAGE")
   }
+}
+
+function assembleWalletMessage({
+  giftTerms,
+  signerCredentials,
+}: GiftTakerMessage) {
+  const nonce = randomDefuseNonce()
+
+  const innerMessage = makeInnerTransferMessage({
+    tokenDeltas: [...Object.entries(giftTerms.tokenDiff)],
+    signerId: resolveSignerId(
+      userAddressToDefuseUserId(giftTerms.userId, "near")
+    ),
+    deadlineTimestamp: minutesFromNow(5),
+    receiverId: signerCredentials.credential,
+    memo: "GIFT_CLAIM",
+  })
+  return makeSwapMessage({
+    innerMessage,
+    nonce: nonce,
+  })
 }
 
 function minutesFromNow(minutes: number): number {
