@@ -328,8 +328,15 @@ export function makeInnerTransferMessage({
   memo?: string
 }): Nep413DefuseMessageFor_DefuseIntents {
   const tokens: Record<string, string> = {}
+  const seenTokens = new Set<string>()
 
   for (const [token, amount] of tokenDeltas) {
+    assert(!seenTokens.has(token), `Duplicate token found: ${token}`)
+    seenTokens.add(token)
+    assert(
+      amount > 0n,
+      `Transfer amount must be positive, got: ${amount} for token ${token}`
+    )
     tokens[token] = amount.toString()
   }
 
