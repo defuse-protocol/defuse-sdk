@@ -60,7 +60,7 @@ function transformNEP141Signature(signature: string) {
   return `ed25519:${encoded}`
 }
 
-function transformERC191Signature(signature: string) {
+export function transformERC191Signature(signature: string) {
   const normalizedSignature = normalizeERC191Signature(signature)
   const bytes = hex.decode(
     normalizedSignature.startsWith("0x")
@@ -70,7 +70,7 @@ function transformERC191Signature(signature: string) {
   return `secp256k1:${base58.encode(bytes)}`
 }
 
-function normalizeERC191Signature(signature: string): string {
+export function normalizeERC191Signature(signature: string): string {
   // Get `v` from the last two characters
   let v = Number.parseInt(signature.slice(-2), 16)
 

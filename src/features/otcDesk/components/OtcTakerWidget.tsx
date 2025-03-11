@@ -6,7 +6,7 @@ import { type ReactNode, useMemo, useState } from "react"
 import * as v from "valibot"
 import { WidgetRoot } from "../../../components/WidgetRoot"
 import { settings } from "../../../config/settings"
-import type { SignerCredentials } from "../../../core/formatters"
+import type { DefuseUserId, SignerCredentials } from "../../../core/formatters"
 import { logger } from "../../../logger"
 import { SwapWidgetProvider } from "../../../providers/SwapWidgetProvider"
 import { getDepositedBalances } from "../../../services/defuseBalanceService"
@@ -192,7 +192,7 @@ function OtcTakerValidationOrder({
     ],
     queryFn: () => {
       return getDepositedBalances(
-        tradeTerms.makerUserId,
+        tradeTerms.makerUserId as DefuseUserId,
         Object.keys(tradeTerms.makerTokenDiff),
         new providers.JsonRpcProvider({
           url: "https://nearrpc.aurora.dev",
