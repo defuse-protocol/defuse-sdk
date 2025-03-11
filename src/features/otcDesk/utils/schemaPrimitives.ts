@@ -35,20 +35,11 @@ export const PublicKeyED25519Schema = createBytesSchema(
   32
 )
 
-export const SignatureED25519Schema = v.pipe(
-  createBytesSchema("ed25519:", "base58", base58, 64),
-  v.rawCheck(({ dataset, addIssue }) => {
-    if (dataset.typed) {
-      const sBytes = dataset.value.slice(32, 64)
-      const sBytesNormalized = normalizeSignatureS(sBytes)
-      if (hex.encode(sBytes) !== hex.encode(sBytesNormalized)) {
-        addIssue({
-          message: "Signature malleability issue (S byte must be low)",
-          expected: hex.encode(sBytesNormalized),
-        })
-      }
-    }
-  })
+export const SignatureED25519Schema = createBytesSchema(
+  "ed25519:",
+  "base58",
+  base58,
+  64
 )
 
 export const SignatureSecp256k1Schema = v.pipe(
@@ -72,11 +63,20 @@ export const SignatureSecp256k1Schema = v.pipe(
   })
 )
 
-export const SignatureP256Schema = createBytesSchema(
-  "p256:",
-  "base58",
-  base58,
-  64
+export const SignatureP256Schema = v.pipe(
+  createBytesSchema("p256:", "base58", base58, 64),
+  v.rawCheck(({ dataset, addIssue }) => {
+    if (dataset.typed) {
+      const sBytes = dataset.value.slice(32, 64)
+      const sBytesNormalized = normalizeSignatureS(sBytes)
+      if (hex.encode(sBytes) !== hex.encode(sBytesNormalized)) {
+        addIssue({
+          message: "Signature malleability issue (S byte must be low)",
+          expected: hex.encode(sBytesNormalized),
+        })
+      }
+    }
+  })
 )
 
 export const PublicKeyP256Schema = createBytesSchema(
