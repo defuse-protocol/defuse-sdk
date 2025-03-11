@@ -35,7 +35,7 @@ import type { EscrowCredentials } from "../utils/generateEscrowCredentials"
 export type GiftMakerSignActorInput = {
   parsed: {
     tokenIn: BaseTokenInfo | UnifiedTokenInfo
-    amountIn: TokenValue
+    amount: TokenValue
     message: string
   }
   balances: BalanceMapping
@@ -102,7 +102,7 @@ export const giftMakerSignActor = setup({
     try {
       tokenInDiff = calculateSplitAmounts(
         getUnderlyingBaseTokenInfos(input.parsed.tokenIn),
-        input.parsed.amountIn,
+        input.parsed.amount,
         input.balances
       )
 
@@ -123,8 +123,8 @@ export const giftMakerSignActor = setup({
       tokenInDiff = {
         [tokenIn.defuseAssetId]: adjustDecimals(
           // We need to negate the amount, as the balance is being reduced
-          input.parsed.amountIn.amount,
-          input.parsed.amountIn.decimals,
+          input.parsed.amount.amount,
+          input.parsed.amount.decimals,
           tokenIn.decimals
         ),
       }

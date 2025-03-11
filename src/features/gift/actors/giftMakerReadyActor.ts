@@ -23,12 +23,12 @@ import {
 export type GiftMakerReadyActorInput = {
   parsed: {
     tokenIn: BaseTokenInfo | UnifiedTokenInfo
-    amountIn: TokenValue
+    amount: TokenValue
     message: string
   }
   raw: {
     tokenIn: BaseTokenInfo | UnifiedTokenInfo
-    amountIn: string
+    amount: string
     message: string
   }
   giftId: string

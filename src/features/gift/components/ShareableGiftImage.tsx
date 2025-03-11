@@ -7,14 +7,14 @@ import { GiftStrip } from "./GiftStrip"
 
 type ShareableGiftImageProps = {
   token: BaseTokenInfo | UnifiedTokenInfo
-  amountIn: TokenValue
+  amount: TokenValue
   message: string
   className?: string
 }
 
 export function ShareableGiftImage({
   token,
-  amountIn,
+  amount,
   message,
   className,
 }: ShareableGiftImageProps) {
@@ -31,7 +31,7 @@ export function ShareableGiftImage({
       <div className="flex flex-col items-center gap-4 z-10">
         {/* Asset Component */}
         <div className="flex items-center gap-4 z-10 bg-white rounded-full p-1.5">
-          <GiftStrip tokenIn={token} amountIn={amountIn} />
+          <GiftStrip tokenIn={token} amount={amount} />
         </div>
 
         {/* Message Text */}

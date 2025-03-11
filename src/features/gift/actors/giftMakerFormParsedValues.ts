@@ -10,14 +10,14 @@ import type { GiftMakerFormValuesState } from "./giftMakerFormValuesStore"
 
 type State = {
   tokenIn: null | BaseTokenInfo | UnifiedTokenInfo
-  amountIn: null | TokenValue
+  amount: null | TokenValue
   message: string
 }
 
 export const createGiftMakerFormParsedValuesStore = () =>
   createStore({
     context: {
-      amountIn: null,
+      amount: null,
       tokenIn: null,
       message: "",
     } as State,
@@ -32,7 +32,7 @@ export const createGiftMakerFormParsedValuesStore = () =>
       ) => {
         const newContext = {
           ...context,
-          amountIn: parseTokenValue(formValues.tokenIn, formValues.amountIn),
+          amount: parseTokenValue(formValues.tokenIn, formValues.amount),
           tokenIn: formValues.tokenIn,
           message: formValues.message,
         }
@@ -61,5 +61,5 @@ function parseTokenValue(
 export function allSetSelector(
   s: SnapshotFromStore<ReturnType<typeof createGiftMakerFormParsedValuesStore>>
 ) {
-  return s.context.tokenIn != null && s.context.amountIn != null
+  return s.context.tokenIn != null && s.context.amount != null
 }

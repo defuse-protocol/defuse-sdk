@@ -19,13 +19,13 @@ export function GiftTakerSuccessScreen({
   giftTerms: GiftTerms
   intentHashes: string[]
 }) {
-  const amountIn = computeTotalBalanceDifferentDecimals(
+  const amount = computeTotalBalanceDifferentDecimals(
     getUnderlyingBaseTokenInfos(giftTerms.tokenIn),
     giftTerms.tokenDiff,
     { strict: false }
   )
 
-  assert(amountIn != null)
+  assert(amount != null)
 
   const intentStatus = useQuery({
     queryKey: ["intents_status", intentHashes],
@@ -70,7 +70,7 @@ export function GiftTakerSuccessScreen({
       {/* Gift Section */}
       <div className="flex flex-col text-xs mt-4 bg-gray-4 rounded-lg">
         <div className="flex flex-row border-b border-gray-6 p-3">
-          <GiftStrip tokenIn={giftTerms.tokenIn} amountIn={amountIn} />
+          <GiftStrip tokenIn={giftTerms.tokenIn} amount={amount} />
         </div>
         <div className="flex flex-col gap-3.5 text-xs p-3">
           <div className="flex justify-between items-center">

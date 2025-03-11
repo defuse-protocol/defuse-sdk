@@ -8,17 +8,17 @@ import { formatTokenValue } from "../../../utils/format"
 
 type SwapStripProps = {
   tokenIn: BaseTokenInfo | UnifiedTokenInfo
-  amountIn: TokenValue
+  amount: TokenValue
 }
 
-export function GiftStrip({ tokenIn, amountIn }: SwapStripProps) {
+export function GiftStrip({ tokenIn, amount }: SwapStripProps) {
   return (
     <div className="flex justify-between items-center gap-2.5">
       <div className="flex items-center relative">
         <AssetComboIcon {...tokenIn} />
       </div>
       <div className="text-sm text-a12 font-bold">
-        {formatTokenValue(amountIn.amount, amountIn.decimals)} {tokenIn.symbol}
+        {formatTokenValue(amount.amount, amount.decimals)} {tokenIn.symbol}
       </div>
     </div>
   )

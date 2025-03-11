@@ -121,8 +121,8 @@ export function GiftMakerForm({
   }
 
   const { data: tokensUsdPriceData } = useTokensUsdPrices()
-  const usdAmountIn = getTokenUsdPrice(
-    formValues.amountIn,
+  const usdAmount = getTokenUsdPrice(
+    formValues.amount,
     formValues.tokenIn,
     tokensUsdPriceData
   )
@@ -199,10 +199,10 @@ export function GiftMakerForm({
               inputSlot={
                 <TokenAmountInputCard.Input
                   id="gift-amount-in"
-                  name="amountIn"
-                  value={formValues.amountIn}
+                  name="amount"
+                  value={formValues.amount}
                   onChange={(e) =>
-                    formValuesRef.trigger.updateAmountIn({
+                    formValuesRef.trigger.updateAmount({
                       value: e.target.value,
                     })
                   }
@@ -220,7 +220,7 @@ export function GiftMakerForm({
                   decimals={tokenInBalance?.decimals ?? 0}
                   handleClick={() => {
                     if (tokenInBalance != null) {
-                      formValuesRef.trigger.updateAmountIn({
+                      formValuesRef.trigger.updateAmount({
                         value: formatTokenValue(
                           tokenInBalance.amount,
                           tokenInBalance.decimals
@@ -237,8 +237,8 @@ export function GiftMakerForm({
               }
               priceSlot={
                 <TokenAmountInputCard.DisplayPrice>
-                  {usdAmountIn !== null && usdAmountIn > 0
-                    ? formatUsdAmount(usdAmountIn)
+                  {usdAmount !== null && usdAmount > 0
+                    ? formatUsdAmount(usdAmount)
                     : null}
                 </TokenAmountInputCard.DisplayPrice>
               }

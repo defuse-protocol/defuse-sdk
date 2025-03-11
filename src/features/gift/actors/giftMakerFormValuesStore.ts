@@ -2,7 +2,7 @@ import { createStore } from "@xstate/store"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../../types/base"
 
 export type GiftMakerFormValuesState = {
-  amountIn: string
+  amount: string
   tokenIn: null | BaseTokenInfo | UnifiedTokenInfo
   message: string
 }
@@ -14,7 +14,7 @@ export const createGiftMakerFormValuesStore = ({
 }) =>
   createStore({
     context: {
-      amountIn: "",
+      amount: "",
       tokenIn: initialTokenIn,
       message: "",
     } satisfies GiftMakerFormValuesState,
@@ -22,10 +22,10 @@ export const createGiftMakerFormValuesStore = ({
       changed: (_: { context: GiftMakerFormValuesState }) => {},
     },
     on: {
-      updateAmountIn: (context, event: { value: string }, enqueue) => {
+      updateAmount: (context, event: { value: string }, enqueue) => {
         const newContext = {
           ...context,
-          amountIn: event.value,
+          amount: event.value,
         }
         enqueue.emit.changed({ context: newContext })
         return newContext

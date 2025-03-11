@@ -22,13 +22,13 @@ export function GiftTakerForm({
   signerCredentials,
   onSuccessClaim,
 }: GiftTakerFormProps) {
-  const amountIn = computeTotalBalanceDifferentDecimals(
+  const amount = computeTotalBalanceDifferentDecimals(
     getUnderlyingBaseTokenInfos(giftTerms.tokenIn),
     giftTerms.tokenDiff,
     { strict: false }
   )
 
-  assert(amountIn != null)
+  assert(amount != null)
 
   const confirmTradeMutation = useGiftTakerConfirmClaim()
 
@@ -49,7 +49,7 @@ export function GiftTakerForm({
       {/* Image Section */}
       <ShareableGiftImage
         token={giftTerms.tokenIn}
-        amountIn={amountIn}
+        amount={amount}
         message="You've received a gift! Click to claim it."
       />
 
