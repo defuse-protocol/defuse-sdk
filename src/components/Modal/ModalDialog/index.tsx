@@ -83,7 +83,7 @@ export function BaseModalDialog({
                 <Dialog.Content
                   className={clsx(
                     "relative overflow-auto m-auto",
-                    "bg-white dark:bg-black-800 shadow-lg focus:outline-none",
+                    "bg-gray-1 shadow-lg focus:outline-none",
                     "rounded-t-2xl md:rounded-2xl",
                     "max-w-full md:w-[90vw] md:max-w-[472px] max-md:max-h-[70vh]",
                     "[--inset-padding-top:theme(spacing.5)]",
