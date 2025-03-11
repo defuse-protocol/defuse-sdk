@@ -30,7 +30,7 @@ import {
   signIntentMachine,
 } from "../../machines/signIntentMachine"
 import type { SignMessage } from "../types/sharedTypes"
-import type { EscrowKeyPair } from "./giftMakerEscrowActor"
+import type { EscrowCredentials } from "../utils/generateEscrowCredentials"
 
 export type GiftMakerSignActorInput = {
   parsed: {
@@ -42,7 +42,7 @@ export type GiftMakerSignActorInput = {
   signerCredentials: SignerCredentials
   signMessage: SignMessage
   referral: string | undefined
-  escrowKeyPair: EscrowKeyPair
+  escrowCredentials: EscrowCredentials
 }
 
 export type GiftMakerSignActorOutput =
@@ -55,7 +55,7 @@ export type GiftMakerSignActorSuccess = {
   signatureResult: WalletSignatureResult
   signerCredentials: SignerCredentials
   usedNonceBase64: string
-  escrowKeyPair: EscrowKeyPair
+  escrowCredentials: EscrowCredentials
 }
 
 export type GiftMakerSignActorContext = {
@@ -63,7 +63,7 @@ export type GiftMakerSignActorContext = {
   parsed: GiftMakerSignActorInput["parsed"]
   signerCredentials: GiftMakerSignActorInput["signerCredentials"]
   walletMessage: WalletMessage
-  escrowKeyPair: EscrowKeyPair
+  escrowCredentials: EscrowCredentials
 }
 
 export type GiftMakerSignActorErrors =
@@ -140,7 +140,7 @@ export const giftMakerSignActor = setup({
           input.parsed.message.length > 0
             ? input.parsed.message
             : "Enjoy your gift!",
-        receiverId: input.escrowKeyPair.userId,
+        receiverId: input.escrowCredentials.NEP413.userId,
       }
     )
 
@@ -149,7 +149,7 @@ export const giftMakerSignActor = setup({
       walletMessage,
       parsed: input.parsed,
       signerCredentials: input.signerCredentials,
-      escrowKeyPair: input.escrowKeyPair,
+      escrowCredentials: input.escrowCredentials,
     }
   },
 
@@ -221,7 +221,7 @@ export const giftMakerSignActor = setup({
             signatureResult: event.output.value.signatureResult,
             signerCredentials: context.signerCredentials,
             usedNonceBase64: base64.encode(context.nonce),
-            escrowKeyPair: context.escrowKeyPair,
+            escrowCredentials: context.escrowCredentials,
           },
         }
       },

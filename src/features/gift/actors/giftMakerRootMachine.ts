@@ -17,7 +17,10 @@ import {
   type Events as DepositedBalanceEvents,
   depositedBalanceMachine,
 } from "../../machines/depositedBalanceMachine"
-import { giftMakerEscrowActor } from "./giftMakerEscrowActor"
+import {
+  type EscrowCredentials,
+  generateEscrowCredentials,
+} from "../utils/generateEscrowCredentials"
 import { giftMakerFormMachine } from "./giftMakerFormMachine"
 import {
   type GiftMakerReadyActorInput,
@@ -61,7 +64,7 @@ export const giftMakerRootMachine = setup({
       error: null | GiftMakerSignActorErrors
       formRef: ActorRefFrom<typeof giftMakerFormMachine>
       depositedBalanceRef: ActorRefFrom<typeof depositedBalanceMachine>
-      escrowRef: ActorRefFrom<typeof giftMakerEscrowActor>
+      escrowCredentials: EscrowCredentials
       referral: string | undefined
     },
     children: {} as {
@@ -71,7 +74,6 @@ export const giftMakerRootMachine = setup({
   actors: {
     formActor: giftMakerFormMachine,
     depositedBalanceActor: depositedBalanceMachine,
-    escrowActor: giftMakerEscrowActor,
     signActor: giftMakerSignActor as unknown as PromiseActorLogic<
       GiftMakerSignActorOutput,
       GiftMakerSignActorInput
@@ -130,12 +132,7 @@ export const giftMakerRootMachine = setup({
         tokenList: input.tokenList,
       },
     }),
-    escrowRef: spawn("escrowActor", {
-      id: "escrowRef",
-      input: {
-        type: "ed25519",
-      },
-    }),
+    escrowCredentials: generateEscrowCredentials(),
     referral: input.referral,
   }),
 
@@ -187,7 +184,7 @@ export const giftMakerRootMachine = setup({
             balances:
               context.depositedBalanceRef.getSnapshot().context.balances,
             referral: context.referral,
-            escrowKeyPair: context.escrowRef.getSnapshot().context.keyPair,
+            escrowCredentials: context.escrowCredentials,
           }
         },
 
@@ -262,7 +259,7 @@ export const giftMakerRootMachine = setup({
             giftId: event.giftId,
             signerCredentials: event.signerCredentials,
             signatureResult: event.signatureResult,
-            escrowKeyPair: context.escrowRef.getSnapshot().context.keyPair,
+            escrowCredentials: context.escrowCredentials,
           }
         },
 

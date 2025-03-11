@@ -8,12 +8,12 @@ import type {
   UnifiedTokenInfo,
 } from "../../../types/base"
 import type { MultiPayload } from "../../../types/defuse-contracts-types"
+import type { EscrowCredentials } from "../utils/generateEscrowCredentials"
 import { giftMakerCancellationActor } from "./giftMakerCancellationActor"
 import type {
   GiftMakerCancellationActorInput,
   GiftMakerCancellationActorOutput,
 } from "./giftMakerCancellationActor"
-import type { EscrowKeyPair } from "./giftMakerEscrowActor"
 import {
   type GiftMakerPublishingActorInput,
   type GiftMakerPublishingActorOutput,
@@ -36,7 +36,7 @@ export type GiftMakerReadyActorInput = {
   multiPayload: MultiPayload
   signerCredentials: SignerCredentials
   signatureResult: WalletSignatureResult
-  escrowKeyPair: EscrowKeyPair
+  escrowCredentials: EscrowCredentials
 }
 
 type GiftMakerReadyActorErrors = { reason: "EXCEPTION" }
@@ -102,7 +102,7 @@ export const giftMakerReadyActor = setup({
             multiPayload: context.multiPayload,
             signatureResult: context.signatureResult,
             signerCredentials: context.signerCredentials,
-            escrowKeyPair: context.escrowKeyPair,
+            escrowCredentials: context.escrowCredentials,
           }
         },
         onError: {
@@ -122,7 +122,7 @@ export const giftMakerReadyActor = setup({
         input: ({ context }) => {
           return {
             giftId: context.giftId,
-            secretKey: context.escrowKeyPair.secretKey,
+            escrowCredentials: context.escrowCredentials,
             signerCredentials: context.signerCredentials,
             multiPayload: context.multiPayload,
             tokenIn: context.parsed.tokenIn,

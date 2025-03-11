@@ -18,11 +18,8 @@ export async function signGiftTakerMessage({
   signerCredentials,
 }: {
   giftTerms: GiftTerms
-  signerCredentials: SignerCredentials | null
+  signerCredentials: SignerCredentials
 }): Promise<Result<NEP413SignatureData, string>> {
-  if (signerCredentials == null) {
-    return Err("CREDENTIALS_NOT_FOUND")
-  }
   const nonce = randomDefuseNonce()
 
   const innerMessage = makeInnerTransferMessage({
@@ -32,7 +29,7 @@ export async function signGiftTakerMessage({
     ),
     deadlineTimestamp: minutesFromNow(5),
     receiverId: signerCredentials.credential,
-    memo: "GIFT_FILL",
+    memo: "GIFT_CLAIM",
   })
   const walletMessage = makeSwapMessage({
     innerMessage,
@@ -40,8 +37,8 @@ export async function signGiftTakerMessage({
   })
 
   try {
-    const keyPair = KeyPair.fromString(`ed25519:${giftTerms.secretKey}`)
-
+    // With different types of escrow accounts this should be updated
+    const keyPair = KeyPair.fromString(giftTerms.secretKey)
     const messageHash = await hashing(
       walletMessage.NEP413.message,
       walletMessage.NEP413.recipient,

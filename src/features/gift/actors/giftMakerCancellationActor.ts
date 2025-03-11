@@ -13,13 +13,14 @@ import type {
   WalletSignatureResult,
 } from "../../../types/swap"
 import { assert } from "../../../utils/assert"
-import { parseGiftSecret } from "../utils/parseGiftSecret"
+import type { EscrowCredentials } from "../utils/generateEscrowCredentials"
+import { deriveSecretKey, parseGiftSecret } from "../utils/parseGiftSecret"
 import { signGiftTakerMessage } from "../utils/signGiftTakerMessage"
 
 export type GiftMakerCancellationActorInput = {
   giftId: string
   signerCredentials: SignerCredentials
-  secretKey: string
+  escrowCredentials: EscrowCredentials
   multiPayload: MultiPayload
   tokenIn: BaseTokenInfo | UnifiedTokenInfo
 }
@@ -54,7 +55,7 @@ type GiftMakerCancellationActorErrors = PublishIntentsErr | CancellationErrors
 
 type GiftMakerCancellationActorContext = {
   giftId: string
-  secretKey: string
+  escrowCredentials: EscrowCredentials
   signerCredentials: SignerCredentials
   multiPayload: MultiPayload
   tokenIn: BaseTokenInfo | UnifiedTokenInfo
@@ -87,7 +88,7 @@ export const giftMakerCancellationActor = setup({
       }: {
         input: {
           signerCredentials: SignerCredentials
-          secretKey: string
+          escrowCredentials: EscrowCredentials
           multiPayload: MultiPayload
           tokenIn: BaseTokenInfo | UnifiedTokenInfo
         }
@@ -104,7 +105,9 @@ export const giftMakerCancellationActor = setup({
         // we can use direct extraction safely now as we don't support multiple tokens in a gift
         const tokenDiff = giftMultiPayload.intents[0].tokens
 
-        const parseResult = parseGiftSecret(input.secretKey)
+        const parseResult = parseGiftSecret(
+          deriveSecretKey(input.escrowCredentials, "nep413")
+        )
         if (parseResult.isErr()) {
           return {
             tag: "err" as const,
@@ -236,7 +239,7 @@ export const giftMakerCancellationActor = setup({
               return {
                 multiPayload: context.multiPayload,
                 signerCredentials: context.signerCredentials,
-                secretKey: context.secretKey,
+                escrowCredentials: context.escrowCredentials,
                 tokenIn: context.tokenIn,
               }
             },
