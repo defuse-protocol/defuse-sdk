@@ -16,7 +16,6 @@ import {
 import type { MultiPayload } from "../../../types/defuse-contracts-types"
 import type { WalletMessage } from "../../../types/swap"
 import { normalizeERC191Signature } from "../../../utils/prepareBroadcastRequest"
-import { normalizeSignatureS } from "../../../utils/webAuthn"
 import {
   GeneralPayloadObjectSchema,
   MultiPayloadDeepSchema,
@@ -147,13 +146,10 @@ const signRawED25519: FakeSign = async (walletMessageFactory) => {
 
   const walletMessage = walletMessageFactory(signerCreds)
 
-  let signature = nacl.sign.detached(
+  const signature = nacl.sign.detached(
     walletMessage.SOLANA.message,
     keypair.secretKey
   )
-  const sBytes = signature.slice(32, 64)
-  const sBytesNormalized = normalizeSignatureS(sBytes)
-  signature = new Uint8Array([...signature.slice(0, 32), ...sBytesNormalized])
 
   return formatSignedIntent(
     {
