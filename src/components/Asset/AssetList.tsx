@@ -1,3 +1,4 @@
+import { CheckCircle } from "@phosphor-icons/react"
 import { Text } from "@radix-ui/themes"
 import clsx from "clsx"
 import type { ReactNode } from "react"
@@ -14,7 +15,6 @@ import { isBaseToken } from "../../utils/token"
 import { AssetComboIcon } from "./AssetComboIcon"
 
 type Props<T> = {
-  title?: string
   assets: SelectItemToken<T>[]
   emptyState?: ReactNode
   className?: string
@@ -25,40 +25,43 @@ type Props<T> = {
 type Token = BaseTokenInfo | UnifiedTokenInfo
 
 export const AssetList = <T extends Token>({
-  title,
   assets,
   className,
   handleSelectToken,
 }: Props<T>) => {
   return (
     <div className={clsx("flex flex-col", className && className)}>
-      <div className="sticky top-0 z-10 px-5 h-[46px] flex items-center bg-white dark:bg-black-800 dark:text-white">
-        <Text
-          as="p"
-          size="1"
-          weight="medium"
-          className="pt-2.5 text-gray-600 dark:text-gray-500"
-        >
-          {title}
-        </Text>
-      </div>
-      {assets.map(({ itemId, token, disabled, balance }, i) => (
+      {assets.map(({ itemId, token, selected, balance }, i) => (
         <button
           key={itemId}
           type="button"
           className={clsx(
-            "flex justify-between items-center gap-3 p-2.5 rounded-md hover:bg-gray-200/60 dark:hover:bg-black-950",
-            disabled && "opacity-50 pointer-events-none"
+            "flex justify-between items-center gap-3 p-2.5 rounded-md hover:bg-gray-3",
+            { "bg-gray-3": selected }
           )}
           // biome-ignore lint/style/noNonNullAssertion: i is always within bounds
           onClick={() => handleSelectToken?.(assets[i]!)}
         >
-          <AssetComboIcon
-            icon={token.icon}
-            name={token.name}
-            chainIcon={isBaseToken(token) ? token.chainIcon : undefined}
-            chainName={isBaseToken(token) ? token.chainName : undefined}
-          />
+          <div className="relative">
+            <AssetComboIcon
+              icon={token.icon}
+              name={token.name}
+              chainIcon={isBaseToken(token) ? token.chainIcon : undefined}
+              chainName={isBaseToken(token) ? token.chainName : undefined}
+              style={
+                selected
+                  ? {
+                      mask: "radial-gradient(7px at 28px 86%, transparent 100%, rgb(255, 255, 255) 100%)",
+                    }
+                  : undefined
+              }
+            />
+            {selected && (
+              <div className="absolute bottom-1 -right-1.5 rounded-full">
+                <CheckCircle width={12} height={12} weight="fill" />
+              </div>
+            )}
+          </div>
           <div className="grow flex flex-col">
             <div className="flex justify-between items-center">
               <Text as="span" size="2" weight="medium">

@@ -23,7 +23,7 @@ import { type ActorRefFrom, createActor, toPromise } from "xstate"
 import { AssetComboIcon } from "../../../components/Asset/AssetComboIcon"
 import { Copy } from "../../../components/IntentCard/CopyButton"
 import { settings } from "../../../config/settings"
-import type { SignerCredentials } from "../../../core/formatters"
+import type { DefuseUserId, SignerCredentials } from "../../../core/formatters"
 import { getDepositedBalances } from "../../../services/defuseBalanceService"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../../types/base"
 import type { MultiPayload } from "../../../types/defuse-contracts-types"
@@ -315,7 +315,7 @@ function useValidateTrade(tradeTerms: TradeTerms) {
     ],
     queryFn: () => {
       return getDepositedBalances(
-        tradeTerms.userId,
+        tradeTerms.userId as DefuseUserId,
         Object.keys(tradeTerms.tokenDiff),
         new providers.JsonRpcProvider({
           url: "https://nearrpc.aurora.dev",

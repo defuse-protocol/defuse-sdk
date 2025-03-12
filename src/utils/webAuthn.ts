@@ -74,17 +74,35 @@ export async function verifyAuthenticatorAssertion(
     return false
   }
 
-  const clientDataHash = await crypto.subtle.digest(
-    "SHA-256",
-    assertation.clientDataJSON
-  )
+  return verifyWebAuthnSignature({
+    clientDataJSON: assertation.clientDataJSON,
+    authenticatorData: assertation.authenticatorData,
+    signature: extractRawSignature(assertation.signature, curveType),
+    curveType,
+    publicKey,
+  })
+}
+
+export async function verifyWebAuthnSignature({
+  clientDataJSON,
+  authenticatorData,
+  signature,
+  curveType,
+  publicKey,
+}: {
+  clientDataJSON: Uint8Array | ArrayBuffer
+  authenticatorData: Uint8Array | ArrayBuffer
+  signature: Uint8Array
+  curveType: CurveType
+  publicKey: Uint8Array
+}) {
+  const clientDataHash = await crypto.subtle.digest("SHA-256", clientDataJSON)
 
   const signedBytes = concatUint8Arrays([
-    new Uint8Array(assertation.authenticatorData),
+    new Uint8Array(authenticatorData),
     new Uint8Array(clientDataHash),
   ])
 
-  const signature = extractRawSignature(assertation.signature, curveType)
   const publicKeyWebCryptoAPI = reconstructWebCryptoAPIPublicKey(
     publicKey,
     curveType
@@ -217,7 +235,7 @@ function shouldRemoveLeadingZero(bytes: Uint8Array): boolean {
  * to prevent signature malleability.
  * See: https://github.com/kadenzipfel/smart-contract-vulnerabilities/blob/master/vulnerabilities/signature-malleability.md
  */
-function normalizeSignatureS(sBytes: Uint8Array): Uint8Array {
+export function normalizeSignatureS(sBytes: Uint8Array): Uint8Array {
   const P256_N = BigInt(
     "0xFFFFFFFF00000000FFFFFFFFFFFFFFFFBCE6FAADA7179E84F3B9CAC2FC632551"
   )

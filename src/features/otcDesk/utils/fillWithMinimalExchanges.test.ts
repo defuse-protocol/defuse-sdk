@@ -200,9 +200,9 @@ describe("fillWithMinimalExchanges", () => {
       {
         fromToken: "A",
         toToken: "B",
-        fromAmount: 250753n,
+        fromAmount: 250008n,
         toAmount: 250000n,
-        fee: 753n,
+        fee: 8n,
       },
     ])
   })
@@ -215,7 +215,7 @@ describe("fillWithMinimalExchanges", () => {
     const required: TokenBalances = {
       B: 100n,
     }
-    const result = fillWithMinimalExchanges(balances, required, 500n) // 5% fee
+    const result = fillWithMinimalExchanges(balances, required, 50000n) // 5% fee
 
     expect(result.success).toBe(true)
     fillInvariant(balances, required, result)

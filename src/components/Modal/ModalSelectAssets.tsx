@@ -1,5 +1,12 @@
+import { X as CrossIcon } from "@phosphor-icons/react"
 import { Text } from "@radix-ui/themes"
-import { useDeferredValue, useEffect, useState } from "react"
+import {
+  useCallback,
+  useDeferredValue,
+  useEffect,
+  useMemo,
+  useState,
+} from "react"
 import type { BalanceMapping } from "../../features/machines/depositedBalanceMachine"
 import { useModalStore } from "../../providers/ModalStoreProvider"
 import { useTokensStore } from "../../providers/TokensStoreProvider"
@@ -18,6 +25,7 @@ import { AssetList } from "../Asset/AssetList"
 import { EmptyAssetList } from "../Asset/EmptyAssetList"
 import { SearchBar } from "../SearchBar"
 import { ModalDialog } from "./ModalDialog"
+import { ModalNoResults } from "./ModalNoResults"
 
 type Token = BaseTokenInfo | UnifiedTokenInfo
 
@@ -33,6 +41,7 @@ export type SelectItemToken<T = Token> = {
   itemId: string
   token: T
   disabled: boolean
+  selected: boolean
   defuseAssetId?: string
   balance?: TokenValue
 }
@@ -47,14 +56,17 @@ export const ModalSelectAssets = () => {
 
   const handleSearchClear = () => setSearchValue("")
 
-  const filterPattern = (asset: SelectItemToken) => {
-    const formattedQuery = deferredQuery.toLocaleUpperCase()
+  const filterPattern = useCallback(
+    (asset: SelectItemToken) => {
+      const formattedQuery = deferredQuery.toLocaleUpperCase()
 
-    return (
-      asset.token.symbol.toLocaleUpperCase().includes(formattedQuery) ||
-      asset.token.name.toLocaleUpperCase().includes(formattedQuery)
-    )
-  }
+      return (
+        asset.token.symbol.toLocaleUpperCase().includes(formattedQuery) ||
+        asset.token.name.toLocaleUpperCase().includes(formattedQuery)
+      )
+    },
+    [deferredQuery]
+  )
 
   const handleSelectToken = (selectedItem: SelectItemToken) => {
     if (modalType !== ModalType.MODAL_SELECT_ASSETS) {
@@ -98,6 +110,7 @@ export const ModalSelectAssets = () => {
         itemId: tokenId,
         token,
         disabled,
+        selected: disabled,
         balance,
       })
     }
@@ -119,23 +132,31 @@ export const ModalSelectAssets = () => {
     setAssetList(getAssetList)
   }, [data, isLoading, payload])
 
+  const filteredAssets = useMemo(
+    () => assetList.filter(filterPattern),
+    [assetList, filterPattern]
+  )
+
   return (
     <ModalDialog>
       <div className="flex flex-col min-h-[680px] md:max-h-[680px] h-full">
-        <div className="z-20 h-auto flex-none -mt-[var(--inset-padding-top)] -mr-[var(--inset-padding-right)] -ml-[var(--inset-padding-left)] p-5 border-b border-gray-100 dark:border-black-950 sticky -top-[var(--inset-padding-top)] bg-white dark:bg-black-800">
-          <SearchBar
-            query={searchValue}
-            setQuery={setSearchValue}
-            handleOverrideCancel={onCloseModal}
-          />
+        <div className="z-20 h-auto flex-none -mt-[var(--inset-padding-top)] -mr-[var(--inset-padding-right)] -ml-[var(--inset-padding-left)] px-5 pt-7 pb-4 sticky -top-[var(--inset-padding-top)]">
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-row justify-between items-center">
+              <Text size="5" weight="bold">
+                Select asset
+              </Text>
+              <button type="button" onClick={onCloseModal} className="p-3">
+                <CrossIcon width={18} height={18} />
+              </button>
+            </div>
+            <SearchBar query={searchValue} setQuery={setSearchValue} />
+          </div>
         </div>
-        <div className="z-10 flex-1 overflow-y-auto border-b border-gray-100 dark:border-black-950 -mr-[var(--inset-padding-right)] pr-[var(--inset-padding-right)]">
+        <div className="z-10 flex-1 overflow-y-auto border-b border-gray-1 dark:border-black-950 -mr-[var(--inset-padding-right)] pr-[var(--inset-padding-right)]">
           {assetList.length ? (
             <AssetList
-              assets={
-                deferredQuery ? assetList.filter(filterPattern) : assetList
-              }
-              title={deferredQuery ? "Search results" : "Popular tokens"}
+              assets={deferredQuery ? filteredAssets : assetList}
               className="h-full"
               handleSelectToken={handleSelectToken}
               accountId={(payload as ModalSelectAssetsPayload)?.accountId}
@@ -143,18 +164,8 @@ export const ModalSelectAssets = () => {
           ) : (
             <EmptyAssetList className="h-full" />
           )}
-          {deferredQuery && (
-            <div className="flex justify-center items-center">
-              <button
-                type="button"
-                onClick={handleSearchClear}
-                className="mb-2.5 px-3 py-1.5 bg-red-100 rounded-full"
-              >
-                <Text size="2" weight="medium" className="text-red-400">
-                  Clear results
-                </Text>
-              </button>
-            </div>
+          {deferredQuery && filteredAssets.length === 0 && (
+            <ModalNoResults handleSearchClear={handleSearchClear} />
           )}
         </div>
       </div>

@@ -7,6 +7,6 @@ describe("computeOppositeSideTokenDiff()", () => {
       { usdc: -1_000_000n, usdt: 1_000_000n },
       1
     )
-    expect(result).toEqual({ usdc: 999_900n, usdt: -1_000_101n })
+    expect(result).toEqual({ usdc: 999_999n, usdt: -1_000_002n })
   })
 })

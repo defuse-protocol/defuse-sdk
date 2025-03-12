@@ -90,8 +90,11 @@ describe("validateAddress", () => {
       "zs1z7rejlpsa98s2rrrfkwmaxu53e4ue0ulcrw0h4x5g8jl04tak0d3mm47vdtahatqrlkngh9slya"
     const unifiedAddress =
       "u1pv2h74qrlq9k9uqh6xk5p6vyzgvj84h6jedxg9e6hfhske3xjqf27f2qsm2qz4t3zqnll98t9n60"
+    const texAddress = "tex1m2g868nlnyw64xnraxzukf4aeuffvn2wyxwjqx"
+
     expect(validateAddress(transparentAddress, "zcash")).toBe(true)
     expect(validateAddress(shieldedAddress, "zcash")).toBe(false)
     expect(validateAddress(unifiedAddress, "zcash")).toBe(false)
+    expect(validateAddress(texAddress, "zcash")).toBe(true)
   })
 })
