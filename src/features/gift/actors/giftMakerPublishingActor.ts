@@ -12,9 +12,14 @@ export type GiftMakerPublishingActorInput = {
   multiPayload: MultiPayload
 }
 
-export type GiftMakerPublishingActorOutput = {
-  giftStatus: "published" | "not_published"
-}
+export type GiftMakerPublishingActorOutput =
+  | {
+      giftStatus: "published"
+      intentHashes: string[]
+    }
+  | {
+      giftStatus: "not_published"
+    }
 
 type GiftMakerPublishingActorErrors =
   | SignIntentErrors
@@ -23,6 +28,7 @@ type GiftMakerPublishingActorErrors =
 
 type GiftMakerPublishingActorContext = {
   multiPayload: MultiPayload
+  intentHashes: null | string[]
   error: null | GiftMakerPublishingActorErrors
 }
 
@@ -42,9 +48,9 @@ export const giftMakerPublishingActor = setup({
           return { tag: "err" as const, value: result.unwrapErr() }
         }
         const intentHashes = result.unwrap()
-        const intentHash = intentHashes[0]
+        const intentHash = intentHashes
         assert(intentHash != null)
-        return { tag: "ok" as const, value: intentHash }
+        return { tag: "ok" as const, value: intentHashes }
       })
     }),
   },
@@ -75,6 +81,7 @@ export const giftMakerPublishingActor = setup({
   /** @xstate-layout N4IgpgJg5mDOIC5QAoC2BDAxgCwJYDswBKAOlwgBswBiAYQHkA5AMQEkAlAWQH0AFAVQBCAGVYBlABKtGAcQDaABgC6iUAAcA9rFwAXXBvyqQAD0QBaABwkArAHYALACYFthQoCcrgGz3bAGhAAT0RbWy8STwBGX2sAZgsLUNiAX2SAtCw8QlJyKmoAQUF6dgAVPiFRSWl5ZSNNbT0DI1MEM3tYyJIva0iFe0Te9tjrAOCEUPComPjE2w7U9IwcAmIyShpFFSQQet19Q22Ws2cFCPb7FzCFOOtu0ZDbdxJHR2jux0fuuwWQDOXstZUfj4TDoEFgCgUdAAIzy+VoAGlyiJxFJZNxWJxePQxGJWCIAKKbOpaPZNQ6ILyxWIkXyRTzXWIMizue4ISK9Tqhez2aKxNyOexeRw-P5ZVZqACusNwsCyUGoEAMYDI+AAbhoANYqsUrUhSmVyghQBAEDWgxr4TbE7a7S3NcyOcJeBSRW7xN3WNwWLz+IKIXoKGnWHlOwVe-kuUVLcX66UUWXyxXK1Ua7UkXUAg0Jo34E1mjQW-bWyJbdSk+0UhCOaxPeIOGuxULuO7+9luYOh4X2CNuWzRzJ6kjZxPG5OEVNanUxocj3P59WF9CW62OMs7Cv7B3V9xWLzuWs+D7xWJs0LWCKOCy+dzuRyR6zWAf-CXx0d56hgABOX40X+HUI6AAZn+qAZjOWZvvOpqLkWBjWrUtqbuSoBHI4u42LYkSxEK6HYY+vpshYj5dAesToTyOEciKPz4BoEBwEYmbECSDRblWbSPF0PR9AMfTUiMbbCuEPJ3i87i+Nc+7PrGgJgKxZIHKhlKOCQFiRD4kQsuh7i9I+9hnthZxibY1gWEyjwyUOuRgMCoLgpCMJUAplbKQgwwXpEtg1rcXp2K8FhshyrokNyTYeCynyRFZkGGvKLnsW5ChEb6JDRNe-LEa8nj2DFr5xZACUoSYiD3qFd4tsFLghhcBltlVNiChZHi1lhFh5aQkogmCmAQlCsLyUhbHFS0gZPAoLLmfSkQUay9WBo15y+Ne2kdSQMJ-johVDYp25tAoql9BJuk+h4t4uEFC3WE1CQtVR-apMkQA */
   context: ({ input }) => ({
     ...input,
+    intentHashes: null,
     error: null,
   }),
 
@@ -115,6 +122,12 @@ export const giftMakerPublishingActor = setup({
                 return event.output
               },
             },
+            actions: assign({
+              intentHashes: ({ event }) => {
+                assert(event.output.tag === "ok")
+                return event.output.value
+              },
+            }),
           },
           {
             target: "#(machine).idleUncancellable",
@@ -139,9 +152,13 @@ export const giftMakerPublishingActor = setup({
 
     published: {
       type: "final",
-      output: {
-        giftStatus: "published",
-      } satisfies GiftMakerPublishingActorOutput,
+      output: ({ context }) => {
+        assert(context.intentHashes, "intentHashes is not defined")
+        return {
+          giftStatus: "published",
+          intentHashes: context.intentHashes,
+        } satisfies GiftMakerPublishingActorOutput
+      },
     },
 
     uncancellable: {

@@ -1,26 +1,26 @@
-import { Err, Ok } from "@thames/monads"
+import { useSelector } from "@xstate/react"
 import { assert } from "src/utils/assert"
 import {
   computeTotalBalanceDifferentDecimals,
   getUnderlyingBaseTokenInfos,
 } from "src/utils/tokenUtils"
+import type { ActorRefFrom } from "xstate"
 import { ButtonCustom } from "../../../components/Button/ButtonCustom"
 import type { SignerCredentials } from "../../../core/formatters"
-import { useGiftTakerConfirmClaim } from "../hooks/useGiftTakerConfirmClaim"
+import type { giftTakerClaimMachine } from "../actors/giftTakerClaimMachine"
 import type { GiftTerms } from "../utils/deriveGiftTerms"
-import { signGiftTakerMessage } from "../utils/signGiftTakerMessage"
 import { ShareableGiftImage } from "./ShareableGiftImage"
 
 export type GiftTakerFormProps = {
   giftTerms: GiftTerms
   signerCredentials: SignerCredentials | null
-  onSuccessClaim: (arg: { intentHashes: string[] }) => void
+  giftTakerClaimRef: ActorRefFrom<typeof giftTakerClaimMachine>
 }
 
 export function GiftTakerForm({
   giftTerms,
   signerCredentials,
-  onSuccessClaim,
+  giftTakerClaimRef,
 }: GiftTakerFormProps) {
   const amount = computeTotalBalanceDifferentDecimals(
     getUnderlyingBaseTokenInfos(giftTerms.token),
@@ -28,9 +28,10 @@ export function GiftTakerForm({
     { strict: false }
   )
 
+  const snapshot = useSelector(giftTakerClaimRef, (state) => state)
+  const processing =
+    snapshot?.value === "signing" || snapshot?.value === "claiming"
   assert(amount != null)
-
-  const confirmTradeMutation = useGiftTakerConfirmClaim()
 
   return (
     <div className="flex flex-col">
@@ -53,53 +54,32 @@ export function GiftTakerForm({
         message="You've received a gift! Click to claim it."
       />
 
-      {confirmTradeMutation.data?.match({
-        ok: () => <div>Gift claimed!</div>,
-        err: (err) => <div className="text-red-700">{err.reason}</div>,
-      })}
+      {snapshot?.context.error != null && (
+        <div className="text-red-700">{snapshot?.context.error?.reason}</div>
+      )}
+      {snapshot.status === "done" && (
+        <div className="flex justify-center mt-5">Gift claimed!</div>
+      )}
+
       <ButtonCustom
         onClick={() => {
-          if (!confirmTradeMutation.isPending && signerCredentials != null) {
-            signGiftTakerMessage({
-              giftTerms,
-              signerCredentials,
-            }).then((signatureResult) => {
-              if (signatureResult.isOk()) {
-                confirmTradeMutation.mutate(
-                  {
-                    signature: signatureResult.unwrap(),
-                    signerCredentials,
-                  },
-                  {
-                    onSuccess: (result) => {
-                      if (result.isErr()) {
-                        return Err(result.unwrapErr())
-                      }
-                      if (result.isOk()) {
-                        const intentHashes = result.unwrap()
-                        const intentHash = intentHashes[0]
-                        if (intentHash) {
-                          onSuccessClaim({ intentHashes: [intentHash] })
-                        }
-                      }
-                      return Ok(signatureResult)
-                    },
-                  }
-                )
-              }
-              return signatureResult.isErr()
-                ? Err(signatureResult.unwrapErr())
-                : Ok(signatureResult)
+          if (signerCredentials != null && snapshot.status !== "done") {
+            giftTakerClaimRef.send({
+              type: "CONFIRM_CLAIM",
+              params: {
+                giftTerms,
+                signerCredentials,
+              },
             })
           }
         }}
         type="button"
         size="lg"
         className="mt-5"
-        variant={confirmTradeMutation.isPending ? "secondary" : "primary"}
-        isLoading={confirmTradeMutation.isPending}
+        variant={processing ? "secondary" : "primary"}
+        isLoading={processing}
       >
-        {confirmTradeMutation.isPending ? "Processing..." : "Claim gift"}
+        {processing ? "Processing..." : "Claim gift"}
       </ButtonCustom>
     </div>
   )

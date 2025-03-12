@@ -1,11 +1,14 @@
 import type { Result } from "@thames/monads"
+import { useActorRef, useSelector } from "@xstate/react"
 import { useEffect, useState } from "react"
 import { logger } from "src/logger"
+import type {} from "xstate"
 import { WidgetRoot } from "../../../components/WidgetRoot"
 import type { SignerCredentials } from "../../../core/formatters"
 import { SwapWidgetProvider } from "../../../providers/SwapWidgetProvider"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../../types/base"
 import type { ChainType } from "../../../types/deposit"
+import { giftTakerClaimMachine } from "../actors/giftTakerClaimMachine"
 import { deriveGiftTerms } from "../utils/deriveGiftTerms"
 import type { GiftTerms } from "../utils/deriveGiftTerms"
 import { GiftTakerForm } from "./GiftTakerForm"
@@ -46,6 +49,8 @@ function GiftTakerScreens({
 }: GiftTakerWidgetProps) {
   const loading = <div>Loading...</div>
 
+  const giftTakerClaimRef = useActorRef(giftTakerClaimMachine)
+
   const signerCredentials: SignerCredentials | null =
     userAddress != null && userChainType != null
       ? { credential: userAddress, credentialType: userChainType }
@@ -54,10 +59,7 @@ function GiftTakerScreens({
   const [giftTerms, setGiftTerms] = useState<Result<GiftTerms, string> | null>(
     null
   )
-
-  const [claimResult, setClaimResult] = useState<{
-    intentHashes: string[]
-  } | null>(null)
+  const snapshot = useSelector(giftTakerClaimRef, (state) => state)
 
   useEffect(() => {
     deriveGiftTerms(secretKey, tokenList).then((result) => {
@@ -74,16 +76,16 @@ function GiftTakerScreens({
 
   return giftTerms.match({
     ok: (giftTerms) =>
-      claimResult !== null ? (
+      snapshot.status === "done" && snapshot.context.intentHashes ? (
         <GiftTakerSuccessScreen
           giftTerms={giftTerms}
-          intentHashes={claimResult.intentHashes}
+          intentHashes={snapshot.context.intentHashes}
         />
       ) : (
         <GiftTakerForm
           giftTerms={giftTerms}
           signerCredentials={signerCredentials}
-          onSuccessClaim={setClaimResult}
+          giftTakerClaimRef={giftTakerClaimRef}
         />
       ),
     err: (error) => <GiftTakerInvalidClaim error={error} />,
