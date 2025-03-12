@@ -97,7 +97,7 @@ describe("createEmptyIntentMessage()", () => {
 
 describe("createTransferMessage()", () => {
   it("creates a valid transfer intent message", () => {
-    const message = createTransferMessage([["token.near", -100n]], {
+    const message = createTransferMessage([["token.near", 100n]], {
       signerId: TEST_USER,
       receiverId: "receiver.near",
       memo: "message",
@@ -109,7 +109,7 @@ describe("createTransferMessage()", () => {
       intents: [
         {
           intent: "transfer",
-          tokens: { "token.near": "-100" },
+          tokens: { "token.near": "100" },
           receiver_id: "receiver.near",
           memo: "message",
         },
