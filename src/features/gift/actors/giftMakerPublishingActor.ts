@@ -1,25 +1,15 @@
 import { assign, fromPromise, setup } from "xstate"
-import type { SignerCredentials } from "../../../core/formatters"
 import { logger } from "../../../logger"
 import {
   type PublishIntentsErr,
   publishIntents,
 } from "../../../services/intentService"
 import type { MultiPayload } from "../../../types/defuse-contracts-types"
-import type { WalletSignatureResult } from "../../../types/swap"
 import { assert } from "../../../utils/assert"
-import type {
-  Errors as SignIntentErrors,
-  Output as SignIntentOutput,
-} from "../../machines/signIntentMachine"
-import type { SignMessage } from "../types/sharedTypes"
+import type { Errors as SignIntentErrors } from "../../machines/signIntentMachine"
 
 export type GiftMakerPublishingActorInput = {
-  giftId: string
-  nonceBas64: string
-  signerCredentials: SignerCredentials
   multiPayload: MultiPayload
-  signatureResult: WalletSignatureResult
 }
 
 export type GiftMakerPublishingActorOutput = {
@@ -32,9 +22,7 @@ type GiftMakerPublishingActorErrors =
   | { reason: "EXCEPTION" }
 
 type GiftMakerPublishingActorContext = {
-  giftId: string
-  nonceBas64: string
-  signerCredentials: SignerCredentials
+  multiPayload: MultiPayload
   error: null | GiftMakerPublishingActorErrors
 }
 
@@ -43,39 +31,22 @@ export const giftMakerPublishingActor = setup({
     input: {} as GiftMakerPublishingActorInput,
     output: {} as GiftMakerPublishingActorOutput,
     context: {} as GiftMakerPublishingActorContext,
-    events: {} as
-      | {
-          type: "ABORT_PUBLISHING" | "ACK_PUBLISHING_IMPOSSIBLE"
-        }
-      | {
-          type: "CONFIRM_PUBLISHING"
-          signerCredentials: SignerCredentials
-          signMessage: SignMessage
-        }
-      | {
-          type: "_INTERNAL_SIGNED"
-          multiPayload: MultiPayload
-          signatureResult: WalletSignatureResult
-          signerCredentials: SignerCredentials
-        },
   },
   actors: {
-    publishActor: fromPromise(
-      ({ input }: { input: { multiPayload: MultiPayload } }) => {
-        return publishIntents({
-          quote_hashes: [],
-          signed_datas: [input.multiPayload],
-        }).then((result) => {
-          if (result.isErr()) {
-            return { tag: "err" as const, value: result.unwrapErr() }
-          }
-          const intentHashes = result.unwrap()
-          const intentHash = intentHashes[0]
-          assert(intentHash != null)
-          return { tag: "ok" as const, value: intentHash }
-        })
-      }
-    ),
+    publishActor: fromPromise(({ input }: { input: MultiPayload }) => {
+      return publishIntents({
+        quote_hashes: [],
+        signed_datas: [input],
+      }).then((result) => {
+        if (result.isErr()) {
+          return { tag: "err" as const, value: result.unwrapErr() }
+        }
+        const intentHashes = result.unwrap()
+        const intentHash = intentHashes[0]
+        assert(intentHash != null)
+        return { tag: "ok" as const, value: intentHash }
+      })
+    }),
   },
   actions: {
     logError: (_, event: { error: unknown }) => {
@@ -85,11 +56,6 @@ export const giftMakerPublishingActor = setup({
       error: (_, error: GiftMakerPublishingActorErrors) => error,
     }),
     clearError: assign({ error: null }),
-
-    completeSigning: ({ self }, event: { output: SignIntentOutput }) => {
-      assert(event.output.tag === "ok")
-      self.send({ type: "_INTERNAL_SIGNED", ...event.output.value })
-    },
   },
   guards: {
     isOk: (_, params: { tag: "ok" | "err" }) => params.tag === "ok",
@@ -106,7 +72,7 @@ export const giftMakerPublishingActor = setup({
     },
   },
 }).createMachine({
-  /** @xstate-layout N4IgpgJg5mDOIC5QAoC2BDAxgCwJYDswBKAOlwgBswBiAYQHkA5AMQEkAlAWQH0AFAVQBCAGVYBlABKtGAcQDaABgC6iUAAcA9rFwAXXBvyqQAD0QAmACwB2EhYBsZgKwAOM1cdXnjhRYsAaEABPRGcATgUSOwtnCzMARjiFAGY45zizAF8MgLQsPEJScipqAEFBenYAFT4hUUlpeWUjTW09AyNTBABaWItbBTs4izjQi1DHeKsA4IQrWJIrHzj3OxdnJIskrJyMHAJiMkowfnxMdFOwCgp0ACNiktoAaRqRcSlZblZOXnoxMVYRABRRQqJAgFq6fSGMGdOxJJK2KwjRaOJKhRZhaaIBIKOILObDTYKBSWBzbEC5PYFEhqACud1wsHyUGoEAMYDI+AAbhoANYcyn5A50hlMghQBAEHlnNr4EEg5paSHtGGILpmOyRXGOMa41Zw+xTILY4kInW9BRWcaWxyhcmC-akEUURnM1nszk8-kkB3U52u8WS7kaGVQ+VxUHqJWyjrmW0kJLOOZOJJWK2rLEIRLJEjmjWWbxJYlWe27IVO+kusX4FlswievkCsuOmmVgM1oPS9Cy+VmSPg6NQ2MIawRYlhRzLZxhdGhJKZzzOEjOOxpbxJqKLOylvIt-3VllgABOR40R5p1x0ADMz6gfc2-W2D52Q92w8oFWCITHVd0zElHEiLxUVCFMFEcOxwMzGIzBIeIbUtFI0yGLJshAfANAgOAjF9YhFVaIdfx6KxYIsAYhhGMYJmWTNVkAswlg8DUIIYu00Nwwojnw5VoVAToulSGxwLcBJrHGScIIXeZFmGFY1g2CwdypA4imOU5zkwS5rjuMBuJ-PjEAAwDlicCDvCY1JMxxPE002RZQjCdM4iU8tW1FZk9MIgyEAUaC7BsIYYiLLx4nRRT2IfYUn2wSBPJVbz-wWUDQjhTw5wGOF52NLNs1zSxE2cBRxg2TIIt3alaXUi4rluKg4t4kwTSKkgFDCdYRnSUZQis3KJk2XxPGiUCXJbW4zx0WKv0HeLGu6MjYJ8LrUkg0JVstHriTyzZpyK1FZNQjIgA */
+  /** @xstate-layout N4IgpgJg5mDOIC5QAoC2BDAxgCwJYDswBKAOlwgBswBiAYQHkA5AMQEkAlAWQH0AFAVQBCAGVYBlABKtGAcQDaABgC6iUAAcA9rFwAXXBvyqQAD0QBaABwkArAHYALACYFthQoCcrgGz3bAGhAAT0RbWy8STwBGX2sAZgsLUNiAX2SAtCw8QlJyKmoAQUF6dgAVPiFRSWl5ZSNNbT0DI1MEM3tYyJIva0iFe0Te9tjrAOCEUPComPjE2w7U9IwcAmIyShpFFSQQet19Q22Ws2cFCPb7FzCFOOtu0ZDbdxJHR2jux0fuuwWQDOXstZUfj4TDoEFgCgUdAAIzy+VoAGlyiJxFJZNxWJxePQxGJWCIAKKbOpaPZNQ6ILyxWIkXyRTzXWIMizue4ISK9Tqhez2aKxNyOexeRw-P5ZVZqACusNwsCyUGoEAMYDI+AAbhoANYqsUrUhSmVyghQBAEDWgxr4TbE7a7S3NcyOcJeBSRW7xN3WNwWLz+IKIXoKGnWHlOwVe-kuUVLcX66UUWXyxXK1Ua7UkXUAg0Jo34E1mjQW-bWyJbdSk+0UhCOaxPeIOGuxULuO7+9luYOh4X2CNuWzRzJ6kjZxPG5OEVNanUxocj3P59WF9CW62OMs7Cv7B3V9xWLzuWs+D7xWJs0LWCKOCy+dzuRyR6zWAf-CXx0d56hgABOX40X+HUI6AAZn+qAZjOWZvvOpqLkWBjWrUtqbuSoBHI4u42LYkSxEK6HYY+vpshYj5dAesToTyOEciKPz4BoEBwEYmbECSDRblWbSPF0PR9AMfTUiMbbCuEPJ3i87i+Nc+7PrGgJgKxZIHKhlKOCQFiRD4kQsuh7i9I+9hnthZxibY1gWEyjwyUOuRgMCoLgpCMJUAplbKQgwwXpEtg1rcXp2K8FhshyrokNyTYeCynyRFZkGGvKLnsW5ChEb6JDRNe-LEa8nj2DFr5xZACUoSYiD3qFd4tsFLghhcBltlVNiChZHi1lhFh5aQkogmCmAQlCsLyUhbHFS0gZPAoLLmfSkQUay9WBo15y+Ne2kdSQMJ-johVDYp25tAoql9BJuk+h4t4uEFC3WE1CQtVR-apMkQA */
   context: ({ input }) => ({
     ...input,
     error: null,
@@ -119,13 +85,6 @@ export const giftMakerPublishingActor = setup({
   initial: "publishing",
 
   states: {
-    idle: {
-      on: {
-        CONFIRM_PUBLISHING: "publishing",
-        ABORT_PUBLISHING: "aborted",
-      },
-    },
-
     idleUncancellable: {
       on: {
         ACK_PUBLISHING_IMPOSSIBLE: "uncancellable",
@@ -133,24 +92,14 @@ export const giftMakerPublishingActor = setup({
     },
 
     publishing: {
-      actions: "clearError",
-
       invoke: {
         src: "publishActor",
-
-        input: ({ event }) => {
-          return {
-            // @ts-expect-error
-            signerCredentials: event.input.signerCredentials,
-            // @ts-expect-error
-            signature: event.input.signatureResult,
-            // @ts-expect-error
-            multiPayload: event.input.multiPayload,
-          }
+        input: ({ context, event }) => {
+          return context?.multiPayload ?? event.input?.multiPayload
         },
 
         onError: {
-          target: "#(machine).idle",
+          target: "#(machine).aborted",
           actions: [
             { type: "logError", params: ({ event }) => event },
             { type: "setError", params: { reason: "EXCEPTION" } },
@@ -162,7 +111,9 @@ export const giftMakerPublishingActor = setup({
             target: "#(machine).published",
             guard: {
               type: "isOk",
-              params: ({ event }) => event.output,
+              params: ({ event }) => {
+                return event.output
+              },
             },
           },
           {
@@ -173,7 +124,7 @@ export const giftMakerPublishingActor = setup({
             },
           },
           {
-            target: "#(machine).idle",
+            target: "#(machine).aborted",
             actions: {
               type: "setError",
               params: ({ event }) => {

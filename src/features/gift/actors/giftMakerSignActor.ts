@@ -50,12 +50,12 @@ export type GiftMakerSignActorOutput =
   | { tag: "ok"; value: GiftMakerSignActorSuccess }
 
 export type GiftMakerSignActorSuccess = {
-  // TODO: we need here only private key
   multiPayload: MultiPayload
-  signatureResult: WalletSignatureResult
   signerCredentials: SignerCredentials
   usedNonceBase64: string
+  signatureResult: WalletSignatureResult
   escrowCredentials: EscrowCredentials
+  giftId: string
 }
 
 export type GiftMakerSignActorContext = {
@@ -222,6 +222,7 @@ export const giftMakerSignActor = setup({
             signerCredentials: context.signerCredentials,
             usedNonceBase64: base64.encode(context.nonce),
             escrowCredentials: context.escrowCredentials,
+            giftId: `gift-${event.output.value.usedNonceBase64}`,
           },
         }
       },

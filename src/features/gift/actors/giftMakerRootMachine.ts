@@ -9,7 +9,6 @@ import {
 import type { SignerCredentials } from "../../../core/formatters"
 import { logger } from "../../../logger"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../../types/base"
-import type { MultiPayload } from "../../../types/defuse-contracts-types"
 import type { WalletMessage, WalletSignatureResult } from "../../../types/swap"
 import { assert } from "../../../utils/assert"
 import { toError } from "../../../utils/errors"
@@ -23,6 +22,11 @@ import {
 } from "../utils/generateEscrowCredentials"
 import { giftMakerFormMachine } from "./giftMakerFormMachine"
 import {
+  type GiftMakerPublishingActorInput,
+  type GiftMakerPublishingActorOutput,
+  giftMakerPublishingActor,
+} from "./giftMakerPublishingActor"
+import {
   type GiftMakerReadyActorInput,
   giftMakerReadyActor,
 } from "./giftMakerReadyActor"
@@ -30,6 +34,7 @@ import type {
   GiftMakerSignActorErrors,
   GiftMakerSignActorInput,
   GiftMakerSignActorOutput,
+  GiftMakerSignActorSuccess,
 } from "./giftMakerSignActor"
 import { giftMakerSignActor } from "./giftMakerSignActor"
 
@@ -52,20 +57,16 @@ export const giftMakerRootMachine = setup({
             params: WalletMessage
           ) => Promise<WalletSignatureResult | null>
         }
-      | {
+      | ({
           type: "COMPLETE_SIGN"
-          multiPayload: MultiPayload
-          signerCredentials: SignerCredentials
-          usedNonceBase64: string
-          giftId: string
-          signatureResult: WalletSignatureResult
-        },
+        } & GiftMakerSignActorSuccess),
     context: {} as {
       error: null | GiftMakerSignActorErrors
       formRef: ActorRefFrom<typeof giftMakerFormMachine>
       depositedBalanceRef: ActorRefFrom<typeof depositedBalanceMachine>
       escrowCredentials: EscrowCredentials
       referral: string | undefined
+      signData: null | GiftMakerSignActorSuccess
     },
     children: {} as {
       readyGiftRef: "readyGiftActor"
@@ -77,6 +78,10 @@ export const giftMakerRootMachine = setup({
     signActor: giftMakerSignActor as unknown as PromiseActorLogic<
       GiftMakerSignActorOutput,
       GiftMakerSignActorInput
+    >,
+    publishingActor: giftMakerPublishingActor as unknown as PromiseActorLogic<
+      GiftMakerPublishingActorOutput,
+      GiftMakerPublishingActorInput
     >,
     readyGiftActor: giftMakerReadyActor as unknown as PromiseActorLogic<
       void,
@@ -101,24 +106,19 @@ export const giftMakerRootMachine = setup({
       "depositedBalanceRef",
       (_, event: DepositedBalanceEvents) => event
     ),
-    completeSign: (
-      { self },
-      event: {
-        multiPayload: MultiPayload
-        signerCredentials: SignerCredentials
-        signatureResult: WalletSignatureResult
-        usedNonceBase64: string
-        giftId: string
-      }
-    ) => {
+    completeSign: ({ self }, event: GiftMakerSignActorSuccess) => {
       self.send({ type: "COMPLETE_SIGN", ...event })
     },
+    cleanup: assign({
+      error: null,
+      signData: null,
+    }),
   },
   guards: {
     isOk: (_, params: { tag: "ok" | "err" }) => params.tag === "ok",
   },
 }).createMachine({
-  /** @xstate-layout N4IgpgJg5mDOIC5QAoC2BDAxgCwJYDswBKAYgBkB5AcQEkA5AbQAYBdRUABwHtZcAXXF3zsQAD0QAmAHQSJADgCsANgDsAZgAsTAIwKNcuRIA0IAJ6JtSuVKZylTDQrWy5GjWoC+Hk2ix5CpJRUFACqACrMbEgg3LwCQiLiCBIqSlLaatpMCgYKWWpKEhom5giW1rb2js7ybp7eIL44BMRSkPwEUCRUAKJ0PQBKAIJhPQD6PQDKAMIDFADqkSKxHQnRSdqpUmq2TBIAnCo5hZYliI7aNtpZbo67KfU+GM0BbRAd+F0DPQCKIVNhMaTGhURisZY8VbCdYWNRSOTOJhqFT7BQqbRyFSyBRnBAKBwyQwaJRZZSbRReBr4LgQOAiJr+YgQuKCaGgJIAWnUUg0WKUej27hUDiUuMyl0U+w0+20qLkcoKXiefhaRDeHygzKhiXOKjF+322wUUuNriYKn0FIaDNVUl4UHwnS18TZYkQHIkCh5fIFRWRDmUuONXsMB1sUuyFvqXiAA */
+  /** @xstate-layout N4IgpgJg5mDOIC5QAoC2BDAxgCwJYDswBKAYgBkB5AcQEkA5AbQAYBdRUABwHtZcAXXF3zsQAD0QBaAEwBGAGwA6ACxKmsgJwBmdXIAcezVIA0IAJ6T1AVgUB2dUt1T9mpXaV6Avh5NoseQqSUVBQAqgAqzGxIINy8AkIi4ggyllIKTDqWckxysjI2esZmFtZujs6u9p7eIL44BMQKkPwEUCQASgCiAIohnQDKYQD6-TRUjKwisS0J0UkSMjKaCjqaukoyuvqpKuom5ghSTDIKlpo2KkqaMuq6lse6Xj4Y9QEKvFD4rSQQQmAKBAAblwANb-D74dpgABmkSmPBmwjmiDkiicunUTCUqRcjhk+0QUksNgUuhsUg2MixlhuGSetRe-kaEO+v0IAPwwLB71wnyhsJkUU4CPiSNASU0NIUVPsUk0ciU6gK8qUBMOxNJ5KURwxUisTE09LqTKIPM+3zAACdLVxLQoOAAbdB8aG21BmyEwuHRaaixKSbRMdIaJZnGw07RqwzqaVMJg2bQFC4uSxGxkNU0s-BtADCFAAsgAFMidMKdEZjCZCmIiwRisSSGRHU7rLTy9EGhVq1yKSwOOTqG5SGxMSxaNN+DMeyA-P4crn-S1gdAQUxUXDQvj873CuJ1-0IbQnewydxrAdZPWq4oIMckkdN8MXFI5CevZm8wgQEhWm12x3Oq6lrukuK5rhuW5epMPq1rM4qSKoihUjYZJrOS6hSFIchqsSSi2BSeg5Fc5woV4NT4FwEBwCIxoZvCe5wQ2CASNieHIahZJ6ph2E3i40pymoeRMBi2IUm+JpNBALTZvRiIHhIuhBnYlj6FYtz2OcRQHE2Jy5Joaj9kskpiTUtFvFmUCyX6yLMSkyxYXcVxkohay6FGqinGc+iLEcNx9qmpnpuZn6QFZ+42QsdwKO2w6aHFKlnFkOHkrYxxOE2+nkksZEeEAA */
   context: ({ input, spawn }) => ({
     error: null,
     formRef: spawn("formActor", {
@@ -134,6 +134,7 @@ export const giftMakerRootMachine = setup({
     }),
     escrowCredentials: generateEscrowCredentials(),
     referral: input.referral,
+    signData: null,
   }),
 
   initial: "editing",
@@ -161,8 +162,12 @@ export const giftMakerRootMachine = setup({
       },
     },
     signing: {
+      entry: [],
+
       on: {
-        COMPLETE_SIGN: "signed",
+        COMPLETE_SIGN: {
+          target: "publishing",
+        },
       },
 
       invoke: {
@@ -171,8 +176,10 @@ export const giftMakerRootMachine = setup({
 
         input: ({ context, event }) => {
           assertEvent(event, "REQUEST_SIGN")
+
           const form = context.formRef.getSnapshot()
           const parsed = form.context.parsedValues.getSnapshot()
+
           return {
             signerCredentials: event.signerCredentials,
             signMessage: event.signMessage,
@@ -209,10 +216,7 @@ export const giftMakerRootMachine = setup({
               type: "completeSign",
               params: ({ event }) => {
                 assert(event.output.tag === "ok")
-                return {
-                  ...event.output.value,
-                  giftId: `gift-${event.output.value.usedNonceBase64}`,
-                }
+                return event.output.value
               },
             },
           },
@@ -226,13 +230,50 @@ export const giftMakerRootMachine = setup({
         ],
       },
     },
+    publishing: {
+      entry: assign({
+        signData: ({ event }) => {
+          assertEvent(event, "COMPLETE_SIGN")
+          return event
+        },
+      }),
+      invoke: {
+        src: "publishingActor",
+        input: ({ context }) => {
+          const multiPayload = context.signData?.multiPayload
+          assert(multiPayload, "multiPayload is not defined")
+          return {
+            multiPayload,
+          }
+        },
+        onDone: [
+          {
+            guard: ({ event }) => {
+              return event.output.giftStatus === "published"
+            },
+            target: "signed",
+          },
+          {
+            target: "editing",
+            actions: {
+              type: "setError",
+              params: { tag: "err", value: { reason: "EXCEPTION" } },
+            },
+          },
+        ],
+        onError: {
+          target: "editing",
+          actions: [{ type: "logError", params: ({ event }) => event }],
+        },
+      },
+    },
     signed: {
       invoke: {
         id: "readyGiftRef",
         src: "readyGiftActor",
-
-        input: ({ context, event }) => {
-          assertEvent(event, "COMPLETE_SIGN")
+        input: ({ context }) => {
+          const signData = context.signData
+          assert(signData, "signData is not defined")
 
           const form = context.formRef.getSnapshot()
           const formValuesSnapshot = form.context.formValues.getSnapshot()
@@ -250,15 +291,14 @@ export const giftMakerRootMachine = setup({
             >
           }
 
-          // TODO: we need here only private key
           return {
             parsed: parsedValues,
             raw: formValues,
-            usedNonceBase64: event.usedNonceBase64,
-            multiPayload: event.multiPayload,
-            giftId: event.giftId,
-            signerCredentials: event.signerCredentials,
-            signatureResult: event.signatureResult,
+            usedNonceBase64: signData.usedNonceBase64,
+            multiPayload: signData.multiPayload,
+            giftId: signData.giftId,
+            signerCredentials: signData.signerCredentials,
+            signatureResult: signData.signatureResult,
             escrowCredentials: context.escrowCredentials,
           }
         },
