@@ -31,7 +31,7 @@ type GiftTakeClaimErr = {
 
 type GiftTakerClaimingActorErrors = PublishIntentsErr | GiftTakeClaimErr
 
-type GiftTakerClaimingOutput =
+type GiftTakerRootMachineOutput =
   | {
       tag: "ok"
       value: {
@@ -43,16 +43,16 @@ type GiftTakerClaimingOutput =
       value: GiftTakerClaimingActorErrors
     }
 
-type GiftTakerClaimMachineContext = {
+type GiftTakerRootMachineContext = {
   error: null | GiftTakerClaimingActorErrors
   multiPayload: null | MultiPayload
   intentHashes: null | string[]
 }
 
-export const giftTakerClaimMachine = setup({
+export const giftTakerRootMachine = setup({
   types: {
-    context: {} as GiftTakerClaimMachineContext,
-    output: {} as GiftTakerClaimingOutput,
+    context: {} as GiftTakerRootMachineContext,
+    output: {} as GiftTakerRootMachineOutput,
     events: {} as {
       type: "CONFIRM_CLAIM"
       params: {

@@ -1,3 +1,4 @@
+import { cn } from "src/utils/cn"
 import type {
   BaseTokenInfo,
   TokenValue,
@@ -20,7 +21,10 @@ export function ShareableGiftImage({
 }: ShareableGiftImageProps) {
   return (
     <div
-      className={`relative w-full min-w-[334.22px] min-h-[188px] max-w-[600px] h-auto aspect-[1.9/1] rounded-xl flex flex-col justify-center p-10 items-center ${className}`}
+      className={cn(
+        "relative w-full min-w-[334.22px] min-h-[188px] max-w-[600px] h-auto aspect-[1.9/1] rounded-xl flex flex-col justify-center p-10 items-center",
+        className
+      )}
       style={{
         backgroundImage: 'url("/static/images/gift-backing.svg")',
         backgroundSize: "cover",

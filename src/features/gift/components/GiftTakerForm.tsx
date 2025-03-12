@@ -7,14 +7,14 @@ import {
 import type { ActorRefFrom } from "xstate"
 import { ButtonCustom } from "../../../components/Button/ButtonCustom"
 import type { SignerCredentials } from "../../../core/formatters"
-import type { giftTakerClaimMachine } from "../actors/giftTakerClaimMachine"
+import type { giftTakerRootMachine } from "../actors/giftTakerRootMachine"
 import type { GiftInfo } from "../utils/getGiftInfo"
 import { ShareableGiftImage } from "./ShareableGiftImage"
 
 export type GiftTakerFormProps = {
   giftInfo: GiftInfo
   signerCredentials: SignerCredentials | null
-  giftTakerClaimRef: ActorRefFrom<typeof giftTakerClaimMachine>
+  giftTakerClaimRef: ActorRefFrom<typeof giftTakerRootMachine>
 }
 
 export function GiftTakerForm({

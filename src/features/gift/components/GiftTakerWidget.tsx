@@ -8,7 +8,7 @@ import type { SignerCredentials } from "../../../core/formatters"
 import { SwapWidgetProvider } from "../../../providers/SwapWidgetProvider"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../../types/base"
 import type { ChainType } from "../../../types/deposit"
-import { giftTakerClaimMachine } from "../actors/giftTakerClaimMachine"
+import { giftTakerRootMachine } from "../actors/giftTakerRootMachine"
 import { type GiftInfo, getGiftInfo } from "../utils/getGiftInfo"
 import { GiftTakerForm } from "./GiftTakerForm"
 import { GiftTakerInvalidClaim } from "./GiftTakerInvalidClaim"
@@ -48,7 +48,7 @@ function GiftTakerScreens({
 }: GiftTakerWidgetProps) {
   const loading = <div>Loading...</div>
 
-  const giftTakerClaimRef = useActorRef(giftTakerClaimMachine)
+  const giftTakerClaimRef = useActorRef(giftTakerRootMachine)
 
   const signerCredentials: SignerCredentials | null =
     userAddress != null && userChainType != null
