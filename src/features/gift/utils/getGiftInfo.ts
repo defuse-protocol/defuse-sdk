@@ -3,17 +3,17 @@ import type { BaseTokenInfo, UnifiedTokenInfo } from "../../../types/base"
 import { determineGiftToken } from "./determineGiftToken"
 import { parseGiftSecret } from "./parseGiftSecret"
 
-export type GiftTerms = {
+export type GiftInfo = {
   tokenDiff: Record<BaseTokenInfo["defuseAssetId"], bigint>
   token: BaseTokenInfo | UnifiedTokenInfo
   secretKey: string
   userId: string
 }
 
-export async function deriveGiftTerms(
+export async function getGiftInfo(
   secretKey: string,
   tokenList: (BaseTokenInfo | UnifiedTokenInfo)[]
-): Promise<Result<GiftTerms, string>> {
+): Promise<Result<GiftInfo, string>> {
   const parseResult = parseGiftSecret(secretKey)
   if (parseResult.isErr()) {
     return Err(parseResult.unwrapErr())

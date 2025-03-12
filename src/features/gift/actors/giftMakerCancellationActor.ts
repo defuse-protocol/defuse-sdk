@@ -115,7 +115,7 @@ export const giftMakerCancellationActor = setup({
           }
         }
 
-        const giftTerms = {
+        const giftInfo = {
           tokenDiff,
           token: input.token,
           secretKey: parseResult.unwrap().secretKey,
@@ -123,7 +123,7 @@ export const giftMakerCancellationActor = setup({
         }
 
         const signature = await signGiftTakerMessage({
-          giftTerms,
+          giftInfo,
           signerCredentials: input.signerCredentials,
         })
 

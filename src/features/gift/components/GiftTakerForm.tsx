@@ -8,23 +8,23 @@ import type { ActorRefFrom } from "xstate"
 import { ButtonCustom } from "../../../components/Button/ButtonCustom"
 import type { SignerCredentials } from "../../../core/formatters"
 import type { giftTakerClaimMachine } from "../actors/giftTakerClaimMachine"
-import type { GiftTerms } from "../utils/deriveGiftTerms"
+import type { GiftInfo } from "../utils/getGiftInfo"
 import { ShareableGiftImage } from "./ShareableGiftImage"
 
 export type GiftTakerFormProps = {
-  giftTerms: GiftTerms
+  giftInfo: GiftInfo
   signerCredentials: SignerCredentials | null
   giftTakerClaimRef: ActorRefFrom<typeof giftTakerClaimMachine>
 }
 
 export function GiftTakerForm({
-  giftTerms,
+  giftInfo,
   signerCredentials,
   giftTakerClaimRef,
 }: GiftTakerFormProps) {
   const amount = computeTotalBalanceDifferentDecimals(
-    getUnderlyingBaseTokenInfos(giftTerms.token),
-    giftTerms.tokenDiff,
+    getUnderlyingBaseTokenInfos(giftInfo.token),
+    giftInfo.tokenDiff,
     { strict: false }
   )
 
@@ -49,7 +49,7 @@ export function GiftTakerForm({
 
       {/* Image Section */}
       <ShareableGiftImage
-        token={giftTerms.token}
+        token={giftInfo.token}
         amount={amount}
         message="You've received a gift! Click to claim it."
       />
@@ -67,7 +67,7 @@ export function GiftTakerForm({
             giftTakerClaimRef.send({
               type: "CONFIRM_CLAIM",
               params: {
-                giftTerms,
+                giftInfo,
                 signerCredentials,
               },
             })

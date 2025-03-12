@@ -9,8 +9,7 @@ import { SwapWidgetProvider } from "../../../providers/SwapWidgetProvider"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../../types/base"
 import type { ChainType } from "../../../types/deposit"
 import { giftTakerClaimMachine } from "../actors/giftTakerClaimMachine"
-import { deriveGiftTerms } from "../utils/deriveGiftTerms"
-import type { GiftTerms } from "../utils/deriveGiftTerms"
+import { type GiftInfo, getGiftInfo } from "../utils/getGiftInfo"
 import { GiftTakerForm } from "./GiftTakerForm"
 import { GiftTakerInvalidClaim } from "./GiftTakerInvalidClaim"
 import { GiftTakerSuccessScreen } from "./GiftTakerSuccessScreen"
@@ -56,34 +55,34 @@ function GiftTakerScreens({
       ? { credential: userAddress, credentialType: userChainType }
       : null
 
-  const [giftTerms, setGiftTerms] = useState<Result<GiftTerms, string> | null>(
+  const [giftInfo, setGiftInfo] = useState<Result<GiftInfo, string> | null>(
     null
   )
   const snapshot = useSelector(giftTakerClaimRef, (state) => state)
 
   useEffect(() => {
-    deriveGiftTerms(secretKey, tokenList).then((result) => {
+    getGiftInfo(secretKey, tokenList).then((result) => {
       if (result.isErr()) {
         logger.error(result.unwrapErr())
       }
-      setGiftTerms(result)
+      setGiftInfo(result)
     })
   }, [secretKey, tokenList])
 
-  if (giftTerms == null) {
+  if (giftInfo == null) {
     return loading
   }
 
-  return giftTerms.match({
-    ok: (giftTerms) =>
+  return giftInfo.match({
+    ok: (giftInfo) =>
       snapshot.status === "done" && snapshot.context.intentHashes ? (
         <GiftTakerSuccessScreen
-          giftTerms={giftTerms}
+          giftInfo={giftInfo}
           intentHashes={snapshot.context.intentHashes}
         />
       ) : (
         <GiftTakerForm
-          giftTerms={giftTerms}
+          giftInfo={giftInfo}
           signerCredentials={signerCredentials}
           giftTakerClaimRef={giftTakerClaimRef}
         />

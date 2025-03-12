@@ -10,23 +10,23 @@ import {
   makeSwapMessage,
 } from "../../../utils/messageFactory"
 import { randomDefuseNonce } from "../../../utils/messageFactory"
-import type { GiftTerms } from "./deriveGiftTerms"
+import type { GiftInfo } from "./getGiftInfo"
 import { hashing } from "./hashing"
 
 type GiftTakerMessage = {
-  giftTerms: GiftTerms
+  giftInfo: GiftInfo
   signerCredentials: SignerCredentials
 }
 
 export async function signGiftTakerMessage({
-  giftTerms,
+  giftInfo,
   signerCredentials,
 }: GiftTakerMessage): Promise<Result<NEP413SignatureData, string>> {
-  const walletMessage = assembleWalletMessage({ giftTerms, signerCredentials })
+  const walletMessage = assembleWalletMessage({ giftInfo, signerCredentials })
 
   try {
     // With different types of escrow accounts this should be updated
-    const keyPair = KeyPair.fromString(giftTerms.secretKey)
+    const keyPair = KeyPair.fromString(giftInfo.secretKey)
     const messageHash = await hashing(
       walletMessage.NEP413.message,
       walletMessage.NEP413.recipient,
@@ -39,7 +39,7 @@ export async function signGiftTakerMessage({
     return Ok({
       type: "NEP413",
       signatureData: {
-        accountId: giftTerms.userId,
+        accountId: giftInfo.userId,
         publicKey: keyPair.getPublicKey().toString(),
         signature: base64.encode(signature.signature),
       },
@@ -51,15 +51,15 @@ export async function signGiftTakerMessage({
 }
 
 function assembleWalletMessage({
-  giftTerms,
+  giftInfo,
   signerCredentials,
 }: GiftTakerMessage) {
   const nonce = randomDefuseNonce()
 
   const innerMessage = makeInnerTransferMessage({
-    tokenDeltas: [...Object.entries(giftTerms.tokenDiff)],
+    tokenDeltas: [...Object.entries(giftInfo.tokenDiff)],
     signerId: resolveSignerId(
-      userAddressToDefuseUserId(giftTerms.userId, "near")
+      userAddressToDefuseUserId(giftInfo.userId, "near")
     ),
     deadlineTimestamp: minutesFromNow(5),
     receiverId: signerCredentials.credential,

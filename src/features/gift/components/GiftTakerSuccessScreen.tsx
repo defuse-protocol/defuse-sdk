@@ -7,21 +7,21 @@ import {
 import { CopyButton } from "../../../components/IntentCard/CopyButton"
 import { waitForIntentSettlement } from "../../../services/intentService"
 import { assert } from "../../../utils/assert"
-import type { GiftTerms } from "../utils/deriveGiftTerms"
+import type { GiftInfo } from "../utils/getGiftInfo"
 import { GiftStrip } from "./GiftStrip"
 
 const NEAR_EXPLORER = "https://nearblocks.io"
 
 export function GiftTakerSuccessScreen({
-  giftTerms,
+  giftInfo,
   intentHashes,
 }: {
-  giftTerms: GiftTerms
+  giftInfo: GiftInfo
   intentHashes: string[]
 }) {
   const amount = computeTotalBalanceDifferentDecimals(
-    getUnderlyingBaseTokenInfos(giftTerms.token),
-    giftTerms.tokenDiff,
+    getUnderlyingBaseTokenInfos(giftInfo.token),
+    giftInfo.tokenDiff,
     { strict: false }
   )
 
@@ -70,7 +70,7 @@ export function GiftTakerSuccessScreen({
       {/* Gift Section */}
       <div className="flex flex-col text-xs mt-4 bg-gray-4 rounded-lg">
         <div className="flex flex-row border-b border-gray-6 p-3">
-          <GiftStrip token={giftTerms.token} amount={amount} />
+          <GiftStrip token={giftInfo.token} amount={amount} />
         </div>
         <div className="flex flex-col gap-3.5 text-xs p-3">
           <div className="flex justify-between items-center">

@@ -13,7 +13,7 @@ import {
 import { logger } from "../../../logger"
 import type { PublishIntentsErr } from "../../../services/intentService"
 import type { MultiPayload } from "../../../types/defuse-contracts-types"
-import type { GiftTerms } from "../utils/deriveGiftTerms"
+import type { GiftInfo } from "../utils/getGiftInfo"
 import { signGiftTakerMessage } from "../utils/signGiftTakerMessage"
 import {
   type GiftMakerPublishingActorInput,
@@ -56,7 +56,7 @@ export const giftTakerClaimMachine = setup({
     events: {} as {
       type: "CONFIRM_CLAIM"
       params: {
-        giftTerms: GiftTerms
+        giftInfo: GiftInfo
         signerCredentials: SignerCredentials
       }
     },
@@ -66,10 +66,10 @@ export const giftTakerClaimMachine = setup({
       async ({
         input,
       }: {
-        input: { giftTerms: GiftTerms; signerCredentials: SignerCredentials }
+        input: { giftInfo: GiftInfo; signerCredentials: SignerCredentials }
       }) => {
         const signGiftResult = await signGiftTakerMessage({
-          giftTerms: input.giftTerms,
+          giftInfo: input.giftInfo,
           signerCredentials: input.signerCredentials,
         })
         if (signGiftResult.isErr()) {
@@ -134,7 +134,7 @@ export const giftTakerClaimMachine = setup({
         input: ({ event }) => {
           assertEvent(event, "CONFIRM_CLAIM")
           return {
-            giftTerms: event.params.giftTerms,
+            giftInfo: event.params.giftInfo,
             signerCredentials: event.params.signerCredentials,
           }
         },
