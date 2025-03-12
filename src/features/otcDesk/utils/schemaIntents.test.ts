@@ -70,14 +70,14 @@ describe("IntentSchema", () => {
     {
       // Regular withdraw to Near blockchain, user.near already has this token on their balance
       intent: "ft_withdraw",
-      token_id: "usdt.tether-token.near",
+      token: "usdt.tether-token.near",
       receiver_id: "user.near",
       amount: "100",
     },
     {
       // Regular withdraw to Near blockchain, user.near has never had this token on their balance
       intent: "ft_withdraw",
-      token_id: "usdt.tether-token.near",
+      token: "usdt.tether-token.near",
       receiver_id: "user.near",
       amount: "100",
       storage_deposit: "1250000000000000000000",
@@ -85,7 +85,7 @@ describe("IntentSchema", () => {
     {
       // Withdraw to Aurora blockchain
       intent: "ft_withdraw",
-      token_id: "usdt.tether-token.near",
+      token: "usdt.tether-token.near",
       receiver_id: "aurora",
       amount: "100",
       msg: "beefcbe1c63ae6573c934bc433e3ccd6d0b52a8e",
@@ -93,7 +93,7 @@ describe("IntentSchema", () => {
     {
       // Withdraw USDT@Arbitrum (USDT from Arbitrum bridged using POA Bridge)
       intent: "ft_withdraw",
-      token_id: "arb-0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9.omft.near",
+      token: "arb-0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9.omft.near",
       receiver_id: "arb-0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9.omft.near",
       amount: "100",
       memo: "WITHDRAW_TO:0xBEEFcBe1C63ae6573c934Bc433e3cCD6D0b52a8E",
@@ -101,7 +101,7 @@ describe("IntentSchema", () => {
     {
       // `memo` and `msg` can be arbitrary strings, they don't need to have a specific format
       intent: "ft_withdraw",
-      token_id: "arb-0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9.omft.near",
+      token: "arb-0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9.omft.near",
       receiver_id: "arb-0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9.omft.near",
       amount: "100",
       memo: "",
@@ -114,25 +114,25 @@ describe("IntentSchema", () => {
   it.each([
     {
       intent: "ft_withdraw",
-      token_id: "usdt.tether-token.near",
+      token: "usdt.tether-token.near",
       receiver_id: "incorrect-account-id-",
       amount: "100",
     },
     {
       intent: "ft_withdraw",
-      token_id: "nep141:usdt.tether-token.near",
+      token: "nep141:usdt.tether-token.near",
       receiver_id: "user.near",
       amount: "100",
     },
     {
       intent: "ft_withdraw",
-      token_id: "usdt.tether-token.near",
+      token: "usdt.tether-token.near",
       receiver_id: "user.near",
       amount: 100,
     },
     {
       intent: "ft_withdraw",
-      token_id: "usdt.tether-token.near",
+      token: "usdt.tether-token.near",
       receiver_id: "user.near",
       amount: "100",
       memo: null,

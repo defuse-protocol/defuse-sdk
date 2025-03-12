@@ -26,7 +26,7 @@ export const IntentSchema = v.variant("intent", [
   }),
   v.object({
     intent: v.literal("ft_withdraw"),
-    token_id: v.pipe(
+    token: v.pipe(
       v.string(),
       v.custom(
         (a) => (typeof a === "string" ? !a.startsWith("nep141:") : false),
