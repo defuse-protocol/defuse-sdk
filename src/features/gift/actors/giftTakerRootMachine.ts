@@ -12,8 +12,9 @@ import {
 } from "../../../core/formatters"
 import { logger } from "../../../logger"
 import type { PublishIntentsErr } from "../../../services/intentService"
+import type { BaseTokenInfo, UnifiedTokenInfo } from "../../../types/base"
 import type { MultiPayload } from "../../../types/defuse-contracts-types"
-import type { GiftInfo } from "../utils/getGiftInfo"
+import { type GiftInfo, getGiftInfo } from "../utils/getGiftInfo"
 import { signGiftTakerMessage } from "../utils/signGiftTakerMessage"
 import {
   type GiftMakerPublishingActorInput,
@@ -21,15 +22,33 @@ import {
   giftMakerPublishingActor,
 } from "./giftMakerPublishingActor"
 
-export type GiftMakerClaimedActorOutput = {
-  giftStatus: "claimed" | "not_claimed" | "already_claimed_or_executed"
-}
-
 type GiftTakeClaimErr = {
-  reason: "CANNOT_SIGN_GIFT" | "CANNOT_CLAIM_GIFT"
+  reason:
+    | "CANNOT_SIGN_GIFT"
+    | "CANNOT_CLAIM_GIFT"
+    | "CANNOT_OPEN_GIFT_SECRET"
+    | "NO_TOKEN_OR_GIFT_HAS_BEEN_CLAIMED"
 }
 
 type GiftTakerClaimingActorErrors = PublishIntentsErr | GiftTakeClaimErr
+
+type GiftTakerRootMachineInput = {
+  secretKey: string
+  tokenList: (BaseTokenInfo | UnifiedTokenInfo)[]
+}
+
+type GiftTakerRootMachineContext = {
+  error: null | GiftTakerClaimingActorErrors
+  giftInfo: null | GiftInfo
+  multiPayload: null | MultiPayload
+  intentHashes: null | string[]
+  secretKey: string
+  tokenList: (BaseTokenInfo | UnifiedTokenInfo)[]
+}
+
+export type GiftMakerClaimedActorOutput = {
+  giftStatus: "claimed" | "not_claimed" | "already_claimed_or_executed"
+}
 
 type GiftTakerRootMachineOutput =
   | {
@@ -43,14 +62,9 @@ type GiftTakerRootMachineOutput =
       value: GiftTakerClaimingActorErrors
     }
 
-type GiftTakerRootMachineContext = {
-  error: null | GiftTakerClaimingActorErrors
-  multiPayload: null | MultiPayload
-  intentHashes: null | string[]
-}
-
 export const giftTakerRootMachine = setup({
   types: {
+    input: {} as GiftTakerRootMachineInput,
     context: {} as GiftTakerRootMachineContext,
     output: {} as GiftTakerRootMachineOutput,
     events: {} as {
@@ -62,6 +76,36 @@ export const giftTakerRootMachine = setup({
     },
   },
   actors: {
+    openSecretActor: fromPromise(
+      async ({
+        input,
+      }: {
+        input: {
+          secretKey: string
+          tokenList: (BaseTokenInfo | UnifiedTokenInfo)[]
+        }
+      }) => {
+        const giftInfoResult = await getGiftInfo(
+          input.secretKey,
+          input.tokenList
+        )
+
+        if (giftInfoResult.isErr()) {
+          return {
+            tag: "err",
+            value: {
+              reason: giftInfoResult.unwrapErr(),
+            },
+          }
+        }
+        return {
+          tag: "ok",
+          value: {
+            giftInfo: giftInfoResult.unwrap(),
+          },
+        }
+      }
+    ),
     signingActor: fromPromise(
       async ({
         input,
@@ -110,46 +154,48 @@ export const giftTakerRootMachine = setup({
     isOk: (_, params: { tag: "ok" | "err" }) => params.tag === "ok",
   },
 }).createMachine({
-  /** @xstate-layout N4IgpgJg5mDOIC5QAoC2BDAxgCwJYDswBKAOlwgBswBiAYQHkA5AMQEkAlAWQH1aAZAIKtOAbQAMAXUSgADgHtYuAC645+aSAAeiALQAmAOwBmEkaMA2Q+bEBOAKxmALObsAaEAE9dARgAc3knN-byNfUKCQvT0AX2j3NCw8QlJyKmoBACF6dgAVXkFhcSkkEHlFFTUNbQRvA0cSXxtveyM9MUM9Xz03T0RzAMdfRzFvRzshmzFnI1j4jBwCYhJFKHwCKGoINTAyfAA3OQBrHZW1-Ch2MAAzIo0y5VV1Eur9G18G3wMxOzsDPW9zI4DOZ3F4alESGIjHYxN8LOYbE1HDM4iAEgtkiRMBR0LhUOtNttdgdjiR0UkltjcfjzggCAdMOgKvgircSvdmVVdK16uZgd5vDCfjY9GNQYg7HoTDZrEDPkZBYDZmj5hTSFS8QStoRiUcduTFuqcZrafS5IzmazvMVZAoHpVnohESQDADakZBm9fBNxQgYWISG8jEibI4bBZHI5lQbMRqaRswAAnRNyRMkGQ4pRXVOoMmqw1Y43xun7c1Mx6syR3O2cx0IHQOOyB7xiXzjPSAqY9MENgwkQajAyNX6TToA2Ko-ByCBwDQx4jV8qPLn18bSlttrqdsW9evQptfPxGYwGSVQ6P5zGpMCL+1PUAvKImKJ6N4hLp+De+-RBEhtPzTKMIxhheiQFqc6y3rWD7cqKLp2I4UTmP04zNDK35DCQQpiOYEantCUaovORrUpB7I1sudavE2HoGG8a5hnRvy+q+9TIsMNjAp8dHnkRl6UkWkBQZRMH1h2Ab+M4rbQqKZgGAYvp8uYga2Megy4Z0dSgRiSzoAARqmShCeRS4OqJR5-m6fyylCkaKcCKnhnUvgaZ8hGxEAA */
+  /** @xstate-layout N4IgpgJg5mDOIC5QAoC2BDAxgCwJYDswBKAOlwgBswBiAYQHkA5AMQEkAlAWQH1aAZAIKtOAbQAMAXUSgADgHtYuAC645+aSAAeiALQA2PWJIB2AIxixAVgCcp0zYAcAFgBMAGhABPXaYfWSTsbGLmLGAMym1lbWTnoAvnEeaFh4hKRyMmD4AMpgmABOYErUEGpgZPgAbnIA1uUZWbkFRexgAGbiUkgg8ooqahraCPrW-sZ6DnpOYdYuseZhHt7DYQ5GxpPBEy4OpnrW8YkgyTgExCSYFOi4qARQJIpQ+HclZRXVdQ+4T3etHZIaXrKVTqbpDEZ6EhiBwOCJOMSrMTWXZLRAuUwuExhMwTCx6UxOSLWBJJDCnNIXK43O5fH74KCvQjvWrlR7Pel-ESmLqyBTAgZg3RhSyYsQuOYuKLGMR6SyxSyohDozHhMwHCZ7SzYsIk45k1LnS7XW702nshlgfL5OT5EgyK5KNo21Bm37tTqAvn9UGgcHIywkSyWIKSlxhQyRRZeRDwkguLXC5zS7EIw6klJnUhG6mmmQAVwARhRcLBUgzSkyCB9yicDVmqSb7vmiyWywgq3JMOhvZ0Pd0gd7BrpjISSHodvs1aq9FHllrjCYLJZfE5LAiZbra5nKcaac3i6WXhXyh3PluKdnG3bCwe2x2uz3JFyeT0vSChytViY14iZtDkc4irzouVgrj+G5HOehoNnuN6ti8lrWra9rdk6+QulB9a7rmcGHvS7ZVJ23Ygr2AL9m+Aq+j4FimCQYSxLCDjGAc8amLOiDhpCjGmCOwb7HK0wJEc+ByBAcAaJhnp9O+grDHYq4mMEOyuJKfirIqOiBEYERiGxVgwmIrgOJYm76tu5BUFJ-I+louj4kYNh6EEQQGJK6nRsM8aQuKMLmJYUyEvRpkZhSDQ5HkhRKFZg6yTo5jWAuIbKeKyLWO5yw6KsmK7LpOw7DEYRisF5LQdhUDRTJVHDOM2lLquGJIoV7HDA4KppSK462KEThOMSkFmReMGmmydwVZRtnVXYJDWEGIpsXK47BkBtHSrKuWBEZLnFXWO45k2uFlmNNngmYmKFVY9UhGlCKKuGTgkLsgT2OMsTSi4xjbdul6QEdH76GYD2tTY4xBLpKIeU5kJRGlI6TGEOwjp9FLoAWNpKD95HSeN4LxgG8YIpYzgylEWoOIqkPTY1sMzgjhwJEAA */
   context: ({ input }) => ({
     ...input,
     error: null,
+    giftInfo: null,
     multiPayload: null,
     intentHashes: null,
   }),
 
-  initial: "idle",
+  initial: "openSecret",
 
   states: {
     idle: {
       on: {
-        CONFIRM_CLAIM: "signing",
+        CONFIRM_CLAIM: "claiming",
       },
     },
-    signing: {
+    openSecret: {
       invoke: {
-        id: "signingRef",
-        src: "signingActor",
+        id: "openSecretRef",
+        src: "openSecretActor",
 
-        input: ({ event }) => {
-          assertEvent(event, "CONFIRM_CLAIM")
-          return {
-            giftInfo: event.params.giftInfo,
-            signerCredentials: event.params.signerCredentials,
-          }
-        },
+        input: ({ context }) => context,
 
         onDone: [
           {
-            target: "claiming",
+            target: "idle",
             guard: ({ event }) => event.output.tag === "ok",
             actions: assign({
-              multiPayload: ({ event }) => {
-                assert(
-                  event.output.value.multiPayload,
-                  "multiPayload is not defined"
-                )
-                return event.output.value.multiPayload
+              giftInfo: ({ event }) => {
+                assert(event.output.value.giftInfo, "giftInfo is not defined")
+                return event.output.value.giftInfo
+              },
+            }),
+          },
+          {
+            actions: assign({
+              error: ({ event }) => {
+                assert(event.output.tag === "err")
+                return {
+                  reason: event.output.value.reason,
+                } as GiftTakerClaimingActorErrors
               },
             }),
           },
@@ -157,40 +203,93 @@ export const giftTakerRootMachine = setup({
       },
     },
     claiming: {
-      invoke: {
-        src: "publishingActor",
-        input: ({ context }) => {
-          const multiPayload = context.multiPayload
-          assert(multiPayload, "multiPayload is not defined")
-          return {
-            multiPayload,
-          }
-        },
-        onDone: [
-          {
-            guard: ({ event }) => {
-              return event.output.giftStatus === "published"
+      entry: "clearError",
+
+      initial: "signing",
+
+      states: {
+        signing: {
+          invoke: {
+            id: "signingRef",
+            src: "signingActor",
+
+            input: ({ event }) => {
+              assertEvent(event, "CONFIRM_CLAIM")
+              return {
+                giftInfo: event.params.giftInfo,
+                signerCredentials: event.params.signerCredentials,
+              }
             },
-            target: "claimed",
-            actions: assign({
-              intentHashes: ({ event }) => {
-                assert(event.output.giftStatus === "published")
-                return event.output.intentHashes
+
+            onError: {
+              target: "#(machine).idle",
+              actions: [
+                { type: "logError", params: ({ event }) => event },
+                { type: "setError", params: { reason: "CANNOT_SIGN_GIFT" } },
+              ],
+            },
+
+            onDone: [
+              {
+                target: "publishing",
+                guard: ({ event }) => event.output.tag === "ok",
+                actions: assign({
+                  multiPayload: ({ event }) => {
+                    assert(
+                      event.output.value.multiPayload,
+                      "multiPayload is not defined"
+                    )
+                    return event.output.value.multiPayload
+                  },
+                }),
               },
-            }),
+              {
+                target: "#(machine).idle",
+                actions: {
+                  type: "setError",
+                  params: { reason: "CANNOT_SIGN_GIFT" },
+                },
+              },
+            ],
           },
-          {
-            target: "aborted",
-            actions: assign({
-              error: () => ({
-                reason: "CANNOT_CLAIM_GIFT" as const,
-              }),
-            }),
+        },
+        publishing: {
+          invoke: {
+            src: "publishingActor",
+            input: ({ context }) => {
+              const multiPayload = context.multiPayload
+              assert(multiPayload, "multiPayload is not defined")
+              return {
+                multiPayload,
+              }
+            },
+            onDone: [
+              {
+                guard: ({ event }) => {
+                  return event.output.giftStatus === "published"
+                },
+                target: "#(machine).claimed",
+                actions: assign({
+                  intentHashes: ({ event }) => {
+                    assert(event.output.giftStatus === "published")
+                    return event.output.intentHashes
+                  },
+                }),
+              },
+              {
+                target: "#(machine).aborted",
+                actions: assign({
+                  error: () => ({
+                    reason: "CANNOT_CLAIM_GIFT" as const,
+                  }),
+                }),
+              },
+            ],
+            onError: {
+              target: "#(machine).idle",
+              actions: [{ type: "logError", params: ({ event }) => event }],
+            },
           },
-        ],
-        onError: {
-          target: "idle",
-          actions: [{ type: "logError", params: ({ event }) => event }],
         },
       },
     },

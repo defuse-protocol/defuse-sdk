@@ -1,7 +1,5 @@
-import type { Result } from "@thames/monads"
 import { useActorRef, useSelector } from "@xstate/react"
-import { useEffect, useState } from "react"
-import { logger } from "src/logger"
+import {} from "react"
 import type {} from "xstate"
 import { WidgetRoot } from "../../../components/WidgetRoot"
 import type { SignerCredentials } from "../../../core/formatters"
@@ -9,7 +7,7 @@ import { SwapWidgetProvider } from "../../../providers/SwapWidgetProvider"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../../types/base"
 import type { ChainType } from "../../../types/deposit"
 import { giftTakerRootMachine } from "../actors/giftTakerRootMachine"
-import { type GiftInfo, getGiftInfo } from "../utils/getGiftInfo"
+import {} from "../utils/getGiftInfo"
 import { GiftTakerForm } from "./GiftTakerForm"
 import { GiftTakerInvalidClaim } from "./GiftTakerInvalidClaim"
 import { GiftTakerSuccessScreen } from "./GiftTakerSuccessScreen"
@@ -48,45 +46,42 @@ function GiftTakerScreens({
 }: GiftTakerWidgetProps) {
   const loading = <div>Loading...</div>
 
-  const giftTakerClaimRef = useActorRef(giftTakerRootMachine)
+  const giftTakerClaimRef = useActorRef(giftTakerRootMachine, {
+    input: {
+      secretKey,
+      tokenList,
+    },
+  })
 
   const signerCredentials: SignerCredentials | null =
     userAddress != null && userChainType != null
       ? { credential: userAddress, credentialType: userChainType }
       : null
 
-  const [giftInfo, setGiftInfo] = useState<Result<GiftInfo, string> | null>(
-    null
-  )
   const snapshot = useSelector(giftTakerClaimRef, (state) => state)
 
-  useEffect(() => {
-    getGiftInfo(secretKey, tokenList).then((result) => {
-      if (result.isErr()) {
-        logger.error(result.unwrapErr())
-      }
-      setGiftInfo(result)
-    })
-  }, [secretKey, tokenList])
+  if (snapshot?.context.error != null) {
+    return <GiftTakerInvalidClaim error={snapshot.context.error.reason} />
+  }
 
-  if (giftInfo == null) {
+  if (snapshot.context.giftInfo == null) {
     return loading
   }
 
-  return giftInfo.match({
-    ok: (giftInfo) =>
-      snapshot.status === "done" && snapshot.context.intentHashes ? (
+  return (
+    <>
+      {snapshot.status === "done" && snapshot.context.intentHashes ? (
         <GiftTakerSuccessScreen
-          giftInfo={giftInfo}
+          giftInfo={snapshot.context.giftInfo}
           intentHashes={snapshot.context.intentHashes}
         />
       ) : (
         <GiftTakerForm
-          giftInfo={giftInfo}
+          giftInfo={snapshot.context.giftInfo}
           signerCredentials={signerCredentials}
           giftTakerClaimRef={giftTakerClaimRef}
         />
-      ),
-    err: (error) => <GiftTakerInvalidClaim error={error} />,
-  })
+      )}
+    </>
+  )
 }

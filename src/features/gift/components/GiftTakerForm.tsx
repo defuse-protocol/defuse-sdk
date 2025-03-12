@@ -29,8 +29,7 @@ export function GiftTakerForm({
   )
 
   const snapshot = useSelector(giftTakerClaimRef, (state) => state)
-  const processing =
-    snapshot?.value === "signing" || snapshot?.value === "claiming"
+  const processing = snapshot?.matches("claiming")
   assert(amount != null)
 
   return (
