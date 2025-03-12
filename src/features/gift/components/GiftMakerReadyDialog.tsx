@@ -5,25 +5,17 @@ import type { ActorRefFrom } from "xstate"
 import { ButtonCustom } from "../../../components/Button/ButtonCustom"
 import { Copy } from "../../../components/IntentCard/CopyButton"
 import { BaseModalDialog } from "../../../components/Modal/ModalDialog"
-import type { SignerCredentials } from "../../../core/formatters"
 import type { giftMakerCancellationActor } from "../actors/giftMakerCancellationActor"
 import type { giftMakerReadyActor } from "../actors/giftMakerReadyActor"
-import type { SignMessage } from "../types/sharedTypes"
 import { ShareableGiftImage } from "./ShareableGiftImage"
 
 type GiftMakerReadyDialogProps = {
   readyGiftRef: ActorRefFrom<typeof giftMakerReadyActor>
-  signerCredentials: SignerCredentials
-  signMessage: SignMessage
   generateLink: (secretKey: string) => string
 }
 
 export function GiftMakerReadyDialog({
   readyGiftRef,
-  // biome-ignore lint/correctness/noUnusedVariables: <explanation>
-  signerCredentials,
-  // biome-ignore lint/correctness/noUnusedVariables: <explanation>
-  signMessage,
   generateLink,
 }: GiftMakerReadyDialogProps) {
   const { giftCancellationRef } = useSelector(readyGiftRef, (state) => ({

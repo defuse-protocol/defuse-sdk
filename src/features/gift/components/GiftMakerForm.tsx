@@ -18,7 +18,6 @@ import { formatTokenValue, formatUsdAmount } from "../../../utils/format"
 import getTokenUsdPrice from "../../../utils/getTokenUsdPrice"
 import { TokenAmountInputCard } from "../../deposit/components/DepositForm/TokenAmountInputCard"
 import { balanceAllSelector } from "../../machines/depositedBalanceMachine"
-import type { SendNearTransaction } from "../../machines/publicKeyVerifierMachine"
 import { formValuesSelector } from "../actors/giftMakerFormMachine"
 import type { giftMakerReadyActor } from "../actors/giftMakerReadyActor"
 import { giftMakerRootMachine } from "../actors/giftMakerRootMachine"
@@ -40,9 +39,6 @@ export type GiftMakerWidgetProps = {
   /** Sign message callback */
   signMessage: SignMessage
 
-  /** Send NEAR transaction callback */
-  sendNearTransaction: SendNearTransaction
-
   /** Function to generate a shareable trade link */
   generateLink: (secretKey: string) => string
 
@@ -59,8 +55,6 @@ export function GiftMakerForm({
   userChainType,
   initialToken,
   signMessage,
-  // biome-ignore lint/correctness/noUnusedVariables: <explanation>
-  sendNearTransaction,
   generateLink,
   referral,
 }: GiftMakerWidgetProps) {
@@ -151,8 +145,6 @@ export function GiftMakerForm({
         signerCredentials != null && (
           <GiftMakerReadyDialog
             readyGiftRef={readyGiftRef}
-            signerCredentials={signerCredentials}
-            signMessage={signMessage}
             generateLink={generateLink}
           />
         )}
