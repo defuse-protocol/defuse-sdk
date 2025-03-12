@@ -60,10 +60,9 @@ export function validateAddress(
  */
 function validateZcashAddress(address: string) {
   // Transparent address validation
-  // t1 for P2PKH addresses, t3 for P2SH addresses
-  const tAddrRegex = /^t[13][a-km-zA-HJ-NP-Z1-9]{33}$/
   if (address.startsWith("t1") || address.startsWith("t3")) {
-    return tAddrRegex.test(address)
+    // t1 for P2PKH addresses, t3 for P2SH addresses
+    return /^t[13][a-km-zA-HJ-NP-Z1-9]{33}$/.test(address)
   }
 
   // TEX address validation
