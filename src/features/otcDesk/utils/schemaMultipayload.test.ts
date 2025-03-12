@@ -23,12 +23,18 @@ import {
 
 describe("mulltipayload schemas", async () => {
   it.each([
+    // swap
     await signERC191(genSwapIntent),
     await signRawED25519(genSwapIntent),
-    await signRawED25519(genWithdrawIntent),
+    // withdraw
     await signERC191(genWithdrawIntent),
-    await signRawED25519(genEmptyIntent),
+    await signRawED25519(genWithdrawIntent),
+    // native withdraw
+    await signERC191(genNativeWithdrawIntent),
+    await signRawED25519(genNativeWithdrawIntent),
+    // no intents
     await signERC191(genEmptyIntent),
+    await signRawED25519(genEmptyIntent),
     // WebAuthn-P256 (empty intent)
     JSON.parse(
       '{"standard":"webauthn","public_key":"p256:QXi4C3LumN7Nk3Xh9fkwaiQWzMtK9Aeq1ZmHVx6dvgVK4ybEsYNsWgqDP3mXn3DABctvW4AWrfiHHsZfuLFejaK","authenticator_data":"e_38lYTpqGj6nGFLqMy9rPqabbuZNCeaNA7P6uNCpKwdAAAAAA","client_data_json":"{\\"type\\":\\"webauthn.get\\",\\"challenge\\":\\"UIJDmOpoatVOk9R3Wknw7Wkudm6yL0wclFUizAS7tZ8\\",\\"origin\\":\\"https://app.near-intents.org\\"}","payload":"{\\"signer_id\\":\\"0x2af28c6d39befc4486b94d247771b12370584718\\",\\"verifying_contract\\":\\"intents.near\\",\\"deadline\\":\\"2025-03-10T18:49:46.700Z\\",\\"nonce\\":\\"i5O1Z9ZyMz0HBJeLaracQfJOhame11//Mxgg+g9gbd0=\\",\\"intents\\":[]}","signature":"p256:4eMvwkk4YyfFXqs5g6TeaxfBjGCUkmqrsEyu47niHa2nsMwi9VDWTFA849KQCYAh8WC2DYbVyKNyMH7afvVxHFkp"}'
@@ -99,12 +105,25 @@ function genEmptyIntent(signerId: SignerCredentials) {
   return createEmptyIntentMessage({ signerId })
 }
 
-function genWithdrawIntent(signerId: SignerCredentials) {
+function genNativeWithdrawIntent(signerId: SignerCredentials) {
   return createWithdrawIntentMessage(
     {
       type: "to_near",
       amount: 100n,
       tokenAccountId: "wrap.near",
+      receiverId: "user.near",
+      storageDeposit: 0n,
+    },
+    { signerId }
+  )
+}
+
+function genWithdrawIntent(signerId: SignerCredentials) {
+  return createWithdrawIntentMessage(
+    {
+      type: "to_near",
+      amount: 100n,
+      tokenAccountId: "usdc.near",
       receiverId: "user.near",
       storageDeposit: 150000000000n,
     },
