@@ -9,6 +9,7 @@ import { BaseModalDialog } from "../../../components/Modal/ModalDialog"
 import type { giftMakerCancellationActor } from "../actors/giftMakerCancellationActor"
 import type { giftMakerReadyActor } from "../actors/giftMakerReadyActor"
 import { ShareableGiftImage } from "./ShareableGiftImage"
+import { ErrorReason } from "./shared/ErrorReason"
 
 type GiftMakerReadyDialogProps = {
   readyGiftRef: ActorRefFrom<typeof giftMakerReadyActor>
@@ -157,11 +158,10 @@ function CancellationDialog({ actorRef }: CancellationDialogProps) {
             work.
           </Dialog.Description>
 
-          {snapshot?.context.error != null && (
-            <div className="text-red-700">
-              {snapshot?.context.error?.reason}
-            </div>
-          )}
+          {snapshot?.context.error != null &&
+            typeof snapshot.context.error?.reason === "string" && (
+              <ErrorReason reason={snapshot.context.error?.reason} />
+            )}
 
           <div className="flex flex-col md:flex-row justify-center gap-3 mt-5">
             <Button

@@ -10,6 +10,7 @@ import type { SignerCredentials } from "../../../core/formatters"
 import type { giftTakerRootMachine } from "../actors/giftTakerRootMachine"
 import type { GiftInfo } from "../utils/getGiftInfo"
 import { ShareableGiftImage } from "./ShareableGiftImage"
+import { ErrorReason } from "./shared/ErrorReason"
 
 export type GiftTakerFormProps = {
   giftInfo: GiftInfo
@@ -53,9 +54,10 @@ export function GiftTakerForm({
         message="You've received a gift! Click to claim it."
       />
 
-      {snapshot?.context.error != null && (
-        <div className="text-red-700">{snapshot?.context.error?.reason}</div>
-      )}
+      {snapshot?.context.error != null &&
+        typeof snapshot.context.error?.reason === "string" && (
+          <ErrorReason reason={snapshot.context.error?.reason} />
+        )}
       {snapshot.status === "done" && (
         <div className="flex justify-center mt-5">Gift claimed!</div>
       )}
