@@ -14,7 +14,11 @@ import type {
 } from "../../../types/swap"
 import { assert } from "../../../utils/assert"
 import type { EscrowCredentials } from "../utils/generateEscrowCredentials"
-import { deriveSecretKey, parseGiftSecret } from "../utils/parseGiftSecret"
+import {
+  deriveAccountId,
+  deriveSecretKey,
+  parseGiftSecret,
+} from "../utils/parseGiftSecret"
 import { signGiftTakerMessage } from "../utils/signGiftTakerMessage"
 
 export type GiftMakerCancellationActorInput = {
@@ -119,7 +123,7 @@ export const giftMakerCancellationActor = setup({
           tokenDiff,
           token: input.token,
           secretKey: parseResult.unwrap().secretKey,
-          userId: parseResult.unwrap().userId,
+          userId: deriveAccountId(parseResult.unwrap().secretKey),
         }
 
         const signature = await signGiftTakerMessage({

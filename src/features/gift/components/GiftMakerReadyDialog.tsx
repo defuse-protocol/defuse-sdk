@@ -54,7 +54,7 @@ function GiftMakerDialog({
   }
 
   return (
-    <BaseModalDialog open={true} onClose={finish} isDismissable>
+    <BaseModalDialog open onClose={finish} isDismissable>
       {/* Header Section */}
       <div className="flex flex-col items-center text-center mb-6">
         <Dialog.Title className="text-2xl font-black text-gray-900 dark:text-gray-100 mb-2">

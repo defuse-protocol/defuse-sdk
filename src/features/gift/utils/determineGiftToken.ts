@@ -17,7 +17,7 @@ export type DetermineGiftTokenErr =
 
 export async function determineGiftToken(
   tokenList: (BaseTokenInfo | UnifiedTokenInfo)[],
-  userId: string
+  accountId: string
 ): Promise<Result<GiftToken, DetermineGiftTokenErr>> {
   try {
     const tokenIds = tokenList.flatMap((token) => {
@@ -27,7 +27,7 @@ export async function determineGiftToken(
     })
 
     const balances = await getDepositedBalances(
-      userAddressToDefuseUserId(userId, "near"),
+      userAddressToDefuseUserId(accountId, "near"),
       tokenIds,
       new providers.JsonRpcProvider({
         url: "https://nearrpc.aurora.dev",

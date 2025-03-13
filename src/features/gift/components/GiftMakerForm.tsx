@@ -1,9 +1,9 @@
 import { useActorRef, useSelector } from "@xstate/react"
 import clsx from "clsx"
 import { useEffect, useMemo } from "react"
-import type { ActorRefFrom, SnapshotFrom } from "xstate"
+import { ButtonCustom } from "src/components/Button/ButtonCustom"
+import type { ActorRefFrom } from "xstate"
 import { BlockMultiBalances } from "../../../components/Block/BlockMultiBalances"
-import { ButtonCustom } from "../../../components/Button/ButtonCustom"
 import type { ModalSelectAssetsPayload } from "../../../components/Modal/ModalSelectAssets"
 import { SelectAssets } from "../../../components/SelectAssets"
 import type { SignerCredentials } from "../../../core/formatters"
@@ -254,34 +254,17 @@ export function GiftMakerForm({
           </div>
         </div>
 
-        {renderSubmitButton(rootSnapshot)}
+        <ButtonCustom
+          type="submit"
+          size="lg"
+          variant={rootSnapshot.matches("signing") ? "secondary" : "primary"}
+          isLoading={rootSnapshot.matches("signing")}
+        >
+          {rootSnapshot.matches("editing")
+            ? "Create gift link"
+            : "Confirm transaction in your wallet..."}
+        </ButtonCustom>
       </form>
     </div>
-  )
-}
-
-function renderSubmitButton(
-  snapshot: SnapshotFrom<typeof giftMakerRootMachine>
-) {
-  let caption = "Create swap link"
-
-  switch (true) {
-    case snapshot.matches("editing"):
-      caption = "Create gift link"
-      break
-    case snapshot.matches("signing"):
-      caption = "Confirm transaction in your wallet..."
-      break
-  }
-
-  return (
-    <ButtonCustom
-      type="submit"
-      size="lg"
-      variant={snapshot.matches("signing") ? "secondary" : "primary"}
-      isLoading={snapshot.matches("signing")}
-    >
-      {caption}
-    </ButtonCustom>
   )
 }
