@@ -20,8 +20,10 @@ import { Form } from "../../../components/Form"
 import { FieldComboInput } from "../../../components/Form/FieldComboInput"
 import { SwapIntentCard } from "../../../components/IntentCard/SwapIntentCard"
 import type { ModalSelectAssetsPayload } from "../../../components/Modal/ModalSelectAssets"
+import { SWAP_TOKEN_FLAGS } from "../../../constants/swap"
 import { useModalStore } from "../../../providers/ModalStoreProvider"
 import { ModalType } from "../../../stores/modalStore"
+import type { SwappableToken } from "../../../types/swap"
 import { compareAmounts } from "../../../utils/tokenUtils"
 import {
   balanceSelector,
@@ -95,14 +97,16 @@ export const SwapForm = ({
     })
   }, [tokenIn, tokenOut, getValues, setValue, swapUIActorRef.send])
 
-  const { setModalType, payload, onCloseModal } = useModalStore(
-    (state) => state
-  )
+  const { setModalType, payload } = useModalStore((state) => state)
 
-  const openModalSelectAssets = (fieldName: string) => {
+  const openModalSelectAssets = (
+    fieldName: string,
+    token: SwappableToken | undefined
+  ) => {
     setModalType(ModalType.MODAL_SELECT_ASSETS, {
+      ...(payload as ModalSelectAssetsPayload),
       fieldName,
-      selectToken: undefined,
+      [fieldName]: token,
       balances: depositedBalanceRef?.getSnapshot().context.balances,
     })
   }
@@ -114,13 +118,15 @@ export const SwapForm = ({
     ) {
       return
     }
-    const { modalType, fieldName, token } = payload as ModalSelectAssetsPayload
+    const { modalType, fieldName } = payload as ModalSelectAssetsPayload
+    const _payload = payload as ModalSelectAssetsPayload
+    const token = _payload[fieldName || "token"]
     if (modalType === ModalType.MODAL_SELECT_ASSETS && fieldName && token) {
       const { tokenIn, tokenOut } =
         swapUIActorRef.getSnapshot().context.formValues
 
       switch (fieldName) {
-        case "tokenIn":
+        case SWAP_TOKEN_FLAGS.IN:
           if (tokenOut === token) {
             // Don't need to switch amounts, when token selected from dialog
             swapUIActorRef.send({
@@ -131,7 +137,7 @@ export const SwapForm = ({
             swapUIActorRef.send({ type: "input", params: { tokenIn: token } })
           }
           break
-        case "tokenOut":
+        case SWAP_TOKEN_FLAGS.OUT:
           if (tokenIn === token) {
             // Don't need to switch amounts, when token selected from dialog
             swapUIActorRef.send({
@@ -143,9 +149,8 @@ export const SwapForm = ({
           }
           break
       }
-      onCloseModal(undefined)
     }
-  }, [payload, onCloseModal, swapUIActorRef])
+  }, [payload, swapUIActorRef])
 
   const { onSubmit } = useContext(SwapSubmitterContext)
 
@@ -210,7 +215,7 @@ export const SwapForm = ({
             fieldName="amountIn"
             selected={tokenIn}
             handleSelect={() => {
-              openModalSelectAssets("tokenIn")
+              openModalSelectAssets(SWAP_TOKEN_FLAGS.IN, tokenIn)
             }}
             className="border border-gray-200/50 rounded-t-xl"
             required
@@ -232,7 +237,7 @@ export const SwapForm = ({
             fieldName="amountOut"
             selected={tokenOut}
             handleSelect={() => {
-              openModalSelectAssets("tokenOut")
+              openModalSelectAssets(SWAP_TOKEN_FLAGS.OUT, tokenOut)
             }}
             className="border border-gray-200/50 rounded-b-xl mb-5"
             errors={errors}

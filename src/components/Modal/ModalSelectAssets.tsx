@@ -27,12 +27,14 @@ import { SearchBar } from "../SearchBar"
 import { ModalDialog } from "./ModalDialog"
 import { ModalNoResults } from "./ModalNoResults"
 
-type Token = BaseTokenInfo | UnifiedTokenInfo
+export type Token = BaseTokenInfo | UnifiedTokenInfo
 
 export type ModalSelectAssetsPayload = {
   modalType?: ModalType.MODAL_SELECT_ASSETS
   token?: Token
-  fieldName?: string
+  tokenIn?: Token
+  tokenOut?: Token
+  fieldName?: "tokenIn" | "tokenOut" | "token"
   balances?: BalanceMapping
   accountId?: string
 }
@@ -76,7 +78,8 @@ export const ModalSelectAssets = () => {
     const newPayload: ModalSelectAssetsPayload = {
       ...(payload as ModalSelectAssetsPayload),
       modalType: ModalType.MODAL_SELECT_ASSETS,
-      token: selectedItem.token,
+      [(payload as ModalSelectAssetsPayload).fieldName || "token"]:
+        selectedItem.token,
     }
     onCloseModal(newPayload)
   }
@@ -85,11 +88,10 @@ export const ModalSelectAssets = () => {
     if (!data.size && !isLoading) {
       return
     }
-    const { selectToken } = payload as {
-      selectToken: Token | undefined
-      fieldName: string
-      balances?: BalanceMapping
-    }
+
+    const _payload = payload as ModalSelectAssetsPayload
+    const fieldName = _payload.fieldName || "token"
+    const selectToken = _payload[fieldName]
 
     // Warning: This is unsafe type casting, payload could be anything
     const balances = (payload as ModalSelectAssetsPayload).balances ?? {}
@@ -140,7 +142,7 @@ export const ModalSelectAssets = () => {
   return (
     <ModalDialog>
       <div className="flex flex-col min-h-[680px] md:max-h-[680px] h-full">
-        <div className="z-20 h-auto flex-none -mt-[var(--inset-padding-top)] -mr-[var(--inset-padding-right)] -ml-[var(--inset-padding-left)] px-5 pt-7 pb-4 sticky -top-[var(--inset-padding-top)]">
+        <div className="z-20 h-auto flex-none -mt-[var(--inset-padding-top)] -mr-[var(--inset-padding-right)] -ml-[var(--inset-padding-left)] px-5 pt-7 pb-4 sticky -top-[var(--inset-padding-top)] bg-gray-1">
           <div className="flex flex-col gap-4">
             <div className="flex flex-row justify-between items-center">
               <Text size="5" weight="bold">
