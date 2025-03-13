@@ -189,15 +189,16 @@ export const WithdrawForm = ({
   const { setModalType, data: modalSelectAssetsData } = useModalController<{
     modalType: ModalType
     token: BaseTokenInfo | UnifiedTokenInfo | undefined
-  }>(ModalType.MODAL_SELECT_ASSETS, "token")
+  }>(ModalType.MODAL_SELECT_ASSETS)
 
   const updateTokens = useTokensStore((state) => state.updateTokens)
 
   const handleSelect = () => {
     updateTokens(tokenList)
+    const fieldName = "token"
     setModalType(ModalType.MODAL_SELECT_ASSETS, {
-      fieldName: "tokenIn",
-      selectToken: undefined,
+      fieldName,
+      [fieldName]: token,
       balances: depositedBalanceRef?.getSnapshot().context.balances,
     })
   }

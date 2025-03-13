@@ -81,7 +81,7 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
   ) => {
     setModalType(ModalType.MODAL_SELECT_ASSETS, {
       fieldName,
-      selectToken,
+      [fieldName]: selectToken,
     })
   }
 
