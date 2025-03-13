@@ -101,7 +101,7 @@ export function GiftMakerForm({
   const { setModalType, data: modalSelectAssetsData } = useModalController<{
     modalType: ModalType.MODAL_SELECT_ASSETS
     token: BaseTokenInfo | UnifiedTokenInfo | undefined
-  }>(ModalType.MODAL_SELECT_ASSETS, "token")
+  }>(ModalType.MODAL_SELECT_ASSETS)
 
   const updateTokens = useTokensStore((state) => state.updateTokens)
 
