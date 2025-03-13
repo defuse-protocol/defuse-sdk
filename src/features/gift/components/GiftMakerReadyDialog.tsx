@@ -1,6 +1,7 @@
 import { Check as CheckIcon, Copy as CopyIcon } from "@phosphor-icons/react"
 import { Button, Dialog, Spinner } from "@radix-ui/themes"
 import { useSelector } from "@xstate/react"
+import { useCallback } from "react"
 import type { ActorRefFrom } from "xstate"
 import { ButtonCustom } from "../../../components/Button/ButtonCustom"
 import { Copy } from "../../../components/IntentCard/CopyButton"
@@ -120,24 +121,29 @@ interface CancellationDialogProps {
 function CancellationDialog({ actorRef }: CancellationDialogProps) {
   const snapshot = useSelector(actorRef ?? undefined, (state) => state)
 
+  const abortCancellation = useCallback(() => {
+    actorRef?.send({ type: "ABORT_CANCELLATION" })
+  }, [actorRef])
+
+  const ackCancellationImpossible = useCallback(() => {
+    actorRef?.send({ type: "ACK_CANCELLATION_IMPOSSIBLE" })
+  }, [actorRef])
+
+  const confirmCancellation = useCallback(() => {
+    actorRef?.send({ type: "CONFIRM_CANCELLATION" })
+  }, [actorRef])
+
   return (
     <BaseModalDialog
       open={!!actorRef}
-      onClose={() => {
-        actorRef?.send({ type: "ABORT_CANCELLATION" })
-      }}
+      onClose={abortCancellation}
       isDismissable
     >
       {snapshot?.matches("idleUncancellable") ? (
         <>
           <div>This gift is either already cancelled or executed.</div>
 
-          <Button
-            type="button"
-            onClick={() => {
-              actorRef?.send({ type: "ACK_CANCELLATION_IMPOSSIBLE" })
-            }}
-          >
+          <Button type="button" onClick={ackCancellationImpossible}>
             Ok
           </Button>
         </>
@@ -164,7 +170,7 @@ function CancellationDialog({ actorRef }: CancellationDialogProps) {
               variant="outline"
               color="gray"
               className="md:flex-1 font-bold"
-              onClick={() => actorRef?.send({ type: "ABORT_CANCELLATION" })}
+              onClick={abortCancellation}
             >
               Keep
             </Button>
@@ -175,11 +181,7 @@ function CancellationDialog({ actorRef }: CancellationDialogProps) {
               variant="solid"
               color="red"
               className="md:flex-1 font-bold"
-              onClick={() =>
-                actorRef?.send({
-                  type: "CONFIRM_CANCELLATION",
-                })
-              }
+              onClick={confirmCancellation}
             >
               <Spinner loading={!!snapshot?.matches("cancelling")} />
               {snapshot?.matches("cancelling")
