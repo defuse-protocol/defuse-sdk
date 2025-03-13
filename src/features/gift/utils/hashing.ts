@@ -42,7 +42,13 @@ export async function hashing(
   const payloadSerialized = borshSerialize(nep413PayloadSchema, payload)
   const baseInt = 2 ** 31 + standard
   const baseIntSerialized = borshSerialize(BorshSchema.u32, baseInt)
-  const combinedData = Buffer.concat([baseIntSerialized, payloadSerialized])
+
+  // Combine serialized data
+  const combinedData = new Uint8Array(
+    baseIntSerialized.length + payloadSerialized.length
+  )
+  combinedData.set(baseIntSerialized)
+  combinedData.set(payloadSerialized, baseIntSerialized.length)
 
   // Hash the combined data
   const hashBuffer = await crypto.subtle.digest("SHA-256", combinedData)
