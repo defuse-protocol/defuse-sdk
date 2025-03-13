@@ -7,6 +7,7 @@ import type { ActorRefFrom, SnapshotFrom } from "xstate"
 import { BlockMultiBalances } from "../../../components/Block/BlockMultiBalances"
 import { ButtonCustom } from "../../../components/Button/ButtonCustom"
 import { SelectAssets } from "../../../components/SelectAssets"
+import { SWAP_TOKEN_FLAGS } from "../../../constants/swap"
 import type { SignerCredentials } from "../../../core/formatters"
 import { useModalController } from "../../../hooks/useModalController"
 import { useTokensUsdPrices } from "../../../hooks/useTokensUsdPrices"
@@ -15,6 +16,7 @@ import { ModalType } from "../../../stores/modalStore"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../../types/base"
 import type { MultiPayload } from "../../../types/defuse-contracts-types"
 import type { ChainType } from "../../../types/deposit"
+import type { SwappableToken } from "../../../types/swap"
 import { assert } from "../../../utils/assert"
 import { formatTokenValue, formatUsdAmount } from "../../../utils/format"
 import getTokenUsdPrice from "../../../utils/getTokenUsdPrice"
@@ -150,17 +152,23 @@ export function OtcMakerForm({
 
   const { setModalType, data: modalSelectAssetsData } = useModalController<{
     modalType: ModalType.MODAL_SELECT_ASSETS
-    token: BaseTokenInfo | UnifiedTokenInfo | undefined
-  }>(ModalType.MODAL_SELECT_ASSETS, "token")
+  }>(ModalType.MODAL_SELECT_ASSETS)
 
   const updateTokens = useTokensStore((state) => state.updateTokens)
 
-  const handleSelect = (fieldName: string) => {
+  const handleSelect = (
+    fieldName: string,
+    token: SwappableToken | undefined
+  ) => {
     updateTokens(tokenList)
+    const payload: ModalSelectAssetsPayload | undefined = modalSelectAssetsData
+
     setModalType(ModalType.MODAL_SELECT_ASSETS, {
+      ...(payload as ModalSelectAssetsPayload),
       fieldName,
-      selectToken: undefined,
-      balances: fieldName === "tokenIn" ? tokenInBalance : tokenOutBalance,
+      [fieldName]: token,
+      balances:
+        fieldName === SWAP_TOKEN_FLAGS.IN ? tokenInBalance : tokenOutBalance,
     })
   }
 
@@ -173,12 +181,15 @@ export function OtcMakerForm({
       return
     }
 
-    if (payload.token) {
-      const token = payload.token
-      payload.token = undefined // consume data, so it won't be triggered again
+    const _payload = payload as ModalSelectAssetsPayload
+    const { fieldName } = _payload
+    const token = _payload[fieldName || "token"]
+
+    if (token) {
+      _payload[fieldName || "token"] = undefined // consume data, so it won't be triggered again
 
       switch (payload.fieldName) {
-        case "tokenIn":
+        case SWAP_TOKEN_FLAGS.IN:
           if (formValues.tokenOut === token && formValues.tokenIn !== null) {
             formValuesRef.trigger.updateTokenOut({
               value: formValues.tokenIn,
@@ -186,7 +197,7 @@ export function OtcMakerForm({
           }
           formValuesRef.trigger.updateTokenIn({ value: token })
           break
-        case "tokenOut":
+        case SWAP_TOKEN_FLAGS.OUT:
           if (formValues.tokenIn === token && formValues.tokenOut !== null) {
             formValuesRef.trigger.updateTokenIn({
               value: formValues.tokenOut,
@@ -287,7 +298,9 @@ export function OtcMakerForm({
               tokenSlot={
                 <SelectAssets
                   selected={formValues.tokenIn ?? undefined}
-                  handleSelect={() => handleSelect("tokenIn")}
+                  handleSelect={() =>
+                    handleSelect(SWAP_TOKEN_FLAGS.IN, formValues.tokenIn)
+                  }
                 />
               }
               balanceSlot={
@@ -359,7 +372,9 @@ export function OtcMakerForm({
               tokenSlot={
                 <SelectAssets
                   selected={formValues.tokenOut ?? undefined}
-                  handleSelect={() => handleSelect("tokenOut")}
+                  handleSelect={() =>
+                    handleSelect(SWAP_TOKEN_FLAGS.OUT, formValues.tokenOut)
+                  }
                 />
               }
               balanceSlot={
