@@ -6,7 +6,10 @@ import type { PublishIntentsErr } from "../../../services/intentService"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../../types/base"
 import type { MultiPayload } from "../../../types/defuse-contracts-types"
 import type { GiftInfo } from "../utils/getGiftInfo"
-import { type GiftClaimActorOutput, giftClaimActor } from "./giftClaimActor"
+import {
+  type GiftClaimActorOutput,
+  giftClaimActor,
+} from "./shared/giftClaimActor"
 import { giftOpenSecretActor } from "./shared/giftOpenSecretActor"
 
 type GiftTakeClaimErr = {

@@ -1,14 +1,14 @@
 import { type SignerCredentials, formatSignedIntent } from "src/core/formatters"
 import type { MultiPayload } from "src/types/defuse-contracts-types"
 import { assertEvent, assign, fromPromise, setup } from "xstate"
-import { logger } from "../../../logger"
+import { logger } from "../../../../logger"
 import {
   type PublishIntentsErr,
   publishIntents,
-} from "../../../services/intentService"
-import { assert } from "../../../utils/assert"
-import type { GiftInfo } from "../utils/getGiftInfo"
-import { signGiftTakerMessage } from "../utils/signGiftTakerMessage"
+} from "../../../../services/intentService"
+import { assert } from "../../../../utils/assert"
+import type { GiftInfo } from "../../utils/getGiftInfo"
+import { signGiftTakerMessage } from "../../utils/signGiftTakerMessage"
 
 type GiftClaimActorErrors =
   | {
