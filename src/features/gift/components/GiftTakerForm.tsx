@@ -30,6 +30,7 @@ export function GiftTakerForm({
   )
 
   const snapshot = useSelector(giftTakerClaimRef, (state) => state)
+
   const processing = snapshot?.matches("claiming")
   assert(amount != null)
 
@@ -68,7 +69,6 @@ export function GiftTakerForm({
             giftTakerClaimRef.send({
               type: "CONFIRM_CLAIM",
               params: {
-                giftInfo,
                 signerCredentials,
               },
             })
