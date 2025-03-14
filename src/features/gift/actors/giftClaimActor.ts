@@ -23,9 +23,8 @@ type GiftClaimActorInput = {
 
 type GiftClaimActorContext = {
   error: null | GiftClaimActorErrors
-  giftInfo: null | GiftInfo
-  signerCredentials: null | SignerCredentials
-  multiPayload: null | MultiPayload
+  giftInfo: GiftInfo
+  signerCredentials: SignerCredentials
 }
 
 type GiftSignGiftActorOutput =
@@ -35,7 +34,7 @@ type GiftSignGiftActorOutput =
     }
   | { tag: "err"; value: GiftClaimActorErrors }
 
-type GiftClaimActorOutput =
+export type GiftClaimActorOutput =
   | {
       tag: "ok"
       value: {
@@ -52,20 +51,12 @@ export const giftClaimActor = setup({
     input: {} as GiftClaimActorInput,
     output: {} as GiftClaimActorOutput,
     context: {} as GiftClaimActorContext,
-    events: {} as
-      | {
-          type: "CLAIM_GIFT"
-          params: {
-            giftInfo: GiftInfo
-            signerCredentials: SignerCredentials
-          }
-        }
-      | {
-          type: "_INTERNAL_SIGNED"
-          params: {
-            multiPayload: MultiPayload
-          }
-        },
+    events: {} as {
+      type: "_INTERNAL_SIGNED"
+      params: {
+        multiPayload: MultiPayload
+      }
+    },
   },
   actors: {
     signGiftActor: fromPromise(
@@ -143,21 +134,14 @@ export const giftClaimActor = setup({
   },
 }).createMachine({
   /** @xstate-layout N4IgpgJg5mDOIC5QAoC2BDAxgCwJYDswBKAOlwgBswBiAYQBkBBASQFkB9AcWYDEAVANoAGALqJQABwD2sXABdcU-OJAAPRAFYATABoQAT0QAOAIwkALAE5rRy6fNCTWreYC+rvWix5CpTBXRcVAIoElkofBDqCCUwMnwANykAazjw-E5cADM5ACUwLOExJBBpWQUlFXUEAHYakiEAZiMaywA2RzaW1qM9QwRGoQ0GoSMhcZqNQcatNvdPDBwCYhJ-QOD8UPSosAAnXaldkgkAuSzD1DDcCMyc-MLRFTL5RWUS6vazGvMtITstRoaDQmNqNPqIExGcwkGptIEaIQ1KEudqNeYgLxLXyrAJBEJXCJRdjMAByfAAorkSYx6OwAMrMTgk8kAESKTxkL0q70QjXMZhMDi0lhm2laLg04IGlmhkx6k0s4x+lnRmJ8KzWeM2xwArgAjCi4WA+KDRWLxJKpXUGo3YW55ArskrPCpvUAfGpfH5-IwAoEgsEGRDmOEkJxWGp-LSmayNNEeDGLdV+XEbUISfWG41RGKEC0pOIZm3G+33AQmYqSTmuqqIT4w73-QHA0FSrRIkhaSFtRVGGYA4WqpPLFPrfFFrMm6h7A5HE7oM4Xa2T0uOx7O6uvWsISyehu-Jv+1tBgZ7tqevujMZdtomdwJ-BSCBwFRqkcc8pbnkIAC0VhIQJWB0SLAdYUo-m0IzjIiNSNEisHtBoQ7eCOZCUGAH5cm6agQtGWgkKCsx1C0Iq+m2u4kFC2hTK0fLdMhWIaqmISYTW34-mYgHtIiRigYq0ZSiYkYAaMEz8vyQLfAxyY4mO2rbJsrFfu6waQeY5gIo0lhdlpvwmFKgL1AiYxCD2XSKkhCZvtimppsutosRun7cipCAaOYRgkCKnqNHCu51CKBl7pMJmApYQIikIbhWcONmppASkuThCDhpYDSNCYTjWHUsHuVKIb4S0VguEJ4zNPG7hAA */
-  context: {
+  context: ({ input }) => ({
     error: null,
-    giftInfo: null,
-    signerCredentials: null,
-    multiPayload: null,
-  },
+    ...input,
+  }),
 
-  initial: "idle",
+  initial: "claiming",
 
   states: {
-    idle: {
-      on: {
-        CLAIM_GIFT: "claiming",
-      },
-    },
     claiming: {
       entry: "clearError",
 
@@ -169,13 +153,15 @@ export const giftClaimActor = setup({
             id: "signGiftRef",
             src: "signGiftActor",
 
-            input: ({ event }) => {
-              assertEvent(event, "CLAIM_GIFT")
-              return event.params
+            input: ({ context }) => {
+              return {
+                giftInfo: context.giftInfo,
+                signerCredentials: context.signerCredentials,
+              }
             },
 
             onError: {
-              target: "#(machine).idle",
+              target: "#(machine).claiming",
               actions: [{ type: "logError", params: ({ event }) => event }],
             },
 
@@ -183,8 +169,21 @@ export const giftClaimActor = setup({
               {
                 guard: {
                   type: "isOk",
-                  params: ({ event }) => ({ tag: event.output.tag }),
+                  params: ({ event }) => {
+                    return { tag: event.output.tag }
+                  },
                 },
+                actions: [
+                  {
+                    type: "completeSigning",
+                    params: ({ event }) => {
+                      assert(event.output.tag === "ok")
+                      return {
+                        output: { tag: "ok", value: event.output.value },
+                      }
+                    },
+                  },
+                ],
               },
             ],
           },
@@ -205,7 +204,7 @@ export const giftClaimActor = setup({
             },
 
             onError: {
-              target: "#(machine).idle",
+              target: "#(machine).claiming",
               actions: [{ type: "logError", params: ({ event }) => event }],
             },
 
@@ -218,7 +217,7 @@ export const giftClaimActor = setup({
                 },
               },
               {
-                target: "#(machine).idle",
+                target: "#(machine).claiming",
                 actions: {
                   type: "setError",
                   params: ({ event }) => {
@@ -237,13 +236,8 @@ export const giftClaimActor = setup({
       output: ({
         event,
       }: {
-        event: { output: { value: { intentHashes: string[] } } }
-      }): GiftClaimActorOutput => ({
-        tag: "ok",
-        value: {
-          intentHashes: event.output.value.intentHashes,
-        },
-      }),
+        event: { output: GiftClaimActorOutput }
+      }) => event.output,
     },
   },
 })
