@@ -1,10 +1,9 @@
 import { base64 } from "@scure/base"
-import { Err, Ok, type Result } from "@thames/monads"
 import { KeyPair } from "near-api-js"
+import { userAddressToDefuseUserId } from "src/utils/defuse"
 import type { DefuseUserId, SignerCredentials } from "../../../core/formatters"
 import { formatUserIdentity } from "../../../core/formatters"
 import type { NEP413SignatureData } from "../../../types/swap"
-import { userAddressToDefuseUserId } from "../../../utils/defuse"
 import {
   makeInnerTransferMessage,
   makeSwapMessage,
@@ -21,32 +20,26 @@ type GiftTakerMessage = {
 export async function signGiftTakerMessage({
   giftInfo,
   signerCredentials,
-}: GiftTakerMessage): Promise<Result<NEP413SignatureData, string>> {
+}: GiftTakerMessage): Promise<NEP413SignatureData> {
   const walletMessage = assembleWalletMessage({ giftInfo, signerCredentials })
+  const keyPair = KeyPair.fromString(giftInfo.secretKey)
 
-  try {
-    // With different types of escrow accounts this should be updated
-    const keyPair = KeyPair.fromString(giftInfo.secretKey)
-    const messageHash = await hashing(
-      walletMessage.NEP413.message,
-      walletMessage.NEP413.recipient,
-      walletMessage.NEP413.nonce,
-      413
-    )
+  // Claimed message should be NEP-413 within same standard as escrow account
+  const messageHash = await hashing({
+    ...walletMessage.NEP413,
+    standard: 413,
+  })
 
-    const signature = keyPair.sign(messageHash)
+  const signature = keyPair.sign(messageHash)
 
-    return Ok({
-      type: "NEP413",
-      signatureData: {
-        accountId: giftInfo.userId,
-        publicKey: keyPair.getPublicKey().toString(),
-        signature: base64.encode(signature.signature),
-      },
-      signedData: walletMessage.NEP413,
-    })
-  } catch {
-    return Err("CANNOT_SIGN_GIFT_TAKER_MESSAGE")
+  return {
+    type: "NEP413",
+    signatureData: {
+      accountId: giftInfo.userId,
+      publicKey: keyPair.getPublicKey().toString(),
+      signature: base64.encode(signature.signature),
+    },
+    signedData: walletMessage.NEP413,
   }
 }
 
@@ -56,11 +49,14 @@ function assembleWalletMessage({
 }: GiftTakerMessage) {
   const nonce = randomDefuseNonce()
 
+  // Signer should be with `near` credential type as we use ED25519 signing
+  const signerId = resolveSignerId(
+    userAddressToDefuseUserId(giftInfo.userId, "near")
+  )
+
   const innerMessage = makeInnerTransferMessage({
     tokenDeltas: [...Object.entries(giftInfo.tokenDiff)],
-    signerId: resolveSignerId(
-      userAddressToDefuseUserId(giftInfo.userId, "near")
-    ),
+    signerId,
     deadlineTimestamp: minutesFromNow(5),
     receiverId: signerCredentials.credential,
     memo: "GIFT_CLAIM",

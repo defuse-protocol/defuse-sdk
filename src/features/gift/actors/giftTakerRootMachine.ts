@@ -116,16 +116,9 @@ export const giftTakerRootMachine = setup({
           giftInfo: input.giftInfo,
           signerCredentials: input.signerCredentials,
         })
-        if (signGiftResult.isErr()) {
-          return {
-            tag: "err",
-            value: {
-              reason: "CANNOT_SIGN_GIFT",
-            },
-          }
-        }
+
         const multiPayload = formatSignedIntent(
-          signGiftResult.unwrap(),
+          signGiftResult,
           input.signerCredentials
         )
         return {

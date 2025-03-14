@@ -132,20 +132,15 @@ export const giftMakerCancellationActor = setup({
         })
 
         const multiPayload = formatSignedIntent(
-          signature.unwrap(),
+          signature,
           input.signerCredentials
         )
-        if (signature.isErr()) {
-          return {
-            tag: "err" as const,
-            value: { reason: "CANNOT_FORMAT_SIGNED_INTENT" as const },
-          }
-        }
+
         return {
           tag: "ok" as const,
           value: {
             signerCredentials: input.signerCredentials,
-            signatureResult: signature.unwrap(),
+            signatureResult: signature,
             multiPayload,
           },
         }
