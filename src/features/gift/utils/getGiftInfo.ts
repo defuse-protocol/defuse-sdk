@@ -7,7 +7,7 @@ export type GiftInfo = {
   tokenDiff: Record<BaseTokenInfo["defuseAssetId"], bigint>
   token: BaseTokenInfo | UnifiedTokenInfo
   secretKey: string
-  userId: string
+  accountId: string
 }
 
 export async function getGiftInfo(
@@ -29,6 +29,6 @@ export async function getGiftInfo(
     tokenDiff: determineResult.unwrap().tokenDiff,
     token: determineResult.unwrap().token,
     secretKey: parseResult.unwrap().secretKey,
-    userId: accountId,
+    accountId: accountId,
   })
 }

@@ -35,7 +35,7 @@ export async function signGiftTakerMessage({
   return {
     type: "NEP413",
     signatureData: {
-      accountId: giftInfo.userId,
+      accountId: giftInfo.accountId,
       publicKey: keyPair.getPublicKey().toString(),
       signature: base64.encode(signature.signature),
     },
@@ -51,7 +51,7 @@ function assembleWalletMessage({
 
   // Signer should be with `near` credential type as we use ED25519 signing
   const signerId = resolveSignerId(
-    userAddressToDefuseUserId(giftInfo.userId, "near")
+    userAddressToDefuseUserId(giftInfo.accountId, "near")
   )
 
   const innerMessage = makeInnerTransferMessage({

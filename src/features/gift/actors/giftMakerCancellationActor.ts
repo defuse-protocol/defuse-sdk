@@ -123,7 +123,7 @@ export const giftMakerCancellationActor = setup({
           tokenDiff,
           token: input.token,
           secretKey: parseResult.unwrap().secretKey,
-          userId: deriveAccountId(parseResult.unwrap().secretKey),
+          accountId: deriveAccountId(parseResult.unwrap().secretKey),
         }
 
         const signature = await signGiftTakerMessage({
