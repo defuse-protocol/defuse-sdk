@@ -141,6 +141,10 @@ export const giftClaimActor = setup({
 
   initial: "claiming",
 
+  output: ({ event }) => {
+    return event.output as GiftClaimActorOutput
+  },
+
   states: {
     claiming: {
       entry: "clearError",
