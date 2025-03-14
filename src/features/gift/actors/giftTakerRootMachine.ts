@@ -1,18 +1,13 @@
 import { assert } from "src/utils/assert"
-import {
-  type PromiseActorLogic,
-  assertEvent,
-  assign,
-  fromPromise,
-  setup,
-} from "xstate"
+import { type PromiseActorLogic, assertEvent, assign, setup } from "xstate"
 import type { SignerCredentials } from "../../../core/formatters"
 import { logger } from "../../../logger"
 import type { PublishIntentsErr } from "../../../services/intentService"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../../types/base"
 import type { MultiPayload } from "../../../types/defuse-contracts-types"
-import { type GiftInfo, getGiftInfo } from "../utils/getGiftInfo"
+import type { GiftInfo } from "../utils/getGiftInfo"
 import { type GiftClaimActorOutput, giftClaimActor } from "./giftClaimActor"
+import { giftOpenSecretActor } from "./shared/giftOpenSecretActor"
 
 type GiftTakeClaimErr = {
   reason:
@@ -68,36 +63,7 @@ export const giftTakerRootMachine = setup({
     },
   },
   actors: {
-    openSecretActor: fromPromise(
-      async ({
-        input,
-      }: {
-        input: {
-          secretKey: string
-          tokenList: (BaseTokenInfo | UnifiedTokenInfo)[]
-        }
-      }) => {
-        const giftInfoResult = await getGiftInfo(
-          input.secretKey,
-          input.tokenList
-        )
-
-        if (giftInfoResult.isErr()) {
-          return {
-            tag: "err",
-            value: {
-              reason: giftInfoResult.unwrapErr(),
-            },
-          }
-        }
-        return {
-          tag: "ok",
-          value: {
-            giftInfo: giftInfoResult.unwrap(),
-          },
-        }
-      }
-    ),
+    openSecretActor: giftOpenSecretActor,
     claimGiftActor: giftClaimActor as unknown as PromiseActorLogic<
       GiftClaimActorOutput,
       void
