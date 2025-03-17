@@ -7,7 +7,7 @@ import {
 import { CopyButton } from "../../../components/IntentCard/CopyButton"
 import { waitForIntentSettlement } from "../../../services/intentService"
 import { assert } from "../../../utils/assert"
-import type { GiftInfo } from "../utils/getGiftInfo"
+import type { GiftInfo } from "../actors/shared/getGiftInfo"
 import { GiftStrip } from "./GiftStrip"
 
 const NEAR_EXPLORER = "https://nearblocks.io"

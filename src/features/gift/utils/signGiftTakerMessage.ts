@@ -9,7 +9,7 @@ import {
   makeSwapMessage,
 } from "../../../utils/messageFactory"
 import { randomDefuseNonce } from "../../../utils/messageFactory"
-import type { GiftInfo } from "./getGiftInfo"
+import type { GiftInfo } from "../actors/shared/getGiftInfo"
 import { hashing } from "./hashing"
 
 type GiftTakerMessage = {
@@ -27,7 +27,6 @@ export async function signGiftTakerMessage({
   // Claimed message should be NEP-413 within same standard as escrow account
   const messageHash = await hashing({
     ...walletMessage.NEP413,
-    standard: 413,
   })
 
   const signature = keyPair.sign(messageHash)

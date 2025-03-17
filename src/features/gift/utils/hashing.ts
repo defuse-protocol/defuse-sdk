@@ -18,34 +18,26 @@ const nep413PayloadSchema = BorshSchema.Struct({
  * @param message - Message content to be signed
  * @param recipient - Recipient account ID
  * @param nonce - 32-byte nonce as a Uint8Array
- * @param standard - Signature standard (currently only NEP-413)
  * @returns Promise resolving to Buffer containing message hash for signing
  */
 export async function hashing({
   message,
   recipient,
   nonce,
-  standard,
 }: {
-  message: unknown
+  message: string
   recipient: string
   nonce: Uint8Array
-  standard: number
 }): Promise<Uint8Array> {
-  if (standard !== 413) {
-    throw new Error(`Unsupported standard: ${standard}`)
-  }
-
   const payload = {
     message: message,
-    nonce: new Uint8Array(32),
+    nonce,
     recipient,
   }
-  payload.nonce.set(nonce.subarray(0, 32))
 
   // Serialize payload and combine with standard identifier
   const payloadSerialized = borshSerialize(nep413PayloadSchema, payload)
-  const baseInt = 2 ** 31 + standard
+  const baseInt = 2 ** 31 + 413
   const baseIntSerialized = borshSerialize(BorshSchema.u32, baseInt)
 
   // Combine serialized data

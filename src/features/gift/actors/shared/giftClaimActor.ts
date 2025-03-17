@@ -7,8 +7,8 @@ import {
   publishIntents,
 } from "../../../../services/intentService"
 import { assert } from "../../../../utils/assert"
-import type { GiftInfo } from "../../utils/getGiftInfo"
 import { signGiftTakerMessage } from "../../utils/signGiftTakerMessage"
+import type { GiftInfo } from "./getGiftInfo"
 
 export type GiftClaimActorOutput =
   | {

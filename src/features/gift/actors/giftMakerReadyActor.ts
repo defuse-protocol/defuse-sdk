@@ -7,8 +7,7 @@ import type {
   UnifiedTokenInfo,
 } from "../../../types/base"
 import type { EscrowCredentials } from "../utils/generateEscrowCredentials"
-import type { GiftInfo } from "../utils/getGiftInfo"
-import {} from "../utils/parseMultiPayload"
+import type { GiftInfo } from "./shared/getGiftInfo"
 import {
   type GiftClaimActorOutput,
   giftClaimActor,

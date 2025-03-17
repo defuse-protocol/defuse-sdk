@@ -4,7 +4,10 @@ import { getDepositedBalances } from "../../../services/defuseBalanceService"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../../types/base"
 import { userAddressToDefuseUserId } from "../../../utils/defuse"
 import { isBaseToken } from "../../../utils/token"
-import { getAnyBaseTokenInfo } from "../../../utils/tokenUtils"
+import {
+  getAnyBaseTokenInfo,
+  getUnderlyingBaseTokenInfos,
+} from "../../../utils/tokenUtils"
 
 type GiftToken = {
   tokenDiff: Record<BaseTokenInfo["defuseAssetId"], bigint>
@@ -20,11 +23,9 @@ export async function determineGiftToken(
   accountId: string
 ): Promise<Result<GiftToken, DetermineGiftTokenErr>> {
   try {
-    const tokenIds = tokenList.flatMap((token) => {
-      return isBaseToken(token)
-        ? [token.defuseAssetId]
-        : token.groupedTokens.map((t) => t.defuseAssetId)
-    })
+    const tokenIds = tokenList
+      .flatMap((token) => getUnderlyingBaseTokenInfos(token))
+      .map((t) => t.defuseAssetId)
 
     const balances = await getDepositedBalances(
       userAddressToDefuseUserId(accountId, "near"),
@@ -34,7 +35,6 @@ export async function determineGiftToken(
       })
     )
 
-    // Currently there will be only one token with balance, but in future we may support multiple tokens in a gift
     const tokenDiff = Object.fromEntries(
       Object.entries(balances).filter(([_, balance]) => balance > 0n)
     )

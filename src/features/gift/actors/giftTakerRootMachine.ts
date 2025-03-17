@@ -5,16 +5,24 @@ import { logger } from "../../../logger"
 import type { PublishIntentsErr } from "../../../services/intentService"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../../types/base"
 import type { MultiPayload } from "../../../types/defuse-contracts-types"
-import type { GiftInfo } from "../utils/getGiftInfo"
+import {
+  type GiftInfo,
+  type GiftInfoErr,
+  type GiftOpenSecretActorInput,
+  type GiftOpenSecretActorOutput,
+  getGiftInfo,
+} from "./shared/getGiftInfo"
 import {
   type GiftClaimActorOutput,
   giftClaimActor,
 } from "./shared/giftClaimActor"
-import { giftOpenSecretActor } from "./shared/giftOpenSecretActor"
 
 type GiftTakeClaimErr = { reason: "EXCEPTION" }
 
-type GiftTakerClaimingActorErrors = PublishIntentsErr | GiftTakeClaimErr
+type GiftTakerClaimingActorErrors =
+  | PublishIntentsErr
+  | GiftTakeClaimErr
+  | GiftInfoErr
 
 type GiftTakerRootMachineInput = {
   secretKey: string
@@ -57,7 +65,10 @@ export const giftTakerRootMachine = setup({
     },
   },
   actors: {
-    openSecretActor: giftOpenSecretActor,
+    getGiftInfoActor: getGiftInfo as unknown as PromiseActorLogic<
+      GiftOpenSecretActorOutput,
+      GiftOpenSecretActorInput
+    >,
     claimGiftActor: giftClaimActor as unknown as PromiseActorLogic<
       GiftClaimActorOutput,
       void
@@ -91,8 +102,8 @@ export const giftTakerRootMachine = setup({
   states: {
     idle: {
       invoke: {
-        id: "openSecretRef",
-        src: "openSecretActor",
+        id: "getGiftInfoRef",
+        src: "getGiftInfoActor",
         input: ({ context }) => context,
         onDone: [
           {
@@ -100,7 +111,7 @@ export const giftTakerRootMachine = setup({
             guard: ({ event }) => event.output.tag === "ok",
             actions: assign({
               giftInfo: ({ event }) => {
-                assert(event.output.value.giftInfo, "giftInfo is not defined")
+                assert(event.output.tag === "ok")
                 return event.output.value.giftInfo
               },
             }),
@@ -109,9 +120,7 @@ export const giftTakerRootMachine = setup({
             actions: assign({
               error: ({ event }) => {
                 assert(event.output.tag === "err")
-                return {
-                  reason: event.output.value.reason,
-                } as GiftTakerClaimingActorErrors
+                return event.output.value
               },
             }),
 

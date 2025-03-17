@@ -20,7 +20,6 @@ import {
   type EscrowCredentials,
   generateEscrowCredentials,
 } from "../utils/generateEscrowCredentials"
-import type { GiftInfo } from "../utils/getGiftInfo"
 import {
   getTokenDiffFromTransferMessage,
   parseMultiPayloadTransferMessage,
@@ -42,6 +41,7 @@ import type {
   GiftMakerSignActorSuccess,
 } from "./giftMakerSignActor"
 import { giftMakerSignActor } from "./giftMakerSignActor"
+import type { GiftInfo } from "./shared/getGiftInfo"
 
 export const giftMakerRootMachine = setup({
   types: {
