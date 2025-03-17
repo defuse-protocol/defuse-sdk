@@ -67,7 +67,7 @@ function GiftTakerScreens({
 
   return (
     <>
-      {snapshot.matches("claiming") && snapshot.context.intentHashes ? (
+      {snapshot.context.intentHashes ? (
         <GiftTakerSuccessScreen
           giftInfo={snapshot.context.giftInfo}
           intentHashes={snapshot.context.intentHashes}
