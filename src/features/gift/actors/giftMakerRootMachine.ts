@@ -298,8 +298,8 @@ export const giftMakerRootMachine = setup({
           const giftInfo: GiftInfo = {
             tokenDiff,
             token: parsedValues.token,
-            secretKey: context.escrowCredentials.NEP413.secretKey,
-            accountId: context.escrowCredentials.NEP413.userId,
+            secretKey: context.escrowCredentials.secretKey,
+            accountId: context.escrowCredentials.credential,
           }
 
           return {

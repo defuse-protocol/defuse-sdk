@@ -92,9 +92,7 @@ function GiftMakerDialog({
       />
 
       <div className="flex flex-col justify-center gap-3 mt-5">
-        <Copy
-          text={() => generateLink(context.escrowCredentials.NEP413.secretKey)}
-        >
+        <Copy text={() => generateLink(context.escrowCredentials.secretKey)}>
           {(copied) => (
             <ButtonCustom
               type="button"

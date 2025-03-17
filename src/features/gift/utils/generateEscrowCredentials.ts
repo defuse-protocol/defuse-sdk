@@ -1,22 +1,17 @@
 import { base58, hex } from "@scure/base"
+import type { SignerCredentials } from "src/core/formatters"
 import { sign } from "tweetnacl"
 
-export type EscrowCredentials = {
-  NEP413: {
-    standard: "nep413"
-    secretKey: string
-    userId: string
-  }
+export interface EscrowCredentials extends SignerCredentials {
+  secretKey: string
 }
 
 export function generateEscrowCredentials(): EscrowCredentials {
   const keyPair = sign.keyPair()
   return {
-    NEP413: {
-      standard: "nep413",
-      secretKey: transformNEP413Key(keyPair.secretKey),
-      userId: hex.encode(keyPair.publicKey),
-    },
+    secretKey: transformNEP413Key(keyPair.secretKey),
+    credential: hex.encode(keyPair.publicKey),
+    credentialType: "near",
   }
 }
 
