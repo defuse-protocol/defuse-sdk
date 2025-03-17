@@ -14,7 +14,7 @@ import radixSelectPackageJson from "./src/lib/@radix-ui/react-select/package.jso
 
 const config = [
   {
-    input: ["src/index.ts", "src/logger.ts"],
+    input: ["src/index.ts", "src/config.ts"],
     output: [
       {
         dir: "dist",
@@ -73,8 +73,8 @@ const config = [
     plugins: [dts()],
   },
   {
-    input: "src/logger.ts",
-    output: [{ file: "dist/logger.d.ts", format: "es" }],
+    input: "src/config.ts",
+    output: [{ file: "dist/config.d.ts", format: "es" }],
     plugins: [dts()],
   },
 ]
