@@ -15,11 +15,22 @@ export function generateEscrowCredentials(): EscrowCredentials {
   }
 }
 
+export function parseEscrowCredentials(secretKey: string): EscrowCredentials {
+  const normalizedSecretKey = normalizeNEP413Key(secretKey)
+  const secretKeyBase58 = base58.decode(normalizedSecretKey)
+  const keyPair = sign.keyPair.fromSecretKey(secretKeyBase58)
+  return {
+    secretKey: transformNEP413Key(keyPair.secretKey),
+    credential: hex.encode(keyPair.publicKey),
+    credentialType: "near",
+  }
+}
+
 function transformNEP413Key(key: Uint8Array): string {
   return `ed25519:${base58.encode(key)}`
 }
 
-export function normalizeNEP413Key(key: string): string {
+function normalizeNEP413Key(key: string): string {
   const value = key.slice("ed25519:".length)
   if (!value) {
     throw new Error("Invalid NEP413 key format")
