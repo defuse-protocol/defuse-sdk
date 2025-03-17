@@ -3,9 +3,9 @@ import { providers } from "near-api-js"
 import { getDepositedBalances } from "../../../services/defuseBalanceService"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../../types/base"
 import { userAddressToDefuseUserId } from "../../../utils/defuse"
-import { isBaseToken } from "../../../utils/token"
+import { isBaseToken, isUnifiedToken } from "../../../utils/token"
 import {
-  getAnyBaseTokenInfo,
+  getDerivedToken,
   getUnderlyingBaseTokenInfos,
 } from "../../../utils/tokenUtils"
 
@@ -17,6 +17,7 @@ type GiftToken = {
 export type DetermineGiftTokenErr =
   | "NO_TOKEN_OR_GIFT_HAS_BEEN_CLAIMED"
   | "ERR_GETTING_BALANCES"
+  | "ERR_GETTING_DERIVED_TOKEN"
 
 export async function determineGiftToken(
   tokenList: (BaseTokenInfo | UnifiedTokenInfo)[],
@@ -38,23 +39,43 @@ export async function determineGiftToken(
     const tokenDiff = Object.fromEntries(
       Object.entries(balances).filter(([_, balance]) => balance > 0n)
     )
-    const token_ = tokenList.find((token) =>
-      isBaseToken(token)
-        ? tokenDiff[token.defuseAssetId] !== undefined
-        : token.groupedTokens.some(
-            (gt) => tokenDiff[gt.defuseAssetId] !== undefined
-          )
-    )
+    let chainName: string | null = null
+    let underlyingToken: BaseTokenInfo | UnifiedTokenInfo | null = null
+    for (const token of tokenList) {
+      if (isBaseToken(token) && tokenDiff[token.defuseAssetId] !== undefined) {
+        chainName = token.chainName ?? null
+        underlyingToken = token
+        break
+      }
+      if (
+        isUnifiedToken(token) &&
+        token.groupedTokens.some(
+          (t) => tokenDiff[t.defuseAssetId] !== undefined
+        )
+      ) {
+        const validToken = token.groupedTokens.find(
+          (t) => tokenDiff[t.defuseAssetId] !== undefined
+        )
+        if (validToken) {
+          chainName = validToken.chainName ?? null
+          underlyingToken = token
+          break
+        }
+      }
+    }
 
-    if (!token_) {
+    if (!underlyingToken) {
       return Err("NO_TOKEN_OR_GIFT_HAS_BEEN_CLAIMED")
     }
 
-    const token = getAnyBaseTokenInfo(token_)
+    const derivedToken = getDerivedToken(underlyingToken, chainName)
+    if (!derivedToken) {
+      return Err("ERR_GETTING_DERIVED_TOKEN")
+    }
 
     return Ok({
       tokenDiff,
-      token,
+      token: derivedToken,
     })
   } catch {
     return Err("ERR_GETTING_BALANCES")
