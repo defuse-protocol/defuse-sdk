@@ -300,6 +300,7 @@ export const giftMakerRootMachine = setup({
             token: parsedValues.token,
             secretKey: context.escrowCredentials.secretKey,
             accountId: context.escrowCredentials.credential,
+            message: parsedValues.message,
           }
 
           return {
