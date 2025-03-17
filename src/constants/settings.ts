@@ -1,7 +1,6 @@
 import type { SupportedChainName } from "../types/base"
 
 interface Settings {
-  defuseContractId: string
   swapExpirySec: number
   quoteQueryTimeoutMs: number
   quotePollingIntervalMs: number
@@ -16,7 +15,6 @@ interface Settings {
 }
 
 export const settings: Settings = {
-  defuseContractId: "intents.near",
   swapExpirySec: 600, // 10 minutes
   /**
    * Quote query lasts 1.4 seconds in good network conditions.

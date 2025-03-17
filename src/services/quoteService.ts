@@ -1,4 +1,4 @@
-import { settings } from "../config/settings"
+import { settings } from "../constants/settings"
 import { logger } from "../logger"
 import type { BaseTokenInfo, TokenValue } from "../types/base"
 import {

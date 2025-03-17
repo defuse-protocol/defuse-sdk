@@ -1,6 +1,5 @@
+import { config as globalConfig } from "../../config"
 import type * as types from "./types"
-
-const BASE_URL = "https://solver-relay-v2.chaindefuser.com"
 
 async function request(
   url: string,
@@ -36,7 +35,7 @@ export async function jsonRPCRequest<
   config: types.RequestConfig = {}
 ) {
   const response = await request(
-    `${BASE_URL}/rpc`,
+    `${globalConfig.env.solverRelayBaseURL}/rpc`,
     {
       id: "dontcare",
       jsonrpc: "2.0",

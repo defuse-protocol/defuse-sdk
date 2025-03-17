@@ -1,7 +1,7 @@
 import { providers } from "near-api-js"
 import type { CodeResult } from "near-api-js/lib/providers/provider"
 import { assign, fromPromise, setup } from "xstate"
-import { settings } from "../../../config/settings"
+import { config } from "../../../config"
 
 export const otcMakerConfigLoadActor = setup({
   types: {
@@ -57,7 +57,7 @@ export async function fetchProtocolFee() {
   // Warning: `CodeResult` is not correct type for `call_function`, but it's closest we have.
   const output = await nearClient.query<CodeResult>({
     request_type: "call_function",
-    account_id: settings.defuseContractId,
+    account_id: config.env.contractID,
     method_name: "fee",
     args_base64: btoa(JSON.stringify({})),
     finality: "optimistic",

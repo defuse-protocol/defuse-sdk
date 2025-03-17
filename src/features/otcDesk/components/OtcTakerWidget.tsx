@@ -5,7 +5,7 @@ import type { CodeResult } from "near-api-js/lib/providers/provider"
 import { type ReactNode, useMemo, useState } from "react"
 import * as v from "valibot"
 import { WidgetRoot } from "../../../components/WidgetRoot"
-import { settings } from "../../../config/settings"
+import { config } from "../../../config"
 import type { DefuseUserId, SignerCredentials } from "../../../core/formatters"
 import { logger } from "../../../logger"
 import { SwapWidgetProvider } from "../../../providers/SwapWidgetProvider"
@@ -230,7 +230,7 @@ function OtcTakerValidationOrder({
       })
       const output = await nearClient.query<CodeResult>({
         request_type: "call_function",
-        account_id: settings.defuseContractId,
+        account_id: config.env.contractID,
         method_name: "is_nonce_used",
         args_base64: btoa(
           JSON.stringify({

@@ -1,5 +1,5 @@
 import { type ActorRefFrom, waitFor } from "xstate"
-import { settings } from "../config/settings"
+import { settings } from "../constants/settings"
 import { NEP141_STORAGE_TOKEN } from "../constants/tokens"
 import type {
   QuoteInput,
