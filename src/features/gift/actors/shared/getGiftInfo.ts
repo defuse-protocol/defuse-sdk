@@ -51,7 +51,7 @@ export const getGiftInfo = fromPromise(
     )
     const determineResult = await determineGiftToken(
       input.tokenList,
-      escrowCredentials.credential
+      escrowCredentials
     )
     if (determineResult.isErr()) {
       return {

@@ -8,6 +8,7 @@ import {
   getDerivedToken,
   getUnderlyingBaseTokenInfos,
 } from "../../../utils/tokenUtils"
+import type { EscrowCredentials } from "./generateEscrowCredentials"
 
 type GiftToken = {
   tokenDiff: Record<BaseTokenInfo["defuseAssetId"], bigint>
@@ -21,7 +22,7 @@ export type DetermineGiftTokenErr =
 
 export async function determineGiftToken(
   tokenList: (BaseTokenInfo | UnifiedTokenInfo)[],
-  accountId: string
+  escrowCredentials: EscrowCredentials
 ): Promise<Result<GiftToken, DetermineGiftTokenErr>> {
   try {
     const tokenIds = tokenList
@@ -29,7 +30,10 @@ export async function determineGiftToken(
       .map((t) => t.defuseAssetId)
 
     const balances = await getDepositedBalances(
-      userAddressToDefuseUserId(accountId, "near"),
+      userAddressToDefuseUserId(
+        escrowCredentials.credential,
+        escrowCredentials.credentialType
+      ),
       tokenIds,
       new providers.JsonRpcProvider({
         url: "https://nearrpc.aurora.dev",
