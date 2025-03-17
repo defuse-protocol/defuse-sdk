@@ -141,4 +141,14 @@ describe("IntentSchema", () => {
   ])("invalid ft_withdraw", (intent) => {
     expect(() => v.parse(IntentSchema, intent)).toThrow()
   })
+
+  it.each([
+    {
+      intent: "transfer",
+      tokens: { "usdt.tether-token.near": "100" },
+      receiver_id: "user.near",
+    },
+  ])("valid transfer", (intent) => {
+    expect(() => v.parse(IntentSchema, intent)).not.toThrow()
+  })
 })
