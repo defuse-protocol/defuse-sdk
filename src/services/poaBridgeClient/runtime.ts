@@ -1,6 +1,5 @@
+import { config } from "../../config"
 import type * as types from "./types"
-
-const BASE_URL = "https://bridge.chaindefuser.com"
 
 async function request(url: string, body: unknown): Promise<Response> {
   let response: Response
@@ -26,7 +25,7 @@ async function request(url: string, body: unknown): Promise<Response> {
 export async function jsonRPCRequest<
   T extends types.JSONRPCRequest<unknown, unknown>,
 >(method: T["method"], params: T["params"][0]) {
-  const response = await request(`${BASE_URL}/rpc`, {
+  const response = await request(`${config.env.poaBridgeBaseURL}/rpc`, {
     id: "dontcare",
     jsonrpc: "2.0",
     method,

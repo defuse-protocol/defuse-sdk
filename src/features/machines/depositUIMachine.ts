@@ -1,4 +1,3 @@
-import { settings } from "src/config/settings"
 import { assert } from "src/utils/assert"
 import {
   type ActorRefFrom,
@@ -8,6 +7,7 @@ import {
   sendTo,
   setup,
 } from "xstate"
+import { config } from "../../config"
 import type { BaseTokenInfo, SupportedChainName } from "../../types/base"
 import type { ChainType } from "../../types/deposit"
 import type { SwappableToken } from "../../types/swap"
@@ -456,7 +456,7 @@ export const depositUIMachine = setup({
           return {
             ...params,
             type: "depositTurbo",
-            depositAddress: settings.defuseContractId,
+            depositAddress: config.env.contractID,
           }
         },
         onDone: {

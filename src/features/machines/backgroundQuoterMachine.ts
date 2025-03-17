@@ -1,5 +1,5 @@
 import { type ActorRef, type Snapshot, fromCallback } from "xstate"
-import { settings } from "../../config/settings"
+import { settings } from "../../constants/settings"
 import { logger } from "../../logger"
 import { type QuoteResult, queryQuote } from "../../services/quoteService"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../types/base"

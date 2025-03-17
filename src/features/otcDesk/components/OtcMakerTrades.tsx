@@ -22,7 +22,7 @@ import * as v from "valibot"
 import { type ActorRefFrom, createActor, toPromise } from "xstate"
 import { AssetComboIcon } from "../../../components/Asset/AssetComboIcon"
 import { Copy } from "../../../components/IntentCard/CopyButton"
-import { settings } from "../../../config/settings"
+import { config } from "../../../config"
 import type { DefuseUserId, SignerCredentials } from "../../../core/formatters"
 import { getDepositedBalances } from "../../../services/defuseBalanceService"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../../types/base"
@@ -347,7 +347,7 @@ function useValidateTrade(tradeTerms: TradeTerms) {
       })
       const output = await nearClient.query<CodeResult>({
         request_type: "call_function",
-        account_id: settings.defuseContractId,
+        account_id: config.env.contractID,
         method_name: "is_nonce_used",
         args_base64: btoa(
           JSON.stringify({

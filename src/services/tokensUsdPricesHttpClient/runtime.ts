@@ -1,9 +1,9 @@
-const BASE_URL = "https://api-mng-console.chaindefuser.com/api"
+import { config } from "../../config"
 
 export async function request(path: string): Promise<Response> {
   let response: Response
   try {
-    response = await fetch(`${BASE_URL}${path}`)
+    response = await fetch(`${config.env.managerConsoleBaseURL}${path}`)
   } catch (err) {
     throw new FetchError("The request failed", { cause: err })
   }
