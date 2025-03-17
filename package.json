@@ -9,9 +9,9 @@
       "import": "./dist/index.esm.js",
       "types": "./dist/index.d.ts"
     },
-    "./logger": {
-      "import": "./dist/logger.esm.js",
-      "types": "./dist/logger.d.ts"
+    "./config": {
+      "import": "./dist/config.esm.js",
+      "types": "./dist/config.d.ts"
     }
   },
   "module": "./dist/index.esm.js",
