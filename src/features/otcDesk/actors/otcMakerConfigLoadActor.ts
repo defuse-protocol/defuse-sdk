@@ -1,7 +1,7 @@
 import { providers } from "near-api-js"
 import type { CodeResult } from "near-api-js/lib/providers/provider"
 import { assign, fromPromise, setup } from "xstate"
-import { settings } from "../../../config/settings"
+import { settings } from "../../../constants/settings"
 
 export const otcMakerConfigLoadActor = setup({
   types: {

@@ -1,6 +1,6 @@
 import type { providers } from "near-api-js"
 import type { CodeResult } from "near-api-js/lib/providers/provider"
-import { settings } from "../config/settings"
+import { settings } from "../constants/settings"
 import type { BaseTokenInfo } from "../types/base"
 import { assert } from "../utils/assert"
 import type { DefuseUserId } from "../utils/defuse"

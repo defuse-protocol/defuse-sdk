@@ -1,7 +1,7 @@
 import type { providers } from "near-api-js"
 import type { CodeResult } from "near-api-js/lib/providers/provider"
 import { assertEvent, assign, fromPromise, setup } from "xstate"
-import { settings } from "../../config/settings"
+import { settings } from "../../constants/settings"
 import { logger } from "../../logger"
 import type { Transaction } from "../../types/deposit"
 import {

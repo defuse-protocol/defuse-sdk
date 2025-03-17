@@ -23,7 +23,7 @@ import type { depositEstimationMachine } from "../features/machines/depositEstim
 import type { depositTokenBalanceMachine } from "../features/machines/depositTokenBalanceMachine"
 
 import { type ActorRefFrom, waitFor } from "xstate"
-import { settings } from "../config/settings"
+import { settings } from "../constants/settings"
 import type { State as DepositFormContext } from "../features/machines/depositFormReducer"
 import type { depositGenerateAddressMachine } from "../features/machines/depositGenerateAddressMachine"
 import { getNearTxSuccessValue } from "../features/machines/getTxMachine"

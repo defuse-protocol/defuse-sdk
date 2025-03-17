@@ -1,7 +1,7 @@
 import { secp256k1 } from "@noble/curves/secp256k1"
 import type { providers } from "near-api-js"
 import { assign, fromPromise, setup } from "xstate"
-import { settings } from "../../config/settings"
+import { settings } from "../../constants/settings"
 import { logger } from "../../logger"
 import { publishIntent } from "../../services/intentService"
 import type { AggregatedQuote } from "../../services/quoteService"

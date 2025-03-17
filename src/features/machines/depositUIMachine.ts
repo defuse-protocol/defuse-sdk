@@ -1,4 +1,4 @@
-import { settings } from "src/config/settings"
+import { settings } from "src/constants/settings"
 import { assert } from "src/utils/assert"
 import {
   type ActorRefFrom,

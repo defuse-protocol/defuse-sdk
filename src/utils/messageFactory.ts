@@ -1,7 +1,7 @@
 import { sha256 } from "@noble/hashes/sha256"
 import { base64 } from "@scure/base"
 import { getAddress } from "viem"
-import { settings } from "../config/settings"
+import { settings } from "../constants/settings"
 import { logger } from "../logger"
 import type {
   Intent,
