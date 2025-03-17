@@ -21,7 +21,7 @@ import { balanceAllSelector } from "../../machines/depositedBalanceMachine"
 import { formValuesSelector } from "../actors/giftMakerFormMachine"
 import type { giftMakerReadyActor } from "../actors/giftMakerReadyActor"
 import { giftMakerRootMachine } from "../actors/giftMakerRootMachine"
-import type { SignMessage } from "../types/sharedTypes"
+import type { GiftPayload, SignMessage } from "../types/sharedTypes"
 import { GiftMakerReadyDialog } from "./GiftMakerReadyDialog"
 import { GiftMessageInput } from "./GiftMessageInput"
 
@@ -40,7 +40,7 @@ export type GiftMakerWidgetProps = {
   signMessage: SignMessage
 
   /** Function to generate a shareable trade link */
-  generateLink: (secretKey: string) => string
+  generateLink: (giftPayload: GiftPayload) => string
 
   /** Theme selection */
   theme?: "dark" | "light"

@@ -10,12 +10,13 @@ import { BaseModalDialog } from "../../../components/Modal/ModalDialog"
 import type { giftMakerReadyActor } from "../actors/giftMakerReadyActor"
 import type { GiftInfo } from "../actors/shared/getGiftInfo"
 import type { giftClaimActor } from "../actors/shared/giftClaimActor"
+import type { GiftPayload } from "../types/sharedTypes"
 import { ShareableGiftImage } from "./ShareableGiftImage"
 import { ErrorReason } from "./shared/ErrorReason"
 
 type GiftMakerReadyDialogProps = {
   readyGiftRef: ActorRefFrom<typeof giftMakerReadyActor>
-  generateLink: (secretKey: string) => string
+  generateLink: (giftPayload: GiftPayload) => string
   signerCredentials: SignerCredentials
 }
 
@@ -53,19 +54,30 @@ function GiftMakerDialog({
   generateLink,
 }: {
   readyGiftRef: ActorRefFrom<typeof giftMakerReadyActor>
-  generateLink: (secretKey: string) => string
+  generateLink: (giftPayload: GiftPayload) => string
 }) {
   const { context } = useSelector(readyGiftRef, (state) => ({
     context: state.context,
   }))
 
-  const finish = () => {
+  const finish = useCallback(() => {
     readyGiftRef.send({ type: "FINISH" })
-  }
+  }, [readyGiftRef])
 
-  const cancelGift = () => {
+  const cancelGift = useCallback(() => {
     readyGiftRef.send({ type: "CANCEL_GIFT" })
-  }
+  }, [readyGiftRef])
+
+  const copyGiftLink = useCallback(() => {
+    return generateLink({
+      secretKey: context.escrowCredentials.secretKey,
+      message: context.parsed.message,
+    })
+  }, [
+    generateLink,
+    context.escrowCredentials.secretKey,
+    context.parsed.message,
+  ])
 
   return (
     <BaseModalDialog open onClose={finish} isDismissable>
@@ -92,7 +104,7 @@ function GiftMakerDialog({
       />
 
       <div className="flex flex-col justify-center gap-3 mt-5">
-        <Copy text={() => generateLink(context.escrowCredentials.secretKey)}>
+        <Copy text={copyGiftLink()}>
           {(copied) => (
             <ButtonCustom
               type="button"

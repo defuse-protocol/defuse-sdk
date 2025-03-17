@@ -1,28 +1,41 @@
 import { Err, Ok, type Result } from "@thames/monads"
 import * as v from "valibot"
+import {
+  type EscrowCredentials,
+  parseEscrowCredentials,
+} from "./generateEscrowCredentials"
 
-export type GiftSecret = {
-  secretKey: string
+export type GiftSecretError = { reason: "INVALID_SECRET_KEY" }
+
+export type ParsedGiftSecret = {
+  escrowCredentials: EscrowCredentials
+  message: string
 }
 
-export type GiftSecretError =
-  | "SECRET_KEY_EMPTY"
-  | "CANNOT_PARSE_SECRET_KEY"
-  | "ACCOUNT_NOT_FOUND"
+const GiftSecretSchema = v.object({
+  secretKey: v.string(),
+  message: v.string(),
+})
 
 export function parseGiftSecret(
   secretKey: string
-): Result<GiftSecret, GiftSecretError> {
+): Result<ParsedGiftSecret, GiftSecretError> {
   try {
-    const parseResult = v.safeParse(v.string(), secretKey)
+    const parseResult = v.safeParse(GiftSecretSchema, secretKey)
     if (!parseResult.success) {
-      return Err("CANNOT_PARSE_SECRET_KEY")
+      return Err({ reason: "INVALID_SECRET_KEY" })
     }
 
+    const escrowCredentials = parseEscrowCredentials(
+      parseResult.output.secretKey
+    )
+    const message = parseResult.output.message
+
     return Ok({
-      secretKey: parseResult.output,
+      escrowCredentials,
+      message,
     })
   } catch {
-    return Err("ACCOUNT_NOT_FOUND")
+    return Err({ reason: "INVALID_SECRET_KEY" })
   }
 }

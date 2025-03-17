@@ -78,7 +78,9 @@ export function GiftTakerForm({
       <ShareableGiftImage
         token={giftInfo.token}
         amount={amount}
-        message="You've received a gift! Click to claim it."
+        message={
+          giftInfo.message ?? "You've received a gift! Click to claim it."
+        }
       />
 
       {snapshot?.context.error != null &&

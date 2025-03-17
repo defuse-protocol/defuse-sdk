@@ -1,8 +1,10 @@
 import { fromPromise } from "xstate"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../../../types/base"
 import { determineGiftToken } from "../../utils/determineGiftToken"
-import { parseEscrowCredentials } from "../../utils/generateEscrowCredentials"
-import { parseGiftSecret } from "../../utils/parseGiftSecret"
+import {
+  type GiftSecretError,
+  parseGiftSecret,
+} from "../../utils/parseGiftSecret"
 
 export type GiftOpenSecretActorInput = {
   secretKey: string
@@ -26,11 +28,14 @@ export type GiftInfo = {
   token: BaseTokenInfo | UnifiedTokenInfo
   secretKey: string
   accountId: string
+  message: string
 }
 
-export type GiftInfoErr = {
-  reason: "INVALID_SECRET_KEY" | "NO_TOKEN_OR_GIFT_HAS_BEEN_CLAIMED"
-}
+export type GiftInfoErr =
+  | {
+      reason: "NO_TOKEN_OR_GIFT_HAS_BEEN_CLAIMED"
+    }
+  | GiftSecretError
 
 export const getGiftInfo = fromPromise(
   async ({
@@ -42,13 +47,12 @@ export const getGiftInfo = fromPromise(
     if (parseResult.isErr()) {
       return {
         tag: "err",
-        value: { reason: "INVALID_SECRET_KEY" },
+        value: parseResult.unwrapErr(),
       }
     }
 
-    const escrowCredentials = parseEscrowCredentials(
-      parseResult.unwrap().secretKey
-    )
+    const { escrowCredentials, message } = parseResult.unwrap()
+
     const determineResult = await determineGiftToken(
       input.tokenList,
       escrowCredentials
@@ -59,15 +63,19 @@ export const getGiftInfo = fromPromise(
         value: { reason: "NO_TOKEN_OR_GIFT_HAS_BEEN_CLAIMED" },
       }
     }
+    const { tokenDiff, token } = determineResult.unwrap()
+    const accountId = escrowCredentials.credential
+    const secretKey = escrowCredentials.secretKey
 
     return {
       tag: "ok",
       value: {
         giftInfo: {
-          tokenDiff: determineResult.unwrap().tokenDiff,
-          token: determineResult.unwrap().token,
-          secretKey: parseResult.unwrap().secretKey,
-          accountId: escrowCredentials.credential,
+          tokenDiff,
+          token,
+          secretKey,
+          accountId,
+          message,
         },
       },
     }
