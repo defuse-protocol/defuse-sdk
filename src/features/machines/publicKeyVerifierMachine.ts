@@ -1,7 +1,7 @@
 import type { providers } from "near-api-js"
 import type { CodeResult } from "near-api-js/lib/providers/provider"
 import { assertEvent, assign, fromPromise, setup } from "xstate"
-import { settings } from "../../constants/settings"
+import { config } from "../../config"
 import { logger } from "../../logger"
 import type { Transaction } from "../../types/deposit"
 import {
@@ -213,7 +213,7 @@ async function checkPublicKeyOnchain({
 }): Promise<boolean> {
   const output = await nearClient.query<CodeResult>({
     request_type: "call_function",
-    account_id: settings.defuseContractId,
+    account_id: config.env.contractID,
     method_name: "has_public_key",
     args_base64: btoa(
       JSON.stringify({
@@ -241,7 +241,7 @@ async function addPublicKeyToContract({
   sendNearTransaction: SendNearTransaction
 }): Promise<boolean> {
   const tx: Transaction["NEAR"] = {
-    receiverId: settings.defuseContractId,
+    receiverId: config.env.contractID,
     actions: [
       {
         type: "FunctionCall",

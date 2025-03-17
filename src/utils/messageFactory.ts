@@ -1,7 +1,7 @@
 import { sha256 } from "@noble/hashes/sha256"
 import { base64 } from "@scure/base"
 import { getAddress } from "viem"
-import { settings } from "../constants/settings"
+import { config } from "../config"
 import { logger } from "../logger"
 import type {
   Intent,
@@ -237,7 +237,7 @@ export function makeSwapMessage({
 }): WalletMessage {
   const payload = {
     signer_id: innerMessage.signer_id,
-    verifying_contract: settings.defuseContractId,
+    verifying_contract: config.env.contractID,
     deadline: innerMessage.deadline,
     nonce: base64.encode(nonce),
     intents: innerMessage.intents,
@@ -249,7 +249,7 @@ export function makeSwapMessage({
     NEP413: {
       message: JSON.stringify(innerMessage),
       // This is who will be verifying the message
-      recipient: settings.defuseContractId,
+      recipient: config.env.contractID,
       nonce,
     },
     ERC191: {
