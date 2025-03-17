@@ -1,4 +1,5 @@
 import { useSelector } from "@xstate/react"
+import { useCallback } from "react"
 import { assert } from "src/utils/assert"
 import {
   computeTotalBalanceDifferentDecimals,
@@ -8,6 +9,7 @@ import type { ActorRefFrom } from "xstate"
 import { ButtonCustom } from "../../../components/Button/ButtonCustom"
 import type { SignerCredentials } from "../../../core/formatters"
 import type { giftTakerRootMachine } from "../actors/giftTakerRootMachine"
+import type { giftClaimActor } from "../actors/shared/giftClaimActor"
 import type { GiftInfo } from "../utils/getGiftInfo"
 import { ShareableGiftImage } from "./ShareableGiftImage"
 import { ErrorReason } from "./shared/ErrorReason"
@@ -15,19 +17,43 @@ import { ErrorReason } from "./shared/ErrorReason"
 export type GiftTakerFormProps = {
   giftInfo: GiftInfo
   signerCredentials: SignerCredentials | null
-  giftTakerClaimRef: ActorRefFrom<typeof giftTakerRootMachine>
+  giftTakerRootRef: ActorRefFrom<typeof giftTakerRootMachine>
 }
 
 export function GiftTakerForm({
   giftInfo,
   signerCredentials,
-  giftTakerClaimRef,
+  giftTakerRootRef,
 }: GiftTakerFormProps) {
   const amount = computeTotalBalanceDifferentDecimals(
     getUnderlyingBaseTokenInfos(giftInfo.token),
     giftInfo.tokenDiff,
     { strict: false }
   )
+  const { giftTakerClaimRef, snapshot: giftTakerRootSnapshot } = useSelector(
+    giftTakerRootRef,
+    (state) => ({
+      giftTakerClaimRef: state.children.giftTakerClaimRef as
+        | undefined
+        | ActorRefFrom<typeof giftClaimActor>,
+      snapshot: state,
+    })
+  )
+
+  const claimGift = useCallback(() => {
+    if (
+      signerCredentials != null &&
+      giftTakerRootSnapshot?.matches("claiming")
+    ) {
+      giftTakerClaimRef?.send({
+        type: "CONFIRM_CLAIM",
+        params: {
+          giftInfo,
+          signerCredentials,
+        },
+      })
+    }
+  }, [signerCredentials, giftTakerRootSnapshot, giftTakerClaimRef, giftInfo])
 
   const snapshot = useSelector(giftTakerClaimRef, (state) => state)
 
@@ -59,21 +85,12 @@ export function GiftTakerForm({
         typeof snapshot.context.error?.reason === "string" && (
           <ErrorReason reason={snapshot.context.error?.reason} />
         )}
-      {snapshot.status === "done" && (
+      {snapshot?.matches("claimed") && (
         <div className="flex justify-center mt-5">Gift claimed!</div>
       )}
 
       <ButtonCustom
-        onClick={() => {
-          if (signerCredentials != null && snapshot.status !== "done") {
-            giftTakerClaimRef.send({
-              type: "CONFIRM_CLAIM",
-              params: {
-                signerCredentials,
-              },
-            })
-          }
-        }}
+        onClick={claimGift}
         type="button"
         size="lg"
         className="mt-5"

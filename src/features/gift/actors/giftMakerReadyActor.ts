@@ -1,4 +1,3 @@
-import type { WalletSignatureResult } from "src/types/swap"
 import { type PromiseActorLogic, assign, setup } from "xstate"
 import type { SignerCredentials } from "../../../core/formatters"
 import { logger } from "../../../logger"
@@ -7,38 +6,30 @@ import type {
   TokenValue,
   UnifiedTokenInfo,
 } from "../../../types/base"
-import type { MultiPayload } from "../../../types/defuse-contracts-types"
 import type { EscrowCredentials } from "../utils/generateEscrowCredentials"
-import { giftMakerCancellationActor } from "./giftMakerCancellationActor"
-import type {
-  GiftMakerCancellationActorInput,
-  GiftMakerCancellationActorOutput,
-} from "./giftMakerCancellationActor"
+import type { GiftInfo } from "../utils/getGiftInfo"
+import {} from "../utils/parseMultiPayload"
+import {
+  type GiftClaimActorOutput,
+  giftClaimActor,
+} from "./shared/giftClaimActor"
 
 export type GiftMakerReadyActorInput = {
+  giftId: string
+  giftInfo: GiftInfo
+  signerCredentials: SignerCredentials
+  escrowCredentials: EscrowCredentials
   parsed: {
     token: BaseTokenInfo | UnifiedTokenInfo
     amount: TokenValue
     message: string
   }
-  raw: {
-    token: BaseTokenInfo | UnifiedTokenInfo
-    amount: string
-    message: string
-  }
-  giftId: string
-  usedNonceBase64: string
-  multiPayload: MultiPayload
-  signerCredentials: SignerCredentials
-  signatureResult: WalletSignatureResult
-  escrowCredentials: EscrowCredentials
 }
 
 type GiftMakerReadyActorErrors = { reason: "EXCEPTION" }
 
 interface GiftMakerReadyActorContext extends GiftMakerReadyActorInput {
   giftId: string
-  usedNonceBase64: string
   error: null | GiftMakerReadyActorErrors
 }
 
@@ -46,12 +37,15 @@ export const giftMakerReadyActor = setup({
   types: {
     input: {} as GiftMakerReadyActorInput,
     context: {} as GiftMakerReadyActorContext,
-    events: {} as { type: "FINISH" | "CANCEL_ORDER" },
+    events: {} as { type: "FINISH" | "CANCEL_GIFT" },
+    children: {} as {
+      giftMakerClaimRef: "claimGiftActor"
+    },
   },
   actors: {
-    cancelGiftActor: giftMakerCancellationActor as unknown as PromiseActorLogic<
-      GiftMakerCancellationActorOutput,
-      GiftMakerCancellationActorInput
+    claimGiftActor: giftClaimActor as unknown as PromiseActorLogic<
+      GiftClaimActorOutput,
+      void
     >,
   },
   actions: {
@@ -78,17 +72,17 @@ export const giftMakerReadyActor = setup({
     idle: {
       on: {
         FINISH: "finished",
-        CANCEL_ORDER: "cancellingGift",
+        CANCEL_GIFT: "cancelling",
       },
     },
-    cancellingGift: {
+    cancelling: {
       invoke: {
-        id: "giftMakerCancellationRef",
-        src: "cancelGiftActor",
+        id: "giftMakerClaimRef",
+        src: "claimGiftActor",
         input: ({ context }) => {
           return {
-            ...context,
-            token: context.parsed.token,
+            giftInfo: context.giftInfo,
+            signerCredentials: context.signerCredentials,
           }
         },
         onDone: [
@@ -96,20 +90,21 @@ export const giftMakerReadyActor = setup({
             target: "finished",
             guard: {
               type: "isTrue",
-              params: ({ event }) =>
-                event.output.giftStatus === "cancelled" ||
-                event.output.giftStatus === "already_cancelled_or_executed",
+              params: ({ event }) => event.output.giftStatus === "claimed",
             },
           },
-          "idle",
+          {
+            target: "idle",
+            actions: [
+              {
+                type: "logError",
+                params: {
+                  error: { reason: "EXCEPTION" },
+                },
+              },
+            ],
+          },
         ],
-        onError: {
-          target: "idle",
-          actions: [
-            { type: "logError", params: ({ event }) => event },
-            { type: "setError", params: { reason: "EXCEPTION" } },
-          ],
-        },
       },
     },
 

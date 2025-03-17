@@ -43,7 +43,7 @@ function GiftTakerScreens({
 }: GiftTakerWidgetProps) {
   const loading = <div>Loading...</div>
 
-  const giftTakerClaimRef = useActorRef(giftTakerRootMachine, {
+  const giftTakerRootRef = useActorRef(giftTakerRootMachine, {
     input: {
       secretKey,
       tokenList,
@@ -55,7 +55,7 @@ function GiftTakerScreens({
       ? { credential: userAddress, credentialType: userChainType }
       : null
 
-  const snapshot = useSelector(giftTakerClaimRef, (state) => state)
+  const snapshot = useSelector(giftTakerRootRef, (state) => state)
 
   if (snapshot?.context.error != null) {
     return <GiftTakerInvalidClaim error={snapshot.context.error.reason} />
@@ -67,7 +67,7 @@ function GiftTakerScreens({
 
   return (
     <>
-      {snapshot.status === "done" && snapshot.context.intentHashes ? (
+      {snapshot.matches("claiming") && snapshot.context.intentHashes ? (
         <GiftTakerSuccessScreen
           giftInfo={snapshot.context.giftInfo}
           intentHashes={snapshot.context.intentHashes}
@@ -76,7 +76,7 @@ function GiftTakerScreens({
         <GiftTakerForm
           giftInfo={snapshot.context.giftInfo}
           signerCredentials={signerCredentials}
-          giftTakerClaimRef={giftTakerClaimRef}
+          giftTakerRootRef={giftTakerRootRef}
         />
       )}
     </>

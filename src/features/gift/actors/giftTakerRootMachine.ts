@@ -1,5 +1,5 @@
 import { assert } from "src/utils/assert"
-import { type PromiseActorLogic, assertEvent, assign, setup } from "xstate"
+import { type PromiseActorLogic, assign, setup } from "xstate"
 import type { SignerCredentials } from "../../../core/formatters"
 import { logger } from "../../../logger"
 import type { PublishIntentsErr } from "../../../services/intentService"
@@ -12,13 +12,7 @@ import {
 } from "./shared/giftClaimActor"
 import { giftOpenSecretActor } from "./shared/giftOpenSecretActor"
 
-type GiftTakeClaimErr = {
-  reason:
-    | "CANNOT_SIGN_GIFT"
-    | "CANNOT_CLAIM_GIFT"
-    | "CANNOT_OPEN_GIFT_SECRET"
-    | "NO_TOKEN_OR_GIFT_HAS_BEEN_CLAIMED"
-}
+type GiftTakeClaimErr = { reason: "EXCEPTION" }
 
 type GiftTakerClaimingActorErrors = PublishIntentsErr | GiftTakeClaimErr
 
@@ -58,11 +52,8 @@ export const giftTakerRootMachine = setup({
     input: {} as GiftTakerRootMachineInput,
     context: {} as GiftTakerRootMachineContext,
     output: {} as GiftTakerRootMachineOutput,
-    events: {} as {
-      type: "CONFIRM_CLAIM"
-      params: {
-        signerCredentials: SignerCredentials
-      }
+    children: {} as {
+      giftTakerClaimRef: "claimGiftActor"
     },
   },
   actors: {
@@ -79,10 +70,10 @@ export const giftTakerRootMachine = setup({
     setError: assign({
       error: (_, error: GiftTakerClaimingActorErrors) => error,
     }),
-    clearError: assign({ error: null }),
   },
   guards: {
     isOk: (_, params: { tag: "ok" | "err" }) => params.tag === "ok",
+    isTrue: (_, value: boolean) => value,
   },
 }).createMachine({
   /** @xstate-layout N4IgpgJg5mDOIC5QAoC2BDAxgCwJYDswBKAOlwgBswBiAYQHkA5AMQEkAlAWQH1aAZAIKtOAbQAMAXUSgADgHtYuAC645+aSAAeiALQBOAExiSAVgAsAZjEA2E9YAce62b0B2ADQgAnonslXBmbWAQYGAIxG9q6u9gC+sZ5oWHiEpHIyYPgAymCYAE5gStQQamBk+ABucgDWZemZOfmF7GAAZuJSSCDyiipqGtoI+tZ6JNZiYbb2JuYGJhb2nj5DYXpmY3auYkFhYrMWFvGJGDgExCT12bkFRSWE5VW1FxlXTUot7WGdsgrKqupdQY6BbrPSGPQzLZmIyuCzWJa6VbrWzBbbWXb7Q4JEBJU6pEiYCjoXCoAhQYqlB41MqE4moADiuFaSgEmCUcjyHw6Gh6f36gN0bhMJAO4TMYhiFjBdgRCAM1gsJDBVnMMzc9gsdiOOJOKXOtJJZIp9wIjxpRJJjOZrPZnLaIi+PN+fQBoCBCusJGhegxVhioRMssCYRIE2cDhMrkhZjC8Wx+DkEDgGlxeqITt6-wGiO2rhIYVcq0LZhMYjmYVlOhjeaiYRjYTskaCJm1qbOpHIVAzfNdWl0UWM3pikxG0QblesBlDq1sBhiejhZiird17eeDWuhW7LuzQzBfg14U1ERMBnsoUrB2MFmLYohwSjrhXyTXBtJ+Cg26zAr3YPzhbcOtS3LCtvEQXYQzEKwDCsZwtigltsTbfE30gL9+TdQUy3zOF7DEewRzWNZZThUZC0LOYLHCOZ7Gsaxnzxc50AAIw5JQ0K6Xkdx-YEoP8VxoTPMILALKiYJIkZ-ALE8qJPWj6LjIA */
@@ -95,24 +86,17 @@ export const giftTakerRootMachine = setup({
     signerCredentials: null,
   }),
 
-  initial: "openSecret",
+  initial: "idle",
 
   states: {
     idle: {
-      on: {
-        CONFIRM_CLAIM: "claiming",
-      },
-    },
-    openSecret: {
       invoke: {
         id: "openSecretRef",
         src: "openSecretActor",
-
         input: ({ context }) => context,
-
         onDone: [
           {
-            target: "idle",
+            target: "claiming",
             guard: ({ event }) => event.output.tag === "ok",
             actions: assign({
               giftInfo: ({ event }) => {
@@ -137,31 +121,20 @@ export const giftTakerRootMachine = setup({
       },
     },
     claiming: {
-      entry: "clearError",
-
       invoke: {
-        id: "claimGiftActorRef",
+        id: "giftTakerClaimRef",
         src: "claimGiftActor",
-
-        input: ({ context, event }) => {
-          assertEvent(event, "CONFIRM_CLAIM")
-          return {
-            giftInfo: context.giftInfo,
-            signerCredentials: event.params.signerCredentials,
-          }
-        },
-
         onDone: [
           {
-            target: "claimed",
+            target: "finished",
             guard: {
-              type: "isOk",
-              params: ({ event }) => event.output,
+              type: "isTrue",
+              params: ({ event }) => event.output.giftStatus === "claimed",
             },
             actions: assign({
               intentHashes: ({ event }) => {
-                assert(event.output.tag === "ok")
-                return event.output.value.intentHashes
+                assert(event.output.giftStatus === "claimed")
+                return event.output.intentHashes
               },
             }),
           },
@@ -170,7 +143,9 @@ export const giftTakerRootMachine = setup({
             actions: [
               {
                 type: "logError",
-                params: ({ event }) => ({ error: event.output.value }),
+                params: {
+                  error: { reason: "EXCEPTION" },
+                },
               },
             ],
           },
@@ -186,7 +161,8 @@ export const giftTakerRootMachine = setup({
         },
       },
     },
-    claimed: {
+
+    finished: {
       type: "final",
     },
     aborted: {

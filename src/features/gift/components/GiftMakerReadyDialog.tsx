@@ -2,36 +2,48 @@ import { Check as CheckIcon, Copy as CopyIcon } from "@phosphor-icons/react"
 import { Button, Dialog, Spinner } from "@radix-ui/themes"
 import { useSelector } from "@xstate/react"
 import { useCallback } from "react"
+import type { SignerCredentials } from "src/core/formatters"
 import type { ActorRefFrom } from "xstate"
 import { ButtonCustom } from "../../../components/Button/ButtonCustom"
 import { Copy } from "../../../components/IntentCard/CopyButton"
 import { BaseModalDialog } from "../../../components/Modal/ModalDialog"
-import type { giftMakerCancellationActor } from "../actors/giftMakerCancellationActor"
 import type { giftMakerReadyActor } from "../actors/giftMakerReadyActor"
+import type { giftClaimActor } from "../actors/shared/giftClaimActor"
+import type { GiftInfo } from "../utils/getGiftInfo"
 import { ShareableGiftImage } from "./ShareableGiftImage"
 import { ErrorReason } from "./shared/ErrorReason"
 
 type GiftMakerReadyDialogProps = {
   readyGiftRef: ActorRefFrom<typeof giftMakerReadyActor>
   generateLink: (secretKey: string) => string
+  signerCredentials: SignerCredentials
 }
 
 export function GiftMakerReadyDialog({
   readyGiftRef,
   generateLink,
+  signerCredentials,
 }: GiftMakerReadyDialogProps) {
-  const { giftCancellationRef } = useSelector(readyGiftRef, (state) => ({
-    giftCancellationRef: state.children.giftMakerCancellationRef as
-      | undefined
-      | ActorRefFrom<typeof giftMakerCancellationActor>,
-  }))
+  const { giftCancellationRef, giftInfo } = useSelector(
+    readyGiftRef,
+    (state) => ({
+      giftCancellationRef: state.children.giftMakerClaimRef as
+        | undefined
+        | ActorRefFrom<typeof giftClaimActor>,
+      giftInfo: state.context.giftInfo,
+    })
+  )
   return (
     <>
       <GiftMakerDialog
         readyGiftRef={readyGiftRef}
         generateLink={generateLink}
       />
-      <CancellationDialog actorRef={giftCancellationRef} />
+      <CancellationDialog
+        giftInfo={giftInfo}
+        actorRef={giftCancellationRef}
+        signerCredentials={signerCredentials}
+      />
     </>
   )
 }
@@ -52,7 +64,7 @@ function GiftMakerDialog({
   }
 
   const cancelGift = () => {
-    readyGiftRef.send({ type: "CANCEL_ORDER" })
+    readyGiftRef.send({ type: "CANCEL_GIFT" })
   }
 
   return (
@@ -116,23 +128,32 @@ function GiftMakerDialog({
 }
 
 interface CancellationDialogProps {
-  actorRef: ActorRefFrom<typeof giftMakerCancellationActor> | undefined | null
+  actorRef: ActorRefFrom<typeof giftClaimActor> | undefined | null
+  giftInfo: GiftInfo
+  signerCredentials: SignerCredentials
 }
 
-function CancellationDialog({ actorRef }: CancellationDialogProps) {
+function CancellationDialog({
+  actorRef,
+  giftInfo,
+  signerCredentials,
+}: CancellationDialogProps) {
   const snapshot = useSelector(actorRef ?? undefined, (state) => state)
 
   const abortCancellation = useCallback(() => {
-    actorRef?.send({ type: "ABORT_CANCELLATION" })
+    actorRef?.send({ type: "ABORT_CLAIM" })
   }, [actorRef])
 
   const ackCancellationImpossible = useCallback(() => {
-    actorRef?.send({ type: "ACK_CANCELLATION_IMPOSSIBLE" })
+    actorRef?.send({ type: "ACK_CLAIM_IMPOSSIBLE" })
   }, [actorRef])
 
   const confirmCancellation = useCallback(() => {
-    actorRef?.send({ type: "CONFIRM_CANCELLATION" })
-  }, [actorRef])
+    actorRef?.send({
+      type: "CONFIRM_CLAIM",
+      params: { giftInfo, signerCredentials },
+    })
+  }, [actorRef, giftInfo, signerCredentials])
 
   return (
     <BaseModalDialog
@@ -140,7 +161,7 @@ function CancellationDialog({ actorRef }: CancellationDialogProps) {
       onClose={abortCancellation}
       isDismissable
     >
-      {snapshot?.matches("idleUncancellable") ? (
+      {snapshot?.matches("idleUnclaimable") ? (
         <>
           <div>This gift is either already cancelled or executed.</div>
 
@@ -183,10 +204,8 @@ function CancellationDialog({ actorRef }: CancellationDialogProps) {
               className="md:flex-1 font-bold"
               onClick={confirmCancellation}
             >
-              <Spinner loading={!!snapshot?.matches("cancelling")} />
-              {snapshot?.matches("cancelling")
-                ? "Cancelling..."
-                : "Cancel gift"}
+              <Spinner loading={!!snapshot?.matches("claiming")} />
+              {snapshot?.matches("claiming") ? "Cancelling..." : "Cancel gift"}
             </Button>
           </div>
         </>

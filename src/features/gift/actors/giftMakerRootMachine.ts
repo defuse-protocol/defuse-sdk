@@ -20,6 +20,11 @@ import {
   type EscrowCredentials,
   generateEscrowCredentials,
 } from "../utils/generateEscrowCredentials"
+import type { GiftInfo } from "../utils/getGiftInfo"
+import {
+  getTokenDiffFromTransferMessage,
+  parseMultiPayloadTransferMessage,
+} from "../utils/parseMultiPayload"
 import { giftMakerFormMachine } from "./giftMakerFormMachine"
 import {
   type GiftMakerPublishingActorInput,
@@ -276,14 +281,7 @@ export const giftMakerRootMachine = setup({
           assert(signData, "signData is not defined")
 
           const form = context.formRef.getSnapshot()
-          const formValuesSnapshot = form.context.formValues.getSnapshot()
           const parsedValuesSnapshot = form.context.parsedValues.getSnapshot()
-
-          const formValues = formValuesSnapshot.context as {
-            [K in keyof typeof formValuesSnapshot.context]: NonNullable<
-              (typeof formValuesSnapshot.context)[K]
-            >
-          }
 
           const parsedValues = parsedValuesSnapshot.context as {
             [K in keyof typeof parsedValuesSnapshot.context]: NonNullable<
@@ -291,15 +289,29 @@ export const giftMakerRootMachine = setup({
             >
           }
 
+          const parsed = parseMultiPayloadTransferMessage(signData.multiPayload)
+          assert(parsed !== null, "Invalid parsed multiPayload")
+
+          const tokenDiff = getTokenDiffFromTransferMessage(parsed)
+          assert(tokenDiff !== null, "Invalid token diff")
+
+          const giftInfo: GiftInfo = {
+            tokenDiff,
+            token: parsedValues.token,
+            secretKey: context.escrowCredentials.NEP413.secretKey,
+            accountId: context.escrowCredentials.NEP413.userId,
+          }
+
           return {
-            parsed: parsedValues,
-            raw: formValues,
-            usedNonceBase64: signData.usedNonceBase64,
-            multiPayload: signData.multiPayload,
             giftId: signData.giftId,
+            giftInfo,
             signerCredentials: signData.signerCredentials,
-            signatureResult: signData.signatureResult,
             escrowCredentials: context.escrowCredentials,
+            parsed: {
+              token: parsedValues.token,
+              amount: parsedValues.amount,
+              message: parsedValues.message,
+            },
           }
         },
 

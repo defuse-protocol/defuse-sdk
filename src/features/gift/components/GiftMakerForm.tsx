@@ -146,6 +146,7 @@ export function GiftMakerForm({
           <GiftMakerReadyDialog
             readyGiftRef={readyGiftRef}
             generateLink={generateLink}
+            signerCredentials={signerCredentials}
           />
         )}
 
