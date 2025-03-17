@@ -90,7 +90,9 @@ export const giftMakerReadyActor = setup({
             target: "finished",
             guard: {
               type: "isTrue",
-              params: ({ event }) => event.output.giftStatus === "claimed",
+              params: ({ event }) =>
+                event.output.giftStatus === "claimed" ||
+                event.output.giftStatus === "already_claimed_or_executed",
             },
           },
           {
