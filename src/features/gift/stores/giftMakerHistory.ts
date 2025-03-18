@@ -1,20 +1,15 @@
 import { create } from "zustand"
 import { createJSONStorage, persist } from "zustand/middleware"
 import type { SignerCredentials } from "../../../core/formatters"
-import type { BaseTokenInfo, UnifiedTokenInfo } from "../../../types/base"
+import type {} from "../../../types/base"
 import {
   type DefuseUserId,
   userAddressToDefuseUserId,
 } from "../../../utils/defuse"
-import type { EscrowCredentials } from "../utils/generateEscrowCredentials"
+import type { GiftInfo } from "../actors/shared/getGiftInfo"
 
-export type GiftMakerHistory = {
+export interface GiftMakerHistory extends GiftInfo {
   giftId: string
-  updatedAt: number
-  escrowCredentials: EscrowCredentials
-  token: BaseTokenInfo | UnifiedTokenInfo
-  amount: string
-  decimals: number
   intentHashes: string[]
 }
 
@@ -43,12 +38,23 @@ export const giftMakerHistoryStore = create<Store>()(
             ? user
             : userAddressToDefuseUserId(user.credential, user.credentialType)
 
+        const stringifiedTokenDiff = Object.fromEntries(
+          Object.entries(gift.tokenDiff).map(([key, value]) => [
+            key,
+            value.toString(),
+          ])
+        )
+
         set((state) => ({
           gifts: {
             ...state.gifts,
             [userId]: [
               ...(state.gifts[userId] ?? []),
-              { ...gift, updatedAt: Date.now() },
+              {
+                ...gift,
+                updatedAt: Date.now(),
+                tokenDiff: stringifiedTokenDiff,
+              },
             ],
           },
         }))
