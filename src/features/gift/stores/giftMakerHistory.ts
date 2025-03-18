@@ -1,12 +1,16 @@
 import { create } from "zustand"
-import { createJSONStorage, persist } from "zustand/middleware"
+import { persist } from "zustand/middleware"
 import type { SignerCredentials } from "../../../core/formatters"
-import type {} from "../../../types/base"
 import {
   type DefuseUserId,
   userAddressToDefuseUserId,
 } from "../../../utils/defuse"
 import type { GiftInfo } from "../actors/shared/getGiftInfo"
+
+import { localStorageHandler } from "./localStorageHandler"
+import { sessionStorageHandler } from "./sessionStorageHandler"
+
+export const STORAGE_NAME = "intents_sdk.gift_maker_gifts"
 
 export interface GiftMakerHistory extends GiftInfo {
   giftId: string
@@ -26,6 +30,27 @@ type Actions = {
 }
 
 type Store = State & Actions
+
+const tripleStorage = {
+  getItem: async (name: string) => {
+    const localData = localStorageHandler.getItem(name)
+    const sessionData = sessionStorageHandler.getItem(name)
+    const data = localData || sessionData
+    return data ? JSON.parse(data) : null
+  },
+  setItem: async (
+    name: string,
+    value: Record<DefuseUserId, GiftMakerHistory[]>
+  ) => {
+    const stringValue = JSON.stringify(value)
+    localStorageHandler.setItem(name, stringValue)
+    sessionStorageHandler.setItem(name, stringValue)
+  },
+  removeItem: async (name: string) => {
+    localStorageHandler.removeItem(name)
+    sessionStorageHandler.removeItem(name)
+  },
+}
 
 export const giftMakerHistoryStore = create<Store>()(
   persist(
@@ -77,8 +102,8 @@ export const giftMakerHistoryStore = create<Store>()(
       },
     }),
     {
-      name: "intents_sdk.gift_maker_gifts",
-      storage: createJSONStorage(() => localStorage),
+      name: STORAGE_NAME,
+      storage: tripleStorage,
     }
   )
 )
