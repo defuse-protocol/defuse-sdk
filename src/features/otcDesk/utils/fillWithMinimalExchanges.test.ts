@@ -271,6 +271,22 @@ describe("fillWithMinimalExchanges", () => {
       })
     )
   })
+
+  it("splits into 3 different tokens", () => {
+    const balances = {
+      A: 1000n,
+      B: 1000n,
+      C: 1000n,
+    }
+    const required = {
+      A: 2000n,
+    }
+
+    const result = fillWithMinimalExchanges(balances, required, 1n)
+
+    expect(result.success).toBe(true)
+    fillInvariant(balances, required, result)
+  })
 })
 
 function fillInvariant(
