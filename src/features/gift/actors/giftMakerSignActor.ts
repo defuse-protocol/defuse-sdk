@@ -1,4 +1,4 @@
-import { base64 } from "@scure/base"
+import { randomDefuseNonce } from "src/utils/messageFactory"
 import { assertEvent, setup } from "xstate"
 import {
   type SignerCredentials,
@@ -18,7 +18,6 @@ import type {
 import type { MultiPayload } from "../../../types/defuse-contracts-types"
 import type { WalletMessage, WalletSignatureResult } from "../../../types/swap"
 import { findError } from "../../../utils/errors"
-import { randomDefuseNonce } from "../../../utils/messageFactory"
 import {
   adjustDecimals,
   getAnyBaseTokenInfo,
@@ -52,14 +51,12 @@ export type GiftMakerSignActorOutput =
 export type GiftMakerSignActorSuccess = {
   multiPayload: MultiPayload
   signerCredentials: SignerCredentials
-  usedNonceBase64: string
   signatureResult: WalletSignatureResult
   escrowCredentials: EscrowCredentials
   giftId: string
 }
 
 export type GiftMakerSignActorContext = {
-  nonce: Uint8Array
   parsed: GiftMakerSignActorInput["parsed"]
   signerCredentials: GiftMakerSignActorInput["signerCredentials"]
   walletMessage: WalletMessage
@@ -95,8 +92,6 @@ export const giftMakerSignActor = setup({
   initial: "signing",
 
   context: ({ input }) => {
-    const nonce = randomDefuseNonce()
-
     let tokenDiff: Record<BaseTokenInfo["defuseAssetId"], bigint>
 
     try {
@@ -122,7 +117,6 @@ export const giftMakerSignActor = setup({
       const token = getAnyBaseTokenInfo(input.parsed.token)
       tokenDiff = {
         [token.defuseAssetId]: adjustDecimals(
-          // We need to negate the amount, as the balance is being reduced
           input.parsed.amount.amount,
           input.parsed.amount.decimals,
           token.decimals
@@ -130,22 +124,14 @@ export const giftMakerSignActor = setup({
       }
     }
 
-    const walletMessage = createTransferMessage(
-      [...Object.entries(tokenDiff)],
-      {
-        signerId: input.signerCredentials,
-        nonce: nonce,
-        referral: input.referral,
-        memo:
-          input.parsed.message.length > 0
-            ? input.parsed.message
-            : "Enjoy your gift!",
-        receiverId: input.escrowCredentials.credential,
-      }
-    )
+    const walletMessage = createTransferMessage(Object.entries(tokenDiff), {
+      signerId: input.signerCredentials,
+      referral: input.referral,
+      memo: input.parsed.message,
+      receiverId: input.escrowCredentials.credential,
+    })
 
     return {
-      nonce,
       walletMessage,
       parsed: input.parsed,
       signerCredentials: input.signerCredentials,
@@ -165,7 +151,7 @@ export const giftMakerSignActor = setup({
 
         input: ({ event, context }) => {
           assertEvent(event, "xstate.init")
-          const input = event.input as GiftMakerSignActorInput
+          const input = event.input
 
           return {
             signMessage: input.signMessage,
@@ -214,15 +200,19 @@ export const giftMakerSignActor = setup({
           context.signerCredentials
         )
 
+        const nonce =
+          "nonce" in event.output.value.signatureResult
+            ? event.output.value.signatureResult.nonce
+            : randomDefuseNonce()
+
         return {
           tag: "ok",
           value: {
             multiPayload,
             signatureResult: event.output.value.signatureResult,
             signerCredentials: context.signerCredentials,
-            usedNonceBase64: base64.encode(context.nonce),
             escrowCredentials: context.escrowCredentials,
-            giftId: `gift-${event.output.value.usedNonceBase64}`,
+            giftId: `gift-${nonce}`,
           },
         }
       },

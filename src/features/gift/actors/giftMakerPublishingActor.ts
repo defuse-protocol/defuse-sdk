@@ -84,25 +84,25 @@ export const giftMakerPublishingActor = setup({
     error: null,
   }),
 
-  output: ({ event }) => {
-    return event.output as GiftMakerPublishingActorOutput
+  output: ({ context }) => {
+    if (!context.intentHashes) {
+      return {
+        giftStatus: "not_published",
+      }
+    }
+    return {
+      giftStatus: "published",
+      intentHashes: context.intentHashes,
+    }
   },
 
   initial: "publishing",
 
   states: {
-    idleUncancellable: {
-      on: {
-        ACK_PUBLISHING_IMPOSSIBLE: "uncancellable",
-      },
-    },
-
     publishing: {
       invoke: {
         src: "publishActor",
-        input: ({ context, event }) => {
-          return context?.multiPayload ?? event.input?.multiPayload
-        },
+        input: ({ context }) => context.multiPayload,
 
         onError: {
           target: "#(machine).aborted",
@@ -129,13 +129,6 @@ export const giftMakerPublishingActor = setup({
             }),
           },
           {
-            target: "#(machine).idleUncancellable",
-            guard: {
-              type: "isNonceUsedError",
-              params: ({ event }) => event,
-            },
-          },
-          {
             target: "#(machine).aborted",
             actions: {
               type: "setError",
@@ -151,27 +144,14 @@ export const giftMakerPublishingActor = setup({
 
     published: {
       type: "final",
-      output: ({ context }) => {
-        assert(context.intentHashes, "intentHashes is not defined")
-        return {
-          giftStatus: "published",
-          intentHashes: context.intentHashes,
-        } satisfies GiftMakerPublishingActorOutput
-      },
     },
 
     uncancellable: {
       type: "final",
-      output: {
-        giftStatus: "not_published",
-      } satisfies GiftMakerPublishingActorOutput,
     },
 
     aborted: {
       type: "final",
-      output: {
-        giftStatus: "not_published",
-      } satisfies GiftMakerPublishingActorOutput,
     },
   },
 })
