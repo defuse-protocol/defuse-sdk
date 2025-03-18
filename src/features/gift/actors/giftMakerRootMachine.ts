@@ -313,7 +313,11 @@ export const giftMakerRootMachine = setup({
             message: parsedValues.message,
           }
 
-          assert(context.intentHashes, "intentHashes is not defined")
+          assert(
+            Array.isArray(context.intentHashes) &&
+              context.intentHashes.length > 0,
+            "intentHashes is empty or not an array"
+          )
           giftMakerHistoryStore.getState().addGift(
             {
               ...giftInfo,

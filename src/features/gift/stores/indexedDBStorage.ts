@@ -1,8 +1,8 @@
-const GIFT_DB_NAME = "intents_sdk.gift_maker_gifts"
+export const GIFT_STORAGE_NAME = "intents_sdk.gift_maker_gifts"
 const GIFT_STORE_NAME = "gifts"
 
 export const indexedDBStorage = {
-  dbName: GIFT_DB_NAME,
+  dbName: GIFT_STORAGE_NAME,
   storeName: GIFT_STORE_NAME,
 
   openDB: () => {
