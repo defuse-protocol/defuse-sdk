@@ -13,6 +13,8 @@ import type { GiftInfo } from "../actors/shared/getGiftInfo"
 import type { giftClaimActor } from "../actors/shared/giftClaimActor"
 import { ShareableGiftImage } from "./ShareableGiftImage"
 import { ErrorReason } from "./shared/ErrorReason"
+import { GiftDescription } from "./shared/GiftDescription"
+import { GiftHeader } from "./shared/GiftHeader"
 
 export type GiftTakerFormProps = {
   giftInfo: GiftInfo
@@ -62,24 +64,18 @@ export function GiftTakerForm({
 
   return (
     <div className="flex flex-col">
-      {/* Header Section */}
-      <div className="flex flex-row justify-between mb-5">
-        <div className="flex flex-col items-start gap-1.5">
-          <div className="text-2xl font-black text-gray-900 dark:text-gray-100 mb-2">
-            You've received a gift!
-          </div>
-          <div className="text-sm font-medium text-gray-600 dark:text-gray-400">
-            Sign in to claim it, no hidden fees or strings attached.
-          </div>
-        </div>
-      </div>
+      <GiftHeader title="You've received a gift!">
+        <GiftDescription description="Sign in to claim it, no hidden fees or strings attached." />
+      </GiftHeader>
 
       {/* Image Section */}
       <ShareableGiftImage
         token={giftInfo.token}
         amount={amount}
         message={
-          giftInfo.message ?? "You've received a gift! Click to claim it."
+          giftInfo.message.length > 0
+            ? giftInfo.message
+            : "You've received a gift! Click to claim it."
         }
       />
 

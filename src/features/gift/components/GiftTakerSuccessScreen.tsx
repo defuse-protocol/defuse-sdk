@@ -1,4 +1,3 @@
-import { Check as CheckIcon } from "@phosphor-icons/react"
 import { useQuery } from "@tanstack/react-query"
 import {
   computeTotalBalanceDifferentDecimals,
@@ -9,6 +8,9 @@ import { waitForIntentSettlement } from "../../../services/intentService"
 import { assert } from "../../../utils/assert"
 import type { GiftInfo } from "../actors/shared/getGiftInfo"
 import { GiftStrip } from "./GiftStrip"
+import { ActionIcon } from "./shared/ActionIcon"
+import { GiftDescription } from "./shared/GiftDescription"
+import { GiftHeader } from "./shared/GiftHeader"
 
 const NEAR_EXPLORER = "https://nearblocks.io"
 
@@ -42,30 +44,19 @@ export function GiftTakerSuccessScreen({
       : null
 
   return (
-    <div>
-      {/* Header Section */}
-      <div className="flex flex-row justify-between mb-5">
-        <div className="flex flex-col items-start gap-1.5">
-          <div className="text-2xl font-black text-gray-900 dark:text-gray-100 mb-2">
-            {intentStatus.isPending ? "You Gift on the way" : "Gift claimed!"}
-          </div>
-          {intentStatus.isPending ? (
-            <div className="text-sm font-medium text-gray-600 dark:text-gray-400">
-              Your gift is being processed.
-            </div>
-          ) : (
-            <div className="text-sm font-medium text-gray-600 dark:text-gray-400">
-              The funds are now in your account. Use them for trading or
-              withdraw to your wallet.
-            </div>
-          )}
-        </div>
-        <div className="flex justify-center items-start">
-          <div className="w-[64px] h-[64px] flex items-center justify-center rounded-full bg-green-4">
-            <CheckIcon weight="bold" className="size-7 text-green-a11" />
-          </div>
-        </div>
-      </div>
+    <>
+      <GiftHeader
+        title={intentStatus.isPending ? "You Gift on the way" : "Gift claimed!"}
+        icon={<ActionIcon type="success" />}
+      >
+        <GiftDescription
+          description={
+            intentStatus.isPending
+              ? "Your gift is being processed."
+              : "The funds are now in your account. Use them for trading or withdraw to your wallet."
+          }
+        />
+      </GiftHeader>
 
       {/* Gift Section */}
       <div className="flex flex-col text-xs mt-4 bg-gray-4 rounded-lg">
@@ -107,7 +98,7 @@ export function GiftTakerSuccessScreen({
           )}
         </div>
       </div>
-    </div>
+    </>
   )
 }
 

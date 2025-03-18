@@ -13,6 +13,8 @@ import type { giftClaimActor } from "../actors/shared/giftClaimActor"
 import type { GiftPayload } from "../types/sharedTypes"
 import { ShareableGiftImage } from "./ShareableGiftImage"
 import { ErrorReason } from "./shared/ErrorReason"
+import { GiftDescription } from "./shared/GiftDescription"
+import { GiftHeader } from "./shared/GiftHeader"
 
 type GiftMakerReadyDialogProps = {
   readyGiftRef: ActorRefFrom<typeof giftMakerReadyActor>
@@ -81,16 +83,13 @@ function GiftMakerDialog({
 
   return (
     <BaseModalDialog open onClose={finish} isDismissable>
-      {/* Header Section */}
-      <div className="flex flex-col items-center text-center mb-6">
-        <Dialog.Title className="text-2xl font-black text-gray-900 dark:text-gray-100 mb-2">
-          Share your gift
-        </Dialog.Title>
-        <Dialog.Description className="text-sm font-medium text-gray-11 dark:text-gray-400">
-          Your funds are on-chain. The recipient can claim them via the link, or
-          you can reclaim them if needed.
-        </Dialog.Description>
-      </div>
+      <GiftHeader title="Share your gift" className="mt-2 text-center">
+        <GiftDescription
+          description="Your funds are on-chain. The recipient can claim them via the link, or
+          you can reclaim them if needed."
+          className="text-center"
+        />
+      </GiftHeader>
 
       {/* Image Section */}
       <ShareableGiftImage

@@ -24,6 +24,8 @@ import { giftMakerRootMachine } from "../actors/giftMakerRootMachine"
 import type { GiftPayload, SignMessage } from "../types/sharedTypes"
 import { GiftMakerReadyDialog } from "./GiftMakerReadyDialog"
 import { GiftMessageInput } from "./GiftMessageInput"
+import { GiftDescription } from "./shared/GiftDescription"
+import { GiftHeader } from "./shared/GiftHeader"
 
 export type GiftMakerWidgetProps = {
   /** List of available tokens for trading */
@@ -150,18 +152,12 @@ export function GiftMakerForm({
           />
         )}
 
-      {/* Header Section */}
-      <div className="flex flex-row justify-between mb-5">
-        <div className="flex flex-col items-start gap-1.5">
-          <div className="text-2xl font-black text-gray-900 dark:text-gray-100 mb-2">
-            Share gift
-          </div>
-          <div className="text-sm font-medium text-gray-600 dark:text-gray-400">
-            Send assets to your friends and help them get started on NEAR
-            Intents, hassle-free.
-          </div>
-        </div>
-      </div>
+      <GiftHeader title="Share gift">
+        <GiftDescription
+          description="Send assets to your friends and help them get started on NEAR
+            Intents, hassle-free."
+        />
+      </GiftHeader>
 
       <form
         onSubmit={(e) => {
