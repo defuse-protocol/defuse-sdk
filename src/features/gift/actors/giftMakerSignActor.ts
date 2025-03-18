@@ -52,7 +52,6 @@ export type GiftMakerSignActorOutput =
 export type GiftMakerSignActorSuccess = {
   multiPayload: MultiPayload
   signerCredentials: SignerCredentials
-  usedNonceBase64: string
   signatureResult: WalletSignatureResult
   escrowCredentials: EscrowCredentials
   giftId: string
@@ -220,9 +219,8 @@ export const giftMakerSignActor = setup({
             multiPayload,
             signatureResult: event.output.value.signatureResult,
             signerCredentials: context.signerCredentials,
-            usedNonceBase64: base64.encode(context.nonce),
             escrowCredentials: context.escrowCredentials,
-            giftId: `gift-${event.output.value.usedNonceBase64}`,
+            giftId: base64.encode(context.nonce),
           },
         }
       },

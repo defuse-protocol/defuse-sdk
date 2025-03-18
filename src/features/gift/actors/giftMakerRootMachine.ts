@@ -16,6 +16,7 @@ import {
   type Events as DepositedBalanceEvents,
   depositedBalanceMachine,
 } from "../../machines/depositedBalanceMachine"
+import { giftMakerHistoryStore } from "../stores/giftMakerHistory"
 import {
   type EscrowCredentials,
   generateEscrowCredentials,
@@ -72,6 +73,7 @@ export const giftMakerRootMachine = setup({
       escrowCredentials: EscrowCredentials
       referral: string | undefined
       signData: null | GiftMakerSignActorSuccess
+      intentHashes: null | string[]
     },
     children: {} as {
       readyGiftRef: "readyGiftActor"
@@ -117,6 +119,7 @@ export const giftMakerRootMachine = setup({
     cleanup: assign({
       error: null,
       signData: null,
+      intentHashes: null,
     }),
   },
   guards: {
@@ -140,6 +143,7 @@ export const giftMakerRootMachine = setup({
     escrowCredentials: generateEscrowCredentials(),
     referral: input.referral,
     signData: null,
+    intentHashes: null,
   }),
 
   initial: "editing",
@@ -167,7 +171,7 @@ export const giftMakerRootMachine = setup({
       },
     },
     signing: {
-      entry: [],
+      entry: "cleanup",
 
       on: {
         COMPLETE_SIGN: {
@@ -257,6 +261,12 @@ export const giftMakerRootMachine = setup({
               return event.output.giftStatus === "published"
             },
             target: "signed",
+            actions: assign({
+              intentHashes: ({ event }) => {
+                assert(event.output.giftStatus === "published")
+                return event.output.intentHashes
+              },
+            }),
           },
           {
             target: "editing",
@@ -302,6 +312,16 @@ export const giftMakerRootMachine = setup({
             accountId: context.escrowCredentials.credential,
             message: parsedValues.message,
           }
+
+          assert(context.intentHashes, "intentHashes is not defined")
+          giftMakerHistoryStore.getState().addGift(
+            {
+              ...giftInfo,
+              giftId: signData.giftId,
+              intentHashes: context.intentHashes,
+            },
+            signData.signerCredentials
+          )
 
           return {
             giftId: signData.giftId,
