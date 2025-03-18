@@ -48,8 +48,7 @@ export const giftMakerPublishingActor = setup({
           return { tag: "err" as const, value: result.unwrapErr() }
         }
         const intentHashes = result.unwrap()
-        const intentHash = intentHashes
-        assert(intentHash != null)
+        assert(intentHashes != null)
         return { tag: "ok" as const, value: intentHashes }
       })
     }),
