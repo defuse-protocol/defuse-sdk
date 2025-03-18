@@ -3,6 +3,7 @@ import {} from "react"
 import type { SignerCredentials } from "../../../core/formatters"
 import { userAddressToDefuseUserId } from "../../../utils/defuse"
 import { useGiftMakerHistory } from "../stores/giftMakerHistory"
+import type { GiftPayload } from "../types/sharedTypes"
 import { GiftMakerHistoryItem } from "./shared/GiftMakerHistoryItem"
 
 export function GiftMakerHistory({
@@ -10,7 +11,7 @@ export function GiftMakerHistory({
   generateLink,
 }: {
   signerCredentials: SignerCredentials
-  generateLink: (secretKey: string) => string
+  generateLink: (giftPayload: GiftPayload) => string
 }) {
   const gifts = useGiftMakerHistory((s) => {
     const userId = userAddressToDefuseUserId(
@@ -30,10 +31,10 @@ export function GiftMakerHistory({
 
   return (
     <div className="flex flex-col gap-2.5">
-      {gifts.map((gift) => (
+      {gifts.map((giftInfo) => (
         <GiftMakerHistoryItem
-          key={gift.giftId}
-          gift={gift}
+          key={giftInfo.giftId}
+          giftInfo={giftInfo}
           generateLink={generateLink}
         />
       ))}

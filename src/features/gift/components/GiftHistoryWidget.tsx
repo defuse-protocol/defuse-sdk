@@ -4,12 +4,13 @@ import type { ChainType } from "src/types/deposit"
 import { WidgetRoot } from "../../../components/WidgetRoot"
 import type { SignerCredentials } from "../../../core/formatters"
 import { cn } from "../../../utils/cn"
+import type { GiftPayload } from "../types/sharedTypes"
 import { GiftMakerHistory } from "./GiftMakerHistory"
 
 export type GiftHistoryWidgetProps = {
   userAddress: string | null | undefined
   userChainType: ChainType | null | undefined
-  generateLink: (secretKey: string) => string
+  generateLink: (giftPayload: GiftPayload) => string
 }
 
 export function GiftHistoryWidget(props: GiftHistoryWidgetProps) {
