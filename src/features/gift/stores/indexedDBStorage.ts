@@ -1,8 +1,9 @@
-import { GIFT_STORAGE_NAME } from "./giftMakerHistory"
+const GIFT_DB_NAME = "intents_sdk.gift_maker_gifts"
+const GIFT_STORE_NAME = "gifts"
 
 export const indexedDBStorage = {
-  dbName: GIFT_STORAGE_NAME,
-  storeName: "gifts",
+  dbName: GIFT_DB_NAME,
+  storeName: GIFT_STORE_NAME,
 
   openDB: () => {
     return new Promise<IDBDatabase>((resolve, reject) => {

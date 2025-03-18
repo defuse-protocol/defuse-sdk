@@ -11,7 +11,7 @@ import { indexedDBStorage } from "./indexedDBStorage"
 import { localStorageHandler } from "./localStorageHandler"
 import { sessionStorageHandler } from "./sessionStorageHandler"
 
-export const GIFT_STORAGE_NAME = "intents_sdk.gift_maker_gifts"
+const GIFT_STORAGE_NAME = "intents_sdk.gift_maker_gifts"
 
 export interface GiftMakerHistory extends GiftInfo {
   giftId: string
@@ -32,7 +32,7 @@ type Actions = {
 
 type Store = State & Actions
 
-const tripleStorage = {
+export const tripleStorage = {
   getItem: async (name: string) => {
     const localData = localStorageHandler.getItem(name)
     const sessionData = sessionStorageHandler.getItem(name)
