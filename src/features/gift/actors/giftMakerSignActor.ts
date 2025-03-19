@@ -1,5 +1,7 @@
 import { base64 } from "@scure/base"
-import { assertEvent, setup } from "xstate"
+import type { MultiPayload } from "src/types/defuse-contracts-types"
+
+import { type PromiseActorLogic, assertEvent, setup } from "xstate"
 import {
   type SignerCredentials,
   formatSignedIntent,
@@ -15,7 +17,6 @@ import type {
   TokenValue,
   UnifiedTokenInfo,
 } from "../../../types/base"
-import type { MultiPayload } from "../../../types/defuse-contracts-types"
 import type { WalletMessage, WalletSignatureResult } from "../../../types/swap"
 import { findError } from "../../../utils/errors"
 import { randomDefuseNonce } from "../../../utils/messageFactory"
@@ -27,6 +28,8 @@ import {
 import type { BalanceMapping } from "../../machines/depositedBalanceMachine"
 import {
   type Errors as SignIntentErrors,
+  type Input as SignIntentInput,
+  type Output as SignIntentOutput,
   signIntentMachine,
 } from "../../machines/signIntentMachine"
 import type { SignMessage } from "../types/sharedTypes"
@@ -47,18 +50,18 @@ export type GiftMakerSignActorInput = {
 
 export type GiftMakerSignActorOutput =
   | { tag: "err"; value: GiftMakerSignActorErrors }
-  | { tag: "ok"; value: GiftMakerSignActorSuccess }
-
-export type GiftMakerSignActorSuccess = {
-  multiPayload: MultiPayload
-  signerCredentials: SignerCredentials
-  signatureResult: WalletSignatureResult
-  escrowCredentials: EscrowCredentials
-  giftId: string
-}
+  | {
+      tag: "ok"
+      value: {
+        multiPayload: MultiPayload
+        signerCredentials: SignerCredentials
+        signatureResult: WalletSignatureResult
+        escrowCredentials: EscrowCredentials
+        giftId: string
+      }
+    }
 
 export type GiftMakerSignActorContext = {
-  nonce: Uint8Array
   parsed: GiftMakerSignActorInput["parsed"]
   signerCredentials: GiftMakerSignActorInput["signerCredentials"]
   walletMessage: WalletMessage
@@ -67,7 +70,7 @@ export type GiftMakerSignActorContext = {
 
 export type GiftMakerSignActorErrors =
   | SignIntentErrors
-  | { reason: "EXCEPTION" }
+  | { reason: "ERR_GIFT_SIGNING" }
 
 export const giftMakerSignActor = setup({
   types: {
@@ -79,7 +82,10 @@ export const giftMakerSignActor = setup({
       | { type: "COMPLETE"; output: GiftMakerSignActorOutput },
   },
   actors: {
-    signActor: signIntentMachine,
+    signActor: signIntentMachine as unknown as PromiseActorLogic<
+      SignIntentOutput,
+      SignIntentInput
+    >,
   },
   actions: {
     logError: (_, event: { error: unknown }) => {
@@ -94,8 +100,6 @@ export const giftMakerSignActor = setup({
   initial: "signing",
 
   context: ({ input }) => {
-    const nonce = randomDefuseNonce()
-
     let tokenDiff: Record<BaseTokenInfo["defuseAssetId"], bigint>
 
     try {
@@ -121,7 +125,6 @@ export const giftMakerSignActor = setup({
       const token = getAnyBaseTokenInfo(input.parsed.token)
       tokenDiff = {
         [token.defuseAssetId]: adjustDecimals(
-          // We need to negate the amount, as the balance is being reduced
           input.parsed.amount.amount,
           input.parsed.amount.decimals,
           token.decimals
@@ -129,22 +132,14 @@ export const giftMakerSignActor = setup({
       }
     }
 
-    const walletMessage = createTransferMessage(
-      [...Object.entries(tokenDiff)],
-      {
-        signerId: input.signerCredentials,
-        nonce: nonce,
-        referral: input.referral,
-        memo:
-          input.parsed.message.length > 0
-            ? input.parsed.message
-            : "Enjoy your gift!",
-        receiverId: input.escrowCredentials.credential,
-      }
-    )
+    const walletMessage = createTransferMessage(Object.entries(tokenDiff), {
+      signerId: input.signerCredentials,
+      referral: input.referral,
+      memo: input.parsed.message,
+      receiverId: input.escrowCredentials.credential,
+    })
 
     return {
-      nonce,
       walletMessage,
       parsed: input.parsed,
       signerCredentials: input.signerCredentials,
@@ -164,7 +159,7 @@ export const giftMakerSignActor = setup({
 
         input: ({ event, context }) => {
           assertEvent(event, "xstate.init")
-          const input = event.input as GiftMakerSignActorInput
+          const input = event.input
 
           return {
             signMessage: input.signMessage,
@@ -173,22 +168,39 @@ export const giftMakerSignActor = setup({
           }
         },
 
+        onDone: {
+          actions: [
+            {
+              type: "complete",
+              params: ({
+                context,
+                event,
+              }: {
+                context: GiftMakerSignActorContext
+                event: { output: SignIntentOutput }
+              }) => {
+                if (event.output.tag === "ok") {
+                  return {
+                    tag: "ok",
+                    value: {
+                      ...event.output.value,
+                      escrowCredentials: context.escrowCredentials,
+                      giftId: base64.encode(randomDefuseNonce()),
+                    },
+                  }
+                }
+                return event.output
+              },
+            },
+          ],
+        },
+
         onError: {
           actions: [
             { type: "logError", params: ({ event }) => event },
             {
               type: "complete",
-              params: { tag: "err", value: { reason: "EXCEPTION" } },
-            },
-          ],
-        },
-
-        // @ts-expect-error wtf???
-        onDone: {
-          actions: [
-            {
-              type: "complete",
-              params: ({ event }) => event.output,
+              params: { tag: "err", value: { reason: "ERR_GIFT_SIGNING" } },
             },
           ],
         },
@@ -216,11 +228,8 @@ export const giftMakerSignActor = setup({
         return {
           tag: "ok",
           value: {
+            ...event.output.value,
             multiPayload,
-            signatureResult: event.output.value.signatureResult,
-            signerCredentials: context.signerCredentials,
-            escrowCredentials: context.escrowCredentials,
-            giftId: base64.encode(context.nonce),
           },
         }
       },

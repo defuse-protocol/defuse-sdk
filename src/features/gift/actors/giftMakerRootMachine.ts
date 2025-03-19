@@ -17,6 +17,7 @@ import {
   depositedBalanceMachine,
 } from "../../machines/depositedBalanceMachine"
 import { giftMakerHistoryStore } from "../stores/giftMakerHistory"
+import type { GiftSignedResult } from "../types/sharedTypes"
 import {
   type EscrowCredentials,
   generateEscrowCredentials,
@@ -27,6 +28,7 @@ import {
 } from "../utils/parseMultiPayload"
 import { giftMakerFormMachine } from "./giftMakerFormMachine"
 import {
+  type GiftMakerPublishingActorErrors,
   type GiftMakerPublishingActorInput,
   type GiftMakerPublishingActorOutput,
   giftMakerPublishingActor,
@@ -39,10 +41,13 @@ import type {
   GiftMakerSignActorErrors,
   GiftMakerSignActorInput,
   GiftMakerSignActorOutput,
-  GiftMakerSignActorSuccess,
 } from "./giftMakerSignActor"
 import { giftMakerSignActor } from "./giftMakerSignActor"
 import type { GiftInfo } from "./shared/getGiftInfo"
+
+type GiftMakerRootMachineErrors =
+  | GiftMakerSignActorErrors
+  | GiftMakerPublishingActorErrors
 
 export const giftMakerRootMachine = setup({
   types: {
@@ -63,15 +68,17 @@ export const giftMakerRootMachine = setup({
             params: WalletMessage
           ) => Promise<WalletSignatureResult | null>
         }
-      | ({
+      | {
           type: "COMPLETE_SIGN"
-        } & GiftMakerSignActorSuccess),
+          params: GiftSignedResult
+        },
     context: {} as {
-      error: null | GiftMakerSignActorErrors
+      error: null | GiftMakerRootMachineErrors
       formRef: ActorRefFrom<typeof giftMakerFormMachine>
       depositedBalanceRef: ActorRefFrom<typeof depositedBalanceMachine>
       escrowCredentials: EscrowCredentials
       referral: string | undefined
+      signData: null | GiftSignedResult
       signData: null | GiftMakerSignActorSuccess
       intentHashes: null | string[]
     },
@@ -103,7 +110,12 @@ export const giftMakerRootMachine = setup({
     setError: assign({
       error: (
         _,
-        result: { tag: "err"; value: GiftMakerSignActorErrors } | { tag: "ok" }
+        result:
+          | {
+              tag: "err"
+              value: GiftMakerRootMachineErrors
+            }
+          | { tag: "ok" }
       ) => {
         assert(result.tag === "err")
         return result.value
@@ -113,8 +125,8 @@ export const giftMakerRootMachine = setup({
       "depositedBalanceRef",
       (_, event: DepositedBalanceEvents) => event
     ),
-    completeSign: ({ self }, event: GiftMakerSignActorSuccess) => {
-      self.send({ type: "COMPLETE_SIGN", ...event })
+    completeSign: ({ self }, event: GiftSignedResult) => {
+      self.send({ type: "COMPLETE_SIGN", params: event })
     },
     cleanup: assign({
       error: null,
@@ -213,7 +225,7 @@ export const giftMakerRootMachine = setup({
             },
             {
               type: "setError",
-              params: { tag: "err", value: { reason: "EXCEPTION" } },
+              params: { tag: "err", value: { reason: "ERR_GIFT_SIGNING" } },
             },
           ],
         },
@@ -243,7 +255,7 @@ export const giftMakerRootMachine = setup({
       entry: assign({
         signData: ({ event }) => {
           assertEvent(event, "COMPLETE_SIGN")
-          return event
+          return event.params
         },
       }),
       invoke: {
@@ -272,13 +284,18 @@ export const giftMakerRootMachine = setup({
             target: "editing",
             actions: {
               type: "setError",
-              params: { tag: "err", value: { reason: "EXCEPTION" } },
+              params: { tag: "err", value: { reason: "ERR_GIFT_PUBLISHING" } },
             },
           },
         ],
         onError: {
           target: "editing",
-          actions: [{ type: "logError", params: ({ event }) => event }],
+          actions: [
+            {
+              type: "logError",
+              params: { error: "EXCEPTION" },
+            },
+          ],
         },
       },
     },
@@ -293,11 +310,11 @@ export const giftMakerRootMachine = setup({
           const form = context.formRef.getSnapshot()
           const parsedValuesSnapshot = form.context.parsedValues.getSnapshot()
 
-          const parsedValues = parsedValuesSnapshot.context as {
-            [K in keyof typeof parsedValuesSnapshot.context]: NonNullable<
-              (typeof parsedValuesSnapshot.context)[K]
-            >
-          }
+          const parsedValues = parsedValuesSnapshot.context
+          assert(
+            parsedValues.token !== null && parsedValues.amount !== null,
+            "token and amount are not defined"
+          )
 
           const parsed = parseMultiPayloadTransferMessage(signData.multiPayload)
           assert(parsed !== null, "Invalid parsed multiPayload")

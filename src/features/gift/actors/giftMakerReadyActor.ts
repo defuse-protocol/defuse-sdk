@@ -25,7 +25,7 @@ export type GiftMakerReadyActorInput = {
   }
 }
 
-type GiftMakerReadyActorErrors = { reason: "EXCEPTION" }
+type GiftMakerReadyActorErrors = { reason: "GIFT_ALREADY_CLAIMED_OR_EXECUTED" }
 
 interface GiftMakerReadyActorContext extends GiftMakerReadyActorInput {
   giftId: string
@@ -100,12 +100,16 @@ export const giftMakerReadyActor = setup({
               {
                 type: "logError",
                 params: {
-                  error: { reason: "EXCEPTION" },
+                  error: { reason: "GIFT_ALREADY_CLAIMED_OR_EXECUTED" },
                 },
               },
             ],
           },
         ],
+        onError: {
+          target: "idle",
+          actions: [{ type: "logError", params: ({ event }) => event }],
+        },
       },
     },
 

@@ -25,25 +25,25 @@ function findOptimalTokenSources(
   targetToken: string,
   feeBasisPoints: bigint
 ): { steps: FillStep[]; success: boolean } {
-  const sourceAmount = grossUpAmount(requiredAmount, Number(feeBasisPoints))
-
   // Try to find a single token first
   for (const [token, balance] of Object.entries(remainingBalances)) {
-    if (token !== targetToken && balance >= sourceAmount) {
-      // We found a single token with sufficient balance
-      const received = netDownAmount(sourceAmount, Number(feeBasisPoints))
+    if (token !== targetToken) {
+      const sourceAmount = grossUpAmount(requiredAmount, Number(feeBasisPoints))
 
-      return {
-        steps: [
-          {
-            fromToken: token,
-            toToken: targetToken,
-            fromAmount: sourceAmount,
-            toAmount: received,
-            fee: sourceAmount - received,
-          },
-        ],
-        success: true,
+      if (balance >= sourceAmount) {
+        // We found a single token with sufficient balance
+        return {
+          steps: [
+            {
+              fromToken: token,
+              toToken: targetToken,
+              fromAmount: sourceAmount,
+              toAmount: requiredAmount,
+              fee: sourceAmount - requiredAmount,
+            },
+          ],
+          success: true,
+        }
       }
     }
   }
@@ -58,44 +58,41 @@ function findOptimalTokenSources(
     return { steps: [], success: false }
   }
 
-  // Calculate total available balance across all tokens
-  const totalAvailable = sortedTokens.reduce(
-    (sum, [, balance]) => sum + balance,
-    0n
-  )
+  const steps: FillStep[] = []
+  let totalReceived = 0n
 
-  // If total available is insufficient, we can't satisfy the requirement
-  if (totalAvailable < sourceAmount) {
+  // Try using tokens one by one until we reach the required amount
+  for (const [token, balance] of sortedTokens) {
+    if (totalReceived >= requiredAmount) {
+      break
+    }
+
+    if (balance <= 0n) continue
+
+    const stillNeeded = requiredAmount - totalReceived
+    const sourceAmount = grossUpAmount(stillNeeded, Number(feeBasisPoints))
+    const amountToUse = sourceAmount <= balance ? sourceAmount : balance
+
+    if (amountToUse <= 0n) continue
+
+    const received = netDownAmount(amountToUse, Number(feeBasisPoints))
+
+    steps.push({
+      fromToken: token,
+      toToken: targetToken,
+      fromAmount: amountToUse,
+      toAmount: received,
+      fee: amountToUse - received,
+    })
+
+    totalReceived += received
+  }
+
+  if (totalReceived < requiredAmount) {
     return { steps: [], success: false }
   }
 
-  // We have enough in total, so use tokens in descending order of balance
-  let remainingNeeded = sourceAmount
-  const steps: FillStep[] = []
-
-  for (const [token, balance] of sortedTokens) {
-    if (remainingNeeded <= 0n) break
-
-    const amountToUse = balance >= remainingNeeded ? remainingNeeded : balance
-    remainingNeeded -= amountToUse
-
-    if (amountToUse > 0n) {
-      const received = netDownAmount(amountToUse, Number(feeBasisPoints))
-
-      steps.push({
-        fromToken: token,
-        toToken: targetToken,
-        fromAmount: amountToUse,
-        toAmount: received,
-        fee: amountToUse - received,
-      })
-    }
-  }
-
-  return {
-    steps,
-    success: true,
-  }
+  return { steps, success: true }
 }
 
 export function fillWithMinimalExchanges(
