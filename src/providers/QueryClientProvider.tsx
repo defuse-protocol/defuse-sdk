@@ -5,7 +5,8 @@ import {
 import type { PropsWithChildren } from "react"
 import { settings } from "../constants/settings"
 
-const queryClient = new QueryClient({
+// todo: accept queryClient instance from user
+export const queryClient = new QueryClient({
   defaultOptions: {
     queries: settings.queries,
   },
