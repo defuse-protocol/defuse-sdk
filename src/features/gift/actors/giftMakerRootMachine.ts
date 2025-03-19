@@ -79,7 +79,6 @@ export const giftMakerRootMachine = setup({
       escrowCredentials: EscrowCredentials
       referral: string | undefined
       signData: null | GiftSignedResult
-      signData: null | GiftMakerSignActorSuccess
       intentHashes: null | string[]
     },
     children: {} as {

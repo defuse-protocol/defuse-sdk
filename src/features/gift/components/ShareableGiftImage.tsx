@@ -26,7 +26,7 @@ export function ShareableGiftImage({
         className
       )}
       style={{
-        backgroundImage: 'url("/static/images/gift-backing.svg")',
+        backgroundImage: 'url("/static/images/gift-blank-card.png")',
         backgroundSize: "cover",
         backgroundPosition: "center",
         backgroundBlendMode: "overlay",
