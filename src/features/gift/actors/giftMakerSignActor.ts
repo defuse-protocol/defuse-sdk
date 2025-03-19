@@ -1,5 +1,7 @@
-import { randomDefuseNonce } from "src/utils/messageFactory"
-import { assertEvent, setup } from "xstate"
+import { base64 } from "@scure/base"
+import type { MultiPayload } from "src/types/defuse-contracts-types"
+
+import { type PromiseActorLogic, assertEvent, setup } from "xstate"
 import {
   type SignerCredentials,
   formatSignedIntent,
@@ -15,9 +17,9 @@ import type {
   TokenValue,
   UnifiedTokenInfo,
 } from "../../../types/base"
-import type { MultiPayload } from "../../../types/defuse-contracts-types"
 import type { WalletMessage, WalletSignatureResult } from "../../../types/swap"
 import { findError } from "../../../utils/errors"
+import { randomDefuseNonce } from "../../../utils/messageFactory"
 import {
   adjustDecimals,
   getAnyBaseTokenInfo,
@@ -26,6 +28,8 @@ import {
 import type { BalanceMapping } from "../../machines/depositedBalanceMachine"
 import {
   type Errors as SignIntentErrors,
+  type Input as SignIntentInput,
+  type Output as SignIntentOutput,
   signIntentMachine,
 } from "../../machines/signIntentMachine"
 import type { SignMessage } from "../types/sharedTypes"
@@ -46,15 +50,16 @@ export type GiftMakerSignActorInput = {
 
 export type GiftMakerSignActorOutput =
   | { tag: "err"; value: GiftMakerSignActorErrors }
-  | { tag: "ok"; value: GiftMakerSignActorSuccess }
-
-export type GiftMakerSignActorSuccess = {
-  multiPayload: MultiPayload
-  signerCredentials: SignerCredentials
-  signatureResult: WalletSignatureResult
-  escrowCredentials: EscrowCredentials
-  giftId: string
-}
+  | {
+      tag: "ok"
+      value: {
+        multiPayload: MultiPayload
+        signerCredentials: SignerCredentials
+        signatureResult: WalletSignatureResult
+        escrowCredentials: EscrowCredentials
+        giftId: string
+      }
+    }
 
 export type GiftMakerSignActorContext = {
   parsed: GiftMakerSignActorInput["parsed"]
@@ -65,7 +70,7 @@ export type GiftMakerSignActorContext = {
 
 export type GiftMakerSignActorErrors =
   | SignIntentErrors
-  | { reason: "EXCEPTION" }
+  | { reason: "ERR_GIFT_SIGNING" }
 
 export const giftMakerSignActor = setup({
   types: {
@@ -77,7 +82,10 @@ export const giftMakerSignActor = setup({
       | { type: "COMPLETE"; output: GiftMakerSignActorOutput },
   },
   actors: {
-    signActor: signIntentMachine,
+    signActor: signIntentMachine as unknown as PromiseActorLogic<
+      SignIntentOutput,
+      SignIntentInput
+    >,
   },
   actions: {
     logError: (_, event: { error: unknown }) => {
@@ -160,22 +168,39 @@ export const giftMakerSignActor = setup({
           }
         },
 
+        onDone: {
+          actions: [
+            {
+              type: "complete",
+              params: ({
+                context,
+                event,
+              }: {
+                context: GiftMakerSignActorContext
+                event: { output: SignIntentOutput }
+              }) => {
+                if (event.output.tag === "ok") {
+                  return {
+                    tag: "ok",
+                    value: {
+                      ...event.output.value,
+                      escrowCredentials: context.escrowCredentials,
+                      giftId: base64.encode(randomDefuseNonce()),
+                    },
+                  }
+                }
+                return event.output
+              },
+            },
+          ],
+        },
+
         onError: {
           actions: [
             { type: "logError", params: ({ event }) => event },
             {
               type: "complete",
-              params: { tag: "err", value: { reason: "EXCEPTION" } },
-            },
-          ],
-        },
-
-        // @ts-expect-error wtf???
-        onDone: {
-          actions: [
-            {
-              type: "complete",
-              params: ({ event }) => event.output,
+              params: { tag: "err", value: { reason: "ERR_GIFT_SIGNING" } },
             },
           ],
         },
@@ -200,19 +225,11 @@ export const giftMakerSignActor = setup({
           context.signerCredentials
         )
 
-        const nonce =
-          "nonce" in event.output.value.signatureResult
-            ? event.output.value.signatureResult.nonce
-            : randomDefuseNonce()
-
         return {
           tag: "ok",
           value: {
+            ...event.output.value,
             multiPayload,
-            signatureResult: event.output.value.signatureResult,
-            signerCredentials: context.signerCredentials,
-            escrowCredentials: context.escrowCredentials,
-            giftId: `gift-${nonce}`,
           },
         }
       },

@@ -21,10 +21,10 @@ export type GiftMakerPublishingActorOutput =
       giftStatus: "not_published"
     }
 
-type GiftMakerPublishingActorErrors =
+export type GiftMakerPublishingActorErrors =
   | SignIntentErrors
   | PublishIntentsErr
-  | { reason: "EXCEPTION" }
+  | { reason: "ERR_GIFT_PUBLISHING" }
 
 type GiftMakerPublishingActorContext = {
   multiPayload: MultiPayload
@@ -108,7 +108,7 @@ export const giftMakerPublishingActor = setup({
           target: "#(machine).aborted",
           actions: [
             { type: "logError", params: ({ event }) => event },
-            { type: "setError", params: { reason: "EXCEPTION" } },
+            { type: "setError", params: { reason: "ERR_GIFT_PUBLISHING" } },
           ],
         },
 
