@@ -2,13 +2,13 @@ import { base64 } from "@scure/base"
 import { AccountLayout } from "@solana/spl-token"
 import { Connection, PublicKey } from "@solana/web3.js"
 import { http, type Address, createPublicClient, erc20Abi } from "viem"
-import { logger } from "../../logger"
+import { logger } from "../logger"
 import {
   getNearBalance,
   getNearNep141BalanceAccount,
   getNearNep141StorageBalanceBounds,
   getNearNep141StorageBalanceOf,
-} from "../../services/nearHttpClient"
+} from "./nearHttpClient"
 
 export const RESERVED_NEAR_BALANCE = 100000000000000000000000n // 0.1 NEAR reserved for transaction fees and storage
 
