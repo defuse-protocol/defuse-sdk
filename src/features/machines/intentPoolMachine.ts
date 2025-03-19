@@ -4,6 +4,7 @@ import {
   type ActorRefFrom,
   type Snapshot,
   assign,
+  emit,
   setup,
 } from "xstate"
 import { findExecutableIntentRef } from "../../services/poolService"
@@ -15,6 +16,7 @@ import type { ChainType } from "../../types/deposit"
 import type { WalletMessage, WalletSignatureResult } from "../../types/swap"
 import { assert } from "../../utils/assert"
 import type { DefuseUserId } from "../../utils/defuse"
+import { getPendingDeltaBalances, isOptimisticIntent } from "../../utils/pool"
 import type { PriorityQueue } from "../../utils/priorityQueue"
 import type { QuoteInput } from "./backgroundQuoterMachine"
 import type { ParentEvents as BackgroundQuoterEvents } from "./backgroundQuoterMachine"
@@ -41,10 +43,12 @@ type Context = {
   pool: Map<string, Intent>
   executingIntentRef: string | null
   checkingIntentRef: string | null
+  depositedBalanceRef: ActorRefFrom<typeof depositedBalanceMachine> | null
 }
 
 type Input = {
   parentRef: ParentActor
+  depositedBalanceRef: ActorRefFrom<typeof depositedBalanceMachine> | null
 }
 
 type ParentReceivedEvents = {
@@ -71,7 +75,7 @@ type PassthroughEvent = {
   }
 }
 
-type Intent = {
+export type Intent = {
   userAddress: string
   userChainType: ChainType
   defuseUserId: DefuseUserId
@@ -124,21 +128,50 @@ export const intentPoolMachine = setup({
         },
       })
 
+      const quoteToPublish = event.params.quoteToPublish
+      assert(
+        quoteToPublish !== null && quoteToPublish.tokenDeltas.length > 0,
+        "quoteToPublish is null"
+      )
+      const tokenDeltaIn = quoteToPublish.tokenDeltas[0]
+      assert(tokenDeltaIn !== undefined, "tokenDeltaIn is undefined")
+      assert(
+        context.depositedBalanceRef !== null,
+        "depositedBalanceRef is null"
+      )
+
+      const intentRefs = [intentRef, ...context.intentRefs]
+      const pool = new Map([[`intent-${id}`, event.params], ...context.pool])
+
+      const isOptimistic = isOptimisticIntent(
+        tokenDeltaIn,
+        context.depositedBalanceRef.getSnapshot().context.onchainBalances
+      )
+      if (isOptimistic) {
+        const pendingDeltaBalance = getPendingDeltaBalances(intentRefs, pool)
+        context.depositedBalanceRef.send({
+          type: "REQUEST_BALANCE_REFRESH",
+          params: {
+            pendingDeltaBalance,
+          },
+        })
+      }
+
       return {
-        intentRefs: [intentRef, ...context.intentRefs],
-        pool: new Map([[`intent-${id}`, event.params]]),
+        intentRefs,
+        pool,
       }
     }),
     setExecutingIntentRef: assign({
       executingIntentRef: ({ context }) => {
-        const snapshot = context.parentRef.getSnapshot()
-        const balances =
-          // @ts-ignore - The parent ref's context type is not properly inferred by TypeScript
-          snapshot.context.depositedBalanceRef.getSnapshot().context.balances
+        assert(
+          context.depositedBalanceRef !== null,
+          "depositedBalanceRef is null"
+        )
         return findExecutableIntentRef(
           context.intentRefs,
           context.pool,
-          balances
+          context.depositedBalanceRef.getSnapshot().context.onchainBalances
         )
       },
     }),
@@ -154,32 +187,6 @@ export const intentPoolMachine = setup({
     }),
     clearCheckingIntentRef: assign({
       checkingIntentRef: null,
-    }),
-    spawnIntentStatusAndReplaceActor: assign({
-      intentRefs: (
-        { context, spawn },
-        output: { tag: "ok"; value: { intentHash: string } }
-      ) => {
-        if (output?.tag === "ok" && output?.value?.intentHash) {
-          assert(
-            context.checkingIntentRef !== null,
-            "checkingIntentRef is null"
-          )
-          return context.intentRefs.map((intentRef) => {
-            if (intentRef.id === context.checkingIntentRef) {
-              return spawn("intentStatusActor", {
-                id: intentRef.id,
-                input: {
-                  ...intentRef.getSnapshot().context,
-                  intentHash: output.value.intentHash,
-                },
-              })
-            }
-            return intentRef
-          })
-        }
-        return context.intentRefs
-      },
     }),
     sendIntentStatusRefIntentHash: assign({
       intentRefs: ({ context }) => {
@@ -231,6 +238,25 @@ export const intentPoolMachine = setup({
         ])
       },
     }),
+    passthroughEventAndRefreshBalances: emit(
+      ({ context }, event: PassthroughEvent) => {
+        assert(
+          context.depositedBalanceRef !== null,
+          "depositedBalanceRef is null"
+        )
+        const pendingDeltaBalance = getPendingDeltaBalances(
+          context.intentRefs,
+          context.pool
+        )
+        context.depositedBalanceRef.send({
+          type: "REQUEST_BALANCE_REFRESH",
+          params: {
+            pendingDeltaBalance,
+          },
+        })
+        return event
+      }
+    ),
   },
   guards: {
     hasUnexecutedIntents: ({ context }) =>
@@ -238,12 +264,12 @@ export const intentPoolMachine = setup({
         const { value } = intentRef.getSnapshot()
         return value === "pending"
       }),
-    hasExecutingIntent: ({ context }) => context.executingIntentRef !== null,
     hasCheckingIntent: ({ context }) => context.checkingIntentRef !== null,
+    hasExecutingIntent: ({ context }) => context.executingIntentRef !== null,
     isOk: (_, a: { tag: "err" | "ok" }) => a.tag === "ok",
   },
 }).createMachine({
-  /** @xstate-layout N4IgpgJg5mDOIC5QEsB2AXMGC0AHA9vgDYDEAggCIUD6AkgHIAqAokwNoAMAuoqAbMnTJ8qXiAAeibAEYAbABYAdAE4O0gKwAOAEzS9AZnnz1AdgA0IAJ5T5mlZs3SOp-bM3r1ykwF9vFtJg4BMQk9MwA6tQAigCqAPIsnDxIIPyCwqIpkggGirLKmibark756tqaFtYI2LpKmsrlhaby2vLSPn4gAVjoeIREigCOAK5gY2hQJEliaUIiYtnqHYr6Jhya+lvyJtI6+lWIerKK0vqO6hxb5wWavv4Yvf3Ew2MTqFNs0sl8+ALzmVAS2kShM6nk+g2HFarX06kOCG04JUtnyHW0G3a0nu3UeQQGr3GYEmJHEsHQAENMIoKQAzTAAJwAFJcOABKEg9fEvUZEyYzFJzDKLI5yRRggrSZS3cFS+FWI6KYzaRrOZT6JHSbQmToPQJ9YKDXAjABGRGQsAAFiSICIwIo0AA3fAAa3tXPQACEGfgKRAAMYU8kAJTAtIFv3+wqyR3Kik0siRbkTmnajlkCP06qVW2U8mU2gxhYqutx+ueRtN5qtNrtDtQzrd9f13t9AaD6FD4e+sz+6QWMZqhfUimWDg0JmUxyc8uq7SUe0TIJ0862OI9FcUxrNFutHxIYAZPoZW6IVNp+AZAFtm71W37AyGwxHUn2ASKanITCoNY4ZSZ8w1BFimkRRiy1ZYCizaVSw3Q1FEdQ9kFpSwSRfIUByBRBNjsbU9DUHRlFkADKgVREITAvMOGcSEMTUToulQfAIDgMQ4IGXso0wiQpG1fRRz2C5J2nZwERkVwlXHM4zhVXQ9HXPEDQJZAICIMBOP7QEeIQVRtFObRZEuWwkTzaQES1fiANheQ1GI4iEwU8t4N5d4oA099BxkBwwN0BoFDk2RXG0BFVFWcd80M1MdQAxynng7dqz3NzBTfaMsJyDhvxsvMilM2Q9mUYCVVOAo0WhcE6PUWLuUGRCGWQ1CPnctLtJMVMwP0KVVEC2wszMsi01WQL8sLIj1EC9R9F8XwgA */
+  /** @xstate-layout N4IgpgJg5mDOIC5QEsB2AXMGC0AHA9vgDYDEAggCIUD6AkgHIAqAokwNoAMAuoqAbMnTJ8qXiAAeibAEYAbABYAdAE4O0gKwAOAEzS9AZnnz1AdgA0IAJ5T5mlZs3SOp-bM3r1ykwF9vFtJg4BMQkDCxM1ADKzIyMADLMFJw8SCD8gsKiqZII+g6K8iYmyqpyhcqyyhbWCNja8rKK0sra6hwmeZry2tpuvv4YWOh4hKT0zADq1ACKAKoA8izJYulCImI5BoomHEYmmrJuJrJymtVSPfqKup7yhsX6Tsb9IAFDI8SKAI4ArmB-aCgJGWqVWmQ2iHU0hMin0O00+kRhWkOn05wQeka0jyGg4iLyygcLzeQVG3z+ANQQLY0hSfHwAjWWVAOShShM6juHE0u3q2n06nRrSUylslWh2m58j0xMGpM+v3+YEBJHEsHQAENMIoNQAzTAAJwAFG0OABKEgk4bBIjkpWAkH0xng7KITHbTyOEoOTnNQVWN0FdTaZRtTz6VrSbRFWWBa1k3A-ABGRGQsAAFiqICIwIo0AA3fAAa1zVoAQgb8BqIABjDXqgBKYF1jrSDIy61dGODigOrTcsm0XRRcnR+mUVzu4-kLUlPSHPj8rzl8c+iZTaczVJI2dQpdQhZLeZXFartfr6CbLdpK3bTIhtR66kUUIcGmKmKc-pq0qUKMH0i2PUgGIrG7w2oo66phmKpgAalYGpBRBarq+AGgAtsecantWdaNs2rZgp2LJSHIMITkOzQ+iYM4RkKjzXD0UZQoS44lIuAxxh8tr5nByC6pYKqEXeLokQgCJ2NGehqDoFQ0WcAYIPUVwhvIHDOPoHCSmoi5Lqg+AQHAYhWtxt7OsREgXB0L4oo4pjKJ+zjojIrgFG+2IKI4hiGGB8q2sgEBEGAZkdsylkIKo2hNL0bRAbc0jolGVw0d0hhqLIxz7LIvmrraiqUlAIX3l2Mj5ExmgVN0mKuNo6KqLCb4zrIWiFEU8g5dxkHJtBW6FaCIkWZs7QFBwoomKpcgolUik9MoTSEuKuyctp6gdRBvEGvxglUkVonhfsSj8s0qiyIYCIOei0p2K4rhRiGzWneo+i+L4QA */
   id: "intent-pool",
 
   initial: "idle",
@@ -255,12 +281,21 @@ export const intentPoolMachine = setup({
     intentCreationResult: null,
     checkingIntentRef: null,
     executingIntentRef: null,
+    depositedBalanceRef: input.depositedBalanceRef,
   }),
 
   on: {
     ADD_INTENT: {
       target: ".queueing",
       actions: ["clearIntentCreationResult", "spawnIntentStatusActor"],
+    },
+    INTENT_SETTLED: {
+      actions: [
+        {
+          type: "passthroughEventAndRefreshBalances",
+          params: ({ event }) => event,
+        },
+      ],
     },
     NEW_QUOTE: {},
   },
