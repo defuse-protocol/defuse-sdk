@@ -279,7 +279,12 @@ export const giftMakerRootMachine = setup({
         ],
         onError: {
           target: "editing",
-          actions: [{ type: "logError", params: ({ event }) => event }],
+          actions: [
+            {
+              type: "logError",
+              params: { error: "EXCEPTION" },
+            },
+          ],
         },
       },
     },
@@ -294,11 +299,11 @@ export const giftMakerRootMachine = setup({
           const form = context.formRef.getSnapshot()
           const parsedValuesSnapshot = form.context.parsedValues.getSnapshot()
 
-          const parsedValues = parsedValuesSnapshot.context as {
-            [K in keyof typeof parsedValuesSnapshot.context]: NonNullable<
-              (typeof parsedValuesSnapshot.context)[K]
-            >
-          }
+          const parsedValues = parsedValuesSnapshot.context
+          assert(
+            parsedValues.token !== null && parsedValues.amount !== null,
+            "token and amount are not defined"
+          )
 
           const parsed = parseMultiPayloadTransferMessage(signData.multiPayload)
           assert(parsed !== null, "Invalid parsed multiPayload")

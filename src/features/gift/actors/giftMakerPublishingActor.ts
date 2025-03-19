@@ -25,6 +25,7 @@ export type GiftMakerPublishingActorErrors =
   | SignIntentErrors
   | PublishIntentsErr
   | { reason: "ERR_GIFT_PUBLISHING" }
+  | { reason: "EXCEPTION" }
 
 type GiftMakerPublishingActorContext = {
   multiPayload: MultiPayload
