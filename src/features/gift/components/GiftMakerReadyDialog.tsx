@@ -38,10 +38,7 @@ export function GiftMakerReadyDialog({
   )
   return (
     <>
-      <GiftMakerDialog
-        readyGiftRef={readyGiftRef}
-        generateLink={generateLink}
-      />
+      <SuccessDialog readyGiftRef={readyGiftRef} generateLink={generateLink} />
       <CancellationDialog
         giftInfo={giftInfo}
         actorRef={giftCancellationRef}
@@ -51,7 +48,7 @@ export function GiftMakerReadyDialog({
   )
 }
 
-function GiftMakerDialog({
+function SuccessDialog({
   readyGiftRef,
   generateLink,
 }: {
