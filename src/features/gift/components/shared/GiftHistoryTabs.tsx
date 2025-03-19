@@ -1,5 +1,5 @@
 import { cn } from "src/utils/cn"
-import { useTabContext } from "../../context/TabContext"
+import { useTabContext } from "../../providers/TabProvider"
 
 export function GiftHistoryTabs() {
   const { activeTab, setActiveTab } = useTabContext()

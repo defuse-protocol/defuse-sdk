@@ -133,13 +133,13 @@ function SuccessDialog({
   )
 }
 
-interface CancellationDialogProps {
+export interface CancellationDialogProps {
   actorRef: ActorRefFrom<typeof giftClaimActor> | undefined | null
   giftInfo: GiftInfo
   signerCredentials: SignerCredentials
 }
 
-function CancellationDialog({
+export function CancellationDialog({
   actorRef,
   giftInfo,
   signerCredentials,

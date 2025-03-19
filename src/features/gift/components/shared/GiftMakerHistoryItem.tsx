@@ -5,11 +5,14 @@ import {
   Trash as TrashIcon,
 } from "@phosphor-icons/react"
 import { IconButton } from "@radix-ui/themes"
+import { useContext } from "react"
+import type { SignerCredentials } from "src/core/formatters"
 import {
   computeTotalBalanceDifferentDecimals,
   getUnderlyingBaseTokenInfos,
 } from "src/utils/tokenUtils"
 import { Copy } from "../../../../components/IntentCard/CopyButton"
+import { GiftClaimActorContext } from "../../providers/GiftClaimActorProvider"
 import type { GiftMakerHistory } from "../../stores/giftMakerHistory"
 import type { GiftPayload } from "../../types/sharedTypes"
 import { GiftStrip } from "../GiftStrip"
@@ -18,16 +21,20 @@ export function GiftMakerHistoryItem({
   giftInfo,
   generateLink,
   tag,
+  signerCredentials,
 }: {
   giftInfo: GiftMakerHistory
   generateLink: (giftPayload: GiftPayload) => string
   tag: "pending" | "history"
+  signerCredentials: SignerCredentials
 }) {
   const amount = computeTotalBalanceDifferentDecimals(
     getUnderlyingBaseTokenInfos(giftInfo.token),
     giftInfo.tokenDiff,
     { strict: false }
   )
+
+  const { cancelGift } = useContext(GiftClaimActorContext)
 
   return (
     <div className="flex justify-between gap-2.5 bg-gray-3 rounded-lg p-3">
@@ -71,6 +78,12 @@ export function GiftMakerHistoryItem({
         {tag === "pending" && (
           <IconButton
             type="button"
+            onClick={() => {
+              cancelGift({
+                giftInfo: giftInfo,
+                signerCredentials: signerCredentials,
+              })
+            }}
             variant="outline"
             color="gray"
             className="rounded-lg"

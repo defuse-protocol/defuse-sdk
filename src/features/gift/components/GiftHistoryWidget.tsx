@@ -7,11 +7,12 @@ import type { ChainType } from "src/types/deposit"
 import { WidgetRoot } from "../../../components/WidgetRoot"
 import type { SignerCredentials } from "../../../core/formatters"
 import { userAddressToDefuseUserId } from "../../../utils/defuse"
+import { GiftClaimActorProvider } from "../providers/GiftClaimActorProvider"
 import {
   TabProvider,
   useHistoryTab,
   usePendingTab,
-} from "../context/TabContext"
+} from "../providers/TabProvider"
 import { useGiftMakerHistory } from "../stores/giftMakerHistory"
 import type { GiftPayload } from "../types/sharedTypes"
 import { type GiftInfos, parseGiftInfos } from "../utils/parseGiftInfos"
@@ -103,24 +104,28 @@ function GiftHistory({
   return (
     <div className="widget-container flex flex-col gap-4 p-5">
       <GiftHistoryTabs />
-      {pendingTab &&
-        giftInfos?.pending.map((giftInfo) => (
-          <GiftMakerHistoryItem
-            tag="pending"
-            key={giftInfo.giftId}
-            giftInfo={giftInfo}
-            generateLink={generateLink}
-          />
-        ))}
-      {historyTab &&
-        giftInfos?.claimed.map((giftInfo) => (
-          <GiftMakerHistoryItem
-            tag="history"
-            key={giftInfo.giftId}
-            giftInfo={giftInfo}
-            generateLink={generateLink}
-          />
-        ))}
+      <GiftClaimActorProvider signerCredentials={signerCredentials}>
+        {pendingTab &&
+          giftInfos?.pending.map((giftInfo) => (
+            <GiftMakerHistoryItem
+              tag="pending"
+              key={giftInfo.giftId}
+              giftInfo={giftInfo}
+              generateLink={generateLink}
+              signerCredentials={signerCredentials}
+            />
+          ))}
+        {historyTab &&
+          giftInfos?.claimed.map((giftInfo) => (
+            <GiftMakerHistoryItem
+              tag="history"
+              key={giftInfo.giftId}
+              giftInfo={giftInfo}
+              generateLink={generateLink}
+              signerCredentials={signerCredentials}
+            />
+          ))}
+      </GiftClaimActorProvider>
     </div>
   )
 }
