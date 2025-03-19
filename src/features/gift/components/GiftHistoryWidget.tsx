@@ -71,10 +71,6 @@ function GiftHistory({
 }: GiftHistoryProps) {
   const pendingTab = usePendingTab()
   const historyTab = useHistoryTab()
-  // biome-ignore lint/suspicious/noConsole: <explanation>
-  console.log("historyTab", historyTab)
-  // biome-ignore lint/suspicious/noConsole: <explanation>
-  console.log("pendingTab", pendingTab)
 
   const [loading, setLoading] = useState(true)
   const gifts = useGiftMakerHistory((s) => {
@@ -108,16 +104,18 @@ function GiftHistory({
     <div className="widget-container flex flex-col gap-4 p-5">
       <GiftHistoryTabs />
       {pendingTab &&
-        giftInfos?.claimed.map((giftInfo) => (
+        giftInfos?.pending.map((giftInfo) => (
           <GiftMakerHistoryItem
+            tag="pending"
             key={giftInfo.giftId}
             giftInfo={giftInfo}
             generateLink={generateLink}
           />
         ))}
       {historyTab &&
-        giftInfos?.pending.map((giftInfo) => (
+        giftInfos?.claimed.map((giftInfo) => (
           <GiftMakerHistoryItem
+            tag="history"
             key={giftInfo.giftId}
             giftInfo={giftInfo}
             generateLink={generateLink}
