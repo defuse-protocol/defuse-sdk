@@ -1,62 +1,128 @@
 import { useMemo } from "react"
+import { useEffect, useState } from "react"
 import { SwapWidgetProvider } from "src/providers/SwapWidgetProvider"
+import type {} from "src/types/base"
+import type { BaseTokenInfo, UnifiedTokenInfo } from "src/types/base"
 import type { ChainType } from "src/types/deposit"
 import { WidgetRoot } from "../../../components/WidgetRoot"
 import type { SignerCredentials } from "../../../core/formatters"
-import { cn } from "../../../utils/cn"
+import { userAddressToDefuseUserId } from "../../../utils/defuse"
+import {
+  TabProvider,
+  useHistoryTab,
+  usePendingTab,
+} from "../context/TabContext"
+import { useGiftMakerHistory } from "../stores/giftMakerHistory"
 import type { GiftPayload } from "../types/sharedTypes"
-import { GiftMakerHistory } from "./GiftMakerHistory"
+import { type GiftInfos, parseGiftInfos } from "../utils/parseGiftInfos"
+import { GiftHistorySkeleton } from "./shared/GiftHistorySkeleton"
+import { GiftHistoryTabs } from "./shared/GiftHistoryTabs"
+import { GiftMakerHistoryItem } from "./shared/GiftMakerHistoryItem"
 
 export type GiftHistoryWidgetProps = {
   userAddress: string | null | undefined
   userChainType: ChainType | null | undefined
   generateLink: (giftPayload: GiftPayload) => string
+  tokenList: (BaseTokenInfo | UnifiedTokenInfo)[]
 }
 
-export function GiftHistoryWidget(props: GiftHistoryWidgetProps) {
+export function GiftHistoryWidget({
+  generateLink,
+  userAddress,
+  userChainType,
+  tokenList,
+}: GiftHistoryWidgetProps) {
   const signerCredentials: SignerCredentials | null = useMemo(() => {
-    return props.userAddress != null && props.userChainType != null
+    return userAddress != null && userChainType != null
       ? {
-          credential: props.userAddress,
-          credentialType: props.userChainType,
+          credential: userAddress,
+          credentialType: userChainType,
         }
       : null
-  }, [props.userChainType, props.userAddress])
+  }, [userChainType, userAddress])
 
   return (
     <WidgetRoot>
       <SwapWidgetProvider>
-        <div className="widget-container flex flex-col gap-4 p-5">
-          <GiftHistoryTabs />
+        <TabProvider>
           {signerCredentials != null && (
-            <GiftMakerHistory
+            <GiftHistory
               signerCredentials={signerCredentials}
-              generateLink={props.generateLink}
+              tokenList={tokenList}
+              generateLink={generateLink}
             />
           )}
-        </div>
+        </TabProvider>
       </SwapWidgetProvider>
     </WidgetRoot>
   )
 }
 
-function GiftHistoryTabs() {
+type GiftHistoryProps = {
+  signerCredentials: SignerCredentials
+  tokenList: (BaseTokenInfo | UnifiedTokenInfo)[]
+  generateLink: (giftPayload: GiftPayload) => string
+}
+
+function GiftHistory({
+  signerCredentials,
+  tokenList,
+  generateLink,
+}: GiftHistoryProps) {
+  const pendingTab = usePendingTab()
+  const historyTab = useHistoryTab()
+  // biome-ignore lint/suspicious/noConsole: <explanation>
+  console.log("historyTab", historyTab)
+  // biome-ignore lint/suspicious/noConsole: <explanation>
+  console.log("pendingTab", pendingTab)
+
+  const [loading, setLoading] = useState(true)
+  const gifts = useGiftMakerHistory((s) => {
+    const userId = userAddressToDefuseUserId(
+      signerCredentials.credential,
+      signerCredentials.credentialType
+    )
+    return s.gifts[userId]
+  })
+
+  const [giftInfos, setGiftInfos] = useState<GiftInfos | null>(null)
+  useEffect(() => {
+    if (gifts == null) {
+      return
+    }
+    parseGiftInfos(tokenList, gifts).then((giftsResult) => {
+      setGiftInfos(giftsResult.unwrap())
+      setLoading(false)
+    })
+  }, [gifts, tokenList])
+
+  if (loading) {
+    return <GiftHistorySkeleton />
+  }
+
+  if (gifts == null || gifts.length === 0) {
+    return <div className="flex flex-col gap-2.5">No pending gifts found</div>
+  }
+
   return (
-    <div className="flex flex-row justify-start items-center">
-      <button
-        type="button"
-        className={cn(
-          "px-3.5 py-2 box-border text-sm font-bold box-border border-b-2 border-black"
-        )}
-      >
-        Pending
-      </button>
-      <button
-        type="button"
-        className={cn("px-3.5 py-2 box-border text-sm font-bold text-gray-11")}
-      >
-        History
-      </button>
+    <div className="widget-container flex flex-col gap-4 p-5">
+      <GiftHistoryTabs />
+      {pendingTab &&
+        giftInfos?.claimed.map((giftInfo) => (
+          <GiftMakerHistoryItem
+            key={giftInfo.giftId}
+            giftInfo={giftInfo}
+            generateLink={generateLink}
+          />
+        ))}
+      {historyTab &&
+        giftInfos?.pending.map((giftInfo) => (
+          <GiftMakerHistoryItem
+            key={giftInfo.giftId}
+            giftInfo={giftInfo}
+            generateLink={generateLink}
+          />
+        ))}
     </div>
   )
 }
