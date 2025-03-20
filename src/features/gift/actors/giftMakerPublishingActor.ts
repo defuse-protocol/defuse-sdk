@@ -21,9 +21,10 @@ export type GiftMakerPublishingActorOutput =
       giftStatus: "not_published"
     }
 
-type GiftMakerPublishingActorErrors =
+export type GiftMakerPublishingActorErrors =
   | SignIntentErrors
   | PublishIntentsErr
+  | { reason: "ERR_GIFT_PUBLISHING" }
   | { reason: "EXCEPTION" }
 
 type GiftMakerPublishingActorContext = {
@@ -64,17 +65,6 @@ export const giftMakerPublishingActor = setup({
   },
   guards: {
     isOk: (_, params: { tag: "ok" | "err" }) => params.tag === "ok",
-    isNonceUsedError: (
-      _,
-      event: {
-        output: { tag: "err"; value: PublishIntentsErr } | { tag: "ok" }
-      }
-    ) => {
-      return (
-        event.output.tag === "err" &&
-        event.output.value.reason === "RELAY_PUBLISH_NONCE_USED"
-      )
-    },
   },
 }).createMachine({
   /** @xstate-layout N4IgpgJg5mDOIC5QAoC2BDAxgCwJYDswBKAOlwgBswBiAYQHkA5AMQEkAlAWQH0AFAVQBCAGVYBlABKtGAcQDaABgC6iUAAcA9rFwAXXBvyqQAD0QBaABwkArAHYALACYFthQoCcrgGz3bAGhAAT0RbWy8STwBGX2sAZgsLUNiAX2SAtCw8QlJyKmoAQUF6dgAVPiFRSWl5ZSNNbT0DI1MEM3tYyJIva0iFe0Te9tjrAOCEUPComPjE2w7U9IwcAmIyShpFFSQQet19Q22Ws2cFCPb7FzCFOOtu0ZDbdxJHR2jux0fuuwWQDOXstZUfj4TDoEFgCgUdAAIzy+VoAGlyiJxFJZNxWJxePQxGJWCIAKKbOpaPZNQ6ILyxWIkXyRTzXWIMizue4ISK9Tqhez2aKxNyOexeRw-P5ZVZqACusNwsCyUGoEAMYDI+AAbhoANYqsUrUhSmVyghQBAEDWgxr4TbE7a7S3NcyOcJeBSRW7xN3WNwWLz+IKIXoKGnWHlOwVe-kuUVLcX66UUWXyxXK1Ua7UkXUAg0Jo34E1mjQW-bWyJbdSk+0UhCOaxPeIOGuxULuO7+9luYOh4X2CNuWzRzJ6kjZxPG5OEVNanUxocj3P59WF9CW62OMs7Cv7B3V9xWLzuWs+D7xWJs0LWCKOCy+dzuRyR6zWAf-CXx0d56hgABOX40X+HUI6AAZn+qAZjOWZvvOpqLkWBjWrUtqbuSoBHI4u42LYkSxEK6HYY+vpshYj5dAesToTyOEciKPz4BoEBwEYmbECSDRblWbSPF0PR9AMfTUiMbbCuEPJ3i87i+Nc+7PrGgJgKxZIHKhlKOCQFiRD4kQsuh7i9I+9hnthZxibY1gWEyjwyUOuRgMCoLgpCMJUAplbKQgwwXpEtg1rcXp2K8FhshyrokNyTYeCynyRFZkGGvKLnsW5ChEb6JDRNe-LEa8nj2DFr5xZACUoSYiD3qFd4tsFLghhcBltlVNiChZHi1lhFh5aQkogmCmAQlCsLyUhbHFS0gZPAoLLmfSkQUay9WBo15y+Ne2kdSQMJ-johVDYp25tAoql9BJuk+h4t4uEFC3WE1CQtVR-apMkQA */
@@ -84,31 +74,31 @@ export const giftMakerPublishingActor = setup({
     error: null,
   }),
 
-  output: ({ event }) => {
-    return event.output as GiftMakerPublishingActorOutput
+  output: ({ context }) => {
+    if (!context.intentHashes) {
+      return {
+        giftStatus: "not_published",
+      }
+    }
+    return {
+      giftStatus: "published",
+      intentHashes: context.intentHashes,
+    }
   },
 
   initial: "publishing",
 
   states: {
-    idleUncancellable: {
-      on: {
-        ACK_PUBLISHING_IMPOSSIBLE: "uncancellable",
-      },
-    },
-
     publishing: {
       invoke: {
         src: "publishActor",
-        input: ({ context, event }) => {
-          return context?.multiPayload ?? event.input?.multiPayload
-        },
+        input: ({ context }) => context.multiPayload,
 
         onError: {
           target: "#(machine).aborted",
           actions: [
             { type: "logError", params: ({ event }) => event },
-            { type: "setError", params: { reason: "EXCEPTION" } },
+            { type: "setError", params: { reason: "ERR_GIFT_PUBLISHING" } },
           ],
         },
 
@@ -129,13 +119,6 @@ export const giftMakerPublishingActor = setup({
             }),
           },
           {
-            target: "#(machine).idleUncancellable",
-            guard: {
-              type: "isNonceUsedError",
-              params: ({ event }) => event,
-            },
-          },
-          {
             target: "#(machine).aborted",
             actions: {
               type: "setError",
@@ -151,31 +134,14 @@ export const giftMakerPublishingActor = setup({
 
     published: {
       type: "final",
-      output: ({ context }) => {
-        assert(
-          Array.isArray(context.intentHashes) &&
-            context.intentHashes.length > 0,
-          "intentHashes is empty or not an array"
-        )
-        return {
-          giftStatus: "published",
-          intentHashes: context.intentHashes,
-        } satisfies GiftMakerPublishingActorOutput
-      },
     },
 
     uncancellable: {
       type: "final",
-      output: {
-        giftStatus: "not_published",
-      } satisfies GiftMakerPublishingActorOutput,
     },
 
     aborted: {
       type: "final",
-      output: {
-        giftStatus: "not_published",
-      } satisfies GiftMakerPublishingActorOutput,
     },
   },
 })
