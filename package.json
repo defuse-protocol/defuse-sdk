@@ -53,6 +53,7 @@
     "@thames/monads": "^0.7.0",
     "@xstate/react": "^4.1.3",
     "@xstate/store": "^3.0.1",
+    "borsher": "^3.5.0",
     "bs58": "^6.0.0",
     "clsx": "^2.1.1",
     "near-api-js": "^0.44.2",
