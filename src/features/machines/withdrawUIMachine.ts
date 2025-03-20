@@ -1,6 +1,7 @@
 import type { providers } from "near-api-js"
 import {
   type ActorRefFrom,
+  type InputFrom,
   assign,
   emit,
   sendTo,
@@ -111,7 +112,8 @@ export const withdrawUIMachine = setup({
   },
   actors: {
     backgroundQuoterActor: backgroundQuoterMachine,
-    depositedBalanceActor: depositedBalanceMachine,
+    // biome-ignore lint/suspicious/noExplicitAny: bypass xstate+ts bloating; be careful when interacting with `depositedBalanceActor` string
+    depositedBalanceActor: depositedBalanceMachine as any,
     swapActor: swapIntentMachine,
     intentStatusActor: intentStatusMachine,
     withdrawFormActor: withdrawFormReducer,
@@ -333,7 +335,8 @@ export const withdrawUIMachine = setup({
       input: {
         parentRef: self,
         tokenList: input.tokenList,
-      },
+        // `depositedBalanceActor` is any, so we explicitly safeguard it with `satisfies`
+      } satisfies InputFrom<typeof depositedBalanceMachine>,
     }),
     withdrawFormRef: spawn("withdrawFormActor", {
       id: "withdrawFormRef",
