@@ -1,7 +1,6 @@
 import { useMemo } from "react"
 import { useEffect, useState } from "react"
 import { SwapWidgetProvider } from "src/providers/SwapWidgetProvider"
-import type {} from "src/types/base"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "src/types/base"
 import type { ChainType } from "src/types/deposit"
 import { WidgetRoot } from "../../../components/WidgetRoot"
