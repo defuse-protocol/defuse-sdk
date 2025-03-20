@@ -14,6 +14,7 @@ import { sessionStorageHandler } from "./sessionStorageHandler"
 export interface GiftMakerHistory extends GiftInfo {
   giftId: string
   intentHashes: string[]
+  updatedAt: number
 }
 
 type State = {

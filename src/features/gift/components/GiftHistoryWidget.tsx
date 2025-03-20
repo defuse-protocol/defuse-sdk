@@ -17,6 +17,7 @@ import type { GiftPayload } from "../types/sharedTypes"
 import { type GiftInfos, parseGiftInfos } from "../utils/parseGiftInfos"
 import { GiftHistorySkeleton } from "./shared/GiftHistorySkeleton"
 import { GiftHistoryTabs } from "./shared/GiftHistoryTabs"
+import { GiftMakerHistoryCollapsibleInfo } from "./shared/GiftMakerHistoryCollapsibleInfo"
 import { GiftMakerHistoryItem } from "./shared/GiftMakerHistoryItem"
 
 export type GiftHistoryWidgetProps = {
@@ -106,23 +107,32 @@ function GiftHistory({
       <GiftClaimActorProvider signerCredentials={signerCredentials}>
         {pendingTab &&
           giftInfos?.pending.map((giftInfo) => (
-            <GiftMakerHistoryItem
-              tag="pending"
+            <GiftMakerHistoryCollapsibleInfo
               key={giftInfo.giftId}
               giftInfo={giftInfo}
-              generateLink={generateLink}
-              signerCredentials={signerCredentials}
-            />
+            >
+              <GiftMakerHistoryItem
+                tag="pending"
+                key={giftInfo.giftId}
+                giftInfo={giftInfo}
+                generateLink={generateLink}
+                signerCredentials={signerCredentials}
+              />
+            </GiftMakerHistoryCollapsibleInfo>
           ))}
         {historyTab &&
           giftInfos?.claimed.map((giftInfo) => (
-            <GiftMakerHistoryItem
-              tag="history"
+            <GiftMakerHistoryCollapsibleInfo
               key={giftInfo.giftId}
               giftInfo={giftInfo}
-              generateLink={generateLink}
-              signerCredentials={signerCredentials}
-            />
+            >
+              <GiftMakerHistoryItem
+                tag="history"
+                giftInfo={giftInfo}
+                generateLink={generateLink}
+                signerCredentials={signerCredentials}
+              />
+            </GiftMakerHistoryCollapsibleInfo>
           ))}
       </GiftClaimActorProvider>
     </div>

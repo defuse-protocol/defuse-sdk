@@ -37,7 +37,7 @@ export function GiftMakerHistoryItem({
   const { cancelGift } = useContext(GiftClaimActorContext)
 
   return (
-    <div className="flex justify-between gap-2.5 bg-gray-3 rounded-lg p-3">
+    <div className="flex justify-between gap-2.5">
       {amount != null && (
         <GiftStrip
           token={giftInfo.token}
