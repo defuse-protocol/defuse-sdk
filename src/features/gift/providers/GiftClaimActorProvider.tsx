@@ -1,5 +1,4 @@
-import { Err, Ok } from "@thames/monads"
-import type { Result } from "postcss"
+import { Err, Ok, type Result } from "@thames/monads"
 import { type ReactNode, createContext, useEffect, useState } from "react"
 import type { SignerCredentials } from "src/core/formatters"
 import { type ActorRefFrom, createActor, toPromise } from "xstate"
@@ -14,7 +13,9 @@ export const GiftClaimActorContext = createContext<{
   cancelGift: (args: {
     giftInfo: GiftInfo
     signerCredentials: SignerCredentials
-  }) => Promise<Result<GiftClaimActorOutput>>
+  }) => Promise<
+    Result<GiftClaimActorOutput, { reason: "CANCELLATION_IN_PROGRESS" }>
+  >
 }>({
   cancelGift: async () => {
     throw new Error("not implemented")
@@ -51,10 +52,13 @@ export function GiftClaimActorProvider({
   }: {
     giftInfo: GiftInfo
     signerCredentials: SignerCredentials
-  }): Promise<Result<GiftClaimActorOutput>> => {
+  }): Promise<
+    Result<GiftClaimActorOutput, { reason: "CANCELLATION_IN_PROGRESS" }>
+  > => {
     if (actorRef) {
-      // @ts-expect-error
-      return Err({ reason: "EXEPTION" })
+      return Err({
+        reason: "CANCELLATION_IN_PROGRESS",
+      })
     }
 
     setGiftInfo(giftInfo)
@@ -69,7 +73,7 @@ export function GiftClaimActorProvider({
     setActorRef(actor)
 
     actor.start()
-    // @ts-expect-error
+
     return toPromise(actor).then(Ok).finally(clearActorRef)
   }
 
