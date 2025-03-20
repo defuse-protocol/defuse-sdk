@@ -1,5 +1,6 @@
 import {
   type ActorRefFrom,
+  type InputFrom,
   type PromiseActorLogic,
   assertEvent,
   assign,
@@ -87,7 +88,8 @@ export const giftMakerRootMachine = setup({
   },
   actors: {
     formActor: giftMakerFormMachine,
-    depositedBalanceActor: depositedBalanceMachine,
+    // biome-ignore lint/suspicious/noExplicitAny: bypass xstate+ts bloating; be careful when interacting with `depositedBalanceActor` string
+    depositedBalanceActor: depositedBalanceMachine as any,
     signActor: giftMakerSignActor as unknown as PromiseActorLogic<
       GiftMakerSignActorOutput,
       GiftMakerSignActorInput
@@ -148,7 +150,8 @@ export const giftMakerRootMachine = setup({
       id: "depositedBalanceRef",
       input: {
         tokenList: input.tokenList,
-      },
+        // `depositedBalanceActor` is any, so we explicitly safeguard it with `satisfies`
+      } satisfies InputFrom<typeof depositedBalanceMachine>,
     }),
     escrowCredentials: generateEscrowCredentials(),
     referral: input.referral,
