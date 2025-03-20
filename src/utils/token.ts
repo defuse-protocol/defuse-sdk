@@ -28,3 +28,13 @@ export function isNativeToken(
 ): token is NativeTokenInfo {
   return isBaseToken(token) && "type" in token && token.type === "native"
 }
+
+export function getTokenId(token: BaseTokenInfo | UnifiedTokenInfo) {
+  if (isBaseToken(token)) {
+    return token.defuseAssetId
+  }
+  if (isUnifiedToken(token)) {
+    return token.unifiedAssetId
+  }
+  throw new Error("Invalid token type")
+}
