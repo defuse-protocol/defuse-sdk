@@ -20,12 +20,19 @@ export function parseMultiPayloadTransferMessage(
     logger.error(result.issues)
     return null
   }
-  if (result.output.standard !== "nep413") {
-    logger.error(result.issues)
-    return null
+  const standard = result.output.standard
+  switch (standard) {
+    case "nep413":
+      return result.output.payload.message
+        .intents[0] as unknown as TransferIntentSubset
+    case "erc191":
+    case "raw_ed25519":
+    case "webauthn":
+      return result.output.payload.intents[0] as unknown as TransferIntentSubset
+    default:
+      standard satisfies never
+      throw new Error("Unsupported multi payload standard")
   }
-  return result.output.payload.message
-    .intents[0] as unknown as TransferIntentSubset
 }
 
 export function getTokenDiffFromTransferMessage(
