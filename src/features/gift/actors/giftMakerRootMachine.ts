@@ -223,7 +223,7 @@ export const giftMakerRootMachine = setup({
             },
             {
               type: "setError",
-              params: { tag: "err", value: { reason: "EXCEPTION" } },
+              params: { tag: "err", value: { reason: "ERR_GIFT_SIGNING" } },
             },
           ],
         },
