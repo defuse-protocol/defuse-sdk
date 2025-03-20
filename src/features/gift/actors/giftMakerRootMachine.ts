@@ -130,7 +130,6 @@ export const giftMakerRootMachine = setup({
     cleanup: assign({
       error: null,
       signData: null,
-      intentHashes: null,
     }),
   },
   guards: {
@@ -182,7 +181,7 @@ export const giftMakerRootMachine = setup({
       },
     },
     signing: {
-      entry: "cleanup",
+      entry: [],
 
       on: {
         COMPLETE_SIGN: {
@@ -329,7 +328,11 @@ export const giftMakerRootMachine = setup({
             message: parsedValues.message,
           }
 
-          assert(context.intentHashes, "intentHashes is not defined")
+          assert(
+            Array.isArray(context.intentHashes) &&
+              context.intentHashes.length > 0,
+            "intentHashes is empty or not an array"
+          )
           giftMakerHistoryStore.getState().addGift(
             {
               ...giftInfo,

@@ -7,11 +7,9 @@ import {
 } from "../../../utils/defuse"
 import type { GiftInfo } from "../actors/shared/getGiftInfo"
 
-import { indexedDBStorage } from "./indexedDBStorage"
+import { GIFT_STORAGE_NAME, indexedDBStorage } from "./indexedDBStorage"
 import { localStorageHandler } from "./localStorageHandler"
 import { sessionStorageHandler } from "./sessionStorageHandler"
-
-const GIFT_STORAGE_NAME = "intents_sdk.gift_maker_gifts"
 
 export interface GiftMakerHistory extends GiftInfo {
   giftId: string
@@ -56,17 +54,19 @@ export const tripleStorage = {
   },
 }
 
+function getUserId(user: DefuseUserId | SignerCredentials) {
+  return typeof user === "string"
+    ? user
+    : userAddressToDefuseUserId(user.credential, user.credentialType)
+}
+
 export const giftMakerHistoryStore = create<Store>()(
   persist(
     (set) => ({
       gifts: {},
 
       addGift: (gift, user) => {
-        const userId =
-          typeof user === "string"
-            ? user
-            : userAddressToDefuseUserId(user.credential, user.credentialType)
-
+        const userId = getUserId(user)
         const stringifiedTokenDiff = Object.fromEntries(
           Object.entries(gift.tokenDiff).map(([key, value]) => [
             key,
@@ -90,10 +90,7 @@ export const giftMakerHistoryStore = create<Store>()(
       },
 
       removeGift: (giftId: string, user) => {
-        const userId =
-          typeof user === "string"
-            ? user
-            : userAddressToDefuseUserId(user.credential, user.credentialType)
+        const userId = getUserId(user)
 
         set((state) => ({
           gifts: {
