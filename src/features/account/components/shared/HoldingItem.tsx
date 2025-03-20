@@ -1,3 +1,4 @@
+import { Skeleton } from "@radix-ui/themes"
 import { AssetComboIcon } from "../../../../components/Asset/AssetComboIcon"
 import { formatTokenValue } from "../../../../utils/format"
 import type { Holding } from "../../types/sharedTypes"
@@ -43,6 +44,24 @@ export function HoldingItem({ holding }: HoldingItemProps) {
         ) : (
           "-"
         )}
+      </div>
+    </div>
+  )
+}
+
+export function HoldingItemSkeleton() {
+  return (
+    <div className="py-2.5 flex items-center gap-2.5">
+      <Skeleton className="size-7 rounded-full" />
+
+      <div className="flex-1 flex flex-col items-start gap-0.5">
+        <Skeleton className="text-sm">Ethereum</Skeleton>
+        <Skeleton className="text-sm">ETH</Skeleton>
+      </div>
+
+      <div className="flex flex-col items-end gap-0.5">
+        <Skeleton className="text-sm">0.9999 ETH</Skeleton>
+        <Skeleton className="text-sm">$100.00</Skeleton>
       </div>
     </div>
   )

@@ -1,5 +1,5 @@
 import { Eye, Gift, PaperPlaneRight, Plus } from "@phosphor-icons/react"
-import { Button } from "@radix-ui/themes"
+import { Button, Skeleton } from "@radix-ui/themes"
 import { FormattedCurrency } from "./shared/FormattedCurrency"
 import { IntentsIcon } from "./shared/IntentsIcon"
 import { Island } from "./shared/Island"
@@ -12,7 +12,7 @@ export function SummaryIsland({
   withdrawHref,
   giftHref,
 }: {
-  valueUsd: number
+  valueUsd: number | undefined
   depositHref: string
   withdrawHref: string
   giftHref: string
@@ -35,12 +35,18 @@ export function SummaryIsland({
       />
 
       <div className="flex flex-col gap-2">
-        <FormattedCurrency
-          value={valueUsd}
-          formatOptions={{ currency: "USD" }}
-          className="text-[40px] leading-none tracking-tight font-black"
-          centsClassName="text-[32px]"
-        />
+        {valueUsd != null ? (
+          <FormattedCurrency
+            value={valueUsd}
+            formatOptions={{ currency: "USD" }}
+            className="text-[40px] leading-none tracking-tight font-black"
+            centsClassName="text-[32px]"
+          />
+        ) : (
+          <div>
+            <Skeleton className="text-[40px] leading-none">$1000.00</Skeleton>
+          </div>
+        )}
         <div className="text-sm font-medium text-gray-11">
           Deposited balance
         </div>
