@@ -16,6 +16,7 @@ import {
   type Events as DepositedBalanceEvents,
   depositedBalanceMachine,
 } from "../../machines/depositedBalanceMachine"
+import { giftMakerHistoryStore } from "../stores/giftMakerHistory"
 import type { GiftSignedResult } from "../types/sharedTypes"
 import {
   type EscrowCredentials,
@@ -270,6 +271,12 @@ export const giftMakerRootMachine = setup({
               return event.output.giftStatus === "published"
             },
             target: "signed",
+            actions: assign({
+              intentHashes: ({ event }) => {
+                assert(event.output.giftStatus === "published")
+                return event.output.intentHashes
+              },
+            }),
           },
           {
             target: "editing",
@@ -320,6 +327,20 @@ export const giftMakerRootMachine = setup({
             accountId: context.escrowCredentials.credential,
             message: parsedValues.message,
           }
+
+          assert(
+            Array.isArray(context.intentHashes) &&
+              context.intentHashes.length > 0,
+            "intentHashes is empty or not an array"
+          )
+          giftMakerHistoryStore.getState().addGift(
+            {
+              ...giftInfo,
+              giftId: signData.giftId,
+              intentHashes: context.intentHashes,
+            },
+            signData.signerCredentials
+          )
 
           return {
             giftId: signData.giftId,
