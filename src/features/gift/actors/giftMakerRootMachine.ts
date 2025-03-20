@@ -16,6 +16,7 @@ import {
   type Events as DepositedBalanceEvents,
   depositedBalanceMachine,
 } from "../../machines/depositedBalanceMachine"
+import type { GiftSignedResult } from "../types/sharedTypes"
 import {
   type EscrowCredentials,
   generateEscrowCredentials,
@@ -39,7 +40,6 @@ import type {
   GiftMakerSignActorErrors,
   GiftMakerSignActorInput,
   GiftMakerSignActorOutput,
-  GiftMakerSignActorSuccess,
 } from "./giftMakerSignActor"
 import { giftMakerSignActor } from "./giftMakerSignActor"
 import type { GiftInfo } from "./shared/getGiftInfo"
@@ -69,7 +69,7 @@ export const giftMakerRootMachine = setup({
         }
       | {
           type: "COMPLETE_SIGN"
-          params: GiftMakerSignActorSuccess
+          params: GiftSignedResult
         },
     context: {} as {
       error: null | GiftMakerRootMachineErrors
@@ -77,7 +77,7 @@ export const giftMakerRootMachine = setup({
       depositedBalanceRef: ActorRefFrom<typeof depositedBalanceMachine>
       escrowCredentials: EscrowCredentials
       referral: string | undefined
-      signData: null | GiftMakerSignActorSuccess
+      signData: null | GiftSignedResult
       intentHashes: null | string[]
     },
     children: {} as {
@@ -123,7 +123,7 @@ export const giftMakerRootMachine = setup({
       "depositedBalanceRef",
       (_, event: DepositedBalanceEvents) => event
     ),
-    completeSign: ({ self }, event: GiftMakerSignActorSuccess) => {
+    completeSign: ({ self }, event: GiftSignedResult) => {
       self.send({ type: "COMPLETE_SIGN", params: event })
     },
     cleanup: assign({
