@@ -347,7 +347,8 @@ export function makeInnerTransferMessage({
         intent: "transfer",
         tokens,
         receiver_id: receiverId,
-        memo,
+        // We don't want to include empty memo in the message
+        ...(memo && { memo }),
       },
     ],
     signer_id: signerId,
