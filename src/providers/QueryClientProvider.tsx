@@ -3,13 +3,9 @@ import {
   QueryClientProvider as RCProvider,
 } from "@tanstack/react-query"
 import type { PropsWithChildren } from "react"
-import { settings } from "../constants/settings"
 
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: settings.queries,
-  },
-})
+// todo: accept queryClient instance from user
+export const queryClient = new QueryClient()
 
 export const QueryClientProvider: React.FC<PropsWithChildren> = ({
   children,
