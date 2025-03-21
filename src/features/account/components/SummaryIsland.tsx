@@ -1,21 +1,26 @@
 import { Gift, PaperPlaneRight, Plus } from "@phosphor-icons/react"
 import { Skeleton } from "@radix-ui/themes"
+import { ButtonCustom } from "../../../components/Button/ButtonCustom"
 import { FormattedCurrency } from "./shared/FormattedCurrency"
 import { Island } from "./shared/Island"
 import { IslandHeader } from "./shared/IslandHeader"
 import { NavButton } from "./shared/NavButton"
 
 export function SummaryIsland({
+  isLoggedIn,
   valueUsd,
   depositHref,
   withdrawHref,
   giftHref,
 }: {
+  isLoggedIn: boolean
   valueUsd: number | undefined
   depositHref: string
   withdrawHref: string
   giftHref: string
 }) {
+  valueUsd = isLoggedIn ? valueUsd : 0
+
   return (
     <Island className="flex flex-col gap-8">
       <IslandHeader
@@ -53,29 +58,35 @@ export function SummaryIsland({
         </div>
       </div>
 
-      <div className="flex gap-4">
-        <NavButton
-          href={depositHref}
-          className="flex-1"
-          variant="primary"
-          label="Deposit"
-          icon={<Plus weight="bold" className="size-5" />}
-        />
-        <NavButton
-          href={withdrawHref}
-          className="flex-1"
-          variant="secondary"
-          label="Withdraw"
-          icon={<PaperPlaneRight weight="bold" className="size-5" />}
-        />
-        <NavButton
-          href={giftHref}
-          className="flex-1"
-          variant="secondary"
-          label="Gift"
-          icon={<Gift weight="bold" className="size-5" />}
-        />
-      </div>
+      {isLoggedIn ? (
+        <div className="flex gap-4">
+          <NavButton
+            href={depositHref}
+            className="flex-1"
+            variant="primary"
+            label="Deposit"
+            icon={<Plus weight="bold" className="size-5" />}
+          />
+          <NavButton
+            href={withdrawHref}
+            className="flex-1"
+            variant="secondary"
+            label="Withdraw"
+            icon={<PaperPlaneRight weight="bold" className="size-5" />}
+          />
+          <NavButton
+            href={giftHref}
+            className="flex-1"
+            variant="secondary"
+            label="Gift"
+            icon={<Gift weight="bold" className="size-5" />}
+          />
+        </div>
+      ) : (
+        <ButtonCustom type="button" size="lg">
+          Sign in
+        </ButtonCustom>
+      )}
     </Island>
   )
 }

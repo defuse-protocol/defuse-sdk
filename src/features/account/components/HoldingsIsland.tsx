@@ -5,24 +5,28 @@ import { HoldingItem, HoldingItemSkeleton } from "./shared/HoldingItem"
 import { Island } from "./shared/Island"
 
 interface HoldingsIslandProps {
+  isLoggedIn: boolean
   holdings: Holding[] | undefined
 }
 
-export function HoldingsIsland({ holdings }: HoldingsIslandProps) {
+export function HoldingsIsland({ isLoggedIn, holdings }: HoldingsIslandProps) {
   return (
     <Island className="py-4">
-      <Content holdings={holdings} />
+      <Content isLoggedIn={isLoggedIn} holdings={holdings} />
     </Island>
   )
 }
 
-function Content({ holdings }: { holdings: Holding[] | undefined }) {
-  if (holdings == null) {
-    return <LoadingScreen />
+function Content({
+  isLoggedIn,
+  holdings,
+}: { isLoggedIn: boolean; holdings: Holding[] | undefined }) {
+  if (holdings?.length === 0 || !isLoggedIn) {
+    return <EmptyScreen />
   }
 
-  if (holdings.length === 0) {
-    return <EmptyScreen />
+  if (holdings == null) {
+    return <LoadingScreen />
   }
 
   return holdings.map((holding) => (

@@ -38,13 +38,14 @@ export function AccountWidget({
     <WidgetRoot>
       <div className="widget-container flex flex-col gap-5">
         <SummaryIsland
+          isLoggedIn={userAddress != null}
           valueUsd={totalValueUsd}
           depositHref={depositHref}
           withdrawHref={withdrawHref}
           giftHref={giftHref}
         />
 
-        <HoldingsIsland holdings={holdings} />
+        <HoldingsIsland isLoggedIn={userId != null} holdings={holdings} />
       </div>
     </WidgetRoot>
   )
