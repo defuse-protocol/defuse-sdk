@@ -1,8 +1,8 @@
 import { cn } from "src/utils/cn"
-import { useTabContext } from "../../providers/TabProvider"
+import { type TabType, useTabContext } from "../../providers/TabProvider"
 
 interface TabConfig {
-  key: "pending" | "history"
+  key: TabType
   title: string
 }
 
