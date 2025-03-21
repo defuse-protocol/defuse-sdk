@@ -1,25 +1,30 @@
 import { Button } from "@radix-ui/themes"
 import type { ReactNode } from "react"
+import type {
+  HostAppRoute,
+  RenderHostAppLink,
+} from "../../../../types/hostAppLink"
 import { cn } from "../../../../utils/cn"
+
+type NavButtonProps = {
+  className?: string
+  variant: "primary" | "secondary"
+  label: string
+  icon: ReactNode
+  routeName: HostAppRoute
+  renderHostAppLink: RenderHostAppLink
+}
 
 export function NavButton({
   className,
   variant,
   label,
   icon,
-  href,
-}: {
-  className?: string
-  variant: "primary" | "secondary"
-  label: string
-  icon: ReactNode
-  href: string
-}) {
-  return (
-    <a
-      href={href}
-      className={cn("flex flex-col items-center gap-2 cursor-auto", className)}
-    >
+  routeName,
+  renderHostAppLink,
+}: NavButtonProps) {
+  const children = (
+    <>
       <Button
         variant={variant === "primary" ? "solid" : "soft"}
         color={variant === "primary" ? undefined : "gray"}
@@ -31,6 +36,10 @@ export function NavButton({
       </Button>
 
       <div className="text-gray-12 text-sm font-bold">{label}</div>
-    </a>
+    </>
   )
+
+  return renderHostAppLink(routeName, children, {
+    className: cn("flex flex-col items-center gap-2 cursor-auto", className),
+  })
 }

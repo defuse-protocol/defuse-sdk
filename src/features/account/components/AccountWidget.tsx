@@ -1,6 +1,7 @@
 import { WidgetRoot } from "../../../components/WidgetRoot"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../../types/base"
 import type { ChainType } from "../../../types/deposit"
+import type { RenderHostAppLink } from "../../../types/hostAppLink"
 import { userAddressToDefuseUserId } from "../../../utils/defuse"
 import { useWatchHoldings } from "../hooks/useWatchHoldings"
 import { computeTotalUsdValue } from "../utils/holdingsUtils"
@@ -13,20 +14,14 @@ export interface AccountWidgetProps {
   userAddress: string | null | undefined
   userChainType: ChainType | null | undefined
 
-  depositHref: string
-  withdrawHref: string
-  giftHref: string
-  onSignInRequest: () => void
+  renderHostAppLink: RenderHostAppLink
 }
 
 export function AccountWidget({
   tokenList,
   userAddress,
   userChainType,
-  depositHref,
-  withdrawHref,
-  giftHref,
-  onSignInRequest,
+  renderHostAppLink,
 }: AccountWidgetProps) {
   const userId =
     userAddress != null && userChainType != null
@@ -42,10 +37,7 @@ export function AccountWidget({
         <SummaryIsland
           isLoggedIn={userAddress != null}
           valueUsd={totalValueUsd}
-          depositHref={depositHref}
-          withdrawHref={withdrawHref}
-          giftHref={giftHref}
-          onSignInRequest={onSignInRequest}
+          renderHostAppLink={renderHostAppLink}
         />
 
         <HoldingsIsland isLoggedIn={userId != null} holdings={holdings} />

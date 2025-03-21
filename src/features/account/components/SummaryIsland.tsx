@@ -1,6 +1,7 @@
 import { Gift, PaperPlaneRight, Plus } from "@phosphor-icons/react"
 import { Skeleton } from "@radix-ui/themes"
 import { ButtonCustom } from "../../../components/Button/ButtonCustom"
+import type { RenderHostAppLink } from "../../../types/hostAppLink"
 import { FormattedCurrency } from "./shared/FormattedCurrency"
 import { Island } from "./shared/Island"
 import { IslandHeader } from "./shared/IslandHeader"
@@ -9,17 +10,11 @@ import { NavButton } from "./shared/NavButton"
 export function SummaryIsland({
   isLoggedIn,
   valueUsd,
-  depositHref,
-  withdrawHref,
-  giftHref,
-  onSignInRequest,
+  renderHostAppLink,
 }: {
   isLoggedIn: boolean
   valueUsd: number | undefined
-  depositHref: string
-  withdrawHref: string
-  giftHref: string
-  onSignInRequest: () => void
+  renderHostAppLink: RenderHostAppLink
 }) {
   valueUsd = isLoggedIn ? valueUsd : 0
 
@@ -63,33 +58,38 @@ export function SummaryIsland({
       {isLoggedIn ? (
         <div className="flex gap-4">
           <NavButton
-            href={depositHref}
+            routeName="deposit"
+            renderHostAppLink={renderHostAppLink}
             className="flex-1"
             variant="primary"
             label="Deposit"
             icon={<Plus weight="bold" className="size-5" />}
           />
           <NavButton
-            href={withdrawHref}
+            routeName="withdraw"
+            renderHostAppLink={renderHostAppLink}
             className="flex-1"
             variant="secondary"
             label="Withdraw"
             icon={<PaperPlaneRight weight="bold" className="size-5" />}
           />
-          {!!giftHref && (
-            <NavButton
-              href={giftHref}
-              className="flex-1"
-              variant="secondary"
-              label="Gift"
-              icon={<Gift weight="bold" className="size-5" />}
-            />
-          )}
+          <NavButton
+            routeName="gift"
+            renderHostAppLink={renderHostAppLink}
+            className="flex-1"
+            variant="secondary"
+            label="Gift"
+            icon={<Gift weight="bold" className="size-5" />}
+          />
         </div>
       ) : (
-        <ButtonCustom type="button" size="lg" onClick={() => onSignInRequest()}>
-          Sign in
-        </ButtonCustom>
+        renderHostAppLink(
+          "sign-in",
+          <ButtonCustom type="button" size="lg" className="w-full">
+            Sign in
+          </ButtonCustom>,
+          {}
+        )
       )}
     </Island>
   )
