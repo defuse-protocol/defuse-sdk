@@ -1,3 +1,4 @@
+export { AccountWidget } from "./features/account/components/AccountWidget"
 export { DepositWidget } from "./features/deposit/components/DepositWidget"
 export { SwapWidget } from "./features/swap/components/SwapWidget"
 export { WithdrawWidget } from "./features/withdraw/components/WithdrawWidget"
