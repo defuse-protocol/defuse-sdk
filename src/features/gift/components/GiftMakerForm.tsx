@@ -26,7 +26,6 @@ import { GiftMakerReadyDialog } from "./GiftMakerReadyDialog"
 import { GiftMessageInput } from "./GiftMessageInput"
 import { GiftDescription } from "./shared/GiftDescription"
 import { GiftHeader } from "./shared/GiftHeader"
-import { MessageHint } from "./shared/MessageHint"
 
 export type GiftMakerWidgetProps = {
   /** List of available tokens for trading */
@@ -249,12 +248,6 @@ export function GiftMakerForm({
                 />
               }
             />
-            {formValues.message && (
-              <MessageHint
-                text="Message is publicly readable and permanently stored on the blockchain. Anyone can view this message."
-                className="mt-4"
-              />
-            )}
           </div>
         </div>
 
