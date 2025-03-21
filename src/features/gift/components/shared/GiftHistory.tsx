@@ -5,7 +5,7 @@ import { userAddressToDefuseUserId } from "../../../../utils/defuse"
 import { GiftClaimActorProvider } from "../../providers/GiftClaimActorProvider"
 import { useTabContext } from "../../providers/TabProvider"
 import { useGiftMakerHistory } from "../../stores/giftMakerHistory"
-import type { GiftPayload } from "../../types/sharedTypes"
+import type { GiftLinkData } from "../../types/sharedTypes"
 import { type GiftInfos, parseGiftInfos } from "../../utils/parseGiftInfos"
 import { GiftHistoryEmpty } from "./GiftHistoryEmpty"
 import { GiftHistorySkeleton } from "./GiftHistorySkeleton"
@@ -16,7 +16,7 @@ import { GiftMakerHistoryItem } from "./GiftMakerHistoryItem"
 export type GiftHistoryProps = {
   signerCredentials: SignerCredentials
   tokenList: (BaseTokenInfo | UnifiedTokenInfo)[]
-  generateLink: (giftPayload: GiftPayload) => string
+  generateLink: (giftLinkData: GiftLinkData) => string
 }
 
 export function GiftHistory({
