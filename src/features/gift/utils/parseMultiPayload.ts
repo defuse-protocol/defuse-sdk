@@ -1,4 +1,4 @@
-import type { MultiPayload } from "src/types/defuse-contracts-types"
+import type { Intent, MultiPayload } from "src/types/defuse-contracts-types"
 import { safeParse } from "valibot"
 import { logger } from "../../../logger"
 import { MultiPayloadDeepSchema } from "../../otcDesk/utils/schemaMultipayload"
@@ -9,7 +9,6 @@ type TransferIntentSubset = {
   tokens: {
     [k: string]: string
   }
-  memo?: string | null
 }
 
 export function parseMultiPayloadTransferMessage(
@@ -20,12 +19,44 @@ export function parseMultiPayloadTransferMessage(
     logger.error(result.issues)
     return null
   }
-  if (result.output.standard !== "nep413") {
-    logger.error(result.issues)
-    return null
+  const standard = result.output.standard
+  switch (standard) {
+    case "nep413": {
+      const intents = result.output.payload.message.intents as Intent[]
+      if (intents.length === 0) {
+        return null
+      }
+      const firstIntent = intents[0]
+      if (firstIntent && isTransferIntent(firstIntent)) {
+        return firstIntent
+      }
+      return null
+    }
+    case "erc191":
+    case "raw_ed25519":
+    case "webauthn": {
+      const intents = result.output.payload.intents as Intent[]
+      if (intents.length === 0) {
+        return null
+      }
+      const firstIntent = intents[0]
+      if (firstIntent && isTransferIntent(firstIntent)) {
+        return firstIntent
+      }
+      return null
+    }
+    default:
+      standard satisfies never
+      throw new Error("Unsupported multi payload standard")
   }
-  return result.output.payload.message
-    .intents[0] as unknown as TransferIntentSubset
+}
+
+function isTransferIntent(intent: Intent): intent is TransferIntentSubset {
+  return (
+    intent.intent === "transfer" &&
+    "receiver_id" in intent &&
+    "tokens" in intent
+  )
 }
 
 export function getTokenDiffFromTransferMessage(

@@ -30,7 +30,7 @@ function transformNEP413Key(key: Uint8Array): string {
   return `ed25519:${base58.encode(key)}`
 }
 
-function normalizeNEP413Key(key: string): string {
+export function normalizeNEP413Key(key: string): string {
   const value = key.slice("ed25519:".length)
   if (!value) {
     throw new Error("Invalid NEP413 key format")

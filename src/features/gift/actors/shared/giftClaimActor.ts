@@ -19,7 +19,7 @@ export type GiftClaimActorOutput =
       giftStatus: "not_claimed" | "already_claimed_or_executed"
     }
 
-type GiftClaimActorErrors =
+export type GiftClaimActorErrors =
   | PublishIntentsErr
   | {
       reason: "ERR_ON_CLAIM_GIFT" | "ERR_ON_SIGN_GIFT" | "ERR_ON_PUBLISH_GIFT"
