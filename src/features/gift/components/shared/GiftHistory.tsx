@@ -50,7 +50,12 @@ export function GiftHistory({
   }
 
   if (loading) {
-    return <GiftHistorySkeleton />
+    return (
+      <div className="widget-container flex flex-col gap-4 p-5">
+        <GiftHistoryTabs />
+        <GiftHistorySkeleton />
+      </div>
+    )
   }
 
   const giftItemsBoundToTab =
