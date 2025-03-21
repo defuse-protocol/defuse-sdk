@@ -66,7 +66,7 @@ export function GiftHistory({
             giftInfo={giftInfo}
           >
             <GiftMakerHistoryItem
-              tag={activeTab}
+              itemType={activeTab}
               giftInfo={giftInfo}
               generateLink={generateLink}
               signerCredentials={signerCredentials}
