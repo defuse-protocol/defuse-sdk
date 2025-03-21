@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react"
-import type { SignerCredentials } from "src/core/formatters"
-import type { BaseTokenInfo, UnifiedTokenInfo } from "src/types/base"
+import { ButtonCustom } from "../../../../components/Button/ButtonCustom"
+import type { SignerCredentials } from "../../../../core/formatters"
+import type { BaseTokenInfo, UnifiedTokenInfo } from "../../../../types/base"
 import { userAddressToDefuseUserId } from "../../../../utils/defuse"
 import { GiftClaimActorProvider } from "../../providers/GiftClaimActorProvider"
 import { useTabContext } from "../../providers/TabProvider"
@@ -19,6 +20,8 @@ export type GiftHistoryProps = {
   generateLink: (giftLinkData: GiftLinkData) => string
 }
 
+const ITEMS_TO_SHOW = 4
+
 export function GiftHistory({
   signerCredentials,
   tokenList,
@@ -35,6 +38,12 @@ export function GiftHistory({
   })
 
   const [giftInfos, setGiftInfos] = useState<GiftInfos | null>(null)
+  const [itemsToShow, setItemsToShow] = useState(ITEMS_TO_SHOW)
+
+  const handleShowMore = () => {
+    setItemsToShow((prev) => prev + ITEMS_TO_SHOW)
+  }
+
   useEffect(() => {
     if (gifts === undefined) {
       return
@@ -61,11 +70,15 @@ export function GiftHistory({
   const giftItemsBoundToTab =
     activeTab === "pending" ? giftInfos?.pending : giftInfos?.claimed
 
+  const getVisibleGiftItems = () => {
+    return giftItemsBoundToTab?.slice(0, itemsToShow)
+  }
+
   return (
     <div className="widget-container flex flex-col gap-4 p-5">
       <GiftHistoryTabs />
       <GiftClaimActorProvider signerCredentials={signerCredentials}>
-        {giftItemsBoundToTab?.map((giftInfo) => (
+        {getVisibleGiftItems()?.map((giftInfo) => (
           <GiftMakerHistoryCollapsibleInfo
             key={giftInfo.giftId}
             giftInfo={giftInfo}
@@ -80,6 +93,16 @@ export function GiftHistory({
         ))}
         {giftItemsBoundToTab?.length === 0 && (
           <GiftHistoryEmpty tag={activeTab} />
+        )}
+        {giftItemsBoundToTab && itemsToShow < giftItemsBoundToTab.length && (
+          <ButtonCustom
+            type="submit"
+            size="sm"
+            variant="secondary"
+            onClick={handleShowMore}
+          >
+            Show more
+          </ButtonCustom>
         )}
       </GiftClaimActorProvider>
     </div>

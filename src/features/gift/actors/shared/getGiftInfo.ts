@@ -24,6 +24,7 @@ export type GiftOpenSecretActorOutput =
     }
 
 export type GiftInfo = {
+  giftId?: string
   tokenDiff: Record<BaseTokenInfo["defuseAssetId"], bigint>
   token: BaseTokenInfo | UnifiedTokenInfo
   secretKey: string
