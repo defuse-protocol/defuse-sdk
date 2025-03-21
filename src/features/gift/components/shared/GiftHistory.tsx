@@ -10,6 +10,7 @@ import { type GiftInfos, parseGiftInfos } from "../../utils/parseGiftInfos"
 import { GiftHistoryEmpty } from "./GiftHistoryEmpty"
 import { GiftHistorySkeleton } from "./GiftHistorySkeleton"
 import { GiftHistoryTabs } from "./GiftHistoryTabs"
+import { GiftMakerHistoryCollapsibleInfo } from "./GiftMakerHistoryCollapsibleInfo"
 import { GiftMakerHistoryItem } from "./GiftMakerHistoryItem"
 
 export type GiftHistoryProps = {
@@ -60,13 +61,17 @@ export function GiftHistory({
       <GiftHistoryTabs />
       <GiftClaimActorProvider signerCredentials={signerCredentials}>
         {giftItemsBoundToTab?.map((giftInfo) => (
-          <GiftMakerHistoryItem
-            tag={activeTab}
+          <GiftMakerHistoryCollapsibleInfo
             key={giftInfo.giftId}
             giftInfo={giftInfo}
-            generateLink={generateLink}
-            signerCredentials={signerCredentials}
-          />
+          >
+            <GiftMakerHistoryItem
+              tag={activeTab}
+              giftInfo={giftInfo}
+              generateLink={generateLink}
+              signerCredentials={signerCredentials}
+            />
+          </GiftMakerHistoryCollapsibleInfo>
         ))}
         {giftItemsBoundToTab?.length === 0 && (
           <GiftHistoryEmpty tag={activeTab} />
