@@ -52,34 +52,25 @@ export function GiftHistory({
     return <GiftHistorySkeleton />
   }
 
+  const giftItemsBoundToTab =
+    activeTab === "pending" ? giftInfos?.pending : giftInfos?.claimed
+
   return (
     <div className="widget-container flex flex-col gap-4 p-5">
       <GiftHistoryTabs />
       <GiftClaimActorProvider signerCredentials={signerCredentials}>
-        {activeTab === "pending" &&
-          giftInfos?.pending.map((giftInfo) => (
-            <GiftMakerHistoryItem
-              tag={activeTab}
-              key={giftInfo.giftId}
-              giftInfo={giftInfo}
-              generateLink={generateLink}
-              signerCredentials={signerCredentials}
-            />
-          ))}
-        {activeTab === "history" &&
-          giftInfos?.claimed.map((giftInfo) => (
-            <GiftMakerHistoryItem
-              tag={activeTab}
-              key={giftInfo.giftId}
-              giftInfo={giftInfo}
-              generateLink={generateLink}
-              signerCredentials={signerCredentials}
-            />
-          ))}
-        {giftInfos?.pending.length === 0 ||
-          (giftInfos?.claimed.length === 0 && (
-            <GiftHistoryEmpty tag={activeTab} />
-          ))}
+        {giftItemsBoundToTab?.map((giftInfo) => (
+          <GiftMakerHistoryItem
+            tag={activeTab}
+            key={giftInfo.giftId}
+            giftInfo={giftInfo}
+            generateLink={generateLink}
+            signerCredentials={signerCredentials}
+          />
+        ))}
+        {giftItemsBoundToTab?.length === 0 && (
+          <GiftHistoryEmpty tag={activeTab} />
+        )}
       </GiftClaimActorProvider>
     </div>
   )
