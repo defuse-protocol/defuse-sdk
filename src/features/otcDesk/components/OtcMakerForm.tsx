@@ -73,6 +73,7 @@ export function OtcMakerForm({
   signMessage,
   sendNearTransaction,
   generateLink,
+  renderHostAppLink,
   referral,
 }: OtcMakerWidgetProps) {
   const signerCredentials: SignerCredentials | null = useMemo(
@@ -435,15 +436,31 @@ export function OtcMakerForm({
           </div>
         </div>
 
-        {renderSubmitButton(rootSnapshot)}
+        {renderSubmitButton(
+          rootSnapshot,
+          userAddress != null,
+          renderHostAppLink
+        )}
       </form>
     </div>
   )
 }
 
 function renderSubmitButton(
-  snapshot: SnapshotFrom<typeof otcMakerRootMachine>
+  snapshot: SnapshotFrom<typeof otcMakerRootMachine>,
+  isLoggedIn: boolean,
+  renderHostAppLink: RenderHostAppLink
 ) {
+  if (!isLoggedIn) {
+    return renderHostAppLink(
+      "sign-in",
+      <ButtonCustom type="button" size="lg" className="w-full">
+        Sign in
+      </ButtonCustom>,
+      { className: "w-full" }
+    )
+  }
+
   let caption = "Create swap link"
 
   switch (true) {

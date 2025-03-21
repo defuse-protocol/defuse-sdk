@@ -43,10 +43,11 @@ export type SwapFormValues = {
 }
 
 export interface SwapFormProps {
+  isLoggedIn: boolean
   renderHostAppLink: RenderHostAppLink
 }
 
-export const SwapForm = ({ renderHostAppLink }: SwapFormProps) => {
+export const SwapForm = ({ isLoggedIn, renderHostAppLink }: SwapFormProps) => {
   const {
     handleSubmit,
     register,
@@ -247,13 +248,21 @@ export const SwapForm = ({ renderHostAppLink }: SwapFormProps) => {
           />
 
           <Flex align="stretch" direction="column">
-            {showDepositButton ? (
+            {!isLoggedIn ? (
+              renderHostAppLink(
+                "sign-in",
+                <ButtonCustom type="button" size="lg" className="w-full">
+                  Sign in
+                </ButtonCustom>,
+                { className: "w-full" }
+              )
+            ) : showDepositButton ? (
               renderHostAppLink(
                 "deposit",
-                <ButtonCustom type="button" size="lg" fullWidth>
+                <ButtonCustom type="button" size="lg" className="w-full">
                   Go to Deposit
                 </ButtonCustom>,
-                {}
+                { className: "w-full" }
               )
             ) : (
               <ButtonCustom
