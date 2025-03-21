@@ -7,14 +7,11 @@ import { WidgetRoot } from "../../../components/WidgetRoot"
 import type { SignerCredentials } from "../../../core/formatters"
 import { userAddressToDefuseUserId } from "../../../utils/defuse"
 import { GiftClaimActorProvider } from "../providers/GiftClaimActorProvider"
-import {
-  TabProvider,
-  useHistoryTab,
-  usePendingTab,
-} from "../providers/TabProvider"
+import { TabProvider, useTabContext } from "../providers/TabProvider"
 import { useGiftMakerHistory } from "../stores/giftMakerHistory"
 import type { GiftPayload } from "../types/sharedTypes"
 import { type GiftInfos, parseGiftInfos } from "../utils/parseGiftInfos"
+import { GiftHistoryEmpty } from "./shared/GiftHistoryEmpty"
 import { GiftHistorySkeleton } from "./shared/GiftHistorySkeleton"
 import { GiftHistoryTabs } from "./shared/GiftHistoryTabs"
 import { GiftMakerHistoryItem } from "./shared/GiftMakerHistoryItem"
@@ -33,7 +30,7 @@ export function GiftHistoryWidget({
   tokenList,
 }: GiftHistoryWidgetProps) {
   const signerCredentials: SignerCredentials | null = useMemo(() => {
-    return userAddress != null && userChainType != null
+    return userAddress && userChainType
       ? {
           credential: userAddress,
           credentialType: userChainType,
@@ -45,7 +42,7 @@ export function GiftHistoryWidget({
     <WidgetRoot>
       <SwapWidgetProvider>
         <TabProvider>
-          {signerCredentials != null && (
+          {signerCredentials && (
             <GiftHistory
               signerCredentials={signerCredentials}
               tokenList={tokenList}
@@ -69,9 +66,7 @@ function GiftHistory({
   tokenList,
   generateLink,
 }: GiftHistoryProps) {
-  const pendingTab = usePendingTab()
-  const historyTab = useHistoryTab()
-
+  const { activeTab } = useTabContext()
   const [loading, setLoading] = useState(true)
   const gifts = useGiftMakerHistory((s) => {
     const userId = userAddressToDefuseUserId(
@@ -83,7 +78,7 @@ function GiftHistory({
 
   const [giftInfos, setGiftInfos] = useState<GiftInfos | null>(null)
   useEffect(() => {
-    if (gifts == null) {
+    if (gifts === undefined) {
       return
     }
     parseGiftInfos(tokenList, gifts).then((giftsResult) => {
@@ -92,37 +87,41 @@ function GiftHistory({
     })
   }, [gifts, tokenList])
 
-  if (loading) {
-    return <GiftHistorySkeleton />
+  if (gifts === undefined) {
+    return null
   }
 
-  if (gifts == null || gifts.length === 0) {
-    return <div className="flex flex-col gap-2.5">No pending gifts found</div>
+  if (loading) {
+    return <GiftHistorySkeleton />
   }
 
   return (
     <div className="widget-container flex flex-col gap-4 p-5">
       <GiftHistoryTabs />
       <GiftClaimActorProvider signerCredentials={signerCredentials}>
-        {pendingTab &&
+        {activeTab === "pending" &&
           giftInfos?.pending.map((giftInfo) => (
             <GiftMakerHistoryItem
-              tag="pending"
+              tag={activeTab}
               key={giftInfo.giftId}
               giftInfo={giftInfo}
               generateLink={generateLink}
               signerCredentials={signerCredentials}
             />
           ))}
-        {historyTab &&
+        {activeTab === "history" &&
           giftInfos?.claimed.map((giftInfo) => (
             <GiftMakerHistoryItem
-              tag="history"
+              tag={activeTab}
               key={giftInfo.giftId}
               giftInfo={giftInfo}
               generateLink={generateLink}
               signerCredentials={signerCredentials}
             />
+          ))}
+        {giftInfos?.pending.length === 0 ||
+          (giftInfos?.claimed.length === 0 && (
+            <GiftHistoryEmpty tag={activeTab} />
           ))}
       </GiftClaimActorProvider>
     </div>

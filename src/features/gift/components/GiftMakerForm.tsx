@@ -249,6 +249,12 @@ export function GiftMakerForm({
                 />
               }
             />
+            {formValues.message && (
+              <MessageHint
+                text="Message is publicly readable and permanently stored on the blockchain. Anyone can view this message."
+                className="mt-4"
+              />
+            )}
           </div>
         </div>
 
@@ -263,10 +269,6 @@ export function GiftMakerForm({
             : "Confirm transaction in your wallet..."}
         </ButtonCustom>
       </form>
-      <MessageHint
-        text="Message is publicly readable and permanently stored on the blockchain. Anyone can view this message."
-        className="mt-4"
-      />
     </div>
   )
 }

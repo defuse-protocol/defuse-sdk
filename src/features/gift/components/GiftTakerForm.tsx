@@ -92,10 +92,17 @@ export function GiftTakerForm({
         type="button"
         size="lg"
         className="mt-5"
-        variant={processing ? "secondary" : "primary"}
+        variant={
+          processing || signerCredentials === null ? "secondary" : "primary"
+        }
         isLoading={processing}
+        disabled={signerCredentials === null}
       >
-        {processing ? "Processing..." : "Claim gift"}
+        {signerCredentials !== null
+          ? processing
+            ? "Processing..."
+            : "Claim gift"
+          : "Sign in to claim gift"}
       </ButtonCustom>
     </div>
   )
