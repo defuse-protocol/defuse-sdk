@@ -1,6 +1,7 @@
 import { Err, Ok, type Result } from "@thames/monads"
 import { type ReactNode, createContext, useEffect, useState } from "react"
 import type { SignerCredentials } from "src/core/formatters"
+import { userAddressToDefuseUserId } from "src/utils/defuse"
 import { type ActorRefFrom, createActor, toPromise } from "xstate"
 import type { GiftInfo } from "../actors/shared/getGiftInfo"
 import {
@@ -8,6 +9,7 @@ import {
   giftClaimActor,
 } from "../actors/shared/giftClaimActor"
 import { CancellationDialog } from "../components/GiftMakerReadyDialog"
+import { giftMakerHistoryStore } from "../stores/giftMakerHistory"
 
 export const GiftClaimActorContext = createContext<{
   cancelGift: (args: {
@@ -74,7 +76,16 @@ export function GiftClaimActorProvider({
 
     actor.start()
 
-    return toPromise(actor).then(Ok).finally(clearActorRef)
+    return toPromise(actor)
+      .then(Ok)
+      .finally(() => {
+        if (giftInfo.giftId) {
+          giftMakerHistoryStore
+            .getState()
+            .removeGift(giftInfo.giftId, signerCredentials)
+        }
+        clearActorRef()
+      })
   }
 
   return (
@@ -85,7 +96,13 @@ export function GiftClaimActorProvider({
         <CancellationDialog
           giftInfo={giftInfo}
           actorRef={actorRef}
-          signerCredentials={signerCredentials}
+          signerCredentials={{
+            credential: userAddressToDefuseUserId(
+              signerCredentials.credential,
+              signerCredentials.credentialType
+            ),
+            credentialType: signerCredentials.credentialType,
+          }}
         />
       )}
     </GiftClaimActorContext.Provider>
