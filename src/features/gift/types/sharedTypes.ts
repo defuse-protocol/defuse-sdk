@@ -6,7 +6,7 @@ export type SignMessage = (
   params: WalletMessage
 ) => Promise<WalletSignatureResult | null>
 
-export type GiftPayload = {
+export type GiftLinkData = {
   secretKey: string
   message: string
 }

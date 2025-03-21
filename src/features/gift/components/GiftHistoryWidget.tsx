@@ -5,13 +5,13 @@ import type { ChainType } from "src/types/deposit"
 import { WidgetRoot } from "../../../components/WidgetRoot"
 import type { SignerCredentials } from "../../../core/formatters"
 import { TabProvider } from "../providers/TabProvider"
-import type { GiftPayload } from "../types/sharedTypes"
+import type { GiftLinkData } from "../types/sharedTypes"
 import { GiftHistory } from "./shared/GiftHistory"
 
 export type GiftHistoryWidgetProps = {
   userAddress: string | null | undefined
   userChainType: ChainType | null | undefined
-  generateLink: (giftPayload: GiftPayload) => string
+  generateLink: (giftLinkData: GiftLinkData) => string
   tokenList: (BaseTokenInfo | UnifiedTokenInfo)[]
 }
 

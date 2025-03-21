@@ -36,25 +36,25 @@ export async function parseGiftInfos(
     })
   )
   return Ok({
-    pending: sortByDate(filterByTag("pending", giftInfos)),
-    claimed: sortByDate(filterByTag("claimed", giftInfos)),
-    failed: sortByDate(filterByTag("failed", giftInfos)),
+    pending: sortByDate(filterByStatus("pending", giftInfos)),
+    claimed: sortByDate(filterByStatus("claimed", giftInfos)),
+    failed: sortByDate(filterByStatus("failed", giftInfos)),
   })
 }
 
 function createTaggedGift(
   gift: GiftMakerHistory,
-  tag: FilterTag
-): GiftMakerHistory & { tag: FilterTag } {
-  return { ...gift, tag }
+  status: FilterStatus
+): GiftMakerHistory & { status: FilterStatus } {
+  return { ...gift, status }
 }
 
-type FilterTag = "pending" | "claimed" | "failed"
-function filterByTag(
-  tagName: FilterTag,
-  giftInfos: Array<GiftMakerHistory & { tag: FilterTag }>
+type FilterStatus = "pending" | "claimed" | "failed"
+function filterByStatus(
+  status: FilterStatus,
+  giftInfos: Array<GiftMakerHistory & { status: FilterStatus }>
 ): GiftMakerHistory[] {
-  return giftInfos.filter((giftInfo) => giftInfo.tag === tagName)
+  return giftInfos.filter((giftInfo) => giftInfo.status === status)
 }
 
 function sortByDate(giftInfos: GiftMakerHistory[]): GiftMakerHistory[] {

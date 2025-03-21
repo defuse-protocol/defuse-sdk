@@ -5,17 +5,18 @@ import { userAddressToDefuseUserId } from "../../../../utils/defuse"
 import { GiftClaimActorProvider } from "../../providers/GiftClaimActorProvider"
 import { useTabContext } from "../../providers/TabProvider"
 import { useGiftMakerHistory } from "../../stores/giftMakerHistory"
-import type { GiftPayload } from "../../types/sharedTypes"
+import type { GiftLinkData } from "../../types/sharedTypes"
 import { type GiftInfos, parseGiftInfos } from "../../utils/parseGiftInfos"
 import { GiftHistoryEmpty } from "./GiftHistoryEmpty"
 import { GiftHistorySkeleton } from "./GiftHistorySkeleton"
 import { GiftHistoryTabs } from "./GiftHistoryTabs"
+import { GiftMakerHistoryCollapsibleInfo } from "./GiftMakerHistoryCollapsibleInfo"
 import { GiftMakerHistoryItem } from "./GiftMakerHistoryItem"
 
 export type GiftHistoryProps = {
   signerCredentials: SignerCredentials
   tokenList: (BaseTokenInfo | UnifiedTokenInfo)[]
-  generateLink: (giftPayload: GiftPayload) => string
+  generateLink: (giftLinkData: GiftLinkData) => string
 }
 
 export function GiftHistory({
@@ -49,7 +50,12 @@ export function GiftHistory({
   }
 
   if (loading) {
-    return <GiftHistorySkeleton />
+    return (
+      <div className="widget-container flex flex-col gap-4 p-5">
+        <GiftHistoryTabs />
+        <GiftHistorySkeleton />
+      </div>
+    )
   }
 
   const giftItemsBoundToTab =
@@ -60,13 +66,17 @@ export function GiftHistory({
       <GiftHistoryTabs />
       <GiftClaimActorProvider signerCredentials={signerCredentials}>
         {giftItemsBoundToTab?.map((giftInfo) => (
-          <GiftMakerHistoryItem
-            tag={activeTab}
+          <GiftMakerHistoryCollapsibleInfo
             key={giftInfo.giftId}
             giftInfo={giftInfo}
-            generateLink={generateLink}
-            signerCredentials={signerCredentials}
-          />
+          >
+            <GiftMakerHistoryItem
+              itemType={activeTab}
+              giftInfo={giftInfo}
+              generateLink={generateLink}
+              signerCredentials={signerCredentials}
+            />
+          </GiftMakerHistoryCollapsibleInfo>
         ))}
         {giftItemsBoundToTab?.length === 0 && (
           <GiftHistoryEmpty tag={activeTab} />

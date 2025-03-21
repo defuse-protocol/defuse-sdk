@@ -15,18 +15,18 @@ import { Copy } from "../../../../components/IntentCard/CopyButton"
 import { GiftClaimActorContext } from "../../providers/GiftClaimActorProvider"
 import type { TabType } from "../../providers/TabProvider"
 import type { GiftMakerHistory } from "../../stores/giftMakerHistory"
-import type { GiftPayload } from "../../types/sharedTypes"
+import type { GiftLinkData } from "../../types/sharedTypes"
 import { GiftStrip } from "../GiftStrip"
 
 export function GiftMakerHistoryItem({
   giftInfo,
   generateLink,
-  tag,
+  itemType,
   signerCredentials,
 }: {
   giftInfo: GiftMakerHistory
-  generateLink: (giftPayload: GiftPayload) => string
-  tag: TabType
+  generateLink: (giftLinkData: GiftLinkData) => string
+  itemType: TabType
   signerCredentials: SignerCredentials
 }) {
   const amount = computeTotalBalanceDifferentDecimals(
@@ -38,7 +38,7 @@ export function GiftMakerHistoryItem({
   const { cancelGift } = useContext(GiftClaimActorContext)
 
   return (
-    <div className="flex justify-between gap-2.5 bg-gray-3 rounded-lg p-3">
+    <div className="flex justify-between gap-2.5">
       {amount != null && (
         <GiftStrip
           token={giftInfo.token}
@@ -49,7 +49,7 @@ export function GiftMakerHistoryItem({
         />
       )}
       <div className="flex gap-2">
-        {tag === "pending" && (
+        {itemType === "pending" && (
           <>
             <Copy
               text={() =>
@@ -92,7 +92,7 @@ export function GiftMakerHistoryItem({
             </IconButton>
           </>
         )}
-        {tag === "history" && (
+        {itemType === "history" && (
           <div className="flex gap-1 items-center">
             <CheckCircle width={12} height={12} className="text-accent-11" />
             <span className="text-xs font-medium text-accent-11">Claimed</span>
