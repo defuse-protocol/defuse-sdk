@@ -58,7 +58,6 @@ function assembleWalletMessage({
     signerId,
     deadlineTimestamp: minutesFromNow(5),
     receiverId: signerCredentials.credential,
-    memo: "GIFT_CLAIM",
   })
   return makeSwapMessage({
     innerMessage,
