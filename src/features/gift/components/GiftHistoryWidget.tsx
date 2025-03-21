@@ -1,24 +1,12 @@
 import { useMemo } from "react"
-import { useEffect, useState } from "react"
 import { SwapWidgetProvider } from "src/providers/SwapWidgetProvider"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "src/types/base"
 import type { ChainType } from "src/types/deposit"
 import { WidgetRoot } from "../../../components/WidgetRoot"
 import type { SignerCredentials } from "../../../core/formatters"
-import { userAddressToDefuseUserId } from "../../../utils/defuse"
-import { GiftClaimActorProvider } from "../providers/GiftClaimActorProvider"
-import {
-  TabProvider,
-  useHistoryTab,
-  usePendingTab,
-} from "../providers/TabProvider"
-import { useGiftMakerHistory } from "../stores/giftMakerHistory"
+import { TabProvider } from "../providers/TabProvider"
 import type { GiftPayload } from "../types/sharedTypes"
-import { type GiftInfos, parseGiftInfos } from "../utils/parseGiftInfos"
-import { GiftHistorySkeleton } from "./shared/GiftHistorySkeleton"
-import { GiftHistoryTabs } from "./shared/GiftHistoryTabs"
-import { GiftMakerHistoryCollapsibleInfo } from "./shared/GiftMakerHistoryCollapsibleInfo"
-import { GiftMakerHistoryItem } from "./shared/GiftMakerHistoryItem"
+import { GiftHistory } from "./shared/GiftHistory"
 
 export type GiftHistoryWidgetProps = {
   userAddress: string | null | undefined
@@ -34,7 +22,7 @@ export function GiftHistoryWidget({
   tokenList,
 }: GiftHistoryWidgetProps) {
   const signerCredentials: SignerCredentials | null = useMemo(() => {
-    return userAddress != null && userChainType != null
+    return userAddress && userChainType
       ? {
           credential: userAddress,
           credentialType: userChainType,
@@ -46,7 +34,7 @@ export function GiftHistoryWidget({
     <WidgetRoot>
       <SwapWidgetProvider>
         <TabProvider>
-          {signerCredentials != null && (
+          {signerCredentials && (
             <GiftHistory
               signerCredentials={signerCredentials}
               tokenList={tokenList}
@@ -56,85 +44,5 @@ export function GiftHistoryWidget({
         </TabProvider>
       </SwapWidgetProvider>
     </WidgetRoot>
-  )
-}
-
-type GiftHistoryProps = {
-  signerCredentials: SignerCredentials
-  tokenList: (BaseTokenInfo | UnifiedTokenInfo)[]
-  generateLink: (giftPayload: GiftPayload) => string
-}
-
-function GiftHistory({
-  signerCredentials,
-  tokenList,
-  generateLink,
-}: GiftHistoryProps) {
-  const pendingTab = usePendingTab()
-  const historyTab = useHistoryTab()
-
-  const [loading, setLoading] = useState(true)
-  const gifts = useGiftMakerHistory((s) => {
-    const userId = userAddressToDefuseUserId(
-      signerCredentials.credential,
-      signerCredentials.credentialType
-    )
-    return s.gifts[userId]
-  })
-
-  const [giftInfos, setGiftInfos] = useState<GiftInfos | null>(null)
-  useEffect(() => {
-    if (gifts == null) {
-      return
-    }
-    parseGiftInfos(tokenList, gifts).then((giftsResult) => {
-      setGiftInfos(giftsResult.unwrap())
-      setLoading(false)
-    })
-  }, [gifts, tokenList])
-
-  if (loading) {
-    return <GiftHistorySkeleton />
-  }
-
-  if (gifts == null || gifts.length === 0) {
-    return <div className="flex flex-col gap-2.5">No pending gifts found</div>
-  }
-
-  return (
-    <div className="widget-container flex flex-col gap-4 p-5">
-      <GiftHistoryTabs />
-      <GiftClaimActorProvider signerCredentials={signerCredentials}>
-        {pendingTab &&
-          giftInfos?.pending.map((giftInfo) => (
-            <GiftMakerHistoryCollapsibleInfo
-              key={giftInfo.giftId}
-              giftInfo={giftInfo}
-            >
-              <GiftMakerHistoryItem
-                tag="pending"
-                key={giftInfo.giftId}
-                giftInfo={giftInfo}
-                generateLink={generateLink}
-                signerCredentials={signerCredentials}
-              />
-            </GiftMakerHistoryCollapsibleInfo>
-          ))}
-        {historyTab &&
-          giftInfos?.claimed.map((giftInfo) => (
-            <GiftMakerHistoryCollapsibleInfo
-              key={giftInfo.giftId}
-              giftInfo={giftInfo}
-            >
-              <GiftMakerHistoryItem
-                tag="history"
-                giftInfo={giftInfo}
-                generateLink={generateLink}
-                signerCredentials={signerCredentials}
-              />
-            </GiftMakerHistoryCollapsibleInfo>
-          ))}
-      </GiftClaimActorProvider>
-    </div>
   )
 }

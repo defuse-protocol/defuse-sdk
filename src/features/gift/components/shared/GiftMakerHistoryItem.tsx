@@ -13,6 +13,7 @@ import {
 } from "src/utils/tokenUtils"
 import { Copy } from "../../../../components/IntentCard/CopyButton"
 import { GiftClaimActorContext } from "../../providers/GiftClaimActorProvider"
+import type { TabType } from "../../providers/TabProvider"
 import type { GiftMakerHistory } from "../../stores/giftMakerHistory"
 import type { GiftPayload } from "../../types/sharedTypes"
 import { GiftStrip } from "../GiftStrip"
@@ -25,7 +26,7 @@ export function GiftMakerHistoryItem({
 }: {
   giftInfo: GiftMakerHistory
   generateLink: (giftPayload: GiftPayload) => string
-  tag: "pending" | "history"
+  tag: TabType
   signerCredentials: SignerCredentials
 }) {
   const amount = computeTotalBalanceDifferentDecimals(
@@ -49,47 +50,47 @@ export function GiftMakerHistoryItem({
       )}
       <div className="flex gap-2">
         {tag === "pending" && (
-          <Copy
-            text={() =>
-              generateLink({
-                secretKey: giftInfo.secretKey,
-                message: giftInfo.message,
-              })
-            }
-          >
-            {(copied) => (
-              <IconButton
-                type="button"
-                variant="outline"
-                color="gray"
-                className="rounded-lg"
-              >
-                <div className="flex gap-2 items-center">
-                  {copied ? (
-                    <CheckIcon weight="bold" />
-                  ) : (
-                    <CopyIcon weight="bold" />
-                  )}
-                </div>
-              </IconButton>
-            )}
-          </Copy>
-        )}
-        {tag === "pending" && (
-          <IconButton
-            type="button"
-            onClick={() => {
-              cancelGift({
-                giftInfo: giftInfo,
-                signerCredentials: signerCredentials,
-              })
-            }}
-            variant="outline"
-            color="gray"
-            className="rounded-lg"
-          >
-            <TrashIcon weight="bold" />
-          </IconButton>
+          <>
+            <Copy
+              text={() =>
+                generateLink({
+                  secretKey: giftInfo.secretKey,
+                  message: giftInfo.message,
+                })
+              }
+            >
+              {(copied) => (
+                <IconButton
+                  type="button"
+                  variant="outline"
+                  color="gray"
+                  className="rounded-lg"
+                >
+                  <div className="flex gap-2 items-center">
+                    {copied ? (
+                      <CheckIcon weight="bold" />
+                    ) : (
+                      <CopyIcon weight="bold" />
+                    )}
+                  </div>
+                </IconButton>
+              )}
+            </Copy>
+            <IconButton
+              type="button"
+              onClick={() => {
+                cancelGift({
+                  giftInfo: giftInfo,
+                  signerCredentials: signerCredentials,
+                })
+              }}
+              variant="outline"
+              color="gray"
+              className="rounded-lg"
+            >
+              <TrashIcon weight="bold" />
+            </IconButton>
+          </>
         )}
         {tag === "history" && (
           <div className="flex gap-1 items-center">

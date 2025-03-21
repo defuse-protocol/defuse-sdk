@@ -1,4 +1,5 @@
 import { useActorRef, useSelector } from "@xstate/react"
+import { userAddressToDefuseUserId } from "src/utils/defuse"
 import { WidgetRoot } from "../../../components/WidgetRoot"
 import type { SignerCredentials } from "../../../core/formatters"
 import { SwapWidgetProvider } from "../../../providers/SwapWidgetProvider"
@@ -52,7 +53,10 @@ function GiftTakerScreens({
 
   const signerCredentials: SignerCredentials | null =
     userAddress != null && userChainType != null
-      ? { credential: userAddress, credentialType: userChainType }
+      ? {
+          credential: userAddressToDefuseUserId(userAddress, userChainType),
+          credentialType: userChainType,
+        }
       : null
 
   const snapshot = useSelector(giftTakerRootRef, (state) => state)

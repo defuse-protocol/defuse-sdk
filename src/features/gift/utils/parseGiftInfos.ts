@@ -26,27 +26,37 @@ export async function parseGiftInfos(
         // If returns an error, it means the escrow account no longer
         // has the gifted token balance, indicating the gift has been claimed
         if (determineResult.isErr()) {
-          return {
-            tag: "claimed",
-            ...gift,
-          }
+          return createTaggedGift(gift, "claimed")
         }
-        return {
-          tag: "pending",
-          ...gift,
-        }
+        return createTaggedGift(gift, "pending")
       } catch (err: unknown) {
         logger.error(new Error("error parsing gift info", { cause: err }))
-        return {
-          tag: "failed",
-          ...gift,
-        }
+        return createTaggedGift(gift, "failed")
       }
     })
   )
   return Ok({
-    pending: giftInfos.filter((giftInfo) => giftInfo.tag === "pending"),
-    claimed: giftInfos.filter((giftInfo) => giftInfo.tag === "claimed"),
-    failed: giftInfos.filter((giftInfo) => giftInfo.tag === "failed"),
+    pending: sortByDate(filterByTag("pending", giftInfos)),
+    claimed: sortByDate(filterByTag("claimed", giftInfos)),
+    failed: sortByDate(filterByTag("failed", giftInfos)),
   })
+}
+
+function createTaggedGift(
+  gift: GiftMakerHistory,
+  tag: FilterTag
+): GiftMakerHistory & { tag: FilterTag } {
+  return { ...gift, tag }
+}
+
+type FilterTag = "pending" | "claimed" | "failed"
+function filterByTag(
+  tagName: FilterTag,
+  giftInfos: Array<GiftMakerHistory & { tag: FilterTag }>
+): GiftMakerHistory[] {
+  return giftInfos.filter((giftInfo) => giftInfo.tag === tagName)
+}
+
+function sortByDate(giftInfos: GiftMakerHistory[]): GiftMakerHistory[] {
+  return giftInfos.sort((a, b) => b.updatedAt - a.updatedAt)
 }
