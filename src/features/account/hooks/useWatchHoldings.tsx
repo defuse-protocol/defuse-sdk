@@ -1,0 +1,34 @@
+import { useQueries } from "@tanstack/react-query"
+import { useMemo } from "react"
+import { createTokenUsdPricesQueryOptions } from "../../../hooks/useTokensUsdPrices"
+import type { BaseTokenInfo, UnifiedTokenInfo } from "../../../types/base"
+import type { DefuseUserId } from "../../../utils/defuse"
+import { getTokenId } from "../../../utils/token"
+import { getUnderlyingBaseTokenInfos } from "../../../utils/tokenUtils"
+import {
+  createDepositedBalanceQueryOptions,
+  createTransitBalanceQueryOptions,
+} from "../queries/balanceQueries"
+import { combineBalances } from "../utils/holdingsUtils"
+
+export function useWatchHoldings({
+  userId,
+  tokenList,
+}: {
+  userId: DefuseUserId | null
+  tokenList: (BaseTokenInfo | UnifiedTokenInfo)[]
+}) {
+  const tokenIds = useMemo(
+    () => tokenList.flatMap(getUnderlyingBaseTokenInfos).map(getTokenId),
+    [tokenList]
+  )
+
+  return useQueries({
+    queries: [
+      createDepositedBalanceQueryOptions({ userId, tokenIds }),
+      createTransitBalanceQueryOptions({ userId, tokenIds }),
+      createTokenUsdPricesQueryOptions(),
+    ],
+    combine: (results) => combineBalances(tokenList, results),
+  })
+}
