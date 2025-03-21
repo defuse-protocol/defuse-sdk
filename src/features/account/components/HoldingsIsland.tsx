@@ -1,8 +1,8 @@
 import { Wallet } from "@phosphor-icons/react"
+import { Island } from "../../../components/Island"
 import { getTokenId } from "../../../utils/token"
 import type { Holding } from "../types/sharedTypes"
 import { HoldingItem, HoldingItemSkeleton } from "./shared/HoldingItem"
-import { Island } from "./shared/Island"
 
 interface HoldingsIslandProps {
   isLoggedIn: boolean
