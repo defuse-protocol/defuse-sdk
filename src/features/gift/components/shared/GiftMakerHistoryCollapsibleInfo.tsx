@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query"
 import { CopyButton } from "src/components/IntentCard/CopyButton"
 import { waitForIntentSettlement } from "src/services/intentService"
 import { assert } from "src/utils/assert"
+import { chainTxExplorer } from "src/utils/chainTxExplorer"
 import type { GiftMakerHistory } from "../../stores/giftMakerHistory"
 import { formatGiftDate } from "../../utils/formattedDate"
 
@@ -11,8 +12,6 @@ type GiftMakerHistoryCollapsibleInfoProps = {
   children: React.ReactNode
   giftInfo: GiftMakerHistory
 }
-
-const NEAR_EXPLORER = "https://nearblocks.io"
 
 export function GiftMakerHistoryCollapsibleInfo({
   children,
@@ -29,10 +28,8 @@ export function GiftMakerHistoryCollapsibleInfo({
     },
   })
 
-  const txUrl =
-    intentStatus.data?.txHash != null
-      ? `${NEAR_EXPLORER}/txns/${intentStatus.data.txHash}`
-      : null
+  const txHash = intentStatus.data?.txHash
+  const txUrl = txHash !== null ? `${chainTxExplorer("near")}/${txHash}` : null
 
   return (
     <Accordion.Root type="single" collapsible className="bg-gray-3 rounded-lg">
@@ -76,18 +73,15 @@ export function GiftMakerHistoryCollapsibleInfo({
                 ))}
               </div>
             </div>
-            {txUrl != null && (
+            {!!txUrl && (
               <div className="flex justify-between items-center">
                 <div className="text-gray-11 font-medium">Transaction hash</div>
-                {intentStatus.data?.txHash && (
+                {txHash && (
                   <div className="flex flex-row items-center gap-1 text-blue-c11 font-medium">
                     <a href={txUrl} rel="noopener noreferrer" target="_blank">
-                      {truncateHash(intentStatus.data.txHash)}
+                      {truncateHash(txHash)}
                     </a>
-                    <CopyButton
-                      text={intentStatus.data.txHash}
-                      ariaLabel="Copy intent hash"
-                    />
+                    <CopyButton text={txHash} ariaLabel="Copy intent hash" />
                   </div>
                 )}
               </div>
