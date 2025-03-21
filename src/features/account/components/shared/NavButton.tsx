@@ -7,21 +7,21 @@ import type {
 import { cn } from "../../../../utils/cn"
 
 type NavButtonProps = {
-  className?: string
   variant: "primary" | "secondary"
   label: string
   icon: ReactNode
   routeName: HostAppRoute
   renderHostAppLink: RenderHostAppLink
+  className?: string
 }
 
 export function NavButton({
-  className,
   variant,
   label,
   icon,
   routeName,
   renderHostAppLink,
+  className,
 }: NavButtonProps) {
   const children = (
     <>
