@@ -100,7 +100,6 @@ describe("createTransferMessage()", () => {
     const message = createTransferMessage([["token.near", 100n]], {
       signerId: TEST_USER,
       receiverId: "receiver.near",
-      memo: "message",
       deadlineTimestamp: TEST_TIMESTAMP,
     })
 
@@ -111,7 +110,6 @@ describe("createTransferMessage()", () => {
           intent: "transfer",
           tokens: { "token.near": "100" },
           receiver_id: "receiver.near",
-          memo: "message",
         },
       ],
       signer_id: "user.near",
