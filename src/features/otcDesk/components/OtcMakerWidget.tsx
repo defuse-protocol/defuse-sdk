@@ -21,7 +21,10 @@ export function OtcMakerWidget(props: OtcMakerWidgetProps) {
     <WidgetRoot>
       <SwapWidgetProvider>
         <Island className="widget-container flex flex-col gap-5">
-          <TradeNavigationLinks onNavigateSwap={props.onNavigateSwap} />
+          <TradeNavigationLinks
+            currentRoute="otc"
+            renderHostAppLink={props.renderHostAppLink}
+          />
           <OtcMakerForm {...props} />
 
           {signerCredentials != null && (

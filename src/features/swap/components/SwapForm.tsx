@@ -24,6 +24,7 @@ import type { ModalSelectAssetsPayload } from "../../../components/Modal/ModalSe
 import { SWAP_TOKEN_FLAGS } from "../../../constants/swap"
 import { useModalStore } from "../../../providers/ModalStoreProvider"
 import { ModalType } from "../../../stores/modalStore"
+import type { RenderHostAppLink } from "../../../types/hostAppLink"
 import type { SwappableToken } from "../../../types/swap"
 import { compareAmounts } from "../../../utils/tokenUtils"
 import {
@@ -42,14 +43,10 @@ export type SwapFormValues = {
 }
 
 export interface SwapFormProps {
-  onNavigateDeposit?: () => void
-  onNavigateOTC?: () => void
+  renderHostAppLink: RenderHostAppLink
 }
 
-export const SwapForm = ({
-  onNavigateDeposit,
-  onNavigateOTC,
-}: SwapFormProps) => {
+export const SwapForm = ({ renderHostAppLink }: SwapFormProps) => {
   const {
     handleSubmit,
     register,
@@ -184,9 +181,7 @@ export const SwapForm = ({
       : false
 
   const showDepositButton =
-    tokenInBalance != null &&
-    tokenInBalance.amount === 0n &&
-    onNavigateDeposit != null
+    tokenInBalance != null && tokenInBalance.amount === 0n
 
   const usdAmountIn = getTokenUsdPrice(
     getValues().amountIn,
@@ -201,7 +196,10 @@ export const SwapForm = ({
 
   return (
     <Island className="widget-container flex flex-col gap-5">
-      <TradeNavigationLinks onNavigateOTC={onNavigateOTC} />
+      <TradeNavigationLinks
+        currentRoute="swap"
+        renderHostAppLink={renderHostAppLink}
+      />
 
       <div className="flex flex-col">
         <Form<SwapFormValues>
@@ -250,16 +248,13 @@ export const SwapForm = ({
 
           <Flex align="stretch" direction="column">
             {showDepositButton ? (
-              <ButtonCustom
-                type="button"
-                size="lg"
-                fullWidth
-                onClick={() => {
-                  onNavigateDeposit()
-                }}
-              >
-                Go to Deposit
-              </ButtonCustom>
+              renderHostAppLink(
+                "deposit",
+                <ButtonCustom type="button" size="lg" fullWidth>
+                  Go to Deposit
+                </ButtonCustom>,
+                {}
+              )
             ) : (
               <ButtonCustom
                 type="submit"

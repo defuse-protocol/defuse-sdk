@@ -16,6 +16,7 @@ import { ModalType } from "../../../stores/modalStore"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../../types/base"
 import type { MultiPayload } from "../../../types/defuse-contracts-types"
 import type { ChainType } from "../../../types/deposit"
+import type { RenderHostAppLink } from "../../../types/hostAppLink"
 import type { SwappableToken } from "../../../types/swap"
 import { assert } from "../../../utils/assert"
 import { formatTokenValue, formatUsdAmount } from "../../../utils/format"
@@ -56,8 +57,8 @@ export type OtcMakerWidgetProps = {
   /** Theme selection */
   theme?: "dark" | "light"
 
-  /** External navigation callback */
-  onNavigateSwap?: () => void
+  /** External navigation */
+  renderHostAppLink: RenderHostAppLink
 
   /** Frontend referral */
   referral?: string
