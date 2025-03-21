@@ -16,6 +16,7 @@ export interface AccountWidgetProps {
   depositHref: string
   withdrawHref: string
   giftHref: string
+  onSignInRequest: () => void
 }
 
 export function AccountWidget({
@@ -25,6 +26,7 @@ export function AccountWidget({
   depositHref,
   withdrawHref,
   giftHref,
+  onSignInRequest,
 }: AccountWidgetProps) {
   const userId =
     userAddress != null && userChainType != null
@@ -43,6 +45,7 @@ export function AccountWidget({
           depositHref={depositHref}
           withdrawHref={withdrawHref}
           giftHref={giftHref}
+          onSignInRequest={onSignInRequest}
         />
 
         <HoldingsIsland isLoggedIn={userId != null} holdings={holdings} />

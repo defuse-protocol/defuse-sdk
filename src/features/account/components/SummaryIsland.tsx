@@ -12,12 +12,14 @@ export function SummaryIsland({
   depositHref,
   withdrawHref,
   giftHref,
+  onSignInRequest,
 }: {
   isLoggedIn: boolean
   valueUsd: number | undefined
   depositHref: string
   withdrawHref: string
   giftHref: string
+  onSignInRequest: () => void
 }) {
   valueUsd = isLoggedIn ? valueUsd : 0
 
@@ -83,7 +85,7 @@ export function SummaryIsland({
           />
         </div>
       ) : (
-        <ButtonCustom type="button" size="lg">
+        <ButtonCustom type="button" size="lg" onClick={() => onSignInRequest()}>
           Sign in
         </ButtonCustom>
       )}
