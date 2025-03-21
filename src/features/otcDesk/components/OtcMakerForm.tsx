@@ -243,7 +243,7 @@ export function OtcMakerForm({
   usePublicKeyModalOpener(publicKeyVerifierRef, sendNearTransaction)
 
   return (
-    <div className="flex flex-col p-5">
+    <div className="flex flex-col">
       {rootSnapshot.matches("signed") &&
         configRef != null &&
         readyOrderRef != null &&

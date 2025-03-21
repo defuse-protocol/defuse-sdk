@@ -1,5 +1,6 @@
 import { useMemo } from "react"
 import { TradeNavigationLinks } from "src/components/TradeNavigationLinks"
+import { Island } from "../../../components/Island"
 import { WidgetRoot } from "../../../components/WidgetRoot"
 import type { SignerCredentials } from "../../../core/formatters"
 import { SwapWidgetProvider } from "../../../providers/SwapWidgetProvider"
@@ -19,7 +20,7 @@ export function OtcMakerWidget(props: OtcMakerWidgetProps) {
   return (
     <WidgetRoot>
       <SwapWidgetProvider>
-        <div className="widget-container rounded-2xl bg-gray-1 shadow gap-0">
+        <Island className="widget-container flex flex-col gap-5">
           <TradeNavigationLinks onNavigateSwap={props.onNavigateSwap} />
           <OtcMakerForm {...props} />
 
@@ -32,7 +33,7 @@ export function OtcMakerWidget(props: OtcMakerWidgetProps) {
               sendNearTransaction={props.sendNearTransaction}
             />
           )}
-        </div>
+        </Island>
       </SwapWidgetProvider>
     </WidgetRoot>
   )

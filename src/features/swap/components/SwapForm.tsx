@@ -19,6 +19,7 @@ import { ButtonSwitch } from "../../../components/Button/ButtonSwitch"
 import { Form } from "../../../components/Form"
 import { FieldComboInput } from "../../../components/Form/FieldComboInput"
 import { SwapIntentCard } from "../../../components/IntentCard/SwapIntentCard"
+import { Island } from "../../../components/Island"
 import type { ModalSelectAssetsPayload } from "../../../components/Modal/ModalSelectAssets"
 import { SWAP_TOKEN_FLAGS } from "../../../constants/swap"
 import { useModalStore } from "../../../providers/ModalStoreProvider"
@@ -199,14 +200,10 @@ export const SwapForm = ({
   )
 
   return (
-    <Flex
-      direction="column"
-      gap="2"
-      className="widget-container rounded-2xl bg-gray-1 shadow gap-0"
-    >
+    <Island className="widget-container flex flex-col gap-5">
       <TradeNavigationLinks onNavigateOTC={onNavigateOTC} />
 
-      <div className="flex flex-col p-5">
+      <div className="flex flex-col">
         <Form<SwapFormValues>
           handleSubmit={handleSubmit(onSubmit)}
           register={register}
@@ -293,7 +290,7 @@ export const SwapForm = ({
           </Box>
         )}
       </div>
-    </Flex>
+    </Island>
   )
 }
 

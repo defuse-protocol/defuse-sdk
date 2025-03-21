@@ -10,6 +10,8 @@ import {
 import { AssetComboIcon } from "../../../../components/Asset/AssetComboIcon"
 import { EmptyIcon } from "../../../../components/EmptyIcon"
 import { Form } from "../../../../components/Form"
+import { Island } from "../../../../components/Island"
+import { IslandHeader } from "../../../../components/IslandHeader"
 import type { ModalSelectAssetsPayload } from "../../../../components/Modal/ModalSelectAssets"
 import { NetworkIcon } from "../../../../components/Network/NetworkIcon"
 import { Select } from "../../../../components/Select/Select"
@@ -152,120 +154,118 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
   const chainOptions = token != null ? filterBlockchainsOptions(token) : {}
 
   return (
-    <div className="widget-container">
-      <div className="rounded-2xl bg-gray-1 p-5 shadow">
-        <Form<DepositFormValues>
-          handleSubmit={handleSubmit(onSubmit)}
-          register={register}
-          className="flex flex-col gap-5"
-        >
-          <div className="flex flex-col gap-2.5">
-            <div className="font-bold text-label text-sm">
-              Select asset and network
-            </div>
+    <Island className="widget-container flex flex-col gap-4">
+      <IslandHeader heading="Deposit" condensed />
 
-            <SelectTriggerLike
-              icon={
-                token ? (
-                  <AssetComboIcon icon={token?.icon} />
-                ) : (
-                  <EmptyIcon circle />
-                )
-              }
-              label={token?.name ?? "Select asset"}
-              onClick={() => openModalSelectAssets("token", token ?? undefined)}
-              isPlaceholder={!token}
-              hint={token ? <Select.Hint>Asset</Select.Hint> : null}
-            />
-
-            {token && (
-              <Controller
-                name="network"
-                control={control}
-                render={({ field }) => (
-                  <Select
-                    options={chainOptions}
-                    placeholder={{
-                      label: "Select network",
-                      icon: <EmptyIcon />,
-                    }}
-                    value={
-                      getDefaultBlockchainOptionValue(token) || network || ""
-                    }
-                    onChange={field.onChange}
-                    name={field.name}
-                    hint={
-                      <Select.Hint>
-                        {Object.keys(chainOptions).length === 1
-                          ? "This network only"
-                          : "Network"}
-                      </Select.Hint>
-                    }
-                  />
-                )}
-              />
-            )}
+      <Form<DepositFormValues>
+        handleSubmit={handleSubmit(onSubmit)}
+        register={register}
+        className="flex flex-col gap-5"
+      >
+        <div className="flex flex-col gap-2.5">
+          <div className="font-bold text-label text-sm">
+            Select asset and network
           </div>
 
-          {currentDepositOption != null && (
-            <>
-              {isActiveDeposit && isPassiveDeposit && (
-                <>
-                  <div className="-mx-5">
-                    <Separator />
-                  </div>
+          <SelectTriggerLike
+            icon={
+              token ? (
+                <AssetComboIcon icon={token?.icon} />
+              ) : (
+                <EmptyIcon circle />
+              )
+            }
+            label={token?.name ?? "Select asset"}
+            onClick={() => openModalSelectAssets("token", token ?? undefined)}
+            isPlaceholder={!token}
+            hint={token ? <Select.Hint>Asset</Select.Hint> : null}
+          />
 
-                  <DepositMethodSelector
-                    selectedDepositOption={currentDepositOption}
-                    onSelectDepositOption={setPreferredDepositOption}
-                  />
-                </>
+          {token && (
+            <Controller
+              name="network"
+              control={control}
+              render={({ field }) => (
+                <Select
+                  options={chainOptions}
+                  placeholder={{
+                    label: "Select network",
+                    icon: <EmptyIcon />,
+                  }}
+                  value={
+                    getDefaultBlockchainOptionValue(token) || network || ""
+                  }
+                  onChange={field.onChange}
+                  name={field.name}
+                  hint={
+                    <Select.Hint>
+                      {Object.keys(chainOptions).length === 1
+                        ? "This network only"
+                        : "Network"}
+                    </Select.Hint>
+                  }
+                />
+              )}
+            />
+          )}
+        </div>
+
+        {currentDepositOption != null && (
+          <>
+            {isActiveDeposit && isPassiveDeposit && (
+              <>
+                <div className="-mx-5">
+                  <Separator />
+                </div>
+
+                <DepositMethodSelector
+                  selectedDepositOption={currentDepositOption}
+                  onSelectDepositOption={setPreferredDepositOption}
+                />
+              </>
+            )}
+
+            <div className="-mx-5">
+              <Separator />
+            </div>
+
+            {currentDepositOption === "active" &&
+              network != null &&
+              derivedToken != null && (
+                <ActiveDeposit
+                  network={network}
+                  token={derivedToken}
+                  minDepositAmount={minDepositAmount}
+                />
               )}
 
-              <div className="-mx-5">
-                <Separator />
-              </div>
+            {currentDepositOption === "passive" &&
+              network != null &&
+              derivedToken != null && (
+                <PassiveDeposit
+                  network={network}
+                  depositAddress={depositAddress}
+                  minDepositAmount={minDepositAmount}
+                  token={derivedToken}
+                />
+              )}
+          </>
+        )}
 
-              {currentDepositOption === "active" &&
-                network != null &&
-                derivedToken != null && (
-                  <ActiveDeposit
-                    network={network}
-                    token={derivedToken}
-                    minDepositAmount={minDepositAmount}
-                  />
-                )}
+        {userAddress ? null : (
+          <Callout.Root size="1" color="yellow">
+            <Callout.Icon>
+              <ExclamationTriangleIcon />
+            </Callout.Icon>
+            <Callout.Text>Please connect your wallet to continue</Callout.Text>
+          </Callout.Root>
+        )}
 
-              {currentDepositOption === "passive" &&
-                network != null &&
-                derivedToken != null && (
-                  <PassiveDeposit
-                    network={network}
-                    depositAddress={depositAddress}
-                    minDepositAmount={minDepositAmount}
-                    token={derivedToken}
-                  />
-                )}
-            </>
-          )}
-
-          {userAddress ? null : (
-            <Callout.Root size="1" color="yellow">
-              <Callout.Icon>
-                <ExclamationTriangleIcon />
-              </Callout.Icon>
-              <Callout.Text>
-                Please connect your wallet to continue
-              </Callout.Text>
-            </Callout.Root>
-          )}
-
-          {userAddress && network && !isActiveDeposit && !isPassiveDeposit && (
-            <NotSupportedDepositRoute />
-          )}
-        </Form>
-      </div>
-    </div>
+        {userAddress && network && !isActiveDeposit && !isPassiveDeposit && (
+          <NotSupportedDepositRoute />
+        )}
+      </Form>
+    </Island>
   )
 }
 
