@@ -1,7 +1,6 @@
-import { Eye, Gift, PaperPlaneRight, Plus } from "@phosphor-icons/react"
-import { Button, Skeleton } from "@radix-ui/themes"
+import { Gift, PaperPlaneRight, Plus } from "@phosphor-icons/react"
+import { Skeleton } from "@radix-ui/themes"
 import { FormattedCurrency } from "./shared/FormattedCurrency"
-import { IntentsIcon } from "./shared/IntentsIcon"
 import { Island } from "./shared/Island"
 import { IslandHeader } from "./shared/IslandHeader"
 import { NavButton } from "./shared/NavButton"
@@ -22,15 +21,17 @@ export function SummaryIsland({
       <IslandHeader
         heading="Account"
         rightSlot={
-          <Button
-            variant="soft"
-            color="gray"
-            radius="full"
-            className="font-bold text-gray-12"
-          >
-            <IntentsIcon className="rounded-full" />
-            Reveal address <Eye weight="bold" />
-          </Button>
+          null
+          // It will be added in the future
+          // <Button
+          //   variant="soft"
+          //   color="gray"
+          //   radius="full"
+          //   className="font-bold text-gray-12"
+          // >
+          //   <IntentsIcon className="rounded-full" />
+          //   Reveal address <Eye weight="bold" />
+          // </Button>
         }
       />
 
