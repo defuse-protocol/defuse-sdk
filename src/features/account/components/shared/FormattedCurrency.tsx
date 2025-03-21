@@ -1,5 +1,3 @@
-import { cn } from "../../../../utils/cn"
-
 const defaultFormatOptions: Intl.NumberFormatOptions = {
   style: "currency",
   currencyDisplay: "narrowSymbol",
@@ -37,7 +35,7 @@ export function FormattedCurrency({
     parts.find((part) => part.type === "fraction")?.value || "00"
 
   return (
-    <div className={cn(className)}>
+    <div className={className}>
       <span className={mainPartClassName}>{currencySymbol}</span>
       <span className={mainPartClassName}>{integerPart}</span>
       <span className={mainPartClassName}>{decimalPart}</span>
