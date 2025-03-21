@@ -76,13 +76,15 @@ export function SummaryIsland({
             label="Withdraw"
             icon={<PaperPlaneRight weight="bold" className="size-5" />}
           />
-          <NavButton
-            href={giftHref}
-            className="flex-1"
-            variant="secondary"
-            label="Gift"
-            icon={<Gift weight="bold" className="size-5" />}
-          />
+          {!!giftHref && (
+            <NavButton
+              href={giftHref}
+              className="flex-1"
+              variant="secondary"
+              label="Gift"
+              icon={<Gift weight="bold" className="size-5" />}
+            />
+          )}
         </div>
       ) : (
         <ButtonCustom type="button" size="lg" onClick={() => onSignInRequest()}>
