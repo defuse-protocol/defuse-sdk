@@ -1,10 +1,10 @@
 import { Gift, PaperPlaneRight, Plus } from "@phosphor-icons/react"
 import { Skeleton } from "@radix-ui/themes"
 import { ButtonCustom } from "../../../components/Button/ButtonCustom"
+import { Island } from "../../../components/Island"
+import { IslandHeader } from "../../../components/IslandHeader"
 import type { RenderHostAppLink } from "../../../types/hostAppLink"
 import { FormattedCurrency } from "./shared/FormattedCurrency"
-import { Island } from "./shared/Island"
-import { IslandHeader } from "./shared/IslandHeader"
 import { NavButton } from "./shared/NavButton"
 
 export function SummaryIsland({
