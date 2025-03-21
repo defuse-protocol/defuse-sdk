@@ -117,7 +117,6 @@
     "node": "^20.13.1"
   },
   "resolutions": {
-    "@tanstack/query-core":  "5.59.16",
     "use-sync-external-store": "^1.2.0"
   },
   "publishConfig": {
