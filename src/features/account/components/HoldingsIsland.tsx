@@ -1,3 +1,4 @@
+import { Wallet } from "@phosphor-icons/react"
 import { getTokenId } from "../../../utils/token"
 import type { Holding } from "../types/sharedTypes"
 import { HoldingItem, HoldingItemSkeleton } from "./shared/HoldingItem"
@@ -31,8 +32,12 @@ function Content({ holdings }: { holdings: Holding[] | undefined }) {
 
 function EmptyScreen() {
   return (
-    <div className="text-gray-11 text-sm h-7 flex items-center justify-center">
-      Your assets will appear here once you deposit them
+    <div className="flex flex-col items-center justify-center py-12">
+      <Wallet weight="bold" className="size-8 mb-2.5 text-gray-11" />
+      <div className="text-sm font-bold mb-1">No assets here yet</div>
+      <div className="text-xs font-medium text-gray-11">
+        Deposit funds to start using NEAR Intents
+      </div>
     </div>
   )
 }
