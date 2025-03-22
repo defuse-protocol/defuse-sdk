@@ -1,6 +1,5 @@
 import {
   type ActorRefFrom,
-  type InputFrom,
   type PromiseActorLogic,
   assertEvent,
   assign,
@@ -150,8 +149,7 @@ export const giftMakerRootMachine = setup({
       id: "depositedBalanceRef",
       input: {
         tokenList: input.tokenList,
-        // `depositedBalanceActor` is any, so we explicitly safeguard it with `satisfies`
-      } satisfies InputFrom<typeof depositedBalanceMachine>,
+      },
     }),
     escrowCredentials: generateEscrowCredentials(),
     referral: input.referral,
