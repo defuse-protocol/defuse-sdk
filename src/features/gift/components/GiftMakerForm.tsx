@@ -100,6 +100,20 @@ export function GiftMakerForm({
       | ActorRefFrom<typeof giftMakerReadyActor>,
   }))
 
+  useEffect(() => {
+    if (signerCredentials == null) {
+      rootActorRef.send({ type: "LOGOUT" })
+    } else {
+      rootActorRef.send({
+        type: "LOGIN",
+        params: {
+          userAddress: signerCredentials.credential,
+          userChainType: signerCredentials.credentialType,
+        },
+      })
+    }
+  }, [rootActorRef, signerCredentials])
+
   const { setModalType, data: modalSelectAssetsData } = useModalController<{
     modalType: ModalType.MODAL_SELECT_ASSETS
     token: BaseTokenInfo | UnifiedTokenInfo | undefined
