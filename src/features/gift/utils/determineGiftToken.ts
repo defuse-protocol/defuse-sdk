@@ -4,15 +4,12 @@ import { getDepositedBalances } from "../../../services/defuseBalanceService"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../../types/base"
 import { userAddressToDefuseUserId } from "../../../utils/defuse"
 import { isBaseToken, isUnifiedToken } from "../../../utils/token"
-import {
-  getDerivedToken,
-  getUnderlyingBaseTokenInfos,
-} from "../../../utils/tokenUtils"
+import { getUnderlyingBaseTokenInfos } from "../../../utils/tokenUtils"
 import type { EscrowCredentials } from "./generateEscrowCredentials"
 
 type GiftToken = {
   tokenDiff: Record<BaseTokenInfo["defuseAssetId"], bigint>
-  token: BaseTokenInfo
+  token: BaseTokenInfo | UnifiedTokenInfo
 }
 
 export type DetermineGiftTokenErr =
@@ -43,11 +40,9 @@ export async function determineGiftToken(
     const tokenDiff = Object.fromEntries(
       Object.entries(balances).filter(([_, balance]) => balance > 0n)
     )
-    let chainName: string | null = null
     let underlyingToken: BaseTokenInfo | UnifiedTokenInfo | null = null
     for (const token of tokenList) {
       if (isBaseToken(token) && tokenDiff[token.defuseAssetId] !== undefined) {
-        chainName = token.chainName ?? null
         underlyingToken = token
         break
       }
@@ -61,7 +56,6 @@ export async function determineGiftToken(
           (t) => tokenDiff[t.defuseAssetId] !== undefined
         )
         if (validToken) {
-          chainName = validToken.chainName ?? null
           underlyingToken = token
           break
         }
@@ -72,14 +66,9 @@ export async function determineGiftToken(
       return Err("NO_TOKEN_OR_GIFT_HAS_BEEN_CLAIMED")
     }
 
-    const derivedToken = getDerivedToken(underlyingToken, chainName)
-    if (!derivedToken) {
-      return Err("ERR_GETTING_DERIVED_TOKEN")
-    }
-
     return Ok({
       tokenDiff,
-      token: derivedToken,
+      token: underlyingToken,
     })
   } catch {
     return Err("ERR_GETTING_BALANCES")
