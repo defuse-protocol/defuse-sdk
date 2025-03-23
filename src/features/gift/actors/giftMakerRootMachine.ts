@@ -8,7 +8,11 @@ import {
 } from "xstate"
 import type { SignerCredentials } from "../../../core/formatters"
 import { logger } from "../../../logger"
-import type { BaseTokenInfo, UnifiedTokenInfo } from "../../../types/base"
+import type {
+  BaseTokenInfo,
+  TokenValue,
+  UnifiedTokenInfo,
+} from "../../../types/base"
 import type { WalletMessage, WalletSignatureResult } from "../../../types/swap"
 import { assert } from "../../../utils/assert"
 import { toError } from "../../../utils/errors"
@@ -49,6 +53,16 @@ type GiftMakerRootMachineErrors =
   | GiftMakerSignActorErrors
   | GiftMakerPublishingActorErrors
 
+type GiftMakerRootMachineContext = {
+  error: null | GiftMakerRootMachineErrors
+  formRef: ActorRefFrom<typeof giftMakerFormMachine>
+  depositedBalanceRef: ActorRefFrom<typeof depositedBalanceMachine>
+  escrowCredentials: EscrowCredentials
+  referral: string | undefined
+  signData: null | GiftSignedResult
+  intentHashes: null | string[]
+}
+
 export const giftMakerRootMachine = setup({
   types: {
     input: {} as {
@@ -72,15 +86,7 @@ export const giftMakerRootMachine = setup({
           type: "COMPLETE_SIGN"
           params: GiftSignedResult
         },
-    context: {} as {
-      error: null | GiftMakerRootMachineErrors
-      formRef: ActorRefFrom<typeof giftMakerFormMachine>
-      depositedBalanceRef: ActorRefFrom<typeof depositedBalanceMachine>
-      escrowCredentials: EscrowCredentials
-      referral: string | undefined
-      signData: null | GiftSignedResult
-      intentHashes: null | string[]
-    },
+    context: {} as GiftMakerRootMachineContext,
     children: {} as {
       readyGiftRef: "readyGiftActor"
     },
@@ -130,6 +136,23 @@ export const giftMakerRootMachine = setup({
     })),
     completeSign: ({ self }, event: GiftSignedResult) => {
       self.send({ type: "COMPLETE_SIGN", params: event })
+    },
+    addGiftToHistory: ({ context }) => {
+      assert(context.intentHashes, "intentHashes is not defined")
+      assert(context.signData, "signData is not defined")
+      const giftInfo = assambleReadyGiftInfo(context)
+      giftMakerHistoryStore.getState().addGift(
+        {
+          giftId: giftInfo.giftId,
+          intentHashes: context.intentHashes,
+          token: giftInfo.token,
+          message: giftInfo.message,
+          tokenDiff: giftInfo.tokenDiff,
+          secretKey: giftInfo.secretKey,
+          accountId: giftInfo.accountId,
+        },
+        context.signData.signerCredentials
+      )
     },
     cleanup: assign({
       error: null,
@@ -310,63 +333,22 @@ export const giftMakerRootMachine = setup({
         id: "readyGiftRef",
         src: "readyGiftActor",
         input: ({ context }) => {
-          const signData = context.signData
-          assert(signData, "signData is not defined")
-
-          const form = context.formRef.getSnapshot()
-          const parsedValuesSnapshot = form.context.parsedValues.getSnapshot()
-
-          const parsedValues = parsedValuesSnapshot.context
-          assert(
-            parsedValues.token !== null && parsedValues.amount !== null,
-            "token and amount are not defined"
-          )
-
-          const parsed = parseMultiPayloadTransferMessage(signData.multiPayload)
-          assert(parsed !== null, "Invalid parsed multiPayload")
-
-          const tokenDiff = getTokenDiffFromTransferMessage(parsed)
-          assert(tokenDiff !== null, "Invalid token diff")
-
-          const giftInfo: GiftInfo = {
-            tokenDiff,
-            token: parsedValues.token,
-            secretKey: context.escrowCredentials.secretKey,
-            accountId: context.escrowCredentials.credential,
-            message: parsedValues.message,
-          }
-
-          assert(
-            Array.isArray(context.intentHashes) &&
-              context.intentHashes.length > 0,
-            "intentHashes is empty or not an array"
-          )
-          giftMakerHistoryStore.getState().addGift(
-            {
-              ...giftInfo,
-              giftId: signData.giftId,
-              intentHashes: context.intentHashes,
-            },
-            signData.signerCredentials
-          )
+          const giftInfo = assambleReadyGiftInfo(context)
+          assert(context.signData, "signData is not defined")
 
           return {
-            giftId: signData.giftId,
+            giftId: giftInfo.giftId,
             giftInfo,
-            signerCredentials: signData.signerCredentials,
+            signerCredentials: context.signData.signerCredentials,
             escrowCredentials: context.escrowCredentials,
-            parsed: {
-              token: parsedValues.token,
-              amount: parsedValues.amount,
-              message: parsedValues.message,
-            },
+            parsed: giftInfo.parsed,
             depositedBalanceRef: context.depositedBalanceRef,
           }
         },
 
         onDone: {
           target: "editing",
-          actions: "sendToDepositedBalanceRefRefresh",
+          actions: ["sendToDepositedBalanceRefRefresh", "addGiftToHistory"],
         },
 
         onError: {
@@ -380,3 +362,58 @@ export const giftMakerRootMachine = setup({
     },
   },
 })
+
+type ReadyGiftInfo = GiftInfo & {
+  giftId: string
+  parsed: {
+    token: BaseTokenInfo | UnifiedTokenInfo
+    amount: TokenValue
+    message: string
+  }
+}
+
+function assambleReadyGiftInfo(
+  context: GiftMakerRootMachineContext
+): ReadyGiftInfo {
+  const signData = context.signData
+  const parsedValues = getParsedValues(context)
+
+  assert(signData, "signData is not defined")
+  assert(parsedValues.token, "token is not defined")
+  assert(parsedValues.amount, "amount is not defined")
+
+  return {
+    giftId: signData.giftId,
+    tokenDiff: getTokenDiff(signData),
+    token: parsedValues.token,
+    secretKey: context.escrowCredentials.secretKey,
+    accountId: context.escrowCredentials.credential,
+    message: parsedValues.message,
+    parsed: {
+      token: parsedValues.token,
+      amount: parsedValues.amount,
+      message: parsedValues.message,
+    },
+  }
+}
+
+function getParsedValues(context: GiftMakerRootMachineContext) {
+  const form = context.formRef.getSnapshot()
+  const parsedValuesSnapshot = form.context.parsedValues.getSnapshot()
+  const parsedValues = parsedValuesSnapshot.context
+  assert(
+    parsedValues.token !== null && parsedValues.amount !== null,
+    "token and amount are not defined"
+  )
+  return parsedValues
+}
+
+function getTokenDiff(signData: GiftSignedResult) {
+  const parsed = parseMultiPayloadTransferMessage(signData.multiPayload)
+  assert(parsed !== null, "Invalid parsed multiPayload")
+
+  const tokenDiff = getTokenDiffFromTransferMessage(parsed)
+  assert(tokenDiff !== null, "Invalid token diff")
+
+  return tokenDiff
+}
