@@ -135,6 +135,9 @@ export const giftMakerRootMachine = setup({
   },
   guards: {
     isOk: (_, params: { tag: "ok" | "err" }) => params.tag === "ok",
+    isFormValid: ({ context }) => {
+      return context.formRef.getSnapshot().context.isValid
+    },
   },
 }).createMachine({
   /** @xstate-layout N4IgpgJg5mDOIC5QAoC2BDAxgCwJYDswBKAYgBkB5AcQEkA5AbQAYBdRUABwHtZcAXXF3zsQAD0QBaAEwBGAGwA6ACxKmsgJwBmdXIAcezVIA0IAJ6T1AVgUB2dUt1T9mpXaV6Avh5NoseQqSUVBQAqgAqzGxIINy8AkIi4ggyllIKTDqWckxysjI2esZmFtZujs6u9p7eIL44BMQKkPwEUCQASgCiAIohnQDKYQD6-TRUjKwisS0J0UkSMjKaCjqaukoyuvqpKuom5ghSTDIKlpo2KkqaMuq6lse6Xj4Y9QEKvFD4rSQQQmAKBAAblwANb-D74dpgABmkSmPBmwjmiDkiicunUTCUqRcjhk+0QUksNgUuhsUg2MixlhuGSetRe-kaEO+v0IAPwwLB71wnyhsJkUU4CPiSNASU0NIUVPsUk0ciU6gK8qUBMOxNJ5KURwxUisTE09LqTKIPM+3zAACdLVxLQoOAAbdB8aG21BmyEwuHRaaixKSbRMdIaJZnGw07RqwzqaVMJg2bQFC4uSxGxkNU0s-BtADCFAAsgAFMidMKdEZjCZCmIiwRisSSGRHU7rLTy9EGhVq1yKSwOOTqG5SGxMSxaNN+DMeyA-P4crn-S1gdAQUxUXDQvj873CuJ1-0IbQnewydxrAdZPWq4oIMckkdN8MXFI5CevZm8wgQEhWm12x3Oq6lrukuK5rhuW5epMPq1rM4qSKoihUjYZJrOS6hSFIchqsSSi2BSeg5Fc5woV4NT4FwEBwCIxoZvCe5wQ2CASNieHIahZJ6ph2E3i40pymoeRMBi2IUm+JpNBALTZvRiIHhIuhBnYlj6FYtz2OcRQHE2Jy5Joaj9kskpiTUtFvFmUCyX6yLMSkyxYXcVxkohay6FGqinGc+iLEcNx9qmpnpuZn6QFZ+42QsdwKO2w6aHFKlnFkOHkrYxxOE2+nkksZEeEAA */
@@ -177,6 +180,7 @@ export const giftMakerRootMachine = setup({
     editing: {
       on: {
         REQUEST_SIGN: {
+          guard: "isFormValid",
           target: "signing",
         },
       },

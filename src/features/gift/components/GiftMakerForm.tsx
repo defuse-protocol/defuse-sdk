@@ -154,6 +154,13 @@ export function GiftMakerForm({
     }
   }, [modalSelectAssetsData, formValuesRef.trigger.updateToken])
 
+  const balanceInsufficient = useMemo(() => {
+    if (tokenBalance == null) {
+      return false
+    }
+    return checkInsufficientBalance(formValues.amount, tokenBalance)
+  }, [formValues.amount, tokenBalance])
+
   return (
     <div className="flex flex-col">
       {rootSnapshot.matches("signed") &&
@@ -270,12 +277,31 @@ export function GiftMakerForm({
           size="lg"
           variant={rootSnapshot.matches("signing") ? "secondary" : "primary"}
           isLoading={rootSnapshot.matches("signing")}
+          disabled={balanceInsufficient}
         >
-          {rootSnapshot.matches("editing")
-            ? "Create gift link"
-            : "Confirm transaction in your wallet..."}
+          {balanceInsufficient
+            ? "Insufficient Balance"
+            : rootSnapshot.matches("editing")
+              ? "Create gift link"
+              : "Confirm transaction in your wallet..."}
         </ButtonCustom>
       </form>
     </div>
   )
+}
+
+function checkInsufficientBalance(
+  formAmount: string,
+  tokenBalance?: { amount: bigint; decimals: number }
+): boolean {
+  if (tokenBalance == null) {
+    return false
+  }
+  if (formAmount.length === 0) {
+    return false
+  }
+  const formAmountBigInt = BigInt(
+    Math.round(Number.parseFloat(formAmount) * 10 ** tokenBalance.decimals)
+  )
+  return formAmountBigInt > tokenBalance.amount
 }
