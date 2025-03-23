@@ -125,6 +125,9 @@ export const giftMakerRootMachine = setup({
       "depositedBalanceRef",
       (_, event: DepositedBalanceEvents) => event
     ),
+    sendToDepositedBalanceRefRefresh: sendTo("depositedBalanceRef", (_) => ({
+      type: "REQUEST_BALANCE_REFRESH",
+    })),
     completeSign: ({ self }, event: GiftSignedResult) => {
       self.send({ type: "COMPLETE_SIGN", params: event })
     },
@@ -186,7 +189,7 @@ export const giftMakerRootMachine = setup({
       },
     },
     signing: {
-      entry: [],
+      entry: "cleanup",
 
       on: {
         COMPLETE_SIGN: {
@@ -357,11 +360,13 @@ export const giftMakerRootMachine = setup({
               amount: parsedValues.amount,
               message: parsedValues.message,
             },
+            depositedBalanceRef: context.depositedBalanceRef,
           }
         },
 
         onDone: {
           target: "editing",
+          actions: "sendToDepositedBalanceRefRefresh",
         },
 
         onError: {

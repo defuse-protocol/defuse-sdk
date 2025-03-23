@@ -1,4 +1,10 @@
-import { type PromiseActorLogic, assign, setup } from "xstate"
+import {
+  type ActorRefFrom,
+  type PromiseActorLogic,
+  assign,
+  sendTo,
+  setup,
+} from "xstate"
 import type { SignerCredentials } from "../../../core/formatters"
 import { logger } from "../../../logger"
 import type {
@@ -6,6 +12,7 @@ import type {
   TokenValue,
   UnifiedTokenInfo,
 } from "../../../types/base"
+import type { depositedBalanceMachine } from "../../machines/depositedBalanceMachine"
 import type { EscrowCredentials } from "../utils/generateEscrowCredentials"
 import type { GiftInfo } from "./shared/getGiftInfo"
 import {
@@ -23,6 +30,7 @@ export type GiftMakerReadyActorInput = {
     amount: TokenValue
     message: string
   }
+  depositedBalanceRef: ActorRefFrom<typeof depositedBalanceMachine>
 }
 
 type GiftMakerReadyActorErrors = { reason: "GIFT_ALREADY_CLAIMED_OR_EXECUTED" }
@@ -54,6 +62,9 @@ export const giftMakerReadyActor = setup({
     setError: assign({
       error: (_, error: GiftMakerReadyActorErrors) => error,
     }),
+    sendToDepositedBalanceRefRefresh: sendTo("depositedBalanceRef", (_) => ({
+      type: "REQUEST_BALANCE_REFRESH",
+    })),
   },
   guards: {
     isTrue: (_, value: boolean) => value,
@@ -93,6 +104,7 @@ export const giftMakerReadyActor = setup({
                 event.output.giftStatus === "claimed" ||
                 event.output.giftStatus === "already_claimed_or_executed",
             },
+            actions: "sendToDepositedBalanceRefRefresh",
           },
           {
             target: "idle",
@@ -115,6 +127,7 @@ export const giftMakerReadyActor = setup({
 
     finished: {
       type: "final",
+      actions: "sendToDepositedBalanceRefRefresh",
     },
   },
 })
