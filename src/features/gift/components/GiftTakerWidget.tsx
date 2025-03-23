@@ -1,10 +1,14 @@
+import { useQuery } from "@tanstack/react-query"
 import { useActorRef, useSelector } from "@xstate/react"
-import { userAddressToDefuseUserId } from "src/utils/defuse"
+import { waitForIntentSettlement } from "src/services/intentService"
+import { assert } from "src/utils/assert"
 import { WidgetRoot } from "../../../components/WidgetRoot"
 import type { SignerCredentials } from "../../../core/formatters"
 import { SwapWidgetProvider } from "../../../providers/SwapWidgetProvider"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../../types/base"
 import type { ChainType } from "../../../types/deposit"
+import { userAddressToDefuseUserId } from "../../../utils/defuse"
+import {} from "../../../utils/tokenUtils"
 import { giftTakerRootMachine } from "../actors/giftTakerRootMachine"
 import { GiftTakerForm } from "./GiftTakerForm"
 import { GiftTakerInvalidClaim } from "./GiftTakerInvalidClaim"
@@ -60,27 +64,41 @@ function GiftTakerScreens({
       : null
 
   const snapshot = useSelector(giftTakerRootRef, (state) => state)
+  const intentHashes = snapshot.context.intentHashes
+  const giftInfo = snapshot.context.giftInfo
+
+  const intentStatus = useQuery({
+    queryKey: ["intents_status", intentHashes],
+    queryFn: async ({ signal }) => {
+      assert(intentHashes != null)
+      const intentHash = intentHashes[0]
+      assert(intentHash != null)
+      return waitForIntentSettlement(signal, intentHash)
+    },
+    enabled: intentHashes != null,
+  })
 
   if (snapshot?.context.error != null) {
     return <GiftTakerInvalidClaim error={snapshot.context.error.reason} />
   }
 
-  if (snapshot.context.giftInfo == null) {
+  if (giftInfo == null) {
     return loading
   }
 
   return (
     <>
-      {snapshot.context.intentHashes ? (
+      {intentHashes && intentStatus.data ? (
         <GiftTakerSuccessScreen
-          giftInfo={snapshot.context.giftInfo}
-          intentHashes={snapshot.context.intentHashes}
+          giftInfo={giftInfo}
+          intentHashes={intentHashes}
         />
       ) : (
         <GiftTakerForm
-          giftInfo={snapshot.context.giftInfo}
+          giftInfo={giftInfo}
           signerCredentials={signerCredentials}
           giftTakerRootRef={giftTakerRootRef}
+          intentHashes={intentHashes}
         />
       )}
     </>

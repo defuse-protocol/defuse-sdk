@@ -13,6 +13,7 @@ import type { GiftInfo } from "../actors/shared/getGiftInfo"
 import type { giftClaimActor } from "../actors/shared/giftClaimActor"
 import { ShareableGiftImage } from "./ShareableGiftImage"
 import { ErrorReason } from "./shared/ErrorReason"
+import { GiftClaimedMessage } from "./shared/GiftClaimedMessage"
 import { GiftDescription } from "./shared/GiftDescription"
 import { GiftHeader } from "./shared/GiftHeader"
 
@@ -20,12 +21,14 @@ export type GiftTakerFormProps = {
   giftInfo: GiftInfo
   signerCredentials: SignerCredentials | null
   giftTakerRootRef: ActorRefFrom<typeof giftTakerRootMachine>
+  intentHashes: string[] | null
 }
 
 export function GiftTakerForm({
   giftInfo,
   signerCredentials,
   giftTakerRootRef,
+  intentHashes,
 }: GiftTakerFormProps) {
   const amount = computeTotalBalanceDifferentDecimals(
     getUnderlyingBaseTokenInfos(giftInfo.token),
@@ -59,7 +62,9 @@ export function GiftTakerForm({
 
   const snapshot = useSelector(giftTakerClaimRef, (state) => state)
 
-  const processing = snapshot?.matches("claiming")
+  const processing =
+    snapshot?.matches("claiming") ||
+    (intentHashes != null && intentHashes.length > 0)
   assert(amount != null)
 
   return (
@@ -104,6 +109,9 @@ export function GiftTakerForm({
             : "Claim gift"
           : "Sign in to claim gift"}
       </ButtonCustom>
+      {intentHashes != null && intentHashes.length > 0 && (
+        <GiftClaimedMessage />
+      )}
     </div>
   )
 }

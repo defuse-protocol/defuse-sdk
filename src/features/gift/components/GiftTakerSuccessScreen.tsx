@@ -45,17 +45,8 @@ export function GiftTakerSuccessScreen({
 
   return (
     <>
-      <GiftHeader
-        title={intentStatus.isPending ? "You Gift on the way" : "Gift claimed!"}
-        icon={<ActionIcon type="success" />}
-      >
-        <GiftDescription
-          description={
-            intentStatus.isPending
-              ? "Your gift is being processed."
-              : "The funds are now in your account. Use them for trading or withdraw to your wallet."
-          }
-        />
+      <GiftHeader title="Gift claimed!" icon={<ActionIcon type="success" />}>
+        <GiftDescription description="The funds are now in your account. Use them for trading or withdraw to your wallet." />
       </GiftHeader>
 
       {/* Gift Section */}
