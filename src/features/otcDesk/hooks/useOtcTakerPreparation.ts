@@ -4,11 +4,19 @@ import { providers } from "near-api-js"
 import { logger } from "../../../logger"
 import { getDepositedBalances } from "../../../services/defuseBalanceService"
 import type { AggregatedQuote } from "../../../services/quoteService"
-import type { BaseTokenInfo, UnifiedTokenInfo } from "../../../types/base"
+import type {
+  BaseTokenInfo,
+  TokenValue,
+  UnifiedTokenInfo,
+} from "../../../types/base"
 import { assert } from "../../../utils/assert"
 import type { DefuseUserId } from "../../../utils/defuse"
+import { isBaseToken } from "../../../utils/token"
 import { getUnderlyingBaseTokenInfos } from "../../../utils/tokenUtils"
-import { fillWithMinimalExchanges } from "../utils/fillWithMinimalExchanges"
+import {
+  type TokenValues,
+  fillWithMinimalExchanges,
+} from "../utils/fillWithMinimalExchanges"
 import {
   type AggregatedQuoteErr,
   type QuoteExactInParams,
@@ -53,6 +61,21 @@ export function useOtcTakerPreparation({
         })
       )
 
+      const balancesWithTokenInfo = Object.keys(balances).reduce(
+        (acc: TokenValues, token) => {
+          acc[token] = {
+            amount: balances[token],
+            decimals: isBaseToken(tokenIn)
+              ? tokenIn.decimals
+              : tokenIn.groupedTokens.find((t) => t.defuseAssetId === token)
+                  ?.decimals,
+          } as TokenValue
+
+          return acc
+        },
+        {}
+      )
+
       logger.verbose("balances", { balances })
 
       const tokensToReceive: Record<string, bigint> = {}
@@ -69,7 +92,7 @@ export function useOtcTakerPreparation({
       logger.verbose("tokens breakdown", { tokensToReceive, tokensToSend })
 
       const fillResult = fillWithMinimalExchanges(
-        balances,
+        balancesWithTokenInfo,
         tokensToSend,
         BigInt(protocolFee)
       )
