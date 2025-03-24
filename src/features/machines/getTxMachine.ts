@@ -1,4 +1,13 @@
-import { getTx } from "../../services/nearHttpClient"
+import type { FinalExecutionStatus } from "near-api-js/lib/providers/provider"
+import { nearClient } from "../../constants/nearClient"
+
+function isSuccessStatus(
+  status: unknown
+): status is FinalExecutionStatus & { SuccessValue: string } {
+  return (
+    typeof status === "object" && status !== null && "SuccessValue" in status
+  )
+}
 
 export const getNearTxSuccessValue = async ({
   txHash,
@@ -8,12 +17,13 @@ export const getNearTxSuccessValue = async ({
   senderAccountId: string
 }): Promise<bigint> => {
   try {
-    const response = await getTx({
-      tx_hash: txHash,
-      sender_account_id: senderAccountId,
-      wait_until: "EXECUTED",
-    })
-    if (response.status?.SuccessValue) {
+    const response = await nearClient.txStatus(
+      txHash,
+      senderAccountId,
+      "EXECUTED"
+    )
+
+    if (isSuccessStatus(response.status)) {
       const decodedValue = Buffer.from(
         response.status.SuccessValue,
         "base64"

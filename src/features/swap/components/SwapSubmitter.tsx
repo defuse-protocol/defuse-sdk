@@ -1,5 +1,5 @@
-import { providers } from "near-api-js"
 import { type ReactNode, createContext } from "react"
+import { nearClient } from "../../../constants/nearClient"
 import { logger } from "../../../logger"
 import type { ChainType } from "../../../types/deposit"
 import { SwapUIMachineContext } from "./SwapUIMachineProvider"
@@ -32,9 +32,7 @@ export function SwapSubmitterProvider({
       params: {
         userAddress,
         userChainType,
-        nearClient: new providers.JsonRpcProvider({
-          url: "https://rpc.mainnet.near.org",
-        }),
+        nearClient,
       },
     })
   }

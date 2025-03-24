@@ -1,9 +1,10 @@
 import { base58, hex } from "@scure/base"
+import type { KeyPairString } from "near-api-js/lib/utils"
 import type { SignerCredentials } from "src/core/formatters"
 import { sign } from "tweetnacl"
 
 export interface EscrowCredentials extends SignerCredentials {
-  secretKey: string
+  secretKey: KeyPairString
 }
 
 export function generateEscrowCredentials(): EscrowCredentials {
@@ -26,7 +27,7 @@ export function parseEscrowCredentials(secretKey: string): EscrowCredentials {
   }
 }
 
-function transformNEP413Key(key: Uint8Array): string {
+function transformNEP413Key(key: Uint8Array): KeyPairString {
   return `ed25519:${base58.encode(key)}`
 }
 
