@@ -143,8 +143,13 @@ export const giftMakerRootMachine = setup({
       const giftInfo = assambleReadyGiftInfo(context)
       giftMakerHistoryStore.getState().addGift(
         {
-          ...giftInfo,
+          giftId: giftInfo.giftId,
           intentHashes: context.intentHashes,
+          tokenDiff: giftInfo.tokenDiff,
+          token: giftInfo.token,
+          secretKey: giftInfo.secretKey,
+          accountId: giftInfo.accountId,
+          message: giftInfo.message,
         },
         context.signData.signerCredentials
       )
