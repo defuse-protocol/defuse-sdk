@@ -21,7 +21,9 @@ import { balanceAllSelector } from "../../machines/depositedBalanceMachine"
 import { formValuesSelector } from "../actors/giftMakerFormMachine"
 import type { giftMakerReadyActor } from "../actors/giftMakerReadyActor"
 import { giftMakerRootMachine } from "../actors/giftMakerRootMachine"
+import { useCheckSignerCredentials } from "../hooks/useCheckSignerCredentials"
 import type { GiftLinkData, SignMessage } from "../types/sharedTypes"
+import { checkInsufficientBalance, getButtonText } from "../utils/makerForm"
 import { GiftMakerReadyDialog } from "./GiftMakerReadyDialog"
 import { GiftMessageInput } from "./GiftMessageInput"
 import { GiftDescription } from "./shared/GiftDescription"
@@ -100,19 +102,7 @@ export function GiftMakerForm({
       | ActorRefFrom<typeof giftMakerReadyActor>,
   }))
 
-  useEffect(() => {
-    if (signerCredentials == null) {
-      rootActorRef.send({ type: "LOGOUT" })
-    } else {
-      rootActorRef.send({
-        type: "LOGIN",
-        params: {
-          userAddress: signerCredentials.credential,
-          userChainType: signerCredentials.credentialType,
-        },
-      })
-    }
-  }, [rootActorRef, signerCredentials])
+  useCheckSignerCredentials(rootActorRef, signerCredentials)
 
   const { setModalType, data: modalSelectAssetsData } = useModalController<{
     modalType: ModalType.MODAL_SELECT_ASSETS
@@ -285,42 +275,9 @@ export function GiftMakerForm({
           isLoading={processing}
           disabled={balanceInsufficient || processing}
         >
-          {renderButtonText(balanceInsufficient, editing, processing)}
+          {getButtonText(balanceInsufficient, editing, processing)}
         </ButtonCustom>
       </form>
     </div>
   )
-}
-
-function renderButtonText(
-  balanceInsufficient: boolean,
-  editing: boolean,
-  processing: boolean
-) {
-  if (balanceInsufficient) {
-    return "Insufficient Balance"
-  }
-  if (processing) {
-    return "Processing..."
-  }
-  if (editing) {
-    return "Create gift link"
-  }
-  return "Confirm transaction in your wallet..."
-}
-
-function checkInsufficientBalance(
-  formAmount: string,
-  tokenBalance?: { amount: bigint; decimals: number }
-): boolean {
-  if (tokenBalance == null) {
-    return false
-  }
-  if (formAmount.length === 0) {
-    return false
-  }
-  const formAmountBigInt = BigInt(
-    Math.round(Number.parseFloat(formAmount) * 10 ** tokenBalance.decimals)
-  )
-  return formAmountBigInt > tokenBalance.amount
 }

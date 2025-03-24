@@ -25,10 +25,7 @@ import {
   type EscrowCredentials,
   generateEscrowCredentials,
 } from "../utils/generateEscrowCredentials"
-import {
-  getTokenDiffFromTransferMessage,
-  parseMultiPayloadTransferMessage,
-} from "../utils/parseMultiPayload"
+import { assembleGiftInfo, getParsedValues } from "../utils/makerMachine"
 import { giftMakerFormMachine } from "./giftMakerFormMachine"
 import {
   type GiftMakerPublishingActorErrors,
@@ -46,13 +43,12 @@ import type {
   GiftMakerSignActorOutput,
 } from "./giftMakerSignActor"
 import { giftMakerSignActor } from "./giftMakerSignActor"
-import type { GiftInfo } from "./shared/getGiftInfo"
 
 type GiftMakerRootMachineErrors =
   | GiftMakerSignActorErrors
   | GiftMakerPublishingActorErrors
 
-type GiftMakerRootMachineContext = {
+export type GiftMakerRootMachineContext = {
   error: null | GiftMakerRootMachineErrors
   formRef: ActorRefFrom<typeof giftMakerFormMachine>
   depositedBalanceRef: ActorRefFrom<typeof depositedBalanceMachine>
@@ -394,49 +390,3 @@ export const giftMakerRootMachine = setup({
     },
   },
 })
-
-type ReadyGiftInfo = GiftInfo & {
-  giftId: string
-  intentHashes: string[]
-}
-
-function assembleGiftInfo(context: GiftMakerRootMachineContext): ReadyGiftInfo {
-  const signData = context.signData
-  const parsedValues = getParsedValues(context)
-
-  assert(signData, "signData is not defined")
-  assert(parsedValues.token, "token is not defined")
-  assert(parsedValues.amount, "amount is not defined")
-  assert(context.intentHashes, "intentHashes is not defined")
-
-  return {
-    giftId: signData.giftId,
-    intentHashes: context.intentHashes,
-    tokenDiff: getTokenDiff(signData),
-    token: parsedValues.token,
-    secretKey: context.escrowCredentials.secretKey,
-    accountId: context.escrowCredentials.credential,
-    message: parsedValues.message,
-  }
-}
-
-function getParsedValues(context: GiftMakerRootMachineContext) {
-  const form = context.formRef.getSnapshot()
-  const parsedValuesSnapshot = form.context.parsedValues.getSnapshot()
-  const parsedValues = parsedValuesSnapshot.context
-  assert(
-    parsedValues.token !== null && parsedValues.amount !== null,
-    "token and amount are not defined"
-  )
-  return parsedValues
-}
-
-function getTokenDiff(signData: GiftSignedResult) {
-  const parsed = parseMultiPayloadTransferMessage(signData.multiPayload)
-  assert(parsed !== null, "Invalid parsed multiPayload")
-
-  const tokenDiff = getTokenDiffFromTransferMessage(parsed)
-  assert(tokenDiff !== null, "Invalid token diff")
-
-  return tokenDiff
-}
