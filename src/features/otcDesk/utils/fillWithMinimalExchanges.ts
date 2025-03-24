@@ -75,7 +75,7 @@ function findOptimalTokenSources(
             fromToken: token,
             toToken: targetToken,
             fromAmount: adjustedFromAmount,
-            toAmount: adjustedToAmount,
+            toAmount: requiredAmount,
             fee: adjustedFromAmount - adjustedToAmount,
           },
         ],
@@ -153,7 +153,11 @@ function findOptimalTokenSources(
       fromToken: token,
       toToken: targetToken,
       fromAmount: adjustedAmountToUse,
-      toAmount: adjustedReceived,
+      toAmount: adjustDecimals(
+        adjustedReceived,
+        tokenDecimals,
+        targetTokenDecimals
+      ),
       fee: adjustedAmountToUse - adjustedReceived,
     })
 
@@ -177,14 +181,7 @@ export function fillWithMinimalExchanges(
   feeBasisPoints: bigint
 ): FillResult {
   const result: FillResult = {
-    remainingBalances: Object.keys(balancesWithTokenInfo).reduce(
-      (acc: TokenValues, curr: string) => {
-        acc[curr] = Object.assign({}, balancesWithTokenInfo[curr]) as TokenValue // like copying as we make actions with this object below
-
-        return acc
-      },
-      {}
-    ),
+    remainingBalances: structuredClone(balancesWithTokenInfo),
     steps: [],
     success: true,
   }

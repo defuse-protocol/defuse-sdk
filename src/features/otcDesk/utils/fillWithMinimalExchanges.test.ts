@@ -366,7 +366,7 @@ describe("fillWithMinimalExchanges different decimals", () => {
           fromToken: "B",
           toToken: "A",
           fromAmount: 4n,
-          toAmount: 3n,
+          toAmount: 39987654322n,
           fee: 1n,
         },
       ],
@@ -406,7 +406,7 @@ describe("fillWithMinimalExchanges different decimals", () => {
           fromToken: "B",
           toToken: "A",
           fromAmount: 3n,
-          toAmount: 2n,
+          toAmount: 20000000000n,
           fee: 1n,
         },
         {
@@ -419,6 +419,69 @@ describe("fillWithMinimalExchanges different decimals", () => {
       ],
       success: true,
     })
+  })
+
+  it("multi chain can cover, different decimals (with 3 chains) example 2", () => {
+    const balances = {
+      A: { amount: 3n, decimals: 2 },
+      B: { amount: 3n, decimals: 1 },
+      C: { amount: 33n, decimals: 2 },
+    }
+    const required = {
+      A: 36n,
+    }
+
+    const result = fillWithMinimalExchanges(balances, required, 1n)
+
+    expect(result.success).toBe(true)
+    checkRemainingBalanceAmounts(balances, result)
+    expect(result).toEqual({
+      remainingBalances: {
+        A: { amount: 0n, decimals: 2 },
+        B: { amount: 0n, decimals: 1 },
+        C: { amount: 19n, decimals: 2 },
+      },
+      steps: [
+        {
+          fromToken: "A",
+          toToken: "A",
+          fromAmount: 3n,
+          toAmount: 3n,
+          fee: 0n,
+        },
+        {
+          fromToken: "B",
+          toToken: "A",
+          fromAmount: 3n,
+          toAmount: 20n,
+          fee: 1n,
+        },
+        {
+          fromToken: "C",
+          toToken: "A",
+          fromAmount: 14n,
+          toAmount: 13n,
+          fee: 1n,
+        },
+      ],
+      success: true,
+    })
+  })
+
+  it("multi chain can cover, different decimals (with 3 chains) failing due to fees problem, but amount is enough", () => {
+    const balances = {
+      A: { amount: 3n, decimals: 2 }, // 3n -> max available 3n
+      B: { amount: 3n, decimals: 1 }, // 30n -> max available 20n
+      C: { amount: 33n, decimals: 2 }, // 33n -> max available 32n
+      // 66n -> max available sum 55n
+    }
+    // even though user has ~66n on A, it can cover max 55n
+    const required = {
+      A: 55n + 1n,
+    }
+    const result = fillWithMinimalExchanges(balances, required, 1n)
+
+    expect(result.success).toBe(false)
   })
 })
 
