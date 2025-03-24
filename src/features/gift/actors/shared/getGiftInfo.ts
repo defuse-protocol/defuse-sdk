@@ -1,3 +1,4 @@
+import type { KeyPairString } from "near-api-js/lib/utils"
 import { fromPromise } from "xstate"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../../../types/base"
 import { determineGiftToken } from "../../utils/determineGiftToken"
@@ -27,7 +28,7 @@ export type GiftInfo = {
   giftId?: string
   tokenDiff: Record<BaseTokenInfo["defuseAssetId"], bigint>
   token: BaseTokenInfo | UnifiedTokenInfo
-  secretKey: string
+  secretKey: KeyPairString
   accountId: string
   message: string
 }
