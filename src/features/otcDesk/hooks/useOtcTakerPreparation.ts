@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query"
 import { Err, type Result } from "@thames/monads"
-import { providers } from "near-api-js"
+import { nearClient } from "src/constants/nearClient"
 import { logger } from "../../../logger"
 import { getDepositedBalances } from "../../../services/defuseBalanceService"
 import type { AggregatedQuote } from "../../../services/quoteService"
@@ -48,9 +48,7 @@ export function useOtcTakerPreparation({
       const balances = await getDepositedBalances(
         takerId,
         getUnderlyingBaseTokenInfos(tokenIn).map((t) => t.defuseAssetId),
-        new providers.JsonRpcProvider({
-          url: "https://nearrpc.aurora.dev",
-        })
+        nearClient
       )
 
       logger.verbose("balances", { balances })

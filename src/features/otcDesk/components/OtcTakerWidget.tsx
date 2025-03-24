@@ -1,11 +1,11 @@
 import { useQuery } from "@tanstack/react-query"
 import { Err, Ok, type Result } from "@thames/monads"
-import { providers } from "near-api-js"
 import type { CodeResult } from "near-api-js/lib/providers/provider"
 import { type ReactNode, useMemo, useState } from "react"
 import * as v from "valibot"
 import { WidgetRoot } from "../../../components/WidgetRoot"
 import { config } from "../../../config"
+import { nearClient } from "../../../constants/nearClient"
 import type { DefuseUserId, SignerCredentials } from "../../../core/formatters"
 import { logger } from "../../../logger"
 import { SwapWidgetProvider } from "../../../providers/SwapWidgetProvider"
@@ -194,9 +194,7 @@ function OtcTakerValidationOrder({
       return getDepositedBalances(
         tradeTerms.makerUserId as DefuseUserId,
         Object.keys(tradeTerms.makerTokenDiff),
-        new providers.JsonRpcProvider({
-          url: "https://nearrpc.aurora.dev",
-        })
+        nearClient
       )
     },
     select: (makerTokenBalances): Result<true, "MAKER_INSUFFICIENT_FUNDS"> => {
@@ -225,9 +223,6 @@ function OtcTakerValidationOrder({
       tradeTerms.makerNonceBase64,
     ],
     queryFn: async () => {
-      const nearClient = new providers.JsonRpcProvider({
-        url: "https://nearrpc.aurora.dev",
-      })
       const output = await nearClient.query<CodeResult>({
         request_type: "call_function",
         account_id: config.env.contractID,

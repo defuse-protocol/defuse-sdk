@@ -14,7 +14,6 @@ import {
   TextField,
 } from "@radix-ui/themes"
 import { useSelector } from "@xstate/react"
-import { providers } from "near-api-js"
 import { type ReactNode, useEffect } from "react"
 import { Controller, useForm } from "react-hook-form"
 import { useTokensUsdPrices } from "src/hooks/useTokensUsdPrices"
@@ -30,6 +29,7 @@ import { Island } from "../../../../components/Island"
 import { IslandHeader } from "../../../../components/IslandHeader"
 import { NetworkIcon } from "../../../../components/Network/NetworkIcon"
 import { Select } from "../../../../components/Select/Select"
+import { nearClient } from "../../../../constants/nearClient"
 import { useModalController } from "../../../../hooks/useModalController"
 import { logger } from "../../../../logger"
 import { useTokensStore } from "../../../../providers/TokensStoreProvider"
@@ -320,9 +320,7 @@ export const WithdrawForm = ({
             params: {
               userAddress,
               userChainType: chainType,
-              nearClient: new providers.JsonRpcProvider({
-                url: "https://nearrpc.aurora.dev",
-              }),
+              nearClient,
             },
           })
         })}
