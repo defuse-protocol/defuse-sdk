@@ -4,11 +4,7 @@ import { providers } from "near-api-js"
 import { logger } from "../../../logger"
 import { getDepositedBalances } from "../../../services/defuseBalanceService"
 import type { AggregatedQuote } from "../../../services/quoteService"
-import type {
-  BaseTokenInfo,
-  TokenValue,
-  UnifiedTokenInfo,
-} from "../../../types/base"
+import type { BaseTokenInfo, UnifiedTokenInfo } from "../../../types/base"
 import { assert } from "../../../utils/assert"
 import type { DefuseUserId } from "../../../utils/defuse"
 import { isBaseToken } from "../../../utils/token"
@@ -62,18 +58,31 @@ export function useOtcTakerPreparation({
       )
 
       const balancesWithTokenInfo = Object.keys(balances).reduce(
-        (acc: TokenValues, token) => {
-          acc[token] = {
-            amount: balances[token],
-            decimals: isBaseToken(tokenIn)
-              ? tokenIn.decimals
-              : tokenIn.groupedTokens.find((t) => t.defuseAssetId === token)
-                  ?.decimals,
-          } as TokenValue
+        (acc, token) => {
+          const amount = balances[token]
+
+          if (amount != null) {
+            if (isBaseToken(tokenIn)) {
+              acc[token] = {
+                amount,
+                decimals: tokenIn.decimals,
+              }
+            } else {
+              const token_ = tokenIn.groupedTokens.find(
+                (t) => t.defuseAssetId === token
+              )
+              assert(token_, "could not find token")
+
+              acc[token] = {
+                amount,
+                decimals: token_.decimals,
+              }
+            }
+          }
 
           return acc
         },
-        {}
+        {} as TokenValues
       )
 
       logger.verbose("balances", { balances })
