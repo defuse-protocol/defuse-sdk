@@ -1,6 +1,7 @@
 import { waitForIntentSettlement } from "src/services/intentService"
 import {
   type ActorRefFrom,
+  type InputFrom,
   type PromiseActorLogic,
   assertEvent,
   assign,
@@ -10,11 +11,7 @@ import {
 } from "xstate"
 import type { SignerCredentials } from "../../../core/formatters"
 import { logger } from "../../../logger"
-import type {
-  BaseTokenInfo,
-  TokenValue,
-  UnifiedTokenInfo,
-} from "../../../types/base"
+import type { BaseTokenInfo, UnifiedTokenInfo } from "../../../types/base"
 import type { WalletMessage, WalletSignatureResult } from "../../../types/swap"
 import { assert } from "../../../utils/assert"
 import { toError } from "../../../utils/errors"
@@ -150,18 +147,11 @@ export const giftMakerRootMachine = setup({
       self.send({ type: "COMPLETE_SIGN", params: event })
     },
     addGiftToHistory: ({ context }) => {
-      assert(context.intentHashes, "intentHashes is not defined")
       assert(context.signData, "signData is not defined")
-      const giftInfo = assambleReadyGiftInfo(context)
+      const giftInfo = assembleGiftInfo(context)
       giftMakerHistoryStore.getState().addGift(
         {
-          giftId: giftInfo.giftId,
-          intentHashes: context.intentHashes,
-          tokenDiff: giftInfo.tokenDiff,
-          token: giftInfo.token,
-          secretKey: giftInfo.secretKey,
-          accountId: giftInfo.accountId,
-          message: giftInfo.message,
+          ...giftInfo,
         },
         context.signData.signerCredentials
       )
@@ -190,7 +180,8 @@ export const giftMakerRootMachine = setup({
       id: "depositedBalanceRef",
       input: {
         tokenList: input.tokenList,
-      },
+        // `depositedBalanceActor` is any, so we explicitly safeguard it with `satisfies`
+      } satisfies InputFrom<typeof depositedBalanceMachine>,
     }),
     escrowCredentials: generateEscrowCredentials(),
     referral: input.referral,
@@ -352,6 +343,7 @@ export const giftMakerRootMachine = setup({
 
         onDone: {
           target: "settled",
+          actions: "addGiftToHistory",
         },
         onError: {
           target: "editing",
@@ -367,22 +359,28 @@ export const giftMakerRootMachine = setup({
         id: "readyGiftRef",
         src: "readyGiftActor",
         input: ({ context }) => {
-          const giftInfo = assambleReadyGiftInfo(context)
+          const giftInfo = assembleGiftInfo(context)
+          const parsedValues = getParsedValues(context)
           assert(context.signData, "signData is not defined")
+          assert(parsedValues.token, "token is not defined")
+          assert(parsedValues.amount, "amount is not defined")
 
           return {
             giftId: giftInfo.giftId,
             giftInfo,
             signerCredentials: context.signData.signerCredentials,
             escrowCredentials: context.escrowCredentials,
-            parsed: giftInfo.parsed,
-            depositedBalanceRef: context.depositedBalanceRef,
+            parsed: {
+              token: parsedValues.token,
+              amount: parsedValues.amount,
+              message: parsedValues.message,
+            },
           }
         },
 
         onDone: {
           target: "editing",
-          actions: ["sendToDepositedBalanceRefRefresh", "addGiftToHistory"],
+          actions: "sendToDepositedBalanceRefRefresh",
         },
 
         onError: {
@@ -399,35 +397,26 @@ export const giftMakerRootMachine = setup({
 
 type ReadyGiftInfo = GiftInfo & {
   giftId: string
-  parsed: {
-    token: BaseTokenInfo | UnifiedTokenInfo
-    amount: TokenValue
-    message: string
-  }
+  intentHashes: string[]
 }
 
-function assambleReadyGiftInfo(
-  context: GiftMakerRootMachineContext
-): ReadyGiftInfo {
+function assembleGiftInfo(context: GiftMakerRootMachineContext): ReadyGiftInfo {
   const signData = context.signData
   const parsedValues = getParsedValues(context)
 
   assert(signData, "signData is not defined")
   assert(parsedValues.token, "token is not defined")
   assert(parsedValues.amount, "amount is not defined")
+  assert(context.intentHashes, "intentHashes is not defined")
 
   return {
     giftId: signData.giftId,
+    intentHashes: context.intentHashes,
     tokenDiff: getTokenDiff(signData),
     token: parsedValues.token,
     secretKey: context.escrowCredentials.secretKey,
     accountId: context.escrowCredentials.credential,
     message: parsedValues.message,
-    parsed: {
-      token: parsedValues.token,
-      amount: parsedValues.amount,
-      message: parsedValues.message,
-    },
   }
 }
 
