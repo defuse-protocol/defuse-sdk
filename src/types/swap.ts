@@ -2,6 +2,7 @@ import type { SendNearTransaction } from "../features/machines/publicKeyVerifier
 import type { BaseTokenInfo, UnifiedTokenInfo } from "./base"
 import type { DefusePayloadFor_DefuseIntents } from "./defuse-contracts-types"
 import type { ChainType } from "./deposit"
+import type { RenderHostAppLink } from "./hostAppLink"
 
 // Message for EVM wallets
 export type ERC191Message = {
@@ -117,8 +118,7 @@ export type SwapWidgetProps = {
     intentHash: string
   }) => void
 
-  onNavigateDeposit?: () => void
-  onNavigateOTC?: () => void
+  renderHostAppLink: RenderHostAppLink
   initialTokenIn?: SwappableToken
   initialTokenOut?: SwappableToken
 

@@ -19,10 +19,12 @@ import { ButtonSwitch } from "../../../components/Button/ButtonSwitch"
 import { Form } from "../../../components/Form"
 import { FieldComboInput } from "../../../components/Form/FieldComboInput"
 import { SwapIntentCard } from "../../../components/IntentCard/SwapIntentCard"
+import { Island } from "../../../components/Island"
 import type { ModalSelectAssetsPayload } from "../../../components/Modal/ModalSelectAssets"
 import { SWAP_TOKEN_FLAGS } from "../../../constants/swap"
 import { useModalStore } from "../../../providers/ModalStoreProvider"
 import { ModalType } from "../../../stores/modalStore"
+import type { RenderHostAppLink } from "../../../types/hostAppLink"
 import type { SwappableToken } from "../../../types/swap"
 import { compareAmounts } from "../../../utils/tokenUtils"
 import {
@@ -41,14 +43,11 @@ export type SwapFormValues = {
 }
 
 export interface SwapFormProps {
-  onNavigateDeposit?: () => void
-  onNavigateOTC?: () => void
+  isLoggedIn: boolean
+  renderHostAppLink: RenderHostAppLink
 }
 
-export const SwapForm = ({
-  onNavigateDeposit,
-  onNavigateOTC,
-}: SwapFormProps) => {
+export const SwapForm = ({ isLoggedIn, renderHostAppLink }: SwapFormProps) => {
   const {
     handleSubmit,
     register,
@@ -183,9 +182,7 @@ export const SwapForm = ({
       : false
 
   const showDepositButton =
-    tokenInBalance != null &&
-    tokenInBalance.amount === 0n &&
-    onNavigateDeposit != null
+    tokenInBalance != null && tokenInBalance.amount === 0n
 
   const usdAmountIn = getTokenUsdPrice(
     getValues().amountIn,
@@ -199,14 +196,13 @@ export const SwapForm = ({
   )
 
   return (
-    <Flex
-      direction="column"
-      gap="2"
-      className="widget-container rounded-2xl bg-gray-1 shadow gap-0"
-    >
-      <TradeNavigationLinks onNavigateOTC={onNavigateOTC} />
+    <Island className="widget-container flex flex-col gap-5">
+      <TradeNavigationLinks
+        currentRoute="swap"
+        renderHostAppLink={renderHostAppLink}
+      />
 
-      <div className="flex flex-col p-5">
+      <div className="flex flex-col">
         <Form<SwapFormValues>
           handleSubmit={handleSubmit(onSubmit)}
           register={register}
@@ -252,17 +248,22 @@ export const SwapForm = ({
           />
 
           <Flex align="stretch" direction="column">
-            {showDepositButton ? (
-              <ButtonCustom
-                type="button"
-                size="lg"
-                fullWidth
-                onClick={() => {
-                  onNavigateDeposit()
-                }}
-              >
-                Go to Deposit
-              </ButtonCustom>
+            {!isLoggedIn ? (
+              renderHostAppLink(
+                "sign-in",
+                <ButtonCustom type="button" size="lg" className="w-full">
+                  Sign in
+                </ButtonCustom>,
+                { className: "w-full" }
+              )
+            ) : showDepositButton ? (
+              renderHostAppLink(
+                "deposit",
+                <ButtonCustom type="button" size="lg" className="w-full">
+                  Go to Deposit
+                </ButtonCustom>,
+                { className: "w-full" }
+              )
             ) : (
               <ButtonCustom
                 type="submit"
@@ -293,7 +294,7 @@ export const SwapForm = ({
           </Box>
         )}
       </div>
-    </Flex>
+    </Island>
   )
 }
 
