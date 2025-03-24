@@ -161,9 +161,15 @@ export function GiftMakerForm({
     return checkInsufficientBalance(formValues.amount, tokenBalance)
   }, [formValues.amount, tokenBalance])
 
+  const editing = rootSnapshot.matches("editing")
+  const processing =
+    rootSnapshot.matches("signing") ||
+    rootSnapshot.matches("publishing") ||
+    rootSnapshot.matches("settling")
+
   return (
     <div className="flex flex-col">
-      {rootSnapshot.matches("signed") &&
+      {rootSnapshot.matches("settled") &&
         readyGiftRef != null &&
         signerCredentials != null && (
           <GiftMakerReadyDialog
@@ -275,19 +281,32 @@ export function GiftMakerForm({
         <ButtonCustom
           type="submit"
           size="lg"
-          variant={rootSnapshot.matches("signing") ? "secondary" : "primary"}
-          isLoading={rootSnapshot.matches("signing")}
-          disabled={balanceInsufficient}
+          variant={processing ? "secondary" : "primary"}
+          isLoading={processing}
+          disabled={balanceInsufficient || processing}
         >
-          {balanceInsufficient
-            ? "Insufficient Balance"
-            : rootSnapshot.matches("editing")
-              ? "Create gift link"
-              : "Confirm transaction in your wallet..."}
+          {renderButtonText(balanceInsufficient, editing, processing)}
         </ButtonCustom>
       </form>
     </div>
   )
+}
+
+function renderButtonText(
+  balanceInsufficient: boolean,
+  editing: boolean,
+  processing: boolean
+) {
+  if (balanceInsufficient) {
+    return "Insufficient Balance"
+  }
+  if (processing) {
+    return "Processing..."
+  }
+  if (editing) {
+    return "Create gift link"
+  }
+  return "Confirm transaction in your wallet..."
 }
 
 function checkInsufficientBalance(

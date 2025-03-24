@@ -1,8 +1,10 @@
+import { waitForIntentSettlement } from "src/services/intentService"
 import {
   type ActorRefFrom,
   type PromiseActorLogic,
   assertEvent,
   assign,
+  fromPromise,
   sendTo,
   setup,
 } from "xstate"
@@ -107,6 +109,16 @@ export const giftMakerRootMachine = setup({
       void,
       GiftMakerReadyActorInput
     >,
+    settlingActor: fromPromise(
+      ({
+        input,
+        signal,
+      }: { input: { intentHashes: string[] }; signal: AbortSignal }) => {
+        const intentHash = input.intentHashes[0]
+        assert(intentHash, "intentHash is not defined")
+        return waitForIntentSettlement(signal, intentHash)
+      }
+    ),
   },
   actions: {
     logError: (_, event: { error: unknown }) => {
@@ -301,7 +313,7 @@ export const giftMakerRootMachine = setup({
             guard: ({ event }) => {
               return event.output.giftStatus === "published"
             },
-            target: "signed",
+            target: "settling",
             actions: assign({
               intentHashes: ({ event }) => {
                 assert(event.output.giftStatus === "published")
@@ -328,7 +340,29 @@ export const giftMakerRootMachine = setup({
         },
       },
     },
-    signed: {
+    settling: {
+      invoke: {
+        src: "settlingActor",
+        input: ({ context }) => {
+          assert(context.intentHashes, "intentHashes is not defined")
+          return {
+            intentHashes: context.intentHashes,
+          }
+        },
+
+        onDone: {
+          target: "settled",
+        },
+        onError: {
+          target: "editing",
+          actions: {
+            type: "logError",
+            params: ({ event }) => event,
+          },
+        },
+      },
+    },
+    settled: {
       invoke: {
         id: "readyGiftRef",
         src: "readyGiftActor",
