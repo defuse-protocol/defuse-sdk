@@ -5,19 +5,25 @@ import type { CodeResult } from "near-api-js/lib/providers/provider"
 import { type ReactNode, useMemo, useState } from "react"
 import * as v from "valibot"
 import { WidgetRoot } from "../../../components/WidgetRoot"
-import { settings } from "../../../config/settings"
-import type { SignerCredentials } from "../../../core/formatters"
+import { config } from "../../../config"
+import type { DefuseUserId, SignerCredentials } from "../../../core/formatters"
 import { logger } from "../../../logger"
 import { SwapWidgetProvider } from "../../../providers/SwapWidgetProvider"
 import { getDepositedBalances } from "../../../services/defuseBalanceService"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../../types/base"
 import type { ChainType } from "../../../types/deposit"
 import type { SendNearTransaction } from "../../machines/publicKeyVerifierMachine"
-import { fetchFee } from "../actors/otcMakerConfigLoadActor"
+import { fetchProtocolFee } from "../actors/otcMakerConfigLoadActor"
 import { SignIntentActorProvider } from "../providers/SignIntentActorProvider"
 import { useOtcTakerTrades } from "../stores/otcTakerTrades"
 import type { SignMessage } from "../types/sharedTypes"
-import { type TradeTerms, deriveTradeTerms } from "../utils/deriveTradeTerms"
+import {
+  type DeriveTradeTermsErr,
+  type DetermineInvolvedTokensErr,
+  type TradeTerms,
+  deriveTradeTerms,
+  determineInvolvedTokens,
+} from "../utils/deriveTradeTerms"
 import { genLocalTradeId } from "../utils/genLocalTradeId"
 import { OtcTakerForm } from "./OtcTakerForm"
 import { OtcTakerInvalidOrder } from "./OtcTakerInvalidOrder"
@@ -76,21 +82,31 @@ function OtcTakerScreens({
 
   const { data: protocolFee } = useQuery({
     queryKey: ["protocol_fee"],
-    queryFn: fetchFee,
+    queryFn: fetchProtocolFee,
   })
 
-  const tradeTerms = useMemo(() => {
+  const enrichedTradeTerms = useMemo(() => {
     if (protocolFee == null) {
       return null
     }
 
-    const tradeTerms = deriveTradeTerms(multiPayload, tokenList, protocolFee)
+    const result = deriveTradeTerms(multiPayload, protocolFee)
+      .mapErr<DeriveTradeTermsErr | DetermineInvolvedTokensErr>((a) => a)
+      .andThen((tradeTerms) => {
+        return determineInvolvedTokens(
+          tokenList,
+          tradeTerms.takerTokenDiff
+        ).map((tokens) => ({
+          ...tokens,
+          tradeTerms,
+        }))
+      })
 
-    if (tradeTerms.isErr()) {
-      logger.error(tradeTerms.unwrapErr())
+    if (result.isErr()) {
+      logger.error(result.unwrapErr())
     }
 
-    return tradeTerms
+    return result
   }, [multiPayload, tokenList, protocolFee])
 
   const [publishResult, setPublishResult] = useState<{
@@ -101,28 +117,39 @@ function OtcTakerScreens({
 
   const knownOtcTakerTrade = useOtcTakerTrades((state) => state.trades[tradeId])
 
-  if (tradeTerms == null || protocolFee == null) {
+  if (enrichedTradeTerms == null || protocolFee == null) {
     return loading
   }
 
-  return tradeTerms.match({
-    ok: (tradeTerms) =>
+  return enrichedTradeTerms.match({
+    ok: ({ tradeTerms, tokenIn, tokenOut }) =>
       publishResult != null ? (
         <OtcTakerSuccessScreen
           tradeTerms={tradeTerms}
           intentHashes={publishResult.intentHashes}
+          tokenIn={tokenIn}
+          tokenOut={tokenOut}
         />
       ) : knownOtcTakerTrade?.status === "completed" ? (
         <OtcTakerSuccessScreen
           tradeTerms={tradeTerms}
           intentHashes={knownOtcTakerTrade.intentHashes}
+          tokenIn={tokenIn}
+          tokenOut={tokenOut}
         />
       ) : (
-        <OtcTakerValidationOrder tradeTerms={tradeTerms} fallback={loading}>
+        <OtcTakerValidationOrder
+          tradeTerms={tradeTerms}
+          tokenIn={tokenIn}
+          tokenOut={tokenOut}
+          fallback={loading}
+        >
           <SignIntentActorProvider sendNearTransaction={sendNearTransaction}>
             <OtcTakerForm
               tradeId={tradeId}
               tradeTerms={tradeTerms}
+              tokenIn={tokenIn}
+              tokenOut={tokenOut}
               makerMultiPayload={tradeTerms.makerMultiPayload}
               signerCredentials={signerCredentials}
               signMessage={signMessage}
@@ -139,9 +166,17 @@ function OtcTakerScreens({
 
 function OtcTakerValidationOrder({
   tradeTerms,
+  tokenIn,
+  tokenOut,
   fallback,
   children,
-}: { tradeTerms: TradeTerms; fallback: ReactNode; children: ReactNode }) {
+}: {
+  tradeTerms: TradeTerms
+  tokenIn: BaseTokenInfo | UnifiedTokenInfo
+  tokenOut: BaseTokenInfo | UnifiedTokenInfo
+  fallback: ReactNode
+  children: ReactNode
+}) {
   let error: Result<true, string> = Ok(true)
 
   if (new Date(tradeTerms.deadline) < new Date()) {
@@ -157,7 +192,7 @@ function OtcTakerValidationOrder({
     ],
     queryFn: () => {
       return getDepositedBalances(
-        tradeTerms.makerUserId,
+        tradeTerms.makerUserId as DefuseUserId,
         Object.keys(tradeTerms.makerTokenDiff),
         new providers.JsonRpcProvider({
           url: "https://nearrpc.aurora.dev",
@@ -195,7 +230,7 @@ function OtcTakerValidationOrder({
       })
       const output = await nearClient.query<CodeResult>({
         request_type: "call_function",
-        account_id: settings.defuseContractId,
+        account_id: config.env.contractID,
         method_name: "is_nonce_used",
         args_base64: btoa(
           JSON.stringify({
@@ -226,7 +261,12 @@ function OtcTakerValidationOrder({
       .andThen(() => makerBalanceValidation.data ?? noError)
 
     return (
-      <OtcTakerInvalidOrder error={error.unwrapErr()} tradeTerms={tradeTerms} />
+      <OtcTakerInvalidOrder
+        error={error.unwrapErr()}
+        tradeTerms={tradeTerms}
+        tokenIn={tokenIn}
+        tokenOut={tokenOut}
+      />
     )
   }
 

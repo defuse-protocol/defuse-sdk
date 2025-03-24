@@ -22,3 +22,11 @@ export const useTokensUsdPrices = () =>
     queryFn: tokensPriceDataInUsd,
     refetchInterval: 20_000,
   })
+
+export function createTokenUsdPricesQueryOptions() {
+  return {
+    queryKey: tokensUsdPricesQueryKey,
+    queryFn: tokensPriceDataInUsd,
+    refetchInterval: 20_000,
+  }
+}

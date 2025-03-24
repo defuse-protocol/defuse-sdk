@@ -1,25 +1,25 @@
 import { providers } from "near-api-js"
 import type { CodeResult } from "near-api-js/lib/providers/provider"
 import { assign, fromPromise, setup } from "xstate"
-import { settings } from "../../../config/settings"
+import { config } from "../../../config"
 
 export const otcMakerConfigLoadActor = setup({
   types: {
     context: {} as {
-      fee: null | number
+      protocolFee: null | number
     },
   },
   actors: {
-    loadFee: fromPromise(fetchFee),
+    loadProtocolFee: fromPromise(fetchProtocolFee),
   },
   actions: {
-    setFee: assign({
-      fee: (_, event: { output: number }) => event.output,
+    setProtocolFee: assign({
+      protocolFee: (_, event: { output: number }) => event.output,
     }),
   },
 }).createMachine({
   context: {
-    fee: null,
+    protocolFee: null,
   },
 
   initial: "loading",
@@ -27,11 +27,11 @@ export const otcMakerConfigLoadActor = setup({
   states: {
     loading: {
       invoke: {
-        src: "loadFee",
+        src: "loadProtocolFee",
         onDone: {
           target: "loaded",
           actions: {
-            type: "setFee",
+            type: "setProtocolFee",
             params: ({ event }) => event,
           },
         },
@@ -49,7 +49,7 @@ export const otcMakerConfigLoadActor = setup({
   },
 })
 
-export async function fetchFee() {
+export async function fetchProtocolFee() {
   const nearClient = new providers.JsonRpcProvider({
     url: "https://nearrpc.aurora.dev",
   })
@@ -57,7 +57,7 @@ export async function fetchFee() {
   // Warning: `CodeResult` is not correct type for `call_function`, but it's closest we have.
   const output = await nearClient.query<CodeResult>({
     request_type: "call_function",
-    account_id: settings.defuseContractId,
+    account_id: config.env.contractID,
     method_name: "fee",
     args_base64: btoa(JSON.stringify({})),
     finality: "optimistic",
@@ -70,6 +70,6 @@ export async function fetchFee() {
     throw new Error(`Expected number, got ${typeof value}`)
   }
 
-  // in bip: 1 bip = 0.01% = 0.0001
+  // in bip: 1 bip = 0.0001% = 0.000001
   return value
 }

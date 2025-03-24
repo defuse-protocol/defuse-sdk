@@ -1,3 +1,4 @@
+import { bech32m } from "@scure/base"
 import { PublicKey } from "@solana/web3.js"
 import {
   isValidClassicAddress as xrp_isValidClassicAddress,
@@ -43,10 +44,40 @@ export function validateAddress(
       return xrp_isValidClassicAddress(address) || xrp_isValidXAddress(address)
 
     case "zcash":
-      return /^t[13][a-km-zA-HJ-NP-Z1-9]{33}$/.test(address) // t-addr (transparent)
+      return validateZcashAddress(address)
 
     default:
       blockchain satisfies never
       return false
   }
+}
+
+/**
+ * Validates Zcash addresses
+ * Supports:
+ * - Transparent addresses (t1, t3)
+ * - TEX addresses (tex1)
+ */
+function validateZcashAddress(address: string) {
+  // Transparent address validation
+  if (address.startsWith("t1") || address.startsWith("t3")) {
+    // t1 for P2PKH addresses, t3 for P2SH addresses
+    return /^t[13][a-km-zA-HJ-NP-Z1-9]{33}$/.test(address)
+  }
+
+  // TEX address validation
+  const expectedHrp = "tex"
+  if (address.startsWith(`${expectedHrp}1`)) {
+    try {
+      const decoded = bech32m.decodeToBytes(address)
+      if (decoded.prefix !== expectedHrp) {
+        return false
+      }
+      return decoded.bytes.length === 20
+    } catch {
+      return false
+    }
+  }
+
+  return false
 }

@@ -2358,7 +2358,7 @@
     lodash.merge "^4.6.2"
     postcss-selector-parser "6.0.10"
 
-"@tanstack/query-core@5.59.16":
+"@tanstack/query-core@5.59.16", "@tanstack/query-core@^5.59.16":
   version "5.59.16"
   resolved "https://registry.yarnpkg.com/@tanstack/query-core/-/query-core-5.59.16.tgz#aa4616e8a9c12afeef4cfbf3ed0f55f404d66e67"
   integrity sha512-crHn+G3ltqb5JG0oUv6q+PMz1m1YkjpASrXTU+sYWW9pLk0t2GybUHNRqYPZWhxgjPaVGC4yp92gSFEJgYEsPw==
@@ -2867,6 +2867,19 @@ borsh@^0.7.0:
     bn.js "^5.2.0"
     bs58 "^4.0.0"
     text-encoding-utf-8 "^1.0.2"
+
+borsh@^2.0.0:
+  version "2.0.0"
+  resolved "https://registry.yarnpkg.com/borsh/-/borsh-2.0.0.tgz#042a9f109565caac3c6a21297cd8c0ae8db3149d"
+  integrity sha512-kc9+BgR3zz9+cjbwM8ODoUB4fs3X3I5A/HtX7LZKxCLaMrEeDFoBpnhZY//DTS1VZBSs6S5v46RZRbZjRFspEg==
+
+borsher@^3.5.0:
+  version "3.6.0"
+  resolved "https://registry.yarnpkg.com/borsher/-/borsher-3.6.0.tgz#6bd371dc4e0368d345de8d631e1d87970b58bac9"
+  integrity sha512-FMMQST0PdrhernqtxHGvq9wIgV6rJkJecfVs7VhL5jYCFFLsXGMn/VtY0s5zotkKHrrdS5Np/DoL2FTR4cdoqw==
+  dependencies:
+    borsh "^2.0.0"
+    buffer "^6.0.3"
 
 bottleneck@^2.15.3:
   version "2.19.5"

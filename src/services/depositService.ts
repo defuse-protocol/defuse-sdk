@@ -23,7 +23,8 @@ import type { depositEstimationMachine } from "../features/machines/depositEstim
 import type { depositTokenBalanceMachine } from "../features/machines/depositTokenBalanceMachine"
 
 import { type ActorRefFrom, waitFor } from "xstate"
-import { settings } from "../config/settings"
+import { config } from "../config"
+import { settings } from "../constants/settings"
 import type { State as DepositFormContext } from "../features/machines/depositFormReducer"
 import type { depositGenerateAddressMachine } from "../features/machines/depositGenerateAddressMachine"
 import { getNearTxSuccessValue } from "../features/machines/getTxMachine"
@@ -363,7 +364,7 @@ export function createBatchDepositNearNep141Transaction(
       params: {
         methodName: "storage_deposit",
         args: {
-          account_id: settings.defuseContractId,
+          account_id: config.env.contractID,
           registration_only: true,
         },
         gas: FT_DEPOSIT_GAS,
@@ -377,7 +378,7 @@ export function createBatchDepositNearNep141Transaction(
     params: {
       methodName: "ft_transfer_call",
       args: {
-        receiver_id: settings.defuseContractId,
+        receiver_id: config.env.contractID,
         amount: amount.toString(),
         msg: "",
       },
@@ -418,7 +419,7 @@ export function createBatchDepositNearNativeTransaction(
     params: {
       methodName: "ft_transfer_call",
       args: {
-        receiver_id: settings.defuseContractId,
+        receiver_id: config.env.contractID,
         amount: amount.toString(),
         msg: "",
       },

@@ -8,7 +8,7 @@ import {
   setup,
   spawnChild,
 } from "xstate"
-import { settings } from "../../config/settings"
+import { settings } from "../../constants/settings"
 import { logger } from "../../logger"
 import type { QuoteResult } from "../../services/quoteService"
 import type {
@@ -296,7 +296,7 @@ export const swapUIMachine = setup({
     intentRefs: [],
     tokenList: input.tokenList,
     referral: input.referral,
-    slippageBasisPoints: 100, // 1%
+    slippageBasisPoints: 10_000, // 1%
   }),
 
   entry: ["spawnBackgroundQuoterRef", "spawnDepositedBalanceRef"],

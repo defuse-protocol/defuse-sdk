@@ -1,5 +1,5 @@
 import { type ActorRefFrom, waitFor } from "xstate"
-import { settings } from "../config/settings"
+import { settings } from "../constants/settings"
 import { NEP141_STORAGE_TOKEN } from "../constants/tokens"
 import type {
   QuoteInput,
@@ -30,7 +30,7 @@ import {
 } from "../utils/tokenUtils"
 import { getNEP141StorageRequired } from "./nep141StorageService"
 import { type QuoteResult, queryQuoteExactOut } from "./quoteService"
-import type { FAILED_QUOTES_TYPES } from "./solverRelayHttpClient/types"
+import type { FailedQuote } from "./solverRelayHttpClient/types"
 
 interface SwapRequirement {
   swapParams: QuoteInput
@@ -208,7 +208,7 @@ async function determineNEP141StorageRequirement(
       value: {
         reason:
           | "ERR_NEP141_STORAGE"
-          | FAILED_QUOTES_TYPES
+          | FailedQuote["type"]
           | "NO_QUOTES"
           | "ERR_CANNOT_FETCH_QUOTE"
       }
@@ -356,7 +356,7 @@ async function getBalances(
     depositedBalanceRef.send({ type: "REQUEST_BALANCE_REFRESH" })
     const state = await waitFor(
       depositedBalanceRef,
-      (state) => state.matches({ authenticated: "idle" }),
+      (state) => state.matches("authenticated"),
       { signal } // todo: add timeout and error handling
     )
     balances = state.context.balances

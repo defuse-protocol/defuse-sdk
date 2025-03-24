@@ -18,7 +18,7 @@ import {
 export type OTCTakerPreparationOk = {
   quotes: AggregatedQuote[]
   quoteParams: QuoteExactInParams[]
-  tokenDiff: [string, bigint][]
+  tokenDelta: [string, bigint][]
 }
 
 export type OTCTakerPreparationErr = { reason: string } | AggregatedQuoteErr
@@ -82,11 +82,11 @@ export function useOtcTakerPreparation({
         })
       }
 
-      const tokenDiff: [string, bigint][] = Object.entries(tokensToReceive)
+      const tokenDelta: [string, bigint][] = Object.entries(tokensToReceive)
       const quoteParams: QuoteExactInParams[] = []
 
       for (const step of fillResult.steps) {
-        tokenDiff.push([step.fromToken, -step.fromAmount])
+        tokenDelta.push([step.fromToken, -step.fromAmount])
 
         if (step.fromToken !== step.toToken) {
           quoteParams.push({
@@ -100,8 +100,8 @@ export function useOtcTakerPreparation({
       const quotesResult = await manyQuotes(quoteParams)
 
       return quotesResult.map((quotes) => {
-        logger.verbose("return", { quotes, quoteParams, tokenDiff })
-        return { quotes, quoteParams, tokenDiff }
+        logger.verbose("return", { quotes, quoteParams, tokenDelta })
+        return { quotes, quoteParams, tokenDelta }
       })
     },
   })

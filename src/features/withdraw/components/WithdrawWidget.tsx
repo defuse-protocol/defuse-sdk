@@ -1,6 +1,7 @@
 import { assign, fromPromise } from "xstate"
 import { WidgetRoot } from "../../../components/WidgetRoot"
 import { auroraEngineContractId } from "../../../constants/aurora"
+import { settings } from "../../../constants/settings"
 import { WithdrawWidgetProvider } from "../../../providers/WithdrawWidgetProvider"
 import type { WithdrawWidgetProps } from "../../../types/withdraw"
 import { assert } from "../../../utils/assert"
@@ -87,10 +88,9 @@ export const WithdrawWidget = (props: WithdrawWidgetProps) => {
                       )
 
                       const innerMessage = makeInnerSwapAndWithdrawMessage({
-                        tokenDeltas: [
-                          ...(quote?.tokenDeltas ?? []),
-                          ...(nep141Storage?.quote?.tokenDeltas ?? []),
-                        ],
+                        tokenDeltas: quote?.tokenDeltas ?? [],
+                        storageTokenDeltas:
+                          nep141Storage?.quote?.tokenDeltas ?? [],
                         withdrawParams: (() => {
                           switch (tokenOut.chainName) {
                             case "near":
@@ -136,8 +136,7 @@ export const WithdrawWidget = (props: WithdrawWidgetProps) => {
                         })(),
                         signerId: context.defuseUserId,
                         deadlineTimestamp:
-                          // Expiry time maybe zero if nothing to swap, so let's just fallback to the default
-                          Date.now() + 10 * 60 * 1000,
+                          Date.now() + settings.swapExpirySec * 1000,
                         referral: context.referral,
                       })
 

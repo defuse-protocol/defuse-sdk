@@ -1,20 +1,16 @@
 import { base64 } from "@scure/base"
 import { AccountLayout } from "@solana/spl-token"
 import { Connection, PublicKey } from "@solana/web3.js"
-import type {
-  AccountView,
-  CodeResult,
-} from "near-api-js/lib/providers/provider"
-import { settings } from "src/config/settings"
-import { nearFailoverRpcProvider } from "src/utils/failover"
 import { http, type Address, createPublicClient, erc20Abi } from "viem"
-import { logger } from "../../logger"
-import type { BaseTokenInfo, UnifiedTokenInfo } from "../../types/base"
-import { Semaphore } from "../../utils/semaphore"
-import { isFungibleToken, isUnifiedToken } from "../../utils/token"
+import { logger } from "../logger"
+import {
+  getNearBalance,
+  getNearNep141BalanceAccount,
+  getNearNep141StorageBalanceBounds,
+  getNearNep141StorageBalanceOf,
+} from "./nearHttpClient"
 
 export const RESERVED_NEAR_BALANCE = 100000000000000000000000n // 0.1 NEAR reserved for transaction fees and storage
-const semaphore = new Semaphore(5, 500) // 5 concurrent request, 0.5 second delay (adjust maxConcurrent and delayMs as needed)
 
 export const getNearNativeBalance = async ({
   accountId,
@@ -22,11 +18,7 @@ export const getNearNativeBalance = async ({
   accountId: string
 }): Promise<bigint | null> => {
   try {
-    const nearClient = nearFailoverRpcProvider({
-      urls: settings.reserveRpcUrls.near,
-    })
-
-    const response: AccountView = await nearClient.query({
+    const response = await getNearBalance({
       request_type: "view_account",
       finality: "final",
       account_id: accountId,
@@ -55,11 +47,7 @@ export const getNearNep141Balance = async ({
     const args = { account_id: accountId }
     const argsBase64 = Buffer.from(JSON.stringify(args)).toString("base64")
 
-    const nearClient = nearFailoverRpcProvider({
-      urls: settings.reserveRpcUrls.near,
-    })
-
-    const response: CodeResult = await nearClient.query({
+    const response = await getNearNep141BalanceAccount({
       request_type: "call_function",
       method_name: "ft_balance_of",
       account_id: tokenAddress,
@@ -80,61 +68,6 @@ export const getNearNep141Balance = async ({
   }
 }
 
-/**
- * @returns An object where the keys are defuseAssetIds (which must be unique) and the values are balances
- */
-export const getNearNep141Balances = async ({
-  tokenList,
-  accountId,
-}: {
-  tokenList: Array<BaseTokenInfo | UnifiedTokenInfo>
-  accountId: string
-}): Promise<Record<string, bigint>> => {
-  try {
-    const tokenMap = mapTokenList(tokenList).filter(([_, tokenAddress]) =>
-      tokenAddress.includes("nep141:")
-    )
-    const results = await Promise.all([
-      ...tokenMap.map(async ([tokenId, tokenAddress]) => {
-        await semaphore.acquire()
-        try {
-          return {
-            [tokenId]: await getNearNep141Balance({
-              tokenAddress,
-              accountId,
-            }),
-          }
-        } finally {
-          semaphore.release()
-        }
-      }),
-    ])
-
-    return Object.assign({}, ...results)
-  } catch (err: unknown) {
-    throw new Error("Error fetching balances", { cause: err })
-  }
-}
-
-function mapTokenList(
-  tokenList: Array<BaseTokenInfo | UnifiedTokenInfo>
-): Array<[string, string]> {
-  return tokenList.reduce<Array<[string, string]>>((acc, token) => {
-    if (isFungibleToken(token)) {
-      acc.push([token.defuseAssetId, token.address])
-    }
-    if (isUnifiedToken(token)) {
-      for (const groupToken of token.groupedTokens) {
-        // As this map for nep141 tokens, we can map the fungible tokens only
-        if (isFungibleToken(groupToken)) {
-          acc.push([groupToken.defuseAssetId, groupToken.address])
-        }
-      }
-    }
-    return acc
-  }, [])
-}
-
 export const getNearNep141StorageBalance = async ({
   contractId,
   accountId,
@@ -146,11 +79,7 @@ export const getNearNep141StorageBalance = async ({
     const args = { account_id: accountId }
     const argsBase64 = Buffer.from(JSON.stringify(args)).toString("base64")
 
-    const nearClient = nearFailoverRpcProvider({
-      urls: settings.reserveRpcUrls.near,
-    })
-
-    const response: CodeResult = await nearClient.query({
+    const response = await getNearNep141StorageBalanceOf({
       request_type: "call_function",
       method_name: "storage_balance_of",
       account_id: contractId,
@@ -172,11 +101,7 @@ export const getNearNep141MinStorageBalance = async ({
 }: {
   contractId: string
 }): Promise<bigint> => {
-  const nearClient = nearFailoverRpcProvider({
-    urls: settings.reserveRpcUrls.near,
-  })
-
-  const response: CodeResult = await nearClient.query({
+  const response = await getNearNep141StorageBalanceBounds({
     request_type: "call_function",
     method_name: "storage_balance_bounds",
     account_id: contractId,

@@ -7,13 +7,13 @@ import { BlockMultiBalances } from "../../../../components/Block/BlockMultiBalan
 import { ButtonCustom } from "../../../../components/Button/ButtonCustom"
 import { TooltipInfo } from "../../../../components/TooltipInfo"
 import { useTokensUsdPrices } from "../../../../hooks/useTokensUsdPrices"
+import { RESERVED_NEAR_BALANCE } from "../../../../services/blockchainBalanceService"
 import type { BaseTokenInfo } from "../../../../types/base"
 import type { BlockchainEnum } from "../../../../types/interfaces"
 import { reverseAssetNetworkAdapter } from "../../../../utils/adapters"
 import { formatTokenValue, formatUsdAmount } from "../../../../utils/format"
 import getTokenUsdPrice from "../../../../utils/getTokenUsdPrice"
 import { isFungibleToken } from "../../../../utils/token"
-import { RESERVED_NEAR_BALANCE } from "../../../machines/getBalanceMachine"
 import { DepositResult } from "../DepositResult"
 import { DepositUIMachineContext } from "../DepositUIMachineProvider"
 import { DepositWarning } from "../DepositWarning"
@@ -124,13 +124,15 @@ export function ActiveDeposit({
       <ButtonCustom
         size="lg"
         disabled={
-          !watch("amount") || balanceInsufficient || !isDepositAmountHighEnough
+          !Number(watch("amount")) ||
+          balanceInsufficient ||
+          !isDepositAmountHighEnough
         }
         isLoading={isLoading}
       >
         {renderDepositButtonText(
           watch("amount") === "",
-          watch("amount") >= "0" &&
+          Number(watch("amount")) > 0 &&
             (balanceInsufficient !== null ? balanceInsufficient : false),
           network,
           token,

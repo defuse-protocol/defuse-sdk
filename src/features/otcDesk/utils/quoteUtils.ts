@@ -1,5 +1,5 @@
 import { Err, Ok, type Result } from "@thames/monads"
-import { settings } from "../../../config/settings"
+import { settings } from "../../../constants/settings"
 import {
   type AggregatedQuote,
   isFailedQuote,

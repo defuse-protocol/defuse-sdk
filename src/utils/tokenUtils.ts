@@ -275,6 +275,67 @@ export function negateTokenValue(value: TokenValue): TokenValue {
 }
 
 /**
+ * 1 bip = 0.0001% = 0.000001
+ * 3000 bips = 0.3% = 0.003
+ * 1000000 bips = 100% = 1
+ */
+export const BASIS_POINTS_DENOMINATOR = 1_000_000n
+
+/**
+ * Calculates net amount by deducting fee from gross amount.
+ * @example
+ * // If gross amount is 100000n with 0.3% fee, net amount is 99700n
+ * netDownAmount(100000n, 3000) == 99700n
+ */
+export function netDownAmount(amount: bigint, feeBip: number): bigint {
+  if (feeBip < 0 || feeBip > Number(BASIS_POINTS_DENOMINATOR)) {
+    throw new Error(
+      `Invalid feeBip value. It must be between 0 and ${BASIS_POINTS_DENOMINATOR}.`
+    )
+  }
+
+  if (amount < 0n) {
+    throw new Error("Amount must be non-negative.")
+  }
+
+  if (amount === 0n || feeBip === 0) return amount
+
+  // Multiply first to maintain precision, then add BASIS_POINTS_DENOMINATOR-1 for ceiling division
+  const feeAmount =
+    (amount * BigInt(feeBip) + (BASIS_POINTS_DENOMINATOR - 1n)) /
+    BASIS_POINTS_DENOMINATOR
+
+  return amount - feeAmount
+}
+
+/**
+ * Calculates gross amount needed to achieve desired net amount after fee.
+ * @example
+ * // To receive net 100000n after 0.3% fee, gross amount needed is 100300n
+ * grossUpAmount(100000n, 3000) == 100300n
+ */
+export function grossUpAmount(amount: bigint, feeBip: number): bigint {
+  if (feeBip < 0 || feeBip > Number(BASIS_POINTS_DENOMINATOR)) {
+    throw new Error(
+      `Invalid feeBip value. It must be between 0 and ${BASIS_POINTS_DENOMINATOR}.`
+    )
+  }
+
+  if (amount < 0n) {
+    throw new Error("Amount must be non-negative.")
+  }
+
+  if (amount === 0n || feeBip === 0) return amount
+
+  const feeMultiplier = BASIS_POINTS_DENOMINATOR - BigInt(feeBip)
+  // Multiply first, then add (denominator-1) for ceiling division
+  const grossAmount =
+    (amount * BASIS_POINTS_DENOMINATOR + (feeMultiplier - 1n)) / feeMultiplier
+
+  return grossAmount
+}
+
+/**
  * Slippage can affect only positive numbers, because positive delta mean
  * that much will receive, and user can receive a bit less than that
  * depending on market conditions.
@@ -285,8 +346,8 @@ export function accountSlippageExactIn(
 ): [string, bigint][] {
   return delta.map(([token, amount]) => {
     if (amount > 0n) {
-      const slippageAmount = (amount * BigInt(slippageBasisPoints)) / 10000n
-      return [token, amount - slippageAmount]
+      const amountWithSlippage = netDownAmount(amount, slippageBasisPoints)
+      return [token, amountWithSlippage]
     }
     return [token, amount]
   })

@@ -1,10 +1,10 @@
-import {
-  getNearNep141MinStorageBalance,
-  getNearNep141StorageBalance,
-} from "../features/machines/getBalanceMachine"
 import { logger } from "../logger"
 import type { BaseTokenInfo } from "../types/base"
 import { isFungibleToken } from "../utils/token"
+import {
+  getNearNep141MinStorageBalance,
+  getNearNep141StorageBalance,
+} from "./blockchainBalanceService"
 
 export type Output =
   | {

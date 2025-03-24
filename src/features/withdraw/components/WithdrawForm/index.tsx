@@ -14,7 +14,8 @@ import {
   TextField,
 } from "@radix-ui/themes"
 import { useSelector } from "@xstate/react"
-import { Fragment, type ReactNode, useEffect } from "react"
+import { providers } from "near-api-js"
+import { type ReactNode, useEffect } from "react"
 import { Controller, useForm } from "react-hook-form"
 import { useTokensUsdPrices } from "src/hooks/useTokensUsdPrices"
 import { formatTokenValue, formatUsdAmount } from "src/utils/format"
@@ -25,9 +26,10 @@ import { EmptyIcon } from "../../../../components/EmptyIcon"
 import { Form } from "../../../../components/Form"
 import { FieldComboInput } from "../../../../components/Form/FieldComboInput"
 import { WithdrawIntentCard } from "../../../../components/IntentCard/WithdrawIntentCard"
+import { Island } from "../../../../components/Island"
+import { IslandHeader } from "../../../../components/IslandHeader"
 import { NetworkIcon } from "../../../../components/Network/NetworkIcon"
 import { Select } from "../../../../components/Select/Select"
-import { settings } from "../../../../config/settings"
 import { useModalController } from "../../../../hooks/useModalController"
 import { logger } from "../../../../logger"
 import { useTokensStore } from "../../../../providers/TokensStoreProvider"
@@ -40,7 +42,6 @@ import type {
 } from "../../../../types/base"
 import { ChainType } from "../../../../types/deposit"
 import type { WithdrawWidgetProps } from "../../../../types/withdraw"
-import { nearFailoverRpcProvider } from "../../../../utils/failover"
 import { parseUnits } from "../../../../utils/parse"
 import { isBaseToken } from "../../../../utils/token"
 import { getTokenMaxDecimals } from "../../../../utils/tokenUtils"
@@ -190,15 +191,16 @@ export const WithdrawForm = ({
   const { setModalType, data: modalSelectAssetsData } = useModalController<{
     modalType: ModalType
     token: BaseTokenInfo | UnifiedTokenInfo | undefined
-  }>(ModalType.MODAL_SELECT_ASSETS, "token")
+  }>(ModalType.MODAL_SELECT_ASSETS)
 
   const updateTokens = useTokensStore((state) => state.updateTokens)
 
   const handleSelect = () => {
     updateTokens(tokenList)
+    const fieldName = "token"
     setModalType(ModalType.MODAL_SELECT_ASSETS, {
-      fieldName: "tokenIn",
-      selectToken: undefined,
+      fieldName,
+      [fieldName]: token,
       balances: depositedBalanceRef?.getSnapshot().context.balances,
     })
   }
@@ -303,245 +305,238 @@ export const WithdrawForm = ({
   )
 
   return (
-    <div className="widget-container">
-      <Flex
-        direction="column"
-        gap="2"
-        className="rounded-2xl bg-gray-1 p-5 shadow"
+    <Island className="widget-container flex flex-col gap-4">
+      <IslandHeader heading="Withdraw" condensed />
+
+      <Form<WithdrawFormNearValues>
+        handleSubmit={handleSubmit(() => {
+          if (userAddress == null || chainType == null) {
+            logger.warn("No user address provided")
+            return
+          }
+
+          actorRef.send({
+            type: "submit",
+            params: {
+              userAddress,
+              userChainType: chainType,
+              nearClient: new providers.JsonRpcProvider({
+                url: "https://nearrpc.aurora.dev",
+              }),
+            },
+          })
+        })}
+        register={register}
       >
-        <Form<WithdrawFormNearValues>
-          handleSubmit={handleSubmit(() => {
-            if (userAddress == null || chainType == null) {
-              logger.warn("No user address provided")
-              return
+        <Flex direction="column" gap="5">
+          <FieldComboInput<WithdrawFormNearValues>
+            fieldName="amountIn"
+            selected={token}
+            handleSelect={() => {
+              handleSelect()
+            }}
+            className="border border-gray-200/50 rounded-xl"
+            required
+            min={
+              minWithdrawalAmount != null
+                ? {
+                    value: formatTokenValue(
+                      minWithdrawalAmount.amount,
+                      minWithdrawalAmount.decimals
+                    ),
+                    message: "Amount is too low",
+                  }
+                : undefined
             }
+            max={
+              tokenInBalance != null
+                ? {
+                    value: formatTokenValue(
+                      tokenInBalance.amount,
+                      tokenInBalance.decimals
+                    ),
+                    message: "Insufficient balance",
+                  }
+                : undefined
+            }
+            errors={errors}
+            balance={tokenInBalance}
+            transitBalance={tokenInTransitBalance}
+            register={register}
+            usdAmount={
+              tokenToWithdrawUsdAmount !== null && tokenToWithdrawUsdAmount > 0
+                ? `~${formatUsdAmount(tokenToWithdrawUsdAmount)}`
+                : null
+            }
+          />
 
-            actorRef.send({
-              type: "submit",
-              params: {
-                userAddress,
-                userChainType: chainType,
-                nearClient: nearFailoverRpcProvider({
-                  urls: settings.reserveRpcUrls.near,
-                }),
-              },
-            })
-          })}
-          register={register}
-        >
-          <Flex direction="column" gap="5">
-            <FieldComboInput<WithdrawFormNearValues>
-              fieldName="amountIn"
-              selected={token}
-              handleSelect={() => {
-                handleSelect()
+          {renderMinWithdrawalAmount(minWithdrawalAmount, tokenOut)}
+          <LongWithdrawWarning
+            amountIn={parsedAmountIn}
+            token={tokenOut}
+            tokensUsdPriceData={tokensUsdPriceData}
+          />
+
+          <Flex direction="column" gap="2">
+            <Box px="2" asChild>
+              <Text size="1" weight="bold">
+                Recipient
+              </Text>
+            </Box>
+            <Controller
+              name="blockchain"
+              control={control}
+              rules={{
+                required: "This field is required",
+                deps: "recipient",
               }}
-              className="border border-gray-200/50 rounded-xl"
-              required
-              min={
-                minWithdrawalAmount != null
-                  ? {
-                      value: formatTokenValue(
-                        minWithdrawalAmount.amount,
-                        minWithdrawalAmount.decimals
-                      ),
-                      message: "Amount is too low",
+              render={({ field }) => {
+                return (
+                  <Select
+                    name={field.name}
+                    value={field.value}
+                    onChange={field.onChange}
+                    disabled={Object.keys(blockchainSelectItems).length === 1}
+                    options={blockchainSelectItems}
+                    placeholder={{
+                      label: "Select network",
+                      icon: <EmptyIcon />,
+                    }}
+                    hint={
+                      <Select.Hint>
+                        {Object.keys(blockchainSelectItems).length === 1
+                          ? "This network only"
+                          : "Network"}
+                      </Select.Hint>
                     }
-                  : undefined
-              }
-              max={
-                tokenInBalance != null
-                  ? {
-                      value: formatTokenValue(
-                        tokenInBalance.amount,
-                        tokenInBalance.decimals
-                      ),
-                      message: "Insufficient balance",
-                    }
-                  : undefined
-              }
-              errors={errors}
-              balance={tokenInBalance}
-              transitBalance={tokenInTransitBalance}
-              register={register}
-              usdAmount={
-                tokenToWithdrawUsdAmount !== null &&
-                tokenToWithdrawUsdAmount > 0
-                  ? `~${formatUsdAmount(tokenToWithdrawUsdAmount)}`
-                  : null
-              }
+                  />
+                )
+              }}
             />
 
-            {renderMinWithdrawalAmount(minWithdrawalAmount, tokenOut)}
-            <LongWithdrawWarning
-              amountIn={parsedAmountIn}
-              token={tokenOut}
-              tokensUsdPriceData={tokensUsdPriceData}
-            />
-
-            <Flex direction="column" gap="2">
-              <Box px="2" asChild>
-                <Text size="1" weight="bold">
-                  Recipient
-                </Text>
-              </Box>
-              <Controller
-                name="blockchain"
-                control={control}
-                rules={{
-                  required: "This field is required",
-                  deps: "recipient",
-                }}
-                render={({ field }) => {
-                  return (
-                    <Select
-                      name={field.name}
-                      value={field.value}
-                      onChange={field.onChange}
-                      disabled={Object.keys(blockchainSelectItems).length === 1}
-                      options={blockchainSelectItems}
-                      placeholder={{
-                        label: "Select network",
-                        icon: <EmptyIcon />,
-                      }}
-                      hint={
-                        <Select.Hint>
-                          {Object.keys(blockchainSelectItems).length === 1
-                            ? "This network only"
-                            : "Network"}
-                        </Select.Hint>
-                      }
-                    />
-                  )
-                }}
-              />
-
-              <Flex direction="column" gap="1">
-                <Flex gap="2" align="center">
-                  <Box asChild flexGrow="1">
-                    <TextField.Root
-                      size="3"
-                      {...register("recipient", {
-                        validate: {
-                          pattern: (value, formValues) => {
-                            if (
-                              !validateAddress(value, formValues.blockchain)
-                            ) {
-                              return "Invalid address for the selected blockchain"
-                            }
-                          },
-                        },
-                      })}
-                      placeholder="Enter wallet address"
-                    >
-                      <TextField.Slot>
-                        <PersonIcon height="16" width="16" />
-                      </TextField.Slot>
-                    </TextField.Root>
-                  </Box>
-
-                  {isChainTypeSatisfiesChainName &&
-                    userAddress != null &&
-                    recipient !== userAddress && (
-                      <IconButton
-                        type="button"
-                        onClick={() => {
-                          setValue("recipient", userAddress, {
-                            shouldValidate: true,
-                          })
-                        }}
-                        variant="outline"
-                        size="3"
-                        title={`Autofill with your address ${truncateUserAddress(userAddress)}`}
-                        aria-label={`Autofill with your address ${truncateUserAddress(userAddress)}`}
-                      >
-                        <MagicWandIcon />
-                      </IconButton>
-                    )}
-                </Flex>
-
-                {errors.recipient && (
-                  <Box px="2" asChild>
-                    <Text size="1" color="red" weight="medium">
-                      {errors.recipient.message}
-                    </Text>
-                  </Box>
-                )}
-              </Flex>
-
-              {blockchain === "xrpledger" && (
-                <Flex direction="column" gap="1">
-                  <Box px="2" asChild>
-                    <Text size="1" weight="bold">
-                      Destination Tag (optional)
-                    </Text>
-                  </Box>
+            <Flex direction="column" gap="1">
+              <Flex gap="2" align="center">
+                <Box asChild flexGrow="1">
                   <TextField.Root
                     size="3"
-                    {...register("destinationMemo", {
+                    {...register("recipient", {
                       validate: {
-                        uint32: (value) => {
-                          if (value == null || value === "") return
-
-                          if (
-                            parseDestinationMemo(value, tokenOut.chainName) ==
-                            null
-                          ) {
-                            return "Should be a number"
+                        pattern: (value, formValues) => {
+                          if (!validateAddress(value, formValues.blockchain)) {
+                            return "Invalid address for the selected blockchain"
                           }
                         },
                       },
                     })}
-                    placeholder="Enter destination tag"
-                  />
-                  {errors.destinationMemo && (
-                    <Box px="2" asChild>
-                      <Text size="1" color="red" weight="medium">
-                        {errors.destinationMemo.message}
-                      </Text>
-                    </Box>
+                    placeholder="Enter wallet address"
+                  >
+                    <TextField.Slot>
+                      <PersonIcon height="16" width="16" />
+                    </TextField.Slot>
+                  </TextField.Root>
+                </Box>
+
+                {isChainTypeSatisfiesChainName &&
+                  userAddress != null &&
+                  recipient !== userAddress && (
+                    <IconButton
+                      type="button"
+                      onClick={() => {
+                        setValue("recipient", userAddress, {
+                          shouldValidate: true,
+                        })
+                      }}
+                      variant="outline"
+                      size="3"
+                      title={`Autofill with your address ${truncateUserAddress(userAddress)}`}
+                      aria-label={`Autofill with your address ${truncateUserAddress(userAddress)}`}
+                    >
+                      <MagicWandIcon />
+                    </IconButton>
                   )}
-                </Flex>
+              </Flex>
+
+              {errors.recipient && (
+                <Box px="2" asChild>
+                  <Text size="1" color="red" weight="medium">
+                    {errors.recipient.message}
+                  </Text>
+                </Box>
               )}
             </Flex>
 
-            <Flex justify="between" px="2">
-              <Text size="1" weight="medium" color="gray">
-                Received amount
-              </Text>
+            {blockchain === "xrpledger" && (
+              <Flex direction="column" gap="1">
+                <Box px="2" asChild>
+                  <Text size="1" weight="bold">
+                    Destination Tag (optional)
+                  </Text>
+                </Box>
+                <TextField.Root
+                  size="3"
+                  {...register("destinationMemo", {
+                    validate: {
+                      uint32: (value) => {
+                        if (value == null || value === "") return
 
-              <Text size="1" weight="bold">
-                {state.matches({ editing: "preparation" }) ? (
-                  <Skeleton>100.000000</Skeleton>
-                ) : totalAmountReceived == null ? (
-                  "–"
-                ) : (
-                  formatTokenValue(
-                    totalAmountReceived.amount,
-                    totalAmountReceived.decimals
-                  )
-                  // biome-ignore lint/nursery/useConsistentCurlyBraces: space is needed here
-                )}{" "}
-                {token.symbol}
-              </Text>
-            </Flex>
-
-            <ButtonCustom
-              size="lg"
-              disabled={state.matches("submitting") || noLiquidity}
-              isLoading={state.matches("submitting")}
-            >
-              {renderWithdrawButtonText(noLiquidity, insufficientTokenInAmount)}
-            </ButtonCustom>
+                        if (
+                          parseDestinationMemo(value, tokenOut.chainName) ==
+                          null
+                        ) {
+                          return "Should be a number"
+                        }
+                      },
+                    },
+                  })}
+                  placeholder="Enter destination tag"
+                />
+                {errors.destinationMemo && (
+                  <Box px="2" asChild>
+                    <Text size="1" color="red" weight="medium">
+                      {errors.destinationMemo.message}
+                    </Text>
+                  </Box>
+                )}
+              </Flex>
+            )}
           </Flex>
-        </Form>
 
-        {renderPreparationResult(state.context.preparationOutput)}
-        {renderIntentCreationResult(intentCreationResult)}
+          <Flex justify="between" px="2">
+            <Text size="1" weight="medium" color="gray">
+              Received amount
+            </Text>
 
-        <Intents intentRefs={intentRefs} />
-      </Flex>
-    </div>
+            <Text size="1" weight="bold">
+              {state.matches({ editing: "preparation" }) ? (
+                <Skeleton>100.000000</Skeleton>
+              ) : totalAmountReceived == null ? (
+                "–"
+              ) : (
+                formatTokenValue(
+                  totalAmountReceived.amount,
+                  totalAmountReceived.decimals
+                )
+                // biome-ignore lint/nursery/useConsistentCurlyBraces: space is needed here
+              )}{" "}
+              {token.symbol}
+            </Text>
+          </Flex>
+
+          <ButtonCustom
+            size="lg"
+            disabled={state.matches("submitting") || noLiquidity}
+            isLoading={state.matches("submitting")}
+          >
+            {renderWithdrawButtonText(noLiquidity, insufficientTokenInAmount)}
+          </ButtonCustom>
+        </Flex>
+      </Form>
+
+      {renderPreparationResult(state.context.preparationOutput)}
+      {renderIntentCreationResult(intentCreationResult)}
+
+      {intentRefs.length !== 0 && <Intents intentRefs={intentRefs} />}
+    </Island>
   )
 }
 
@@ -780,13 +775,12 @@ function Intents({
 }: { intentRefs: ActorRefFrom<typeof intentStatusMachine>[] }) {
   return (
     <div>
-      {intentRefs.map((intentRef) => {
-        return (
-          <Fragment key={intentRef.id}>
-            <WithdrawIntentCard intentStatusActorRef={intentRef} />
-          </Fragment>
-        )
-      })}
+      {intentRefs.map((intentRef) => (
+        <WithdrawIntentCard
+          key={intentRef.id}
+          intentStatusActorRef={intentRef}
+        />
+      ))}
     </div>
   )
 }

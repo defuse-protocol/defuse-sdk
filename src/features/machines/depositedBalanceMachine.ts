@@ -1,14 +1,15 @@
-import { settings } from "src/config/settings"
-import { nearFailoverRpcProvider } from "src/utils/failover"
+import { type QueryClient, QueryObserver } from "@tanstack/query-core"
+import { providers } from "near-api-js"
 import {
   type ActorRef,
   type Snapshot,
   type SnapshotFrom,
   assign,
   enqueueActions,
-  fromPromise,
+  fromCallback,
   setup,
 } from "xstate"
+import { queryClient } from "../../providers/QueryClientProvider"
 import {
   getDepositedBalances,
   getTransitBalances,
@@ -19,13 +20,14 @@ import type {
   UnifiedTokenInfo,
 } from "../../types/base"
 import type { ChainType } from "../../types/deposit"
-import { assert } from "../../utils/assert"
 import {
   type DefuseUserId,
   userAddressToDefuseUserId,
 } from "../../utils/defuse"
-import { isBaseToken } from "../../utils/token"
-import { computeTotalBalanceDifferentDecimals } from "../../utils/tokenUtils"
+import {
+  computeTotalBalanceDifferentDecimals,
+  getUnderlyingBaseTokenInfos,
+} from "../../utils/tokenUtils"
 
 export interface Input {
   parentRef?: ParentActor
@@ -60,57 +62,82 @@ export const depositedBalanceMachine = setup({
   types: {
     context: {} as {
       parentRef: ParentActor | undefined
-      defuseTokenIds: string[]
-      userAccountId: DefuseUserId | null
       balances: BalanceMapping
       transitBalances: BalanceMapping
+      depositedBalanceQueryObserver: DepositedBalanceQueryObserver
+      transitBalanceQueryObserver: TransitBalanceQueryObserver
     },
     events: {} as Events | SharedEvents,
     input: {} as Input,
   },
   actors: {
-    fetchBalanceActor: fromPromise(
-      async ({
+    getDepositedBalances: fromCallback(
+      ({
         input,
       }: {
-        input: {
-          parentRef: ThisActor
-          userAccountId: DefuseUserId
-          defuseTokenIds: string[]
-        }
+        input: { observer: DepositedBalanceQueryObserver; parentRef: ThisActor }
       }) => {
-        const { parentRef, userAccountId } = input
-
-        // If the token list is too large (>100 tokens) we should split it into multiple requests
-        // and `UPDATE_BALANCE_SLICE` on receiving each response
-        const balance = await getDepositedBalances(
-          userAccountId,
-          input.defuseTokenIds,
-          nearFailoverRpcProvider({ urls: settings.reserveRpcUrls.near })
-        )
-
-        const transitBalances = await getTransitBalances(
-          userAccountId,
-          input.defuseTokenIds
-        )
-
-        parentRef.send({
-          type: "UPDATE_BALANCE_SLICE",
-          params: {
-            balanceSlice: balance,
-            transitBalanceSlice: transitBalances,
-          },
+        return input.observer.subscribe((result) => {
+          if (result.isSuccess) {
+            input.parentRef.send({
+              type: "UPDATE_BALANCE_SLICE",
+              params: {
+                balanceSlice: result.data,
+                transitBalanceSlice: {},
+              },
+            })
+          }
+        })
+      }
+    ),
+    getTransitBalances: fromCallback(
+      ({
+        input,
+      }: {
+        input: { observer: TransitBalanceQueryObserver; parentRef: ThisActor }
+      }) => {
+        return input.observer.subscribe((result) => {
+          if (result.isSuccess) {
+            input.parentRef.send({
+              type: "UPDATE_BALANCE_SLICE",
+              params: {
+                balanceSlice: {},
+                transitBalanceSlice: result.data,
+              },
+            })
+          }
         })
       }
     ),
   },
   actions: {
-    setUserAccountId: assign({
-      userAccountId: (_, accountId: DefuseUserId) => accountId,
-    }),
-    clearUserAccountId: assign({
-      userAccountId: null,
-    }),
+    updateUser: ({ context }, user: DefuseUserId | null) => {
+      {
+        const queryKey = structuredClone(
+          context.depositedBalanceQueryObserver.options.queryKey
+        )
+        queryKey[1].user = user
+
+        context.depositedBalanceQueryObserver.setOptions({
+          ...context.depositedBalanceQueryObserver.options,
+          queryKey: queryKey,
+          queryHash: undefined,
+        })
+      }
+
+      {
+        const queryKey = structuredClone(
+          context.transitBalanceQueryObserver.options.queryKey
+        )
+        queryKey[1].user = user
+
+        context.transitBalanceQueryObserver.setOptions({
+          ...context.transitBalanceQueryObserver.options,
+          queryKey: queryKey,
+          queryHash: undefined,
+        })
+      }
+    },
     updateBalance: enqueueActions(
       (
         { enqueue, context },
@@ -161,17 +188,6 @@ export const depositedBalanceMachine = setup({
       transitBalances: {},
     }),
   },
-  guards: {
-    // TODO: Either use this guard or remove it
-    balanceDifferent: ({ context }, balanceSlice: BalanceMapping) => {
-      for (const [key, val] of Object.entries(balanceSlice)) {
-        if (context.balances[key] !== val) {
-          return true
-        }
-      }
-      return false
-    },
-  },
 }).createMachine({
   /** @xstate-layout N4IgpgJg5mDOIC5QTABwPawJYBdICEBDAG0IDsBjMAYgBkB5AcQEkA5AbQAYBdRUDbDizoyfEAA9EAWgCMAZk4A6AOwBOAKwyALJ1UA2ZXLnqANCACe0mQA45ivda2G9WgExyt15VoC+PsygCuAQk5FSKhACuOAAWYGRCFIR4EHRM9ACqACpcvEggQUIiYpIIssaKqsq6Mhqunpw2ymaWZR4qWnWOnHKunH3WfgFomMEQRKSUYBHRcQlYSSnUAEoAogCKGasAylkA+vgAgrSHrADCq3trAGJr2wASuWKFwqL5pTKainK2ejI2tXUyiBrhaVj0dh+7lc6nqnGsek4vn8IECoxSEzC0yisXiiWSkEUACcwAAzEmwGJYMhQAAEACNQlNqBARNNqQA3dAAa2mpLAOAoMUxU2WZKe+RexXeiH+qkU6ms1iRCmqcj0MK0YIQf0UjS06us6gN3j0qkGKLRghCk3COLm+JSxLJFKpNIZTKo1AyAAUACKHLKXI4nc6Xba0ZgXCX8dGvEqIWEyFSfGR-VxqWFG7VSAyKBEyJHKQvGLTqPRDVEja3jT3Y2Z4hYEiCKLAQYg0cSwHAEiKkvBEgAU6k4o4AlCzq2MRXaG-NFoS2x2YwU49LQKUPMmtNoNRDNY5QRZELr9YbjXJTea-CiyOgUPB8lbp3Xnmu3hvpD8lOpVB4EUq1R6C4OZGNY3zWO4qZKoWqiuBWlpThidaKJEZD2o2C4QG+gjxjKbS9Aqf6eA4XicMBWrHggSgaD0Zb6B4nDeEaFrDIUNpYjMuLzs2OG4Hhn46nYGh6OomguMoaiuNoOYwkoSrQv02ieJ4riVs+yG2vW3GOoSJLknAbp0oyWl8UUH4SLK-yVOWYlpk4UkyVRubgUqciAvBMIaloyJseiHFTFxDpNk6S5gGZAmWQgrjWMmnC-jFiJKgaRiUa08h2BCqiqJ0kHGuoqo3j4QA */
   id: "depositedBalance",
@@ -179,16 +195,22 @@ export const depositedBalanceMachine = setup({
   initial: "unauthenticated",
 
   context: ({ input }) => {
+    const tokenIds = input.tokenList
+      .flatMap(getUnderlyingBaseTokenInfos)
+      .map((t) => t.defuseAssetId)
+
     return {
-      userAccountId: null,
+      depositedBalanceQueryObserver: createDepositedBalanceQueryObserver(
+        queryClient,
+        tokenIds
+      ),
+      transitBalanceQueryObserver: createTransitBalanceQueryObserver(
+        queryClient,
+        tokenIds
+      ),
       balances: {},
       transitBalances: {},
       parentRef: input.parentRef,
-      defuseTokenIds: input.tokenList.flatMap((token) => {
-        return isBaseToken(token)
-          ? [token.defuseAssetId]
-          : token.groupedTokens.map((t) => t.defuseAssetId)
-      }),
     }
   },
 
@@ -196,56 +218,42 @@ export const depositedBalanceMachine = setup({
     unauthenticated: {},
 
     authenticated: {
-      initial: "refreshing balance",
-
-      states: {
-        "refreshing balance": {
-          invoke: {
-            src: "fetchBalanceActor",
-            id: "fetchBalanceRef",
-            input: ({ self, context }) => {
-              assert(context.userAccountId != null, "User is not authenticated")
-              return {
-                parentRef: self,
-                userAccountId: context.userAccountId,
-                defuseTokenIds: context.defuseTokenIds,
-              }
-            },
-            onDone: "idle",
-            // todo: handle error
-          },
-
-          on: {
-            UPDATE_BALANCE_SLICE: {
-              target: "refreshing balance",
-              actions: {
-                type: "updateBalance",
-                params: ({ event }) => ({
-                  balanceSlice: event.params.balanceSlice,
-                  transitBalanceSlice: event.params.transitBalanceSlice,
-                }),
-              },
-            },
-          },
+      invoke: [
+        {
+          src: "getDepositedBalances",
+          input: ({ self, context }) => ({
+            parentRef: self,
+            observer: context.depositedBalanceQueryObserver,
+          }),
         },
-
-        idle: {
-          after: {
-            "10000": "refreshing balance",
-          },
+        {
+          src: "getTransitBalances",
+          input: ({ self, context }) => ({
+            parentRef: self,
+            observer: context.transitBalanceQueryObserver,
+          }),
         },
-      },
+      ],
 
       on: {
         LOGOUT: {
           target: "unauthenticated",
-          actions: ["clearBalance", "clearUserAccountId"],
-          reenter: true,
+          actions: ["clearBalance", { type: "updateUser", params: null }],
         },
 
         REQUEST_BALANCE_REFRESH: {
-          target: ".refreshing balance",
+          target: ".",
           reenter: true,
+        },
+
+        UPDATE_BALANCE_SLICE: {
+          actions: {
+            type: "updateBalance",
+            params: ({ event }) => ({
+              balanceSlice: event.params.balanceSlice,
+              transitBalanceSlice: event.params.transitBalanceSlice,
+            }),
+          },
         },
       },
     },
@@ -257,7 +265,7 @@ export const depositedBalanceMachine = setup({
       actions: [
         "clearBalance",
         {
-          type: "setUserAccountId",
+          type: "updateUser",
           params: ({ event }) =>
             userAddressToDefuseUserId(
               event.params.userAddress,
@@ -356,4 +364,62 @@ export function transitBalanceSelector(
     if (pending?.amount === 0n) return
     return pending
   }
+}
+
+type DepositedBalanceQueryObserver = ReturnType<
+  typeof createDepositedBalanceQueryObserver
+>
+
+function createDepositedBalanceQueryObserver(
+  queryClient: QueryClient,
+  tokenIds: string[]
+) {
+  const provider = new providers.JsonRpcProvider({
+    url: "https://nearrpc.aurora.dev",
+  })
+
+  return new QueryObserver(queryClient, {
+    queryKey: ["deposited_balance", { user: null, tokenIds }] as [
+      string,
+      { user: null | DefuseUserId; tokenIds: string[] },
+    ],
+    queryFn: ({ queryKey }) => {
+      if (queryKey[1].user == null) {
+        throw new Error("user is null")
+      }
+
+      return getDepositedBalances(
+        queryKey[1].user,
+        queryKey[1].tokenIds,
+        provider
+      )
+    },
+    enabled: (query) => query.queryKey[1].user != null,
+    refetchInterval: 30000,
+  })
+}
+
+type TransitBalanceQueryObserver = ReturnType<
+  typeof createTransitBalanceQueryObserver
+>
+
+function createTransitBalanceQueryObserver(
+  queryClient: QueryClient,
+  tokenIds: string[]
+) {
+  return new QueryObserver(queryClient, {
+    queryKey: ["transit_balance", { user: null, tokenIds }] as [
+      string,
+      { user: null | DefuseUserId; tokenIds: string[] },
+    ],
+    queryFn: ({ queryKey }) => {
+      if (queryKey[1].user == null) {
+        throw new Error("user is null")
+      }
+
+      return getTransitBalances(queryKey[1].user, queryKey[1].tokenIds)
+    },
+    enabled: (query) => query.queryKey[1].user != null,
+    refetchInterval: 30000,
+  })
 }

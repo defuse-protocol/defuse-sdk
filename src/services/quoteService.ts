@@ -1,4 +1,4 @@
-import { settings } from "../config/settings"
+import { settings } from "../constants/settings"
 import { logger } from "../logger"
 import type { BaseTokenInfo, TokenValue } from "../types/base"
 import {
@@ -18,6 +18,10 @@ export function isFailedQuote(
   quote: Quote | FailedQuote
 ): quote is FailedQuote {
   return "type" in quote
+}
+
+function isNotFailedQuote(quote: Quote | FailedQuote): quote is Quote {
+  return !("type" in quote)
 }
 
 type TokenSlice = BaseTokenInfo
@@ -281,17 +285,11 @@ export function aggregateQuotes(
   const quoteHashes: string[] = []
   let expirationTime = Number.POSITIVE_INFINITY
   const tokenDeltas: [string, bigint][] = []
-  let quoteError: FailedQuote | null = null
+  let anyQuoteError: FailedQuote | undefined
+
   for (const qList of quotes) {
-    const failedQuotes: FailedQuote[] = []
-    const validQuotes = []
-    for (const q of qList) {
-      if (isFailedQuote(q)) {
-        failedQuotes.push(q)
-      } else {
-        validQuotes.push(q)
-      }
-    }
+    const failedQuotes = qList.filter(isFailedQuote)
+    const validQuotes = qList.filter(isNotFailedQuote)
 
     validQuotes.sort((a, b) => {
       if (BigInt(a.amount_out) > BigInt(b.amount_out)) return -1
@@ -299,12 +297,10 @@ export function aggregateQuotes(
       return 0
     })
 
-    const q = validQuotes[0]
-    if (failedQuotes[0]) {
-      if (quoteError === null) quoteError = failedQuotes[0]
-    }
+    anyQuoteError ??= failedQuotes[0]
 
-    if (q === undefined) continue
+    const q = validQuotes[0]
+    if (q == null) continue
 
     const amountOut = BigInt(q.amount_out)
     const amountIn = BigInt(q.amount_in)
@@ -320,33 +316,47 @@ export function aggregateQuotes(
     quoteHashes.push(q.quote_hash)
   }
 
-  const noQuotes = quoteHashes.length === 0
+  const fillStatus =
+    quoteHashes.length === 0
+      ? "NONE"
+      : quoteHashes.length === quotes.length
+        ? "FULL"
+        : "PARTIAL"
 
-  if (noQuotes && quoteError !== null) {
-    return {
-      tag: "err",
-      value: quoteError,
+  switch (fillStatus) {
+    case "NONE": {
+      if (anyQuoteError != null) {
+        return {
+          tag: "err",
+          value: anyQuoteError,
+        }
+      }
+
+      return {
+        tag: "err",
+        value: {
+          type: "NO_QUOTES",
+        },
+      }
     }
-  }
 
-  if (noQuotes) {
-    return {
-      tag: "err",
-      value: {
-        type: "NO_QUOTES",
-      },
+    case "FULL":
+    case "PARTIAL": {
+      return {
+        tag: "ok",
+        value: {
+          quoteHashes,
+          expirationTime: new Date(
+            expirationTime === Number.POSITIVE_INFINITY ? 0 : expirationTime
+          ).toISOString(),
+          tokenDeltas,
+        },
+      }
     }
-  }
 
-  return {
-    tag: "ok",
-    value: {
-      quoteHashes,
-      expirationTime: new Date(
-        expirationTime === Number.POSITIVE_INFINITY ? 0 : expirationTime
-      ).toISOString(),
-      tokenDeltas,
-    },
+    default:
+      fillStatus satisfies never
+      throw new Error("exhaustive check failed")
   }
 }
 
