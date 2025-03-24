@@ -75,6 +75,11 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
     (state) => state
   )
 
+  const onChangeNetwork = (network: BlockchainEnum) => {
+    setValue("network", network)
+    onCloseModal()
+  }
+
   const openModalSelectAssets = (
     fieldName: string,
     selectToken: SwappableToken | undefined
@@ -82,6 +87,17 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
     setModalType(ModalType.MODAL_SELECT_ASSETS, {
       fieldName,
       [fieldName]: selectToken,
+    })
+  }
+
+  const openModalSelectNetwork = (
+    fieldName: string,
+    selectNetwork: (network: BlockchainEnum) => void
+  ) => {
+    setModalType(ModalType.MODAL_SELECT_NETWORK, {
+      fieldName,
+      token,
+      selectNetwork,
     })
   }
 
@@ -182,27 +198,33 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
               <Controller
                 name="network"
                 control={control}
-                render={({ field }) => (
-                  <Select
-                    options={chainOptions}
-                    placeholder={{
-                      label: "Select network",
-                      icon: <EmptyIcon />,
-                    }}
-                    value={
-                      getDefaultBlockchainOptionValue(token) || network || ""
-                    }
-                    onChange={field.onChange}
-                    name={field.name}
-                    hint={
-                      <Select.Hint>
-                        {Object.keys(chainOptions).length === 1
-                          ? "This network only"
-                          : "Network"}
-                      </Select.Hint>
-                    }
-                  />
-                )}
+                render={({ field }) => {
+                  const label =
+                    chainOptions[network ?? ""]?.label ?? "Select network"
+                  const hint =
+                    Object.keys(chainOptions).length === 1
+                      ? "This network only"
+                      : "Network"
+                  const icon = chainOptions[network ?? ""]?.icon ?? (
+                    <EmptyIcon />
+                  )
+
+                  return (
+                    <SelectTriggerLike
+                      label={label}
+                      icon={icon}
+                      onClick={() => {
+                        openModalSelectNetwork(field.name, onChangeNetwork)
+                      }}
+                      hint={<Select.Hint>{hint}</Select.Hint>}
+                      disabled={
+                        chainOptions &&
+                        Object.keys(chainOptions).length === 1 &&
+                        field.value === Object.values(chainOptions)[0]?.value
+                      }
+                    />
+                  )
+                }}
               />
             )}
           </div>
@@ -269,7 +291,12 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
   )
 }
 
-function getBlockchainsOptions(): Record<
+export function isAuroraVirtualChain(network: BlockchainEnum): boolean {
+  const virtualChains = [BlockchainEnum.TURBOCHAIN]
+  return virtualChains.includes(network)
+}
+
+export function getBlockchainsOptions(): Record<
   BlockchainEnum,
   { label: string; icon: React.ReactNode; value: BlockchainEnum }
 > {
@@ -408,7 +435,7 @@ function getBlockchainsOptions(): Record<
   return options
 }
 
-function filterBlockchainsOptions(
+export function filterBlockchainsOptions(
   token: BaseTokenInfo | UnifiedTokenInfo
 ): Record<string, { label: string; icon: React.ReactNode; value: string }> {
   const tokens = isUnifiedToken(token) ? token.groupedTokens : [token]
@@ -421,7 +448,6 @@ function filterBlockchainsOptions(
       chains.includes(reverseAssetNetworkAdapter[option.value])
     )
     .map((option) => [option.value, option])
-
   return Object.fromEntries(res)
 }
 

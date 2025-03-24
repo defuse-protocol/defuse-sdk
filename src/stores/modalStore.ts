@@ -3,6 +3,7 @@ import { createStore } from "zustand/vanilla"
 export enum ModalType {
   MODAL_SELECT_ASSETS = "modalSelectAssets",
   MODAL_CONFIRM_ADD_PUBKEY = "modalConfirmAddPubKey",
+  MODAL_SELECT_NETWORK = "modalSelectNetwork",
 }
 
 export type ModalState = {
