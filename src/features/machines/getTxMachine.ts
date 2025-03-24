@@ -1,6 +1,5 @@
 import type { FinalExecutionStatus } from "near-api-js/lib/providers/provider"
-import { settings } from "src/config/settings"
-import { nearFailoverRpcProvider } from "src/utils/failover"
+import { nearClient } from "../../constants/nearClient"
 
 function isSuccessStatus(
   status: unknown
@@ -18,10 +17,6 @@ export const getNearTxSuccessValue = async ({
   senderAccountId: string
 }): Promise<bigint> => {
   try {
-    const nearClient = nearFailoverRpcProvider({
-      urls: settings.reserveRpcUrls.near,
-    })
-
     const response = await nearClient.txStatus(
       txHash,
       senderAccountId,

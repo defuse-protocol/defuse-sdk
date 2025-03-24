@@ -1,5 +1,5 @@
 import { type QueryClient, QueryObserver } from "@tanstack/query-core"
-import { providers } from "near-api-js"
+import { nearClient } from "src/constants/nearClient"
 import {
   type ActorRef,
   type Snapshot,
@@ -374,10 +374,6 @@ function createDepositedBalanceQueryObserver(
   queryClient: QueryClient,
   tokenIds: string[]
 ) {
-  const provider = new providers.JsonRpcProvider({
-    url: "https://nearrpc.aurora.dev",
-  })
-
   return new QueryObserver(queryClient, {
     queryKey: ["deposited_balance", { user: null, tokenIds }] as [
       string,
@@ -391,7 +387,7 @@ function createDepositedBalanceQueryObserver(
       return getDepositedBalances(
         queryKey[1].user,
         queryKey[1].tokenIds,
-        provider
+        nearClient
       )
     },
     enabled: (query) => query.queryKey[1].user != null,

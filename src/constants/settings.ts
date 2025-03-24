@@ -9,9 +9,6 @@ interface Settings {
   rpcUrls: {
     [key in SupportedChainName]: string
   }
-  reserveRpcUrls: {
-    [key in "near"]: string[]
-  }
 }
 
 export const settings: Settings = {
@@ -49,16 +46,5 @@ export const settings: Settings = {
     zcash: "https://mainnet.lightwalletd.com",
     gnosis: "https://rpc.gnosischain.com",
     berachain: "https://rpc.berachain.com",
-  },
-  reserveRpcUrls: {
-    /**
-     * NEAR RPC providers list from official docs:
-     * https://docs.near.org/api/rpc/providers
-     */
-    near: [
-      "https://nearrpc.aurora.dev",
-      "https://free.rpc.fastnear.com",
-      "https://rpc.mainnet.near.org",
-    ],
   },
 }

@@ -1,5 +1,5 @@
 import { Err, Ok, type Result } from "@thames/monads"
-import { providers } from "near-api-js"
+import { nearClient } from "../../../constants/nearClient"
 import { getDepositedBalances } from "../../../services/defuseBalanceService"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../../types/base"
 import { userAddressToDefuseUserId } from "../../../utils/defuse"
@@ -35,9 +35,7 @@ export async function determineGiftToken(
         escrowCredentials.credentialType
       ),
       tokenIds,
-      new providers.JsonRpcProvider({
-        url: "https://nearrpc.aurora.dev",
-      })
+      nearClient
     )
 
     const tokenDiff = Object.fromEntries(

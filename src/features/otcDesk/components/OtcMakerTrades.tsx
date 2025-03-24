@@ -8,7 +8,6 @@ import { useQuery } from "@tanstack/react-query"
 import { Err, None, Ok, type Option, type Result, Some } from "@thames/monads"
 import { useSelector } from "@xstate/react"
 import clsx from "clsx"
-import { providers } from "near-api-js"
 import type { CodeResult } from "near-api-js/lib/providers/provider"
 import {
   type ReactElement,
@@ -18,6 +17,7 @@ import {
   useEffect,
   useState,
 } from "react"
+import { nearClient } from "src/constants/nearClient"
 import * as v from "valibot"
 import { type ActorRefFrom, createActor, toPromise } from "xstate"
 import { AssetComboIcon } from "../../../components/Asset/AssetComboIcon"
@@ -317,9 +317,7 @@ function useValidateTrade(tradeTerms: TradeTerms) {
       return getDepositedBalances(
         tradeTerms.userId as DefuseUserId,
         Object.keys(tradeTerms.tokenDiff),
-        new providers.JsonRpcProvider({
-          url: "https://nearrpc.aurora.dev",
-        })
+        nearClient
       )
     },
     select: (makerTokenBalances): Option<"MAKER_INSUFFICIENT_FUNDS"> => {
@@ -342,9 +340,6 @@ function useValidateTrade(tradeTerms: TradeTerms) {
     enabled: error.isNone(),
     queryKey: ["nonce_is_used", tradeTerms.userId, tradeTerms.nonceBase64],
     queryFn: async () => {
-      const nearClient = new providers.JsonRpcProvider({
-        url: "https://nearrpc.aurora.dev",
-      })
       const output = await nearClient.query<CodeResult>({
         request_type: "call_function",
         account_id: config.env.contractID,

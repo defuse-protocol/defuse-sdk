@@ -2,9 +2,9 @@ import { ArrowDown } from "@phosphor-icons/react"
 import { useQuery } from "@tanstack/react-query"
 import { None } from "@thames/monads"
 import clsx from "clsx"
-import { providers } from "near-api-js"
 import { BlockMultiBalances } from "../../../components/Block/BlockMultiBalances"
 import { ButtonCustom } from "../../../components/Button/ButtonCustom"
+import { nearClient } from "../../../constants/nearClient"
 import type { SignerCredentials } from "../../../core/formatters"
 import { useTokensUsdPrices } from "../../../hooks/useTokensUsdPrices"
 import { getDepositedBalances } from "../../../services/defuseBalanceService"
@@ -78,9 +78,7 @@ export function OtcTakerForm({
             (token) => token.defuseAssetId
           ),
         ],
-        new providers.JsonRpcProvider({
-          url: "https://nearrpc.aurora.dev",
-        })
+        nearClient
       )
 
       const tokenInBalance = computeTotalBalanceDifferentDecimals(
