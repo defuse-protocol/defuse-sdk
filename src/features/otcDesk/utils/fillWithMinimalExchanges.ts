@@ -1,16 +1,7 @@
-import type { TokenValue } from "../../../types/base"
-import {
-  adjustDecimals,
-  grossUpAmount,
-  netDownAmount,
-} from "../../../utils/tokenUtils"
+import { grossUpAmount, netDownAmount } from "../../../utils/tokenUtils"
 
 export interface TokenBalances {
   [token: string]: bigint
-}
-
-export interface TokenValues {
-  [token: string]: TokenValue
 }
 
 interface FillStep {
@@ -22,84 +13,46 @@ interface FillStep {
 }
 
 export interface FillResult {
-  remainingBalances: TokenValues
+  remainingBalances: TokenBalances
   steps: FillStep[]
   success: boolean
 }
 
 // Find best sources combining multiple tokens if necessary
 function findOptimalTokenSources(
-  remainingBalances: TokenValues,
+  remainingBalances: TokenBalances,
   requiredAmount: bigint,
   targetToken: string,
   feeBasisPoints: bigint
 ): { steps: FillStep[]; success: boolean } {
   // Try to find a single token first
-  const targetTokenDecimals = (remainingBalances[targetToken] as TokenValue)
-    .decimals
+  for (const [token, balance] of Object.entries(remainingBalances)) {
+    if (token !== targetToken) {
+      const sourceAmount = grossUpAmount(requiredAmount, Number(feeBasisPoints))
 
-  for (const [token, balanceData] of Object.entries(remainingBalances)) {
-    if (token === targetToken) {
-      continue
-    }
-
-    const { amount: balance, decimals: tokenDecimals } = balanceData
-
-    if (balance <= 0n) {
-      continue
-    }
-
-    const sourceAmount = grossUpAmount(requiredAmount, Number(feeBasisPoints))
-    const adjustedBalance = adjustDecimals(
-      balance,
-      tokenDecimals,
-      targetTokenDecimals
-    )
-
-    if (adjustedBalance >= sourceAmount) {
-      // We found a single token with sufficient balance
-      const adjustedFromAmount = adjustDecimals(
-        sourceAmount,
-        targetTokenDecimals,
-        tokenDecimals
-      )
-      const adjustedToAmount = adjustDecimals(
-        requiredAmount,
-        targetTokenDecimals,
-        tokenDecimals
-      )
-
-      return {
-        steps: [
-          {
-            fromToken: token,
-            toToken: targetToken,
-            fromAmount: adjustedFromAmount,
-            toAmount: adjustedToAmount,
-            fee: adjustedFromAmount - adjustedToAmount,
-          },
-        ],
-        success: true,
+      if (balance >= sourceAmount) {
+        // We found a single token with sufficient balance
+        return {
+          steps: [
+            {
+              fromToken: token,
+              toToken: targetToken,
+              fromAmount: sourceAmount,
+              toAmount: requiredAmount,
+              fee: sourceAmount - requiredAmount,
+            },
+          ],
+          success: true,
+        }
       }
     }
   }
 
   // If no single token is sufficient, try combining tokens
-  // Sort tokens by decimals (ascending) to use smaller decimals first
-  // if equal then sort by amount (descending)
+  // Sort tokens by balance (descending) to use larger balances first
   const sortedTokens = Object.entries(remainingBalances)
     .filter(([token]) => token !== targetToken)
-    .sort(([, a], [, b]) => {
-      if (b.decimals > a.decimals) {
-        return -1
-      }
-      if (b.decimals < a.decimals) {
-        return 1
-      }
-
-      // if decimals are equal then, sort by amount (descending)
-      return b.amount > a.amount ? 1 : b.amount < a.amount ? -1 : 0
-    })
+    .sort(([, a], [, b]) => (b > a ? -1 : b < a ? 1 : 0))
 
   if (sortedTokens.length === 0) {
     return { steps: [], success: false }
@@ -109,59 +62,30 @@ function findOptimalTokenSources(
   let totalReceived = 0n
 
   // Try using tokens one by one until we reach the required amount
-  for (const [token, balanceData] of sortedTokens) {
-    const { amount: balance, decimals: tokenDecimals } = balanceData
-
+  for (const [token, balance] of sortedTokens) {
     if (totalReceived >= requiredAmount) {
       break
     }
 
-    if (balance <= 0n) {
-      continue
-    }
+    if (balance <= 0n) continue
 
-    const adjustedBalance = adjustDecimals(
-      balance,
-      tokenDecimals,
-      targetTokenDecimals
-    )
     const stillNeeded = requiredAmount - totalReceived
+    const sourceAmount = grossUpAmount(stillNeeded, Number(feeBasisPoints))
+    const amountToUse = sourceAmount <= balance ? sourceAmount : balance
 
-    const adjustedSourceAmount = grossUpAmount(
-      stillNeeded,
-      Number(feeBasisPoints)
-    )
+    if (amountToUse <= 0n) continue
 
-    const adjustedAmountToUse = adjustDecimals(
-      adjustedSourceAmount <= adjustedBalance
-        ? adjustedSourceAmount
-        : adjustedBalance,
-      targetTokenDecimals,
-      tokenDecimals
-    )
-
-    if (adjustedAmountToUse <= 0n) {
-      continue
-    }
-
-    const adjustedReceived = netDownAmount(
-      adjustedAmountToUse,
-      Number(feeBasisPoints)
-    )
+    const received = netDownAmount(amountToUse, Number(feeBasisPoints))
 
     steps.push({
       fromToken: token,
       toToken: targetToken,
-      fromAmount: adjustedAmountToUse,
-      toAmount: adjustedReceived,
-      fee: adjustedAmountToUse - adjustedReceived,
+      fromAmount: amountToUse,
+      toAmount: received,
+      fee: amountToUse - received,
     })
 
-    totalReceived += adjustDecimals(
-      adjustedReceived,
-      tokenDecimals,
-      targetTokenDecimals
-    )
+    totalReceived += received
   }
 
   if (totalReceived < requiredAmount) {
@@ -172,19 +96,12 @@ function findOptimalTokenSources(
 }
 
 export function fillWithMinimalExchanges(
-  balancesWithTokenInfo: TokenValues,
+  balances: TokenBalances,
   required: TokenBalances,
   feeBasisPoints: bigint
 ): FillResult {
   const result: FillResult = {
-    remainingBalances: Object.keys(balancesWithTokenInfo).reduce(
-      (acc: TokenValues, curr: string) => {
-        acc[curr] = Object.assign({}, balancesWithTokenInfo[curr]) as TokenValue // like copying as we make actions with this object below
-
-        return acc
-      },
-      {}
-    ),
+    remainingBalances: { ...balances },
     steps: [],
     success: true,
   }
@@ -196,16 +113,11 @@ export function fillWithMinimalExchanges(
 
   // First pass: Use direct balances where possible
   for (const [token, requiredAmount] of sortedRequired) {
-    const tokenBalanceData = result.remainingBalances[token] as TokenValue
-    if (!tokenBalanceData) {
-      continue
-    }
-
-    const availableAmount = tokenBalanceData.amount ?? 0n
+    const availableAmount = result.remainingBalances[token] ?? 0n
 
     if (availableAmount >= requiredAmount) {
       // We have enough of this token directly
-      tokenBalanceData.amount = availableAmount - requiredAmount
+      result.remainingBalances[token] = availableAmount - requiredAmount
       result.steps.push({
         fromToken: token,
         toToken: token,
@@ -228,7 +140,7 @@ export function fillWithMinimalExchanges(
         toAmount: availableAmount,
         fee: 0n,
       })
-      tokenBalanceData.amount = 0n
+      result.remainingBalances[token] = 0n
     }
 
     // Find best sources for the remaining required amount
@@ -246,17 +158,9 @@ export function fillWithMinimalExchanges(
 
     // Apply all the steps from the source result
     for (const step of sourceResult.steps) {
-      const tokenBalanceData = result.remainingBalances[
-        step.fromToken
-      ] as TokenValue
-      tokenBalanceData.amount -= step.fromAmount
+      result.remainingBalances[step.fromToken] -= step.fromAmount
       result.steps.push(step)
     }
-  }
-
-  if (result.steps.length <= 0 && Object.keys(required).length > 0) {
-    // any required was sent, but we end up without steps: success must be false
-    result.success = false
   }
 
   return result

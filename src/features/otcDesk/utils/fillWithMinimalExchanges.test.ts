@@ -3,14 +3,14 @@ import {
   type FillResult,
   fillWithMinimalExchanges,
 } from "./fillWithMinimalExchanges"
-import type { TokenBalances, TokenValues } from "./fillWithMinimalExchanges"
+import type { TokenBalances } from "./fillWithMinimalExchanges"
 
-describe("fillWithMinimalExchanges same decimals", () => {
+describe("fillWithMinimalExchanges", () => {
   it("handles direct fills without exchanges", () => {
-    const balances: TokenValues = {
-      A: { amount: 1000n, decimals: 18 },
-      B: { amount: 500n, decimals: 18 },
-      C: { amount: 200n, decimals: 18 },
+    const balances: TokenBalances = {
+      A: 1000n,
+      B: 500n,
+      C: 200n,
     }
     const required: TokenBalances = {
       A: 500n,
@@ -19,15 +19,14 @@ describe("fillWithMinimalExchanges same decimals", () => {
     const result = fillWithMinimalExchanges(balances, required, 30n)
 
     expect(result.success).toBe(true)
-    checkTotalOut(required, result)
-    checkRemainingBalanceAmounts(balances, result)
+    fillInvariant(balances, required, result)
 
     expect(result).toEqual({
       success: true,
       remainingBalances: {
-        A: { amount: 500n, decimals: 18 },
-        B: { amount: 200n, decimals: 18 },
-        C: { amount: 200n, decimals: 18 },
+        A: 500n,
+        B: 200n,
+        C: 200n,
       },
       steps: expect.arrayContaining([
         {
@@ -50,9 +49,9 @@ describe("fillWithMinimalExchanges same decimals", () => {
 
   it("performs single exchange when needed", () => {
     const balances = {
-      A: { amount: 1000n, decimals: 18 },
-      B: { amount: 50n, decimals: 18 },
-      C: { amount: 200n, decimals: 18 },
+      A: 1000n,
+      B: 50n,
+      C: 200n,
     }
     const required = {
       A: 500n,
@@ -62,27 +61,25 @@ describe("fillWithMinimalExchanges same decimals", () => {
     const result = fillWithMinimalExchanges(balances, required, 30n)
 
     expect(result.success).toBe(true)
-    checkTotalOut(required, result)
-    checkRemainingBalanceAmounts(balances, result)
+    fillInvariant(balances, required, result)
 
     expect(result).toEqual(
       expect.objectContaining({
         success: true,
         remainingBalances: {
-          A: { amount: 449n, decimals: 18 },
-          B: { amount: 0n, decimals: 18 },
-          C: { amount: 200n, decimals: 18 },
+          A: 449n,
+          B: 0n,
+          C: 200n,
         },
       })
     )
   })
 
   it("fails when insufficient balance for exchange", () => {
-    const balances: TokenValues = {
-      A: { amount: 100n, decimals: 18 },
-      B: { amount: 50n, decimals: 18 },
+    const balances: TokenBalances = {
+      A: 100n,
+      B: 50n,
     }
-
     const required: TokenBalances = {
       A: 200n,
     }
@@ -92,11 +89,11 @@ describe("fillWithMinimalExchanges same decimals", () => {
   })
 
   it("handles multiple exchanges optimally", () => {
-    const balances: TokenValues = {
-      A: { amount: 1000n, decimals: 18 },
-      B: { amount: 10n, decimals: 18 },
-      C: { amount: 10n, decimals: 18 },
-      D: { amount: 1000n, decimals: 18 },
+    const balances: TokenBalances = {
+      A: 1000n,
+      B: 10n,
+      C: 10n,
+      D: 1000n,
     }
     const required: TokenBalances = {
       B: 100n,
@@ -105,8 +102,7 @@ describe("fillWithMinimalExchanges same decimals", () => {
     const result = fillWithMinimalExchanges(balances, required, 30n)
 
     expect(result.success).toBe(true)
-    checkTotalOut(required, result)
-    checkRemainingBalanceAmounts(balances, result)
+    fillInvariant(balances, required, result)
 
     expect(result.steps).toMatchInlineSnapshot(`
       [
@@ -143,10 +139,10 @@ describe("fillWithMinimalExchanges same decimals", () => {
   })
 
   it("prefers using existing balances over exchanges", () => {
-    const balances: TokenValues = {
-      A: { amount: 1000n, decimals: 18 },
-      B: { amount: 50n, decimals: 18 },
-      C: { amount: 200n, decimals: 18 },
+    const balances: TokenBalances = {
+      A: 1000n,
+      B: 50n,
+      C: 200n,
     }
     const required: TokenBalances = {
       A: 500n,
@@ -156,8 +152,7 @@ describe("fillWithMinimalExchanges same decimals", () => {
     const result = fillWithMinimalExchanges(balances, required, 30n)
 
     expect(result.success).toBe(true)
-    checkTotalOut(required, result)
-    checkRemainingBalanceAmounts(balances, result)
+    fillInvariant(balances, required, result)
 
     const bExchanges = result.steps.filter((step) => step.toToken === "B")
     expect(bExchanges).toHaveLength(1)
@@ -165,7 +160,7 @@ describe("fillWithMinimalExchanges same decimals", () => {
   })
 
   it("handles edge case of empty balances", () => {
-    const balances: TokenValues = {}
+    const balances: TokenBalances = {}
     const required: TokenBalances = {
       A: 100n,
     }
@@ -175,24 +170,23 @@ describe("fillWithMinimalExchanges same decimals", () => {
   })
 
   it("handles edge case of empty requirements", () => {
-    const balances: TokenValues = {
-      A: { amount: 100n, decimals: 18 },
+    const balances: TokenBalances = {
+      A: 100n,
     }
     const required: TokenBalances = {}
     const result = fillWithMinimalExchanges(balances, required, 30n)
 
     expect(result.success).toBe(true)
-    checkTotalOut(required, result)
-    checkRemainingBalanceAmounts(balances, result)
+    fillInvariant(balances, required, result)
 
     expect(result.steps).toHaveLength(0)
     expect(result.remainingBalances).toEqual(balances)
   })
 
   it("verifies fee calculation in exchanges", () => {
-    const balances: TokenValues = {
-      A: { amount: 500000n, decimals: 18 },
-      B: { amount: 0n, decimals: 18 },
+    const balances: TokenBalances = {
+      A: 500000n,
+      B: 0n,
     }
     const required: TokenBalances = {
       B: 250000n,
@@ -200,8 +194,7 @@ describe("fillWithMinimalExchanges same decimals", () => {
     const result = fillWithMinimalExchanges(balances, required, 30n)
 
     expect(result.success).toBe(true)
-    checkTotalOut(required, result)
-    checkRemainingBalanceAmounts(balances, result)
+    fillInvariant(balances, required, result)
 
     expect(result.steps).toEqual([
       {
@@ -215,19 +208,17 @@ describe("fillWithMinimalExchanges same decimals", () => {
   })
 
   it("handles high fee scenarios", () => {
-    const balances: TokenValues = {
-      A: { amount: 1000n, decimals: 18 },
-      B: { amount: 0n, decimals: 18 },
+    const balances: TokenBalances = {
+      A: 1000n,
+      B: 0n,
     }
-
     const required: TokenBalances = {
       B: 100n,
     }
     const result = fillWithMinimalExchanges(balances, required, 50000n) // 5% fee
 
     expect(result.success).toBe(true)
-    checkTotalOut(required, result)
-    checkRemainingBalanceAmounts(balances, result)
+    fillInvariant(balances, required, result)
 
     expect(result.steps).toEqual([
       {
@@ -241,9 +232,9 @@ describe("fillWithMinimalExchanges same decimals", () => {
   })
 
   it("preserves original balances object", () => {
-    const balances: TokenValues = {
-      A: { amount: 1000n, decimals: 18 },
-      B: { amount: 500n, decimals: 18 },
+    const balances: TokenBalances = {
+      A: 1000n,
+      B: 500n,
     }
     const originalBalances = { ...balances }
     const required: TokenBalances = {
@@ -256,9 +247,9 @@ describe("fillWithMinimalExchanges same decimals", () => {
 
   it("handles zero fee", () => {
     const balances = {
-      A: { amount: 400000n, decimals: 18 },
-      B: { amount: 300000n, decimals: 18 },
-      C: { amount: 0n, decimals: 18 },
+      A: 400000n,
+      B: 300000n,
+      C: 0n,
     }
     const required = {
       C: 700000n,
@@ -267,16 +258,15 @@ describe("fillWithMinimalExchanges same decimals", () => {
     const result = fillWithMinimalExchanges(balances, required, 0n)
 
     expect(result.success).toBe(true)
-    checkTotalOut(required, result)
-    checkRemainingBalanceAmounts(balances, result)
+    fillInvariant(balances, required, result)
 
     expect(result).toEqual(
       expect.objectContaining({
         success: true,
         remainingBalances: {
-          A: { amount: 0n, decimals: 18 },
-          B: { amount: 0n, decimals: 18 },
-          C: { amount: 0n, decimals: 18 },
+          A: 0n,
+          B: 0n,
+          C: 0n,
         },
       })
     )
@@ -284,9 +274,9 @@ describe("fillWithMinimalExchanges same decimals", () => {
 
   it("splits into 3 different tokens", () => {
     const balances = {
-      A: { amount: 1000n, decimals: 18 },
-      B: { amount: 1000n, decimals: 18 },
-      C: { amount: 1000n, decimals: 18 },
+      A: 1000n,
+      B: 1000n,
+      C: 1000n,
     }
     const required = {
       A: 2000n,
@@ -295,160 +285,25 @@ describe("fillWithMinimalExchanges same decimals", () => {
     const result = fillWithMinimalExchanges(balances, required, 1n)
 
     expect(result.success).toBe(true)
-    checkTotalOut(required, result)
-    checkRemainingBalanceAmounts(balances, result)
+    fillInvariant(balances, required, result)
   })
 })
 
-describe("fillWithMinimalExchanges different decimals", () => {
-  it("same chain can cover", () => {
-    const balances: TokenValues = {
-      A: { amount: 100n, decimals: 18 },
-      B: { amount: 500n, decimals: 8 },
-      C: { amount: 200n, decimals: 18 },
-    }
-    const required: TokenBalances = {
-      A: 50n,
-    }
-    const result = fillWithMinimalExchanges(balances, required, 20n)
-
-    expect(result.success).toBe(true)
-    checkRemainingBalanceAmounts(balances, result)
-
-    expect(result).toEqual({
-      success: true,
-      remainingBalances: {
-        A: { amount: 50n, decimals: 18 },
-        B: { amount: 500n, decimals: 8 },
-        C: { amount: 200n, decimals: 18 },
-      },
-      steps: expect.arrayContaining([
-        {
-          fromToken: "A",
-          toToken: "A",
-          fromAmount: 50n,
-          toAmount: 50n,
-          fee: 0n,
-        },
-      ]),
-    })
-  })
-
-  it("multi chain can cover, different decimals (with 2 chains)", () => {
-    const balances: TokenValues = {
-      A: { amount: 10012345678n, decimals: 18 },
-      B: { amount: 50n, decimals: 8 },
-      C: { amount: 200987654321n, decimals: 18 },
-    }
-    const required: TokenBalances = {
-      A: 50000000000n,
-    }
-    const result = fillWithMinimalExchanges(balances, required, 20_0000n)
-
-    expect(result.success).toBe(true)
-    checkRemainingBalanceAmounts(balances, result)
-
-    expect(result).toEqual({
-      remainingBalances: {
-        A: { amount: 0n, decimals: 18 },
-        B: { amount: 46n, decimals: 8 },
-        C: { amount: 200987654321n, decimals: 18 },
-      },
-      steps: [
-        {
-          fromToken: "A",
-          toToken: "A",
-          fromAmount: 10012345678n,
-          toAmount: 10012345678n,
-          fee: 0n,
-        },
-        {
-          fromToken: "B",
-          toToken: "A",
-          fromAmount: 4n,
-          toAmount: 3n,
-          fee: 1n,
-        },
-      ],
-      success: true,
-    })
-  })
-
-  it("multi chain can cover, different decimals (with 3 chains)", () => {
-    const balances: TokenValues = {
-      A: { amount: 10012345678n, decimals: 18 },
-      B: { amount: 3n, decimals: 8 },
-      C: { amount: 30098765432n, decimals: 18 },
-    }
-    const required: TokenBalances = {
-      A: 50000000000n,
-    }
-    const result = fillWithMinimalExchanges(balances, required, 20_0000n)
-
-    expect(result.success).toBe(true)
-    checkRemainingBalanceAmounts(balances, result)
-
-    expect(result).toEqual({
-      remainingBalances: {
-        A: { amount: 0n, decimals: 18 },
-        B: { amount: 0n, decimals: 8 },
-        C: { amount: 5114197529n, decimals: 18 },
-      },
-      steps: [
-        {
-          fromToken: "A",
-          toToken: "A",
-          fromAmount: 10012345678n,
-          toAmount: 10012345678n,
-          fee: 0n,
-        },
-        {
-          fromToken: "B",
-          toToken: "A",
-          fromAmount: 3n,
-          toAmount: 2n,
-          fee: 1n,
-        },
-        {
-          fromToken: "C",
-          toToken: "A",
-          fromAmount: 24984567903n,
-          toAmount: 19987654322n,
-          fee: 4996913581n,
-        },
-      ],
-      success: true,
-    })
-  })
-})
-
-function checkTotalOut(required: TokenBalances, result: FillResult) {
-  let totalOut = 0n
-  for (const step of result.steps) {
-    totalOut += step.toAmount
-  }
-
-  expect(totalOut).toEqual(sum(required))
-}
-
-function checkRemainingBalanceAmounts(
-  balances: TokenValues,
+function fillInvariant(
+  balances: TokenBalances,
+  required: TokenBalances,
   result: FillResult
 ) {
   let totalIn = 0n
+  let totalOut = 0n
   for (const step of result.steps) {
     totalIn += step.fromAmount
+    totalOut += step.toAmount
   }
-
-  const balanceAmounts = Object.values(balances).map(
-    (balance) => balance.amount
-  ) as bigint[]
-  const remainingBalanceAmounts = Object.values(result.remainingBalances).map(
-    (balance) => balance.amount
-  ) as bigint[]
-  expect(sum(remainingBalanceAmounts) + totalIn).toEqual(sum(balanceAmounts))
+  expect(totalOut).toEqual(sum(required))
+  expect(sum(result.remainingBalances) + totalIn).toEqual(sum(balances))
 }
 
-function sum(balances: TokenBalances | bigint[]) {
+function sum(balances: TokenBalances) {
   return Object.values(balances).reduce((acc, x) => acc + x, 0n)
 }
