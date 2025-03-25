@@ -25,6 +25,7 @@ function isNotFailedQuote(quote: Quote | FailedQuote): quote is Quote {
 }
 
 type TokenSlice = BaseTokenInfo
+type Balances = Record<string, bigint>
 
 export interface AggregatedQuoteParams {
   tokensIn: TokenSlice[] // set of close tokens, e.g. [USDC on Solana, USDC on Ethereum, USDC on Near]
@@ -219,17 +220,63 @@ function assert(condition: unknown, msg?: string): asserts condition {
 }
 
 /**
+ * First sorting per decimals ascending - Reason: as fewer decimals have coverage problems, it is better to use them first
+ * Second sorting per decimals descending - Reason: use less items to cover the split
+ */
+export function sortForOptimalAmountSplitting(
+  uniqueTokensIn: BaseTokenInfo[],
+  balances: Balances
+): BaseTokenInfo[] {
+  return structuredClone(uniqueTokensIn).sort((a, b) => {
+    if (b.decimals < a.decimals) {
+      return 1
+    }
+    if (b.decimals > a.decimals) {
+      return -1
+    }
+
+    if (balances[a.defuseAssetId] && balances[b.defuseAssetId]) {
+      const maxDecimalBetweenAandB = Math.max(a.decimals, b.decimals) // taking max from decimals to ave cleaner comparing
+      const aBalanceAdjusted = adjustDecimals(
+        balances[a.defuseAssetId] as bigint,
+        a.decimals,
+        maxDecimalBetweenAandB
+      )
+      const bBalanceAdjusted = adjustDecimals(
+        balances[b.defuseAssetId] as bigint,
+        b.decimals,
+        maxDecimalBetweenAandB
+      )
+
+      if (bBalanceAdjusted < aBalanceAdjusted) {
+        return -1
+      }
+
+      if (bBalanceAdjusted > aBalanceAdjusted) {
+        return 1
+      }
+    }
+
+    return 0
+  })
+}
+
+/**
  * Function to calculate how to split the input amounts based on available balances.
  * Duplicate tokens are processed only once and their balances are considered only once.
  */
 export function calculateSplitAmounts(
   tokensIn: TokenSlice[],
   amountIn: TokenValue,
-  balances: Record<string, bigint>
+  balances: Balances
 ): Record<string, bigint> {
   const amountsToQuote: Record<string, bigint> = {}
 
-  const uniqueTokensIn = deduplicateTokens(tokensIn)
+  const uniqueTokensIn_ = deduplicateTokens(tokensIn)
+  const uniqueTokensIn = sortForOptimalAmountSplitting(
+    uniqueTokensIn_,
+    balances
+  )
 
   let remainingAmount = amountIn.amount
   const remainingDecimals = amountIn.decimals
