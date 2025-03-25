@@ -1,11 +1,11 @@
 import { useEffect } from "react"
 import type { ActorRefFrom } from "xstate"
-import type { ChainType } from "../../../types/deposit"
+import type { SignerCredentials } from "../../../core/formatters"
 import type { giftMakerRootMachine } from "../actors/giftMakerRootMachine"
 
 export function useCheckSignerCredentials(
   rootActorRef: ActorRefFrom<typeof giftMakerRootMachine>,
-  signerCredentials: { credential: string; credentialType: ChainType } | null
+  signerCredentials: SignerCredentials | null
 ) {
   useEffect(() => {
     if (signerCredentials == null) {

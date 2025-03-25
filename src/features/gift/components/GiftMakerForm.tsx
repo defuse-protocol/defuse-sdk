@@ -21,6 +21,7 @@ import { balanceAllSelector } from "../../machines/depositedBalanceMachine"
 import { formValuesSelector } from "../actors/giftMakerFormMachine"
 import type { giftMakerReadyActor } from "../actors/giftMakerReadyActor"
 import { giftMakerRootMachine } from "../actors/giftMakerRootMachine"
+import { useBalanceUpdaterSyncWithHistory } from "../hooks/useBalanceUpdaterSyncWithHistory"
 import { useCheckSignerCredentials } from "../hooks/useCheckSignerCredentials"
 import type { GiftLinkData, SignMessage } from "../types/sharedTypes"
 import { checkInsufficientBalance, getButtonText } from "../utils/makerForm"
@@ -103,6 +104,7 @@ export function GiftMakerForm({
   }))
 
   useCheckSignerCredentials(rootActorRef, signerCredentials)
+  useBalanceUpdaterSyncWithHistory(rootActorRef, signerCredentials)
 
   const { setModalType, data: modalSelectAssetsData } = useModalController<{
     modalType: ModalType.MODAL_SELECT_ASSETS
