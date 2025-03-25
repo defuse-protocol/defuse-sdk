@@ -36,6 +36,48 @@ type Actions = {
 
 type Store = State & Actions
 
+type GiftData = {
+  state: {
+    gifts: Record<DefuseUserId, GiftMakerHistory[]>
+  }
+}
+
+function serializeGiftData(gift: GiftMakerHistory) {
+  return {
+    ...gift,
+    tokenDiff: Object.fromEntries(
+      Object.entries(gift.tokenDiff).map(([key, value]) => [key, String(value)])
+    ),
+  }
+}
+
+function deserializeGiftData(gift: GiftMakerHistory) {
+  return {
+    ...gift,
+    tokenDiff: Object.fromEntries(
+      Object.entries(gift.tokenDiff).map(([key, value]) => [key, BigInt(value)])
+    ),
+  }
+}
+
+function processGiftData(data: GiftData | null) {
+  if (data?.state?.gifts) {
+    return {
+      ...data,
+      state: {
+        ...data.state,
+        gifts: Object.fromEntries(
+          Object.entries(data.state.gifts).map(([key, value]) => [
+            key,
+            value.map(deserializeGiftData),
+          ])
+        ),
+      },
+    }
+  }
+  return data
+}
+
 export const tripleStorage = {
   getItem: async (name: string) => {
     const localData = localStorageHandler.getItem(name)
@@ -49,7 +91,7 @@ export const tripleStorage = {
       )
     }
     const data = localData || sessionData || indexedData
-    return data ? JSON.parse(data) : null
+    return data ? processGiftData(JSON.parse(data)) : null
   },
   setItem: async (
     name: string,
@@ -107,23 +149,16 @@ export const giftMakerHistoryStore = create<Store>()(
 
       addGift: (gift, user) => {
         const userId = getUserId(user)
-        const stringifiedTokenDiff = Object.fromEntries(
-          Object.entries(gift.tokenDiff).map(([key, value]) => [
-            key,
-            value.toString(),
-          ])
-        )
 
         set((state) => ({
           gifts: {
             ...state.gifts,
             [userId]: [
               ...(state.gifts[userId] ?? []),
-              {
+              serializeGiftData({
                 ...gift,
                 updatedAt: Date.now(),
-                tokenDiff: stringifiedTokenDiff,
-              },
+              }),
             ],
           },
         }))

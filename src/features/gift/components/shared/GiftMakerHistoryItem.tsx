@@ -16,7 +16,6 @@ import { GiftClaimActorContext } from "../../providers/GiftClaimActorProvider"
 import type { TabType } from "../../providers/TabProvider"
 import type { GiftMakerHistory } from "../../stores/giftMakerHistory"
 import type { GiftLinkData } from "../../types/sharedTypes"
-import { convertTokenDiffToBigInt } from "../../utils/convertTokenDiffToBigInt"
 import { GiftStrip } from "../GiftStrip"
 
 export function GiftMakerHistoryItem({
@@ -30,11 +29,9 @@ export function GiftMakerHistoryItem({
   itemType: TabType
   signerCredentials: SignerCredentials
 }) {
-  const convertedTokenDiff = convertTokenDiffToBigInt(giftInfo.tokenDiff)
-
   const amount = computeTotalBalanceDifferentDecimals(
     getUnderlyingBaseTokenInfos(giftInfo.token),
-    convertedTokenDiff,
+    giftInfo.tokenDiff,
     { strict: false }
   )
 
