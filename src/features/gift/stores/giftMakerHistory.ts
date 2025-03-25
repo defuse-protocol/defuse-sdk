@@ -46,7 +46,10 @@ function serializeGiftData(gift: GiftMakerHistory) {
   return {
     ...gift,
     tokenDiff: Object.fromEntries(
-      Object.entries(gift.tokenDiff).map(([key, value]) => [key, String(value)])
+      Object.entries(gift.tokenDiff).map(([key, value]) => [
+        key,
+        typeof value === "bigint" ? value.toString() : value,
+      ])
     ),
   }
 }
@@ -55,7 +58,10 @@ function deserializeGiftData(gift: GiftMakerHistory) {
   return {
     ...gift,
     tokenDiff: Object.fromEntries(
-      Object.entries(gift.tokenDiff).map(([key, value]) => [key, BigInt(value)])
+      Object.entries(gift.tokenDiff).map(([key, value]) => [
+        key,
+        typeof value === "string" ? BigInt(value) : value,
+      ])
     ),
   }
 }
@@ -155,11 +161,11 @@ export const giftMakerHistoryStore = create<Store>()(
             ...state.gifts,
             [userId]: [
               ...(state.gifts[userId] ?? []),
-              serializeGiftData({
+              {
                 ...gift,
                 updatedAt: Date.now(),
-              }),
-            ],
+              },
+            ].map(serializeGiftData),
           },
         }))
       },
@@ -169,9 +175,9 @@ export const giftMakerHistoryStore = create<Store>()(
         set((state) => ({
           gifts: {
             ...state.gifts,
-            [userId]: (state.gifts[userId] ?? []).map((g) =>
-              g.giftId === giftId ? { ...g, intentHashes } : g
-            ),
+            [userId]: (state.gifts[userId] ?? [])
+              .map((g) => (g.giftId === giftId ? { ...g, intentHashes } : g))
+              .map(serializeGiftData),
           },
         }))
       },
