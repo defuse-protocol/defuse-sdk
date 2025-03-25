@@ -26,6 +26,11 @@ type Actions = {
     gift: Omit<GiftMakerHistory, "updatedAt">,
     userId: DefuseUserId | SignerCredentials
   ) => void
+  updateGift: (
+    giftId: string,
+    userId: DefuseUserId | SignerCredentials,
+    intentHashes: string[]
+  ) => void
   removeGift: (giftId: string, userId: DefuseUserId | SignerCredentials) => void
 }
 
@@ -58,6 +63,21 @@ export const tripleStorage = {
     } catch (error) {
       logger.error(
         new Error("Failed to set data in IndexedDB", { cause: error })
+      )
+    }
+  },
+  updateItem: async (
+    name: string,
+    value: Record<DefuseUserId, GiftMakerHistory[]>
+  ) => {
+    const stringValue = JSON.stringify(value)
+    localStorageHandler.setItem(name, stringValue)
+    sessionStorageHandler.setItem(name, stringValue)
+    try {
+      await indexedDBStorage.setItem(name, stringValue)
+    } catch (error) {
+      logger.error(
+        new Error("Failed to update data in IndexedDB", { cause: error })
       )
     }
   },
@@ -105,6 +125,18 @@ export const giftMakerHistoryStore = create<Store>()(
                 tokenDiff: stringifiedTokenDiff,
               },
             ],
+          },
+        }))
+      },
+
+      updateGift: (giftId, user, intentHashes) => {
+        const userId = getUserId(user)
+        set((state) => ({
+          gifts: {
+            ...state.gifts,
+            [userId]: (state.gifts[userId] ?? []).map((g) =>
+              g.giftId === giftId ? { ...g, intentHashes } : g
+            ),
           },
         }))
       },

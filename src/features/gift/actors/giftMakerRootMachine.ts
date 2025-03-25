@@ -152,6 +152,23 @@ export const giftMakerRootMachine = setup({
         context.signData.signerCredentials
       )
     },
+    updateGiftToHistory: ({ context }) => {
+      assert(context.signData, "signData is not defined")
+      const giftInfo = assembleGiftInfo(context)
+      giftMakerHistoryStore
+        .getState()
+        .updateGift(
+          giftInfo.giftId,
+          context.signData.signerCredentials,
+          giftInfo.intentHashes
+        )
+    },
+    removeGiftFromHistory: ({ context }) => {
+      assert(context.signData, "signData is not defined")
+      giftMakerHistoryStore
+        .getState()
+        .removeGift(context.signData.giftId, context.signData.signerCredentials)
+    },
     cleanup: assign({
       error: null,
       signData: null,
@@ -280,12 +297,15 @@ export const giftMakerRootMachine = setup({
       },
     },
     publishing: {
-      entry: assign({
-        signData: ({ event }) => {
-          assertEvent(event, "COMPLETE_SIGN")
-          return event.params
-        },
-      }),
+      entry: [
+        assign({
+          signData: ({ event }) => {
+            assertEvent(event, "COMPLETE_SIGN")
+            return event.params
+          },
+        }),
+        "addGiftToHistory",
+      ],
       invoke: {
         src: "publishingActor",
         input: ({ context }) => {
@@ -310,10 +330,16 @@ export const giftMakerRootMachine = setup({
           },
           {
             target: "editing",
-            actions: {
-              type: "setError",
-              params: { tag: "err", value: { reason: "ERR_GIFT_PUBLISHING" } },
-            },
+            actions: [
+              {
+                type: "setError",
+                params: {
+                  tag: "err",
+                  value: { reason: "ERR_GIFT_PUBLISHING" },
+                },
+              },
+              "removeGiftFromHistory",
+            ],
           },
         ],
         onError: {
@@ -323,6 +349,7 @@ export const giftMakerRootMachine = setup({
               type: "logError",
               params: { error: "EXCEPTION" },
             },
+            "removeGiftFromHistory",
           ],
         },
       },
@@ -339,7 +366,7 @@ export const giftMakerRootMachine = setup({
 
         onDone: {
           target: "settled",
-          actions: "addGiftToHistory",
+          actions: "updateGiftToHistory",
         },
         onError: {
           target: "editing",

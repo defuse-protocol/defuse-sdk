@@ -21,11 +21,12 @@ export function assembleGiftInfo(
   assert(signData, "signData is not defined")
   assert(parsedValues.token, "token is not defined")
   assert(parsedValues.amount, "amount is not defined")
-  assert(context.intentHashes, "intentHashes is not defined")
 
   return {
     giftId: signData.giftId,
-    intentHashes: context.intentHashes,
+    // `intentHashes` is initially undefined when storing giftInfo to history before publishing.
+    // The actual intentHashes will be populated after successful publishing.
+    intentHashes: context?.intentHashes ?? [],
     tokenDiff: getTokenDiff(signData),
     token: parsedValues.token,
     secretKey: context.escrowCredentials.secretKey,
