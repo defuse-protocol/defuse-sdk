@@ -7,8 +7,12 @@ import type { AggregatedQuote } from "../../../services/quoteService"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../../types/base"
 import { assert } from "../../../utils/assert"
 import type { DefuseUserId } from "../../../utils/defuse"
+import { isBaseToken } from "../../../utils/token"
 import { getUnderlyingBaseTokenInfos } from "../../../utils/tokenUtils"
-import { fillWithMinimalExchanges } from "../utils/fillWithMinimalExchanges"
+import {
+  type TokenValues,
+  fillWithMinimalExchanges,
+} from "../utils/fillWithMinimalExchanges"
 import {
   type AggregatedQuoteErr,
   type QuoteExactInParams,
@@ -51,6 +55,34 @@ export function useOtcTakerPreparation({
         nearClient
       )
 
+      const balancesWithTokenInfo = Object.keys(balances).reduce(
+        (acc, token) => {
+          const amount = balances[token]
+
+          if (amount != null) {
+            if (isBaseToken(tokenIn)) {
+              acc[token] = {
+                amount,
+                decimals: tokenIn.decimals,
+              }
+            } else {
+              const token_ = tokenIn.groupedTokens.find(
+                (t) => t.defuseAssetId === token
+              )
+              assert(token_, "could not find token")
+
+              acc[token] = {
+                amount,
+                decimals: token_.decimals,
+              }
+            }
+          }
+
+          return acc
+        },
+        {} as TokenValues
+      )
+
       logger.verbose("balances", { balances })
 
       const tokensToReceive: Record<string, bigint> = {}
@@ -67,7 +99,7 @@ export function useOtcTakerPreparation({
       logger.verbose("tokens breakdown", { tokensToReceive, tokensToSend })
 
       const fillResult = fillWithMinimalExchanges(
-        balances,
+        balancesWithTokenInfo,
         tokensToSend,
         BigInt(protocolFee)
       )
