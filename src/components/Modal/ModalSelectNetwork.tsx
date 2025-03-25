@@ -80,7 +80,7 @@ export const ModalSelectNetwork = () => {
               </button>
             </div>
             <SearchBar
-              placeholder="Search network"
+              placeholder="Search"
               query={searchValue}
               setQuery={setSearchValue}
             />
