@@ -10,6 +10,7 @@ import type { BlockchainEnum } from "src/types/interfaces"
 import { useModalStore } from "../../providers/ModalStoreProvider"
 import { SearchBar } from "../SearchBar"
 import { ModalDialog } from "./ModalDialog"
+import { ModalNoResults } from "./ModalNoResults"
 import { NetworkList } from "./NetworksList"
 
 export const ModalSelectNetwork = () => {
@@ -87,30 +88,38 @@ export const ModalSelectNetwork = () => {
         </div>
 
         <div className="z-10 flex-1 overflow-y-auto  -mr-[var(--inset-padding-right)] pr-[var(--inset-padding-right)]">
-          <div className="flex flex-col gap-2 divide-y divide-gray-300">
-            {Object.keys({ ...filteredChains, ...disabledChains }).length ===
-              0 && <Text>No results.</Text>}
-            <div className="flex flex-col gap-2">
-              <NetworkList
-                networks={filteredChains}
-                selectedNetwork={selectedNetwork}
-                onChangeNetwork={onChangeNetwork}
-              />
+          {Object.keys({ ...filteredChains, ...disabledChains }).length ===
+          0 ? (
+            <ModalNoResults
+              text="No networks found"
+              handleSearchClear={() => setSearchValue("")}
+            />
+          ) : (
+            <div className="flex flex-col gap-2 divide-y divide-gray-300">
+              {Object.keys(filteredChains).length > 0 && (
+                <div className="flex flex-col gap-2">
+                  <NetworkList
+                    networks={filteredChains}
+                    selectedNetwork={selectedNetwork}
+                    onChangeNetwork={onChangeNetwork}
+                  />
+                </div>
+              )}
+              {Object.keys(disabledChains).length > 0 && (
+                <div className="flex flex-col gap-2 pt-4">
+                  <Text size="1" weight="bold" className="text-gray-500">
+                    Unsupported networks
+                  </Text>
+                  <NetworkList
+                    disabled
+                    networks={disabledChains}
+                    selectedNetwork={selectedNetwork}
+                    onChangeNetwork={onChangeNetwork}
+                  />
+                </div>
+              )}
             </div>
-            {Object.keys(disabledChains).length > 0 && (
-              <div className="flex flex-col gap-2 pt-4">
-                <Text size="1" weight="bold" className="text-gray-500">
-                  Unsupported networks
-                </Text>
-                <NetworkList
-                  disabled
-                  networks={disabledChains}
-                  selectedNetwork={selectedNetwork}
-                  onChangeNetwork={onChangeNetwork}
-                />
-              </div>
-            )}
-          </div>
+          )}
         </div>
       </div>
     </ModalDialog>

@@ -37,7 +37,9 @@ export const NetworkList = ({
           >
             <div className="flex items-center gap-2">
               {chain.icon}
-              <Text weight="bold">{chain.label}</Text>
+              <Text as="span" size="3" weight="bold">
+                {chain.label}
+              </Text>
             </div>
             <div className="flex items-center gap-2">
               {isAuroraVirtualChain(chain.value as BlockchainEnum) && (

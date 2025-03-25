@@ -19,7 +19,7 @@ export const PoweredByAuroraLabel = () => {
           stroke-width="0.5"
         />
       </svg>
-      <Text size="1" weight="bold" className="text-gray-700">
+      <Text as="span" size="1" weight="bold" className="text-gray-700">
         Powered by Aurora
       </Text>
     </div>
