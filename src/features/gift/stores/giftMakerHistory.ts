@@ -1,12 +1,12 @@
 import { create } from "zustand"
 import { persist } from "zustand/middleware"
 import type { SignerCredentials } from "../../../core/formatters"
+import { logger } from "../../../logger"
 import {
   type DefuseUserId,
   userAddressToDefuseUserId,
 } from "../../../utils/defuse"
 import type { GiftInfo } from "../actors/shared/getGiftInfo"
-
 import { GIFT_STORAGE_NAME, indexedDBStorage } from "./indexedDBStorage"
 import { localStorageHandler } from "./localStorageHandler"
 import { sessionStorageHandler } from "./sessionStorageHandler"
@@ -35,7 +35,14 @@ export const tripleStorage = {
   getItem: async (name: string) => {
     const localData = localStorageHandler.getItem(name)
     const sessionData = sessionStorageHandler.getItem(name)
-    const indexedData = await indexedDBStorage.getItem(name)
+    let indexedData = null
+    try {
+      indexedData = await indexedDBStorage.getItem(name)
+    } catch (error) {
+      logger.error(
+        new Error("Failed to fetch data from IndexedDB", { cause: error })
+      )
+    }
     const data = localData || sessionData || indexedData
     return data ? JSON.parse(data) : null
   },
@@ -46,12 +53,24 @@ export const tripleStorage = {
     const stringValue = JSON.stringify(value)
     localStorageHandler.setItem(name, stringValue)
     sessionStorageHandler.setItem(name, stringValue)
-    await indexedDBStorage.setItem(name, stringValue)
+    try {
+      await indexedDBStorage.setItem(name, stringValue)
+    } catch (error) {
+      logger.error(
+        new Error("Failed to set data in IndexedDB", { cause: error })
+      )
+    }
   },
   removeItem: async (name: string) => {
     localStorageHandler.removeItem(name)
     sessionStorageHandler.removeItem(name)
-    await indexedDBStorage.removeItem(name)
+    try {
+      await indexedDBStorage.removeItem(name)
+    } catch (error) {
+      logger.error(
+        new Error("Failed to remove data from IndexedDB", { cause: error })
+      )
+    }
   },
 }
 
