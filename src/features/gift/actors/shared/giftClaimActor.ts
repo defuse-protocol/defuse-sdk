@@ -8,6 +8,7 @@ import {
   waitForIntentSettlement,
 } from "../../../../services/intentService"
 import { assert } from "../../../../utils/assert"
+import { userAddressToDefuseUserId } from "../../../../utils/defuse"
 import { signGiftTakerMessage } from "../../utils/signGiftTakerMessage"
 import type { GiftInfo } from "./getGiftInfo"
 
@@ -88,7 +89,13 @@ export const giftClaimActor = setup({
         try {
           const signature = await signGiftTakerMessage({
             giftInfo: input.giftInfo,
-            signerCredentials: input.signerCredentials,
+            signerCredentials: {
+              credential: userAddressToDefuseUserId(
+                input.signerCredentials.credential,
+                input.signerCredentials.credentialType
+              ),
+              credentialType: input.signerCredentials.credentialType,
+            },
           })
           const multiPayload = formatSignedIntent(
             signature,

@@ -188,9 +188,9 @@ export const giftMakerHistoryStore = create<Store>()(
         set((state) => ({
           gifts: {
             ...state.gifts,
-            [userId]: (state.gifts[userId] ?? []).filter(
-              (gift) => gift.giftId !== giftId
-            ),
+            [userId]: (state.gifts[userId] ?? [])
+              .filter((gift) => gift.giftId !== giftId)
+              .map(serializeGiftData),
           },
         }))
       },
