@@ -36,7 +36,15 @@ export const giftMakerReadyActor = setup({
   types: {
     input: {} as GiftMakerReadyActorInput,
     context: {} as GiftMakerReadyActorContext,
-    events: {} as { type: "FINISH" | "CANCEL_GIFT" },
+    events: {} as
+      | { type: "FINISH" | "CANCEL_GIFT" | "LOGOUT" }
+      | {
+          type: "LOGIN"
+          params: {
+            userAddress: string
+            userChainType: string
+          }
+        },
     children: {} as {
       giftMakerClaimRef: "claimGiftActor"
     },
@@ -115,6 +123,7 @@ export const giftMakerReadyActor = setup({
 
     finished: {
       type: "final",
+      actions: "sendToDepositedBalanceRefRefresh",
     },
   },
 })

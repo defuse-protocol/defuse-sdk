@@ -110,8 +110,7 @@ export const giftMakerSignActor = setup({
       )
 
       for (const [assetId, amount] of Object.entries(tokenDiff)) {
-        // We need to negate the amount, as the balance is being reduced
-        tokenDiff[assetId] = -amount
+        tokenDiff[assetId] = amount
       }
     } catch (err: unknown) {
       if (!findError(err, AmountMismatchError)) {
@@ -135,7 +134,6 @@ export const giftMakerSignActor = setup({
     const walletMessage = createTransferMessage(Object.entries(tokenDiff), {
       signerId: input.signerCredentials,
       referral: input.referral,
-      memo: input.parsed.message,
       receiverId: input.escrowCredentials.credential,
     })
 

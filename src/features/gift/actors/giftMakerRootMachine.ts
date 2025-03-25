@@ -1,9 +1,11 @@
+import { waitForIntentSettlement } from "src/services/intentService"
 import {
   type ActorRefFrom,
   type InputFrom,
   type PromiseActorLogic,
   assertEvent,
   assign,
+  fromPromise,
   sendTo,
   setup,
 } from "xstate"
@@ -23,10 +25,7 @@ import {
   type EscrowCredentials,
   generateEscrowCredentials,
 } from "../utils/generateEscrowCredentials"
-import {
-  getTokenDiffFromTransferMessage,
-  parseMultiPayloadTransferMessage,
-} from "../utils/parseMultiPayload"
+import { assembleGiftInfo, getParsedValues } from "../utils/makerMachine"
 import { giftMakerFormMachine } from "./giftMakerFormMachine"
 import {
   type GiftMakerPublishingActorErrors,
@@ -44,11 +43,20 @@ import type {
   GiftMakerSignActorOutput,
 } from "./giftMakerSignActor"
 import { giftMakerSignActor } from "./giftMakerSignActor"
-import type { GiftInfo } from "./shared/getGiftInfo"
 
 type GiftMakerRootMachineErrors =
   | GiftMakerSignActorErrors
   | GiftMakerPublishingActorErrors
+
+export type GiftMakerRootMachineContext = {
+  error: null | GiftMakerRootMachineErrors
+  formRef: ActorRefFrom<typeof giftMakerFormMachine>
+  depositedBalanceRef: ActorRefFrom<typeof depositedBalanceMachine>
+  escrowCredentials: EscrowCredentials
+  referral: string | undefined
+  signData: null | GiftSignedResult
+  intentHashes: null | string[]
+}
 
 export const giftMakerRootMachine = setup({
   types: {
@@ -73,15 +81,7 @@ export const giftMakerRootMachine = setup({
           type: "COMPLETE_SIGN"
           params: GiftSignedResult
         },
-    context: {} as {
-      error: null | GiftMakerRootMachineErrors
-      formRef: ActorRefFrom<typeof giftMakerFormMachine>
-      depositedBalanceRef: ActorRefFrom<typeof depositedBalanceMachine>
-      escrowCredentials: EscrowCredentials
-      referral: string | undefined
-      signData: null | GiftSignedResult
-      intentHashes: null | string[]
-    },
+    context: {} as GiftMakerRootMachineContext,
     children: {} as {
       readyGiftRef: "readyGiftActor"
     },
@@ -102,6 +102,16 @@ export const giftMakerRootMachine = setup({
       void,
       GiftMakerReadyActorInput
     >,
+    settlingActor: fromPromise(
+      ({
+        input,
+        signal,
+      }: { input: { intentHashes: string[] }; signal: AbortSignal }) => {
+        const intentHash = input.intentHashes[0]
+        assert(intentHash, "intentHash is not defined")
+        return waitForIntentSettlement(signal, intentHash)
+      }
+    ),
   },
   actions: {
     logError: (_, event: { error: unknown }) => {
@@ -126,8 +136,38 @@ export const giftMakerRootMachine = setup({
       "depositedBalanceRef",
       (_, event: DepositedBalanceEvents) => event
     ),
+    sendToDepositedBalanceRefRefresh: sendTo("depositedBalanceRef", (_) => ({
+      type: "REQUEST_BALANCE_REFRESH",
+    })),
     completeSign: ({ self }, event: GiftSignedResult) => {
       self.send({ type: "COMPLETE_SIGN", params: event })
+    },
+    addGiftToHistory: ({ context }) => {
+      assert(context.signData, "signData is not defined")
+      const giftInfo = assembleGiftInfo(context)
+      giftMakerHistoryStore.getState().addGift(
+        {
+          ...giftInfo,
+        },
+        context.signData.signerCredentials
+      )
+    },
+    updateGiftToHistory: ({ context }) => {
+      assert(context.signData, "signData is not defined")
+      const giftInfo = assembleGiftInfo(context)
+      giftMakerHistoryStore
+        .getState()
+        .updateGift(
+          giftInfo.giftId,
+          context.signData.signerCredentials,
+          giftInfo.intentHashes
+        )
+    },
+    removeGiftFromHistory: ({ context }) => {
+      assert(context.signData, "signData is not defined")
+      giftMakerHistoryStore
+        .getState()
+        .removeGift(context.signData.giftId, context.signData.signerCredentials)
     },
     cleanup: assign({
       error: null,
@@ -136,6 +176,9 @@ export const giftMakerRootMachine = setup({
   },
   guards: {
     isOk: (_, params: { tag: "ok" | "err" }) => params.tag === "ok",
+    isFormValid: ({ context }) => {
+      return context.formRef.getSnapshot().context.isValid
+    },
   },
 }).createMachine({
   /** @xstate-layout N4IgpgJg5mDOIC5QAoC2BDAxgCwJYDswBKAYgBkB5AcQEkA5AbQAYBdRUABwHtZcAXXF3zsQAD0QBaAEwBGAGwA6ACxKmsgJwBmdXIAcezVIA0IAJ6T1AVgUB2dUt1T9mpXaV6Avh5NoseQqSUVBQAqgAqzGxIINy8AkIi4ggyllIKTDqWckxysjI2esZmFtZujs6u9p7eIL44BMQKkPwEUCQASgCiAIohnQDKYQD6-TRUjKwisS0J0UkSMjKaCjqaukoyuvqpKuom5ghSTDIKlpo2KkqaMuq6lse6Xj4Y9QEKvFD4rSQQQmAKBAAblwANb-D74dpgABmkSmPBmwjmiDkiicunUTCUqRcjhk+0QUksNgUuhsUg2MixlhuGSetRe-kaEO+v0IAPwwLB71wnyhsJkUU4CPiSNASU0NIUVPsUk0ciU6gK8qUBMOxNJ5KURwxUisTE09LqTKIPM+3zAACdLVxLQoOAAbdB8aG21BmyEwuHRaaixKSbRMdIaJZnGw07RqwzqaVMJg2bQFC4uSxGxkNU0s-BtADCFAAsgAFMidMKdEZjCZCmIiwRisSSGRHU7rLTy9EGhVq1yKSwOOTqG5SGxMSxaNN+DMeyA-P4crn-S1gdAQUxUXDQvj873CuJ1-0IbQnewydxrAdZPWq4oIMckkdN8MXFI5CevZm8wgQEhWm12x3Oq6lrukuK5rhuW5epMPq1rM4qSKoihUjYZJrOS6hSFIchqsSSi2BSeg5Fc5woV4NT4FwEBwCIxoZvCe5wQ2CASNieHIahZJ6ph2E3i40pymoeRMBi2IUm+JpNBALTZvRiIHhIuhBnYlj6FYtz2OcRQHE2Jy5Joaj9kskpiTUtFvFmUCyX6yLMSkyxYXcVxkohay6FGqinGc+iLEcNx9qmpnpuZn6QFZ+42QsdwKO2w6aHFKlnFkOHkrYxxOE2+nkksZEeEAA */
@@ -179,12 +222,13 @@ export const giftMakerRootMachine = setup({
     editing: {
       on: {
         REQUEST_SIGN: {
+          guard: "isFormValid",
           target: "signing",
         },
       },
     },
     signing: {
-      entry: [],
+      entry: "cleanup",
 
       on: {
         COMPLETE_SIGN: {
@@ -253,12 +297,15 @@ export const giftMakerRootMachine = setup({
       },
     },
     publishing: {
-      entry: assign({
-        signData: ({ event }) => {
-          assertEvent(event, "COMPLETE_SIGN")
-          return event.params
-        },
-      }),
+      entry: [
+        assign({
+          signData: ({ event }) => {
+            assertEvent(event, "COMPLETE_SIGN")
+            return event.params
+          },
+        }),
+        "addGiftToHistory",
+      ],
       invoke: {
         src: "publishingActor",
         input: ({ context }) => {
@@ -273,7 +320,7 @@ export const giftMakerRootMachine = setup({
             guard: ({ event }) => {
               return event.output.giftStatus === "published"
             },
-            target: "signed",
+            target: "settling",
             actions: assign({
               intentHashes: ({ event }) => {
                 assert(event.output.giftStatus === "published")
@@ -283,10 +330,16 @@ export const giftMakerRootMachine = setup({
           },
           {
             target: "editing",
-            actions: {
-              type: "setError",
-              params: { tag: "err", value: { reason: "ERR_GIFT_PUBLISHING" } },
-            },
+            actions: [
+              {
+                type: "setError",
+                params: {
+                  tag: "err",
+                  value: { reason: "ERR_GIFT_PUBLISHING" },
+                },
+              },
+              "removeGiftFromHistory",
+            ],
           },
         ],
         onError: {
@@ -296,59 +349,49 @@ export const giftMakerRootMachine = setup({
               type: "logError",
               params: { error: "EXCEPTION" },
             },
+            "removeGiftFromHistory",
           ],
         },
       },
     },
-    signed: {
+    settling: {
+      invoke: {
+        src: "settlingActor",
+        input: ({ context }) => {
+          assert(context.intentHashes, "intentHashes is not defined")
+          return {
+            intentHashes: context.intentHashes,
+          }
+        },
+
+        onDone: {
+          target: "settled",
+          actions: "updateGiftToHistory",
+        },
+        onError: {
+          target: "editing",
+          actions: {
+            type: "logError",
+            params: ({ event }) => event,
+          },
+        },
+      },
+    },
+    settled: {
       invoke: {
         id: "readyGiftRef",
         src: "readyGiftActor",
         input: ({ context }) => {
-          const signData = context.signData
-          assert(signData, "signData is not defined")
-
-          const form = context.formRef.getSnapshot()
-          const parsedValuesSnapshot = form.context.parsedValues.getSnapshot()
-
-          const parsedValues = parsedValuesSnapshot.context
-          assert(
-            parsedValues.token !== null && parsedValues.amount !== null,
-            "token and amount are not defined"
-          )
-
-          const parsed = parseMultiPayloadTransferMessage(signData.multiPayload)
-          assert(parsed !== null, "Invalid parsed multiPayload")
-
-          const tokenDiff = getTokenDiffFromTransferMessage(parsed)
-          assert(tokenDiff !== null, "Invalid token diff")
-
-          const giftInfo: GiftInfo = {
-            tokenDiff,
-            token: parsedValues.token,
-            secretKey: context.escrowCredentials.secretKey,
-            accountId: context.escrowCredentials.credential,
-            message: parsedValues.message,
-          }
-
-          assert(
-            Array.isArray(context.intentHashes) &&
-              context.intentHashes.length > 0,
-            "intentHashes is empty or not an array"
-          )
-          giftMakerHistoryStore.getState().addGift(
-            {
-              ...giftInfo,
-              giftId: signData.giftId,
-              intentHashes: context.intentHashes,
-            },
-            signData.signerCredentials
-          )
+          const giftInfo = assembleGiftInfo(context)
+          const parsedValues = getParsedValues(context)
+          assert(context.signData, "signData is not defined")
+          assert(parsedValues.token, "token is not defined")
+          assert(parsedValues.amount, "amount is not defined")
 
           return {
-            giftId: signData.giftId,
+            giftId: giftInfo.giftId,
             giftInfo,
-            signerCredentials: signData.signerCredentials,
+            signerCredentials: context.signData.signerCredentials,
             escrowCredentials: context.escrowCredentials,
             parsed: {
               token: parsedValues.token,
@@ -360,6 +403,7 @@ export const giftMakerRootMachine = setup({
 
         onDone: {
           target: "editing",
+          actions: "sendToDepositedBalanceRefRefresh",
         },
 
         onError: {

@@ -21,7 +21,10 @@ import { balanceAllSelector } from "../../machines/depositedBalanceMachine"
 import { formValuesSelector } from "../actors/giftMakerFormMachine"
 import type { giftMakerReadyActor } from "../actors/giftMakerReadyActor"
 import { giftMakerRootMachine } from "../actors/giftMakerRootMachine"
+import { useBalanceUpdaterSyncWithHistory } from "../hooks/useBalanceUpdaterSyncWithHistory"
+import { useCheckSignerCredentials } from "../hooks/useCheckSignerCredentials"
 import type { GiftLinkData, SignMessage } from "../types/sharedTypes"
+import { checkInsufficientBalance, getButtonText } from "../utils/makerForm"
 import { GiftMakerReadyDialog } from "./GiftMakerReadyDialog"
 import { GiftMessageInput } from "./GiftMessageInput"
 import { GiftDescription } from "./shared/GiftDescription"
@@ -100,6 +103,9 @@ export function GiftMakerForm({
       | ActorRefFrom<typeof giftMakerReadyActor>,
   }))
 
+  useCheckSignerCredentials(rootActorRef, signerCredentials)
+  useBalanceUpdaterSyncWithHistory(rootActorRef, signerCredentials)
+
   const { setModalType, data: modalSelectAssetsData } = useModalController<{
     modalType: ModalType.MODAL_SELECT_ASSETS
     token: BaseTokenInfo | UnifiedTokenInfo | undefined
@@ -140,9 +146,22 @@ export function GiftMakerForm({
     }
   }, [modalSelectAssetsData, formValuesRef.trigger.updateToken])
 
+  const balanceInsufficient = useMemo(() => {
+    if (tokenBalance == null) {
+      return false
+    }
+    return checkInsufficientBalance(formValues.amount, tokenBalance)
+  }, [formValues.amount, tokenBalance])
+
+  const editing = rootSnapshot.matches("editing")
+  const processing =
+    rootSnapshot.matches("signing") ||
+    rootSnapshot.matches("publishing") ||
+    rootSnapshot.matches("settling")
+
   return (
     <div className="flex flex-col">
-      {rootSnapshot.matches("signed") &&
+      {rootSnapshot.matches("settled") &&
         readyGiftRef != null &&
         signerCredentials != null && (
           <GiftMakerReadyDialog
@@ -254,12 +273,11 @@ export function GiftMakerForm({
         <ButtonCustom
           type="submit"
           size="lg"
-          variant={rootSnapshot.matches("signing") ? "secondary" : "primary"}
-          isLoading={rootSnapshot.matches("signing")}
+          variant={processing ? "secondary" : "primary"}
+          isLoading={processing}
+          disabled={balanceInsufficient || processing}
         >
-          {rootSnapshot.matches("editing")
-            ? "Create gift link"
-            : "Confirm transaction in your wallet..."}
+          {getButtonText(balanceInsufficient, editing, processing)}
         </ButtonCustom>
       </form>
     </div>
