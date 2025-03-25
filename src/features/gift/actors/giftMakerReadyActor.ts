@@ -6,6 +6,7 @@ import type {
   TokenValue,
   UnifiedTokenInfo,
 } from "../../../types/base"
+import { giftMakerHistoryStore } from "../stores/giftMakerHistory"
 import type { EscrowCredentials } from "../utils/generateEscrowCredentials"
 import type { GiftInfo } from "./shared/getGiftInfo"
 import {
@@ -36,15 +37,7 @@ export const giftMakerReadyActor = setup({
   types: {
     input: {} as GiftMakerReadyActorInput,
     context: {} as GiftMakerReadyActorContext,
-    events: {} as
-      | { type: "FINISH" | "CANCEL_GIFT" | "LOGOUT" }
-      | {
-          type: "LOGIN"
-          params: {
-            userAddress: string
-            userChainType: string
-          }
-        },
+    events: {} as { type: "FINISH" | "CANCEL_GIFT" },
     children: {} as {
       giftMakerClaimRef: "claimGiftActor"
     },
@@ -62,6 +55,11 @@ export const giftMakerReadyActor = setup({
     setError: assign({
       error: (_, error: GiftMakerReadyActorErrors) => error,
     }),
+    removeGiftFromHistory: ({ context }) => {
+      giftMakerHistoryStore
+        .getState()
+        .removeGift(context.giftId, context.signerCredentials)
+    },
   },
   guards: {
     isTrue: (_, value: boolean) => value,
@@ -101,6 +99,7 @@ export const giftMakerReadyActor = setup({
                 event.output.giftStatus === "claimed" ||
                 event.output.giftStatus === "already_claimed_or_executed",
             },
+            actions: "removeGiftFromHistory",
           },
           {
             target: "idle",
