@@ -17,7 +17,11 @@ import { useSelector } from "@xstate/react"
 import { providers } from "near-api-js"
 import { Fragment, type ReactNode, useEffect } from "react"
 import { Controller, useForm } from "react-hook-form"
+import { SelectTriggerLike } from "src/components/Select/SelectTriggerLike"
 import { useTokensUsdPrices } from "src/hooks/useTokensUsdPrices"
+import { useModalStore } from "src/providers/ModalStoreProvider"
+import type { BlockchainEnum } from "src/types/interfaces"
+import { blockchainToChainName } from "src/utils/blockchain"
 import { formatTokenValue, formatUsdAmount } from "src/utils/format"
 import getTokenUsdPrice from "src/utils/getTokenUsdPrice"
 import type { ActorRefFrom } from "xstate"
@@ -186,10 +190,25 @@ export const WithdrawForm = ({
     },
   })
 
-  const { setModalType, data: modalSelectAssetsData } = useModalController<{
+  const { data: modalSelectAssetsData } = useModalController<{
     modalType: ModalType
     token: BaseTokenInfo | UnifiedTokenInfo | undefined
   }>(ModalType.MODAL_SELECT_ASSETS)
+
+  const { setModalType, onCloseModal } = useModalStore((state) => state)
+
+  const onChangeNetwork = (network: BlockchainEnum) => {
+    setValue("blockchain", blockchainToChainName(network))
+    onCloseModal()
+  }
+
+  const openModalSelectNetwork = () => {
+    setModalType(ModalType.MODAL_SELECT_NETWORK, {
+      token,
+      selectNetwork: onChangeNetwork,
+      selectedNetwork: blockchain,
+    })
+  }
 
   const updateTokens = useTokensStore((state) => state.updateTokens)
 
@@ -393,23 +412,27 @@ export const WithdrawForm = ({
                   deps: "recipient",
                 }}
                 render={({ field }) => {
+                  const label =
+                    blockchainSelectItems[field.value]?.label ??
+                    "Select network"
+                  const hint =
+                    Object.keys(blockchainSelectItems).length === 1
+                      ? "This network only"
+                      : "Network"
+                  const icon = blockchainSelectItems[field.value]?.icon ?? (
+                    <EmptyIcon />
+                  )
                   return (
-                    <Select
-                      name={field.name}
-                      value={field.value}
-                      onChange={field.onChange}
-                      disabled={Object.keys(blockchainSelectItems).length === 1}
-                      options={blockchainSelectItems}
-                      placeholder={{
-                        label: "Select network",
-                        icon: <EmptyIcon />,
-                      }}
-                      hint={
-                        <Select.Hint>
-                          {Object.keys(blockchainSelectItems).length === 1
-                            ? "This network only"
-                            : "Network"}
-                        </Select.Hint>
+                    <SelectTriggerLike
+                      label={label}
+                      icon={icon}
+                      onClick={() => openModalSelectNetwork()}
+                      hint={<Select.Hint>{hint}</Select.Hint>}
+                      disabled={
+                        blockchainSelectItems &&
+                        Object.keys(blockchainSelectItems).length === 1 &&
+                        field.value ===
+                          Object.values(blockchainSelectItems)[0]?.value
                       }
                     />
                   )

@@ -90,14 +90,11 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
     })
   }
 
-  const openModalSelectNetwork = (
-    fieldName: string,
-    selectNetwork: (network: BlockchainEnum) => void
-  ) => {
+  const openModalSelectNetwork = () => {
     setModalType(ModalType.MODAL_SELECT_NETWORK, {
-      fieldName,
       token,
-      selectNetwork,
+      selectNetwork: onChangeNetwork,
+      selectedNetwork: blockchain,
     })
   }
 
@@ -213,9 +210,7 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
                     <SelectTriggerLike
                       label={label}
                       icon={icon}
-                      onClick={() => {
-                        openModalSelectNetwork(field.name, onChangeNetwork)
-                      }}
+                      onClick={() => openModalSelectNetwork()}
                       hint={<Select.Hint>{hint}</Select.Hint>}
                       disabled={
                         chainOptions &&
