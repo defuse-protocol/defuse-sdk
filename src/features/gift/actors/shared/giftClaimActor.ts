@@ -5,6 +5,7 @@ import { logger } from "../../../../logger"
 import {
   type PublishIntentsErr,
   publishIntents,
+  waitForIntentSettlement,
 } from "../../../../services/intentService"
 import { assert } from "../../../../utils/assert"
 import { signGiftTakerMessage } from "../../utils/signGiftTakerMessage"
@@ -22,7 +23,11 @@ export type GiftClaimActorOutput =
 export type GiftClaimActorErrors =
   | PublishIntentsErr
   | {
-      reason: "ERR_ON_CLAIM_GIFT" | "ERR_ON_SIGN_GIFT" | "ERR_ON_PUBLISH_GIFT"
+      reason:
+        | "ERR_ON_CLAIM_GIFT"
+        | "ERR_ON_SIGN_GIFT"
+        | "ERR_ON_PUBLISH_GIFT"
+        | "NOT_FOUND_OR_NOT_VALID"
     }
 
 type GiftSignGiftActorOutput =
@@ -129,6 +134,28 @@ export const giftClaimActor = setup({
         }
       }
     ),
+    settlingActor: fromPromise(
+      async ({
+        input,
+        signal,
+      }: {
+        input: { intentHashes: string[] }
+        signal: AbortSignal
+      }): Promise<
+        { tag: "ok" } | { tag: "err"; value: GiftClaimActorErrors }
+      > => {
+        const intentHash = input.intentHashes[0]
+        assert(intentHash, "intentHash is not defined")
+        const result = await waitForIntentSettlement(signal, intentHash)
+        if (result.status === "NOT_FOUND_OR_NOT_VALID") {
+          return {
+            tag: "err" as const,
+            value: { reason: result.status },
+          }
+        }
+        return { tag: "ok" as const }
+      }
+    ),
   },
   actions: {
     logError: (_, event: { error: unknown }) => {
@@ -210,7 +237,9 @@ export const giftClaimActor = setup({
                 guard: {
                   type: "isOk",
                   params: ({ event }) => {
-                    return { tag: event.output.tag }
+                    const output = event.output
+                    assert(output.tag === "ok")
+                    return { tag: output.tag }
                   },
                 },
                 actions: [
@@ -267,7 +296,7 @@ export const giftClaimActor = setup({
 
             onDone: [
               {
-                target: "#(machine).claimed",
+                target: "settling",
                 guard: {
                   type: "isOk",
                   params: ({ event }) => event.output,
@@ -284,8 +313,62 @@ export const giftClaimActor = setup({
                 actions: {
                   type: "setError",
                   params: ({ event }) => {
-                    assert(event.output.tag === "err")
-                    return event.output.value
+                    const output = event.output as {
+                      tag: "err"
+                      value: GiftClaimActorErrors
+                    }
+                    assert(output.tag === "err")
+                    return output.value
+                  },
+                },
+              },
+            ],
+          },
+        },
+
+        settling: {
+          invoke: {
+            src: "settlingActor",
+            input: ({ context }) => {
+              assert(context.addIntentHashes, "addIntentHashes is not defined")
+              return {
+                intentHashes: context.addIntentHashes,
+              }
+            },
+
+            onError: {
+              target: "#(machine).claiming",
+              actions: [
+                { type: "logError", params: ({ event }) => event },
+                {
+                  type: "setError",
+                  params: { reason: "NOT_FOUND_OR_NOT_VALID" },
+                },
+              ],
+            },
+
+            onDone: [
+              {
+                target: "#(machine).claimed",
+                guard: {
+                  type: "isOk",
+                  params: ({ event }) => {
+                    const output = event.output
+                    return { tag: output.tag }
+                  },
+                },
+              },
+              {
+                target: "#(machine).idleUnclaimable",
+                actions: {
+                  type: "setError",
+                  params: ({ event }) => {
+                    const output = event.output as {
+                      tag: "err"
+                      value: GiftClaimActorErrors
+                    }
+                    assert(output.tag === "err")
+                    return output.value
                   },
                 },
               },

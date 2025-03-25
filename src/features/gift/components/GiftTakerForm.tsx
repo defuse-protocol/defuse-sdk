@@ -109,7 +109,7 @@ export function GiftTakerForm({
             : "Claim gift"
           : "Sign in to claim gift"}
       </ButtonCustom>
-      {intentHashes != null && <GiftClaimedMessage />}
+      {processing && <GiftClaimedMessage />}
     </div>
   )
 }

@@ -1,7 +1,4 @@
-import { useQuery } from "@tanstack/react-query"
 import { useActorRef, useSelector } from "@xstate/react"
-import { waitForIntentSettlement } from "src/services/intentService"
-import { assert } from "src/utils/assert"
 import { WidgetRoot } from "../../../components/WidgetRoot"
 import type { SignerCredentials } from "../../../core/formatters"
 import { SwapWidgetProvider } from "../../../providers/SwapWidgetProvider"
@@ -66,17 +63,6 @@ function GiftTakerScreens({
   const intentHashes = snapshot.context.intentHashes
   const giftInfo = snapshot.context.giftInfo
 
-  const intentStatus = useQuery({
-    queryKey: ["intents_status", intentHashes],
-    queryFn: async ({ signal }) => {
-      assert(intentHashes != null)
-      const intentHash = intentHashes[0]
-      assert(intentHash != null)
-      return waitForIntentSettlement(signal, intentHash)
-    },
-    enabled: intentHashes != null,
-  })
-
   if (snapshot?.context.error != null) {
     return <GiftTakerInvalidClaim error={snapshot.context.error.reason} />
   }
@@ -87,7 +73,7 @@ function GiftTakerScreens({
 
   return (
     <>
-      {intentHashes && intentStatus.data ? (
+      {intentHashes ? (
         <GiftTakerSuccessScreen
           giftInfo={giftInfo}
           intentHashes={intentHashes}
