@@ -21,6 +21,7 @@ export function assembleGiftInfo(
   assert(signData, "signData is not defined")
   assert(parsedValues.token, "token is not defined")
   assert(parsedValues.amount, "amount is not defined")
+  assert(context.escrowCredentials != null)
 
   return {
     giftId: signData.giftId,
