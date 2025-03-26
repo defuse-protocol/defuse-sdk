@@ -234,18 +234,20 @@ export function sortForOptimalAmountSplitting(
     if (b.decimals > a.decimals) {
       return -1
     }
+    const aBalance = balances[a.defuseAssetId]
+    const bBalance = balances[b.defuseAssetId]
 
-    assert(balances[a.defuseAssetId] != null)
-    assert(balances[b.defuseAssetId] != null)
+    assert(aBalance != null)
+    assert(bBalance != null)
 
     const maxDecimalBetweenAandB = Math.max(a.decimals, b.decimals) // taking max from decimals to ave cleaner comparing
     const aBalanceAdjusted = adjustDecimals(
-      balances[a.defuseAssetId] as bigint,
+      aBalance,
       a.decimals,
       maxDecimalBetweenAandB
     )
     const bBalanceAdjusted = adjustDecimals(
-      balances[b.defuseAssetId] as bigint,
+      bBalance,
       b.decimals,
       maxDecimalBetweenAandB
     )
