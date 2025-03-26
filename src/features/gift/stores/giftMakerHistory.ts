@@ -1,3 +1,4 @@
+import { deserialize } from "src/utils/deserialize"
 import { create } from "zustand"
 import { persist } from "zustand/middleware"
 import type { SignerCredentials } from "../../../core/formatters"
@@ -6,12 +7,9 @@ import {
   type DefuseUserId,
   userAddressToDefuseUserId,
 } from "../../../utils/defuse"
+import { serialize } from "../../../utils/serialize"
 import type { GiftInfo } from "../actors/shared/getGiftInfo"
-import {
-  type GiftData,
-  deserializeGiftData,
-  serializeGiftData,
-} from "../utils/giftDataSerializer"
+import type { GiftData } from "../utils/giftDataSerializer"
 import { GIFT_STORAGE_NAME, indexedDBStorage } from "./indexedDBStorage"
 import { localStorageHandler } from "./localStorageHandler"
 import { sessionStorageHandler } from "./sessionStorageHandler"
@@ -82,7 +80,7 @@ async function executeStorageOperations<T>(
 }
 
 export const tripleStorage = {
-  getItem: async (name: string) => {
+  getItem: async (name: string): Promise<{ state: State } | null> => {
     const [localData, sessionData, indexedData] =
       await executeStorageOperations([
         {
@@ -106,7 +104,7 @@ export const tripleStorage = {
     if (!rawData) return null
 
     try {
-      return deserializeGiftData(JSON.parse(rawData))
+      return deserialize(rawData) as { state: State }
     } catch (error) {
       logger.error(
         new Error("Failed to parse/deserialize data", { cause: error })
@@ -116,7 +114,7 @@ export const tripleStorage = {
   },
 
   setItem: async (name: string, value: GiftData) => {
-    const stringValue = JSON.stringify(serializeGiftData(value))
+    const stringValue = serialize(value)
     await executeStorageOperations([
       {
         operation: () => localStorageHandler.setItem(name, stringValue),
@@ -137,7 +135,7 @@ export const tripleStorage = {
   },
 
   updateItem: async (name: string, value: GiftData) => {
-    const stringValue = JSON.stringify(serializeGiftData(value))
+    const stringValue = serialize(value)
     await executeStorageOperations([
       {
         operation: () => localStorageHandler.setItem(name, stringValue),

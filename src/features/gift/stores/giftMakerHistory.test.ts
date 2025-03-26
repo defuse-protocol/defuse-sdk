@@ -1,19 +1,16 @@
+import { deserialize } from "src/utils/deserialize"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 import { logger } from "../../../logger"
 import type { DefuseUserId } from "../../../utils/defuse"
-import {
-  type GiftData,
-  deserializeGiftData,
-  serializeGiftData,
-} from "../utils/giftDataSerializer"
+import { serialize } from "../../../utils/serialize"
 import { type GiftMakerHistory, tripleStorage } from "./giftMakerHistory"
 import { indexedDBStorage } from "./indexedDBStorage"
 import { localStorageHandler } from "./localStorageHandler"
 import { sessionStorageHandler } from "./sessionStorageHandler"
 
 describe("tripleStorage", () => {
-  const mockData = JSON.stringify({
-    state: { gifts: {} as Record<DefuseUserId, GiftMakerHistory[]> },
+  const mockData = serialize({
+    gifts: {} as Record<DefuseUserId, GiftMakerHistory[]>,
   })
 
   beforeEach(() => {
@@ -40,10 +37,8 @@ describe("tripleStorage", () => {
 
   it("should get data from localStorage even if an error occurs in indexedDBStorage", async () => {
     const errorSpy = vi.spyOn(logger, "error")
-    const mockGiftData = { state: { gifts: {} } }
-    const serializedData = JSON.stringify(
-      serializeGiftData(mockGiftData as GiftData)
-    )
+    const mockGiftData = { gifts: {} }
+    const serializedData = serialize(mockGiftData)
 
     vi.spyOn(localStorageHandler, "getItem").mockReturnValue(serializedData)
     vi.spyOn(sessionStorageHandler, "getItem").mockImplementation(() => {
@@ -54,7 +49,7 @@ describe("tripleStorage", () => {
 
     const result = await tripleStorage.getItem("testKey")
 
-    expect(result).toEqual(mockGiftData)
+    expect(result).toEqual({ state: mockGiftData })
     expect(errorSpy).toHaveBeenCalledWith(
       expect.objectContaining({
         cause: expect.any(Error),
@@ -73,7 +68,7 @@ describe("tripleStorage", () => {
     const mockData = {
       state: { gifts: {} as Record<DefuseUserId, GiftMakerHistory[]> },
     }
-    const stringifiedData = JSON.stringify(mockData)
+    const stringifiedData = serialize(mockData)
 
     vi.spyOn(localStorageHandler, "setItem").mockImplementation(() => {})
     vi.spyOn(sessionStorageHandler, "setItem").mockImplementation(() => {})
@@ -124,7 +119,7 @@ describe("processGiftData", () => {
   }
 
   it("should serialize correct storage data", () => {
-    const result = serializeGiftData(mockStorageData)
+    const result = JSON.parse(serialize(mockStorageData))
     expect(result).toMatchInlineSnapshot(`
       {
         "state": {
@@ -147,7 +142,10 @@ describe("processGiftData", () => {
                   "unifiedAssetId": "usdc",
                 },
                 "tokenDiff": {
-                  "nep141:usdc": "1000",
+                  "nep141:usdc": {
+                    "__type": "bigint",
+                    "value": "1000",
+                  },
                 },
                 "updatedAt": 1742910077547,
               },
@@ -159,8 +157,7 @@ describe("processGiftData", () => {
   })
 
   it("should deserialize correct storage data", () => {
-    const serialized = serializeGiftData(mockStorageData)
-    const result = deserializeGiftData(serialized as unknown as GiftData)
+    const result = deserialize(serialize(mockStorageData))
     expect(result).toEqual(mockStorageData)
   })
 })
