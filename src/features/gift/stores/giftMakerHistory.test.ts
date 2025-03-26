@@ -10,7 +10,9 @@ import { sessionStorageHandler } from "./sessionStorageHandler"
 
 describe("tripleStorage", () => {
   const mockData = serialize({
-    gifts: {} as Record<DefuseUserId, GiftMakerHistory[]>,
+    state: {
+      gifts: {} as Record<DefuseUserId, GiftMakerHistory[]>,
+    },
   })
 
   beforeEach(() => {
@@ -37,7 +39,7 @@ describe("tripleStorage", () => {
 
   it("should get data from localStorage even if an error occurs in indexedDBStorage", async () => {
     const errorSpy = vi.spyOn(logger, "error")
-    const mockGiftData = { gifts: {} }
+    const mockGiftData = { state: { gifts: {} } }
     const serializedData = serialize(mockGiftData)
 
     vi.spyOn(localStorageHandler, "getItem").mockReturnValue(serializedData)
@@ -49,7 +51,7 @@ describe("tripleStorage", () => {
 
     const result = await tripleStorage.getItem("testKey")
 
-    expect(result).toEqual({ state: mockGiftData })
+    expect(result).toEqual(mockGiftData)
     expect(errorSpy).toHaveBeenCalledWith(
       expect.objectContaining({
         cause: expect.any(Error),
