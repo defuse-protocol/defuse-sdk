@@ -24,21 +24,22 @@ export function FormattedCurrency({
     ...formatOptions,
   })
   const parts = formatter.formatToParts(value)
-
-  const currencySymbol = parts.find((part) => part.type === "currency")?.value
-  const integerPart = parts.find((part) => part.type === "integer")?.value
-  const decimalPart = parts.find((part) => part.type === "decimal")?.value
-  const fractionPart =
-    parts.find((part) => part.type === "fraction")?.value ?? "00"
+  const decimalPart = parts.findIndex((part) => part.type === "decimal")
 
   return (
     <div className={className}>
       <span className={mainPartClassName}>
-        {currencySymbol}
-        {integerPart}
-        {decimalPart}
+        {parts
+          .slice(0, decimalPart)
+          .map((part) => part.value)
+          .join("")}
       </span>
-      <span className={centsClassName}>{fractionPart}</span>
+      <span className={centsClassName}>
+        {parts
+          .slice(decimalPart)
+          .map((part) => part.value)
+          .join("")}
+      </span>
     </div>
   )
 }
