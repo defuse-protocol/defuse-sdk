@@ -9,7 +9,6 @@ import {
 } from "../../../utils/defuse"
 import { serialize } from "../../../utils/serialize"
 import type { GiftInfo } from "../actors/shared/getGiftInfo"
-import type { GiftData } from "../utils/giftDataSerializer"
 import { GIFT_STORAGE_NAME, indexedDBStorage } from "./indexedDBStorage"
 import { localStorageHandler } from "./localStorageHandler"
 import { sessionStorageHandler } from "./sessionStorageHandler"
@@ -22,6 +21,11 @@ export interface GiftMakerHistory extends GiftInfo {
 
 type State = {
   gifts: Record<DefuseUserId, GiftMakerHistory[]>
+}
+type GiftStorageState = {
+  state: {
+    gifts: Record<DefuseUserId, GiftMakerHistory[]>
+  }
 }
 
 type Actions = {
@@ -113,7 +117,7 @@ export const tripleStorage = {
     }
   },
 
-  setItem: async (name: string, value: GiftData) => {
+  setItem: async (name: string, value: GiftStorageState) => {
     const stringValue = serialize(value)
     await executeStorageOperations([
       {
@@ -134,7 +138,7 @@ export const tripleStorage = {
     ])
   },
 
-  updateItem: async (name: string, value: GiftData) => {
+  updateItem: async (name: string, value: GiftStorageState) => {
     const stringValue = serialize(value)
     await executeStorageOperations([
       {
