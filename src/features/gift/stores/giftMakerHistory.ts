@@ -86,7 +86,9 @@ async function executeStorageOperations<T>(
 }
 
 export const tripleStorage = {
-  getItem: async (name: string): Promise<{ state: State } | null> => {
+  getItem: async (
+    name: string
+  ): Promise<{ state: State; version: number } | null> => {
     const [localData, sessionData, indexedData] =
       await executeStorageOperations([
         {
@@ -110,13 +112,13 @@ export const tripleStorage = {
     if (!rawData) return null
 
     try {
-      const result = deserialize(rawData) as { state: State }
-      const validated = v.parse(GiftStorageSchema, result)
-      return validated as { state: State }
+      return deserialize(rawData) as { state: State; version: number }
+      // TODO: After migration, we should return the validated data
+      // const result = deserialize(rawData) as { state: State }
+      // const validated = v.parse(GiftStorageSchema, result)
+      // return validated as { state: State }
     } catch (error) {
-      logger.error(
-        new Error("Failed to parse/deserialize data", { cause: error })
-      )
+      logger.error(new Error("Failed to deserialize data", { cause: error }))
       return null
     }
   },
@@ -238,6 +240,33 @@ export const giftMakerHistoryStore = create<Store>()(
     {
       name: GIFT_STORAGE_NAME,
       storage: tripleStorage,
+      version: 1,
+      migrate: (persistedState: unknown, version) => {
+        if (version === 0) {
+          const state = persistedState as State
+          const migratedState = {
+            state: {
+              gifts: Object.fromEntries(
+                Object.entries(state.gifts).map(([userId, gifts]) => [
+                  userId,
+                  gifts.map((gift) => ({
+                    ...gift,
+                    tokenDiff: Object.fromEntries(
+                      Object.entries(gift.tokenDiff).map(([key, value]) => [
+                        key,
+                        typeof value === "string" ? BigInt(value) : value,
+                      ])
+                    ),
+                  })),
+                ])
+              ),
+            },
+          }
+          const validated = v.parse(GiftStorageSchema, migratedState)
+          return validated.state as State
+        }
+        return persistedState as State
+      },
     }
   )
 )
