@@ -1,4 +1,5 @@
 import { deserialize } from "src/utils/deserialize"
+import * as v from "valibot"
 import { create } from "zustand"
 import { persist } from "zustand/middleware"
 import type { SignerCredentials } from "../../../core/formatters"
@@ -9,6 +10,7 @@ import {
 } from "../../../utils/defuse"
 import { serialize } from "../../../utils/serialize"
 import type { GiftInfo } from "../actors/shared/getGiftInfo"
+import { GiftStorageSchema } from "../utils/schemaStorage"
 import { GIFT_STORAGE_NAME, indexedDBStorage } from "./indexedDBStorage"
 import { localStorageHandler } from "./localStorageHandler"
 import { sessionStorageHandler } from "./sessionStorageHandler"
@@ -108,7 +110,9 @@ export const tripleStorage = {
     if (!rawData) return null
 
     try {
-      return deserialize(rawData) as { state: State }
+      const result = deserialize(rawData) as { state: State }
+      const validated = v.parse(GiftStorageSchema, result)
+      return validated as { state: State }
     } catch (error) {
       logger.error(
         new Error("Failed to parse/deserialize data", { cause: error })
