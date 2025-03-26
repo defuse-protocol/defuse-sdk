@@ -413,12 +413,12 @@ describe("calculateSplitAmounts", () => {
     const balances = {
       token1: 100n,
       token2: 50n,
-      token3: 200n,
+      token3: 120n,
     }
     const result = calculateSplitAmounts(tokensIn, amountIn, balances)
     expect(result).toEqual({
-      token1: 100n,
-      token2: 50n,
+      token3: 120n,
+      token1: 30n,
     })
 
     const total = sumTotal(tokensIn, result)
@@ -547,7 +547,7 @@ describe("calculateSplitAmounts", () => {
       { ...token1, decimals: 18 },
       { ...token2, decimals: 6 },
     ]
-    const amountIn = { amount: 1_000_000n, decimals: 12 } // 0.000001 with 12 decimals
+    const amountIn = { amount: 1_000_000_000n, decimals: 12 } // 0.000001 with 12 decimals
     const balances = {
       token1: 1_000_000_000_000_000_000n, // 1 with 18 decimals
       token2: 1_000_000n, // 1 with 6 decimals
@@ -555,7 +555,7 @@ describe("calculateSplitAmounts", () => {
 
     const result = calculateSplitAmounts(tokensIn, amountIn, balances)
     expect(result).toEqual({
-      token1: 1_000_000_000_000n,
+      token2: 1_000n,
     })
 
     const total = sumTotal(tokensIn, result)
