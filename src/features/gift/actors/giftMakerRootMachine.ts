@@ -52,7 +52,7 @@ export type GiftMakerRootMachineContext = {
   error: null | GiftMakerRootMachineErrors
   formRef: ActorRefFrom<typeof giftMakerFormMachine>
   depositedBalanceRef: ActorRefFrom<typeof depositedBalanceMachine>
-  escrowCredentials: EscrowCredentials
+  escrowCredentials: null | EscrowCredentials
   referral: string | undefined
   signData: null | GiftSignedResult
   intentHashes: null | string[]
@@ -172,6 +172,13 @@ export const giftMakerRootMachine = setup({
     cleanup: assign({
       error: null,
       signData: null,
+      escrowCredentials: null,
+    }),
+    clearEscrowCredentials: assign({
+      escrowCredentials: null,
+    }),
+    generateEscrowCredentials: assign({
+      escrowCredentials: () => generateEscrowCredentials(),
     }),
   },
   guards: {
@@ -196,7 +203,7 @@ export const giftMakerRootMachine = setup({
         // `depositedBalanceActor` is any, so we explicitly safeguard it with `satisfies`
       } satisfies InputFrom<typeof depositedBalanceMachine>,
     }),
-    escrowCredentials: generateEscrowCredentials(),
+    escrowCredentials: null,
     referral: input.referral,
     signData: null,
     intentHashes: null,
@@ -220,6 +227,8 @@ export const giftMakerRootMachine = setup({
   },
   states: {
     editing: {
+      entry: ["clearEscrowCredentials"],
+
       on: {
         REQUEST_SIGN: {
           guard: "isFormValid",
@@ -228,7 +237,7 @@ export const giftMakerRootMachine = setup({
       },
     },
     signing: {
-      entry: "cleanup",
+      entry: ["cleanup", "generateEscrowCredentials"],
 
       on: {
         COMPLETE_SIGN: {
@@ -245,6 +254,8 @@ export const giftMakerRootMachine = setup({
 
           const form = context.formRef.getSnapshot()
           const parsed = form.context.parsedValues.getSnapshot()
+
+          assert(context.escrowCredentials != null)
 
           return {
             signerCredentials: event.signerCredentials,
@@ -387,6 +398,8 @@ export const giftMakerRootMachine = setup({
           assert(context.signData, "signData is not defined")
           assert(parsedValues.token, "token is not defined")
           assert(parsedValues.amount, "amount is not defined")
+
+          assert(context.escrowCredentials != null)
 
           return {
             giftId: giftInfo.giftId,
