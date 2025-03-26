@@ -7,6 +7,11 @@ import {
   userAddressToDefuseUserId,
 } from "../../../utils/defuse"
 import type { GiftInfo } from "../actors/shared/getGiftInfo"
+import {
+  type GiftData,
+  deserializeGiftData,
+  serializeGiftData,
+} from "../utils/giftDataSerializer"
 import { GIFT_STORAGE_NAME, indexedDBStorage } from "./indexedDBStorage"
 import { localStorageHandler } from "./localStorageHandler"
 import { sessionStorageHandler } from "./sessionStorageHandler"
@@ -36,109 +41,131 @@ type Actions = {
 
 type Store = State & Actions
 
-type GiftData = {
-  state: {
-    gifts: Record<DefuseUserId, GiftMakerHistory[]>
-  }
+type StorageOperation<T> = {
+  operation: () => T | Promise<T>
+  storageName: string
+  operationType: "fetch" | "set" | "update" | "remove"
 }
 
-function serializeGiftData(gift: GiftMakerHistory) {
-  return {
-    ...gift,
-    tokenDiff: Object.fromEntries(
-      Object.entries(gift.tokenDiff).map(([key, value]) => [
-        key,
-        typeof value === "bigint" ? value.toString() : value,
-      ])
-    ),
-  }
-}
-
-function deserializeGiftData(gift: GiftMakerHistory) {
-  return {
-    ...gift,
-    tokenDiff: Object.fromEntries(
-      Object.entries(gift.tokenDiff).map(([key, value]) => [
-        key,
-        typeof value === "string" ? BigInt(value) : value,
-      ])
-    ),
-  }
-}
-
-function processGiftData(data: GiftData | null) {
-  if (data?.state?.gifts) {
-    return {
-      ...data,
-      state: {
-        ...data.state,
-        gifts: Object.fromEntries(
-          Object.entries(data.state.gifts).map(([key, value]) => [
-            key,
-            value.map(deserializeGiftData),
-          ])
-        ),
-      },
-    }
-  }
-  return data
+async function executeStorageOperations<T>(
+  operations: StorageOperation<T>[]
+): Promise<(T | null)[]> {
+  return Promise.all(
+    operations.map(async ({ operation, storageName, operationType }) => {
+      try {
+        return await operation()
+      } catch (error) {
+        const action =
+          operationType === "fetch"
+            ? "fetch from"
+            : operationType === "set"
+              ? "set data in"
+              : operationType === "update"
+                ? "update data in"
+                : "remove data from"
+        logger.error(
+          new Error(`Failed to ${action} ${storageName}`, { cause: error })
+        )
+        return null
+      }
+    })
+  )
 }
 
 export const tripleStorage = {
   getItem: async (name: string) => {
-    const localData = localStorageHandler.getItem(name)
-    const sessionData = sessionStorageHandler.getItem(name)
-    let indexedData = null
+    const [localData, sessionData, indexedData] =
+      await executeStorageOperations([
+        {
+          operation: () => localStorageHandler.getItem(name),
+          storageName: "localStorage",
+          operationType: "fetch",
+        },
+        {
+          operation: () => sessionStorageHandler.getItem(name),
+          storageName: "sessionStorage",
+          operationType: "fetch",
+        },
+        {
+          operation: () => indexedDBStorage.getItem(name),
+          storageName: "indexedDB",
+          operationType: "fetch",
+        },
+      ])
+
+    const rawData = localData || sessionData || indexedData
+    if (!rawData) return null
+
     try {
-      indexedData = await indexedDBStorage.getItem(name)
+      return deserializeGiftData(JSON.parse(rawData))
     } catch (error) {
       logger.error(
-        new Error("Failed to fetch data from IndexedDB", { cause: error })
+        new Error("Failed to parse/deserialize data", { cause: error })
       )
-    }
-    const data = localData || sessionData || indexedData
-    return data ? processGiftData(JSON.parse(data)) : null
-  },
-  setItem: async (
-    name: string,
-    value: Record<DefuseUserId, GiftMakerHistory[]>
-  ) => {
-    const stringValue = JSON.stringify(value)
-    localStorageHandler.setItem(name, stringValue)
-    sessionStorageHandler.setItem(name, stringValue)
-    try {
-      await indexedDBStorage.setItem(name, stringValue)
-    } catch (error) {
-      logger.error(
-        new Error("Failed to set data in IndexedDB", { cause: error })
-      )
+      return null
     }
   },
-  updateItem: async (
-    name: string,
-    value: Record<DefuseUserId, GiftMakerHistory[]>
-  ) => {
-    const stringValue = JSON.stringify(value)
-    localStorageHandler.setItem(name, stringValue)
-    sessionStorageHandler.setItem(name, stringValue)
-    try {
-      await indexedDBStorage.setItem(name, stringValue)
-    } catch (error) {
-      logger.error(
-        new Error("Failed to update data in IndexedDB", { cause: error })
-      )
-    }
+
+  setItem: async (name: string, value: GiftData) => {
+    const stringValue = JSON.stringify(serializeGiftData(value))
+    await executeStorageOperations([
+      {
+        operation: () => localStorageHandler.setItem(name, stringValue),
+        storageName: "localStorage",
+        operationType: "set",
+      },
+      {
+        operation: () => sessionStorageHandler.setItem(name, stringValue),
+        storageName: "sessionStorage",
+        operationType: "set",
+      },
+      {
+        operation: () => indexedDBStorage.setItem(name, stringValue),
+        storageName: "indexedDB",
+        operationType: "set",
+      },
+    ])
   },
+
+  updateItem: async (name: string, value: GiftData) => {
+    const stringValue = JSON.stringify(serializeGiftData(value))
+    await executeStorageOperations([
+      {
+        operation: () => localStorageHandler.setItem(name, stringValue),
+        storageName: "localStorage",
+        operationType: "update",
+      },
+      {
+        operation: () => sessionStorageHandler.setItem(name, stringValue),
+        storageName: "sessionStorage",
+        operationType: "update",
+      },
+      {
+        operation: () => indexedDBStorage.setItem(name, stringValue),
+        storageName: "indexedDB",
+        operationType: "update",
+      },
+    ])
+  },
+
   removeItem: async (name: string) => {
-    localStorageHandler.removeItem(name)
-    sessionStorageHandler.removeItem(name)
-    try {
-      await indexedDBStorage.removeItem(name)
-    } catch (error) {
-      logger.error(
-        new Error("Failed to remove data from IndexedDB", { cause: error })
-      )
-    }
+    await executeStorageOperations([
+      {
+        operation: () => localStorageHandler.removeItem(name),
+        storageName: "localStorage",
+        operationType: "remove",
+      },
+      {
+        operation: () => sessionStorageHandler.removeItem(name),
+        storageName: "sessionStorage",
+        operationType: "remove",
+      },
+      {
+        operation: () => indexedDBStorage.removeItem(name),
+        storageName: "indexedDB",
+        operationType: "remove",
+      },
+    ])
   },
 }
 
@@ -155,7 +182,6 @@ export const giftMakerHistoryStore = create<Store>()(
 
       addGift: (gift, user) => {
         const userId = getUserId(user)
-
         set((state) => ({
           gifts: {
             ...state.gifts,
@@ -165,7 +191,7 @@ export const giftMakerHistoryStore = create<Store>()(
                 ...gift,
                 updatedAt: Date.now(),
               },
-            ].map(serializeGiftData),
+            ],
           },
         }))
       },
@@ -175,22 +201,21 @@ export const giftMakerHistoryStore = create<Store>()(
         set((state) => ({
           gifts: {
             ...state.gifts,
-            [userId]: (state.gifts[userId] ?? [])
-              .map((g) => (g.giftId === giftId ? { ...g, intentHashes } : g))
-              .map(serializeGiftData),
+            [userId]: (state.gifts[userId] ?? []).map((g) =>
+              g.giftId === giftId ? { ...g, intentHashes } : g
+            ),
           },
         }))
       },
 
       removeGift: (giftId: string, user) => {
         const userId = getUserId(user)
-
         set((state) => ({
           gifts: {
             ...state.gifts,
-            [userId]: (state.gifts[userId] ?? [])
-              .filter((gift) => gift.giftId !== giftId)
-              .map(serializeGiftData),
+            [userId]: (state.gifts[userId] ?? []).filter(
+              (gift) => gift.giftId !== giftId
+            ),
           },
         }))
       },
