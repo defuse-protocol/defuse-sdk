@@ -55,14 +55,23 @@ async function executeStorageOperations<T>(
       try {
         return await operation()
       } catch (error) {
-        const action =
-          operationType === "fetch"
-            ? "fetch from"
-            : operationType === "set"
-              ? "set data in"
-              : operationType === "update"
-                ? "update data in"
-                : "remove data from"
+        let action: string
+        switch (operationType) {
+          case "fetch":
+            action = "fetch from"
+            break
+          case "set":
+            action = "set data in"
+            break
+          case "update":
+            action = "update data in"
+            break
+          case "remove":
+            action = "remove data from"
+            break
+          default:
+            action = "interact with"
+        }
         logger.error(
           new Error(`Failed to ${action} ${storageName}`, { cause: error })
         )
