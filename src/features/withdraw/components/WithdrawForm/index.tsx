@@ -21,7 +21,10 @@ import { SelectTriggerLike } from "src/components/Select/SelectTriggerLike"
 import { useTokensUsdPrices } from "src/hooks/useTokensUsdPrices"
 import { useModalStore } from "src/providers/ModalStoreProvider"
 import type { BlockchainEnum } from "src/types/interfaces"
-import { blockchainToChainName } from "src/utils/blockchain"
+import {
+  blockchainToChainName,
+  chainNameToBlockchain,
+} from "src/utils/blockchain"
 import { formatTokenValue, formatUsdAmount } from "src/utils/format"
 import getTokenUsdPrice from "src/utils/getTokenUsdPrice"
 import type { ActorRefFrom } from "xstate"
@@ -206,7 +209,7 @@ export const WithdrawForm = ({
     setModalType(ModalType.MODAL_SELECT_NETWORK, {
       token,
       selectNetwork: onChangeNetwork,
-      selectedNetwork: blockchain,
+      selectedNetwork: chainNameToBlockchain(blockchain),
     })
   }
 

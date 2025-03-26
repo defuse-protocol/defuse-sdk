@@ -94,7 +94,7 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
     setModalType(ModalType.MODAL_SELECT_NETWORK, {
       token,
       selectNetwork: onChangeNetwork,
-      selectedNetwork: blockchain,
+      selectedNetwork: network,
     })
   }
 
