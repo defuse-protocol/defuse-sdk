@@ -18,7 +18,7 @@ export const SearchBar = ({
         <MagnifyingGlassIcon width={22} height={22} />
       </div>
       <input
-        className="flex-1 border-transparent p-0 focus:border-transparent focus:ring-0 bg-gray-3 dark:text-white"
+        className="flex-1 border-transparent p-0 focus:border-transparent focus:ring-0 bg-gray-3 dark:text-white outline-none"
         placeholder={placeholder}
         value={query}
         onChange={(e) => setQuery(e.target.value)}
