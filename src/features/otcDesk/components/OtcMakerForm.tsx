@@ -16,6 +16,7 @@ import { ModalType } from "../../../stores/modalStore"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../../types/base"
 import type { MultiPayload } from "../../../types/defuse-contracts-types"
 import type { ChainType } from "../../../types/deposit"
+import type { RenderHostAppLink } from "../../../types/hostAppLink"
 import type { SwappableToken } from "../../../types/swap"
 import { assert } from "../../../utils/assert"
 import { formatTokenValue, formatUsdAmount } from "../../../utils/format"
@@ -56,8 +57,8 @@ export type OtcMakerWidgetProps = {
   /** Theme selection */
   theme?: "dark" | "light"
 
-  /** External navigation callback */
-  onNavigateSwap?: () => void
+  /** External navigation */
+  renderHostAppLink: RenderHostAppLink
 
   /** Frontend referral */
   referral?: string
@@ -72,6 +73,7 @@ export function OtcMakerForm({
   signMessage,
   sendNearTransaction,
   generateLink,
+  renderHostAppLink,
   referral,
 }: OtcMakerWidgetProps) {
   const signerCredentials: SignerCredentials | null = useMemo(
@@ -243,7 +245,7 @@ export function OtcMakerForm({
   usePublicKeyModalOpener(publicKeyVerifierRef, sendNearTransaction)
 
   return (
-    <div className="flex flex-col p-5">
+    <div className="flex flex-col">
       {rootSnapshot.matches("signed") &&
         configRef != null &&
         readyOrderRef != null &&
@@ -434,15 +436,31 @@ export function OtcMakerForm({
           </div>
         </div>
 
-        {renderSubmitButton(rootSnapshot)}
+        {renderSubmitButton(
+          rootSnapshot,
+          userAddress != null,
+          renderHostAppLink
+        )}
       </form>
     </div>
   )
 }
 
 function renderSubmitButton(
-  snapshot: SnapshotFrom<typeof otcMakerRootMachine>
+  snapshot: SnapshotFrom<typeof otcMakerRootMachine>,
+  isLoggedIn: boolean,
+  renderHostAppLink: RenderHostAppLink
 ) {
+  if (!isLoggedIn) {
+    return renderHostAppLink(
+      "sign-in",
+      <ButtonCustom type="button" size="lg" className="w-full">
+        Sign in
+      </ButtonCustom>,
+      { className: "w-full" }
+    )
+  }
+
   let caption = "Create swap link"
 
   switch (true) {

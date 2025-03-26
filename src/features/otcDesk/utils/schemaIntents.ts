@@ -40,4 +40,19 @@ export const IntentSchema = v.variant("intent", [
     memo: v.optional(v.string()),
     msg: v.optional(v.string()),
   }),
+  v.object({
+    intent: v.literal("transfer"),
+    tokens: v.record(
+      v.string(),
+      v.pipe(
+        v.string(),
+        v.custom(
+          (a) => (typeof a === "string" ? !a.startsWith("nep141:") : false),
+          "Token ID must not start with 'nep141:'"
+        )
+      )
+    ),
+    receiver_id: NearAccountIdSchema,
+    memo: v.optional(v.string()),
+  }),
 ])

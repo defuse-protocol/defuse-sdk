@@ -1,7 +1,7 @@
-import { providers } from "near-api-js"
 import type { CodeResult } from "near-api-js/lib/providers/provider"
 import { assign, fromPromise, setup } from "xstate"
 import { config } from "../../../config"
+import { nearClient } from "../../../constants/nearClient"
 
 export const otcMakerConfigLoadActor = setup({
   types: {
@@ -50,10 +50,6 @@ export const otcMakerConfigLoadActor = setup({
 })
 
 export async function fetchProtocolFee() {
-  const nearClient = new providers.JsonRpcProvider({
-    url: "https://nearrpc.aurora.dev",
-  })
-
   // Warning: `CodeResult` is not correct type for `call_function`, but it's closest we have.
   const output = await nearClient.query<CodeResult>({
     request_type: "call_function",

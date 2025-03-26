@@ -1,14 +1,18 @@
 import { useQuery } from "@tanstack/react-query"
 import { Err, type Result } from "@thames/monads"
-import { providers } from "near-api-js"
+import { nearClient } from "src/constants/nearClient"
 import { logger } from "../../../logger"
 import { getDepositedBalances } from "../../../services/defuseBalanceService"
 import type { AggregatedQuote } from "../../../services/quoteService"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../../types/base"
 import { assert } from "../../../utils/assert"
 import type { DefuseUserId } from "../../../utils/defuse"
+import { isBaseToken } from "../../../utils/token"
 import { getUnderlyingBaseTokenInfos } from "../../../utils/tokenUtils"
-import { fillWithMinimalExchanges } from "../utils/fillWithMinimalExchanges"
+import {
+  type TokenValues,
+  fillWithMinimalExchanges,
+} from "../utils/fillWithMinimalExchanges"
 import {
   type AggregatedQuoteErr,
   type QuoteExactInParams,
@@ -48,9 +52,35 @@ export function useOtcTakerPreparation({
       const balances = await getDepositedBalances(
         takerId,
         getUnderlyingBaseTokenInfos(tokenIn).map((t) => t.defuseAssetId),
-        new providers.JsonRpcProvider({
-          url: "https://nearrpc.aurora.dev",
-        })
+        nearClient
+      )
+
+      const balancesWithTokenInfo = Object.keys(balances).reduce(
+        (acc, token) => {
+          const amount = balances[token]
+
+          if (amount != null) {
+            if (isBaseToken(tokenIn)) {
+              acc[token] = {
+                amount,
+                decimals: tokenIn.decimals,
+              }
+            } else {
+              const token_ = tokenIn.groupedTokens.find(
+                (t) => t.defuseAssetId === token
+              )
+              assert(token_, "could not find token")
+
+              acc[token] = {
+                amount,
+                decimals: token_.decimals,
+              }
+            }
+          }
+
+          return acc
+        },
+        {} as TokenValues
       )
 
       logger.verbose("balances", { balances })
@@ -69,7 +99,7 @@ export function useOtcTakerPreparation({
       logger.verbose("tokens breakdown", { tokensToReceive, tokensToSend })
 
       const fillResult = fillWithMinimalExchanges(
-        balances,
+        balancesWithTokenInfo,
         tokensToSend,
         BigInt(protocolFee)
       )

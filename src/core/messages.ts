@@ -5,6 +5,7 @@ import {
   makeEmptyMessage,
   makeInnerSwapAndWithdrawMessage,
   makeInnerSwapMessage,
+  makeInnerTransferMessage,
   makeSwapMessage,
 } from "../utils/messageFactory"
 import type { SignerCredentials } from "./formatters"
@@ -109,4 +110,27 @@ export function createEmptyIntentMessage(
 
 function minutesFromNow(minutes: number): number {
   return Date.now() + minutes * 60 * 1000
+}
+
+/**
+ * Creates an intent message for token transfers
+ * @param tokenDeltas Array of [tokenAddress, amount] tuples representing the transfer
+ * @param options Message configuration options
+ * @returns Intent message ready to be signed by a wallet
+ */
+export function createTransferMessage(
+  tokenDeltas: [string, bigint][],
+  options: IntentMessageConfig & { receiverId: string }
+): WalletMessage {
+  const innerMessage = makeInnerTransferMessage({
+    tokenDeltas,
+    signerId: resolveSignerId(options.signerId),
+    deadlineTimestamp: options.deadlineTimestamp ?? minutesFromNow(5),
+    receiverId: options.receiverId,
+  })
+
+  return makeSwapMessage({
+    innerMessage,
+    nonce: options.nonce,
+  })
 }

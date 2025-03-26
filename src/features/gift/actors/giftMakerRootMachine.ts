@@ -1,0 +1,419 @@
+import { waitForIntentSettlement } from "src/services/intentService"
+import {
+  type ActorRefFrom,
+  type InputFrom,
+  type PromiseActorLogic,
+  assertEvent,
+  assign,
+  fromPromise,
+  sendTo,
+  setup,
+} from "xstate"
+import type { SignerCredentials } from "../../../core/formatters"
+import { logger } from "../../../logger"
+import type { BaseTokenInfo, UnifiedTokenInfo } from "../../../types/base"
+import type { WalletMessage, WalletSignatureResult } from "../../../types/swap"
+import { assert } from "../../../utils/assert"
+import { toError } from "../../../utils/errors"
+import {
+  type Events as DepositedBalanceEvents,
+  depositedBalanceMachine,
+} from "../../machines/depositedBalanceMachine"
+import { giftMakerHistoryStore } from "../stores/giftMakerHistory"
+import type { GiftSignedResult } from "../types/sharedTypes"
+import {
+  type EscrowCredentials,
+  generateEscrowCredentials,
+} from "../utils/generateEscrowCredentials"
+import { assembleGiftInfo, getParsedValues } from "../utils/makerMachine"
+import { giftMakerFormMachine } from "./giftMakerFormMachine"
+import {
+  type GiftMakerPublishingActorErrors,
+  type GiftMakerPublishingActorInput,
+  type GiftMakerPublishingActorOutput,
+  giftMakerPublishingActor,
+} from "./giftMakerPublishingActor"
+import {
+  type GiftMakerReadyActorInput,
+  giftMakerReadyActor,
+} from "./giftMakerReadyActor"
+import type {
+  GiftMakerSignActorErrors,
+  GiftMakerSignActorInput,
+  GiftMakerSignActorOutput,
+} from "./giftMakerSignActor"
+import { giftMakerSignActor } from "./giftMakerSignActor"
+
+type GiftMakerRootMachineErrors =
+  | GiftMakerSignActorErrors
+  | GiftMakerPublishingActorErrors
+
+export type GiftMakerRootMachineContext = {
+  error: null | GiftMakerRootMachineErrors
+  formRef: ActorRefFrom<typeof giftMakerFormMachine>
+  depositedBalanceRef: ActorRefFrom<typeof depositedBalanceMachine>
+  escrowCredentials: EscrowCredentials
+  referral: string | undefined
+  signData: null | GiftSignedResult
+  intentHashes: null | string[]
+}
+
+export const giftMakerRootMachine = setup({
+  types: {
+    input: {} as {
+      tokenList: (BaseTokenInfo | UnifiedTokenInfo)[]
+      initialToken: BaseTokenInfo | UnifiedTokenInfo
+      referral: string | undefined
+    },
+    events: {} as
+      | DepositedBalanceEvents
+      | {
+          type: "START_OVER"
+        }
+      | {
+          type: "REQUEST_SIGN"
+          signerCredentials: SignerCredentials
+          signMessage: (
+            params: WalletMessage
+          ) => Promise<WalletSignatureResult | null>
+        }
+      | {
+          type: "COMPLETE_SIGN"
+          params: GiftSignedResult
+        },
+    context: {} as GiftMakerRootMachineContext,
+    children: {} as {
+      readyGiftRef: "readyGiftActor"
+    },
+  },
+  actors: {
+    formActor: giftMakerFormMachine,
+    // biome-ignore lint/suspicious/noExplicitAny: bypass xstate+ts bloating; be careful when interacting with `depositedBalanceActor` string
+    depositedBalanceActor: depositedBalanceMachine as any,
+    signActor: giftMakerSignActor as unknown as PromiseActorLogic<
+      GiftMakerSignActorOutput,
+      GiftMakerSignActorInput
+    >,
+    publishingActor: giftMakerPublishingActor as unknown as PromiseActorLogic<
+      GiftMakerPublishingActorOutput,
+      GiftMakerPublishingActorInput
+    >,
+    readyGiftActor: giftMakerReadyActor as unknown as PromiseActorLogic<
+      void,
+      GiftMakerReadyActorInput
+    >,
+    settlingActor: fromPromise(
+      ({
+        input,
+        signal,
+      }: { input: { intentHashes: string[] }; signal: AbortSignal }) => {
+        const intentHash = input.intentHashes[0]
+        assert(intentHash, "intentHash is not defined")
+        return waitForIntentSettlement(signal, intentHash)
+      }
+    ),
+  },
+  actions: {
+    logError: (_, event: { error: unknown }) => {
+      const err = toError(event.error)
+      logger.error(err)
+    },
+    setError: assign({
+      error: (
+        _,
+        result:
+          | {
+              tag: "err"
+              value: GiftMakerRootMachineErrors
+            }
+          | { tag: "ok" }
+      ) => {
+        assert(result.tag === "err")
+        return result.value
+      },
+    }),
+    relayToDepositedBalanceRef: sendTo(
+      "depositedBalanceRef",
+      (_, event: DepositedBalanceEvents) => event
+    ),
+    sendToDepositedBalanceRefRefresh: sendTo("depositedBalanceRef", (_) => ({
+      type: "REQUEST_BALANCE_REFRESH",
+    })),
+    completeSign: ({ self }, event: GiftSignedResult) => {
+      self.send({ type: "COMPLETE_SIGN", params: event })
+    },
+    addGiftToHistory: ({ context }) => {
+      assert(context.signData, "signData is not defined")
+      const giftInfo = assembleGiftInfo(context)
+      giftMakerHistoryStore.getState().addGift(
+        {
+          ...giftInfo,
+        },
+        context.signData.signerCredentials
+      )
+    },
+    updateGiftToHistory: ({ context }) => {
+      assert(context.signData, "signData is not defined")
+      const giftInfo = assembleGiftInfo(context)
+      giftMakerHistoryStore
+        .getState()
+        .updateGift(
+          giftInfo.giftId,
+          context.signData.signerCredentials,
+          giftInfo.intentHashes
+        )
+    },
+    removeGiftFromHistory: ({ context }) => {
+      assert(context.signData, "signData is not defined")
+      giftMakerHistoryStore
+        .getState()
+        .removeGift(context.signData.giftId, context.signData.signerCredentials)
+    },
+    cleanup: assign({
+      error: null,
+      signData: null,
+    }),
+  },
+  guards: {
+    isOk: (_, params: { tag: "ok" | "err" }) => params.tag === "ok",
+    isFormValid: ({ context }) => {
+      return context.formRef.getSnapshot().context.isValid
+    },
+  },
+}).createMachine({
+  /** @xstate-layout N4IgpgJg5mDOIC5QAoC2BDAxgCwJYDswBKAYgBkB5AcQEkA5AbQAYBdRUABwHtZcAXXF3zsQAD0QBaAEwBGAGwA6ACxKmsgJwBmdXIAcezVIA0IAJ6T1AVgUB2dUt1T9mpXaV6Avh5NoseQqSUVBQAqgAqzGxIINy8AkIi4ggyllIKTDqWckxysjI2esZmFtZujs6u9p7eIL44BMQKkPwEUCQASgCiAIohnQDKYQD6-TRUjKwisS0J0UkSMjKaCjqaukoyuvqpKuom5ghSTDIKlpo2KkqaMuq6lse6Xj4Y9QEKvFD4rSQQQmAKBAAblwANb-D74dpgABmkSmPBmwjmiDkiicunUTCUqRcjhk+0QUksNgUuhsUg2MixlhuGSetRe-kaEO+v0IAPwwLB71wnyhsJkUU4CPiSNASU0NIUVPsUk0ciU6gK8qUBMOxNJ5KURwxUisTE09LqTKIPM+3zAACdLVxLQoOAAbdB8aG21BmyEwuHRaaixKSbRMdIaJZnGw07RqwzqaVMJg2bQFC4uSxGxkNU0s-BtADCFAAsgAFMidMKdEZjCZCmIiwRisSSGRHU7rLTy9EGhVq1yKSwOOTqG5SGxMSxaNN+DMeyA-P4crn-S1gdAQUxUXDQvj873CuJ1-0IbQnewydxrAdZPWq4oIMckkdN8MXFI5CevZm8wgQEhWm12x3Oq6lrukuK5rhuW5epMPq1rM4qSKoihUjYZJrOS6hSFIchqsSSi2BSeg5Fc5woV4NT4FwEBwCIxoZvCe5wQ2CASNieHIahZJ6ph2E3i40pymoeRMBi2IUm+JpNBALTZvRiIHhIuhBnYlj6FYtz2OcRQHE2Jy5Joaj9kskpiTUtFvFmUCyX6yLMSkyxYXcVxkohay6FGqinGc+iLEcNx9qmpnpuZn6QFZ+42QsdwKO2w6aHFKlnFkOHkrYxxOE2+nkksZEeEAA */
+  context: ({ input, spawn }) => ({
+    error: null,
+    formRef: spawn("formActor", {
+      input: {
+        initialToken: input.initialToken,
+      },
+    }),
+    depositedBalanceRef: spawn("depositedBalanceActor", {
+      id: "depositedBalanceRef",
+      input: {
+        tokenList: input.tokenList,
+        // `depositedBalanceActor` is any, so we explicitly safeguard it with `satisfies`
+      } satisfies InputFrom<typeof depositedBalanceMachine>,
+    }),
+    escrowCredentials: generateEscrowCredentials(),
+    referral: input.referral,
+    signData: null,
+    intentHashes: null,
+  }),
+
+  initial: "editing",
+
+  on: {
+    LOGIN: {
+      actions: {
+        type: "relayToDepositedBalanceRef",
+        params: ({ event }) => event,
+      },
+    },
+    LOGOUT: {
+      actions: {
+        type: "relayToDepositedBalanceRef",
+        params: ({ event }) => event,
+      },
+    },
+  },
+  states: {
+    editing: {
+      on: {
+        REQUEST_SIGN: {
+          guard: "isFormValid",
+          target: "signing",
+        },
+      },
+    },
+    signing: {
+      entry: "cleanup",
+
+      on: {
+        COMPLETE_SIGN: {
+          target: "publishing",
+        },
+      },
+
+      invoke: {
+        id: "signRef",
+        src: "signActor",
+
+        input: ({ context, event }) => {
+          assertEvent(event, "REQUEST_SIGN")
+
+          const form = context.formRef.getSnapshot()
+          const parsed = form.context.parsedValues.getSnapshot()
+
+          return {
+            signerCredentials: event.signerCredentials,
+            signMessage: event.signMessage,
+            parsed: parsed.context as {
+              [K in keyof typeof parsed.context]: NonNullable<
+                (typeof parsed.context)[K]
+              >
+            },
+            balances:
+              context.depositedBalanceRef.getSnapshot().context.balances,
+            referral: context.referral,
+            escrowCredentials: context.escrowCredentials,
+          }
+        },
+
+        onError: {
+          target: "editing",
+          actions: [
+            {
+              type: "logError",
+              params: ({ event }) => event,
+            },
+            {
+              type: "setError",
+              params: { tag: "err", value: { reason: "ERR_GIFT_SIGNING" } },
+            },
+          ],
+        },
+
+        onDone: [
+          {
+            guard: { type: "isOk", params: ({ event }) => event.output },
+            actions: {
+              type: "completeSign",
+              params: ({ event }) => {
+                assert(event.output.tag === "ok")
+                return event.output.value
+              },
+            },
+          },
+          {
+            target: "editing",
+            actions: {
+              type: "setError",
+              params: ({ event }) => event.output,
+            },
+          },
+        ],
+      },
+    },
+    publishing: {
+      entry: [
+        assign({
+          signData: ({ event }) => {
+            assertEvent(event, "COMPLETE_SIGN")
+            return event.params
+          },
+        }),
+        "addGiftToHistory",
+      ],
+      invoke: {
+        src: "publishingActor",
+        input: ({ context }) => {
+          const multiPayload = context.signData?.multiPayload
+          assert(multiPayload, "multiPayload is not defined")
+          return {
+            multiPayload,
+          }
+        },
+        onDone: [
+          {
+            guard: ({ event }) => {
+              return event.output.giftStatus === "published"
+            },
+            target: "settling",
+            actions: assign({
+              intentHashes: ({ event }) => {
+                assert(event.output.giftStatus === "published")
+                return event.output.intentHashes
+              },
+            }),
+          },
+          {
+            target: "editing",
+            actions: [
+              {
+                type: "setError",
+                params: {
+                  tag: "err",
+                  value: { reason: "ERR_GIFT_PUBLISHING" },
+                },
+              },
+              "removeGiftFromHistory",
+            ],
+          },
+        ],
+        onError: {
+          target: "editing",
+          actions: [
+            {
+              type: "logError",
+              params: { error: "EXCEPTION" },
+            },
+            "removeGiftFromHistory",
+          ],
+        },
+      },
+    },
+    settling: {
+      invoke: {
+        src: "settlingActor",
+        input: ({ context }) => {
+          assert(context.intentHashes, "intentHashes is not defined")
+          return {
+            intentHashes: context.intentHashes,
+          }
+        },
+
+        onDone: {
+          target: "settled",
+          actions: "updateGiftToHistory",
+        },
+        onError: {
+          target: "editing",
+          actions: {
+            type: "logError",
+            params: ({ event }) => event,
+          },
+        },
+      },
+    },
+    settled: {
+      invoke: {
+        id: "readyGiftRef",
+        src: "readyGiftActor",
+        input: ({ context }) => {
+          const giftInfo = assembleGiftInfo(context)
+          const parsedValues = getParsedValues(context)
+          assert(context.signData, "signData is not defined")
+          assert(parsedValues.token, "token is not defined")
+          assert(parsedValues.amount, "amount is not defined")
+
+          return {
+            giftId: giftInfo.giftId,
+            giftInfo,
+            signerCredentials: context.signData.signerCredentials,
+            escrowCredentials: context.escrowCredentials,
+            parsed: {
+              token: parsedValues.token,
+              amount: parsedValues.amount,
+              message: parsedValues.message,
+            },
+          }
+        },
+
+        onDone: {
+          target: "editing",
+          actions: "sendToDepositedBalanceRefRefresh",
+        },
+
+        onError: {
+          target: "editing",
+          actions: {
+            type: "logError",
+            params: ({ event }) => event,
+          },
+        },
+      },
+    },
+  },
+})

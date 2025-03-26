@@ -1,13 +1,6 @@
 import type { Address } from "viem"
 import { assign, fromPromise, setup } from "xstate"
 import { logger } from "../../logger"
-import { getWalletRpcUrl } from "../../services/depositService"
-import type { BaseTokenInfo, SupportedChainName } from "../../types/base"
-import { BlockchainEnum } from "../../types/interfaces"
-import { assetNetworkAdapter } from "../../utils/adapters"
-import { assert } from "../../utils/assert"
-import { isFungibleToken, isNativeToken } from "../../utils/token"
-import { validateAddress } from "../../utils/validateAddress"
 import {
   getEvmErc20Balance,
   getEvmNativeBalance,
@@ -15,7 +8,14 @@ import {
   getNearNep141Balance,
   getSolanaNativeBalance,
   getSolanaSplBalance,
-} from "./getBalanceMachine"
+} from "../../services/blockchainBalanceService"
+import { getWalletRpcUrl } from "../../services/depositService"
+import type { BaseTokenInfo, SupportedChainName } from "../../types/base"
+import { BlockchainEnum } from "../../types/interfaces"
+import { assetNetworkAdapter } from "../../utils/adapters"
+import { assert } from "../../utils/assert"
+import { isFungibleToken, isNativeToken } from "../../utils/token"
+import { validateAddress } from "../../utils/validateAddress"
 
 export const backgroundBalanceActor = fromPromise(
   async ({

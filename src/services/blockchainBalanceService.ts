@@ -2,19 +2,15 @@ import { base64 } from "@scure/base"
 import { AccountLayout } from "@solana/spl-token"
 import { Connection, PublicKey } from "@solana/web3.js"
 import { http, type Address, createPublicClient, erc20Abi } from "viem"
-import { logger } from "../../logger"
+import { logger } from "../logger"
 import {
   getNearBalance,
   getNearNep141BalanceAccount,
   getNearNep141StorageBalanceBounds,
   getNearNep141StorageBalanceOf,
-} from "../../services/nearHttpClient"
-import type { BaseTokenInfo, UnifiedTokenInfo } from "../../types/base"
-import { Semaphore } from "../../utils/semaphore"
-import { isFungibleToken, isUnifiedToken } from "../../utils/token"
+} from "./nearHttpClient"
 
 export const RESERVED_NEAR_BALANCE = 100000000000000000000000n // 0.1 NEAR reserved for transaction fees and storage
-const semaphore = new Semaphore(5, 500) // 5 concurrent request, 0.5 second delay (adjust maxConcurrent and delayMs as needed)
 
 export const getNearNativeBalance = async ({
   accountId,
@@ -70,61 +66,6 @@ export const getNearNep141Balance = async ({
     )
     return null
   }
-}
-
-/**
- * @returns An object where the keys are defuseAssetIds (which must be unique) and the values are balances
- */
-export const getNearNep141Balances = async ({
-  tokenList,
-  accountId,
-}: {
-  tokenList: Array<BaseTokenInfo | UnifiedTokenInfo>
-  accountId: string
-}): Promise<Record<string, bigint>> => {
-  try {
-    const tokenMap = mapTokenList(tokenList).filter(([_, tokenAddress]) =>
-      tokenAddress.includes("nep141:")
-    )
-    const results = await Promise.all([
-      ...tokenMap.map(async ([tokenId, tokenAddress]) => {
-        await semaphore.acquire()
-        try {
-          return {
-            [tokenId]: await getNearNep141Balance({
-              tokenAddress,
-              accountId,
-            }),
-          }
-        } finally {
-          semaphore.release()
-        }
-      }),
-    ])
-
-    return Object.assign({}, ...results)
-  } catch (err: unknown) {
-    throw new Error("Error fetching balances", { cause: err })
-  }
-}
-
-function mapTokenList(
-  tokenList: Array<BaseTokenInfo | UnifiedTokenInfo>
-): Array<[string, string]> {
-  return tokenList.reduce<Array<[string, string]>>((acc, token) => {
-    if (isFungibleToken(token)) {
-      acc.push([token.defuseAssetId, token.address])
-    }
-    if (isUnifiedToken(token)) {
-      for (const groupToken of token.groupedTokens) {
-        // As this map for nep141 tokens, we can map the fungible tokens only
-        if (isFungibleToken(groupToken)) {
-          acc.push([groupToken.defuseAssetId, groupToken.address])
-        }
-      }
-    }
-    return acc
-  }, [])
 }
 
 export const getNearNep141StorageBalance = async ({

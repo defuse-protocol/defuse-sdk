@@ -313,3 +313,40 @@ export function makeChallenge(payload: Uint8Array): Uint8Array {
   const hash = sha256(payload)
   return new Uint8Array(hash)
 }
+
+export function makeInnerTransferMessage({
+  tokenDeltas,
+  signerId,
+  deadlineTimestamp,
+  receiverId,
+}: {
+  tokenDeltas: [string, bigint][]
+  signerId: DefuseUserId
+  deadlineTimestamp: number
+  receiverId: string
+}): Nep413DefuseMessageFor_DefuseIntents {
+  const tokens: Record<string, string> = {}
+  const seenTokens = new Set<string>()
+
+  for (const [token, amount] of tokenDeltas) {
+    assert(!seenTokens.has(token), `Duplicate token found: ${token}`)
+    seenTokens.add(token)
+    assert(
+      amount > 0n,
+      `Transfer amount must be positive, got: ${amount} for token ${token}`
+    )
+    tokens[token] = amount.toString()
+  }
+
+  return {
+    deadline: new Date(deadlineTimestamp).toISOString(),
+    intents: [
+      {
+        intent: "transfer",
+        tokens,
+        receiver_id: receiverId,
+      },
+    ],
+    signer_id: signerId,
+  }
+}

@@ -9,6 +9,7 @@ import {
   aggregateQuotes,
   calculateSplitAmounts,
   queryQuote,
+  sortForOptimalAmountSplitting,
 } from "./quoteService"
 import * as relayClient from "./solverRelayHttpClient"
 import type {
@@ -316,6 +317,91 @@ describe("queryQuote()", () => {
   })
 })
 
+describe("sortForOptimalAmountSplitting", () => {
+  const balances = {
+    tokenA: BigInt(500),
+    tokenB: BigInt(1000),
+    tokenC: BigInt(200),
+  }
+
+  const uniqueTokensIn: BaseTokenInfo[] = [
+    { ...tokenInfo, defuseAssetId: "tokenA", decimals: 2 },
+    { ...tokenInfo, defuseAssetId: "tokenB", decimals: 4 },
+    { ...tokenInfo, defuseAssetId: "tokenC", decimals: 2 },
+  ]
+
+  it("should sort tokens by decimals in ascending order first", () => {
+    const result = sortForOptimalAmountSplitting(uniqueTokensIn, balances)
+
+    // Expecting to see the tokens sorted by decimals: 2 -> 2 -> 4
+    expect(result[0]?.decimals).toBe(2)
+    expect(result[1]?.decimals).toBe(2)
+    expect(result[2]?.decimals).toBe(4)
+  })
+
+  it("should sort by balances when decimals are equal", () => {
+    // Changing the balances so we can test balance sorting
+    const updatedBalances = {
+      ...balances,
+      tokenC: BigInt(500), // Smaller balance for tokenC
+      tokenA: BigInt(1000), // Larger balance for tokenA
+    }
+
+    const result = sortForOptimalAmountSplitting(
+      uniqueTokensIn,
+      updatedBalances
+    )
+
+    // Tokens with the same decimals should be sorted by balance: tokenA > tokenC
+    expect(result[0]?.defuseAssetId).toBe("tokenA")
+    expect(result[1]?.defuseAssetId).toBe("tokenC")
+    expect(result[2]?.defuseAssetId).toBe("tokenB")
+  })
+
+  it("should return the tokens in order when balances are missing", () => {
+    const balancesWithoutTokenB = {
+      tokenA: BigInt(500),
+      tokenC: BigInt(200),
+    }
+
+    const result = sortForOptimalAmountSplitting(
+      uniqueTokensIn,
+      balancesWithoutTokenB
+    )
+
+    // If balances for a token are missing, it should still sort by decimals first
+    expect(result[0]?.defuseAssetId).toBe("tokenA")
+    expect(result[1]?.defuseAssetId).toBe("tokenC")
+    expect(result[2]?.defuseAssetId).toBe("tokenB")
+  })
+
+  it("should return empty array if no tokens are provided", () => {
+    const result = sortForOptimalAmountSplitting([], balances)
+    expect(result).toEqual([])
+  })
+
+  it("should handle large and small balances correctly", () => {
+    const largeBalances = {
+      tokenA: BigInt(999999999),
+      tokenB: BigInt(1),
+    }
+
+    const largeUniqueTokensIn = [
+      { ...tokenInfo, defuseAssetId: "tokenA", decimals: 5 },
+      { ...tokenInfo, defuseAssetId: "tokenB", decimals: 2 },
+    ]
+
+    const result = sortForOptimalAmountSplitting(
+      largeUniqueTokensIn,
+      largeBalances
+    )
+
+    // Sort by decimals first, then by balance
+    expect(result[0]?.defuseAssetId).toBe("tokenB")
+    expect(result[1]?.defuseAssetId).toBe("tokenA")
+  })
+})
+
 describe("calculateSplitAmounts", () => {
   it("splits amounts when same decimals", () => {
     const tokensIn = [
@@ -327,12 +413,12 @@ describe("calculateSplitAmounts", () => {
     const balances = {
       token1: 100n,
       token2: 50n,
-      token3: 200n,
+      token3: 120n,
     }
     const result = calculateSplitAmounts(tokensIn, amountIn, balances)
     expect(result).toEqual({
-      token1: 100n,
-      token2: 50n,
+      token3: 120n,
+      token1: 30n,
     })
 
     const total = sumTotal(tokensIn, result)
@@ -461,7 +547,7 @@ describe("calculateSplitAmounts", () => {
       { ...token1, decimals: 18 },
       { ...token2, decimals: 6 },
     ]
-    const amountIn = { amount: 1_000_000n, decimals: 12 } // 0.000001 with 12 decimals
+    const amountIn = { amount: 1_000_000_000n, decimals: 12 } // 0.000001 with 12 decimals
     const balances = {
       token1: 1_000_000_000_000_000_000n, // 1 with 18 decimals
       token2: 1_000_000n, // 1 with 6 decimals
@@ -469,7 +555,7 @@ describe("calculateSplitAmounts", () => {
 
     const result = calculateSplitAmounts(tokensIn, amountIn, balances)
     expect(result).toEqual({
-      token1: 1_000_000_000_000n,
+      token2: 1_000n,
     })
 
     const total = sumTotal(tokensIn, result)

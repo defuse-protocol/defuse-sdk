@@ -6,9 +6,6 @@ interface Settings {
   quotePollingIntervalMs: number
   quoteMinDeadlineMs: number
   maxQuoteMinDeadlineMs: number
-  queries: {
-    staleTime: number
-  }
   rpcUrls: {
     [key in SupportedChainName]: string
   }
@@ -31,9 +28,6 @@ export const settings: Settings = {
    * The server will return quotes with at least this much time remaining.
    */
   maxQuoteMinDeadlineMs: 600_000,
-  queries: {
-    staleTime: 2000 * 60, // 2 minutes
-  },
   /**
    * RPC URLs for different blockchains.
    * Ensure these URLs are valid and accessible.

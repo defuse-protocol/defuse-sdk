@@ -1,6 +1,6 @@
 import { secp256k1 } from "@noble/curves/secp256k1"
 import { base58 } from "@scure/base"
-import { providers } from "near-api-js"
+import { nearClient } from "src/constants/nearClient"
 import { sign } from "tweetnacl"
 import { verifyMessage as verifyMessageViem } from "viem"
 import { assertEvent, assign, fromPromise, setup } from "xstate"
@@ -253,9 +253,7 @@ export const signIntentMachine = setup({
               context.signature.type === "NEP413"
                 ? context.signature.signatureData
                 : null,
-            nearClient: new providers.JsonRpcProvider({
-              url: "https://nearrpc.aurora.dev",
-            }),
+            nearClient,
           }
         },
 

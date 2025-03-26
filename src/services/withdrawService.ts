@@ -356,7 +356,7 @@ async function getBalances(
     depositedBalanceRef.send({ type: "REQUEST_BALANCE_REFRESH" })
     const state = await waitFor(
       depositedBalanceRef,
-      (state) => state.matches({ authenticated: "idle" }),
+      (state) => state.matches("authenticated"),
       { signal } // todo: add timeout and error handling
     )
     balances = state.context.balances

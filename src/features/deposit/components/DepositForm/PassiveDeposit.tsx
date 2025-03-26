@@ -63,6 +63,7 @@ export function PassiveDeposit({
                 bottom: 0,
                 left: 0,
                 color: "transparent",
+                outline: "none",
               }}
             />
           </span>
