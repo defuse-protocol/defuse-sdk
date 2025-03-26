@@ -1,4 +1,5 @@
 import { X as CrossIcon } from "@phosphor-icons/react"
+import { InfoCircledIcon } from "@radix-ui/react-icons"
 import { Text } from "@radix-ui/themes"
 import { type ReactNode, useMemo, useState } from "react"
 import {
@@ -9,6 +10,7 @@ import type { BaseTokenInfo, UnifiedTokenInfo } from "src/types/base"
 import type { BlockchainEnum } from "src/types/interfaces"
 import { useModalStore } from "../../providers/ModalStoreProvider"
 import { SearchBar } from "../SearchBar"
+import { TooltipInfo } from "../TooltipInfo"
 import { ModalDialog } from "./ModalDialog"
 import { ModalNoResults } from "./ModalNoResults"
 import { NetworkList } from "./NetworksList"
@@ -107,9 +109,23 @@ export const ModalSelectNetwork = () => {
               )}
               {Object.keys(disabledChains).length > 0 && (
                 <div className="flex flex-col gap-2 pt-4">
-                  <Text size="1" weight="bold" className="text-gray-500">
-                    Unsupported networks
-                  </Text>
+                  <div className="flex flex-row justify-start items-center gap-2">
+                    <Text size="1" weight="bold" className="text-gray-500">
+                      Unsupported networks
+                    </Text>
+                    <TooltipInfo
+                      icon={
+                        <button type="button">
+                          <Text asChild>
+                            <InfoCircledIcon />
+                          </Text>
+                        </button>
+                      }
+                    >
+                      The selected asset is not supported on the following
+                      networks.
+                    </TooltipInfo>
+                  </div>
                   <NetworkList
                     disabled
                     networks={disabledChains}
