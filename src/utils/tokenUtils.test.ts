@@ -54,11 +54,8 @@ describe("computeTotalBalance", () => {
       name: "Token",
       decimals: 18,
       icon: "icon.png",
-      chainId: "",
-      chainIcon: "chain.png",
       chainName: "eth",
       bridge: "poa",
-      routes: [],
     }
 
     it("should return balance for base token", () => {
@@ -85,11 +82,8 @@ describe("computeTotalBalance", () => {
           name: "Token1",
           decimals: 18,
           icon: "icon1.png",
-          chainId: "",
-          chainIcon: "chain1.png",
           chainName: "eth",
           bridge: "poa",
-          routes: [],
         },
         {
           defuseAssetId: "token2",
@@ -98,11 +92,8 @@ describe("computeTotalBalance", () => {
           name: "Token2",
           decimals: 18,
           icon: "icon2.png",
-          chainId: "2",
-          chainIcon: "chain2.png",
           chainName: "base",
           bridge: "poa",
-          routes: [],
         },
       ],
     }
@@ -187,11 +178,8 @@ describe("computeTotalBalanceDifferentDecimals", () => {
         name: "Token1",
         decimals: 18,
         icon: "icon1.png",
-        chainId: "",
-        chainIcon: "chain1.png",
         chainName: "eth",
         bridge: "poa",
-        routes: [],
       },
       {
         defuseAssetId: "missing",
@@ -200,11 +188,8 @@ describe("computeTotalBalanceDifferentDecimals", () => {
         name: "Token2",
         decimals: 18,
         icon: "icon2.png",
-        chainId: "",
-        chainIcon: "chain2.png",
         chainName: "eth",
         bridge: "poa",
-        routes: [],
       },
     ]
 
@@ -225,11 +210,8 @@ describe("computeTotalBalanceDifferentDecimals", () => {
         name: "Token1",
         decimals: 18,
         icon: "icon1.png",
-        chainId: "",
-        chainIcon: "chain1.png",
         chainName: "eth",
         bridge: "poa",
-        routes: [],
       },
       {
         defuseAssetId: "missing2",
@@ -238,11 +220,8 @@ describe("computeTotalBalanceDifferentDecimals", () => {
         name: "Token2",
         decimals: 18,
         icon: "icon2.png",
-        chainId: "",
-        chainIcon: "chain2.png",
         chainName: "eth",
         bridge: "poa",
-        routes: [],
       },
     ]
 
@@ -259,11 +238,8 @@ describe("computeTotalBalanceDifferentDecimals", () => {
       name: "Token",
       decimals: 18,
       icon: "icon.png",
-      chainId: "",
-      chainIcon: "chain.png",
       chainName: "eth",
       bridge: "poa",
-      routes: [],
     }
 
     it("should return balance and decimals for base token", () => {
@@ -297,11 +273,8 @@ describe("computeTotalBalanceDifferentDecimals", () => {
           name: "Token1",
           decimals: 18,
           icon: "icon1.png",
-          chainId: "",
-          chainIcon: "chain1.png",
           chainName: "eth",
           bridge: "poa",
-          routes: [],
         },
         {
           defuseAssetId: "token2",
@@ -310,11 +283,8 @@ describe("computeTotalBalanceDifferentDecimals", () => {
           name: "Token2",
           decimals: 18,
           icon: "icon2.png",
-          chainId: "2",
-          chainIcon: "chain2.png",
           chainName: "base",
           bridge: "poa",
-          routes: [],
         },
       ],
     }
@@ -382,11 +352,8 @@ describe("computeTotalBalanceDifferentDecimals", () => {
           name: "Token1",
           decimals: 6,
           icon: "icon1.png",
-          chainId: "",
-          chainIcon: "chain1.png",
           chainName: "eth",
           bridge: "poa",
-          routes: [],
         },
         {
           defuseAssetId: "token2",
@@ -395,11 +362,8 @@ describe("computeTotalBalanceDifferentDecimals", () => {
           name: "Token2",
           decimals: 18,
           icon: "icon2.png",
-          chainId: "2",
-          chainIcon: "chain2.png",
           chainName: "base",
           bridge: "poa",
-          routes: [],
         },
       ],
     }
@@ -435,11 +399,8 @@ describe("computeTotalBalanceDifferentDecimals", () => {
           name: "Token1",
           decimals: 6,
           icon: "icon1.png",
-          chainId: "",
-          chainIcon: "chain1.png",
           chainName: "eth",
           bridge: "poa",
-          routes: [],
         },
         {
           defuseAssetId: "token1", // Duplicate with different decimals
@@ -448,11 +409,8 @@ describe("computeTotalBalanceDifferentDecimals", () => {
           name: "Token1",
           decimals: 18,
           icon: "icon1.png",
-          chainId: "",
-          chainIcon: "chain1.png",
           chainName: "eth",
           bridge: "poa",
-          routes: [],
         },
         {
           defuseAssetId: "token2",
@@ -461,11 +419,8 @@ describe("computeTotalBalanceDifferentDecimals", () => {
           name: "Token2",
           decimals: 18,
           icon: "icon2.png",
-          chainId: "2",
-          chainIcon: "chain2.png",
           chainName: "base",
           bridge: "poa",
-          routes: [],
         },
       ],
     }
@@ -487,11 +442,8 @@ describe("computeTotalBalanceDifferentDecimals", () => {
             name: "Token1",
             decimals: 6,
             icon: "icon1.png",
-            chainId: "",
-            chainIcon: "chain1.png",
             chainName: "eth",
             bridge: "poa",
-            routes: [],
           },
           {
             defuseAssetId: "token1",
@@ -500,11 +452,8 @@ describe("computeTotalBalanceDifferentDecimals", () => {
             name: "Token1",
             decimals: 6,
             icon: "icon1.png",
-            chainId: "",
-            chainIcon: "chain1.png",
             chainName: "eth",
             bridge: "poa",
-            routes: [],
           },
           {
             defuseAssetId: "token2",
@@ -513,11 +462,8 @@ describe("computeTotalBalanceDifferentDecimals", () => {
             name: "Token2",
             decimals: 18,
             icon: "icon2.png",
-            chainId: "2",
-            chainIcon: "chain2.png",
             chainName: "base",
             bridge: "poa",
-            routes: [],
           },
         ],
       }
@@ -547,11 +493,8 @@ describe("getDerivedToken", () => {
           name: "Token1",
           decimals: 18,
           icon: "icon1.png",
-          chainId: "",
-          chainIcon: "chain1.png",
           chainName: "eth",
           bridge: "poa",
-          routes: [],
         },
         {
           defuseAssetId: "token2",
@@ -560,11 +503,8 @@ describe("getDerivedToken", () => {
           name: "Token2",
           decimals: 18,
           icon: "icon2.png",
-          chainId: "2",
-          chainIcon: "chain2.png",
           chainName: "base",
           bridge: "poa",
-          routes: [],
         },
       ],
     },
@@ -575,11 +515,8 @@ describe("getDerivedToken", () => {
       name: "Token3",
       decimals: 18,
       icon: "icon3.png",
-      chainId: "",
-      chainIcon: "chain.png",
       chainName: "eth",
       bridge: "poa",
-      routes: [],
     },
   ]
   it("should derive token from unified token list", () => {
@@ -592,11 +529,8 @@ describe("getDerivedToken", () => {
       name: "Token1",
       decimals: 18,
       icon: "icon1.png",
-      chainId: "",
-      chainIcon: "chain1.png",
       chainName: "eth",
       bridge: "poa",
-      routes: [],
     })
   })
 
@@ -610,11 +544,8 @@ describe("getDerivedToken", () => {
       name: "Token3",
       decimals: 18,
       icon: "icon3.png",
-      chainId: "",
-      chainIcon: "chain.png",
       chainName: "eth",
       bridge: "poa",
-      routes: [],
     })
   })
 
@@ -772,11 +703,8 @@ describe("computeTotalDeltaDifferentDecimals", () => {
       name: "Token1",
       decimals: 6,
       icon: "icon1.png",
-      chainId: "",
-      chainIcon: "chain1.png",
       chainName: "eth",
       bridge: "poa",
-      routes: [],
     },
     {
       defuseAssetId: "token2",
@@ -785,11 +713,8 @@ describe("computeTotalDeltaDifferentDecimals", () => {
       name: "Token2",
       decimals: 18,
       icon: "icon2.png",
-      chainId: "",
-      chainIcon: "chain2.png",
       chainName: "eth",
       bridge: "poa",
-      routes: [],
     },
   ]
 
@@ -847,11 +772,8 @@ describe("getUnderlyingBaseTokenInfos", () => {
     name: "Token1",
     decimals: 6,
     icon: "icon1.png",
-    chainId: "",
-    chainIcon: "chain1.png",
     chainName: "eth",
     bridge: "poa",
-    routes: [],
   }
 
   const unifiedToken: UnifiedTokenInfo = {
@@ -868,11 +790,8 @@ describe("getUnderlyingBaseTokenInfos", () => {
         name: "Token2",
         decimals: 18,
         icon: "icon2.png",
-        chainId: "2",
-        chainIcon: "chain2.png",
         chainName: "base",
         bridge: "poa",
-        routes: [],
       },
     ],
   }

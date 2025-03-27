@@ -31,9 +31,6 @@ export const SelectAssets = ({ selected, handleSelect }: Props) => {
         <AssetComboIcon
           icon={selected.icon as string}
           name={selected.name as string}
-          chainIcon={
-            "defuseAssetId" in selected ? selected.chainIcon : undefined
-          }
           chainName={
             "defuseAssetId" in selected ? selected.chainName : undefined
           }
