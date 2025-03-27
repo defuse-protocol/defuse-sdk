@@ -26,6 +26,8 @@ export type SupportedChainName =
   | "gnosis"
   | "berachain"
 
+export type SupportedBridge = "direct" | "poa" | "aurora_engine"
+
 export interface FungibleTokenInfo extends Partial<BaseTokenBalance> {
   defuseAssetId: string
   address: string
@@ -39,6 +41,7 @@ export interface FungibleTokenInfo extends Partial<BaseTokenBalance> {
   chainName: SupportedChainName
   /** @deprecated */
   routes: string[]
+  bridge: SupportedBridge
 }
 
 export interface NativeTokenInfo extends Partial<BaseTokenBalance> {
@@ -54,6 +57,7 @@ export interface NativeTokenInfo extends Partial<BaseTokenBalance> {
   chainName: SupportedChainName
   /** @deprecated */
   routes: string[]
+  bridge: SupportedBridge
 }
 
 export type BaseTokenInfo = FungibleTokenInfo | NativeTokenInfo

@@ -3,6 +3,7 @@ import { useSelector } from "@xstate/react"
 import type { ActorRefFrom, StateValueFrom } from "xstate"
 import type { intentStatusMachine } from "../../features/machines/intentStatusMachine"
 import { assert } from "../../utils/assert"
+import { blockExplorerTxLinkFactory } from "../../utils/chainTxExplorer"
 import { formatTokenValue } from "../../utils/format"
 import { AssetComboIcon } from "../Asset/AssetComboIcon"
 import { CopyButton } from "./CopyButton"
@@ -11,21 +12,28 @@ type WithdrawIntentCardProps = {
   intentStatusActorRef: ActorRefFrom<typeof intentStatusMachine>
 }
 
-const NEAR_EXPLORER = "https://nearblocks.io"
-
 export function WithdrawIntentCard({
   intentStatusActorRef,
 }: WithdrawIntentCardProps) {
   const state = useSelector(intentStatusActorRef, (state) => state)
-  const { tokenOut, intentDescription } = state.context
+  const { intentDescription, bridgeTransactionResult } = state.context
 
   assert(intentDescription.type === "withdraw", "Type must be withdraw")
   const amountWithdrawn = intentDescription.amountWithdrawn
 
-  const txUrl =
-    state.context.txHash != null
-      ? `${NEAR_EXPLORER}/txns/${state.context.txHash}`
-      : null
+  const tokenOut = intentDescription.tokenOut
+
+  const sourceTxHash = state.context.txHash
+  const sourceTxUrl =
+    sourceTxHash != null
+      ? blockExplorerTxLinkFactory("near", sourceTxHash)
+      : undefined
+
+  const destTxHash = bridgeTransactionResult?.destinationTxHash
+  const destTxUrl =
+    destTxHash != null
+      ? blockExplorerTxLinkFactory(tokenOut.chainName, destTxHash)
+      : undefined
 
   return (
     <Flex p="2" gap="3">
@@ -42,9 +50,9 @@ export function WithdrawIntentCard({
           </Box>
 
           <Flex gap="1" align="center">
-            {(state.matches("pending") || state.matches("checking")) && (
-              <Spinner size="1" />
-            )}
+            {(state.matches("pending") ||
+              state.matches("checking") ||
+              state.matches("waitingForBridge")) && <Spinner size="1" />}
 
             <Text
               size="1"
@@ -85,19 +93,36 @@ export function WithdrawIntentCard({
               </Flex>
             )}
 
-            {state.context.txHash != null && txUrl != null && (
+            {sourceTxHash != null && (
               <Flex align="center" gap="1">
                 <Text size="1" color="gray">
                   {/* biome-ignore lint/nursery/useConsistentCurlyBraces: space is needed here */}
-                  Transaction:{" "}
-                  <Link href={txUrl} target="_blank" color="blue">
-                    {truncateHash(state.context.txHash)}
+                  Source Tx:{" "}
+                  <Link href={sourceTxUrl} target="_blank" color="blue">
+                    {truncateHash(sourceTxHash)}
                   </Link>
                 </Text>
 
                 <CopyButton
-                  text={state.context.txHash}
-                  ariaLabel="Copy Transaction hash"
+                  text={sourceTxHash}
+                  ariaLabel="Copy Source Transaction"
+                />
+              </Flex>
+            )}
+
+            {destTxHash != null && (
+              <Flex align="center" gap="1">
+                <Text size="1" color="gray">
+                  {/* biome-ignore lint/nursery/useConsistentCurlyBraces: space is needed here */}
+                  Destination Tx:{" "}
+                  <Link href={destTxUrl} target="_blank" color="blue">
+                    {truncateHash(destTxHash)}
+                  </Link>
+                </Text>
+
+                <CopyButton
+                  text={destTxHash}
+                  ariaLabel="Copy Destination Transaction"
                 />
               </Flex>
             )}
@@ -131,11 +156,16 @@ export function WithdrawIntentCard({
   )
 }
 
-function renderStatusLabel(val: StateValueFrom<typeof intentStatusMachine>) {
+export function renderStatusLabel(
+  val: StateValueFrom<typeof intentStatusMachine>
+) {
   switch (val) {
     case "pending":
     case "checking":
+    case "settled":
       return "Pending"
+    case "waitingForBridge":
+      return "Transferring"
     case "error":
       return "Can't get status"
     case "success":

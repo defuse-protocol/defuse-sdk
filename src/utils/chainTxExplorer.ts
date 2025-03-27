@@ -33,3 +33,13 @@ export function chainTxExplorer(blockchain: SupportedChainName): string | null {
       return null
   }
 }
+
+export function blockExplorerTxLinkFactory(
+  blockchain: SupportedChainName,
+  txHash: string
+) {
+  const baseUrl = chainTxExplorer(blockchain)
+  if (baseUrl != null) {
+    return baseUrl + txHash
+  }
+}
