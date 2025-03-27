@@ -131,6 +131,29 @@ export const giftMakerRootMachine = setup({
           },
           input.signData.signerCredentials
         )
+
+        if (result.tag === "err") {
+          return { tag: "err", reason: result.reason }
+        }
+        return { tag: "ok" }
+      }
+    ),
+    updateGiftToHistory: fromPromise(
+      async ({
+        input,
+      }: {
+        input: GiftMakerRootMachineContext
+      }): Promise<StorageOperationResult> => {
+        assert(input.signData, "signData is not defined")
+        const giftInfo = assembleGiftInfo(input)
+        const result = await giftMakerHistoryStore
+          .getState()
+          .updateGift(
+            giftInfo.giftId,
+            input.signData.signerCredentials,
+            giftInfo.intentHashes
+          )
+
         if (result.tag === "err") {
           return { tag: "err", reason: result.reason }
         }
@@ -166,17 +189,6 @@ export const giftMakerRootMachine = setup({
     })),
     completeSign: ({ self }, event: GiftSignedResult) => {
       self.send({ type: "COMPLETE_SIGN", params: event })
-    },
-    updateGiftToHistory: ({ context }) => {
-      assert(context.signData, "signData is not defined")
-      const giftInfo = assembleGiftInfo(context)
-      giftMakerHistoryStore
-        .getState()
-        .updateGift(
-          giftInfo.giftId,
-          context.signData.signerCredentials,
-          giftInfo.intentHashes
-        )
     },
     removeGiftFromHistory: ({ context }) => {
       assert(context.signData, "signData is not defined")
@@ -428,8 +440,7 @@ export const giftMakerRootMachine = setup({
         },
 
         onDone: {
-          target: "settled",
-          actions: "updateGiftToHistory",
+          target: "updatingGiftToHistory",
         },
         onError: {
           target: "editing",
@@ -437,6 +448,44 @@ export const giftMakerRootMachine = setup({
             type: "logError",
             params: ({ event }) => event,
           },
+        },
+      },
+    },
+    updatingGiftToHistory: {
+      invoke: {
+        src: "updateGiftToHistory",
+        input: ({ context }) => context,
+        onDone: [
+          {
+            guard: { type: "isOk", params: ({ event }) => event.output },
+            target: "settled",
+          },
+          {
+            target: "editing",
+            actions: {
+              type: "setError",
+              params: ({ event }) => {
+                assert(event.output.tag === "err")
+                return { tag: "err", value: { reason: event.output.reason } }
+              },
+            },
+          },
+        ],
+        onError: {
+          target: "editing",
+          actions: [
+            {
+              type: "logError",
+              params: ({ event }) => event,
+            },
+            {
+              type: "setError",
+              params: {
+                tag: "err",
+                value: { reason: "ERR_STORAGE_OPERATION_EXCEPTION" },
+              },
+            },
+          ],
         },
       },
     },

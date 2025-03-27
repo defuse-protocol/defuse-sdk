@@ -9,10 +9,12 @@ import { indexedDBStorage } from "./indexedDBStorage"
 import { localStorageHandler } from "./localStorageHandler"
 import { sessionStorageHandler } from "./sessionStorageHandler"
 
+type StorageOperationType = "fetch" | "set" | "update" | "remove"
+
 export type StorageOperation<T> = {
   operation: () => T | Promise<T>
   storageName: string
-  operationType: "fetch" | "set" | "update" | "remove"
+  operationType: StorageOperationType
 }
 
 type ExecuteStorageOperationsOk<T> = { tag: "ok"; result: T }
@@ -42,7 +44,7 @@ export async function executeStorageOperations<T>(
     operations.map(async ({ operation, storageName, operationType }) => {
       try {
         const result = await operation()
-        return { tag: "ok", result } as const
+        return { tag: "ok", result, operationType } as const
       } catch (error) {
         logger.error(
           new Error(`Failed to ${operationType} at ${storageName}`, {
@@ -80,15 +82,21 @@ export async function executeStorageOperations<T>(
     return { tag: "err", reason }
   }
 
-  const successfulOperations = results.filter((r) => r.tag === "ok" && r.result)
+  const successfulOperations = results.filter((r) => r.tag === "ok")
+
   const firstSuccess = successfulOperations[0]
-  if (!firstSuccess || !firstSuccess.result) {
+
+  if (
+    !firstSuccess ||
+    (firstSuccess?.operationType === "fetch" &&
+      firstSuccess.result === undefined)
+  ) {
     return { tag: "err", reason: "ERR_STORAGE_OPERATION_EXCEPTION" }
   }
 
   return {
     tag: "ok",
-    result: firstSuccess.result,
+    result: firstSuccess.result as T,
   }
 }
 
