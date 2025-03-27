@@ -30,6 +30,7 @@ const tokenInfo: BaseTokenInfo = {
   chainId: "",
   chainIcon: "",
   chainName: "eth",
+  bridge: "poa",
   routes: [],
 }
 
