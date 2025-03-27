@@ -1,16 +1,3 @@
-export enum BaseTokenConvertEnum {
-  USD = "usd",
-}
-
-export type BaseTokenBalance = {
-  /** bigint in string */
-  balance: string
-  balanceUsd?: string
-  convertedLast?: {
-    [key in BaseTokenConvertEnum]: string
-  }
-}
-
 export type SupportedChainName =
   | "eth"
   | "near"
@@ -28,7 +15,7 @@ export type SupportedChainName =
 
 export type SupportedBridge = "direct" | "poa" | "aurora_engine"
 
-export interface FungibleTokenInfo extends Partial<BaseTokenBalance> {
+export interface FungibleTokenInfo {
   defuseAssetId: string
   address: string
   symbol: string
@@ -39,7 +26,7 @@ export interface FungibleTokenInfo extends Partial<BaseTokenBalance> {
   bridge: SupportedBridge
 }
 
-export interface NativeTokenInfo extends Partial<BaseTokenBalance> {
+export interface NativeTokenInfo {
   defuseAssetId: string
   type: "native"
   symbol: string
