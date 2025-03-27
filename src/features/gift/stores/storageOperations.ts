@@ -28,6 +28,7 @@ export type StorageOperationErr =
   | "ERR_STORAGE_OPERATION_EXCEPTION"
   | "ERR_STORAGE_DATA_INVALID"
   | "ERR_STORAGE_DATA_DESERIALIZATION_FAILED"
+
 export type StorageOperationResult =
   | { tag: "ok" }
   | {

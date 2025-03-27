@@ -38,7 +38,9 @@ import {
   giftMakerPublishingActor,
 } from "./giftMakerPublishingActor"
 import {
+  type GiftMakerReadyActorErrors,
   type GiftMakerReadyActorInput,
+  type GiftMakerReadyActorOutput,
   giftMakerReadyActor,
 } from "./giftMakerReadyActor"
 import type {
@@ -52,6 +54,7 @@ type GiftMakerRootMachineErrors =
   | GiftMakerSignActorErrors
   | GiftMakerPublishingActorErrors
   | { reason: StorageOperationErr }
+  | GiftMakerReadyActorErrors
 
 export type GiftMakerRootMachineContext = {
   error: null | GiftMakerRootMachineErrors
@@ -104,7 +107,7 @@ export const giftMakerRootMachine = setup({
       GiftMakerPublishingActorInput
     >,
     readyGiftActor: giftMakerReadyActor as unknown as PromiseActorLogic<
-      void,
+      GiftMakerReadyActorOutput,
       GiftMakerReadyActorInput
     >,
     settlingActor: fromPromise(
@@ -515,16 +518,37 @@ export const giftMakerRootMachine = setup({
           }
         },
 
-        onDone: {
-          target: "editing",
-          actions: "sendToDepositedBalanceRefRefresh",
-        },
+        onDone: [
+          {
+            target: "editing",
+            actions: "sendToDepositedBalanceRefRefresh",
+            guard: { type: "isOk", params: ({ event }) => event.output },
+          },
+          {
+            target: "editing",
+            actions: [
+              "sendToDepositedBalanceRefRefresh",
+              {
+                type: "setError",
+                params: ({ event }) => {
+                  assert(event.output.tag === "err")
+                  return {
+                    tag: "err",
+                    value: event.output.value.reason,
+                  }
+                },
+              },
+            ],
+          },
+        ],
 
         onError: {
           target: "editing",
           actions: {
             type: "logError",
-            params: ({ event }) => event,
+            params: ({ event }) => {
+              return event
+            },
           },
         },
       },

@@ -1,4 +1,5 @@
-import { type PromiseActorLogic, assign, setup } from "xstate"
+import { assert } from "src/utils/assert"
+import { type PromiseActorLogic, assign, fromPromise, setup } from "xstate"
 import type { SignerCredentials } from "../../../core/formatters"
 import { logger } from "../../../logger"
 import type {
@@ -7,6 +8,10 @@ import type {
   UnifiedTokenInfo,
 } from "../../../types/base"
 import { giftMakerHistoryStore } from "../stores/giftMakerHistory"
+import type {
+  StorageOperationErr,
+  StorageOperationResult,
+} from "../stores/storageOperations"
 import type { EscrowCredentials } from "../utils/generateEscrowCredentials"
 import type { GiftInfo } from "./shared/getGiftInfo"
 import {
@@ -26,7 +31,20 @@ export type GiftMakerReadyActorInput = {
   }
 }
 
-type GiftMakerReadyActorErrors = { reason: "GIFT_ALREADY_CLAIMED_OR_EXECUTED" }
+export type GiftMakerReadyActorOutput =
+  | {
+      tag: "ok"
+    }
+  | {
+      tag: "err"
+      value: {
+        reason: GiftMakerReadyActorErrors
+      }
+    }
+
+export type GiftMakerReadyActorErrors = {
+  reason: StorageOperationErr | "GIFT_ALREADY_CLAIMED_OR_EXECUTED"
+}
 
 interface GiftMakerReadyActorContext extends GiftMakerReadyActorInput {
   giftId: string
@@ -37,6 +55,7 @@ export const giftMakerReadyActor = setup({
   types: {
     input: {} as GiftMakerReadyActorInput,
     context: {} as GiftMakerReadyActorContext,
+    output: {} as GiftMakerReadyActorOutput,
     events: {} as { type: "FINISH" | "CANCEL_GIFT" },
     children: {} as {
       giftMakerClaimRef: "claimGiftActor"
@@ -47,21 +66,44 @@ export const giftMakerReadyActor = setup({
       GiftClaimActorOutput,
       void
     >,
+    removeGiftFromHistory: fromPromise(
+      async ({
+        input,
+      }: {
+        input: GiftMakerReadyActorContext
+      }): Promise<StorageOperationResult> => {
+        const result = await giftMakerHistoryStore
+          .getState()
+          .removeGift(input.giftId, input.signerCredentials)
+
+        if (result.tag === "err") {
+          return { tag: "err", reason: result.reason }
+        }
+        return { tag: "ok" }
+      }
+    ),
   },
   actions: {
     logError: (_, event: { error: unknown }) => {
       logger.error(event.error)
     },
     setError: assign({
-      error: (_, error: GiftMakerReadyActorErrors) => error,
+      error: (
+        _,
+        result:
+          | {
+              tag: "err"
+              value: GiftMakerReadyActorErrors
+            }
+          | { tag: "ok" }
+      ) => {
+        assert(result.tag === "err")
+        return result.value
+      },
     }),
-    removeGiftFromHistory: ({ context }) => {
-      giftMakerHistoryStore
-        .getState()
-        .removeGift(context.giftId, context.signerCredentials)
-    },
   },
   guards: {
+    isOk: (_, params: { tag: "ok" | "err" }) => params.tag === "ok",
     isTrue: (_, value: boolean) => value,
   },
 }).createMachine({
@@ -73,6 +115,10 @@ export const giftMakerReadyActor = setup({
 
   initial: "idle",
 
+  output: ({ event }) => {
+    return event.output as GiftMakerReadyActorOutput
+  },
+
   states: {
     idle: {
       on: {
@@ -81,47 +127,112 @@ export const giftMakerReadyActor = setup({
       },
     },
     cancelling: {
-      invoke: {
-        id: "giftMakerClaimRef",
-        src: "claimGiftActor",
-        input: ({ context }) => {
-          return {
-            giftInfo: context.giftInfo,
-            signerCredentials: context.signerCredentials,
-          }
-        },
-        onDone: [
-          {
-            target: "finished",
-            guard: {
-              type: "isTrue",
-              params: ({ event }) =>
-                event.output.giftStatus === "claimed" ||
-                event.output.giftStatus === "already_claimed_or_executed",
+      initial: "claiming",
+      states: {
+        claiming: {
+          invoke: {
+            id: "giftMakerClaimRef",
+            src: "claimGiftActor",
+            input: ({ context }) => {
+              return {
+                giftInfo: context.giftInfo,
+                signerCredentials: context.signerCredentials,
+              }
             },
-            actions: "removeGiftFromHistory",
-          },
-          {
-            target: "idle",
-            actions: [
+            onDone: [
               {
-                type: "logError",
-                params: {
-                  error: { reason: "GIFT_ALREADY_CLAIMED_OR_EXECUTED" },
+                target: "removingGiftFromHistory",
+                guard: {
+                  type: "isTrue",
+                  params: ({ event }) =>
+                    event.output.giftStatus === "claimed" ||
+                    event.output.giftStatus === "already_claimed_or_executed",
                 },
               },
+              {
+                target: "#(machine).idle",
+                actions: [
+                  {
+                    type: "logError",
+                    params: {
+                      error: { reason: "GIFT_ALREADY_CLAIMED_OR_EXECUTED" },
+                    },
+                  },
+                  {
+                    type: "setError",
+                    params: {
+                      tag: "err",
+                      value: { reason: "GIFT_ALREADY_CLAIMED_OR_EXECUTED" },
+                    },
+                  },
+                ],
+              },
             ],
+            onError: {
+              target: "#(machine).idle",
+              actions: [{ type: "logError", params: ({ event }) => event }],
+            },
           },
-        ],
-        onError: {
-          target: "idle",
-          actions: [{ type: "logError", params: ({ event }) => event }],
+        },
+        removingGiftFromHistory: {
+          invoke: {
+            src: "removeGiftFromHistory",
+            input: ({ context }) => context,
+            onDone: [
+              {
+                guard: { type: "isOk", params: ({ event }) => event.output },
+                target: "#(machine).finished",
+              },
+              {
+                target: "#(machine).failed",
+                actions: [
+                  {
+                    type: "logError",
+                    params: ({ event }) => {
+                      if (event.output.tag === "err") {
+                        return { error: { reason: event.output.reason } }
+                      }
+                      return {
+                        error: { reason: "ERR_STORAGE_OPERATION_EXCEPTION" },
+                      }
+                    },
+                  },
+                  {
+                    type: "setError",
+                    params: ({ event }) => {
+                      assert(event.output.tag === "err")
+                      return {
+                        tag: "err",
+                        value: { reason: event.output.reason },
+                      }
+                    },
+                  },
+                ],
+              },
+            ],
+            onError: {
+              target: "#(machine).idle",
+              actions: [{ type: "logError", params: ({ event }) => event }],
+            },
+          },
         },
       },
     },
 
     finished: {
       type: "final",
+      output: { tag: "ok" },
+      actions: "sendToDepositedBalanceRefRefresh",
+    },
+
+    failed: {
+      type: "final",
+      output: ({ context }) => {
+        return {
+          tag: "err",
+          value: { reason: context.error },
+        }
+      },
       actions: "sendToDepositedBalanceRefRefresh",
     },
   },
