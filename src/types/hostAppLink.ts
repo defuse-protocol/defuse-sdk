@@ -11,5 +11,5 @@ export type HostAppRoute =
 export type RenderHostAppLink = (
   routeName: HostAppRoute,
   children: ReactNode,
-  props: { className?: string }
+  props: { className?: string; "aria-labelledby"?: string }
 ) => ReactElement
