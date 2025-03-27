@@ -4,7 +4,6 @@ import type { SignerCredentials } from "../../../core/formatters"
 import { SwapWidgetProvider } from "../../../providers/SwapWidgetProvider"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../../types/base"
 import type { ChainType } from "../../../types/deposit"
-import { userAddressToDefuseUserId } from "../../../utils/defuse"
 import { giftTakerRootMachine } from "../actors/giftTakerRootMachine"
 import { GiftTakerForm } from "./GiftTakerForm"
 import { GiftTakerInvalidClaim } from "./GiftTakerInvalidClaim"
@@ -53,10 +52,7 @@ function GiftTakerScreens({
 
   const signerCredentials: SignerCredentials | null =
     userAddress != null && userChainType != null
-      ? {
-          credential: userAddressToDefuseUserId(userAddress, userChainType),
-          credentialType: userChainType,
-        }
+      ? { credential: userAddress, credentialType: userChainType }
       : null
 
   const snapshot = useSelector(giftTakerRootRef, (state) => state)
