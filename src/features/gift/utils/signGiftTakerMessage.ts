@@ -57,7 +57,10 @@ function assembleWalletMessage({
     tokenDeltas: [...Object.entries(giftInfo.tokenDiff)],
     signerId,
     deadlineTimestamp: minutesFromNow(5),
-    receiverId: signerCredentials.credential,
+    receiverId: userAddressToDefuseUserId(
+      signerCredentials.credential,
+      signerCredentials.credentialType
+    ),
   })
   return makeSwapMessage({
     innerMessage,
