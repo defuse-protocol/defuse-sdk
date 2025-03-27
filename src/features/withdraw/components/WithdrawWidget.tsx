@@ -92,8 +92,9 @@ export const WithdrawWidget = (props: WithdrawWidgetProps) => {
                         storageTokenDeltas:
                           nep141Storage?.quote?.tokenDeltas ?? [],
                         withdrawParams: (() => {
-                          switch (tokenOut.chainName) {
-                            case "near":
+                          const bridge = tokenOut.bridge
+                          switch (bridge) {
+                            case "direct":
                               return {
                                 type: "to_near",
                                 amount: adjustDecimals(
@@ -106,8 +107,17 @@ export const WithdrawWidget = (props: WithdrawWidgetProps) => {
                                 storageDeposit:
                                   nep141Storage?.requiredStorageNEAR ?? 0n,
                               }
-                            case "turbochain":
-                            case "aurora":
+
+                            case "aurora_engine": {
+                              const contractId = (
+                                auroraEngineContractId as Record<string, string>
+                              )[tokenOut.chainName]
+
+                              assert(
+                                contractId != null,
+                                `AuroraEngine contract id is not specified for "${tokenOut.chainName}"`
+                              )
+
                               return {
                                 type: "to_aurora_engine",
                                 amount: adjustDecimals(
@@ -116,11 +126,12 @@ export const WithdrawWidget = (props: WithdrawWidgetProps) => {
                                   tokenOut.decimals
                                 ),
                                 tokenAccountId: tokenOutAccountId,
-                                auroraEngineContractId:
-                                  auroraEngineContractId[tokenOut.chainName],
+                                auroraEngineContractId: contractId,
                                 destinationAddress: recipient,
                               }
-                            default:
+                            }
+
+                            case "poa":
                               return {
                                 type: "via_poa_bridge",
                                 amount: adjustDecimals(
@@ -132,6 +143,10 @@ export const WithdrawWidget = (props: WithdrawWidgetProps) => {
                                 destinationAddress: recipient,
                                 destinationMemo,
                               }
+
+                            default:
+                              bridge satisfies never
+                              throw new Error(`Unsupported bridge "${bridge}"`)
                           }
                         })(),
                         signerId: context.defuseUserId,
