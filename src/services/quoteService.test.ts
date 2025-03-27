@@ -65,6 +65,7 @@ describe("queryQuote()", () => {
       tokenOut: tokenOut,
       amountIn: { amount: adjustDecimals(150n, 0, 6), decimals: 6 },
       balances: { token1: adjustDecimals(100n, 0, 6) },
+      waitMs: 0,
     }
 
     vi.mocked(relayClient.quote).mockImplementationOnce(async () => [
@@ -113,6 +114,7 @@ describe("queryQuote()", () => {
         token2: adjustDecimals(100n, 0, token2.decimals),
         token3: adjustDecimals(100n, 0, token3.decimals),
       },
+      waitMs: 0,
     }
 
     vi.mocked(relayClient.quote)
@@ -179,6 +181,7 @@ describe("queryQuote()", () => {
       tokenOut: tokenOut,
       amountIn: { amount: adjustDecimals(150n, 0, 6), decimals: 6 },
       balances: { token1: adjustDecimals(100n, 0, token1.decimals) },
+      waitMs: 0,
     }
 
     vi.mocked(relayClient.quote).mockImplementationOnce(async () => [
@@ -229,6 +232,7 @@ describe("queryQuote()", () => {
       tokenOut: tokenOut,
       amountIn: { amount: adjustDecimals(150n, 0, 6), decimals: 6 },
       balances: { token1: adjustDecimals(100n, 0, token1.decimals) },
+      waitMs: 0,
     }
 
     vi.mocked(relayClient.quote)
@@ -259,6 +263,7 @@ describe("queryQuote()", () => {
         token1: adjustDecimals(100n, 0, token1.decimals),
         token2: adjustDecimals(100n, 0, token2.decimals),
       },
+      waitMs: 0,
     }
 
     vi.mocked(relayClient.quote)
@@ -288,6 +293,7 @@ describe("queryQuote()", () => {
       tokenOut: tokenOut,
       amountIn: { amount: adjustDecimals(150n, 0, 6), decimals: 6 },
       balances: { token1: adjustDecimals(100n, 0, token1.decimals) },
+      waitMs: 0,
     }
 
     vi.mocked(relayClient.quote).mockImplementationOnce(async () => [

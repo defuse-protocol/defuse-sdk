@@ -27,7 +27,11 @@ function isNotFailedQuote(quote: Quote | FailedQuote): quote is Quote {
 type TokenSlice = BaseTokenInfo
 type Balances = Record<string, bigint>
 
-export interface AggregatedQuoteParams {
+interface BaseQuoteParams {
+  waitMs: number
+}
+
+export interface AggregatedQuoteParams extends BaseQuoteParams {
   tokensIn: TokenSlice[] // set of close tokens, e.g. [USDC on Solana, USDC on Ethereum, USDC on Near]
   tokenOut: TokenSlice // set of close tokens, e.g. [USDC on Solana, USDC on Ethereum, USDC on Near]
   amountIn: TokenValue // total amount in
@@ -91,6 +95,7 @@ export async function queryQuote(
         defuse_asset_identifier_out: tokenOut.defuseAssetId,
         exact_amount_in: exactAmountIn.toString(),
         min_deadline_ms: settings.quoteMinDeadlineMs,
+        wait_ms: input.waitMs,
       },
       { signal }
     )
@@ -116,6 +121,7 @@ export async function queryQuote(
   const quotes = await fetchQuotesForTokens(
     tokenOut.defuseAssetId,
     amountsToQuote,
+    input.waitMs,
     {
       signal,
     }
@@ -410,9 +416,10 @@ export function aggregateQuotes(
   }
 }
 
-export async function fetchQuotesForTokens(
+async function fetchQuotesForTokens(
   tokenOut: string,
   amountsToQuote: Record<string, bigint>,
+  waitMs: number,
   { signal }: { signal?: AbortSignal } = {}
 ): Promise<null | NonNullable<QuoteResults>[]> {
   const quotes = await Promise.all(
@@ -423,6 +430,7 @@ export async function fetchQuotesForTokens(
           defuse_asset_identifier_out: tokenOut,
           exact_amount_in: amountIn.toString(),
           min_deadline_ms: settings.quoteMinDeadlineMs,
+          wait_ms: waitMs,
         },
         { signal }
       )
