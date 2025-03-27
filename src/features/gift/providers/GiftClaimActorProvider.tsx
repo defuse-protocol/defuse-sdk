@@ -3,6 +3,7 @@ import { type ReactNode, createContext, useEffect, useState } from "react"
 import type { SignerCredentials } from "src/core/formatters"
 import { userAddressToDefuseUserId } from "src/utils/defuse"
 import { type ActorRefFrom, createActor, toPromise } from "xstate"
+import { logger } from "../../../logger"
 import type { GiftInfo } from "../actors/shared/getGiftInfo"
 import {
   type GiftClaimActorOutput,
@@ -78,11 +79,16 @@ export function GiftClaimActorProvider({
 
     return toPromise(actor)
       .then(Ok)
-      .finally(() => {
+      .finally(async () => {
         if (giftInfo.giftId) {
-          giftMakerHistoryStore
+          const result = await giftMakerHistoryStore
             .getState()
             .removeGift(giftInfo.giftId, signerCredentials)
+          if (result.tag === "err") {
+            logger.error(
+              new Error("Failed to remove gift", { cause: result.reason })
+            )
+          }
         }
         clearActorRef()
       })

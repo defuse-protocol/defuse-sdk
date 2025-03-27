@@ -33,7 +33,9 @@ export function useBalanceUpdaterSyncWithHistory(
       prevGiftsLengthRef.current !== null &&
       currentLength < prevGiftsLengthRef.current
     ) {
-      rootActorRef.send({ type: "REQUEST_BALANCE_REFRESH" })
+      rootActorRef.getSnapshot().context.depositedBalanceRef.send({
+        type: "REQUEST_BALANCE_REFRESH",
+      })
     }
     prevGiftsLengthRef.current = currentLength
   }, [gifts, rootActorRef])
