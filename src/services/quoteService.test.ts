@@ -88,6 +88,7 @@ describe("queryQuote()", () => {
         defuse_asset_identifier_out: "tokenOut",
         exact_amount_in: "150000000",
         min_deadline_ms: 60_000,
+        wait_ms: 0,
       },
       expect.any(Object)
     )
@@ -148,6 +149,7 @@ describe("queryQuote()", () => {
         defuse_asset_identifier_out: "tokenOut",
         exact_amount_in: "100000000",
         min_deadline_ms: 60_000,
+        wait_ms: 0,
       },
       expect.any(Object)
     )
@@ -157,6 +159,7 @@ describe("queryQuote()", () => {
         defuse_asset_identifier_out: "tokenOut",
         exact_amount_in: "5000000000",
         min_deadline_ms: 60_000,
+        wait_ms: 0,
       },
       expect.any(Object)
     )
