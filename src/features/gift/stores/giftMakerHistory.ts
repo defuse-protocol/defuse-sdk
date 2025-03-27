@@ -1,3 +1,5 @@
+import { deserialize } from "src/utils/deserialize"
+import * as v from "valibot"
 import { create } from "zustand"
 import { persist } from "zustand/middleware"
 import type { SignerCredentials } from "../../../core/formatters"
@@ -6,7 +8,9 @@ import {
   type DefuseUserId,
   userAddressToDefuseUserId,
 } from "../../../utils/defuse"
+import { serialize } from "../../../utils/serialize"
 import type { GiftInfo } from "../actors/shared/getGiftInfo"
+import { GiftStorageSchema } from "../utils/schemaStorage"
 import { GIFT_STORAGE_NAME, indexedDBStorage } from "./indexedDBStorage"
 import { localStorageHandler } from "./localStorageHandler"
 import { sessionStorageHandler } from "./sessionStorageHandler"
@@ -19,6 +23,11 @@ export interface GiftMakerHistory extends GiftInfo {
 
 type State = {
   gifts: Record<DefuseUserId, GiftMakerHistory[]>
+}
+type GiftStorageState = {
+  state: {
+    gifts: Record<DefuseUserId, GiftMakerHistory[]>
+  }
 }
 
 type Actions = {
@@ -36,109 +45,144 @@ type Actions = {
 
 type Store = State & Actions
 
-type GiftData = {
-  state: {
-    gifts: Record<DefuseUserId, GiftMakerHistory[]>
-  }
+type StorageOperation<T> = {
+  operation: () => T | Promise<T>
+  storageName: string
+  operationType: "fetch" | "set" | "update" | "remove"
 }
 
-function serializeGiftData(gift: GiftMakerHistory) {
-  return {
-    ...gift,
-    tokenDiff: Object.fromEntries(
-      Object.entries(gift.tokenDiff).map(([key, value]) => [
-        key,
-        typeof value === "bigint" ? value.toString() : value,
-      ])
-    ),
-  }
-}
-
-function deserializeGiftData(gift: GiftMakerHistory) {
-  return {
-    ...gift,
-    tokenDiff: Object.fromEntries(
-      Object.entries(gift.tokenDiff).map(([key, value]) => [
-        key,
-        typeof value === "string" ? BigInt(value) : value,
-      ])
-    ),
-  }
-}
-
-function processGiftData(data: GiftData | null) {
-  if (data?.state?.gifts) {
-    return {
-      ...data,
-      state: {
-        ...data.state,
-        gifts: Object.fromEntries(
-          Object.entries(data.state.gifts).map(([key, value]) => [
-            key,
-            value.map(deserializeGiftData),
-          ])
-        ),
-      },
-    }
-  }
-  return data
+async function executeStorageOperations<T>(
+  operations: StorageOperation<T>[]
+): Promise<(T | null)[]> {
+  return Promise.all(
+    operations.map(async ({ operation, storageName, operationType }) => {
+      try {
+        return await operation()
+      } catch (error) {
+        let action: string
+        switch (operationType) {
+          case "fetch":
+            action = "fetch from"
+            break
+          case "set":
+            action = "set data in"
+            break
+          case "update":
+            action = "update data in"
+            break
+          case "remove":
+            action = "remove data from"
+            break
+          default:
+            action = "interact with"
+        }
+        logger.error(
+          new Error(`Failed to ${action} ${storageName}`, { cause: error })
+        )
+        return null
+      }
+    })
+  )
 }
 
 export const tripleStorage = {
-  getItem: async (name: string) => {
-    const localData = localStorageHandler.getItem(name)
-    const sessionData = sessionStorageHandler.getItem(name)
-    let indexedData = null
+  getItem: async (
+    name: string
+  ): Promise<{ state: State; version: number } | null> => {
+    const [localData, sessionData, indexedData] =
+      await executeStorageOperations([
+        {
+          operation: () => localStorageHandler.getItem(name),
+          storageName: "localStorage",
+          operationType: "fetch",
+        },
+        {
+          operation: () => sessionStorageHandler.getItem(name),
+          storageName: "sessionStorage",
+          operationType: "fetch",
+        },
+        {
+          operation: () => indexedDBStorage.getItem(name),
+          storageName: "indexedDB",
+          operationType: "fetch",
+        },
+      ])
+
+    const rawData = localData || sessionData || indexedData
+    if (!rawData) return null
+
     try {
-      indexedData = await indexedDBStorage.getItem(name)
+      return deserialize(rawData) as { state: State; version: number }
+      // TODO: After migration, we should return the validated data
+      // const result = deserialize(rawData) as { state: State }
+      // const validated = v.parse(GiftStorageSchema, result)
+      // return validated as { state: State }
     } catch (error) {
-      logger.error(
-        new Error("Failed to fetch data from IndexedDB", { cause: error })
-      )
-    }
-    const data = localData || sessionData || indexedData
-    return data ? processGiftData(JSON.parse(data)) : null
-  },
-  setItem: async (
-    name: string,
-    value: Record<DefuseUserId, GiftMakerHistory[]>
-  ) => {
-    const stringValue = JSON.stringify(value)
-    localStorageHandler.setItem(name, stringValue)
-    sessionStorageHandler.setItem(name, stringValue)
-    try {
-      await indexedDBStorage.setItem(name, stringValue)
-    } catch (error) {
-      logger.error(
-        new Error("Failed to set data in IndexedDB", { cause: error })
-      )
-    }
-  },
-  updateItem: async (
-    name: string,
-    value: Record<DefuseUserId, GiftMakerHistory[]>
-  ) => {
-    const stringValue = JSON.stringify(value)
-    localStorageHandler.setItem(name, stringValue)
-    sessionStorageHandler.setItem(name, stringValue)
-    try {
-      await indexedDBStorage.setItem(name, stringValue)
-    } catch (error) {
-      logger.error(
-        new Error("Failed to update data in IndexedDB", { cause: error })
-      )
+      logger.error(new Error("Failed to deserialize data", { cause: error }))
+      return null
     }
   },
+
+  setItem: async (name: string, value: GiftStorageState) => {
+    const stringValue = serialize(value)
+    await executeStorageOperations([
+      {
+        operation: () => localStorageHandler.setItem(name, stringValue),
+        storageName: "localStorage",
+        operationType: "set",
+      },
+      {
+        operation: () => sessionStorageHandler.setItem(name, stringValue),
+        storageName: "sessionStorage",
+        operationType: "set",
+      },
+      {
+        operation: () => indexedDBStorage.setItem(name, stringValue),
+        storageName: "indexedDB",
+        operationType: "set",
+      },
+    ])
+  },
+
+  updateItem: async (name: string, value: GiftStorageState) => {
+    const stringValue = serialize(value)
+    await executeStorageOperations([
+      {
+        operation: () => localStorageHandler.setItem(name, stringValue),
+        storageName: "localStorage",
+        operationType: "update",
+      },
+      {
+        operation: () => sessionStorageHandler.setItem(name, stringValue),
+        storageName: "sessionStorage",
+        operationType: "update",
+      },
+      {
+        operation: () => indexedDBStorage.setItem(name, stringValue),
+        storageName: "indexedDB",
+        operationType: "update",
+      },
+    ])
+  },
+
   removeItem: async (name: string) => {
-    localStorageHandler.removeItem(name)
-    sessionStorageHandler.removeItem(name)
-    try {
-      await indexedDBStorage.removeItem(name)
-    } catch (error) {
-      logger.error(
-        new Error("Failed to remove data from IndexedDB", { cause: error })
-      )
-    }
+    await executeStorageOperations([
+      {
+        operation: () => localStorageHandler.removeItem(name),
+        storageName: "localStorage",
+        operationType: "remove",
+      },
+      {
+        operation: () => sessionStorageHandler.removeItem(name),
+        storageName: "sessionStorage",
+        operationType: "remove",
+      },
+      {
+        operation: () => indexedDBStorage.removeItem(name),
+        storageName: "indexedDB",
+        operationType: "remove",
+      },
+    ])
   },
 }
 
@@ -155,7 +199,6 @@ export const giftMakerHistoryStore = create<Store>()(
 
       addGift: (gift, user) => {
         const userId = getUserId(user)
-
         set((state) => ({
           gifts: {
             ...state.gifts,
@@ -165,7 +208,7 @@ export const giftMakerHistoryStore = create<Store>()(
                 ...gift,
                 updatedAt: Date.now(),
               },
-            ].map(serializeGiftData),
+            ],
           },
         }))
       },
@@ -175,22 +218,21 @@ export const giftMakerHistoryStore = create<Store>()(
         set((state) => ({
           gifts: {
             ...state.gifts,
-            [userId]: (state.gifts[userId] ?? [])
-              .map((g) => (g.giftId === giftId ? { ...g, intentHashes } : g))
-              .map(serializeGiftData),
+            [userId]: (state.gifts[userId] ?? []).map((g) =>
+              g.giftId === giftId ? { ...g, intentHashes } : g
+            ),
           },
         }))
       },
 
       removeGift: (giftId: string, user) => {
         const userId = getUserId(user)
-
         set((state) => ({
           gifts: {
             ...state.gifts,
-            [userId]: (state.gifts[userId] ?? [])
-              .filter((gift) => gift.giftId !== giftId)
-              .map(serializeGiftData),
+            [userId]: (state.gifts[userId] ?? []).filter(
+              (gift) => gift.giftId !== giftId
+            ),
           },
         }))
       },
@@ -198,6 +240,33 @@ export const giftMakerHistoryStore = create<Store>()(
     {
       name: GIFT_STORAGE_NAME,
       storage: tripleStorage,
+      version: 1,
+      migrate: (persistedState: unknown, version) => {
+        if (version === 0) {
+          const state = persistedState as State
+          const migratedState = {
+            state: {
+              gifts: Object.fromEntries(
+                Object.entries(state.gifts).map(([userId, gifts]) => [
+                  userId,
+                  gifts.map((gift) => ({
+                    ...gift,
+                    tokenDiff: Object.fromEntries(
+                      Object.entries(gift.tokenDiff).map(([key, value]) => [
+                        key,
+                        typeof value === "string" ? BigInt(value) : value,
+                      ])
+                    ),
+                  })),
+                ])
+              ),
+            },
+          }
+          const validated = v.parse(GiftStorageSchema, migratedState)
+          return validated.state as State
+        }
+        return persistedState as State
+      },
     }
   )
 )
