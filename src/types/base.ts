@@ -35,12 +35,7 @@ export interface FungibleTokenInfo extends Partial<BaseTokenBalance> {
   name: string
   decimals: number
   icon: string
-  /** @deprecated */
-  chainId: string
-  chainIcon: string
   chainName: SupportedChainName
-  /** @deprecated */
-  routes: string[]
   bridge: SupportedBridge
 }
 
@@ -51,12 +46,7 @@ export interface NativeTokenInfo extends Partial<BaseTokenBalance> {
   name: string
   decimals: number
   icon: string
-  /** @deprecated */
-  chainId: string
-  chainIcon: string
   chainName: SupportedChainName
-  /** @deprecated */
-  routes: string[]
   bridge: SupportedBridge
 }
 
