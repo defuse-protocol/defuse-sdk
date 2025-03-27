@@ -20,6 +20,10 @@ import {
   depositedBalanceMachine,
 } from "../../machines/depositedBalanceMachine"
 import { giftMakerHistoryStore } from "../stores/giftMakerHistory"
+import type {
+  StorageOperationErr,
+  StorageOperationResult,
+} from "../stores/storageOperations"
 import type { GiftSignedResult } from "../types/sharedTypes"
 import {
   type EscrowCredentials,
@@ -47,6 +51,7 @@ import { giftMakerSignActor } from "./giftMakerSignActor"
 type GiftMakerRootMachineErrors =
   | GiftMakerSignActorErrors
   | GiftMakerPublishingActorErrors
+  | { reason: StorageOperationErr }
 
 export type GiftMakerRootMachineContext = {
   error: null | GiftMakerRootMachineErrors
@@ -112,6 +117,26 @@ export const giftMakerRootMachine = setup({
         return waitForIntentSettlement(signal, intentHash)
       }
     ),
+    addGiftToHistory: fromPromise(
+      async ({
+        input,
+      }: {
+        input: GiftMakerRootMachineContext
+      }): Promise<StorageOperationResult> => {
+        assert(input.signData, "signData is not defined")
+        const giftInfo = assembleGiftInfo(input)
+        const result = await giftMakerHistoryStore.getState().addGift(
+          {
+            ...giftInfo,
+          },
+          input.signData.signerCredentials
+        )
+        if (result.tag === "err") {
+          return { tag: "err", reason: result.reason }
+        }
+        return { tag: "ok" }
+      }
+    ),
   },
   actions: {
     logError: (_, event: { error: unknown }) => {
@@ -141,16 +166,6 @@ export const giftMakerRootMachine = setup({
     })),
     completeSign: ({ self }, event: GiftSignedResult) => {
       self.send({ type: "COMPLETE_SIGN", params: event })
-    },
-    addGiftToHistory: ({ context }) => {
-      assert(context.signData, "signData is not defined")
-      const giftInfo = assembleGiftInfo(context)
-      giftMakerHistoryStore.getState().addGift(
-        {
-          ...giftInfo,
-        },
-        context.signData.signerCredentials
-      )
     },
     updateGiftToHistory: ({ context }) => {
       assert(context.signData, "signData is not defined")
@@ -241,7 +256,7 @@ export const giftMakerRootMachine = setup({
 
       on: {
         COMPLETE_SIGN: {
-          target: "publishing",
+          target: "addingGiftToHistory",
         },
       },
 
@@ -307,7 +322,7 @@ export const giftMakerRootMachine = setup({
         ],
       },
     },
-    publishing: {
+    addingGiftToHistory: {
       entry: [
         assign({
           signData: ({ event }) => {
@@ -315,8 +330,45 @@ export const giftMakerRootMachine = setup({
             return event.params
           },
         }),
-        "addGiftToHistory",
       ],
+      invoke: {
+        src: "addGiftToHistory",
+        input: ({ context }) => context,
+        onDone: [
+          {
+            guard: { type: "isOk", params: ({ event }) => event.output },
+            target: "publishing",
+          },
+          {
+            target: "editing",
+            actions: {
+              type: "setError",
+              params: ({ event }) => {
+                assert(event.output.tag === "err")
+                return { tag: "err", value: { reason: event.output.reason } }
+              },
+            },
+          },
+        ],
+        onError: {
+          target: "editing",
+          actions: [
+            {
+              type: "logError",
+              params: ({ event }) => event,
+            },
+            {
+              type: "setError",
+              params: {
+                tag: "err",
+                value: { reason: "ERR_STORAGE_OPERATION_EXCEPTION" },
+              },
+            },
+          ],
+        },
+      },
+    },
+    publishing: {
       invoke: {
         src: "publishingActor",
         input: ({ context }) => {

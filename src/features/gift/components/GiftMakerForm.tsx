@@ -27,6 +27,7 @@ import type { GiftLinkData, SignMessage } from "../types/sharedTypes"
 import { checkInsufficientBalance, getButtonText } from "../utils/makerForm"
 import { GiftMakerReadyDialog } from "./GiftMakerReadyDialog"
 import { GiftMessageInput } from "./GiftMessageInput"
+import { ErrorReason } from "./shared/ErrorReason"
 import { GiftDescription } from "./shared/GiftDescription"
 import { GiftHeader } from "./shared/GiftHeader"
 
@@ -159,6 +160,8 @@ export function GiftMakerForm({
     rootSnapshot.matches("publishing") ||
     rootSnapshot.matches("settling")
 
+  const error = rootSnapshot.context.error
+
   return (
     <div className="flex flex-col">
       {rootSnapshot.matches("settled") &&
@@ -280,6 +283,11 @@ export function GiftMakerForm({
           {getButtonText(balanceInsufficient, editing, processing)}
         </ButtonCustom>
       </form>
+      {error != null && (
+        <div className="mt-2">
+          <ErrorReason reason={error.reason} />
+        </div>
+      )}
     </div>
   )
 }
