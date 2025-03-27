@@ -68,4 +68,9 @@ export function combineBalances(
         (h.value && h.value.amount !== 0n) ||
         (h.transitValue && h.transitValue.amount !== 0n)
     )
+    .sort((a, b) => {
+      const totalValueA = (a.usdValue ?? 0) + (a.transitUsdValue ?? 0)
+      const totalValueB = (b.usdValue ?? 0) + (b.transitUsdValue ?? 0)
+      return totalValueB - totalValueA
+    })
 }
