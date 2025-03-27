@@ -75,6 +75,7 @@ export type IntentDescription =
     }
   | {
       type: "withdraw"
+      tokenOut: BaseTokenInfo
       amountWithdrawn: TokenValue
     }
 
@@ -311,6 +312,7 @@ export const swapIntentMachine = setup({
               intentHash: context.intentHash,
               intentDescription: {
                 type: "withdraw",
+                tokenOut: context.intentOperationParams.tokenOut,
                 amountWithdrawn: calcOperationAmountOut(
                   context.intentOperationParams,
                   context.quoteToPublish

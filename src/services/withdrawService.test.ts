@@ -13,6 +13,7 @@ const usdcSolana: BaseTokenInfo = {
   chainId: "solana",
   chainIcon: "solana.svg",
   chainName: "solana",
+  bridge: "poa",
   routes: [],
 }
 
@@ -26,6 +27,7 @@ const usdcNear: BaseTokenInfo = {
   chainId: "near",
   chainIcon: "near.svg",
   chainName: "near",
+  bridge: "direct",
   routes: [],
 }
 
@@ -47,6 +49,7 @@ const turboSolana: BaseTokenInfo = {
   chainId: "solana",
   chainIcon: "solana.svg",
   chainName: "solana",
+  bridge: "poa",
   routes: [],
 }
 
@@ -60,6 +63,7 @@ const turboEth: BaseTokenInfo = {
   chainId: "eth",
   chainIcon: "ethereum.svg",
   chainName: "eth",
+  bridge: "poa",
   routes: [],
 }
 

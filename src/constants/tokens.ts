@@ -8,6 +8,7 @@ export const NEP141_STORAGE_TOKEN: BaseTokenInfo = {
   chainId: "",
   chainIcon: "/static/icons/network/near.svg",
   chainName: "near",
+  bridge: "direct",
   routes: [],
   symbol: "NEAR",
   name: "Near",

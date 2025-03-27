@@ -57,6 +57,7 @@ describe("computeTotalBalance", () => {
       chainId: "",
       chainIcon: "chain.png",
       chainName: "eth",
+      bridge: "poa",
       routes: [],
     }
 
@@ -87,6 +88,7 @@ describe("computeTotalBalance", () => {
           chainId: "",
           chainIcon: "chain1.png",
           chainName: "eth",
+          bridge: "poa",
           routes: [],
         },
         {
@@ -99,6 +101,7 @@ describe("computeTotalBalance", () => {
           chainId: "2",
           chainIcon: "chain2.png",
           chainName: "base",
+          bridge: "poa",
           routes: [],
         },
       ],
@@ -187,6 +190,7 @@ describe("computeTotalBalanceDifferentDecimals", () => {
         chainId: "",
         chainIcon: "chain1.png",
         chainName: "eth",
+        bridge: "poa",
         routes: [],
       },
       {
@@ -199,6 +203,7 @@ describe("computeTotalBalanceDifferentDecimals", () => {
         chainId: "",
         chainIcon: "chain2.png",
         chainName: "eth",
+        bridge: "poa",
         routes: [],
       },
     ]
@@ -223,6 +228,7 @@ describe("computeTotalBalanceDifferentDecimals", () => {
         chainId: "",
         chainIcon: "chain1.png",
         chainName: "eth",
+        bridge: "poa",
         routes: [],
       },
       {
@@ -235,6 +241,7 @@ describe("computeTotalBalanceDifferentDecimals", () => {
         chainId: "",
         chainIcon: "chain2.png",
         chainName: "eth",
+        bridge: "poa",
         routes: [],
       },
     ]
@@ -255,6 +262,7 @@ describe("computeTotalBalanceDifferentDecimals", () => {
       chainId: "",
       chainIcon: "chain.png",
       chainName: "eth",
+      bridge: "poa",
       routes: [],
     }
 
@@ -292,6 +300,7 @@ describe("computeTotalBalanceDifferentDecimals", () => {
           chainId: "",
           chainIcon: "chain1.png",
           chainName: "eth",
+          bridge: "poa",
           routes: [],
         },
         {
@@ -304,6 +313,7 @@ describe("computeTotalBalanceDifferentDecimals", () => {
           chainId: "2",
           chainIcon: "chain2.png",
           chainName: "base",
+          bridge: "poa",
           routes: [],
         },
       ],
@@ -375,6 +385,7 @@ describe("computeTotalBalanceDifferentDecimals", () => {
           chainId: "",
           chainIcon: "chain1.png",
           chainName: "eth",
+          bridge: "poa",
           routes: [],
         },
         {
@@ -387,6 +398,7 @@ describe("computeTotalBalanceDifferentDecimals", () => {
           chainId: "2",
           chainIcon: "chain2.png",
           chainName: "base",
+          bridge: "poa",
           routes: [],
         },
       ],
@@ -426,6 +438,7 @@ describe("computeTotalBalanceDifferentDecimals", () => {
           chainId: "",
           chainIcon: "chain1.png",
           chainName: "eth",
+          bridge: "poa",
           routes: [],
         },
         {
@@ -438,6 +451,7 @@ describe("computeTotalBalanceDifferentDecimals", () => {
           chainId: "",
           chainIcon: "chain1.png",
           chainName: "eth",
+          bridge: "poa",
           routes: [],
         },
         {
@@ -450,6 +464,7 @@ describe("computeTotalBalanceDifferentDecimals", () => {
           chainId: "2",
           chainIcon: "chain2.png",
           chainName: "base",
+          bridge: "poa",
           routes: [],
         },
       ],
@@ -475,6 +490,7 @@ describe("computeTotalBalanceDifferentDecimals", () => {
             chainId: "",
             chainIcon: "chain1.png",
             chainName: "eth",
+            bridge: "poa",
             routes: [],
           },
           {
@@ -487,6 +503,7 @@ describe("computeTotalBalanceDifferentDecimals", () => {
             chainId: "",
             chainIcon: "chain1.png",
             chainName: "eth",
+            bridge: "poa",
             routes: [],
           },
           {
@@ -499,6 +516,7 @@ describe("computeTotalBalanceDifferentDecimals", () => {
             chainId: "2",
             chainIcon: "chain2.png",
             chainName: "base",
+            bridge: "poa",
             routes: [],
           },
         ],
@@ -532,6 +550,7 @@ describe("getDerivedToken", () => {
           chainId: "",
           chainIcon: "chain1.png",
           chainName: "eth",
+          bridge: "poa",
           routes: [],
         },
         {
@@ -544,6 +563,7 @@ describe("getDerivedToken", () => {
           chainId: "2",
           chainIcon: "chain2.png",
           chainName: "base",
+          bridge: "poa",
           routes: [],
         },
       ],
@@ -558,6 +578,7 @@ describe("getDerivedToken", () => {
       chainId: "",
       chainIcon: "chain.png",
       chainName: "eth",
+      bridge: "poa",
       routes: [],
     },
   ]
@@ -574,6 +595,7 @@ describe("getDerivedToken", () => {
       chainId: "",
       chainIcon: "chain1.png",
       chainName: "eth",
+      bridge: "poa",
       routes: [],
     })
   })
@@ -591,6 +613,7 @@ describe("getDerivedToken", () => {
       chainId: "",
       chainIcon: "chain.png",
       chainName: "eth",
+      bridge: "poa",
       routes: [],
     })
   })
@@ -752,6 +775,7 @@ describe("computeTotalDeltaDifferentDecimals", () => {
       chainId: "",
       chainIcon: "chain1.png",
       chainName: "eth",
+      bridge: "poa",
       routes: [],
     },
     {
@@ -764,6 +788,7 @@ describe("computeTotalDeltaDifferentDecimals", () => {
       chainId: "",
       chainIcon: "chain2.png",
       chainName: "eth",
+      bridge: "poa",
       routes: [],
     },
   ]
@@ -825,6 +850,7 @@ describe("getUnderlyingBaseTokenInfos", () => {
     chainId: "",
     chainIcon: "chain1.png",
     chainName: "eth",
+    bridge: "poa",
     routes: [],
   }
 
@@ -845,6 +871,7 @@ describe("getUnderlyingBaseTokenInfos", () => {
         chainId: "2",
         chainIcon: "chain2.png",
         chainName: "base",
+        bridge: "poa",
         routes: [],
       },
     ],
