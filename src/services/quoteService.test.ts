@@ -27,11 +27,8 @@ const tokenInfo: BaseTokenInfo = {
   name: "",
   decimals: 0,
   icon: "",
-  chainId: "",
-  chainIcon: "",
   chainName: "eth",
   bridge: "poa",
-  routes: [],
 }
 
 const token1 = {

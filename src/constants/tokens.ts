@@ -5,11 +5,8 @@ export const NEP141_STORAGE_TOKEN: BaseTokenInfo = {
   address: "wrap.near",
   decimals: 24,
   icon: "https://assets.coingecko.com/coins/images/10365/standard/near.jpg",
-  chainId: "",
-  chainIcon: "/static/icons/network/near.svg",
   chainName: "near",
   bridge: "direct",
-  routes: [],
   symbol: "NEAR",
   name: "Near",
 }
