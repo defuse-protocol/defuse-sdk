@@ -1,11 +1,16 @@
 import type { BaseTokenInfo, UnifiedTokenInfo } from "src/types/base"
 import * as v from "valibot"
 import { logger } from "../../../logger"
+import { deserialize } from "../../../utils/deserialize"
+import { serialize } from "../../../utils/serialize"
 import { deriveTokenId } from "../utils/deriveToken"
-import { GiftStorageSchema, GiftStorageSchemaV2 } from "../utils/schemaStorage"
+import {
+  GiftStorageSchemaV1,
+  GiftStorageSchemaV2,
+} from "../utils/schemaStorage"
 import type { State } from "./giftMakerHistory"
 
-export const migrateToV1 = (state: State) => {
+export const migrateV0ToV1 = (state: State) => {
   return {
     state: {
       gifts: Object.fromEntries(
@@ -16,7 +21,10 @@ export const migrateToV1 = (state: State) => {
             tokenDiff: Object.fromEntries(
               Object.entries(gift.tokenDiff).map(([key, value]) => [
                 key,
-                typeof value === "string" ? BigInt(value) : value,
+                {
+                  __type: "bigint",
+                  value: typeof value === "string" ? value : value.toString(),
+                },
               ])
             ),
           })),
@@ -26,8 +34,8 @@ export const migrateToV1 = (state: State) => {
   }
 }
 
-export const migrateToV2 = (
-  validatedV1: v.InferOutput<typeof GiftStorageSchema>
+export const migrateV1ToV2 = (
+  validatedV1: v.InferOutput<typeof GiftStorageSchemaV1>
 ) => {
   return {
     state: {
@@ -57,14 +65,14 @@ export const migrateGiftStorage = (
   persistedState: unknown,
   version: number
 ): State => {
-  if (version === 0) {
+  if (version === 1) {
     try {
       const state = persistedState as State
-      const migratedStateToV1 = migrateToV1(state)
-      const validatedV0 = v.parse(GiftStorageSchema, migratedStateToV1)
-      const migratedStateToV2 = migrateToV2(validatedV0)
+      const migratedStateToV1 = migrateV0ToV1(state)
+      const validatedV1 = v.parse(GiftStorageSchemaV1, migratedStateToV1)
+      const migratedStateToV2 = migrateV1ToV2(validatedV1)
       const validatedV2 = v.parse(GiftStorageSchemaV2, migratedStateToV2)
-      return validatedV2.state as State
+      return deserialize(serialize(validatedV2.state)) as State
     } catch (error) {
       logger.error(
         new Error("Failed to migrate gift storage", { cause: error })
@@ -72,15 +80,15 @@ export const migrateGiftStorage = (
       throw new Error("Failed to migrate gift storage. Please contact support.")
     }
   }
-  if (version === 1) {
+  if (version === 2) {
     try {
       const state = persistedState as State
-      const validatedV1 = v.parse(GiftStorageSchema, {
+      const validatedV1 = v.parse(GiftStorageSchemaV1, {
         state: { gifts: state.gifts },
       })
-      const migratedStateToV2 = migrateToV2(validatedV1)
+      const migratedStateToV2 = migrateV1ToV2(validatedV1)
       const validatedV2 = v.parse(GiftStorageSchemaV2, migratedStateToV2)
-      return validatedV2.state as State
+      return deserialize(serialize(validatedV2.state)) as State
     } catch (error) {
       logger.error(
         new Error("Failed to migrate gift storage", { cause: error })

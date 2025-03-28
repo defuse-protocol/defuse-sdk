@@ -1,5 +1,5 @@
 import { deserialize } from "src/utils/deserialize"
-import { beforeEach, describe, expect, it, vi } from "vitest"
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { serialize } from "../../../utils/serialize"
 import type { GiftMakerHistory } from "./giftMakerHistory"
 import { config, indexedDBStorage } from "./indexedDBStorage"
@@ -31,11 +31,30 @@ describe("storage", () => {
   }
 
   beforeEach(() => {
+    vi.stubGlobal("localStorage", {
+      getItem: vi.fn(),
+      setItem: vi.fn(),
+      removeItem: vi.fn(),
+    })
+    vi.stubGlobal("sessionStorage", {
+      getItem: vi.fn(),
+      setItem: vi.fn(),
+      removeItem: vi.fn(),
+    })
+
     vi.clearAllMocks()
   })
 
-  it("should get data from indexedDBStorage if both localStorage and sessionStorage are empty", async () => {
-    vi.spyOn(indexedDBStorage, "getItem").mockResolvedValue(
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  it("should get data from localStorage or sessionStorage if indexedDBStorage is empty", async () => {
+    vi.spyOn(indexedDBStorage, "getItem").mockResolvedValue(null)
+    vi.spyOn(localStorage, "getItem").mockReturnValue(
+      serialize(mockStorageData)
+    )
+    vi.spyOn(sessionStorage, "getItem").mockResolvedValue(
       serialize(mockStorageData)
     )
 

@@ -11,7 +11,7 @@ const FungibleTokenInfoSchema = v.object({
   chainName: v.string(),
   chainId: v.optional(v.string()),
   routes: v.optional(v.array(v.string())),
-  bridge: v.string(),
+  bridge: v.optional(v.string()),
 })
 
 const NativeTokenInfoSchema = v.object({
@@ -25,7 +25,7 @@ const NativeTokenInfoSchema = v.object({
   chainName: v.string(),
   chainId: v.optional(v.string()),
   routes: v.optional(v.array(v.string())),
-  bridge: v.string(),
+  bridge: v.optional(v.string()),
 })
 
 const BaseTokenInfoSchema = v.union([
@@ -38,13 +38,29 @@ const UnifiedTokenInfoSchema = v.object({
   symbol: v.string(),
   name: v.string(),
   icon: v.string(),
+  decimals: v.optional(v.number()),
+  tags: v.optional(v.array(v.string())),
   groupedTokens: v.array(BaseTokenInfoSchema),
 })
 
-const GiftMakerHistorySchema = v.object({
+const GiftMakerHistorySchemaV0 = v.object({
   giftId: v.string(),
   intentHashes: v.array(v.string()),
   tokenDiff: v.record(v.string(), v.bigint()),
+  token: v.union([BaseTokenInfoSchema, UnifiedTokenInfoSchema]),
+  secretKey: v.string(),
+  accountId: v.string(),
+  message: v.string(),
+  updatedAt: v.number(),
+})
+
+const GiftMakerHistorySchemaV1 = v.object({
+  giftId: v.string(),
+  intentHashes: v.array(v.string()),
+  tokenDiff: v.record(
+    v.string(),
+    v.object({ __type: v.literal("bigint"), value: v.string() })
+  ),
   token: v.union([BaseTokenInfoSchema, UnifiedTokenInfoSchema]),
   secretKey: v.string(),
   accountId: v.string(),
@@ -56,7 +72,10 @@ const GiftMakerHistorySchemaV2 = v.object({
   giftId: v.string(),
   giftStatus: v.union([v.literal("preparing"), v.literal("sent")]),
   intentHashes: v.array(v.string()),
-  tokenDiff: v.record(v.string(), v.bigint()),
+  tokenDiff: v.record(
+    v.string(),
+    v.object({ __type: v.literal("bigint"), value: v.string() })
+  ),
   tokenId: v.string(),
   secretKey: v.string(),
   accountId: v.string(),
@@ -64,9 +83,15 @@ const GiftMakerHistorySchemaV2 = v.object({
   updatedAt: v.number(),
 })
 
-export const GiftStorageSchema = v.object({
+export const GiftStorageSchemaV0 = v.object({
   state: v.object({
-    gifts: v.record(v.string(), v.array(GiftMakerHistorySchema)),
+    gifts: v.record(v.string(), v.array(GiftMakerHistorySchemaV0)),
+  }),
+})
+
+export const GiftStorageSchemaV1 = v.object({
+  state: v.object({
+    gifts: v.record(v.string(), v.array(GiftMakerHistorySchemaV1)),
   }),
 })
 

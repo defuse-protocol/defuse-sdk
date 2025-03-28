@@ -1,9 +1,9 @@
 import * as v from "valibot"
 import { describe, expect, it } from "vitest"
-import { GiftStorageSchema, GiftStorageSchemaV2 } from "./schemaStorage"
+import { GiftStorageSchemaV0, GiftStorageSchemaV2 } from "./schemaStorage"
 
 describe("GiftStorageSchema", () => {
-  it("valid gift storage data", () => {
+  it("valid gift storage data v1", () => {
     const giftStorageData = {
       state: {
         gifts: {
@@ -36,7 +36,7 @@ describe("GiftStorageSchema", () => {
         },
       },
     }
-    const result = v.parse(GiftStorageSchema, giftStorageData)
+    const result = v.parse(GiftStorageSchemaV0, giftStorageData)
     expect(result).toEqual(giftStorageData)
   })
 
@@ -50,7 +50,7 @@ describe("GiftStorageSchema", () => {
               giftStatus: "preparing",
               intentHashes: ["hash1"],
               tokenDiff: {
-                "nep141:usdc": 1000n,
+                "nep141:usdc": { __type: "bigint", value: "1000" },
               },
               tokenId: "usdc",
               secretKey: "ed25519:secretKey",

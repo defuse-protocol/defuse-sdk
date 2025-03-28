@@ -26,9 +26,16 @@ export const storage = {
   ): Promise<{ state: State; version: number } | null> => {
     try {
       const rawData = await indexedDBStorage.getItem(name)
-      if (!rawData) return null
 
-      return deserialize(rawData) as { state: State; version: number }
+      // Due to we migrate to single storage, we need to be backward compatible with users who have data in localStorage or sessionStorage
+      // TODO: Remove this once all users have migrated to the new storage
+      const localStorageData = localStorage.getItem(name)
+      const sessionStorageData = sessionStorage.getItem(name)
+
+      const storageData = rawData ?? localStorageData ?? sessionStorageData
+      if (!storageData) return null
+
+      return deserialize(storageData) as { state: State; version: number }
     } catch (error) {
       logger.error(new Error("Failed to get data", { cause: error }))
       throw new Error("Failed to get data")
