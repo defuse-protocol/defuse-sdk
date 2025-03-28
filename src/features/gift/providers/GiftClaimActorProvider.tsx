@@ -1,9 +1,9 @@
 import { Err, Ok, type Result } from "@thames/monads"
 import { type ReactNode, createContext, useEffect, useState } from "react"
 import type { SignerCredentials } from "src/core/formatters"
-import { userAddressToDefuseUserId } from "src/utils/defuse"
 import { type ActorRefFrom, createActor, toPromise } from "xstate"
 import { logger } from "../../../logger"
+import { assert } from "../../../utils/assert"
 import type { GiftInfo } from "../actors/shared/getGiftInfo"
 import {
   type GiftClaimActorOutput,
@@ -77,19 +77,23 @@ export function GiftClaimActorProvider({
 
     actor.start()
 
+    actor.subscribe(async (snapshot) => {
+      if (snapshot.matches("claimed")) {
+        assert(giftInfo.giftId, "giftInfo.giftId is not set")
+        const result = await giftMakerHistoryStore
+          .getState()
+          .removeGift(giftInfo.giftId, signerCredentials)
+        if (result.tag === "err") {
+          logger.error(
+            new Error("Failed to remove gift", { cause: result.reason })
+          )
+        }
+      }
+    })
+
     return toPromise(actor)
       .then(Ok)
-      .finally(async () => {
-        if (giftInfo.giftId) {
-          const result = await giftMakerHistoryStore
-            .getState()
-            .removeGift(giftInfo.giftId, signerCredentials)
-          if (result.tag === "err") {
-            logger.error(
-              new Error("Failed to remove gift", { cause: result.reason })
-            )
-          }
-        }
+      .finally(() => {
         clearActorRef()
       })
   }
@@ -102,13 +106,7 @@ export function GiftClaimActorProvider({
         <CancellationDialog
           giftInfo={giftInfo}
           actorRef={actorRef}
-          signerCredentials={{
-            credential: userAddressToDefuseUserId(
-              signerCredentials.credential,
-              signerCredentials.credentialType
-            ),
-            credentialType: signerCredentials.credentialType,
-          }}
+          signerCredentials={signerCredentials}
         />
       )}
     </GiftClaimActorContext.Provider>

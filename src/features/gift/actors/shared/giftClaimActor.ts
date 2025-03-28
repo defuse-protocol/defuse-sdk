@@ -238,7 +238,6 @@ export const giftClaimActor = setup({
                   type: "isOk",
                   params: ({ event }) => {
                     const output = event.output
-                    assert(output.tag === "ok")
                     return { tag: output.tag }
                   },
                 },
