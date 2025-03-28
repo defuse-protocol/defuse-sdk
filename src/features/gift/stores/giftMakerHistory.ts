@@ -5,13 +5,12 @@ import { persist } from "zustand/middleware"
 import type { SignerCredentials } from "../../../core/formatters"
 import { logger } from "../../../logger"
 import type { DefuseUserId } from "../../../utils/defuse"
-import {} from "../utils/schemaStorage"
-import { GIFT_STORAGE_NAME } from "./indexedDBStorage"
+import { config as configDBStorage } from "./indexedDBStorage"
 import { migrateGiftStorage } from "./migrations"
 import {
   type StorageOperationResult,
   getUserId,
-  tripleStorage,
+  storage,
 } from "./storageOperations"
 
 export type GiftStatus = "preparing" | "sent"
@@ -78,7 +77,7 @@ export const giftMakerHistoryStore = create<Store>()(
         }
 
         try {
-          const result = await tripleStorage.setItem(GIFT_STORAGE_NAME, {
+          const result = await storage.setItem(configDBStorage.dbName, {
             state: newState,
           })
           if (result.tag === "err") {
@@ -88,7 +87,7 @@ export const giftMakerHistoryStore = create<Store>()(
           return result
         } catch (error) {
           logger.error(new Error("Failed to add gift", { cause: error }))
-          return { tag: "err", reason: "ERR_UPDATE_ITEM_FAILED_IN_ALL_STORES" }
+          return { tag: "err", reason: "ERR_UPDATE_ITEM_FAILED_TO_STORAGE" }
         }
       },
 
@@ -104,7 +103,7 @@ export const giftMakerHistoryStore = create<Store>()(
         }
 
         try {
-          const result = await tripleStorage.updateItem(GIFT_STORAGE_NAME, {
+          const result = await storage.updateItem(configDBStorage.dbName, {
             state: newState,
           })
           if (result.tag === "err") {
@@ -114,7 +113,7 @@ export const giftMakerHistoryStore = create<Store>()(
           return result
         } catch (error) {
           logger.error(new Error("Failed to update gift", { cause: error }))
-          return { tag: "err", reason: "ERR_UPDATE_ITEM_FAILED_IN_ALL_STORES" }
+          return { tag: "err", reason: "ERR_UPDATE_ITEM_FAILED_TO_STORAGE" }
         }
       },
 
@@ -130,7 +129,7 @@ export const giftMakerHistoryStore = create<Store>()(
         }
 
         try {
-          const result = await tripleStorage.removeItem(GIFT_STORAGE_NAME)
+          const result = await storage.removeItem(configDBStorage.dbName)
           if (result.tag === "err") {
             return result
           }
@@ -138,13 +137,13 @@ export const giftMakerHistoryStore = create<Store>()(
           return result
         } catch (error) {
           logger.error(new Error("Failed to remove gift", { cause: error }))
-          return { tag: "err", reason: "ERR_UPDATE_ITEM_FAILED_IN_ALL_STORES" }
+          return { tag: "err", reason: "ERR_UPDATE_ITEM_FAILED_TO_STORAGE" }
         }
       },
     }),
     {
-      name: GIFT_STORAGE_NAME,
-      storage: tripleStorage,
+      name: configDBStorage.dbName,
+      storage,
       version: 2,
       migrate: migrateGiftStorage,
     }

@@ -1,14 +1,11 @@
 import { deserialize } from "src/utils/deserialize"
 import { beforeEach, describe, expect, it, vi } from "vitest"
-import { logger } from "../../../logger"
 import { serialize } from "../../../utils/serialize"
 import type { GiftMakerHistory } from "./giftMakerHistory"
-import { indexedDBStorage } from "./indexedDBStorage"
-import { localStorageHandler } from "./localStorageHandler"
-import { sessionStorageHandler } from "./sessionStorageHandler"
-import { tripleStorage } from "./storageOperations"
+import { config, indexedDBStorage } from "./indexedDBStorage"
+import { storage } from "./storageOperations"
 
-describe("tripleStorage", () => {
+describe("storage", () => {
   const mockStorageData = {
     state: {
       gifts: {
@@ -37,105 +34,31 @@ describe("tripleStorage", () => {
     vi.clearAllMocks()
   })
 
-  it("should get data from sessionStorage if localStorage is empty", async () => {
-    vi.spyOn(localStorageHandler, "getItem").mockReturnValue(null)
-    vi.spyOn(sessionStorageHandler, "getItem").mockReturnValue(
-      serialize(mockStorageData)
-    )
-    vi.spyOn(indexedDBStorage, "getItem").mockResolvedValue(null)
-
-    const result = await tripleStorage.getItem("alice")
-    expect(result).toEqual(deserialize(serialize(mockStorageData)))
-  })
-
   it("should get data from indexedDBStorage if both localStorage and sessionStorage are empty", async () => {
-    vi.spyOn(localStorageHandler, "getItem").mockReturnValue(null)
-    vi.spyOn(sessionStorageHandler, "getItem").mockReturnValue(null)
     vi.spyOn(indexedDBStorage, "getItem").mockResolvedValue(
       serialize(mockStorageData)
     )
 
-    const result = await tripleStorage.getItem("alice")
+    const result = await storage.getItem(config.storeName)
     expect(result).toEqual(deserialize(serialize(mockStorageData)))
-  })
-
-  it("should get data from localStorage even if an error occurs in indexedDBStorage", async () => {
-    const errorSpy = vi.spyOn(logger, "error")
-
-    vi.spyOn(localStorageHandler, "getItem").mockReturnValue(
-      serialize(mockStorageData)
-    )
-    vi.spyOn(sessionStorageHandler, "getItem").mockImplementation(() => {
-      throw new Error("Session storage error")
-    })
-    const indexedDBError = new Error("IndexedDB error")
-    vi.spyOn(indexedDBStorage, "getItem").mockRejectedValue(indexedDBError)
-
-    const result = await tripleStorage.getItem("alice")
-
-    expect(result).toEqual(deserialize(serialize(mockStorageData)))
-    expect(errorSpy).toHaveBeenCalledWith(
-      new Error("Failed to fetch at sessionStorage")
-    )
-    expect(errorSpy).toHaveBeenCalledWith(
-      new Error("Failed to fetch at indexedDB")
-    )
-  })
-
-  it("should set data in localStorage and sessionStorage even if an error occurs in indexedDBStorage", async () => {
-    const errorSpy = vi.spyOn(logger, "error")
-
-    vi.spyOn(localStorageHandler, "setItem").mockReturnValue(undefined)
-    vi.spyOn(sessionStorageHandler, "setItem").mockReturnValue(undefined)
-    vi.spyOn(indexedDBStorage, "setItem").mockRejectedValue(
-      new Error("IndexedDB error")
-    )
-
-    await tripleStorage.setItem("alice", mockStorageData)
-
-    expect(localStorageHandler.setItem).toHaveBeenCalledWith(
-      "alice",
-      serialize(mockStorageData)
-    )
-    expect(sessionStorageHandler.setItem).toHaveBeenCalledWith(
-      "alice",
-      serialize(mockStorageData)
-    )
-    expect(errorSpy).toHaveBeenCalledWith(
-      new Error("Failed to set at indexedDB")
-    )
   })
 
   it("should return err if an error occurs in all storage operations", async () => {
-    vi.spyOn(localStorageHandler, "setItem").mockImplementation(() => {
-      throw new Error("test")
-    })
-    vi.spyOn(sessionStorageHandler, "setItem").mockImplementation(() => {
-      throw new Error("test")
-    })
     vi.spyOn(indexedDBStorage, "setItem").mockImplementation(() => {
       throw new Error("test")
     })
 
-    const result = await tripleStorage.setItem("alice", mockStorageData)
+    const result = await storage.setItem(config.storeName, mockStorageData)
     expect(result).toEqual({
       tag: "err",
-      reason: "ERR_SET_ITEM_FAILED_IN_ALL_STORES",
+      reason: "ERR_SET_ITEM_FAILED_TO_STORAGE",
     })
   })
 
   it("should return ok if all storage operations are successful", async () => {
-    vi.spyOn(localStorageHandler, "setItem").mockImplementation(() => ({
-      tag: "ok",
-      result: undefined,
-    }))
-    vi.spyOn(sessionStorageHandler, "setItem").mockImplementation(() => ({
-      tag: "ok",
-      result: undefined,
-    }))
-    vi.spyOn(indexedDBStorage, "setItem").mockResolvedValue(undefined)
+    vi.spyOn(indexedDBStorage, "setItem").mockResolvedValue("test-key")
 
-    const result = await tripleStorage.setItem("alice", mockStorageData)
+    const result = await storage.setItem(config.storeName, mockStorageData)
     expect(result).toEqual({
       tag: "ok",
     })

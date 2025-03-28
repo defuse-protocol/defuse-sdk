@@ -217,6 +217,7 @@ export function GiftMakerForm({
                       value: e.target.value,
                     })
                   }
+                  disabled={processing}
                 />
               }
               tokenSlot={
