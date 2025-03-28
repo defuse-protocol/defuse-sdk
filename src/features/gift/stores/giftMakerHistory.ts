@@ -1,20 +1,29 @@
-import * as v from "valibot"
+import type { KeyPairString } from "near-api-js/lib/utils"
+import type { BaseTokenInfo } from "src/types/base"
 import { create } from "zustand"
 import { persist } from "zustand/middleware"
 import type { SignerCredentials } from "../../../core/formatters"
 import { logger } from "../../../logger"
 import type { DefuseUserId } from "../../../utils/defuse"
-import type { GiftInfo } from "../actors/shared/getGiftInfo"
-import { GiftStorageSchema } from "../utils/schemaStorage"
+import {} from "../utils/schemaStorage"
 import { GIFT_STORAGE_NAME } from "./indexedDBStorage"
+import { migrateGiftStorage } from "./migrations"
 import {
   type StorageOperationResult,
   getUserId,
   tripleStorage,
 } from "./storageOperations"
 
-export interface GiftMakerHistory extends GiftInfo {
+export type GiftStatus = "preparing" | "sent"
+
+export interface GiftMakerHistory {
   giftId: string
+  giftStatus: GiftStatus
+  tokenDiff: Record<BaseTokenInfo["defuseAssetId"], bigint>
+  tokenId: string
+  secretKey: KeyPairString
+  accountId: string
+  message: string
   intentHashes: string[]
   updatedAt: number
 }
@@ -37,7 +46,8 @@ export type Actions = {
   updateGift: (
     giftId: string,
     userId: DefuseUserId | SignerCredentials,
-    intentHashes: string[]
+    intentHashes: string[],
+    giftStatus: GiftStatus
   ) => Promise<StorageOperationResult>
   removeGift: (
     giftId: string,
@@ -46,11 +56,6 @@ export type Actions = {
 }
 
 export type Store = State & Actions
-export interface GiftMakerHistory extends GiftInfo {
-  giftId: string
-  intentHashes: string[]
-  updatedAt: number
-}
 
 export const giftMakerHistoryStore = create<Store>()(
   persist(
@@ -140,43 +145,8 @@ export const giftMakerHistoryStore = create<Store>()(
     {
       name: GIFT_STORAGE_NAME,
       storage: tripleStorage,
-      version: 1,
-      migrate: (persistedState: unknown, version) => {
-        if (version === 0) {
-          try {
-            const state = persistedState as State
-            const migratedState = {
-              state: {
-                gifts: Object.fromEntries(
-                  Object.entries(state.gifts).map(([userId, gifts]) => [
-                    userId,
-                    gifts.map((gift) => ({
-                      ...gift,
-                      tokenDiff: Object.fromEntries(
-                        Object.entries(gift.tokenDiff).map(([key, value]) => [
-                          key,
-                          typeof value === "string" ? BigInt(value) : value,
-                        ])
-                      ),
-                    })),
-                  ])
-                ),
-              },
-            }
-
-            const validated = v.parse(GiftStorageSchema, migratedState)
-            return validated.state as State
-          } catch (error) {
-            logger.error(
-              new Error("Failed to migrate gift storage", { cause: error })
-            )
-            throw new Error(
-              "Failed to migrate gift storage. Please contact support."
-            )
-          }
-        }
-        return persistedState as State
-      },
+      version: 2,
+      migrate: migrateGiftStorage,
     }
   )
 )

@@ -14,8 +14,8 @@ import {
 import { Copy } from "../../../../components/IntentCard/CopyButton"
 import { GiftClaimActorContext } from "../../providers/GiftClaimActorProvider"
 import type { TabType } from "../../providers/TabProvider"
-import type { GiftMakerHistory } from "../../stores/giftMakerHistory"
 import type { GiftLinkData } from "../../types/sharedTypes"
+import type { GiftInfo } from "../../utils/parseGiftInfos"
 import { GiftStrip } from "../GiftStrip"
 
 export function GiftMakerHistoryItem({
@@ -24,7 +24,7 @@ export function GiftMakerHistoryItem({
   itemType,
   signerCredentials,
 }: {
-  giftInfo: GiftMakerHistory
+  giftInfo: GiftInfo
   generateLink: (giftLinkData: GiftLinkData) => string
   itemType: TabType
   signerCredentials: SignerCredentials

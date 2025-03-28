@@ -1,14 +1,21 @@
 import { Ok, type Result } from "@thames/monads"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "src/types/base"
 import { logger } from "../../../logger"
+import { assert } from "../../../utils/assert"
 import type { GiftMakerHistory } from "../stores/giftMakerHistory"
+import { deriveToken } from "./deriveToken"
 import { determineGiftToken } from "./determineGiftToken"
 import { parseEscrowCredentials } from "./generateEscrowCredentials"
 
 export type GiftInfos = {
-  pending: GiftMakerHistory[]
-  claimed: GiftMakerHistory[]
-  failed: GiftMakerHistory[]
+  pending: GiftInfo[]
+  claimed: GiftInfo[]
+  failed: GiftInfo[]
+}
+
+export type GiftInfo = GiftMakerHistory & {
+  status: FilterStatus
+  token: BaseTokenInfo | UnifiedTokenInfo
 }
 
 export async function parseGiftInfos(
@@ -23,15 +30,17 @@ export async function parseGiftInfos(
           tokenList,
           escrowCredentials
         )
+        const token = deriveToken(gift.tokenId, tokenList)
         // If returns an error, it means the escrow account no longer
         // has the gifted token balance, indicating the gift has been claimed
         if (determineResult.isErr()) {
-          return createTaggedGift(gift, "claimed")
+          return createTaggedGift("claimed", gift, token)
         }
-        return createTaggedGift(gift, "pending")
+        return createTaggedGift("pending", gift, token)
       } catch (err: unknown) {
         logger.error(new Error("error parsing gift info", { cause: err }))
-        return createTaggedGift(gift, "failed")
+        assert(tokenList[0], "tokenList[0] is not undefined")
+        return createTaggedGift("failed", gift, tokenList[0])
       }
     })
   )
@@ -43,20 +52,21 @@ export async function parseGiftInfos(
 }
 
 function createTaggedGift(
+  status: FilterStatus,
   gift: GiftMakerHistory,
-  status: FilterStatus
-): GiftMakerHistory & { status: FilterStatus } {
-  return { ...gift, status }
+  token: BaseTokenInfo | UnifiedTokenInfo
+): GiftInfo {
+  return { ...gift, status, token }
 }
 
 type FilterStatus = "pending" | "claimed" | "failed"
 function filterByStatus(
   status: FilterStatus,
-  giftInfos: Array<GiftMakerHistory & { status: FilterStatus }>
-): GiftMakerHistory[] {
+  giftInfos: Array<GiftInfo>
+): GiftInfo[] {
   return giftInfos.filter((giftInfo) => giftInfo.status === status)
 }
 
-function sortByDate(giftInfos: GiftMakerHistory[]): GiftMakerHistory[] {
+function sortByDate(giftInfos: GiftInfo[]): GiftInfo[] {
   return giftInfos.sort((a, b) => b.updatedAt - a.updatedAt)
 }

@@ -11,6 +11,7 @@ const FungibleTokenInfoSchema = v.object({
   chainName: v.string(),
   chainId: v.optional(v.string()),
   routes: v.optional(v.array(v.string())),
+  bridge: v.string(),
 })
 
 const NativeTokenInfoSchema = v.object({
@@ -24,6 +25,7 @@ const NativeTokenInfoSchema = v.object({
   chainName: v.string(),
   chainId: v.optional(v.string()),
   routes: v.optional(v.array(v.string())),
+  bridge: v.string(),
 })
 
 const BaseTokenInfoSchema = v.union([
@@ -50,8 +52,26 @@ const GiftMakerHistorySchema = v.object({
   updatedAt: v.number(),
 })
 
+const GiftMakerHistorySchemaV2 = v.object({
+  giftId: v.string(),
+  giftStatus: v.union([v.literal("preparing"), v.literal("sent")]),
+  intentHashes: v.array(v.string()),
+  tokenDiff: v.record(v.string(), v.bigint()),
+  tokenId: v.string(),
+  secretKey: v.string(),
+  accountId: v.string(),
+  message: v.string(),
+  updatedAt: v.number(),
+})
+
 export const GiftStorageSchema = v.object({
   state: v.object({
     gifts: v.record(v.string(), v.array(GiftMakerHistorySchema)),
+  }),
+})
+
+export const GiftStorageSchemaV2 = v.object({
+  state: v.object({
+    gifts: v.record(v.string(), v.array(GiftMakerHistorySchemaV2)),
   }),
 })

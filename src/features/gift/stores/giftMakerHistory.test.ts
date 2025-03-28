@@ -168,14 +168,8 @@ describe("processGiftData", () => {
     intentHashes: ["intentHash"],
     message: "message",
     secretKey: "ed25519:secretKey",
-    token: {
-      unifiedAssetId: "usdc",
-      decimals: 6,
-      symbol: "USDC",
-      name: "USD Coin",
-      icon: "icon",
-      groupedTokens: [],
-    },
+    tokenId: "usdc",
+    giftStatus: "preparing",
     tokenDiff: {
       "nep141:usdc": 1000n,
     },
@@ -206,14 +200,8 @@ describe("processGiftData", () => {
                 ],
                 "message": "message",
                 "secretKey": "ed25519:secretKey",
-                "token": {
-                  "decimals": 6,
-                  "groupedTokens": [],
-                  "icon": "icon",
-                  "name": "USD Coin",
-                  "symbol": "USDC",
-                  "unifiedAssetId": "usdc",
-                },
+                "tokenId": "usdc",
+                "giftStatus": "preparing",
                 "tokenDiff": {
                   "nep141:usdc": {
                     "__type": "bigint",
