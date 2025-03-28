@@ -30,7 +30,18 @@ export async function parseGiftInfos(
           tokenList,
           escrowCredentials
         )
-        const token = deriveToken(gift.tokenId, tokenList)
+
+        // For backward compatibility with versions, we try to extract the token from the structure
+        // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+        const tokenFromV0 = (gift as any)?.token as
+          | BaseTokenInfo
+          | UnifiedTokenInfo
+        const tokenFromLatest = gift?.tokenId
+          ? deriveToken(gift.tokenId, tokenList)
+          : undefined
+
+        const token = tokenFromV0 ?? tokenFromLatest
+
         // If returns an error, it means the escrow account no longer
         // has the gifted token balance, indicating the gift has been claimed
         if (determineResult.isErr()) {
