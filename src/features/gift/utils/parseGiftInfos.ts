@@ -44,6 +44,10 @@ export async function parseGiftInfos(
 
         // If returns an error, it means the escrow account no longer
         // has the gifted token balance, indicating the gift has been claimed
+        // except it's on preparing and not yet published
+        if (determineResult.isErr() && gift.giftStatus === "preparing") {
+          return createTaggedGift("pending", gift, token)
+        }
         if (determineResult.isErr()) {
           return createTaggedGift("claimed", gift, token)
         }
