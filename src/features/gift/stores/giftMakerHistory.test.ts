@@ -15,32 +15,13 @@ describe("tripleStorage", () => {
         alice: [
           {
             giftId: "YjUjyafLoHZGVB4JeG1y85sJKjxeTMCvqCDRifsPFb8=",
+            giftStatus: "preparing",
             intentHashes: ["Amy7ek15DBZZhQB7DHynCUxKGTYZJCmawNK841RvS69Q"],
             tokenDiff: {
               "nep141:eth-0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48.omft.near":
-                { __type: "bigint", value: "100" },
+                100n,
             },
-            token: {
-              unifiedAssetId: "usdc",
-              symbol: "USDC",
-              name: "USD Coin",
-              icon: "icon",
-              groupedTokens: [
-                {
-                  defuseAssetId:
-                    "nep141:eth-0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48.omft.near",
-                  address: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
-                  symbol: "USDC",
-                  name: "USD Coin",
-                  decimals: 6,
-                  icon: "icon",
-                  chainIcon: "/static/icons/network/ethereum.svg",
-                  chainName: "eth",
-                  chainId: "",
-                  routes: [],
-                },
-              ],
-            },
+            tokenId: "usdc",
             secretKey: "ed25519:mWCSdwW",
             accountId: "accountId",
             message: "",
@@ -49,7 +30,7 @@ describe("tripleStorage", () => {
         ],
       },
     },
-    version: 1,
+    version: 2,
   }
 
   beforeEach(() => {
@@ -195,19 +176,19 @@ describe("processGiftData", () => {
               {
                 "accountId": "accountId",
                 "giftId": "giftId",
+                "giftStatus": "preparing",
                 "intentHashes": [
                   "intentHash",
                 ],
                 "message": "message",
                 "secretKey": "ed25519:secretKey",
-                "tokenId": "usdc",
-                "giftStatus": "preparing",
                 "tokenDiff": {
                   "nep141:usdc": {
                     "__type": "bigint",
                     "value": "1000",
                   },
                 },
+                "tokenId": "usdc",
                 "updatedAt": 1742910077547,
               },
             ],

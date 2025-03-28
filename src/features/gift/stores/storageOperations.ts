@@ -83,7 +83,9 @@ export async function executeStorageOperations<T>(
     return { tag: "err", reason }
   }
 
-  const successfulOperations = results.filter((r) => r.tag === "ok")
+  const successfulOperations = results
+    .filter((r) => r.tag === "ok")
+    .sort((a, b) => (a.result === null ? 1 : -1) - (b.result === null ? 1 : -1))
 
   const firstSuccess = successfulOperations[0]
 
