@@ -8,7 +8,6 @@ import {
   setup,
   spawnChild,
 } from "xstate"
-import { settings } from "../../constants/settings"
 import { logger } from "../../logger"
 import type { QuoteResult } from "../../services/quoteService"
 import type {
@@ -176,10 +175,7 @@ export const swapUIMachine = setup({
     passthroughEvent: emit((_, event: PassthroughEvent) => event),
     spawnBackgroundQuoterRef: spawnChild("backgroundQuoterActor", {
       id: "backgroundQuoterRef",
-      input: ({ self }) => ({
-        parentRef: self,
-        delayMs: settings.quotePollingIntervalMs,
-      }),
+      input: ({ self }) => ({ parentRef: self }),
     }),
     // Warning: This cannot be properly typed, so you can send an incorrect event
     sendToBackgroundQuoterRefNewQuoteInput: sendTo(
