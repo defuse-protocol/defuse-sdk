@@ -13,17 +13,12 @@ import {
   storage,
 } from "./storageOperations"
 
-export type GiftStatus = "preparing" | "sent"
-
 export interface GiftMakerHistory {
-  giftId: string
-  giftStatus: GiftStatus
   tokenDiff: Record<BaseTokenInfo["defuseAssetId"], bigint>
-  tokenId: string
   secretKey: KeyPairString
-  accountId: string
   message: string
   intentHashes: string[]
+  createdAt: number
   updatedAt: number
 }
 
@@ -43,13 +38,12 @@ export type Actions = {
     userId: DefuseUserId | SignerCredentials
   ) => Promise<StorageOperationResult>
   updateGift: (
-    giftId: string,
+    secretKey: string,
     userId: DefuseUserId | SignerCredentials,
-    intentHashes: string[],
-    giftStatus: GiftStatus
+    intentHashes: string[]
   ) => Promise<StorageOperationResult>
   removeGift: (
-    giftId: string,
+    secretKey: string,
     userId: DefuseUserId | SignerCredentials
   ) => Promise<StorageOperationResult>
 }
@@ -91,13 +85,13 @@ export const giftMakerHistoryStore = create<Store>()(
         }
       },
 
-      updateGift: async (giftId, user, intentHashes) => {
+      updateGift: async (secretKey, user, intentHashes) => {
         const userId = getUserId(user)
         const newState = {
           gifts: {
             ...get().gifts,
             [userId]: (get().gifts[userId] ?? []).map((g) =>
-              g.giftId === giftId ? { ...g, intentHashes } : g
+              g.secretKey === secretKey ? { ...g, intentHashes } : g
             ),
           },
         }
@@ -117,13 +111,13 @@ export const giftMakerHistoryStore = create<Store>()(
         }
       },
 
-      removeGift: async (giftId, user) => {
+      removeGift: async (secretKey, user) => {
         const userId = getUserId(user)
         const newState = {
           gifts: {
             ...get().gifts,
             [userId]: (get().gifts[userId] ?? []).filter(
-              (gift) => gift.giftId !== giftId
+              (gift) => gift.secretKey !== secretKey
             ),
           },
         }

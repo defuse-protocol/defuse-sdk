@@ -79,10 +79,10 @@ export function GiftClaimActorProvider({
 
     actor.subscribe(async (snapshot) => {
       if (snapshot.matches("claimed")) {
-        assert(giftInfo.giftId, "giftInfo.giftId is not set")
+        assert(giftInfo.secretKey, "giftInfo.secretKey is not set")
         const result = await giftMakerHistoryStore
           .getState()
-          .removeGift(giftInfo.giftId, signerCredentials)
+          .removeGift(giftInfo.secretKey, signerCredentials)
         if (result.tag === "err") {
           logger.error(
             new Error("Failed to remove gift", { cause: result.reason })

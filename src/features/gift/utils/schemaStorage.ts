@@ -46,7 +46,7 @@ const UnifiedTokenInfoSchema = v.object({
 const GiftMakerHistorySchemaV0 = v.object({
   giftId: v.string(),
   intentHashes: v.array(v.string()),
-  tokenDiff: v.record(v.string(), v.bigint()),
+  tokenDiff: v.record(v.string(), v.string()),
   token: v.union([BaseTokenInfoSchema, UnifiedTokenInfoSchema]),
   secretKey: v.string(),
   accountId: v.string(),
@@ -57,10 +57,7 @@ const GiftMakerHistorySchemaV0 = v.object({
 const GiftMakerHistorySchemaV1 = v.object({
   giftId: v.string(),
   intentHashes: v.array(v.string()),
-  tokenDiff: v.record(
-    v.string(),
-    v.object({ __type: v.literal("bigint"), value: v.string() })
-  ),
+  tokenDiff: v.record(v.string(), v.bigint()),
   token: v.union([BaseTokenInfoSchema, UnifiedTokenInfoSchema]),
   secretKey: v.string(),
   accountId: v.string(),
@@ -69,17 +66,11 @@ const GiftMakerHistorySchemaV1 = v.object({
 })
 
 const GiftMakerHistorySchemaV2 = v.object({
-  giftId: v.string(),
-  giftStatus: v.union([v.literal("preparing"), v.literal("sent")]),
-  intentHashes: v.array(v.string()),
-  tokenDiff: v.record(
-    v.string(),
-    v.object({ __type: v.literal("bigint"), value: v.string() })
-  ),
-  tokenId: v.string(),
+  tokenDiff: v.record(v.string(), v.string()),
   secretKey: v.string(),
-  accountId: v.string(),
   message: v.string(),
+  intentHashes: v.array(v.string()),
+  createdAt: v.number(),
   updatedAt: v.number(),
 })
 

@@ -1,20 +1,19 @@
 import type { BaseTokenInfo, UnifiedTokenInfo } from "src/types/base"
 import { isUnifiedToken } from "../../../utils/token"
 
-export function deriveTokenId(token: BaseTokenInfo | UnifiedTokenInfo) {
-  if (isUnifiedToken(token)) {
-    return token.unifiedAssetId
-  }
-  return token.defuseAssetId
-}
-
-export function deriveToken(
-  tokenId: string,
+export function findTokenFromDiff(
+  tokenDiff: Record<BaseTokenInfo["defuseAssetId"], bigint>,
   tokenList: (BaseTokenInfo | UnifiedTokenInfo)[]
 ) {
-  const result = tokenList.find((t) => deriveTokenId(t) === tokenId)
+  const defuseAssetId = Object.keys(tokenDiff)[0]
+  const result = tokenList.find((t) => {
+    if (isUnifiedToken(t)) {
+      return t.groupedTokens.some((t) => t.defuseAssetId === defuseAssetId)
+    }
+    return t.defuseAssetId === defuseAssetId
+  })
   if (!result) {
-    throw new Error(`Token not found: ${tokenId}`)
+    throw new Error(`Token not found: ${defuseAssetId}`)
   }
   return result
 }

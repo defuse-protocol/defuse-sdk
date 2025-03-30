@@ -12,7 +12,7 @@ describe("GiftStorageSchema", () => {
               giftId: "1",
               intentHashes: ["hash1", "hash2"],
               tokenDiff: {
-                "nep141:usdc": 1000n,
+                "nep141:usdc": "1000",
               },
               token: {
                 defuseAssetId: "nep141:usdc",
@@ -46,16 +46,13 @@ describe("GiftStorageSchema", () => {
         gifts: {
           user1: [
             {
-              giftId: "1",
-              giftStatus: "preparing",
               intentHashes: ["hash1"],
               tokenDiff: {
-                "nep141:usdc": { __type: "bigint", value: "1000" },
+                "nep141:usdc": "1000",
               },
-              tokenId: "usdc",
               secretKey: "ed25519:secretKey",
-              accountId: "accountId",
               message: "message",
+              createdAt: 1742910077547,
               updatedAt: 1742910077547,
             },
           ],

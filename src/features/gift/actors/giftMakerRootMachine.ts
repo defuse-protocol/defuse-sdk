@@ -25,7 +25,6 @@ import type {
   StorageOperationResult,
 } from "../stores/storageOperations"
 import type { GiftSignedResult } from "../types/sharedTypes"
-import { deriveTokenId } from "../utils/deriveToken"
 import {
   type EscrowCredentials,
   generateEscrowCredentials,
@@ -132,8 +131,7 @@ export const giftMakerRootMachine = setup({
         const result = await giftMakerHistoryStore.getState().addGift(
           {
             ...giftInfo,
-            tokenId: deriveTokenId(giftInfo.token),
-            giftStatus: "preparing",
+            createdAt: Date.now(),
           },
           input.signData.signerCredentials
         )
@@ -155,10 +153,9 @@ export const giftMakerRootMachine = setup({
         const result = await giftMakerHistoryStore
           .getState()
           .updateGift(
-            giftInfo.giftId,
+            giftInfo.secretKey,
             input.signData.signerCredentials,
-            giftInfo.intentHashes,
-            "sent"
+            giftInfo.intentHashes
           )
 
         if (result.tag === "err") {

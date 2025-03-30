@@ -80,7 +80,7 @@ export function GiftHistory({
       <GiftClaimActorProvider signerCredentials={signerCredentials}>
         {getVisibleGiftItems()?.map((giftInfo) => (
           <GiftMakerHistoryCollapsibleInfo
-            key={giftInfo.giftId}
+            key={crypto.randomUUID()}
             giftInfo={giftInfo}
           >
             <GiftMakerHistoryItem

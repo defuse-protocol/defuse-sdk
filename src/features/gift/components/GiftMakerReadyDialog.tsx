@@ -154,10 +154,10 @@ export function CancellationDialog({
 
   const ackCancellationImpossible = useCallback(() => {
     actorRef?.send({ type: "ACK_CLAIM_IMPOSSIBLE" })
-    assert(giftInfo.giftId, "giftInfo.giftId is not set")
+    assert(giftInfo.secretKey, "giftInfo.secretKey is not set")
     giftMakerHistoryStore
       .getState()
-      .removeGift(giftInfo.giftId, signerCredentials)
+      .removeGift(giftInfo.secretKey, signerCredentials)
   }, [actorRef, giftInfo, signerCredentials])
 
   const confirmCancellation = useCallback(() => {

@@ -3,18 +3,19 @@ import type { BaseTokenInfo, UnifiedTokenInfo } from "src/types/base"
 import { logger } from "../../../logger"
 import { assert } from "../../../utils/assert"
 import type { GiftMakerHistory } from "../stores/giftMakerHistory"
-import { deriveToken } from "./deriveToken"
+import { findTokenFromDiff } from "./deriveToken"
 import { determineGiftToken } from "./determineGiftToken"
 import { parseEscrowCredentials } from "./generateEscrowCredentials"
 
 export type GiftInfos = {
   pending: GiftInfo[]
   claimed: GiftInfo[]
-  failed: GiftInfo[]
+  nonExistent: GiftInfo[]
 }
 
 export type GiftInfo = GiftMakerHistory & {
   status: FilterStatus
+  accountId: string
   token: BaseTokenInfo | UnifiedTokenInfo
 }
 
@@ -30,51 +31,54 @@ export async function parseGiftInfos(
           tokenList,
           escrowCredentials
         )
-
-        // For backward compatibility with versions, we try to extract the token from the structure
-        // biome-ignore lint/suspicious/noExplicitAny: <explanation>
-        const tokenFromV0 = (gift as any)?.token as
-          | BaseTokenInfo
-          | UnifiedTokenInfo
-        const tokenFromLatest = gift?.tokenId
-          ? deriveToken(gift.tokenId, tokenList)
-          : undefined
-
-        const token = tokenFromV0 ?? tokenFromLatest
-
-        // If returns an error, it means the escrow account no longer
-        // has the gifted token balance, indicating the gift has been claimed
-        // except it's on preparing and not yet published
-        if (determineResult.isErr() && gift.giftStatus === "preparing") {
-          return createTaggedGift("pending", gift, token)
+        const token = findTokenFromDiff(gift.tokenDiff, tokenList)
+        const escrowAccountBalance = determineResult.isOk()
+        const giftStatus = getGiftStatus(gift, escrowAccountBalance)
+        if (giftStatus === "pending") {
+          return createTaggedGift(
+            giftStatus,
+            gift,
+            token,
+            escrowCredentials.credential
+          )
         }
-        if (determineResult.isErr()) {
-          return createTaggedGift("claimed", gift, token)
+        if (giftStatus === "claimed") {
+          return createTaggedGift(
+            giftStatus,
+            gift,
+            token,
+            escrowCredentials.credential
+          )
         }
-        return createTaggedGift("pending", gift, token)
+        return createTaggedGift(
+          "non-existent",
+          gift,
+          token,
+          escrowCredentials.credential
+        )
       } catch (err: unknown) {
         logger.error(new Error("error parsing gift info", { cause: err }))
         assert(tokenList[0], "tokenList[0] is not undefined")
-        return createTaggedGift("failed", gift, tokenList[0])
+        return createTaggedGift("non-existent", gift, tokenList[0], "dontcare")
       }
     })
   )
   return Ok({
     pending: sortByDate(filterByStatus("pending", giftInfos)),
     claimed: sortByDate(filterByStatus("claimed", giftInfos)),
-    failed: sortByDate(filterByStatus("failed", giftInfos)),
+    nonExistent: sortByDate(filterByStatus("non-existent", giftInfos)),
   })
 }
 
 function createTaggedGift(
   status: FilterStatus,
   gift: GiftMakerHistory,
-  token: BaseTokenInfo | UnifiedTokenInfo
+  token: BaseTokenInfo | UnifiedTokenInfo,
+  accountId: string
 ): GiftInfo {
-  return { ...gift, status, token }
+  return { ...gift, status, token, accountId }
 }
 
-type FilterStatus = "pending" | "claimed" | "failed"
 function filterByStatus(
   status: FilterStatus,
   giftInfos: Array<GiftInfo>
@@ -84,4 +88,26 @@ function filterByStatus(
 
 function sortByDate(giftInfos: GiftInfo[]): GiftInfo[] {
   return giftInfos.sort((a, b) => b.updatedAt - a.updatedAt)
+}
+
+type FilterStatus = "draft" | "pending" | "claimed" | "non-existent"
+
+function getGiftStatus(
+  gift: GiftMakerHistory,
+  escrowAccountBalance: boolean
+): FilterStatus {
+  const createdAt = gift.createdAt
+  const updatedAt = gift.updatedAt
+
+  // Case 1: `draft` Gift is stored in storage but not yet published
+  if (createdAt === updatedAt && !escrowAccountBalance) return "draft"
+
+  // Case 2: `pending` Gift is stored in storage and funds have been transferred to the escrow account
+  if (createdAt === updatedAt && escrowAccountBalance) return "pending"
+  if (createdAt !== updatedAt && escrowAccountBalance) return "pending"
+
+  // Case 3: `claimed` Gift has been published and funds have been claimed from the escrow account
+  if (createdAt !== updatedAt && !escrowAccountBalance) return "claimed"
+
+  return "non-existent"
 }

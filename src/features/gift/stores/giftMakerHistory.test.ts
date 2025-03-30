@@ -11,17 +11,14 @@ describe("storage", () => {
       gifts: {
         alice: [
           {
-            giftId: "YjUjyafLoHZGVB4JeG1y85sJKjxeTMCvqCDRifsPFb8=",
-            giftStatus: "preparing",
             intentHashes: ["Amy7ek15DBZZhQB7DHynCUxKGTYZJCmawNK841RvS69Q"],
             tokenDiff: {
               "nep141:eth-0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48.omft.near":
                 100n,
             },
-            tokenId: "usdc",
             secretKey: "ed25519:mWCSdwW",
-            accountId: "accountId",
             message: "",
+            createdAt: 1743010969229,
             updatedAt: 1743010969229,
           },
         ],
@@ -86,16 +83,13 @@ describe("storage", () => {
 
 describe("processGiftData", () => {
   const mockGift: GiftMakerHistory = {
-    accountId: "accountId",
-    giftId: "giftId",
     intentHashes: ["intentHash"],
     message: "message",
     secretKey: "ed25519:secretKey",
-    tokenId: "usdc",
-    giftStatus: "preparing",
     tokenDiff: {
       "nep141:usdc": 1000n,
     },
+    createdAt: 1743010969229,
     updatedAt: 1742910077547,
   }
   const mockUserId = "testUser"
@@ -116,9 +110,7 @@ describe("processGiftData", () => {
           "gifts": {
             "testUser": [
               {
-                "accountId": "accountId",
-                "giftId": "giftId",
-                "giftStatus": "preparing",
+                "createdAt": 1743010969229,
                 "intentHashes": [
                   "intentHash",
                 ],
@@ -130,7 +122,6 @@ describe("processGiftData", () => {
                     "value": "1000",
                   },
                 },
-                "tokenId": "usdc",
                 "updatedAt": 1742910077547,
               },
             ],
