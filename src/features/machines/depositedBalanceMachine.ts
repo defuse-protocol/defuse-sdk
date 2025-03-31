@@ -20,10 +20,8 @@ import type {
   TokenValue,
   UnifiedTokenInfo,
 } from "../../types/base"
-import {
-  type IntentsUserId,
-  authHandleToIntentsUserId,
-} from "../../utils/defuse"
+import type { IntentsUserId } from "../../types/intentsUserId"
+import { authHandleToIntentsUserId } from "../../utils/defuse"
 import {
   computeTotalBalanceDifferentDecimals,
   getUnderlyingBaseTokenInfos,

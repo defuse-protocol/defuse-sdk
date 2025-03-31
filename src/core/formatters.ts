@@ -1,6 +1,7 @@
 import type { AuthMethod } from "../types/authHandle"
+import type { IntentsUserId } from "../types/intentsUserId"
 import type { WalletSignatureResult } from "../types/swap"
-import { type IntentsUserId, authHandleToIntentsUserId } from "../utils/defuse"
+import { authHandleToIntentsUserId } from "../utils/defuse"
 import { prepareSwapSignedData } from "../utils/prepareBroadcastRequest"
 
 export type { IntentsUserId }

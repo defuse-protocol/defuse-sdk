@@ -2,8 +2,8 @@ import type { providers } from "near-api-js"
 import type { CodeResult } from "near-api-js/lib/providers/provider"
 import { config } from "../config"
 import type { BaseTokenInfo } from "../types/base"
+import type { IntentsUserId } from "../types/intentsUserId"
 import { assert } from "../utils/assert"
-import type { IntentsUserId } from "../utils/defuse"
 import { getDepositStatus } from "./poaBridgeClient"
 
 type TokenBalances = Record<BaseTokenInfo["defuseAssetId"], bigint>

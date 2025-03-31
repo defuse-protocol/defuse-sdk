@@ -4,7 +4,7 @@ import { create } from "zustand"
 import { persist } from "zustand/middleware"
 import type { SignerCredentials } from "../../../core/formatters"
 import { logger } from "../../../logger"
-import type { IntentsUserId } from "../../../utils/defuse"
+import type { IntentsUserId } from "../../../types/intentsUserId"
 import { config as configDBStorage } from "./indexedDBStorage"
 import { migrateGiftStorage } from "./migrations"
 import {

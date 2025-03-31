@@ -8,9 +8,9 @@ import type { AggregatedQuote } from "../../services/quoteService"
 import type { AuthMethod } from "../../types/authHandle"
 import type { BaseTokenInfo, TokenValue } from "../../types/base"
 import type { Nep413DefuseMessageFor_DefuseIntents } from "../../types/defuse-contracts-types"
+import type { IntentsUserId } from "../../types/intentsUserId"
 import type { WalletMessage, WalletSignatureResult } from "../../types/swap"
 import { assert } from "../../utils/assert"
-import type { IntentsUserId } from "../../utils/defuse"
 import {
   makeInnerSwapMessage,
   makeSwapMessage,

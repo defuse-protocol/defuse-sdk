@@ -4,8 +4,8 @@ import {
   getDepositedBalances,
   getTransitBalances,
 } from "../../../services/defuseBalanceService"
+import type { IntentsUserId } from "../../../types/intentsUserId"
 import { assert } from "../../../utils/assert"
-import type { IntentsUserId } from "../../../utils/defuse"
 import type { BalanceMapping } from "../../machines/depositedBalanceMachine"
 
 export function createDepositedBalanceQueryOptions({

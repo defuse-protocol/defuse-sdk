@@ -9,7 +9,8 @@ import type {
 } from "../types/defuse-contracts-types"
 import type { WalletMessage } from "../types/swap"
 import { assert } from "./assert"
-import type { IntentsUserId } from "./defuse"
+
+import type { IntentsUserId } from "../types/intentsUserId"
 
 /**
  * @param tokenDeltas

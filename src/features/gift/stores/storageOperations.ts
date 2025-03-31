@@ -1,6 +1,5 @@
-import type { SignerCredentials } from "../../../core/formatters"
+import type { IntentsUserId, SignerCredentials } from "../../../core/formatters"
 import { logger } from "../../../logger"
-import type { IntentsUserId } from "../../../utils/defuse"
 import { authHandleToIntentsUserId } from "../../../utils/defuse"
 import { deserialize } from "../../../utils/deserialize"
 import { serialize } from "../../../utils/serialize"

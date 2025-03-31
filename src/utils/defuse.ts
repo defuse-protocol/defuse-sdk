@@ -5,13 +5,8 @@ import type {
   AuthIdentifier,
   AuthMethod,
 } from "../types/authHandle"
+import type { IntentsUserId } from "../types/intentsUserId"
 import { parsePublicKey } from "./webAuthn"
-
-/**
- * A branded string type representing a Defuse user ID.
- * The brand prevents accidental mixing with regular strings in TypeScript.
- */
-export type IntentsUserId = string & { __brand: "IntentsUserId" }
 
 /**
  * Converts a blockchain address to a standardized Defuse user ID.

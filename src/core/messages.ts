@@ -1,5 +1,5 @@
+import type { IntentsUserId } from "../types/intentsUserId"
 import type { WalletMessage } from "../types/swap"
-import type { IntentsUserId } from "../utils/defuse"
 import {
   type WithdrawParams,
   makeEmptyMessage,
