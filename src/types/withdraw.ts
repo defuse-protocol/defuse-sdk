@@ -3,7 +3,10 @@ import type { BaseTokenInfo, UnifiedTokenInfo } from "./base"
 import type { AuthHandle } from "./deposit"
 import type { WalletMessage, WalletSignatureResult } from "./swap"
 
-export type WithdrawWidgetProps = AuthHandle & {
+export type WithdrawWidgetProps = {
+  userAddress: AuthHandle["identifier"] | undefined
+  chainType: AuthHandle["method"] | undefined
+
   tokenList: (BaseTokenInfo | UnifiedTokenInfo)[]
   signMessage: (params: WalletMessage) => Promise<WalletSignatureResult | null>
   sendNearTransaction: SendNearTransaction

@@ -19,16 +19,18 @@ export const AuthMethod = {
 export type AuthIdentifier = string
 
 export type AuthHandle = {
-  userAddress?: AuthIdentifier
-  chainType?: AuthMethod
+  identifier: AuthIdentifier
+  method: AuthMethod
 }
 
-export type DepositWidgetProps = AuthHandle & {
+export type DepositWidgetProps = {
+  userAddress: AuthHandle["identifier"] | undefined
+  chainType: AuthHandle["method"] | undefined
+
   tokenList: SwappableToken[]
   sendTransactionNear: (tx: Transaction["NEAR"][]) => Promise<string | null>
   sendTransactionEVM: (tx: Transaction["EVM"]) => Promise<Hash | null>
   sendTransactionSolana: (tx: Transaction["Solana"]) => Promise<string | null>
-  chainType?: AuthMethod
 }
 
 export type Transaction = {
