@@ -2,18 +2,25 @@ import type { Transaction as TransactionSolana } from "@solana/web3.js"
 import type { Address, Hash } from "viem"
 import type { SwappableToken } from "./swap"
 
-export type ChainType = "near" | "evm" | "solana" | "webauthn"
+export type AuthMethod = "near" | "evm" | "solana" | "webauthn"
 
-export const ChainType = {
+export const AuthMethod = {
   Near: "near",
   EVM: "evm",
   Solana: "solana",
   WebAuthn: "webauthn",
 } as const
 
+/**
+ * Represents a public identifier used for authentication.
+ * This could be a blockchain address, account name, or public key.
+ * This is always a public value - never contains private keys or passwords.
+ */
+export type AuthIdentifier = string
+
 export type UserInfo = {
-  userAddress?: string
-  chainType?: ChainType
+  userAddress?: AuthIdentifier
+  chainType?: AuthMethod
 }
 
 export type DepositWidgetProps = UserInfo & {
@@ -21,7 +28,7 @@ export type DepositWidgetProps = UserInfo & {
   sendTransactionNear: (tx: Transaction["NEAR"][]) => Promise<string | null>
   sendTransactionEVM: (tx: Transaction["EVM"]) => Promise<Hash | null>
   sendTransactionSolana: (tx: Transaction["Solana"]) => Promise<string | null>
-  chainType?: ChainType
+  chainType?: AuthMethod
 }
 
 export type Transaction = {

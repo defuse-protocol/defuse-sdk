@@ -11,7 +11,7 @@ import {
 import { logger } from "../../logger"
 import type { QuoteResult } from "../../services/quoteService"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../types/base"
-import type { ChainType } from "../../types/deposit"
+import type { AuthMethod } from "../../types/deposit"
 import { assert } from "../../utils/assert"
 import { authHandleToIntentsUserId } from "../../utils/defuse"
 import {
@@ -53,7 +53,7 @@ export type Context = {
   poaBridgeInfoRef: ActorRefFrom<typeof poaBridgeInfoActor>
   submitDeps: {
     userAddress: string
-    userChainType: ChainType
+    userChainType: AuthMethod
     nearClient: providers.Provider
   } | null
   preparationOutput: PreparationOutput | null

@@ -8,7 +8,7 @@ export { GiftMakerWidget } from "./features/gift/components/GiftMakerWidget"
 export { GiftTakerWidget } from "./features/gift/components/GiftTakerWidget"
 export { GiftHistoryWidget } from "./features/gift/components/GiftHistoryWidget"
 export type { BaseTokenInfo, UnifiedTokenInfo } from "./types/base"
-export { ChainType } from "./types/deposit"
+export { AuthMethod } from "./types/deposit"
 export { isBaseToken, isUnifiedToken } from "./utils/token"
 
 // Message creation utilities

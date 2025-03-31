@@ -1,7 +1,7 @@
 import type { SendNearTransaction } from "../features/machines/publicKeyVerifierMachine"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "./base"
 import type { DefusePayloadFor_DefuseIntents } from "./defuse-contracts-types"
-import type { ChainType } from "./deposit"
+import type { AuthMethod } from "./deposit"
 import type { RenderHostAppLink } from "./hostAppLink"
 
 // Message for EVM wallets
@@ -104,7 +104,7 @@ export type SwapWidgetProps = {
    * `null` if the user is not authenticated.
    */
   userAddress: string | null
-  userChainType: ChainType | null
+  userChainType: AuthMethod | null
 
   sendNearTransaction: SendNearTransaction
 

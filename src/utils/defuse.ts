@@ -1,6 +1,6 @@
 import { keccak_256 } from "@noble/hashes/sha3"
 import { base58, hex } from "@scure/base"
-import type { ChainType } from "../types/deposit"
+import type { AuthMethod } from "../types/deposit"
 import { parsePublicKey } from "./webAuthn"
 
 /**
@@ -34,7 +34,7 @@ export type IntentsUserId = string & { __brand: "IntentsUserId" }
  */
 export function authHandleToIntentsUserId(
   credential: string,
-  credentialType: ChainType
+  credentialType: AuthMethod
 ): IntentsUserId {
   switch (credentialType) {
     case "evm":

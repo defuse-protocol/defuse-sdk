@@ -32,7 +32,7 @@ import type { storageDepositAmountMachine } from "../features/machines/storageDe
 import { logger } from "../logger"
 import type { BaseTokenInfo, SupportedChainName } from "../types/base"
 import {
-  ChainType,
+  AuthMethod,
   type SendTransactionEVMParams,
   type Transaction,
 } from "../types/deposit"
@@ -471,7 +471,7 @@ export function createDepositFromSiloTransaction(
       getAddress(tokenAddress),
       amount,
       depositAddress,
-      authHandleToIntentsUserId(userAddress, ChainType.EVM),
+      authHandleToIntentsUserId(userAddress, AuthMethod.EVM),
     ],
   })
   const tx: SendTransactionEVMParams = {
@@ -699,11 +699,11 @@ export function waitEVMTransaction({
  * - `passiveDeposit` is deposit via generated address at QR code provided by POA bridge.
  */
 export function getAvailableDepositRoutes(
-  chainTypeFromWallet: ChainType,
+  chainTypeFromWallet: AuthMethod,
   network: BlockchainEnum
 ): { activeDeposit: boolean; passiveDeposit: boolean } | null {
   switch (chainTypeFromWallet) {
-    case ChainType.Near:
+    case AuthMethod.Near:
       switch (network) {
         case BlockchainEnum.NEAR:
           return {
@@ -734,7 +734,7 @@ export function getAvailableDepositRoutes(
           network satisfies never
           throw new Error("exhaustive check failed")
       }
-    case ChainType.EVM:
+    case AuthMethod.EVM:
       switch (network) {
         case BlockchainEnum.NEAR:
           return {
@@ -769,7 +769,7 @@ export function getAvailableDepositRoutes(
           network satisfies never
           throw new Error("exhaustive check failed")
       }
-    case ChainType.Solana:
+    case AuthMethod.Solana:
       switch (network) {
         case BlockchainEnum.NEAR:
         case BlockchainEnum.TURBOCHAIN:
@@ -800,7 +800,7 @@ export function getAvailableDepositRoutes(
           network satisfies never
           throw new Error("exhaustive check failed")
       }
-    case ChainType.WebAuthn:
+    case AuthMethod.WebAuthn:
       switch (network) {
         case BlockchainEnum.NEAR:
         case BlockchainEnum.TURBOCHAIN:

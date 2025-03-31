@@ -1,6 +1,6 @@
 import { WidgetRoot } from "../../../components/WidgetRoot"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../../types/base"
-import type { ChainType } from "../../../types/deposit"
+import type { AuthMethod } from "../../../types/deposit"
 import type { RenderHostAppLink } from "../../../types/hostAppLink"
 import { authHandleToIntentsUserId } from "../../../utils/defuse"
 import { useWatchHoldings } from "../hooks/useWatchHoldings"
@@ -12,7 +12,7 @@ export interface AccountWidgetProps {
   tokenList: (BaseTokenInfo | UnifiedTokenInfo)[]
 
   userAddress: string | null | undefined
-  userChainType: ChainType | null | undefined
+  userChainType: AuthMethod | null | undefined
 
   renderHostAppLink: RenderHostAppLink
 }

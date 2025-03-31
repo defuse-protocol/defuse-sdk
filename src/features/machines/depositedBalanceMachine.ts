@@ -19,7 +19,7 @@ import type {
   TokenValue,
   UnifiedTokenInfo,
 } from "../../types/base"
-import type { ChainType } from "../../types/deposit"
+import type { AuthMethod } from "../../types/deposit"
 import {
   type IntentsUserId,
   authHandleToIntentsUserId,
@@ -56,7 +56,10 @@ type ThisActor = ActorRef<Snapshot<unknown>, SharedEvents>
 
 export type Events =
   | { type: "LOGOUT" | "REQUEST_BALANCE_REFRESH" }
-  | { type: "LOGIN"; params: { userAddress: string; userChainType: ChainType } }
+  | {
+      type: "LOGIN"
+      params: { userAddress: string; userChainType: AuthMethod }
+    }
 
 export const depositedBalanceMachine = setup({
   types: {

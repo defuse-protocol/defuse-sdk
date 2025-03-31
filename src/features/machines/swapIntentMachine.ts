@@ -7,7 +7,7 @@ import { publishIntent } from "../../services/intentService"
 import type { AggregatedQuote } from "../../services/quoteService"
 import type { BaseTokenInfo, TokenValue } from "../../types/base"
 import type { Nep413DefuseMessageFor_DefuseIntents } from "../../types/defuse-contracts-types"
-import type { ChainType } from "../../types/deposit"
+import type { AuthMethod } from "../../types/deposit"
 import type { WalletMessage, WalletSignatureResult } from "../../types/swap"
 import { assert } from "../../utils/assert"
 import type { IntentsUserId } from "../../utils/defuse"
@@ -81,7 +81,7 @@ export type IntentDescription =
 
 type Context = {
   userAddress: string
-  userChainType: ChainType
+  userChainType: AuthMethod
   defuseUserId: IntentsUserId
   referral?: string
   slippageBasisPoints: number
@@ -121,7 +121,7 @@ type Context = {
 
 type Input = {
   userAddress: string
-  userChainType: ChainType
+  userChainType: AuthMethod
   defuseUserId: IntentsUserId
   referral?: string
   slippageBasisPoints: number
@@ -228,7 +228,7 @@ export const swapIntentMachine = setup({
       }: {
         input: {
           signatureData: WalletSignatureResult
-          userInfo: { userAddress: string; userChainType: ChainType }
+          userInfo: { userAddress: string; userChainType: AuthMethod }
           quoteHashes: string[]
         }
       }) =>

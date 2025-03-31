@@ -40,7 +40,7 @@ import type {
   TokenValue,
   UnifiedTokenInfo,
 } from "../../../../types/base"
-import { ChainType } from "../../../../types/deposit"
+import { AuthMethod } from "../../../../types/deposit"
 import type { WithdrawWidgetProps } from "../../../../types/withdraw"
 import { parseUnits } from "../../../../utils/parse"
 import { isBaseToken } from "../../../../utils/token"
@@ -784,21 +784,21 @@ function Intents({
 }
 
 function chainTypeSatisfiesChainName(
-  chainType: ChainType | undefined,
+  chainType: AuthMethod | undefined,
   chainName: SupportedChainName
 ) {
   if (chainType == null) return false
 
   switch (true) {
-    case chainType === ChainType.Near && chainName === "near":
-    case chainType === ChainType.EVM && chainName === "eth":
-    case chainType === ChainType.EVM && chainName === "arbitrum":
-    case chainType === ChainType.EVM && chainName === "base":
-    case chainType === ChainType.EVM && chainName === "turbochain":
-    case chainType === ChainType.EVM && chainName === "aurora":
-    case chainType === ChainType.EVM && chainName === "gnosis":
-    case chainType === ChainType.EVM && chainName === "berachain":
-    case chainType === ChainType.Solana && chainName === "solana":
+    case chainType === AuthMethod.Near && chainName === "near":
+    case chainType === AuthMethod.EVM && chainName === "eth":
+    case chainType === AuthMethod.EVM && chainName === "arbitrum":
+    case chainType === AuthMethod.EVM && chainName === "base":
+    case chainType === AuthMethod.EVM && chainName === "turbochain":
+    case chainType === AuthMethod.EVM && chainName === "aurora":
+    case chainType === AuthMethod.EVM && chainName === "gnosis":
+    case chainType === AuthMethod.EVM && chainName === "berachain":
+    case chainType === AuthMethod.Solana && chainName === "solana":
       return true
   }
 

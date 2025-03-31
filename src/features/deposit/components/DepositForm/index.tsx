@@ -22,7 +22,7 @@ import { useModalStore } from "../../../../providers/ModalStoreProvider"
 import { getAvailableDepositRoutes } from "../../../../services/depositService"
 import { ModalType } from "../../../../stores/modalStore"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../../../types/base"
-import type { ChainType } from "../../../../types/deposit"
+import type { AuthMethod } from "../../../../types/deposit"
 import { BlockchainEnum } from "../../../../types/interfaces"
 import type { SwappableToken } from "../../../../types/swap"
 import { isBaseToken, isUnifiedToken } from "../../../../utils/token"
@@ -39,7 +39,7 @@ export type DepositFormValues = {
   rpcUrl: string | undefined
 }
 
-export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
+export const DepositForm = ({ chainType }: { chainType?: AuthMethod }) => {
   const { handleSubmit, register, control, setValue, watch } =
     useFormContext<DepositFormValues>()
 

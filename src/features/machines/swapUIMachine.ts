@@ -15,7 +15,7 @@ import type {
   TokenValue,
   UnifiedTokenInfo,
 } from "../../types/base"
-import type { ChainType } from "../../types/deposit"
+import type { AuthMethod } from "../../types/deposit"
 import type { SwappableToken } from "../../types/swap"
 import { assert } from "../../utils/assert"
 import { authHandleToIntentsUserId } from "../../utils/defuse"
@@ -94,7 +94,7 @@ export const swapUIMachine = setup({
           type: "submit"
           params: {
             userAddress: string
-            userChainType: ChainType
+            userChainType: AuthMethod
             nearClient: providers.Provider
           }
         }

@@ -1,4 +1,4 @@
-import type { ChainType } from "../types/deposit"
+import type { AuthMethod } from "../types/deposit"
 import type { WalletSignatureResult } from "../types/swap"
 import { type IntentsUserId, authHandleToIntentsUserId } from "../utils/defuse"
 import { prepareSwapSignedData } from "../utils/prepareBroadcastRequest"
@@ -9,7 +9,7 @@ export interface SignerCredentials {
   /** The credential (blockchain address or WebAuthn public key) that will sign or has signed the intent */
   credential: string
   /** The type of credential (chain or authentication method) */
-  credentialType: ChainType
+  credentialType: AuthMethod
 }
 
 /**

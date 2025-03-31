@@ -1,7 +1,7 @@
 import { retry } from "@lifeomic/attempt"
 import { Err, Ok, type Result } from "@thames/monads"
 import { logger } from "../logger"
-import type { ChainType } from "../types/deposit"
+import type { AuthMethod } from "../types/deposit"
 import type { WalletSignatureResult } from "../types/swap"
 import { prepareSwapSignedData } from "../utils/prepareBroadcastRequest"
 import * as solverRelayClient from "./solverRelayHttpClient"
@@ -16,7 +16,7 @@ export type PublishIntentResult =
 
 export async function publishIntent(
   signatureData: WalletSignatureResult,
-  userInfo: { userAddress: string; userChainType: ChainType },
+  userInfo: { userAddress: string; userChainType: AuthMethod },
   quoteHashes: string[]
 ): Promise<PublishIntentResult> {
   const result = await retry<types.PublishIntentResponse["result"]>(

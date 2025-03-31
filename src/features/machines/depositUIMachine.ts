@@ -9,7 +9,7 @@ import {
 } from "xstate"
 import { config } from "../../config"
 import type { BaseTokenInfo, SupportedChainName } from "../../types/base"
-import type { ChainType } from "../../types/deposit"
+import type { AuthMethod } from "../../types/deposit"
 import type { SwappableToken } from "../../types/swap"
 import { depositEstimationMachine } from "./depositEstimationActor"
 import {
@@ -32,7 +32,7 @@ export type Context = {
   poaBridgeInfoRef: ActorRefFrom<typeof poaBridgeInfoActor>
   tokenList: SwappableToken[]
   userAddress: string | null
-  userChainType: ChainType | null
+  userChainType: AuthMethod | null
   depositFormRef: ActorRefFrom<typeof depositFormReducer>
   preparationOutput: PreparationOutput | null
   storageDepositAmountRef: ActorRefFrom<typeof storageDepositAmountMachine>
@@ -55,7 +55,7 @@ export const depositUIMachine = setup({
           type: "LOGIN"
           params: {
             userAddress: string
-            userChainType: ChainType
+            userChainType: AuthMethod
           }
         }
       | {

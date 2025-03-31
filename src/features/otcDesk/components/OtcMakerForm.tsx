@@ -15,7 +15,7 @@ import { useTokensStore } from "../../../providers/TokensStoreProvider"
 import { ModalType } from "../../../stores/modalStore"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../../types/base"
 import type { MultiPayload } from "../../../types/defuse-contracts-types"
-import type { ChainType } from "../../../types/deposit"
+import type { AuthMethod } from "../../../types/deposit"
 import type { RenderHostAppLink } from "../../../types/hostAppLink"
 import type { SwappableToken } from "../../../types/swap"
 import { assert } from "../../../utils/assert"
@@ -39,7 +39,7 @@ export type OtcMakerWidgetProps = {
 
   /** User's wallet address */
   userAddress: string | null | undefined
-  userChainType: ChainType | null | undefined
+  userChainType: AuthMethod | null | undefined
 
   /** Initial tokens for pre-filling the form */
   initialTokenIn?: BaseTokenInfo | UnifiedTokenInfo

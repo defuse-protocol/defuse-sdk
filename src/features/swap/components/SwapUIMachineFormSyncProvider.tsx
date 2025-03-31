@@ -1,7 +1,7 @@
 import { useSelector } from "@xstate/react"
 import { type PropsWithChildren, useEffect, useRef } from "react"
 import { useFormContext } from "react-hook-form"
-import type { ChainType } from "../../../types/deposit"
+import type { AuthMethod } from "../../../types/deposit"
 import type { SwapWidgetProps } from "../../../types/swap"
 import { usePublicKeyModalOpener } from "../hooks/usePublicKeyModalOpener"
 import type { SwapFormValues } from "./SwapForm"
@@ -9,7 +9,7 @@ import { SwapUIMachineContext } from "./SwapUIMachineProvider"
 
 type SwapUIMachineFormSyncProviderProps = PropsWithChildren<{
   userAddress: string | null
-  userChainType: ChainType | null
+  userChainType: AuthMethod | null
   onSuccessSwap: SwapWidgetProps["onSuccessSwap"]
   sendNearTransaction: SwapWidgetProps["sendNearTransaction"]
 }>
