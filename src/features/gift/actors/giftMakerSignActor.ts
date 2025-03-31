@@ -48,6 +48,10 @@ export type GiftMakerSignActorInput = {
   escrowCredentials: EscrowCredentials
 }
 
+export type GiftMakerSignActorErrors =
+  | SignIntentErrors
+  | { reason: "ERR_GIFT_SIGNING" }
+
 export type GiftMakerSignActorOutput =
   | { tag: "err"; value: GiftMakerSignActorErrors }
   | {
@@ -67,10 +71,6 @@ export type GiftMakerSignActorContext = {
   walletMessage: WalletMessage
   escrowCredentials: EscrowCredentials
 }
-
-export type GiftMakerSignActorErrors =
-  | SignIntentErrors
-  | { reason: "ERR_GIFT_SIGNING" }
 
 export const giftMakerSignActor = setup({
   types: {
@@ -134,6 +134,7 @@ export const giftMakerSignActor = setup({
     const walletMessage = createTransferMessage(Object.entries(tokenDiff), {
       signerId: input.signerCredentials,
       referral: input.referral,
+      memo: "GIFT_CREATE",
       receiverId: input.escrowCredentials.credential,
     })
 
