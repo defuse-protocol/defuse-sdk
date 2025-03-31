@@ -1,113 +1,95 @@
 import { deserialize } from "src/utils/deserialize"
-import { beforeEach, describe, expect, it, vi } from "vitest"
-import { logger } from "../../../logger"
-import type { DefuseUserId } from "../../../utils/defuse"
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { serialize } from "../../../utils/serialize"
-import { type GiftMakerHistory, tripleStorage } from "./giftMakerHistory"
-import { indexedDBStorage } from "./indexedDBStorage"
-import { localStorageHandler } from "./localStorageHandler"
-import { sessionStorageHandler } from "./sessionStorageHandler"
+import type { GiftMakerHistory } from "./giftMakerHistory"
+import { config, indexedDBStorage } from "./indexedDBStorage"
+import { storage } from "./storageOperations"
 
-describe("tripleStorage", () => {
-  const mockData = serialize({
+describe("storage", () => {
+  const mockStorageData = {
     state: {
-      gifts: {} as Record<DefuseUserId, GiftMakerHistory[]>,
+      gifts: {
+        alice: [
+          {
+            intentHashes: ["Amy7ek15DBZZhQB7DHynCUxKGTYZJCmawNK841RvS69Q"],
+            tokenDiff: {
+              "nep141:eth-0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48.omft.near":
+                100n,
+            },
+            secretKey: "ed25519:mWCSdwW",
+            message: "",
+            createdAt: 1743010969229,
+            updatedAt: 1743010969229,
+          },
+        ],
+      },
     },
-  })
+    version: 2,
+  }
 
   beforeEach(() => {
+    vi.stubGlobal("localStorage", {
+      getItem: vi.fn(),
+      setItem: vi.fn(),
+      removeItem: vi.fn(),
+    })
+    vi.stubGlobal("sessionStorage", {
+      getItem: vi.fn(),
+      setItem: vi.fn(),
+      removeItem: vi.fn(),
+    })
+
     vi.clearAllMocks()
   })
 
-  it("should get data from sessionStorage if localStorage is empty", async () => {
-    vi.spyOn(localStorageHandler, "getItem").mockReturnValue(null)
-    vi.spyOn(sessionStorageHandler, "getItem").mockReturnValue(mockData)
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  it("should get data from localStorage or sessionStorage if indexedDBStorage is empty", async () => {
     vi.spyOn(indexedDBStorage, "getItem").mockResolvedValue(null)
+    vi.spyOn(localStorage, "getItem").mockReturnValue(
+      serialize(mockStorageData)
+    )
+    vi.spyOn(sessionStorage, "getItem").mockResolvedValue(
+      serialize(mockStorageData)
+    )
 
-    const result = await tripleStorage.getItem("testKey")
-    expect(result).toEqual({ state: { gifts: {} } })
+    const result = await storage.getItem(config.storeName)
+    expect(result).toEqual(deserialize(serialize(mockStorageData)))
   })
 
-  it("should get data from indexedDBStorage if both localStorage and sessionStorage are empty", async () => {
-    vi.spyOn(localStorageHandler, "getItem").mockReturnValue(null)
-    vi.spyOn(sessionStorageHandler, "getItem").mockReturnValue(null)
-    vi.spyOn(indexedDBStorage, "getItem").mockResolvedValue(mockData)
-
-    const result = await tripleStorage.getItem("testKey")
-    expect(result).toEqual({ state: { gifts: {} } })
-  })
-
-  it("should get data from localStorage even if an error occurs in indexedDBStorage", async () => {
-    const errorSpy = vi.spyOn(logger, "error")
-    const mockGiftData = { state: { gifts: {} } }
-    const serializedData = serialize(mockGiftData)
-
-    vi.spyOn(localStorageHandler, "getItem").mockReturnValue(serializedData)
-    vi.spyOn(sessionStorageHandler, "getItem").mockImplementation(() => {
-      throw new Error("Session storage error")
+  it("should return err if an error occurs in all storage operations", async () => {
+    vi.spyOn(indexedDBStorage, "setItem").mockImplementation(() => {
+      throw new Error("test")
     })
-    const indexedDBError = new Error("IndexedDB error")
-    vi.spyOn(indexedDBStorage, "getItem").mockRejectedValue(indexedDBError)
 
-    const result = await tripleStorage.getItem("testKey")
-
-    expect(result).toEqual(mockGiftData)
-    expect(errorSpy).toHaveBeenCalledWith(
-      expect.objectContaining({
-        cause: expect.any(Error),
-        message: "Failed to fetch from sessionStorage",
-      })
-    )
-    expect(errorSpy).toHaveBeenCalledWith(
-      expect.objectContaining({
-        cause: indexedDBError,
-        message: "Failed to fetch from indexedDB",
-      })
-    )
+    const result = await storage.setItem(config.storeName, mockStorageData)
+    expect(result).toEqual({
+      tag: "err",
+      reason: "ERR_SET_ITEM_FAILED_TO_STORAGE",
+    })
   })
 
-  it("should set data in localStorage and sessionStorage even if an error occurs in indexedDBStorage", async () => {
-    const mockData = {
-      state: { gifts: {} as Record<DefuseUserId, GiftMakerHistory[]> },
-    }
-    const stringifiedData = serialize(mockData)
+  it("should return ok if all storage operations are successful", async () => {
+    vi.spyOn(indexedDBStorage, "setItem").mockResolvedValue("test-key")
 
-    vi.spyOn(localStorageHandler, "setItem").mockImplementation(() => {})
-    vi.spyOn(sessionStorageHandler, "setItem").mockImplementation(() => {})
-    vi.spyOn(indexedDBStorage, "setItem").mockRejectedValue(
-      new Error("IndexedDB error")
-    )
-
-    await tripleStorage.setItem("testKey", mockData)
-    expect(localStorageHandler.setItem).toHaveBeenCalledWith(
-      "testKey",
-      stringifiedData
-    )
-    expect(sessionStorageHandler.setItem).toHaveBeenCalledWith(
-      "testKey",
-      stringifiedData
-    )
+    const result = await storage.setItem(config.storeName, mockStorageData)
+    expect(result).toEqual({
+      tag: "ok",
+    })
   })
 })
 
 describe("processGiftData", () => {
   const mockGift: GiftMakerHistory = {
-    accountId: "accountId",
-    giftId: "giftId",
     intentHashes: ["intentHash"],
     message: "message",
     secretKey: "ed25519:secretKey",
-    token: {
-      unifiedAssetId: "usdc",
-      decimals: 6,
-      symbol: "USDC",
-      name: "USD Coin",
-      icon: "icon",
-      groupedTokens: [],
-    },
     tokenDiff: {
       "nep141:usdc": 1000n,
     },
+    createdAt: 1743010969229,
     updatedAt: 1742910077547,
   }
   const mockUserId = "testUser"
@@ -128,21 +110,12 @@ describe("processGiftData", () => {
           "gifts": {
             "testUser": [
               {
-                "accountId": "accountId",
-                "giftId": "giftId",
+                "createdAt": 1743010969229,
                 "intentHashes": [
                   "intentHash",
                 ],
                 "message": "message",
                 "secretKey": "ed25519:secretKey",
-                "token": {
-                  "decimals": 6,
-                  "groupedTokens": [],
-                  "icon": "icon",
-                  "name": "USD Coin",
-                  "symbol": "USDC",
-                  "unifiedAssetId": "usdc",
-                },
                 "tokenDiff": {
                   "nep141:usdc": {
                     "__type": "bigint",

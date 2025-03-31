@@ -7,11 +7,9 @@ import { GiftClaimActorProvider } from "../../providers/GiftClaimActorProvider"
 import { useTabContext } from "../../providers/TabProvider"
 import { useGiftMakerHistory } from "../../stores/giftMakerHistory"
 import type { GiftLinkData } from "../../types/sharedTypes"
-import { type GiftInfos, parseGiftInfos } from "../../utils/parseGiftInfos"
+import { type GiftInfo, parseGiftInfos } from "../../utils/parseGiftInfos"
 import { GiftHistoryEmpty } from "./GiftHistoryEmpty"
 import { GiftHistorySkeleton } from "./GiftHistorySkeleton"
-import { GiftHistoryTabs } from "./GiftHistoryTabs"
-import { GiftMakerHistoryCollapsibleInfo } from "./GiftMakerHistoryCollapsibleInfo"
 import { GiftMakerHistoryItem } from "./GiftMakerHistoryItem"
 
 export type GiftHistoryProps = {
@@ -37,7 +35,7 @@ export function GiftHistory({
     return s.gifts[userId]
   })
 
-  const [giftInfos, setGiftInfos] = useState<GiftInfos | null>(null)
+  const [giftInfos, setGiftInfos] = useState<GiftInfo[] | null>(null)
   const [itemsToShow, setItemsToShow] = useState(ITEMS_TO_SHOW)
 
   const handleShowMore = () => {
@@ -61,40 +59,31 @@ export function GiftHistory({
   if (loading) {
     return (
       <div className="widget-container flex flex-col gap-4 p-5">
-        <GiftHistoryTabs />
+        <HistoryHeader />
         <GiftHistorySkeleton />
       </div>
     )
   }
 
-  const giftItemsBoundToTab =
-    activeTab === "pending" ? giftInfos?.pending : giftInfos?.claimed
-
   const getVisibleGiftItems = () => {
-    return giftItemsBoundToTab?.slice(0, itemsToShow)
+    return giftInfos?.slice(0, itemsToShow)
   }
 
   return (
     <div className="widget-container flex flex-col gap-4 p-5">
-      <GiftHistoryTabs />
+      <HistoryHeader />
       <GiftClaimActorProvider signerCredentials={signerCredentials}>
         {getVisibleGiftItems()?.map((giftInfo) => (
-          <GiftMakerHistoryCollapsibleInfo
-            key={giftInfo.giftId}
+          <GiftMakerHistoryItem
+            key={crypto.randomUUID()}
+            itemType={activeTab}
             giftInfo={giftInfo}
-          >
-            <GiftMakerHistoryItem
-              itemType={activeTab}
-              giftInfo={giftInfo}
-              generateLink={generateLink}
-              signerCredentials={signerCredentials}
-            />
-          </GiftMakerHistoryCollapsibleInfo>
+            generateLink={generateLink}
+            signerCredentials={signerCredentials}
+          />
         ))}
-        {giftItemsBoundToTab?.length === 0 && (
-          <GiftHistoryEmpty tag={activeTab} />
-        )}
-        {giftItemsBoundToTab && itemsToShow < giftItemsBoundToTab.length && (
+        {giftInfos?.length === 0 && <GiftHistoryEmpty tag={activeTab} />}
+        {giftInfos && itemsToShow < giftInfos.length && (
           <ButtonCustom
             type="submit"
             size="sm"
@@ -107,4 +96,8 @@ export function GiftHistory({
       </GiftClaimActorProvider>
     </div>
   )
+}
+
+const HistoryHeader = () => {
+  return <div className="text-sm font-bold text-black">Your gifts</div>
 }

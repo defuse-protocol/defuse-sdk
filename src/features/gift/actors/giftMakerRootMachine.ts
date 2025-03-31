@@ -20,6 +20,10 @@ import {
   depositedBalanceMachine,
 } from "../../machines/depositedBalanceMachine"
 import { giftMakerHistoryStore } from "../stores/giftMakerHistory"
+import type {
+  StorageOperationErr,
+  StorageOperationResult,
+} from "../stores/storageOperations"
 import type { GiftSignedResult } from "../types/sharedTypes"
 import {
   type EscrowCredentials,
@@ -34,7 +38,9 @@ import {
   giftMakerPublishingActor,
 } from "./giftMakerPublishingActor"
 import {
+  type GiftMakerReadyActorErrors,
   type GiftMakerReadyActorInput,
+  type GiftMakerReadyActorOutput,
   giftMakerReadyActor,
 } from "./giftMakerReadyActor"
 import type {
@@ -47,6 +53,8 @@ import { giftMakerSignActor } from "./giftMakerSignActor"
 type GiftMakerRootMachineErrors =
   | GiftMakerSignActorErrors
   | GiftMakerPublishingActorErrors
+  | { reason: StorageOperationErr }
+  | GiftMakerReadyActorErrors
 
 export type GiftMakerRootMachineContext = {
   error: null | GiftMakerRootMachineErrors
@@ -99,7 +107,7 @@ export const giftMakerRootMachine = setup({
       GiftMakerPublishingActorInput
     >,
     readyGiftActor: giftMakerReadyActor as unknown as PromiseActorLogic<
-      void,
+      GiftMakerReadyActorOutput,
       GiftMakerReadyActorInput
     >,
     settlingActor: fromPromise(
@@ -110,6 +118,50 @@ export const giftMakerRootMachine = setup({
         const intentHash = input.intentHashes[0]
         assert(intentHash, "intentHash is not defined")
         return waitForIntentSettlement(signal, intentHash)
+      }
+    ),
+    addGiftToHistory: fromPromise(
+      async ({
+        input,
+      }: {
+        input: GiftMakerRootMachineContext
+      }): Promise<StorageOperationResult> => {
+        assert(input.signData, "signData is not defined")
+        const giftInfo = assembleGiftInfo(input)
+        const result = await giftMakerHistoryStore.getState().addGift(
+          {
+            ...giftInfo,
+            createdAt: Date.now(),
+          },
+          input.signData.signerCredentials
+        )
+
+        if (result.tag === "err") {
+          return { tag: "err", reason: result.reason }
+        }
+        return { tag: "ok" }
+      }
+    ),
+    updateGiftToHistory: fromPromise(
+      async ({
+        input,
+      }: {
+        input: GiftMakerRootMachineContext
+      }): Promise<StorageOperationResult> => {
+        assert(input.signData, "signData is not defined")
+        const giftInfo = assembleGiftInfo(input)
+        const result = await giftMakerHistoryStore
+          .getState()
+          .updateGift(
+            giftInfo.secretKey,
+            input.signData.signerCredentials,
+            giftInfo.intentHashes
+          )
+
+        if (result.tag === "err") {
+          return { tag: "err", reason: result.reason }
+        }
+        return { tag: "ok" }
       }
     ),
   },
@@ -141,27 +193,6 @@ export const giftMakerRootMachine = setup({
     })),
     completeSign: ({ self }, event: GiftSignedResult) => {
       self.send({ type: "COMPLETE_SIGN", params: event })
-    },
-    addGiftToHistory: ({ context }) => {
-      assert(context.signData, "signData is not defined")
-      const giftInfo = assembleGiftInfo(context)
-      giftMakerHistoryStore.getState().addGift(
-        {
-          ...giftInfo,
-        },
-        context.signData.signerCredentials
-      )
-    },
-    updateGiftToHistory: ({ context }) => {
-      assert(context.signData, "signData is not defined")
-      const giftInfo = assembleGiftInfo(context)
-      giftMakerHistoryStore
-        .getState()
-        .updateGift(
-          giftInfo.giftId,
-          context.signData.signerCredentials,
-          giftInfo.intentHashes
-        )
     },
     removeGiftFromHistory: ({ context }) => {
       assert(context.signData, "signData is not defined")
@@ -241,7 +272,7 @@ export const giftMakerRootMachine = setup({
 
       on: {
         COMPLETE_SIGN: {
-          target: "publishing",
+          target: "addingGiftToHistory",
         },
       },
 
@@ -307,7 +338,7 @@ export const giftMakerRootMachine = setup({
         ],
       },
     },
-    publishing: {
+    addingGiftToHistory: {
       entry: [
         assign({
           signData: ({ event }) => {
@@ -315,8 +346,45 @@ export const giftMakerRootMachine = setup({
             return event.params
           },
         }),
-        "addGiftToHistory",
       ],
+      invoke: {
+        src: "addGiftToHistory",
+        input: ({ context }) => context,
+        onDone: [
+          {
+            guard: { type: "isOk", params: ({ event }) => event.output },
+            target: "publishing",
+          },
+          {
+            target: "editing",
+            actions: {
+              type: "setError",
+              params: ({ event }) => {
+                assert(event.output.tag === "err")
+                return { tag: "err", value: { reason: event.output.reason } }
+              },
+            },
+          },
+        ],
+        onError: {
+          target: "editing",
+          actions: [
+            {
+              type: "logError",
+              params: ({ event }) => event,
+            },
+            {
+              type: "setError",
+              params: {
+                tag: "err",
+                value: { reason: "ERR_STORAGE_OPERATION_EXCEPTION" },
+              },
+            },
+          ],
+        },
+      },
+    },
+    publishing: {
       invoke: {
         src: "publishingActor",
         input: ({ context }) => {
@@ -376,8 +444,7 @@ export const giftMakerRootMachine = setup({
         },
 
         onDone: {
-          target: "settled",
-          actions: "updateGiftToHistory",
+          target: "updatingGiftToHistory",
         },
         onError: {
           target: "editing",
@@ -385,6 +452,44 @@ export const giftMakerRootMachine = setup({
             type: "logError",
             params: ({ event }) => event,
           },
+        },
+      },
+    },
+    updatingGiftToHistory: {
+      invoke: {
+        src: "updateGiftToHistory",
+        input: ({ context }) => context,
+        onDone: [
+          {
+            guard: { type: "isOk", params: ({ event }) => event.output },
+            target: "settled",
+          },
+          {
+            target: "editing",
+            actions: {
+              type: "setError",
+              params: ({ event }) => {
+                assert(event.output.tag === "err")
+                return { tag: "err", value: { reason: event.output.reason } }
+              },
+            },
+          },
+        ],
+        onError: {
+          target: "editing",
+          actions: [
+            {
+              type: "logError",
+              params: ({ event }) => event,
+            },
+            {
+              type: "setError",
+              params: {
+                tag: "err",
+                value: { reason: "ERR_STORAGE_OPERATION_EXCEPTION" },
+              },
+            },
+          ],
         },
       },
     },
@@ -414,16 +519,37 @@ export const giftMakerRootMachine = setup({
           }
         },
 
-        onDone: {
-          target: "editing",
-          actions: "sendToDepositedBalanceRefRefresh",
-        },
+        onDone: [
+          {
+            target: "editing",
+            actions: "sendToDepositedBalanceRefRefresh",
+            guard: { type: "isOk", params: ({ event }) => event.output },
+          },
+          {
+            target: "editing",
+            actions: [
+              "sendToDepositedBalanceRefRefresh",
+              {
+                type: "setError",
+                params: ({ event }) => {
+                  assert(event.output.tag === "err")
+                  return {
+                    tag: "err",
+                    value: event.output.value.reason,
+                  }
+                },
+              },
+            ],
+          },
+        ],
 
         onError: {
           target: "editing",
           actions: {
             type: "logError",
-            params: ({ event }) => event,
+            params: ({ event }) => {
+              return event
+            },
           },
         },
       },

@@ -3,6 +3,7 @@ import { Button, Dialog, Spinner } from "@radix-ui/themes"
 import { useSelector } from "@xstate/react"
 import { useCallback } from "react"
 import type { SignerCredentials } from "src/core/formatters"
+import { assert } from "src/utils/assert"
 import type { ActorRefFrom } from "xstate"
 import { ButtonCustom } from "../../../components/Button/ButtonCustom"
 import { Copy } from "../../../components/IntentCard/CopyButton"
@@ -10,6 +11,7 @@ import { BaseModalDialog } from "../../../components/Modal/ModalDialog"
 import type { giftMakerReadyActor } from "../actors/giftMakerReadyActor"
 import type { GiftInfo } from "../actors/shared/getGiftInfo"
 import type { giftClaimActor } from "../actors/shared/giftClaimActor"
+import { giftMakerHistoryStore } from "../stores/giftMakerHistory"
 import type { GiftLinkData } from "../types/sharedTypes"
 import { ShareableGiftImage } from "./ShareableGiftImage"
 import { ErrorReason } from "./shared/ErrorReason"
@@ -152,7 +154,11 @@ export function CancellationDialog({
 
   const ackCancellationImpossible = useCallback(() => {
     actorRef?.send({ type: "ACK_CLAIM_IMPOSSIBLE" })
-  }, [actorRef])
+    assert(giftInfo.secretKey, "giftInfo.secretKey is not set")
+    giftMakerHistoryStore
+      .getState()
+      .removeGift(giftInfo.secretKey, signerCredentials)
+  }, [actorRef, giftInfo, signerCredentials])
 
   const confirmCancellation = useCallback(() => {
     actorRef?.send({

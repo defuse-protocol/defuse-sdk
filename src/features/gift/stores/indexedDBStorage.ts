@@ -1,65 +1,58 @@
-export const GIFT_STORAGE_NAME = "intents_sdk.gift_maker_gifts"
-const GIFT_STORE_NAME = "gifts"
-
-export const indexedDBStorage = {
-  dbName: GIFT_STORAGE_NAME,
-  storeName: GIFT_STORE_NAME,
-
-  openDB: () => {
-    return new Promise<IDBDatabase>((resolve, reject) => {
-      const request = indexedDB.open(indexedDBStorage.dbName, 1)
-
-      request.onupgradeneeded = () => {
-        const db = request.result
-        if (!db.objectStoreNames.contains(indexedDBStorage.storeName)) {
-          db.createObjectStore(indexedDBStorage.storeName)
-        }
-      }
-
+export const config = {
+  dbName: "intents_sdk.gift_maker_gifts",
+  storeName: "gifts",
+  version: 1,
+  transactionModes: {
+    readonly: "readonly" as const,
+    readwrite: "readwrite" as const,
+  },
+  handleRequest: <T>(request: IDBRequest<T>) => {
+    return new Promise<T>((resolve, reject) => {
       request.onsuccess = () => resolve(request.result)
       request.onerror = () => reject(request.error)
     })
   },
+} as const
+
+export const indexedDBStorage = {
+  openDB: () => {
+    const request = indexedDB.open(config.dbName, config.version)
+    request.onupgradeneeded = () => {
+      const db = request.result
+      if (!db.objectStoreNames.contains(config.storeName)) {
+        db.createObjectStore(config.storeName)
+      }
+    }
+    return config.handleRequest(request)
+  },
 
   getItem: async (name: string) => {
     const db = await indexedDBStorage.openDB()
-    return new Promise<string | null>((resolve, reject) => {
-      const transaction = db.transaction(indexedDBStorage.storeName, "readonly")
-      const store = transaction.objectStore(indexedDBStorage.storeName)
-      const request = store.get(name)
-
-      request.onsuccess = () => resolve(request.result || null)
-      request.onerror = () => reject(request.error)
-    })
+    const transaction = db.transaction(
+      config.storeName,
+      config.transactionModes.readonly
+    )
+    const store = transaction.objectStore(config.storeName)
+    return config.handleRequest(store.get(name))
   },
 
   setItem: async (name: string, value: string) => {
     const db = await indexedDBStorage.openDB()
-    return new Promise<void>((resolve, reject) => {
-      const transaction = db.transaction(
-        indexedDBStorage.storeName,
-        "readwrite"
-      )
-      const store = transaction.objectStore(indexedDBStorage.storeName)
-      const request = store.put(value, name)
-
-      request.onsuccess = () => resolve()
-      request.onerror = () => reject(request.error)
-    })
+    const transaction = db.transaction(
+      config.storeName,
+      config.transactionModes.readwrite
+    )
+    const store = transaction.objectStore(config.storeName)
+    return config.handleRequest(store.put(value, name))
   },
 
   removeItem: async (name: string) => {
     const db = await indexedDBStorage.openDB()
-    return new Promise<void>((resolve, reject) => {
-      const transaction = db.transaction(
-        indexedDBStorage.storeName,
-        "readwrite"
-      )
-      const store = transaction.objectStore(indexedDBStorage.storeName)
-      const request = store.delete(name)
-
-      request.onsuccess = () => resolve()
-      request.onerror = () => reject(request.error)
-    })
+    const transaction = db.transaction(
+      config.storeName,
+      config.transactionModes.readwrite
+    )
+    const store = transaction.objectStore(config.storeName)
+    return config.handleRequest(store.delete(name))
   },
 }

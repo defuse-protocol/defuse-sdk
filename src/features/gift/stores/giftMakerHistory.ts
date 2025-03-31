@@ -1,272 +1,148 @@
-import { deserialize } from "src/utils/deserialize"
-import * as v from "valibot"
+import type { KeyPairString } from "near-api-js/lib/utils"
+import type { BaseTokenInfo } from "src/types/base"
 import { create } from "zustand"
 import { persist } from "zustand/middleware"
 import type { SignerCredentials } from "../../../core/formatters"
 import { logger } from "../../../logger"
+import type { DefuseUserId } from "../../../utils/defuse"
+import { config as configDBStorage } from "./indexedDBStorage"
+import { migrateGiftStorage } from "./migrations"
 import {
-  type DefuseUserId,
-  userAddressToDefuseUserId,
-} from "../../../utils/defuse"
-import { serialize } from "../../../utils/serialize"
-import type { GiftInfo } from "../actors/shared/getGiftInfo"
-import { GiftStorageSchema } from "../utils/schemaStorage"
-import { GIFT_STORAGE_NAME, indexedDBStorage } from "./indexedDBStorage"
-import { localStorageHandler } from "./localStorageHandler"
-import { sessionStorageHandler } from "./sessionStorageHandler"
+  type StorageOperationResult,
+  getUserId,
+  storage,
+} from "./storageOperations"
 
-export interface GiftMakerHistory extends GiftInfo {
-  giftId: string
+export interface GiftMakerHistory {
+  tokenDiff: Record<BaseTokenInfo["defuseAssetId"], bigint>
+  secretKey: KeyPairString
+  message: string
   intentHashes: string[]
+  createdAt: number
   updatedAt: number
 }
 
-type State = {
+export type State = {
   gifts: Record<DefuseUserId, GiftMakerHistory[]>
 }
-type GiftStorageState = {
+
+export type GiftStorageState = {
   state: {
     gifts: Record<DefuseUserId, GiftMakerHistory[]>
   }
 }
 
-type Actions = {
+export type Actions = {
   addGift: (
     gift: Omit<GiftMakerHistory, "updatedAt">,
     userId: DefuseUserId | SignerCredentials
-  ) => void
+  ) => Promise<StorageOperationResult>
   updateGift: (
-    giftId: string,
+    secretKey: string,
     userId: DefuseUserId | SignerCredentials,
     intentHashes: string[]
-  ) => void
-  removeGift: (giftId: string, userId: DefuseUserId | SignerCredentials) => void
+  ) => Promise<StorageOperationResult>
+  removeGift: (
+    secretKey: string,
+    userId: DefuseUserId | SignerCredentials
+  ) => Promise<StorageOperationResult>
 }
 
-type Store = State & Actions
-
-type StorageOperation<T> = {
-  operation: () => T | Promise<T>
-  storageName: string
-  operationType: "fetch" | "set" | "update" | "remove"
-}
-
-async function executeStorageOperations<T>(
-  operations: StorageOperation<T>[]
-): Promise<(T | null)[]> {
-  return Promise.all(
-    operations.map(async ({ operation, storageName, operationType }) => {
-      try {
-        return await operation()
-      } catch (error) {
-        let action: string
-        switch (operationType) {
-          case "fetch":
-            action = "fetch from"
-            break
-          case "set":
-            action = "set data in"
-            break
-          case "update":
-            action = "update data in"
-            break
-          case "remove":
-            action = "remove data from"
-            break
-          default:
-            action = "interact with"
-        }
-        logger.error(
-          new Error(`Failed to ${action} ${storageName}`, { cause: error })
-        )
-        return null
-      }
-    })
-  )
-}
-
-export const tripleStorage = {
-  getItem: async (
-    name: string
-  ): Promise<{ state: State; version: number } | null> => {
-    const [localData, sessionData, indexedData] =
-      await executeStorageOperations([
-        {
-          operation: () => localStorageHandler.getItem(name),
-          storageName: "localStorage",
-          operationType: "fetch",
-        },
-        {
-          operation: () => sessionStorageHandler.getItem(name),
-          storageName: "sessionStorage",
-          operationType: "fetch",
-        },
-        {
-          operation: () => indexedDBStorage.getItem(name),
-          storageName: "indexedDB",
-          operationType: "fetch",
-        },
-      ])
-
-    const rawData = localData || sessionData || indexedData
-    if (!rawData) return null
-
-    try {
-      return deserialize(rawData) as { state: State; version: number }
-      // TODO: After migration, we should return the validated data
-      // const result = deserialize(rawData) as { state: State }
-      // const validated = v.parse(GiftStorageSchema, result)
-      // return validated as { state: State }
-    } catch (error) {
-      logger.error(new Error("Failed to deserialize data", { cause: error }))
-      return null
-    }
-  },
-
-  setItem: async (name: string, value: GiftStorageState) => {
-    const stringValue = serialize(value)
-    await executeStorageOperations([
-      {
-        operation: () => localStorageHandler.setItem(name, stringValue),
-        storageName: "localStorage",
-        operationType: "set",
-      },
-      {
-        operation: () => sessionStorageHandler.setItem(name, stringValue),
-        storageName: "sessionStorage",
-        operationType: "set",
-      },
-      {
-        operation: () => indexedDBStorage.setItem(name, stringValue),
-        storageName: "indexedDB",
-        operationType: "set",
-      },
-    ])
-  },
-
-  updateItem: async (name: string, value: GiftStorageState) => {
-    const stringValue = serialize(value)
-    await executeStorageOperations([
-      {
-        operation: () => localStorageHandler.setItem(name, stringValue),
-        storageName: "localStorage",
-        operationType: "update",
-      },
-      {
-        operation: () => sessionStorageHandler.setItem(name, stringValue),
-        storageName: "sessionStorage",
-        operationType: "update",
-      },
-      {
-        operation: () => indexedDBStorage.setItem(name, stringValue),
-        storageName: "indexedDB",
-        operationType: "update",
-      },
-    ])
-  },
-
-  removeItem: async (name: string) => {
-    await executeStorageOperations([
-      {
-        operation: () => localStorageHandler.removeItem(name),
-        storageName: "localStorage",
-        operationType: "remove",
-      },
-      {
-        operation: () => sessionStorageHandler.removeItem(name),
-        storageName: "sessionStorage",
-        operationType: "remove",
-      },
-      {
-        operation: () => indexedDBStorage.removeItem(name),
-        storageName: "indexedDB",
-        operationType: "remove",
-      },
-    ])
-  },
-}
-
-function getUserId(user: DefuseUserId | SignerCredentials) {
-  return typeof user === "string"
-    ? user
-    : userAddressToDefuseUserId(user.credential, user.credentialType)
-}
+export type Store = State & Actions
 
 export const giftMakerHistoryStore = create<Store>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       gifts: {},
 
-      addGift: (gift, user) => {
+      addGift: async (gift, user) => {
         const userId = getUserId(user)
-        set((state) => ({
+        const newState = {
           gifts: {
-            ...state.gifts,
+            ...get().gifts,
             [userId]: [
-              ...(state.gifts[userId] ?? []),
+              ...(get().gifts[userId] ?? []),
               {
                 ...gift,
+                createdAt: Date.now(),
                 updatedAt: Date.now(),
               },
             ],
           },
-        }))
+        }
+
+        try {
+          const result = await storage.setItem(configDBStorage.dbName, {
+            state: newState,
+          })
+          if (result.tag === "err") {
+            return result
+          }
+          set(newState)
+          return result
+        } catch (error) {
+          logger.error(new Error("Failed to add gift", { cause: error }))
+          return { tag: "err", reason: "ERR_UPDATE_ITEM_FAILED_TO_STORAGE" }
+        }
       },
 
-      updateGift: (giftId, user, intentHashes) => {
+      updateGift: async (secretKey, user, intentHashes) => {
         const userId = getUserId(user)
-        set((state) => ({
+        const newState = {
           gifts: {
-            ...state.gifts,
-            [userId]: (state.gifts[userId] ?? []).map((g) =>
-              g.giftId === giftId ? { ...g, intentHashes } : g
+            ...get().gifts,
+            [userId]: (get().gifts[userId] ?? []).map((g) =>
+              g.secretKey === secretKey
+                ? { ...g, intentHashes, updatedAt: Date.now() }
+                : g
             ),
           },
-        }))
+        }
+
+        try {
+          const result = await storage.updateItem(configDBStorage.dbName, {
+            state: newState,
+          })
+          if (result.tag === "err") {
+            return result
+          }
+          set(newState)
+          return result
+        } catch (error) {
+          logger.error(new Error("Failed to update gift", { cause: error }))
+          return { tag: "err", reason: "ERR_UPDATE_ITEM_FAILED_TO_STORAGE" }
+        }
       },
 
-      removeGift: (giftId: string, user) => {
+      removeGift: async (secretKey, user) => {
         const userId = getUserId(user)
-        set((state) => ({
+        const newState = {
           gifts: {
-            ...state.gifts,
-            [userId]: (state.gifts[userId] ?? []).filter(
-              (gift) => gift.giftId !== giftId
+            ...get().gifts,
+            [userId]: (get().gifts[userId] ?? []).filter(
+              (gift) => gift.secretKey !== secretKey
             ),
           },
-        }))
+        }
+
+        try {
+          const result = await storage.removeItem(configDBStorage.dbName)
+          if (result.tag === "err") {
+            return result
+          }
+          set(newState)
+          return result
+        } catch (error) {
+          logger.error(new Error("Failed to remove gift", { cause: error }))
+          return { tag: "err", reason: "ERR_UPDATE_ITEM_FAILED_TO_STORAGE" }
+        }
       },
     }),
     {
-      name: GIFT_STORAGE_NAME,
-      storage: tripleStorage,
-      version: 1,
-      migrate: (persistedState: unknown, version) => {
-        if (version === 0) {
-          const state = persistedState as State
-          const migratedState = {
-            state: {
-              gifts: Object.fromEntries(
-                Object.entries(state.gifts).map(([userId, gifts]) => [
-                  userId,
-                  gifts.map((gift) => ({
-                    ...gift,
-                    tokenDiff: Object.fromEntries(
-                      Object.entries(gift.tokenDiff).map(([key, value]) => [
-                        key,
-                        typeof value === "string" ? BigInt(value) : value,
-                      ])
-                    ),
-                  })),
-                ])
-              ),
-            },
-          }
-          const validated = v.parse(GiftStorageSchema, migratedState)
-          return validated.state as State
-        }
-        return persistedState as State
-      },
+      name: configDBStorage.dbName,
+      storage,
+      version: 2,
+      migrate: migrateGiftStorage,
     }
   )
 )

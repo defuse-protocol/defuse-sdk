@@ -25,6 +25,10 @@ export function checkInsufficientBalance(
   if (formAmount.length === 0) {
     return false
   }
+  const invalidFormAmount = !/^-?\d*\.?\d*$/.test(formAmount)
+  if (invalidFormAmount) {
+    return false
+  }
   const conversionFactor = 10 ** tokenBalance.decimals
   const formAmountBigInt = BigInt(
     Math.round(Number.parseFloat(formAmount) * conversionFactor)

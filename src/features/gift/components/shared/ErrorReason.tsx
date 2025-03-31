@@ -11,7 +11,16 @@ export function ErrorReason({ reason }: ErrorReasonProps) {
       <Callout.Icon>
         <ExclamationTriangleIcon />
       </Callout.Icon>
-      <Callout.Text>{reason}</Callout.Text>
+      <Callout.Text>{renderErrorMessages(reason)}</Callout.Text>
     </Callout.Root>
   )
+}
+
+function renderErrorMessages(reason: string): string {
+  switch (reason) {
+    case "RELAY_PUBLISH_INSUFFICIENT_BALANCE":
+      return "OOPS_UNFORTUNATELY_SOMEONE_TOOK_THIS_GIFT"
+    default:
+      return reason
+  }
 }
