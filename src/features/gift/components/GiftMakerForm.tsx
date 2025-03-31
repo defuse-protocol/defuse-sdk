@@ -159,7 +159,7 @@ export function GiftMakerForm({
     if (modalType === ModalType.MODAL_SELECT_ASSETS && fieldName && token) {
       formValuesRef.trigger.updateToken({ value: token })
     }
-  }, [payload, formValuesRef.trigger.updateToken])
+  }, [payload, formValuesRef])
 
   const balanceInsufficient = useMemo(() => {
     if (tokenBalance == null) {
