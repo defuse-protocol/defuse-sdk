@@ -1,5 +1,4 @@
-import { useEffect } from "react"
-import { useTokensStore } from "src/providers/TokensStoreProvider"
+import { TokenListUpdater } from "../../../components/TokenListUpdater"
 import { WidgetRoot } from "../../../components/WidgetRoot"
 import { SwapWidgetProvider } from "../../../providers/SwapWidgetProvider"
 import { GiftMakerForm } from "./GiftMakerForm"
@@ -16,16 +15,4 @@ export function GiftMakerWidget(props: GiftMakerWidgetProps) {
       </SwapWidgetProvider>
     </WidgetRoot>
   )
-}
-
-function TokenListUpdater({
-  tokenList,
-}: { tokenList: GiftMakerWidgetProps["tokenList"] }) {
-  const { updateTokens } = useTokensStore((state) => state)
-
-  useEffect(() => {
-    updateTokens(tokenList)
-  }, [tokenList, updateTokens])
-
-  return null
 }
