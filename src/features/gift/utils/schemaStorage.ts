@@ -8,9 +8,6 @@ const FungibleTokenInfoSchema = v.object({
   decimals: v.number(),
   icon: v.string(),
   chainName: v.string(),
-  chainId: v.optional(v.string()),
-  routes: v.optional(v.array(v.string())),
-  bridge: v.optional(v.string()),
 })
 
 const NativeTokenInfoSchema = v.object({
@@ -21,9 +18,6 @@ const NativeTokenInfoSchema = v.object({
   decimals: v.number(),
   icon: v.string(),
   chainName: v.string(),
-  chainId: v.optional(v.string()),
-  routes: v.optional(v.array(v.string())),
-  bridge: v.optional(v.string()),
 })
 
 const BaseTokenInfoSchema = v.union([
