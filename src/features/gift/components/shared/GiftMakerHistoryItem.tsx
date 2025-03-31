@@ -13,7 +13,6 @@ import {
 } from "src/utils/tokenUtils"
 import { Copy } from "../../../../components/IntentCard/CopyButton"
 import { GiftClaimActorContext } from "../../providers/GiftClaimActorProvider"
-import type { TabType } from "../../providers/TabProvider"
 import type { GiftLinkData } from "../../types/sharedTypes"
 import type { GiftInfo } from "../../utils/parseGiftInfos"
 import { GiftStrip } from "../GiftStrip"
@@ -21,12 +20,10 @@ import { GiftStrip } from "../GiftStrip"
 export function GiftMakerHistoryItem({
   giftInfo,
   generateLink,
-  itemType,
   signerCredentials,
 }: {
   giftInfo: GiftInfo
   generateLink: (giftLinkData: GiftLinkData) => string
-  itemType: TabType
   signerCredentials: SignerCredentials
 }) {
   const amount = computeTotalBalanceDifferentDecimals(
@@ -50,63 +47,53 @@ export function GiftMakerHistoryItem({
         />
       )}
       <div className="flex gap-2 items-center">
-        {itemType === "pending" && (
-          <>
-            {(giftInfo.status === "pending" || giftInfo.status === "draft") && (
-              <Copy
-                text={() =>
-                  generateLink({
-                    secretKey: giftInfo.secretKey,
-                    message: giftInfo.message,
-                  })
-                }
+        {giftInfo.status === "pending" && (
+          <Copy
+            text={() =>
+              generateLink({
+                secretKey: giftInfo.secretKey,
+                message: giftInfo.message,
+              })
+            }
+          >
+            {(copied) => (
+              <IconButton
+                type="button"
+                variant="outline"
+                color="gray"
+                className="rounded-lg"
               >
-                {(copied) => (
-                  <IconButton
-                    type="button"
-                    variant="outline"
-                    color="gray"
-                    className="rounded-lg"
-                  >
-                    <div className="flex gap-2 items-center">
-                      {copied ? (
-                        <CheckIcon weight="bold" />
-                      ) : (
-                        <CopyIcon weight="bold" />
-                      )}
-                    </div>
-                  </IconButton>
-                )}
-              </Copy>
+                <div className="flex gap-2 items-center">
+                  {copied ? (
+                    <CheckIcon weight="bold" />
+                  ) : (
+                    <CopyIcon weight="bold" />
+                  )}
+                </div>
+              </IconButton>
             )}
-            {giftInfo.status !== "pending" && giftInfo.status !== "draft" && (
-              <div className="flex gap-1 items-center">
-                <CheckCircle
-                  width={12}
-                  height={12}
-                  className="text-accent-11"
-                />
-                <span className="text-xs font-medium text-accent-11">
-                  Claimed
-                </span>
-              </div>
-            )}
-            <IconButton
-              type="button"
-              onClick={() => {
-                cancelGift({
-                  giftInfo: giftInfo,
-                  signerCredentials: signerCredentials,
-                })
-              }}
-              variant="outline"
-              color="gray"
-              className="rounded-lg"
-            >
-              <TrashIcon weight="bold" />
-            </IconButton>
-          </>
+          </Copy>
         )}
+        {giftInfo.status === "claimed" && (
+          <div className="flex gap-1 items-center">
+            <CheckCircle width={12} height={12} className="text-accent-11" />
+            <span className="text-xs font-medium text-accent-11">Claimed</span>
+          </div>
+        )}
+        <IconButton
+          type="button"
+          onClick={() => {
+            cancelGift({
+              giftInfo: giftInfo,
+              signerCredentials: signerCredentials,
+            })
+          }}
+          variant="outline"
+          color="gray"
+          className="rounded-lg"
+        >
+          <TrashIcon weight="bold" />
+        </IconButton>
       </div>
     </div>
   )
