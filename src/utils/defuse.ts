@@ -45,12 +45,12 @@ export function authHandleToIntentsUserId(
       return hex.encode(base58.decode(credential)) as IntentsUserId
 
     case "webauthn": {
-      return webAuthnCredentialToDefuseUserId(credential) as IntentsUserId
+      return webAuthnIdentifierToIntentsUserId(credential) as IntentsUserId
     }
   }
 }
 
-function webAuthnCredentialToDefuseUserId(credential: string): string {
+function webAuthnIdentifierToIntentsUserId(credential: string): string {
   const { curveType, publicKey } = parsePublicKey(credential)
 
   switch (curveType) {
