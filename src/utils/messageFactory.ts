@@ -319,11 +319,13 @@ export function makeInnerTransferMessage({
   signerId,
   deadlineTimestamp,
   receiverId,
+  memo,
 }: {
   tokenDeltas: [string, bigint][]
   signerId: DefuseUserId
   deadlineTimestamp: number
   receiverId: string
+  memo?: string
 }): Nep413DefuseMessageFor_DefuseIntents {
   const tokens: Record<string, string> = {}
   const seenTokens = new Set<string>()
@@ -345,6 +347,7 @@ export function makeInnerTransferMessage({
         intent: "transfer",
         tokens,
         receiver_id: receiverId,
+        ...(memo ? { memo } : {}),
       },
     ],
     signer_id: signerId,
