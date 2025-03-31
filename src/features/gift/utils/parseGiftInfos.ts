@@ -7,12 +7,6 @@ import { findTokenFromDiff } from "./deriveToken"
 import { determineGiftToken } from "./determineGiftToken"
 import { parseEscrowCredentials } from "./generateEscrowCredentials"
 
-export type GiftInfos = {
-  pending: GiftInfo[]
-  claimed: GiftInfo[]
-  nonExistent: GiftInfo[]
-}
-
 export type GiftInfo = GiftMakerHistory & {
   status: FilterStatus
   accountId: string
@@ -22,7 +16,7 @@ export type GiftInfo = GiftMakerHistory & {
 export async function parseGiftInfos(
   tokenList: (BaseTokenInfo | UnifiedTokenInfo)[],
   gifts: GiftMakerHistory[]
-): Promise<Result<GiftInfos, Error>> {
+): Promise<Result<GiftInfo[], Error>> {
   const giftInfos = await Promise.all(
     gifts.map(async (gift) => {
       try {
@@ -34,24 +28,8 @@ export async function parseGiftInfos(
         const token = findTokenFromDiff(gift.tokenDiff, tokenList)
         const escrowAccountBalance = determineResult.isOk()
         const giftStatus = getGiftStatus(gift, escrowAccountBalance)
-        if (giftStatus === "pending") {
-          return createTaggedGift(
-            giftStatus,
-            gift,
-            token,
-            escrowCredentials.credential
-          )
-        }
-        if (giftStatus === "claimed") {
-          return createTaggedGift(
-            giftStatus,
-            gift,
-            token,
-            escrowCredentials.credential
-          )
-        }
         return createTaggedGift(
-          "non-existent",
+          giftStatus,
           gift,
           token,
           escrowCredentials.credential
@@ -59,15 +37,11 @@ export async function parseGiftInfos(
       } catch (err: unknown) {
         logger.error(new Error("error parsing gift info", { cause: err }))
         assert(tokenList[0], "tokenList[0] is not undefined")
-        return createTaggedGift("non-existent", gift, tokenList[0], "dontcare")
+        return createTaggedGift("claimed", gift, tokenList[0], "dontcare")
       }
     })
   )
-  return Ok({
-    pending: sortByDate(filterByStatus("pending", giftInfos)),
-    claimed: sortByDate(filterByStatus("claimed", giftInfos)),
-    nonExistent: sortByDate(filterByStatus("non-existent", giftInfos)),
-  })
+  return Ok(sortByDate(giftInfos))
 }
 
 function createTaggedGift(
@@ -79,18 +53,11 @@ function createTaggedGift(
   return { ...gift, status, token, accountId }
 }
 
-function filterByStatus(
-  status: FilterStatus,
-  giftInfos: Array<GiftInfo>
-): GiftInfo[] {
-  return giftInfos.filter((giftInfo) => giftInfo.status === status)
-}
-
 function sortByDate(giftInfos: GiftInfo[]): GiftInfo[] {
   return giftInfos.sort((a, b) => b.updatedAt - a.updatedAt)
 }
 
-type FilterStatus = "draft" | "pending" | "claimed" | "non-existent"
+type FilterStatus = "draft" | "pending" | "claimed"
 
 function getGiftStatus(
   gift: GiftMakerHistory,
@@ -109,5 +76,5 @@ function getGiftStatus(
   // Case 3: `claimed` Gift has been published and funds have been claimed from the escrow account
   if (createdAt !== updatedAt && !escrowAccountBalance) return "claimed"
 
-  return "non-existent"
+  throw new Error("Invalid gift status")
 }
