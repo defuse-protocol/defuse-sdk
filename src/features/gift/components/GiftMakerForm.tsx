@@ -66,6 +66,8 @@ export type GiftMakerWidgetProps = {
   referral?: string
 }
 
+const MAX_MESSAGE_LENGTH = 50
+
 export function GiftMakerForm({
   tokenList,
   userAddress,
@@ -327,7 +329,15 @@ export function GiftMakerForm({
                       value: e.target.value,
                     })
                   }
+                  maxLength={MAX_MESSAGE_LENGTH}
                 />
+              }
+              countSlot={
+                formValues.message.length > 0 ? (
+                  <GiftMessageInput.DisplayCount
+                    count={MAX_MESSAGE_LENGTH - formValues.message.length}
+                  />
+                ) : null
               }
             />
           </div>
