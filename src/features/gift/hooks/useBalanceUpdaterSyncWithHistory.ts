@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react"
 import type { ActorRefFrom } from "xstate"
 import type { SignerCredentials } from "../../../core/formatters"
-import { userAddressToDefuseUserId } from "../../../utils/defuse"
+import { authHandleToIntentsUserId } from "../../../utils/authIdentity"
 import type { giftMakerRootMachine } from "../actors/giftMakerRootMachine"
 import {
   type GiftMakerHistory,
@@ -18,7 +18,7 @@ export function useBalanceUpdaterSyncWithHistory(
     if (signerCredentials == null) {
       return EMPTY_GIFTS
     }
-    const userId = userAddressToDefuseUserId(
+    const userId = authHandleToIntentsUserId(
       signerCredentials.credential,
       signerCredentials.credentialType
     )

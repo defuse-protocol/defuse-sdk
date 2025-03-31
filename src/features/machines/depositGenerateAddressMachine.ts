@@ -1,11 +1,11 @@
 import type { SupportedChainName } from "src/types/base"
-import type { ChainType } from "src/types/deposit"
 import { assert } from "src/utils/assert"
 import { assign, fromPromise, setup } from "xstate"
+import type { AuthMethod } from "../../types/authHandle"
 
 export type Context = {
   userAddress: string | null
-  userChainType: ChainType | null
+  userChainType: AuthMethod | null
   blockchain: SupportedChainName | null
   preparationOutput:
     | {
@@ -38,7 +38,7 @@ export const depositGenerateAddressMachine = setup({
       async (_: {
         input: {
           userAddress: string
-          userChainType: ChainType
+          userChainType: AuthMethod
           blockchain: SupportedChainName
         }
       }): Promise<string> => {

@@ -14,16 +14,14 @@ import {
   getDepositedBalances,
   getTransitBalances,
 } from "../../services/defuseBalanceService"
+import type { AuthMethod } from "../../types/authHandle"
 import type {
   BaseTokenInfo,
   TokenValue,
   UnifiedTokenInfo,
 } from "../../types/base"
-import type { ChainType } from "../../types/deposit"
-import {
-  type DefuseUserId,
-  userAddressToDefuseUserId,
-} from "../../utils/defuse"
+import type { IntentsUserId } from "../../types/intentsUserId"
+import { authHandleToIntentsUserId } from "../../utils/authIdentity"
 import {
   computeTotalBalanceDifferentDecimals,
   getUnderlyingBaseTokenInfos,
@@ -56,7 +54,10 @@ type ThisActor = ActorRef<Snapshot<unknown>, SharedEvents>
 
 export type Events =
   | { type: "LOGOUT" | "REQUEST_BALANCE_REFRESH" }
-  | { type: "LOGIN"; params: { userAddress: string; userChainType: ChainType } }
+  | {
+      type: "LOGIN"
+      params: { userAddress: string; userChainType: AuthMethod }
+    }
 
 export const depositedBalanceMachine = setup({
   types: {
@@ -111,7 +112,7 @@ export const depositedBalanceMachine = setup({
     ),
   },
   actions: {
-    updateUser: ({ context }, user: DefuseUserId | null) => {
+    updateUser: ({ context }, user: IntentsUserId | null) => {
       {
         const queryKey = structuredClone(
           context.depositedBalanceQueryObserver.options.queryKey
@@ -267,7 +268,7 @@ export const depositedBalanceMachine = setup({
         {
           type: "updateUser",
           params: ({ event }) =>
-            userAddressToDefuseUserId(
+            authHandleToIntentsUserId(
               event.params.userAddress,
               event.params.userChainType
             ),
@@ -377,7 +378,7 @@ function createDepositedBalanceQueryObserver(
   return new QueryObserver(queryClient, {
     queryKey: ["deposited_balance", { user: null, tokenIds }] as [
       string,
-      { user: null | DefuseUserId; tokenIds: string[] },
+      { user: null | IntentsUserId; tokenIds: string[] },
     ],
     queryFn: ({ queryKey }) => {
       if (queryKey[1].user == null) {
@@ -406,7 +407,7 @@ function createTransitBalanceQueryObserver(
   return new QueryObserver(queryClient, {
     queryKey: ["transit_balance", { user: null, tokenIds }] as [
       string,
-      { user: null | DefuseUserId; tokenIds: string[] },
+      { user: null | IntentsUserId; tokenIds: string[] },
     ],
     queryFn: ({ queryKey }) => {
       if (queryKey[1].user == null) {

@@ -1,7 +1,6 @@
-import type { SignerCredentials } from "../../../core/formatters"
+import type { IntentsUserId, SignerCredentials } from "../../../core/formatters"
 import { logger } from "../../../logger"
-import type { DefuseUserId } from "../../../utils/defuse"
-import { userAddressToDefuseUserId } from "../../../utils/defuse"
+import { authHandleToIntentsUserId } from "../../../utils/authIdentity"
 import { deserialize } from "../../../utils/deserialize"
 import { serialize } from "../../../utils/serialize"
 import type { GiftStorageState, State } from "./giftMakerHistory"
@@ -85,9 +84,9 @@ export const storage = {
 }
 
 export function getUserId(
-  user: DefuseUserId | SignerCredentials
-): DefuseUserId {
+  user: IntentsUserId | SignerCredentials
+): IntentsUserId {
   return typeof user === "string"
     ? user
-    : userAddressToDefuseUserId(user.credential, user.credentialType)
+    : authHandleToIntentsUserId(user.credential, user.credentialType)
 }

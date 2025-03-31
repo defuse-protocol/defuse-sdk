@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { userAddressToDefuseUserId } from "./defuse"
+import { authHandleToIntentsUserId } from "./authIdentity"
 import {
   makeEmptyMessage, // Add this import
   makeInnerSwapAndWithdrawMessage,
@@ -10,7 +10,7 @@ import {
 describe("makeSwapMessage()", () => {
   const innerMessage = makeInnerSwapMessage({
     tokenDeltas: [["foo.near", 100n]],
-    signerId: userAddressToDefuseUserId("user.near", "near"),
+    signerId: authHandleToIntentsUserId("user.near", "near"),
     deadlineTimestamp: 1704110400000, // 2024-01-01T12:00:00.000Z
   })
 
@@ -64,7 +64,7 @@ describe("makeSwapMessage()", () => {
     const config = {
       innerMessage: makeInnerSwapMessage({
         tokenDeltas: [["foo.near", 100n]],
-        signerId: userAddressToDefuseUserId("user.near", "near"),
+        signerId: authHandleToIntentsUserId("user.near", "near"),
         deadlineTimestamp: 1704110400000, // 2024-01-01T12:00:00.000Z,
       }),
       recipient: "recipient.near",
@@ -129,7 +129,7 @@ describe("makeSwapMessage()", () => {
         ["foo.near", -100n],
         ["bar.near", 200n],
       ],
-      signerId: userAddressToDefuseUserId("user.near", "near"),
+      signerId: authHandleToIntentsUserId("user.near", "near"),
       deadlineTimestamp: 1704110400000,
       referral: "referrer.near",
     })
@@ -161,7 +161,7 @@ describe("makeSwapMessage()", () => {
         ["bar.near", 270n],
         ["foo.near", 100n],
       ],
-      signerId: userAddressToDefuseUserId("user.near", "near"),
+      signerId: authHandleToIntentsUserId("user.near", "near"),
       deadlineTimestamp: 1704110400000,
     })
 
@@ -202,7 +202,7 @@ describe("makeInnerSwapAndWithdrawMessage()", () => {
         receiverId: "receiver.near",
         storageDeposit: 0n,
       },
-      signerId: userAddressToDefuseUserId("user.near", "near"),
+      signerId: authHandleToIntentsUserId("user.near", "near"),
       deadlineTimestamp: DEADLINE,
     })
 
@@ -249,7 +249,7 @@ describe("makeInnerSwapAndWithdrawMessage()", () => {
         receiverId: "receiver.near",
         storageDeposit: 125n,
       },
-      signerId: userAddressToDefuseUserId("user.near", "near"),
+      signerId: authHandleToIntentsUserId("user.near", "near"),
       deadlineTimestamp: DEADLINE,
       referral: "referrer.near",
     })
@@ -300,7 +300,7 @@ describe("makeInnerSwapAndWithdrawMessage()", () => {
         receiverId: "receiver.near",
         storageDeposit: 100n,
       },
-      signerId: userAddressToDefuseUserId("user.near", "near"),
+      signerId: authHandleToIntentsUserId("user.near", "near"),
       deadlineTimestamp: DEADLINE,
     })
 
@@ -332,7 +332,7 @@ describe("makeInnerSwapAndWithdrawMessage()", () => {
         destinationAddress: "0xdead",
         destinationMemo: null,
       },
-      signerId: userAddressToDefuseUserId("user.near", "near"),
+      signerId: authHandleToIntentsUserId("user.near", "near"),
       deadlineTimestamp: DEADLINE,
     })
 
@@ -364,7 +364,7 @@ describe("makeInnerSwapAndWithdrawMessage()", () => {
         destinationAddress: "rJHkpNJVRUKMGV3NV6FNccySKNwEFF9C4c",
         destinationMemo: "2682497019",
       },
-      signerId: userAddressToDefuseUserId("user.near", "near"),
+      signerId: authHandleToIntentsUserId("user.near", "near"),
       deadlineTimestamp: DEADLINE,
     })
 
@@ -396,7 +396,7 @@ describe("makeInnerSwapAndWithdrawMessage()", () => {
         auroraEngineContractId: "foo.cloud.aurora",
         destinationAddress: "0xDeAdBeEf00000000000000000000000000000001",
       },
-      signerId: userAddressToDefuseUserId("user.near", "near"),
+      signerId: authHandleToIntentsUserId("user.near", "near"),
       deadlineTimestamp: DEADLINE,
     })
 
@@ -431,7 +431,7 @@ describe("makeInnerSwapAndWithdrawMessage()", () => {
         receiverId: "receiver.near",
         storageDeposit: 0n,
       },
-      signerId: userAddressToDefuseUserId("user.near", "near"),
+      signerId: authHandleToIntentsUserId("user.near", "near"),
       deadlineTimestamp: DEADLINE,
       referral: "referrer.near",
     })
@@ -469,7 +469,7 @@ describe("makeEmptyMessage()", () => {
 
   it("should create message with empty intents array", () => {
     const message = makeEmptyMessage({
-      signerId: userAddressToDefuseUserId("user.near", "near"),
+      signerId: authHandleToIntentsUserId("user.near", "near"),
       deadlineTimestamp: TEST_TIMESTAMP,
       nonce: TEST_NONCE,
     })
@@ -483,7 +483,7 @@ describe("makeEmptyMessage()", () => {
 
   it("should use default nonce when not provided", () => {
     const message = makeEmptyMessage({
-      signerId: userAddressToDefuseUserId("user.near", "near"),
+      signerId: authHandleToIntentsUserId("user.near", "near"),
       deadlineTimestamp: TEST_TIMESTAMP,
     })
 

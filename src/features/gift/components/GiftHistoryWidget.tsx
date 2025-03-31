@@ -2,14 +2,14 @@ import { useMemo } from "react"
 import { WidgetRoot } from "../../../components/WidgetRoot"
 import type { SignerCredentials } from "../../../core/formatters"
 import { SwapWidgetProvider } from "../../../providers/SwapWidgetProvider"
+import type { AuthMethod } from "../../../types/authHandle"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../../types/base"
-import type { ChainType } from "../../../types/deposit"
 import type { GiftLinkData } from "../types/sharedTypes"
 import { GiftHistory } from "./shared/GiftHistory"
 
 export type GiftHistoryWidgetProps = {
   userAddress: string | null | undefined
-  userChainType: ChainType | null | undefined
+  userChainType: AuthMethod | null | undefined
   generateLink: (giftLinkData: GiftLinkData) => string
   tokenList: (BaseTokenInfo | UnifiedTokenInfo)[]
 }

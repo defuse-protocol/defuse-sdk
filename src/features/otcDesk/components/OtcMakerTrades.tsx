@@ -23,12 +23,12 @@ import { type ActorRefFrom, createActor, toPromise } from "xstate"
 import { AssetComboIcon } from "../../../components/Asset/AssetComboIcon"
 import { Copy } from "../../../components/IntentCard/CopyButton"
 import { config } from "../../../config"
-import type { DefuseUserId, SignerCredentials } from "../../../core/formatters"
+import type { IntentsUserId, SignerCredentials } from "../../../core/formatters"
 import { getDepositedBalances } from "../../../services/defuseBalanceService"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../../types/base"
 import type { MultiPayload } from "../../../types/defuse-contracts-types"
 import { assert } from "../../../utils/assert"
-import { userAddressToDefuseUserId } from "../../../utils/defuse"
+import { authHandleToIntentsUserId } from "../../../utils/authIdentity"
 import { formatTokenValue } from "../../../utils/format"
 import { computeTotalBalanceDifferentDecimals } from "../../../utils/tokenUtils"
 import type { SendNearTransaction } from "../../machines/publicKeyVerifierMachine"
@@ -71,7 +71,7 @@ export function OtcMakerTrades({
   sendNearTransaction,
 }: OtcMakerTradesProps) {
   const trades = useOtcMakerTrades((s) => {
-    const userId = userAddressToDefuseUserId(
+    const userId = authHandleToIntentsUserId(
       signerCredentials.credential,
       signerCredentials.credentialType
     )
@@ -315,7 +315,7 @@ function useValidateTrade(tradeTerms: TradeTerms) {
     ],
     queryFn: () => {
       return getDepositedBalances(
-        tradeTerms.userId as DefuseUserId,
+        tradeTerms.userId as IntentsUserId,
         Object.keys(tradeTerms.tokenDiff),
         nearClient
       )

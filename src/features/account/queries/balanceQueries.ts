@@ -4,14 +4,14 @@ import {
   getDepositedBalances,
   getTransitBalances,
 } from "../../../services/defuseBalanceService"
+import type { IntentsUserId } from "../../../types/intentsUserId"
 import { assert } from "../../../utils/assert"
-import type { DefuseUserId } from "../../../utils/defuse"
 import type { BalanceMapping } from "../../machines/depositedBalanceMachine"
 
 export function createDepositedBalanceQueryOptions({
   userId,
   tokenIds,
-}: { userId: null | DefuseUserId; tokenIds: string[] }) {
+}: { userId: null | IntentsUserId; tokenIds: string[] }) {
   return {
     queryKey: ["intents_sdk.deposited_balance", { userId, tokenIds }],
     queryFn: async ({ queryKey }) => {
@@ -30,14 +30,14 @@ export function createDepositedBalanceQueryOptions({
     Error,
     BalanceMapping,
     BalanceMapping,
-    [string, { userId: null | DefuseUserId; tokenIds: string[] }]
+    [string, { userId: null | IntentsUserId; tokenIds: string[] }]
   >
 }
 
 export function createTransitBalanceQueryOptions({
   userId,
   tokenIds,
-}: { userId: null | DefuseUserId; tokenIds: string[] }) {
+}: { userId: null | IntentsUserId; tokenIds: string[] }) {
   return {
     queryKey: ["intents_sdk.transit_balance", { userId, tokenIds }],
     queryFn: ({ queryKey }) => {
@@ -51,6 +51,6 @@ export function createTransitBalanceQueryOptions({
     Error,
     BalanceMapping,
     BalanceMapping,
-    [string, { userId: null | DefuseUserId; tokenIds: string[] }]
+    [string, { userId: null | IntentsUserId; tokenIds: string[] }]
   >
 }

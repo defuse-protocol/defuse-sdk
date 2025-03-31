@@ -11,7 +11,7 @@ import {
   publishIntents,
 } from "../../../services/intentService"
 import type { MultiPayload } from "../../../types/defuse-contracts-types"
-import { userAddressToDefuseUserId } from "../../../utils/defuse"
+import { authHandleToIntentsUserId } from "../../../utils/authIdentity"
 import {
   SignIntentContext,
   type SignIntentErr,
@@ -57,7 +57,7 @@ export function useOtcTakerConfirmTrade({
         PublishIntentsErr | SignIntentErr | AggregatedQuoteErr
       >
     > => {
-      const signerId = userAddressToDefuseUserId(
+      const signerId = authHandleToIntentsUserId(
         signerCredentials.credential,
         signerCredentials.credentialType
       )
