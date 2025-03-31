@@ -3,7 +3,7 @@ import type {
   Params,
   PublishIntentRequest,
 } from "../services/solverRelayHttpClient/types"
-import type { AuthMethod } from "../types/deposit"
+import type { AuthMethod } from "../types/authHandle"
 import type { WalletSignatureResult } from "../types/swap"
 import { assert } from "./assert"
 import { makeWebAuthnMultiPayload } from "./multiPayload/webauthn"

@@ -1,6 +1,6 @@
 import { keccak_256 } from "@noble/hashes/sha3"
 import { base58, hex } from "@scure/base"
-import type { AuthMethod } from "../types/deposit"
+import type { AuthMethod } from "../types/authHandle"
 import { parsePublicKey } from "./webAuthn"
 
 /**

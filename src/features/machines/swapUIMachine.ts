@@ -10,12 +10,12 @@ import {
 } from "xstate"
 import { logger } from "../../logger"
 import type { QuoteResult } from "../../services/quoteService"
+import type { AuthMethod } from "../../types/authHandle"
 import type {
   BaseTokenInfo,
   TokenValue,
   UnifiedTokenInfo,
 } from "../../types/base"
-import type { AuthMethod } from "../../types/deposit"
 import type { SwappableToken } from "../../types/swap"
 import { assert } from "../../utils/assert"
 import { authHandleToIntentsUserId } from "../../utils/defuse"

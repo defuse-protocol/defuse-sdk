@@ -1,7 +1,7 @@
 import type { SupportedChainName } from "src/types/base"
-import type { AuthMethod } from "src/types/deposit"
 import { assert } from "src/utils/assert"
 import { assign, fromPromise, setup } from "xstate"
+import type { AuthMethod } from "../../types/authHandle"
 
 export type Context = {
   userAddress: string | null

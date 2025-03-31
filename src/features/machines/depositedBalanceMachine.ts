@@ -14,12 +14,12 @@ import {
   getDepositedBalances,
   getTransitBalances,
 } from "../../services/defuseBalanceService"
+import type { AuthMethod } from "../../types/authHandle"
 import type {
   BaseTokenInfo,
   TokenValue,
   UnifiedTokenInfo,
 } from "../../types/base"
-import type { AuthMethod } from "../../types/deposit"
 import {
   type IntentsUserId,
   authHandleToIntentsUserId,

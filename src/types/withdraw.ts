@@ -1,6 +1,6 @@
 import type { SendNearTransaction } from "../features/machines/publicKeyVerifierMachine"
+import type { AuthHandle } from "./authHandle"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "./base"
-import type { AuthHandle } from "./deposit"
 import type { WalletMessage, WalletSignatureResult } from "./swap"
 
 export type WithdrawWidgetProps = {

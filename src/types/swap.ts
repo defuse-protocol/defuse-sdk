@@ -1,7 +1,7 @@
 import type { SendNearTransaction } from "../features/machines/publicKeyVerifierMachine"
+import type { AuthMethod } from "./authHandle"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "./base"
 import type { DefusePayloadFor_DefuseIntents } from "./defuse-contracts-types"
-import type { AuthMethod } from "./deposit"
 import type { RenderHostAppLink } from "./hostAppLink"
 
 // Message for EVM wallets

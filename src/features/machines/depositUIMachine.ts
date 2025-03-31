@@ -8,8 +8,8 @@ import {
   setup,
 } from "xstate"
 import { config } from "../../config"
+import type { AuthMethod } from "../../types/authHandle"
 import type { BaseTokenInfo, SupportedChainName } from "../../types/base"
-import type { AuthMethod } from "../../types/deposit"
 import type { SwappableToken } from "../../types/swap"
 import { depositEstimationMachine } from "./depositEstimationActor"
 import {

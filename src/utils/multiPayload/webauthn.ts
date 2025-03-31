@@ -1,6 +1,6 @@
 import { base58, base64urlnopad } from "@scure/base"
+import type { AuthMethod } from "../../types/authHandle"
 import type { MultiPayload } from "../../types/defuse-contracts-types"
-import type { AuthMethod } from "../../types/deposit"
 import type { WebAuthnSignatureData } from "../../types/swap"
 import type { CurveType, FormattedPublicKey } from "../../types/webAuthn"
 import { assert } from "../assert"

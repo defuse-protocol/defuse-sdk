@@ -1,6 +1,6 @@
 import { WidgetRoot } from "../../../components/WidgetRoot"
+import type { AuthMethod } from "../../../types/authHandle"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../../types/base"
-import type { AuthMethod } from "../../../types/deposit"
 import type { RenderHostAppLink } from "../../../types/hostAppLink"
 import { authHandleToIntentsUserId } from "../../../utils/defuse"
 import { useWatchHoldings } from "../hooks/useWatchHoldings"

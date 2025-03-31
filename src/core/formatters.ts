@@ -1,4 +1,4 @@
-import type { AuthMethod } from "../types/deposit"
+import type { AuthMethod } from "../types/authHandle"
 import type { WalletSignatureResult } from "../types/swap"
 import { type IntentsUserId, authHandleToIntentsUserId } from "../utils/defuse"
 import { prepareSwapSignedData } from "../utils/prepareBroadcastRequest"

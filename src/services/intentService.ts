@@ -1,7 +1,7 @@
 import { retry } from "@lifeomic/attempt"
 import { Err, Ok, type Result } from "@thames/monads"
 import { logger } from "../logger"
-import type { AuthMethod } from "../types/deposit"
+import type { AuthMethod } from "../types/authHandle"
 import type { WalletSignatureResult } from "../types/swap"
 import { prepareSwapSignedData } from "../utils/prepareBroadcastRequest"
 import * as solverRelayClient from "./solverRelayHttpClient"

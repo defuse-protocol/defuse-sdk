@@ -34,13 +34,13 @@ import { useModalController } from "../../../../hooks/useModalController"
 import { logger } from "../../../../logger"
 import { useTokensStore } from "../../../../providers/TokensStoreProvider"
 import { ModalType } from "../../../../stores/modalStore"
+import { AuthMethod } from "../../../../types/authHandle"
 import type {
   BaseTokenInfo,
   SupportedChainName,
   TokenValue,
   UnifiedTokenInfo,
 } from "../../../../types/base"
-import { AuthMethod } from "../../../../types/deposit"
 import type { WithdrawWidgetProps } from "../../../../types/withdraw"
 import { parseUnits } from "../../../../utils/parse"
 import { isBaseToken } from "../../../../utils/token"
