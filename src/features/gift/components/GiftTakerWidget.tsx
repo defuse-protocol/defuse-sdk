@@ -1,10 +1,12 @@
 import { useActorRef, useSelector } from "@xstate/react"
+import type { ActorRefFrom } from "xstate"
 import { WidgetRoot } from "../../../components/WidgetRoot"
 import type { SignerCredentials } from "../../../core/formatters"
 import { SwapWidgetProvider } from "../../../providers/SwapWidgetProvider"
 import type { AuthMethod } from "../../../types/authHandle"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../../types/base"
 import { giftTakerRootMachine } from "../actors/giftTakerRootMachine"
+import type { giftClaimActor } from "../actors/shared/giftClaimActor"
 import { GiftTakerForm } from "./GiftTakerForm"
 import { GiftTakerInvalidClaim } from "./GiftTakerInvalidClaim"
 import { GiftTakerSuccessScreen } from "./GiftTakerSuccessScreen"
@@ -55,12 +57,23 @@ function GiftTakerScreens({
       ? { credential: userAddress, credentialType: userChainType }
       : null
 
-  const snapshot = useSelector(giftTakerRootRef, (state) => state)
+  const { snapshot, giftTakerClaimRef } = useSelector(
+    giftTakerRootRef,
+    (state) => ({
+      giftTakerClaimRef: state.children.giftTakerClaimRef as
+        | undefined
+        | ActorRefFrom<typeof giftClaimActor>,
+      snapshot: state,
+    })
+  )
   const intentHashes = snapshot.context.intentHashes
   const giftInfo = snapshot.context.giftInfo
 
-  if (snapshot?.context.error != null) {
-    return <GiftTakerInvalidClaim error={snapshot.context.error.reason} />
+  const claimSnapshot = useSelector(giftTakerClaimRef, (state) => state)
+  const error = claimSnapshot?.context.error ?? snapshot.context.error
+
+  if (error != null) {
+    return <GiftTakerInvalidClaim error={error.reason} />
   }
 
   if (giftInfo == null) {
