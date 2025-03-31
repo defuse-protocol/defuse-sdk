@@ -4,7 +4,7 @@ import type { SignerCredentials } from "../../../core/formatters"
 import type { MultiPayload } from "../../../types/defuse-contracts-types"
 import {
   type IntentsUserId,
-  userAddressToDefuseUserId,
+  authHandleToIntentsUserId,
 } from "../../../utils/defuse"
 
 type OtcMakerTrade = {
@@ -39,7 +39,7 @@ export const otcMakerTradesStore = create<Store>()(
         const userId =
           typeof user === "string"
             ? user
-            : userAddressToDefuseUserId(user.credential, user.credentialType)
+            : authHandleToIntentsUserId(user.credential, user.credentialType)
 
         set((state) => ({
           trades: {
@@ -56,7 +56,7 @@ export const otcMakerTradesStore = create<Store>()(
         const userId =
           typeof user === "string"
             ? user
-            : userAddressToDefuseUserId(user.credential, user.credentialType)
+            : authHandleToIntentsUserId(user.credential, user.credentialType)
 
         set((state) => ({
           trades: {

@@ -18,7 +18,7 @@ import type {
 import type { ChainType } from "../../types/deposit"
 import type { SwappableToken } from "../../types/swap"
 import { assert } from "../../utils/assert"
-import { userAddressToDefuseUserId } from "../../utils/defuse"
+import { authHandleToIntentsUserId } from "../../utils/defuse"
 import { parseUnits } from "../../utils/parse"
 import {
   getAnyBaseTokenInfo,
@@ -411,7 +411,7 @@ export const swapUIMachine = setup({
           return {
             userAddress: event.params.userAddress,
             userChainType: event.params.userChainType,
-            defuseUserId: userAddressToDefuseUserId(
+            defuseUserId: authHandleToIntentsUserId(
               event.params.userAddress,
               event.params.userChainType
             ),

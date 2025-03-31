@@ -1,6 +1,6 @@
 import type { ChainType } from "../types/deposit"
 import type { WalletSignatureResult } from "../types/swap"
-import { type IntentsUserId, userAddressToDefuseUserId } from "../utils/defuse"
+import { type IntentsUserId, authHandleToIntentsUserId } from "../utils/defuse"
 import { prepareSwapSignedData } from "../utils/prepareBroadcastRequest"
 
 export type { IntentsUserId }
@@ -39,7 +39,7 @@ export function formatSignedIntent(
 export function formatUserIdentity(
   credentials: SignerCredentials
 ): IntentsUserId {
-  return userAddressToDefuseUserId(
+  return authHandleToIntentsUserId(
     credentials.credential,
     credentials.credentialType
   )

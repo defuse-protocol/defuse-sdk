@@ -38,7 +38,7 @@ import {
 } from "../types/deposit"
 import { BlockchainEnum } from "../types/interfaces"
 import { assert } from "../utils/assert"
-import { type IntentsUserId, userAddressToDefuseUserId } from "../utils/defuse"
+import { type IntentsUserId, authHandleToIntentsUserId } from "../utils/defuse"
 import { getEVMChainId } from "../utils/evmChainId"
 import { isNativeToken } from "../utils/token"
 import { getDepositAddress, getSupportedTokens } from "./poaBridgeClient"
@@ -471,7 +471,7 @@ export function createDepositFromSiloTransaction(
       getAddress(tokenAddress),
       amount,
       depositAddress,
-      userAddressToDefuseUserId(userAddress, ChainType.EVM),
+      authHandleToIntentsUserId(userAddress, ChainType.EVM),
     ],
   })
   const tx: SendTransactionEVMParams = {

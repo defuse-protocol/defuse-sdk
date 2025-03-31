@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { userAddressToDefuseUserId } from "../utils/defuse"
+import { authHandleToIntentsUserId } from "../utils/defuse"
 import {
   createEmptyIntentMessage,
   createSwapIntentMessage,
@@ -8,7 +8,7 @@ import {
 } from "./messages"
 
 const TEST_TIMESTAMP = 1704110400000 // 2024-01-01T12:00:00.000Z
-const TEST_USER = userAddressToDefuseUserId("user.near", "near")
+const TEST_USER = authHandleToIntentsUserId("user.near", "near")
 
 describe("createSwapIntentMessage()", () => {
   it("creates a valid swap intent message", () => {

@@ -28,7 +28,7 @@ import { getDepositedBalances } from "../../../services/defuseBalanceService"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../../types/base"
 import type { MultiPayload } from "../../../types/defuse-contracts-types"
 import { assert } from "../../../utils/assert"
-import { userAddressToDefuseUserId } from "../../../utils/defuse"
+import { authHandleToIntentsUserId } from "../../../utils/defuse"
 import { formatTokenValue } from "../../../utils/format"
 import { computeTotalBalanceDifferentDecimals } from "../../../utils/tokenUtils"
 import type { SendNearTransaction } from "../../machines/publicKeyVerifierMachine"
@@ -71,7 +71,7 @@ export function OtcMakerTrades({
   sendNearTransaction,
 }: OtcMakerTradesProps) {
   const trades = useOtcMakerTrades((s) => {
-    const userId = userAddressToDefuseUserId(
+    const userId = authHandleToIntentsUserId(
       signerCredentials.credential,
       signerCredentials.credentialType
     )

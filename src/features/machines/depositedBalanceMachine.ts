@@ -22,7 +22,7 @@ import type {
 import type { ChainType } from "../../types/deposit"
 import {
   type IntentsUserId,
-  userAddressToDefuseUserId,
+  authHandleToIntentsUserId,
 } from "../../utils/defuse"
 import {
   computeTotalBalanceDifferentDecimals,
@@ -267,7 +267,7 @@ export const depositedBalanceMachine = setup({
         {
           type: "updateUser",
           params: ({ event }) =>
-            userAddressToDefuseUserId(
+            authHandleToIntentsUserId(
               event.params.userAddress,
               event.params.userChainType
             ),

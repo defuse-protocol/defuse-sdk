@@ -9,7 +9,7 @@ import {
   createSwapIntentMessage,
 } from "../../../core/messages"
 import { logger } from "../../../logger"
-import { userAddressToDefuseUserId } from "../../../utils/defuse"
+import { authHandleToIntentsUserId } from "../../../utils/defuse"
 import { parseTradeTerms } from "./parseTradeTerms"
 
 vi.mock("../../../logger", () => ({
@@ -21,7 +21,7 @@ describe("parseTradeTerms", () => {
     credential: "joe.near",
     credentialType: "near",
   }
-  const trade1Id = userAddressToDefuseUserId(
+  const trade1Id = authHandleToIntentsUserId(
     trader1.credential,
     trader1.credentialType
   )

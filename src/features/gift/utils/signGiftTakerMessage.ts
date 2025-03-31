@@ -1,6 +1,6 @@
 import { base64 } from "@scure/base"
 import { KeyPair } from "near-api-js"
-import { userAddressToDefuseUserId } from "src/utils/defuse"
+import { authHandleToIntentsUserId } from "src/utils/defuse"
 import type { IntentsUserId, SignerCredentials } from "../../../core/formatters"
 import { formatUserIdentity } from "../../../core/formatters"
 import type { NEP413SignatureData } from "../../../types/swap"
@@ -50,14 +50,14 @@ function assembleWalletMessage({
 
   // Signer should be with `near` credential type as we use ED25519 signing
   const signerId = resolveSignerId(
-    userAddressToDefuseUserId(giftInfo.accountId, "near")
+    authHandleToIntentsUserId(giftInfo.accountId, "near")
   )
 
   const innerMessage = makeInnerTransferMessage({
     tokenDeltas: [...Object.entries(giftInfo.tokenDiff)],
     signerId,
     deadlineTimestamp: minutesFromNow(5),
-    receiverId: userAddressToDefuseUserId(
+    receiverId: authHandleToIntentsUserId(
       signerCredentials.credential,
       signerCredentials.credentialType
     ),

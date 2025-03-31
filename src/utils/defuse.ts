@@ -32,7 +32,7 @@ export type IntentsUserId = string & { __brand: "IntentsUserId" }
  * @param credentialType - The type of credential ("evm", "near", "solana", "webauthn")
  * @returns A standardized Defuse user ID
  */
-export function userAddressToDefuseUserId(
+export function authHandleToIntentsUserId(
   credential: string,
   credentialType: ChainType
 ): IntentsUserId {

@@ -1,14 +1,14 @@
 import { describe, expect, it } from "vitest"
-import { userAddressToDefuseUserId } from "./defuse"
+import { authHandleToIntentsUserId } from "./defuse"
 
-describe("userAddressToDefuseUserId", () => {
+describe("authHandleToIntentsUserId", () => {
   it("returns lowercased Near account ID for 'near' chain type", () => {
-    const result = userAddressToDefuseUserId("Bob.Near", "near")
+    const result = authHandleToIntentsUserId("Bob.Near", "near")
     expect(result).toBe("bob.near")
   })
 
   it("returns lowercased Ethereum address for 'evm' chain type", () => {
-    const result = userAddressToDefuseUserId(
+    const result = authHandleToIntentsUserId(
       "0xc0ffee254729296a45a3885639AC7E10F9d54979",
       "evm"
     )
@@ -16,7 +16,7 @@ describe("userAddressToDefuseUserId", () => {
   })
 
   it("returns hex encoded Solana address for 'solana' chain type", () => {
-    const result = userAddressToDefuseUserId(
+    const result = authHandleToIntentsUserId(
       "3yAnWiDUbv2Ckjptk1D1HAwYHgqZKoqbR755ckY3n9oV",
       "solana"
     )
@@ -26,7 +26,7 @@ describe("userAddressToDefuseUserId", () => {
   })
 
   it("returns derived address for 'webauthn' chain type with P-256 curve", () => {
-    const result = userAddressToDefuseUserId(
+    const result = authHandleToIntentsUserId(
       "p256:3NSY8SFTWoPFMrTGdLVqPogirCyt3kMnUajXoDQuVeCsA6wzkMMp5whBqymAPM7xFiBthDKueiUv1zVAj7GDT8rQ",
       "webauthn"
     )
@@ -34,7 +34,7 @@ describe("userAddressToDefuseUserId", () => {
   })
 
   it("returns hex encoded public key for 'webauthn' chain type with Ed25519 curve", () => {
-    const result = userAddressToDefuseUserId(
+    const result = authHandleToIntentsUserId(
       "ed25519:Gz9STDrgGWdt2fh1g91v2n6SUsy5QKHbx86Nrjy2kFz5",
       "webauthn"
     )
@@ -45,7 +45,7 @@ describe("userAddressToDefuseUserId", () => {
 
   it("throws if incorrect curve is provided", () => {
     expect(() =>
-      userAddressToDefuseUserId(
+      authHandleToIntentsUserId(
         "foo:Gz9STDrgGWdt2fh1g91v2n6SUsy5QKHbx86Nrjy2kFz5",
         "webauthn"
       )

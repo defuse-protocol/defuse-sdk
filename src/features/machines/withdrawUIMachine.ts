@@ -13,7 +13,7 @@ import type { QuoteResult } from "../../services/quoteService"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../types/base"
 import type { ChainType } from "../../types/deposit"
 import { assert } from "../../utils/assert"
-import { userAddressToDefuseUserId } from "../../utils/defuse"
+import { authHandleToIntentsUserId } from "../../utils/defuse"
 import {
   type Events as BackgroundQuoterEvents,
   type ParentEvents as BackgroundQuoterParentEvents,
@@ -536,7 +536,7 @@ export const withdrawUIMachine = setup({
           return {
             userAddress: context.submitDeps.userAddress,
             userChainType: context.submitDeps.userChainType,
-            defuseUserId: userAddressToDefuseUserId(
+            defuseUserId: authHandleToIntentsUserId(
               context.submitDeps.userAddress,
               context.submitDeps.userChainType
             ),

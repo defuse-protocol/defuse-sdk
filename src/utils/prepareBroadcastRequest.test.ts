@@ -6,7 +6,7 @@ import type {
   WalletMessage,
   WebAuthnSignatureData,
 } from "../types/swap"
-import { userAddressToDefuseUserId } from "./defuse"
+import { authHandleToIntentsUserId } from "./defuse"
 import { makeInnerSwapMessage, makeSwapMessage } from "./messageFactory"
 import { prepareSwapSignedData } from "./prepareBroadcastRequest"
 
@@ -31,7 +31,7 @@ describe("prepareSwapSignedData()", () => {
     WEBAUTHN: makeSwapMessage({
       innerMessage: makeInnerSwapMessage({
         tokenDeltas: [["foo.near", 100n]],
-        signerId: userAddressToDefuseUserId("user.near", "near"),
+        signerId: authHandleToIntentsUserId("user.near", "near"),
         deadlineTimestamp: 1704110400000,
       }),
       nonce: new Uint8Array(32),

@@ -2,7 +2,7 @@ import { Err, Ok, type Result } from "@thames/monads"
 import { nearClient } from "../../../constants/nearClient"
 import { getDepositedBalances } from "../../../services/defuseBalanceService"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../../types/base"
-import { userAddressToDefuseUserId } from "../../../utils/defuse"
+import { authHandleToIntentsUserId } from "../../../utils/defuse"
 import { isBaseToken, isUnifiedToken } from "../../../utils/token"
 import { getUnderlyingBaseTokenInfos } from "../../../utils/tokenUtils"
 import type { EscrowCredentials } from "./generateEscrowCredentials"
@@ -27,7 +27,7 @@ export async function determineGiftToken(
       .map((t) => t.defuseAssetId)
 
     const balances = await getDepositedBalances(
-      userAddressToDefuseUserId(
+      authHandleToIntentsUserId(
         escrowCredentials.credential,
         escrowCredentials.credentialType
       ),
