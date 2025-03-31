@@ -1,6 +1,6 @@
 import { type ActorRefFrom, waitFor } from "xstate"
 import { settings } from "../constants/settings"
-import { NEP141_STORAGE_TOKEN } from "../constants/tokens"
+import { NEP141_STORAGE_TOKEN_ID } from "../constants/tokens"
 import type {
   QuoteInput,
   backgroundQuoterMachine,
@@ -233,9 +233,7 @@ async function determineNEP141StorageRequirement(
     return { tag: "ok", value: null }
   }
 
-  if (
-    formValues.tokenOut.defuseAssetId === NEP141_STORAGE_TOKEN.defuseAssetId
-  ) {
+  if (formValues.tokenOut.defuseAssetId === NEP141_STORAGE_TOKEN_ID) {
     return {
       tag: "ok",
       value: {
@@ -250,7 +248,7 @@ async function determineNEP141StorageRequirement(
     const nep141StorageQuote = await queryQuoteExactOut(
       {
         tokenIn: formValues.tokenOut.defuseAssetId,
-        tokenOut: NEP141_STORAGE_TOKEN.defuseAssetId,
+        tokenOut: NEP141_STORAGE_TOKEN_ID,
         exactAmountOut: nep141StorageRequired.value,
         /**
          * We expect user to finish the transaction in specific timeframe and
