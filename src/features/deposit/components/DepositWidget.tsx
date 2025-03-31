@@ -1,7 +1,6 @@
-import { useEffect } from "react"
+import { TokenListUpdater } from "../../../components/TokenListUpdater"
 import { WidgetRoot } from "../../../components/WidgetRoot"
 import { DepositWidgetProvider } from "../../../providers/DepositWidgetProvider"
-import { useTokensStore } from "../../../providers/TokensStoreProvider"
 import type { DepositWidgetProps } from "../../../types/deposit"
 import { DepositForm } from "./DepositForm"
 import { DepositFormProvider } from "./DepositFormProvider"
@@ -38,16 +37,4 @@ export const DepositWidget = ({
       </DepositWidgetProvider>
     </WidgetRoot>
   )
-}
-
-function TokenListUpdater({
-  tokenList,
-}: { tokenList: DepositWidgetProps["tokenList"] }) {
-  const { updateTokens } = useTokensStore((state) => state)
-
-  useEffect(() => {
-    updateTokens(tokenList)
-  }, [tokenList, updateTokens])
-
-  return null
 }
