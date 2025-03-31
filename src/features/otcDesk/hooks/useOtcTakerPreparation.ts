@@ -6,7 +6,7 @@ import { getDepositedBalances } from "../../../services/defuseBalanceService"
 import type { AggregatedQuote } from "../../../services/quoteService"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../../types/base"
 import { assert } from "../../../utils/assert"
-import type { DefuseUserId } from "../../../utils/defuse"
+import type { IntentsUserId } from "../../../utils/defuse"
 import { isBaseToken } from "../../../utils/token"
 import { getUnderlyingBaseTokenInfos } from "../../../utils/tokenUtils"
 import {
@@ -41,7 +41,7 @@ export function useOtcTakerPreparation({
   tokenIn: BaseTokenInfo | UnifiedTokenInfo
   takerTokenDiff: Record<string, bigint>
   protocolFee: number
-  takerId: DefuseUserId | null
+  takerId: IntentsUserId | null
 }) {
   return useQuery({
     enabled: takerId != null,

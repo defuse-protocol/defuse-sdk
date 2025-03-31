@@ -3,7 +3,7 @@ import { createJSONStorage, persist } from "zustand/middleware"
 import type { SignerCredentials } from "../../../core/formatters"
 import type { MultiPayload } from "../../../types/defuse-contracts-types"
 import {
-  type DefuseUserId,
+  type IntentsUserId,
   userAddressToDefuseUserId,
 } from "../../../utils/defuse"
 
@@ -14,17 +14,17 @@ type OtcMakerTrade = {
 }
 
 type State = {
-  trades: Record<DefuseUserId, OtcMakerTrade[]>
+  trades: Record<IntentsUserId, OtcMakerTrade[]>
 }
 
 type Actions = {
   addTrade: (
     trade: Omit<OtcMakerTrade, "updatedAt">,
-    userId: DefuseUserId | SignerCredentials
+    userId: IntentsUserId | SignerCredentials
   ) => void
   removeTrade: (
     tradeId: string,
-    userId: DefuseUserId | SignerCredentials
+    userId: IntentsUserId | SignerCredentials
   ) => void
 }
 

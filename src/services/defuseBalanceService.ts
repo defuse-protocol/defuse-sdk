@@ -3,13 +3,13 @@ import type { CodeResult } from "near-api-js/lib/providers/provider"
 import { config } from "../config"
 import type { BaseTokenInfo } from "../types/base"
 import { assert } from "../utils/assert"
-import type { DefuseUserId } from "../utils/defuse"
+import type { IntentsUserId } from "../utils/defuse"
 import { getDepositStatus } from "./poaBridgeClient"
 
 type TokenBalances = Record<BaseTokenInfo["defuseAssetId"], bigint>
 
 export async function getDepositedBalances(
-  accountId: DefuseUserId,
+  accountId: IntentsUserId,
   tokenIds: BaseTokenInfo["defuseAssetId"][],
   nearClient: providers.Provider
 ): Promise<TokenBalances> {
@@ -51,7 +51,7 @@ export async function getDepositedBalances(
 }
 
 export async function getTransitBalances(
-  accountId: DefuseUserId,
+  accountId: IntentsUserId,
   tokenIds: BaseTokenInfo["defuseAssetId"][]
 ): Promise<TokenBalances> {
   const depositStatus = await getDepositStatus({

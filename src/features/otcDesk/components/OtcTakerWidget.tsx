@@ -6,7 +6,7 @@ import * as v from "valibot"
 import { WidgetRoot } from "../../../components/WidgetRoot"
 import { config } from "../../../config"
 import { nearClient } from "../../../constants/nearClient"
-import type { DefuseUserId, SignerCredentials } from "../../../core/formatters"
+import type { IntentsUserId, SignerCredentials } from "../../../core/formatters"
 import { logger } from "../../../logger"
 import { SwapWidgetProvider } from "../../../providers/SwapWidgetProvider"
 import { getDepositedBalances } from "../../../services/defuseBalanceService"
@@ -192,7 +192,7 @@ function OtcTakerValidationOrder({
     ],
     queryFn: () => {
       return getDepositedBalances(
-        tradeTerms.makerUserId as DefuseUserId,
+        tradeTerms.makerUserId as IntentsUserId,
         Object.keys(tradeTerms.makerTokenDiff),
         nearClient
       )

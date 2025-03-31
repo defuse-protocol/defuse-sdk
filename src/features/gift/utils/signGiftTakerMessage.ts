@@ -1,7 +1,7 @@
 import { base64 } from "@scure/base"
 import { KeyPair } from "near-api-js"
 import { userAddressToDefuseUserId } from "src/utils/defuse"
-import type { DefuseUserId, SignerCredentials } from "../../../core/formatters"
+import type { IntentsUserId, SignerCredentials } from "../../../core/formatters"
 import { formatUserIdentity } from "../../../core/formatters"
 import type { NEP413SignatureData } from "../../../types/swap"
 import {
@@ -73,7 +73,7 @@ function minutesFromNow(minutes: number): number {
 }
 
 function resolveSignerId(
-  signerId: DefuseUserId | SignerCredentials
-): DefuseUserId {
+  signerId: IntentsUserId | SignerCredentials
+): IntentsUserId {
   return typeof signerId === "string" ? signerId : formatUserIdentity(signerId)
 }

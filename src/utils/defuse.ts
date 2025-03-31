@@ -7,7 +7,7 @@ import { parsePublicKey } from "./webAuthn"
  * A branded string type representing a Defuse user ID.
  * The brand prevents accidental mixing with regular strings in TypeScript.
  */
-export type DefuseUserId = string & { __brand: "DefuseAccountId" }
+export type IntentsUserId = string & { __brand: "IntentsUserId" }
 
 /**
  * Converts a blockchain address to a standardized Defuse user ID.
@@ -35,17 +35,17 @@ export type DefuseUserId = string & { __brand: "DefuseAccountId" }
 export function userAddressToDefuseUserId(
   credential: string,
   credentialType: ChainType
-): DefuseUserId {
+): IntentsUserId {
   switch (credentialType) {
     case "evm":
     case "near":
-      return credential.toLowerCase() as DefuseUserId
+      return credential.toLowerCase() as IntentsUserId
 
     case "solana":
-      return hex.encode(base58.decode(credential)) as DefuseUserId
+      return hex.encode(base58.decode(credential)) as IntentsUserId
 
     case "webauthn": {
-      return webAuthnCredentialToDefuseUserId(credential) as DefuseUserId
+      return webAuthnCredentialToDefuseUserId(credential) as IntentsUserId
     }
   }
 }

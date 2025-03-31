@@ -23,7 +23,7 @@ import { type ActorRefFrom, createActor, toPromise } from "xstate"
 import { AssetComboIcon } from "../../../components/Asset/AssetComboIcon"
 import { Copy } from "../../../components/IntentCard/CopyButton"
 import { config } from "../../../config"
-import type { DefuseUserId, SignerCredentials } from "../../../core/formatters"
+import type { IntentsUserId, SignerCredentials } from "../../../core/formatters"
 import { getDepositedBalances } from "../../../services/defuseBalanceService"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../../types/base"
 import type { MultiPayload } from "../../../types/defuse-contracts-types"
@@ -315,7 +315,7 @@ function useValidateTrade(tradeTerms: TradeTerms) {
     ],
     queryFn: () => {
       return getDepositedBalances(
-        tradeTerms.userId as DefuseUserId,
+        tradeTerms.userId as IntentsUserId,
         Object.keys(tradeTerms.tokenDiff),
         nearClient
       )

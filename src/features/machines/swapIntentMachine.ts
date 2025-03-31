@@ -10,7 +10,7 @@ import type { Nep413DefuseMessageFor_DefuseIntents } from "../../types/defuse-co
 import type { ChainType } from "../../types/deposit"
 import type { WalletMessage, WalletSignatureResult } from "../../types/swap"
 import { assert } from "../../utils/assert"
-import type { DefuseUserId } from "../../utils/defuse"
+import type { IntentsUserId } from "../../utils/defuse"
 import {
   makeInnerSwapMessage,
   makeSwapMessage,
@@ -82,7 +82,7 @@ export type IntentDescription =
 type Context = {
   userAddress: string
   userChainType: ChainType
-  defuseUserId: DefuseUserId
+  defuseUserId: IntentsUserId
   referral?: string
   slippageBasisPoints: number
   nearClient: providers.Provider
@@ -122,7 +122,7 @@ type Context = {
 type Input = {
   userAddress: string
   userChainType: ChainType
-  defuseUserId: DefuseUserId
+  defuseUserId: IntentsUserId
   referral?: string
   slippageBasisPoints: number
   nearClient: providers.Provider

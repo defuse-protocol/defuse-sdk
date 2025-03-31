@@ -21,7 +21,7 @@ import type {
 } from "../../types/base"
 import type { ChainType } from "../../types/deposit"
 import {
-  type DefuseUserId,
+  type IntentsUserId,
   userAddressToDefuseUserId,
 } from "../../utils/defuse"
 import {
@@ -111,7 +111,7 @@ export const depositedBalanceMachine = setup({
     ),
   },
   actions: {
-    updateUser: ({ context }, user: DefuseUserId | null) => {
+    updateUser: ({ context }, user: IntentsUserId | null) => {
       {
         const queryKey = structuredClone(
           context.depositedBalanceQueryObserver.options.queryKey
@@ -377,7 +377,7 @@ function createDepositedBalanceQueryObserver(
   return new QueryObserver(queryClient, {
     queryKey: ["deposited_balance", { user: null, tokenIds }] as [
       string,
-      { user: null | DefuseUserId; tokenIds: string[] },
+      { user: null | IntentsUserId; tokenIds: string[] },
     ],
     queryFn: ({ queryKey }) => {
       if (queryKey[1].user == null) {
@@ -406,7 +406,7 @@ function createTransitBalanceQueryObserver(
   return new QueryObserver(queryClient, {
     queryKey: ["transit_balance", { user: null, tokenIds }] as [
       string,
-      { user: null | DefuseUserId; tokenIds: string[] },
+      { user: null | IntentsUserId; tokenIds: string[] },
     ],
     queryFn: ({ queryKey }) => {
       if (queryKey[1].user == null) {

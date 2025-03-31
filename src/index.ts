@@ -26,7 +26,7 @@ export type {
 export {
   formatSignedIntent,
   formatUserIdentity,
-  type DefuseUserId,
+  type IntentsUserId,
   type SignerCredentials,
 } from "./core/formatters"
 

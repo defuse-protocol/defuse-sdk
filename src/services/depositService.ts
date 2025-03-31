@@ -38,7 +38,7 @@ import {
 } from "../types/deposit"
 import { BlockchainEnum } from "../types/interfaces"
 import { assert } from "../utils/assert"
-import { type DefuseUserId, userAddressToDefuseUserId } from "../utils/defuse"
+import { type IntentsUserId, userAddressToDefuseUserId } from "../utils/defuse"
 import { getEVMChainId } from "../utils/evmChainId"
 import { isNativeToken } from "../utils/token"
 import { getDepositAddress, getSupportedTokens } from "./poaBridgeClient"
@@ -593,7 +593,7 @@ function createSPLTransferSolanaTransaction(
  * @returns A Promise that resolves to the generated deposit address
  */
 export async function generateDepositAddress(
-  userAddress: DefuseUserId,
+  userAddress: IntentsUserId,
   chain: BlockchainEnum
 ): Promise<string> {
   try {
