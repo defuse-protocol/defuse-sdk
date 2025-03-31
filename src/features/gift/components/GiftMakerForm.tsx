@@ -2,11 +2,12 @@ import { useActorRef, useSelector } from "@xstate/react"
 import clsx from "clsx"
 import { useEffect, useMemo } from "react"
 import { ButtonCustom } from "src/components/Button/ButtonCustom"
-import type { ActorRefFrom } from "xstate"
+import type { ActorRefFrom, PromiseActorLogic } from "xstate"
 import { BlockMultiBalances } from "../../../components/Block/BlockMultiBalances"
 import type { ModalSelectAssetsPayload } from "../../../components/Modal/ModalSelectAssets"
 import { SelectAssets } from "../../../components/SelectAssets"
 import type { SignerCredentials } from "../../../core/formatters"
+import { usePublicKeyModalOpener } from "../../../features/swap/hooks/usePublicKeyModalOpener"
 import { useModalController } from "../../../hooks/useModalController"
 import { useTokensUsdPrices } from "../../../hooks/useTokensUsdPrices"
 import { useTokensStore } from "../../../providers/TokensStoreProvider"
@@ -18,9 +19,16 @@ import { formatTokenValue, formatUsdAmount } from "../../../utils/format"
 import getTokenUsdPrice from "../../../utils/getTokenUsdPrice"
 import { TokenAmountInputCard } from "../../deposit/components/DepositForm/TokenAmountInputCard"
 import { balanceAllSelector } from "../../machines/depositedBalanceMachine"
+import type { SendNearTransaction } from "../../machines/publicKeyVerifierMachine"
+import type { publicKeyVerifierMachine } from "../../machines/publicKeyVerifierMachine"
 import { formValuesSelector } from "../actors/giftMakerFormMachine"
 import type { giftMakerReadyActor } from "../actors/giftMakerReadyActor"
 import { giftMakerRootMachine } from "../actors/giftMakerRootMachine"
+import type { giftMakerSignActor } from "../actors/giftMakerSignActor"
+import type {
+  GiftMakerSignActorInput,
+  GiftMakerSignActorOutput,
+} from "../actors/giftMakerSignActor"
 import { useBalanceUpdaterSyncWithHistory } from "../hooks/useBalanceUpdaterSyncWithHistory"
 import { useCheckSignerCredentials } from "../hooks/useCheckSignerCredentials"
 import type { GiftLinkData, SignMessage } from "../types/sharedTypes"
@@ -45,6 +53,9 @@ export type GiftMakerWidgetProps = {
   /** Sign message callback */
   signMessage: SignMessage
 
+  /** Send NEAR transaction callback */
+  sendNearTransaction: SendNearTransaction
+
   /** Function to generate a shareable trade link */
   generateLink: (giftLinkData: GiftLinkData) => string
 
@@ -61,6 +72,7 @@ export function GiftMakerForm({
   userChainType,
   initialToken,
   signMessage,
+  sendNearTransaction,
   generateLink,
   referral,
 }: GiftMakerWidgetProps) {
@@ -161,6 +173,49 @@ export function GiftMakerForm({
     rootSnapshot.matches("settling")
 
   const error = rootSnapshot.context.error
+
+  const publicKeyVerifierRef = useSelector(
+    useSelector(
+      useSelector(
+        rootActorRef,
+        (state) =>
+          state.children.signRef as
+            | undefined
+            | ActorRefFrom<typeof giftMakerSignActor>
+      ),
+      (state) => {
+        if (state) {
+          return (
+            state as unknown as {
+              children: {
+                signRef: ActorRefFrom<
+                  PromiseActorLogic<
+                    GiftMakerSignActorOutput,
+                    GiftMakerSignActorInput
+                  >
+                >
+              }
+            }
+          ).children.signRef
+        }
+      }
+    ),
+    (state) => {
+      if (state) {
+        return (
+          state as unknown as {
+            children: {
+              publicKeyVerifierRef: ActorRefFrom<
+                typeof publicKeyVerifierMachine
+              >
+            }
+          }
+        ).children.publicKeyVerifierRef
+      }
+    }
+  )
+
+  usePublicKeyModalOpener(publicKeyVerifierRef, sendNearTransaction)
 
   return (
     <div className="flex flex-col">
