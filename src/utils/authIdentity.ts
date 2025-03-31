@@ -1,13 +1,12 @@
 import { keccak_256 } from "@noble/hashes/sha3"
 import { base58, hex } from "@scure/base"
-import type { ChainType } from "../types/deposit"
+import type {
+  AuthHandle,
+  AuthIdentifier,
+  AuthMethod,
+} from "../types/authHandle"
+import type { IntentsUserId } from "../types/intentsUserId"
 import { parsePublicKey } from "./webAuthn"
-
-/**
- * A branded string type representing a Defuse user ID.
- * The brand prevents accidental mixing with regular strings in TypeScript.
- */
-export type DefuseUserId = string & { __brand: "DefuseAccountId" }
 
 /**
  * Converts a blockchain address to a standardized Defuse user ID.
@@ -28,29 +27,54 @@ export type DefuseUserId = string & { __brand: "DefuseAccountId" }
  *   - P-256: Keccak256(prefix + pubkey) -> last 20 bytes -> hex with 0x prefix
  *   - Ed25519: Raw public key -> hex encoding
  *
- * @param credential - The user's identifier (blockchain address or WebAuthn public key)
- * @param credentialType - The type of credential ("evm", "near", "solana", "webauthn")
+ * @param authIdentifier - The user's identifier (blockchain address or WebAuthn public key)
+ * @param authMethod - The type of credential ("evm", "near", "solana", "webauthn")
  * @returns A standardized Defuse user ID
  */
-export function userAddressToDefuseUserId(
-  credential: string,
-  credentialType: ChainType
-): DefuseUserId {
-  switch (credentialType) {
+export function authHandleToIntentsUserId(
+  authIdentifier: AuthIdentifier,
+  authMethod: AuthMethod
+): IntentsUserId
+export function authHandleToIntentsUserId(authHandle: AuthHandle): IntentsUserId
+export function authHandleToIntentsUserId(
+  authIdentifier: AuthIdentifier | AuthHandle,
+  authMethod?: AuthMethod
+): IntentsUserId {
+  let authHandle: AuthHandle
+  if (typeof authIdentifier === "object") {
+    authHandle = authIdentifier
+  } else if (authMethod != null) {
+    authHandle = {
+      identifier: authIdentifier,
+      method: authMethod,
+    }
+  } else {
+    // This should never happen, because of argument types
+    throw new Error("Invalid arguments")
+  }
+
+  const method = authHandle.method
+  switch (method) {
     case "evm":
     case "near":
-      return credential.toLowerCase() as DefuseUserId
+      return authHandle.identifier.toLowerCase() as IntentsUserId
 
     case "solana":
-      return hex.encode(base58.decode(credential)) as DefuseUserId
+      return hex.encode(base58.decode(authHandle.identifier)) as IntentsUserId
 
     case "webauthn": {
-      return webAuthnCredentialToDefuseUserId(credential) as DefuseUserId
+      return webAuthnIdentifierToIntentsUserId(
+        authHandle.identifier
+      ) as IntentsUserId
     }
+
+    default:
+      method satisfies never
+      throw new Error("Unsupported auth method")
   }
 }
 
-function webAuthnCredentialToDefuseUserId(credential: string): string {
+function webAuthnIdentifierToIntentsUserId(credential: string): string {
   const { curveType, publicKey } = parsePublicKey(credential)
 
   switch (curveType) {

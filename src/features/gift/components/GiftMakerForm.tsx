@@ -12,8 +12,8 @@ import { useModalController } from "../../../hooks/useModalController"
 import { useTokensUsdPrices } from "../../../hooks/useTokensUsdPrices"
 import { useTokensStore } from "../../../providers/TokensStoreProvider"
 import { ModalType } from "../../../stores/modalStore"
+import type { AuthMethod } from "../../../types/authHandle"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../../types/base"
-import type { ChainType } from "../../../types/deposit"
 import { assert } from "../../../utils/assert"
 import { formatTokenValue, formatUsdAmount } from "../../../utils/format"
 import getTokenUsdPrice from "../../../utils/getTokenUsdPrice"
@@ -45,7 +45,7 @@ export type GiftMakerWidgetProps = {
 
   /** User's wallet address */
   userAddress: string | null | undefined
-  userChainType: ChainType | null | undefined
+  userChainType: AuthMethod | null | undefined
 
   /** Initial tokens for pre-filling the form */
   initialToken?: BaseTokenInfo | UnifiedTokenInfo

@@ -2,8 +2,8 @@ import { useActorRef, useSelector } from "@xstate/react"
 import { WidgetRoot } from "../../../components/WidgetRoot"
 import type { SignerCredentials } from "../../../core/formatters"
 import { SwapWidgetProvider } from "../../../providers/SwapWidgetProvider"
+import type { AuthMethod } from "../../../types/authHandle"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../../types/base"
-import type { ChainType } from "../../../types/deposit"
 import { giftTakerRootMachine } from "../actors/giftTakerRootMachine"
 import { GiftTakerForm } from "./GiftTakerForm"
 import { GiftTakerInvalidClaim } from "./GiftTakerInvalidClaim"
@@ -17,7 +17,7 @@ export type GiftTakerWidgetProps = {
 
   /** User's wallet address */
   userAddress: string | null | undefined
-  userChainType: ChainType | null | undefined
+  userChainType: AuthMethod | null | undefined
 
   /** Theme selection */
   theme?: "dark" | "light"

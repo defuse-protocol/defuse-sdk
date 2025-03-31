@@ -6,12 +6,12 @@ import * as v from "valibot"
 import { WidgetRoot } from "../../../components/WidgetRoot"
 import { config } from "../../../config"
 import { nearClient } from "../../../constants/nearClient"
-import type { DefuseUserId, SignerCredentials } from "../../../core/formatters"
+import type { IntentsUserId, SignerCredentials } from "../../../core/formatters"
 import { logger } from "../../../logger"
 import { SwapWidgetProvider } from "../../../providers/SwapWidgetProvider"
 import { getDepositedBalances } from "../../../services/defuseBalanceService"
+import type { AuthMethod } from "../../../types/authHandle"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../../types/base"
-import type { ChainType } from "../../../types/deposit"
 import type { SendNearTransaction } from "../../machines/publicKeyVerifierMachine"
 import { fetchProtocolFee } from "../actors/otcMakerConfigLoadActor"
 import { SignIntentActorProvider } from "../providers/SignIntentActorProvider"
@@ -37,7 +37,7 @@ export type OtcTakerWidgetProps = {
 
   /** User's wallet address */
   userAddress: string | null | undefined
-  userChainType: ChainType | null | undefined
+  userChainType: AuthMethod | null | undefined
 
   /** Sign message callback */
   signMessage: SignMessage
@@ -192,7 +192,7 @@ function OtcTakerValidationOrder({
     ],
     queryFn: () => {
       return getDepositedBalances(
-        tradeTerms.makerUserId as DefuseUserId,
+        tradeTerms.makerUserId as IntentsUserId,
         Object.keys(tradeTerms.makerTokenDiff),
         nearClient
       )

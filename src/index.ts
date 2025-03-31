@@ -8,7 +8,6 @@ export { GiftMakerWidget } from "./features/gift/components/GiftMakerWidget"
 export { GiftTakerWidget } from "./features/gift/components/GiftTakerWidget"
 export { GiftHistoryWidget } from "./features/gift/components/GiftHistoryWidget"
 export type { BaseTokenInfo, UnifiedTokenInfo } from "./types/base"
-export { ChainType } from "./types/deposit"
 export { isBaseToken, isUnifiedToken } from "./utils/token"
 
 // Message creation utilities
@@ -26,9 +25,10 @@ export type {
 export {
   formatSignedIntent,
   formatUserIdentity,
-  type DefuseUserId,
+  type IntentsUserId,
   type SignerCredentials,
 } from "./core/formatters"
 
 // Validation utilities
 export { MultiPayloadDeepSchema } from "./features/otcDesk/utils/schemaMultipayload"
+export { AuthMethod } from "./types/authHandle"

@@ -1,13 +1,13 @@
 import { type PropsWithChildren, useEffect } from "react"
 import { useFormContext } from "react-hook-form"
-import type { ChainType } from "../../../types/deposit"
+import type { AuthMethod } from "../../../types/authHandle"
 import { reverseAssetNetworkAdapter } from "../../../utils/adapters"
 import type { DepositFormValues } from "./DepositForm"
 import { DepositUIMachineContext } from "./DepositUIMachineProvider"
 
 type DepositUIMachineFormSyncProviderProps = PropsWithChildren<{
   userAddress?: string
-  userChainType?: ChainType
+  userChainType?: AuthMethod
 }>
 
 export function DepositUIMachineFormSyncProvider({

@@ -11,7 +11,7 @@ import { getDepositedBalances } from "../../../services/defuseBalanceService"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../../types/base"
 import type { MultiPayload } from "../../../types/defuse-contracts-types"
 import { assert } from "../../../utils/assert"
-import { userAddressToDefuseUserId } from "../../../utils/defuse"
+import { authHandleToIntentsUserId } from "../../../utils/authIdentity"
 import { formatTokenValue, formatUsdAmount } from "../../../utils/format"
 import getTokenUsdPrice from "../../../utils/getTokenUsdPrice"
 import {
@@ -53,7 +53,7 @@ export function OtcTakerForm({
 }: OtcTakerFormProps) {
   const signerId =
     signerCredentials != null
-      ? userAddressToDefuseUserId(
+      ? authHandleToIntentsUserId(
           signerCredentials.credential,
           signerCredentials.credentialType
         )

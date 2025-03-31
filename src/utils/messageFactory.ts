@@ -9,7 +9,8 @@ import type {
 } from "../types/defuse-contracts-types"
 import type { WalletMessage } from "../types/swap"
 import { assert } from "./assert"
-import type { DefuseUserId } from "./defuse"
+
+import type { IntentsUserId } from "../types/intentsUserId"
 
 /**
  * @param tokenDeltas
@@ -26,7 +27,7 @@ export function makeInnerSwapMessage({
   memo,
 }: {
   tokenDeltas: [string, bigint][]
-  signerId: DefuseUserId
+  signerId: IntentsUserId
   deadlineTimestamp: number
   referral?: string
   memo?: string
@@ -115,7 +116,7 @@ export function makeInnerSwapAndWithdrawMessage({
   tokenDeltas: [string, bigint][]
   storageTokenDeltas: [string, bigint][]
   withdrawParams: WithdrawParams
-  signerId: DefuseUserId
+  signerId: IntentsUserId
   deadlineTimestamp: number
   referral?: string
 }): Nep413DefuseMessageFor_DefuseIntents {
@@ -271,7 +272,7 @@ export function makeEmptyMessage({
   deadlineTimestamp,
   nonce = randomDefuseNonce(),
 }: {
-  signerId: DefuseUserId
+  signerId: IntentsUserId
   deadlineTimestamp: number
   nonce?: Uint8Array
 }): WalletMessage {
@@ -322,7 +323,7 @@ export function makeInnerTransferMessage({
   memo,
 }: {
   tokenDeltas: [string, bigint][]
-  signerId: DefuseUserId
+  signerId: IntentsUserId
   deadlineTimestamp: number
   receiverId: string
   memo?: string

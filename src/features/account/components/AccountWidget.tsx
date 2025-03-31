@@ -1,8 +1,8 @@
 import { WidgetRoot } from "../../../components/WidgetRoot"
+import type { AuthMethod } from "../../../types/authHandle"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../../types/base"
-import type { ChainType } from "../../../types/deposit"
 import type { RenderHostAppLink } from "../../../types/hostAppLink"
-import { userAddressToDefuseUserId } from "../../../utils/defuse"
+import { authHandleToIntentsUserId } from "../../../utils/authIdentity"
 import { useWatchHoldings } from "../hooks/useWatchHoldings"
 import { computeTotalUsdValue } from "../utils/holdingsUtils"
 import { HoldingsIsland } from "./HoldingsIsland"
@@ -12,7 +12,7 @@ export interface AccountWidgetProps {
   tokenList: (BaseTokenInfo | UnifiedTokenInfo)[]
 
   userAddress: string | null | undefined
-  userChainType: ChainType | null | undefined
+  userChainType: AuthMethod | null | undefined
 
   renderHostAppLink: RenderHostAppLink
 }
@@ -25,7 +25,7 @@ export function AccountWidget({
 }: AccountWidgetProps) {
   const userId =
     userAddress != null && userChainType != null
-      ? userAddressToDefuseUserId(userAddress, userChainType)
+      ? authHandleToIntentsUserId(userAddress, userChainType)
       : null
 
   const holdings = useWatchHoldings({ userId, tokenList })

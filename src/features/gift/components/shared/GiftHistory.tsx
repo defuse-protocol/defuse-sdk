@@ -2,7 +2,7 @@ import { useEffect, useState } from "react"
 import { ButtonCustom } from "../../../../components/Button/ButtonCustom"
 import type { SignerCredentials } from "../../../../core/formatters"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../../../types/base"
-import { userAddressToDefuseUserId } from "../../../../utils/defuse"
+import { authHandleToIntentsUserId } from "../../../../utils/authIdentity"
 import { GiftClaimActorProvider } from "../../providers/GiftClaimActorProvider"
 import { useGiftMakerHistory } from "../../stores/giftMakerHistory"
 import type { GiftLinkData } from "../../types/sharedTypes"
@@ -26,7 +26,7 @@ export function GiftHistory({
 }: GiftHistoryProps) {
   const [loading, setLoading] = useState(true)
   const gifts = useGiftMakerHistory((s) => {
-    const userId = userAddressToDefuseUserId(
+    const userId = authHandleToIntentsUserId(
       signerCredentials.credential,
       signerCredentials.credentialType
     )

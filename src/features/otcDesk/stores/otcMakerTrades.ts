@@ -2,10 +2,8 @@ import { create } from "zustand"
 import { createJSONStorage, persist } from "zustand/middleware"
 import type { SignerCredentials } from "../../../core/formatters"
 import type { MultiPayload } from "../../../types/defuse-contracts-types"
-import {
-  type DefuseUserId,
-  userAddressToDefuseUserId,
-} from "../../../utils/defuse"
+import type { IntentsUserId } from "../../../types/intentsUserId"
+import { authHandleToIntentsUserId } from "../../../utils/authIdentity"
 
 type OtcMakerTrade = {
   tradeId: string
@@ -14,17 +12,17 @@ type OtcMakerTrade = {
 }
 
 type State = {
-  trades: Record<DefuseUserId, OtcMakerTrade[]>
+  trades: Record<IntentsUserId, OtcMakerTrade[]>
 }
 
 type Actions = {
   addTrade: (
     trade: Omit<OtcMakerTrade, "updatedAt">,
-    userId: DefuseUserId | SignerCredentials
+    userId: IntentsUserId | SignerCredentials
   ) => void
   removeTrade: (
     tradeId: string,
-    userId: DefuseUserId | SignerCredentials
+    userId: IntentsUserId | SignerCredentials
   ) => void
 }
 
@@ -39,7 +37,7 @@ export const otcMakerTradesStore = create<Store>()(
         const userId =
           typeof user === "string"
             ? user
-            : userAddressToDefuseUserId(user.credential, user.credentialType)
+            : authHandleToIntentsUserId(user.credential, user.credentialType)
 
         set((state) => ({
           trades: {
@@ -56,7 +54,7 @@ export const otcMakerTradesStore = create<Store>()(
         const userId =
           typeof user === "string"
             ? user
-            : userAddressToDefuseUserId(user.credential, user.credentialType)
+            : authHandleToIntentsUserId(user.credential, user.credentialType)
 
         set((state) => ({
           trades: {

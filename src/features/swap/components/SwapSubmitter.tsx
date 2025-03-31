@@ -1,7 +1,7 @@
 import { type ReactNode, createContext } from "react"
 import { nearClient } from "../../../constants/nearClient"
 import { logger } from "../../../logger"
-import type { ChainType } from "../../../types/deposit"
+import type { AuthMethod } from "../../../types/authHandle"
 import { SwapUIMachineContext } from "./SwapUIMachineProvider"
 
 export const SwapSubmitterContext = createContext<{
@@ -17,7 +17,7 @@ export function SwapSubmitterProvider({
 }: {
   children: ReactNode
   userAddress: string | null
-  userChainType: ChainType | null
+  userChainType: AuthMethod | null
 }) {
   const actorRef = SwapUIMachineContext.useActorRef()
 

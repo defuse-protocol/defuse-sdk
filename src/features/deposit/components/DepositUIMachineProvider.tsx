@@ -28,7 +28,7 @@ import type { Transaction } from "../../../types/deposit"
 import type { SwappableToken } from "../../../types/swap"
 import { assetNetworkAdapter } from "../../../utils/adapters"
 import { assert } from "../../../utils/assert"
-import { userAddressToDefuseUserId } from "../../../utils/defuse"
+import { authHandleToIntentsUserId } from "../../../utils/authIdentity"
 import { getEVMChainId } from "../../../utils/evmChainId"
 import { isFungibleToken, isNativeToken } from "../../../utils/token"
 import { depositGenerateAddressMachine } from "../../machines/depositGenerateAddressMachine"
@@ -90,7 +90,7 @@ export function DepositUIMachineProvider({
                 const { userAddress, blockchain, userChainType } = input
 
                 const address = await generateDepositAddress(
-                  userAddressToDefuseUserId(userAddress, userChainType),
+                  authHandleToIntentsUserId(userAddress, userChainType),
                   assetNetworkAdapter[blockchain]
                 )
 
