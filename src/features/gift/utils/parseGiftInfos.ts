@@ -67,14 +67,14 @@ function getGiftStatus(
   const updatedAt = gift.updatedAt
 
   // Case 1: `draft` Gift is stored in storage but not yet published
+  // Note: Gift that was created incorrectly and claimed will not shown within status `Claimed`
   if (createdAt === updatedAt && !escrowAccountBalance) return "draft"
 
   // Case 2: `pending` Gift is stored in storage and funds have been transferred to the escrow account
-  if (createdAt === updatedAt && escrowAccountBalance) return "pending"
-  if (createdAt !== updatedAt && escrowAccountBalance) return "pending"
+  if (escrowAccountBalance) return "pending"
 
   // Case 3: `claimed` Gift has been published and funds have been claimed from the escrow account
-  if (createdAt !== updatedAt && !escrowAccountBalance) return "claimed"
+  if (!escrowAccountBalance) return "claimed"
 
   throw new Error("Invalid gift status")
 }
