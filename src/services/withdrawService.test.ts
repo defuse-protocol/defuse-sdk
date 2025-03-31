@@ -10,11 +10,8 @@ const usdcSolana: BaseTokenInfo = {
   name: "USD Coin",
   decimals: 6,
   icon: "usdc.svg",
-  chainId: "solana",
-  chainIcon: "solana.svg",
   chainName: "solana",
   bridge: "poa",
-  routes: [],
 }
 
 const usdcNear: BaseTokenInfo = {
@@ -24,11 +21,8 @@ const usdcNear: BaseTokenInfo = {
   name: "USD Coin",
   decimals: 6,
   icon: "usdc.svg",
-  chainId: "near",
-  chainIcon: "near.svg",
   chainName: "near",
   bridge: "direct",
-  routes: [],
 }
 
 const unifiedUsdc: UnifiedTokenInfo = {
@@ -46,11 +40,8 @@ const turboSolana: BaseTokenInfo = {
   name: "Turbo Token",
   decimals: 8,
   icon: "turbo.svg",
-  chainId: "solana",
-  chainIcon: "solana.svg",
   chainName: "solana",
   bridge: "poa",
-  routes: [],
 }
 
 const turboEth: BaseTokenInfo = {
@@ -60,11 +51,8 @@ const turboEth: BaseTokenInfo = {
   name: "Turbo Token",
   decimals: 18,
   icon: "turbo.svg",
-  chainId: "eth",
-  chainIcon: "ethereum.svg",
   chainName: "eth",
   bridge: "poa",
-  routes: [],
 }
 
 const unifiedTurbo: UnifiedTokenInfo = {

@@ -8,7 +8,6 @@ import {
   setup,
   spawnChild,
 } from "xstate"
-import { settings } from "../../constants/settings"
 import { logger } from "../../logger"
 import type { QuoteResult } from "../../services/quoteService"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../types/base"
@@ -193,10 +192,7 @@ export const withdrawUIMachine = setup({
 
     spawnBackgroundQuoterRef: spawnChild("backgroundQuoterActor", {
       id: "backgroundQuoterRef",
-      input: ({ self }) => ({
-        parentRef: self,
-        delayMs: settings.quotePollingIntervalMs,
-      }),
+      input: ({ self }) => ({ parentRef: self }),
     }),
     sendToBackgroundQuoterRefNewQuoteInput: sendTo(
       "backgroundQuoterRef",

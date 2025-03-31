@@ -1,5 +1,4 @@
 import { type ActorRef, type Snapshot, fromCallback } from "xstate"
-import { settings } from "../../constants/settings"
 import { logger } from "../../logger"
 import { type QuoteResult, queryQuote } from "../../services/quoteService"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../types/base"
@@ -47,8 +46,25 @@ type ParentActor = ActorRef<Snapshot<unknown>, ParentEvents>
 
 type Input = {
   parentRef: ParentActor
-  delayMs: number
 }
+
+const QUOTE_TIMINGS = [
+  {
+    auctionTimeMs: 500, // for fast quotes
+    intervalMs: -1, // means no polling
+    timeoutMs: 15000,
+  },
+  {
+    auctionTimeMs: 2000, // normal solvers
+    intervalMs: -1,
+    timeoutMs: 10000,
+  },
+  {
+    auctionTimeMs: 10000, // normal solvers + MPC solvers
+    intervalMs: 5000,
+    timeoutMs: 20000,
+  },
+]
 
 export const backgroundQuoterMachine = fromCallback<
   Events,
@@ -68,21 +84,16 @@ export const backgroundQuoterMachine = fromCallback<
       case "NEW_QUOTE_INPUT": {
         const quoteInput = event.params
 
-        pollQuote(
-          abortController.signal,
-          quoteInput,
-          input.delayMs,
-          (quote) => {
-            input.parentRef.send({
-              type: "NEW_QUOTE",
-              params: { quoteInput, quote },
-            })
-            emit({
-              type: "NEW_QUOTE",
-              params: { quoteInput, quote },
-            })
-          }
-        )
+        pollQuote(abortController.signal, quoteInput, (quote) => {
+          input.parentRef.send({
+            type: "NEW_QUOTE",
+            params: { quoteInput, quote },
+          })
+          emit({
+            type: "NEW_QUOTE",
+            params: { quoteInput, quote },
+          })
+        })
         break
       }
       default:
@@ -99,22 +110,37 @@ export const backgroundQuoterMachine = fromCallback<
 function pollQuote(
   signal: AbortSignal,
   quoteInput: QuoteInput,
-  delayMs: number,
   onResult: (result: QuoteResult) => void
 ): void {
-  pollQuoteLoop(signal, quoteInput, delayMs, onResult).catch((error) =>
-    logger.error(
-      new Error("pollQuote terminated unexpectedly", { cause: error })
+  for (const timings of QUOTE_TIMINGS) {
+    pollQuoteLoop({
+      signal,
+      quoteInput,
+      onResult,
+      ...timings,
+    }).catch((error) =>
+      logger.error(
+        new Error("pollQuote terminated unexpectedly", { cause: error })
+      )
     )
-  )
+  }
 }
 
-async function pollQuoteLoop(
-  signal: AbortSignal,
-  quoteInput: QuoteInput,
-  delayMs: number,
+async function pollQuoteLoop({
+  signal,
+  quoteInput,
+  auctionTimeMs,
+  intervalMs,
+  timeoutMs,
+  onResult,
+}: {
+  signal: AbortSignal
+  quoteInput: QuoteInput
+  auctionTimeMs: number
+  intervalMs: number
+  timeoutMs: number
   onResult: (result: QuoteResult) => void
-): Promise<void> {
+}): Promise<void> {
   let lastPropagatedResultRequestedAt: number | null = null
 
   while (!signal.aborted) {
@@ -128,9 +154,10 @@ async function pollQuoteLoop(
         tokenOut: quoteInput.tokenOut,
         amountIn: quoteInput.amountIn,
         balances: quoteInput.balances,
+        waitMs: auctionTimeMs,
       },
       {
-        signal: AbortSignal.timeout(settings.quoteQueryTimeoutMs),
+        signal: AbortSignal.timeout(timeoutMs),
       }
     ).then(
       (quote) => {
@@ -155,7 +182,10 @@ async function pollQuoteLoop(
       }
     )
 
-    await new Promise((resolve) => setTimeout(resolve, delayMs))
+    if (intervalMs < 0) {
+      break
+    }
+    await new Promise((resolve) => setTimeout(resolve, intervalMs))
   }
 }
 

@@ -21,7 +21,6 @@ describe("GiftStorageSchema", () => {
                 name: "USD Coin",
                 decimals: 6,
                 icon: "https://example.com/usdc.png",
-                chainIcon: "https://example.com/usdc.png",
                 chainName: "near",
                 chainId: "1",
                 routes: ["route1", "route2"],

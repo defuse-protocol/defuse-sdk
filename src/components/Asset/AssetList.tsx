@@ -46,7 +46,6 @@ export const AssetList = <T extends Token>({
             <AssetComboIcon
               icon={token.icon}
               name={token.name}
-              chainIcon={isBaseToken(token) ? token.chainIcon : undefined}
               chainName={isBaseToken(token) ? token.chainName : undefined}
               style={
                 selected

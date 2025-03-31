@@ -82,7 +82,6 @@ TokenAmountInputCard.DisplayToken = function DisplayToken({
       <AssetComboIcon
         icon={token.icon}
         name={token.name}
-        chainIcon={isBaseToken(token) ? token.chainIcon : undefined}
         chainName={isBaseToken(token) ? token.chainName : undefined}
       />
 

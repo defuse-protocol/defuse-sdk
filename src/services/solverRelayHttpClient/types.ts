@@ -25,6 +25,7 @@ export type QuoteRequest = JSONRPCRequest<
     exact_amount_in?: string
     exact_amount_out?: string
     min_deadline_ms?: number
+    wait_ms?: number
   }
 >
 
