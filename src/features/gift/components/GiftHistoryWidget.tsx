@@ -4,7 +4,6 @@ import type { SignerCredentials } from "../../../core/formatters"
 import { SwapWidgetProvider } from "../../../providers/SwapWidgetProvider"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../../types/base"
 import type { ChainType } from "../../../types/deposit"
-import { TabProvider } from "../providers/TabProvider"
 import type { GiftLinkData } from "../types/sharedTypes"
 import { GiftHistory } from "./shared/GiftHistory"
 
@@ -33,15 +32,13 @@ export function GiftHistoryWidget({
   return (
     <WidgetRoot>
       <SwapWidgetProvider>
-        <TabProvider>
-          {signerCredentials && (
-            <GiftHistory
-              signerCredentials={signerCredentials}
-              tokenList={tokenList}
-              generateLink={generateLink}
-            />
-          )}
-        </TabProvider>
+        {signerCredentials && (
+          <GiftHistory
+            signerCredentials={signerCredentials}
+            tokenList={tokenList}
+            generateLink={generateLink}
+          />
+        )}
       </SwapWidgetProvider>
     </WidgetRoot>
   )

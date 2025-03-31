@@ -4,7 +4,6 @@ import type { SignerCredentials } from "../../../../core/formatters"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../../../types/base"
 import { userAddressToDefuseUserId } from "../../../../utils/defuse"
 import { GiftClaimActorProvider } from "../../providers/GiftClaimActorProvider"
-import { useTabContext } from "../../providers/TabProvider"
 import { useGiftMakerHistory } from "../../stores/giftMakerHistory"
 import type { GiftLinkData } from "../../types/sharedTypes"
 import { type GiftInfo, parseGiftInfos } from "../../utils/parseGiftInfos"
@@ -25,7 +24,6 @@ export function GiftHistory({
   tokenList,
   generateLink,
 }: GiftHistoryProps) {
-  const { activeTab } = useTabContext()
   const [loading, setLoading] = useState(true)
   const gifts = useGiftMakerHistory((s) => {
     const userId = userAddressToDefuseUserId(
@@ -76,13 +74,12 @@ export function GiftHistory({
         {getVisibleGiftItems()?.map((giftInfo) => (
           <GiftMakerHistoryItem
             key={crypto.randomUUID()}
-            itemType={activeTab}
             giftInfo={giftInfo}
             generateLink={generateLink}
             signerCredentials={signerCredentials}
           />
         ))}
-        {giftInfos?.length === 0 && <GiftHistoryEmpty tag={activeTab} />}
+        {giftInfos?.length === 0 && <GiftHistoryEmpty />}
         {giftInfos && itemsToShow < giftInfos.length && (
           <ButtonCustom
             type="submit"
