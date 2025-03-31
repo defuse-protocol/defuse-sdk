@@ -64,6 +64,7 @@ export const giftMakerHistoryStore = create<Store>()(
               ...(get().gifts[userId] ?? []),
               {
                 ...gift,
+                createdAt: Date.now(),
                 updatedAt: Date.now(),
               },
             ],
@@ -91,7 +92,9 @@ export const giftMakerHistoryStore = create<Store>()(
           gifts: {
             ...get().gifts,
             [userId]: (get().gifts[userId] ?? []).map((g) =>
-              g.secretKey === secretKey ? { ...g, intentHashes } : g
+              g.secretKey === secretKey
+                ? { ...g, intentHashes, updatedAt: Date.now() }
+                : g
             ),
           },
         }
