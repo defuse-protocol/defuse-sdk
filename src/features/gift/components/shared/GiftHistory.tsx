@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { ButtonCustom } from "../../../../components/Button/ButtonCustom"
 import type { SignerCredentials } from "../../../../core/formatters"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../../../types/base"
@@ -45,10 +45,18 @@ export function GiftHistory({
       return
     }
     parseGiftInfos(tokenList, gifts).then((giftsResult) => {
-      setGiftInfos(giftsResult.unwrap())
+      const filteredGifts = giftsResult
+        .unwrap()
+        .filter((gift) => gift.status !== "draft")
+      setGiftInfos(filteredGifts)
       setLoading(false)
     })
   }, [gifts, tokenList])
+
+  const visibleGiftItems = useMemo(
+    () => giftInfos?.slice(0, itemsToShow),
+    [giftInfos, itemsToShow]
+  )
 
   if (gifts === undefined) {
     return null
@@ -63,15 +71,11 @@ export function GiftHistory({
     )
   }
 
-  const getVisibleGiftItems = () => {
-    return giftInfos?.slice(0, itemsToShow)
-  }
-
   return (
     <div className="widget-container flex flex-col gap-4 p-5">
       <HistoryHeader />
       <GiftClaimActorProvider signerCredentials={signerCredentials}>
-        {getVisibleGiftItems()?.map((giftInfo) => (
+        {visibleGiftItems?.map((giftInfo) => (
           <GiftMakerHistoryItem
             key={crypto.randomUUID()}
             giftInfo={giftInfo}
