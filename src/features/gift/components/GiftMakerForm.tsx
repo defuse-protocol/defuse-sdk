@@ -1,19 +1,19 @@
 import { useActorRef, useSelector } from "@xstate/react"
 import clsx from "clsx"
 import { useEffect, useMemo } from "react"
-import { ButtonCustom } from "src/components/Button/ButtonCustom"
 import type { ActorRefFrom, PromiseActorLogic } from "xstate"
 import { BlockMultiBalances } from "../../../components/Block/BlockMultiBalances"
+import { ButtonCustom } from "../../../components/Button/ButtonCustom"
 import type { ModalSelectAssetsPayload } from "../../../components/Modal/ModalSelectAssets"
 import { SelectAssets } from "../../../components/SelectAssets"
 import type { SignerCredentials } from "../../../core/formatters"
 import { usePublicKeyModalOpener } from "../../../features/swap/hooks/usePublicKeyModalOpener"
-import { useModalController } from "../../../hooks/useModalController"
 import { useTokensUsdPrices } from "../../../hooks/useTokensUsdPrices"
-import { useTokensStore } from "../../../providers/TokensStoreProvider"
+import { useModalStore } from "../../../providers/ModalStoreProvider"
 import { ModalType } from "../../../stores/modalStore"
 import type { AuthMethod } from "../../../types/authHandle"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../../types/base"
+import type { SwappableToken } from "../../../types/swap"
 import { assert } from "../../../utils/assert"
 import { formatTokenValue, formatUsdAmount } from "../../../utils/format"
 import getTokenUsdPrice from "../../../utils/getTokenUsdPrice"
@@ -119,22 +119,6 @@ export function GiftMakerForm({
   useCheckSignerCredentials(rootActorRef, signerCredentials)
   useBalanceUpdaterSyncWithHistory(rootActorRef, signerCredentials)
 
-  const { setModalType, data: modalSelectAssetsData } = useModalController<{
-    modalType: ModalType.MODAL_SELECT_ASSETS
-    token: BaseTokenInfo | UnifiedTokenInfo | undefined
-  }>(ModalType.MODAL_SELECT_ASSETS)
-
-  const updateTokens = useTokensStore((state) => state.updateTokens)
-
-  const handleSelect = (fieldName: string) => {
-    updateTokens(tokenList)
-    setModalType(ModalType.MODAL_SELECT_ASSETS, {
-      fieldName,
-      selectToken: undefined,
-      balances: tokenBalance,
-    })
-  }
-
   const { data: tokensUsdPriceData } = useTokensUsdPrices()
   const usdAmount = getTokenUsdPrice(
     formValues.amount,
@@ -142,22 +126,40 @@ export function GiftMakerForm({
     tokensUsdPriceData
   )
 
-  /**
-   * This is ModalSelectAssets "callback"
-   */
+  const depositedBalanceRef = useSelector(
+    rootActorRef,
+    (state) => state.children.depositedBalanceRef
+  )
+
+  const { setModalType, payload } = useModalStore((state) => state)
+
+  const openModalSelectAssets = (
+    fieldName: string,
+    token: SwappableToken | undefined
+  ) => {
+    setModalType(ModalType.MODAL_SELECT_ASSETS, {
+      ...(payload as ModalSelectAssetsPayload),
+      fieldName,
+      [fieldName]: token,
+      balances: depositedBalanceRef?.getSnapshot().context.balances,
+    })
+  }
+
   useEffect(() => {
-    const payload: ModalSelectAssetsPayload | undefined = modalSelectAssetsData
-    if (payload?.modalType !== ModalType.MODAL_SELECT_ASSETS) {
+    if (
+      (payload as ModalSelectAssetsPayload)?.modalType !==
+      ModalType.MODAL_SELECT_ASSETS
+    ) {
       return
     }
 
-    if (payload.token) {
-      const token = payload.token
-      payload.token = undefined // consume data, so it won't be triggered again
-
+    const { modalType, fieldName } = payload as ModalSelectAssetsPayload
+    const _payload = payload as ModalSelectAssetsPayload
+    const token = _payload[fieldName || "token"]
+    if (modalType === ModalType.MODAL_SELECT_ASSETS && fieldName && token) {
       formValuesRef.trigger.updateToken({ value: token })
     }
-  }, [modalSelectAssetsData, formValuesRef.trigger.updateToken])
+  }, [payload, formValuesRef.trigger.updateToken])
 
   const balanceInsufficient = useMemo(() => {
     if (tokenBalance == null) {
@@ -278,7 +280,9 @@ export function GiftMakerForm({
               tokenSlot={
                 <SelectAssets
                   selected={formValues.token ?? undefined}
-                  handleSelect={() => handleSelect("token")}
+                  handleSelect={() =>
+                    openModalSelectAssets("token", formValues.token)
+                  }
                 />
               }
               balanceSlot={
