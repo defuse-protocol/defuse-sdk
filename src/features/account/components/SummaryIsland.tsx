@@ -1,4 +1,4 @@
-import { PaperPlaneRight, Plus } from "@phosphor-icons/react"
+import { Gift, PaperPlaneRight, Plus } from "@phosphor-icons/react"
 import { Skeleton } from "@radix-ui/themes"
 import { ButtonCustom } from "../../../components/Button/ButtonCustom"
 import { Island } from "../../../components/Island"
@@ -73,14 +73,14 @@ export function SummaryIsland({
             label="Withdraw"
             icon={<PaperPlaneRight weight="bold" className="size-5" />}
           />
-          {/*<NavButton*/}
-          {/*  routeName="gift"*/}
-          {/*  renderHostAppLink={renderHostAppLink}*/}
-          {/*  className="flex-1"*/}
-          {/*  variant="secondary"*/}
-          {/*  label="Gift"*/}
-          {/*  icon={<Gift weight="bold" className="size-5" />}*/}
-          {/*/>*/}
+          <NavButton
+            routeName="gift"
+            renderHostAppLink={renderHostAppLink}
+            className="flex-1"
+            variant="secondary"
+            label="Gift"
+            icon={<Gift weight="bold" className="size-5" />}
+          />
         </div>
       ) : (
         renderHostAppLink(
