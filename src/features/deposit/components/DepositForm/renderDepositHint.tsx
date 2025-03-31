@@ -1,23 +1,8 @@
 import { Callout } from "@radix-ui/themes"
+import { blockchainToChainMap } from "src/utils/blockchain"
 import type { BaseTokenInfo } from "../../../../types/base"
-import { BlockchainEnum } from "../../../../types/interfaces"
+import type { BlockchainEnum } from "../../../../types/interfaces"
 import { formatTokenValue } from "../../../../utils/format"
-
-const networkSelectToLabel: Record<BlockchainEnum, string> = {
-  [BlockchainEnum.NEAR]: "NEAR",
-  [BlockchainEnum.ETHEREUM]: "Ethereum",
-  [BlockchainEnum.BASE]: "Base",
-  [BlockchainEnum.ARBITRUM]: "Arbitrum",
-  [BlockchainEnum.BITCOIN]: "Bitcoin",
-  [BlockchainEnum.SOLANA]: "Solana",
-  [BlockchainEnum.DOGECOIN]: "Dogecoin",
-  [BlockchainEnum.TURBOCHAIN]: "TurboChain",
-  [BlockchainEnum.AURORA]: "Aurora",
-  [BlockchainEnum.XRPLEDGER]: "XRP Ledger",
-  [BlockchainEnum.ZCASH]: "Zcash",
-  [BlockchainEnum.GNOSIS]: "Gnosis",
-  [BlockchainEnum.BERACHAIN]: "BeraChain",
-}
 
 export function renderDepositHint(
   network: BlockchainEnum,
@@ -30,7 +15,7 @@ export function renderDepositHint(
         <Callout.Text className="text-xs">
           <span className="font-bold">
             {/* biome-ignore lint/nursery/useConsistentCurlyBraces: <explanation> */}
-            Only deposit {token.symbol} from the {networkSelectToLabel[network]}{" "}
+            Only deposit {token.symbol} from the {blockchainToChainMap[network]}{" "}
             network.
             {/* biome-ignore lint/nursery/useConsistentCurlyBraces: <explanation> */}
           </span>{" "}

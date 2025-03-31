@@ -198,29 +198,25 @@ export const DepositForm = ({ chainType }: { chainType?: ChainType }) => {
             <Controller
               name="network"
               control={control}
-              render={({ field }) => {
-                const label =
-                  chainOptions[network ?? ""]?.label ?? "Select network"
-                const hint =
-                  Object.keys(chainOptions).length === 1
-                    ? "This network only"
-                    : "Network"
-                const icon = chainOptions[network ?? ""]?.icon ?? <EmptyIcon />
-
-                return (
-                  <SelectTriggerLike
-                    label={label}
-                    icon={icon}
-                    onClick={() => openModalSelectNetwork()}
-                    hint={<Select.Hint>{hint}</Select.Hint>}
-                    disabled={
-                      chainOptions &&
-                      Object.keys(chainOptions).length === 1 &&
-                      field.value === Object.values(chainOptions)[0]?.value
-                    }
-                  />
-                )
-              }}
+              render={({ field }) => (
+                <SelectTriggerLike
+                  label={chainOptions[network ?? ""]?.label ?? "Select network"}
+                  icon={chainOptions[network ?? ""]?.icon ?? <EmptyIcon />}
+                  onClick={() => openModalSelectNetwork()}
+                  hint={
+                    <Select.Hint>
+                      {Object.keys(chainOptions).length === 1
+                        ? "This network only"
+                        : "Network"}
+                    </Select.Hint>
+                  }
+                  disabled={
+                    chainOptions &&
+                    Object.keys(chainOptions).length === 1 &&
+                    field.value === Object.values(chainOptions)[0]?.value
+                  }
+                />
+              )}
             />
           )}
         </div>

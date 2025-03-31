@@ -6,11 +6,8 @@ import { BlockchainEnum } from "../types/interfaces"
  * @param blockchain The BlockchainEnum value to convert
  * @returns The corresponding SupportedChainName
  */
-export function blockchainToChainName(
-  blockchain: BlockchainEnum
-): SupportedChainName {
-  // Split the blockchain string by ':' and take the first part
-  const blockchainToChainMap: Record<BlockchainEnum, SupportedChainName> = {
+export const blockchainToChainMap: Record<BlockchainEnum, SupportedChainName> =
+  {
     [BlockchainEnum.ETHEREUM]: "eth",
     [BlockchainEnum.NEAR]: "near",
     [BlockchainEnum.BASE]: "base",
@@ -26,7 +23,13 @@ export function blockchainToChainName(
     [BlockchainEnum.BERACHAIN]: "berachain",
   }
 
-  return blockchainToChainMap[blockchain]
+/**
+ * Checks if an object has any keys
+ * @param obj The object to check
+ * @returns True if the object has at least one key, false otherwise
+ */
+export function hasKeys(obj: Record<string, unknown>): boolean {
+  return Object.keys(obj).length > 0
 }
 
 /**
