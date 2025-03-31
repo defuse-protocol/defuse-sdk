@@ -56,12 +56,12 @@ const QUOTE_TIMINGS = [
   },
   {
     auctionTimeMs: 2000, // normal solvers
-    intervalMs: 10000,
-    timeoutMs: 15000,
+    intervalMs: -1,
+    timeoutMs: 10000,
   },
   {
-    auctionTimeMs: 10000, // MPC solvers
-    intervalMs: 10000,
+    auctionTimeMs: 10000, // normal solvers + MPC solvers
+    intervalMs: 5000,
     timeoutMs: 20000,
   },
 ]
