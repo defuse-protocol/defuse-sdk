@@ -21,7 +21,7 @@ import type {
   UnifiedTokenInfo,
 } from "../../types/base"
 import type { IntentsUserId } from "../../types/intentsUserId"
-import { authHandleToIntentsUserId } from "../../utils/defuse"
+import { authHandleToIntentsUserId } from "../../utils/authIdentity"
 import {
   computeTotalBalanceDifferentDecimals,
   getUnderlyingBaseTokenInfos,

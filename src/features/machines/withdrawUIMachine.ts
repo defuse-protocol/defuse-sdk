@@ -13,7 +13,7 @@ import type { QuoteResult } from "../../services/quoteService"
 import type { AuthMethod } from "../../types/authHandle"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../types/base"
 import { assert } from "../../utils/assert"
-import { authHandleToIntentsUserId } from "../../utils/defuse"
+import { authHandleToIntentsUserId } from "../../utils/authIdentity"
 import {
   type Events as BackgroundQuoterEvents,
   type ParentEvents as BackgroundQuoterParentEvents,

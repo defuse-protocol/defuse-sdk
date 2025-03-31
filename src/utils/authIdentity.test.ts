@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { authHandleToIntentsUserId } from "./defuse"
+import { authHandleToIntentsUserId } from "./authIdentity"
 
 describe("authHandleToIntentsUserId", () => {
   it("returns lowercased Near account ID for 'near' chain type", () => {

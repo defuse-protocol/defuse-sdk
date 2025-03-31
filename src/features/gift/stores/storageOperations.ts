@@ -1,6 +1,6 @@
 import type { IntentsUserId, SignerCredentials } from "../../../core/formatters"
 import { logger } from "../../../logger"
-import { authHandleToIntentsUserId } from "../../../utils/defuse"
+import { authHandleToIntentsUserId } from "../../../utils/authIdentity"
 import { deserialize } from "../../../utils/deserialize"
 import { serialize } from "../../../utils/serialize"
 import type { GiftStorageState, State } from "./giftMakerHistory"

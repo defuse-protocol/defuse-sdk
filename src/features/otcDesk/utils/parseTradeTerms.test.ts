@@ -9,7 +9,7 @@ import {
   createSwapIntentMessage,
 } from "../../../core/messages"
 import { logger } from "../../../logger"
-import { authHandleToIntentsUserId } from "../../../utils/defuse"
+import { authHandleToIntentsUserId } from "../../../utils/authIdentity"
 import { parseTradeTerms } from "./parseTradeTerms"
 
 vi.mock("../../../logger", () => ({

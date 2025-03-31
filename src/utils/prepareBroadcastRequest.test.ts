@@ -6,7 +6,7 @@ import type {
   WalletMessage,
   WebAuthnSignatureData,
 } from "../types/swap"
-import { authHandleToIntentsUserId } from "./defuse"
+import { authHandleToIntentsUserId } from "./authIdentity"
 import { makeInnerSwapMessage, makeSwapMessage } from "./messageFactory"
 import { prepareSwapSignedData } from "./prepareBroadcastRequest"
 

@@ -11,7 +11,7 @@ import {
   publishIntents,
 } from "../../../services/intentService"
 import type { MultiPayload } from "../../../types/defuse-contracts-types"
-import { authHandleToIntentsUserId } from "../../../utils/defuse"
+import { authHandleToIntentsUserId } from "../../../utils/authIdentity"
 import {
   SignIntentContext,
   type SignIntentErr,

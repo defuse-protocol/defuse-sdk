@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { authHandleToIntentsUserId } from "../utils/defuse"
+import { authHandleToIntentsUserId } from "../utils/authIdentity"
 import {
   createEmptyIntentMessage,
   createSwapIntentMessage,
