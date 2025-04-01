@@ -284,7 +284,7 @@ export const giftMakerRootMachine = setup({
 
       on: {
         COMPLETE_SIGN: {
-          target: "addingGiftToHistory",
+          target: "adding",
         },
       },
 
@@ -350,7 +350,7 @@ export const giftMakerRootMachine = setup({
         ],
       },
     },
-    addingGiftToHistory: {
+    adding: {
       entry: [
         assign({
           signData: ({ event }) => {
@@ -420,7 +420,7 @@ export const giftMakerRootMachine = setup({
             }),
           },
           {
-            target: "removingGiftFromHistory",
+            target: "removing",
             actions: [
               {
                 type: "setError",
@@ -433,7 +433,7 @@ export const giftMakerRootMachine = setup({
           },
         ],
         onError: {
-          target: "removingGiftFromHistory",
+          target: "removing",
           actions: [
             {
               type: "logError",
@@ -454,7 +454,7 @@ export const giftMakerRootMachine = setup({
         },
 
         onDone: {
-          target: "updatingGiftToHistory",
+          target: "updating",
         },
         onError: {
           target: "editing",
@@ -465,7 +465,7 @@ export const giftMakerRootMachine = setup({
         },
       },
     },
-    updatingGiftToHistory: {
+    updating: {
       invoke: {
         src: "updateGiftToHistory",
         input: ({ context }) => context,
@@ -569,7 +569,7 @@ export const giftMakerRootMachine = setup({
         },
       },
     },
-    removingGiftFromHistory: {
+    removing: {
       invoke: {
         src: "removeGiftFromHistory",
         input: ({ context }) => context,
