@@ -71,14 +71,10 @@ function SuccessDialog({
 
   const copyGiftLink = useCallback(() => {
     return generateLink({
-      secretKey: context.escrowCredentials.secretKey,
+      secretKey: context.giftInfo.secretKey,
       message: context.parsed.message,
     })
-  }, [
-    generateLink,
-    context.escrowCredentials.secretKey,
-    context.parsed.message,
-  ])
+  }, [generateLink, context.giftInfo.secretKey, context.parsed.message])
 
   return (
     <BaseModalDialog open onClose={finish} isDismissable>

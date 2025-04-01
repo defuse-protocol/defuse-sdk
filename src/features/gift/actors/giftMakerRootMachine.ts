@@ -517,10 +517,8 @@ export const giftMakerRootMachine = setup({
           assert(context.escrowCredentials != null)
 
           return {
-            giftId: giftInfo.giftId,
             giftInfo,
             signerCredentials: context.signData.signerCredentials,
-            escrowCredentials: context.escrowCredentials,
             parsed: {
               token: parsedValues.token,
               amount: parsedValues.amount,
