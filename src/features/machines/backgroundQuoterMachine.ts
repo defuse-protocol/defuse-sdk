@@ -119,6 +119,18 @@ function pollQuote(
       balances: quoteInput.balances,
     },
     onResult: ({ requestId, result }) => {
+      // Often the fast quote (#1) fails with "no quote".
+      // But it doesn't mean that there's no quote at all.
+      // It means Solvers couldn't provide a quote in a short time.
+      // So we ignore this error and wait for the next quote.
+      if (
+        requestId === 1 &&
+        result.tag === "err" &&
+        result.value.type === "NO_QUOTES"
+      ) {
+        return
+      }
+
       // We're interested in the latest result only
       if (lastQuoteIndex < requestId) {
         lastQuoteIndex = requestId
