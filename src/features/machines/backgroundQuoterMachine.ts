@@ -106,7 +106,7 @@ function pollQuote(
   quoteInput: QuoteInput,
   onResult: (result: QuoteResult) => void
 ): void {
-  let lastQuoteIndex = 0
+  let lastSetRequestId = 0
 
   getQuotes({
     signal,
@@ -132,8 +132,8 @@ function pollQuote(
       }
 
       // We're interested in the latest result only
-      if (lastQuoteIndex < requestId) {
-        lastQuoteIndex = requestId
+      if (lastSetRequestId < requestId) {
+        lastSetRequestId = requestId
         onResult(result)
       }
     },
