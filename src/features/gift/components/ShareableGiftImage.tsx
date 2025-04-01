@@ -35,11 +35,22 @@ export function ShareableGiftImage({
       <div className="flex flex-col items-center gap-4 z-10">
         {/* Asset Component */}
         <div className="flex items-center gap-4 z-10 bg-white rounded-full p-1.5">
-          <GiftStrip token={token} amount={amount} />
+          <GiftStrip
+            token={token}
+            amountSlot={
+              <GiftStrip.Amount
+                token={token}
+                amount={amount}
+                className="text-lg"
+              />
+            }
+          />
         </div>
 
         {/* Message Text */}
-        <div className="text-white text-sm z-10 font-bold">{message}</div>
+        <div className="text-white text-sm md:text-base z-10 font-bold text-center">
+          {message}
+        </div>
       </div>
     </div>
   )
