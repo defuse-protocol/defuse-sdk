@@ -164,6 +164,24 @@ export const giftMakerRootMachine = setup({
         return { tag: "ok" }
       }
     ),
+    removeGiftFromHistory: fromPromise(
+      async ({
+        input,
+      }: {
+        input: GiftMakerRootMachineContext
+      }): Promise<StorageOperationResult> => {
+        assert(input.signData, "signData is not defined")
+        const giftInfo = assembleGiftInfo(input)
+        const result = await giftMakerHistoryStore
+          .getState()
+          .removeGift(giftInfo.secretKey, input.signData.signerCredentials)
+
+        if (result.tag === "err") {
+          return { tag: "err", reason: result.reason }
+        }
+        return { tag: "ok" }
+      }
+    ),
   },
   actions: {
     logError: (_, event: { error: unknown }) => {
@@ -193,12 +211,6 @@ export const giftMakerRootMachine = setup({
     })),
     completeSign: ({ self }, event: GiftSignedResult) => {
       self.send({ type: "COMPLETE_SIGN", params: event })
-    },
-    removeGiftFromHistory: ({ context }) => {
-      assert(context.signData, "signData is not defined")
-      giftMakerHistoryStore
-        .getState()
-        .removeGift(context.signData.giftId, context.signData.signerCredentials)
     },
     cleanup: assign({
       error: null,
@@ -272,7 +284,7 @@ export const giftMakerRootMachine = setup({
 
       on: {
         COMPLETE_SIGN: {
-          target: "addingGiftToHistory",
+          target: "adding",
         },
       },
 
@@ -338,7 +350,7 @@ export const giftMakerRootMachine = setup({
         ],
       },
     },
-    addingGiftToHistory: {
+    adding: {
       entry: [
         assign({
           signData: ({ event }) => {
@@ -408,7 +420,7 @@ export const giftMakerRootMachine = setup({
             }),
           },
           {
-            target: "editing",
+            target: "removing",
             actions: [
               {
                 type: "setError",
@@ -417,18 +429,16 @@ export const giftMakerRootMachine = setup({
                   value: { reason: "ERR_GIFT_PUBLISHING" },
                 },
               },
-              "removeGiftFromHistory",
             ],
           },
         ],
         onError: {
-          target: "editing",
+          target: "removing",
           actions: [
             {
               type: "logError",
               params: { error: "EXCEPTION" },
             },
-            "removeGiftFromHistory",
           ],
         },
       },
@@ -444,7 +454,7 @@ export const giftMakerRootMachine = setup({
         },
 
         onDone: {
-          target: "updatingGiftToHistory",
+          target: "updating",
         },
         onError: {
           target: "editing",
@@ -455,7 +465,7 @@ export const giftMakerRootMachine = setup({
         },
       },
     },
-    updatingGiftToHistory: {
+    updating: {
       invoke: {
         src: "updateGiftToHistory",
         input: ({ context }) => context,
@@ -507,10 +517,8 @@ export const giftMakerRootMachine = setup({
           assert(context.escrowCredentials != null)
 
           return {
-            giftId: giftInfo.giftId,
             giftInfo,
             signerCredentials: context.signData.signerCredentials,
-            escrowCredentials: context.escrowCredentials,
             parsed: {
               token: parsedValues.token,
               amount: parsedValues.amount,
@@ -551,6 +559,44 @@ export const giftMakerRootMachine = setup({
               return event
             },
           },
+        },
+      },
+    },
+    removing: {
+      invoke: {
+        src: "removeGiftFromHistory",
+        input: ({ context }) => context,
+        onDone: [
+          {
+            guard: { type: "isOk", params: ({ event }) => event.output },
+            target: "editing",
+          },
+          {
+            target: "editing",
+            actions: {
+              type: "setError",
+              params: ({ event }) => {
+                assert(event.output.tag === "err")
+                return { tag: "err", value: { reason: event.output.reason } }
+              },
+            },
+          },
+        ],
+        onError: {
+          target: "editing",
+          actions: [
+            {
+              type: "logError",
+              params: ({ event }) => event,
+            },
+            {
+              type: "setError",
+              params: {
+                tag: "err",
+                value: { reason: "ERR_STORAGE_OPERATION_EXCEPTION" },
+              },
+            },
+          ],
         },
       },
     },
