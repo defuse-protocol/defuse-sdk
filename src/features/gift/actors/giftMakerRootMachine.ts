@@ -531,12 +531,7 @@ export const giftMakerRootMachine = setup({
           {
             target: "editing",
             actions: "sendToDepositedBalanceRefRefresh",
-            guard: {
-              type: "isOk",
-              params: ({ event }) => ({
-                tag: event.output.tag as "ok" | "err",
-              }),
-            },
+            guard: { type: "isOk", params: ({ event }) => event.output },
           },
           {
             target: "editing",
