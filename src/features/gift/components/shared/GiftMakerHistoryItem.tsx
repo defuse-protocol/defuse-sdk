@@ -39,11 +39,10 @@ export function GiftMakerHistoryItem({
       {amount != null && (
         <GiftStrip
           token={giftInfo.token}
-          amount={{
-            amount: amount.amount,
-            decimals: amount.decimals,
-          }}
-          updatedAt={giftInfo.updatedAt}
+          amountSlot={
+            <GiftStrip.Amount token={giftInfo.token} amount={amount} />
+          }
+          dateSlot={<GiftStrip.Date updatedAt={giftInfo.updatedAt} />}
         />
       )}
       <div className="flex gap-2 items-center">
