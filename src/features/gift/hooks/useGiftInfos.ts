@@ -4,20 +4,20 @@ import type { GiftMakerHistory } from "../stores/giftMakerHistory"
 import { type GiftInfo, parseGiftInfos } from "../utils/parseGiftInfos"
 
 type UseGiftInfosReturn = {
-  giftInfos: GiftInfo[] | null
+  giftInfos: GiftInfo[]
   loading: boolean
-  isEmpty: boolean
 }
 
 export function useGiftInfos(
   gifts: GiftMakerHistory[] | undefined,
   tokenList: (BaseTokenInfo | UnifiedTokenInfo)[]
 ): UseGiftInfosReturn {
-  const [giftInfos, setGiftInfos] = useState<GiftInfo[] | null>(null)
+  const [giftInfos, setGiftInfos] = useState<GiftInfo[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     if (gifts === undefined) {
+      setLoading(false)
       return
     }
     parseGiftInfos(tokenList, gifts).then((giftsResult) => {
@@ -29,11 +29,8 @@ export function useGiftInfos(
     })
   }, [gifts, tokenList])
 
-  const isEmpty = giftInfos?.length === 0
-
   return {
     giftInfos,
     loading,
-    isEmpty,
   }
 }

@@ -32,10 +32,10 @@ function Content({
   generateLink,
   gifts,
 }: GiftHistoryProps) {
-  const { giftInfos, loading, isEmpty } = useGiftInfos(gifts, tokenList)
+  const { giftInfos, loading } = useGiftInfos(gifts, tokenList)
   const { visibleGiftItems, hasMore, showMore } = useGiftPagination(giftInfos)
 
-  if (!signerCredentials || isEmpty) {
+  if (!signerCredentials || giftInfos.length === 0) {
     return <GiftHistoryEmpty />
   }
 
