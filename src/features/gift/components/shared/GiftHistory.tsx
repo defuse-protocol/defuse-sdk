@@ -35,16 +35,12 @@ function Content({
   const { giftInfos, loading } = useGiftInfos(gifts, tokenList)
   const { visibleGiftItems, hasMore, showMore } = useGiftPagination(giftInfos)
 
-  if (!signerCredentials || giftInfos.length === 0) {
-    return <GiftHistoryEmpty />
+  if (loading) {
+    return <GiftHistorySkeleton />
   }
 
-  if (loading) {
-    return (
-      <div className="widget-container flex flex-col gap-4 p-5">
-        <GiftHistorySkeleton />
-      </div>
-    )
+  if (!signerCredentials || giftInfos.length === 0) {
+    return <GiftHistoryEmpty />
   }
 
   return (
