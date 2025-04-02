@@ -164,7 +164,7 @@ export function GiftMakerForm({
   }, [payload, formValuesRef])
 
   const balanceInsufficient = useMemo(() => {
-    if (tokenBalance == null) {
+    if (!tokenBalance) {
       return false
     }
     return checkInsufficientBalance(formValues.amount, tokenBalance)
