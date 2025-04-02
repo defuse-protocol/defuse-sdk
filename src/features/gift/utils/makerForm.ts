@@ -25,6 +25,9 @@ export function checkInsufficientBalance(
   if (formAmount.length === 0) {
     return false
   }
+  if (formAmount === ".") {
+    return false
+  }
   const invalidFormAmount = !/^-?\d*\.?\d*$/.test(formAmount)
   if (invalidFormAmount) {
     return false
