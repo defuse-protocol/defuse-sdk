@@ -47,7 +47,7 @@ export async function jsonRPCRequest<
   return response.json()
 }
 
-class FetchError extends Error {
+export class FetchError extends Error {
   name = "FetchError"
 }
 

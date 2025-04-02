@@ -12,7 +12,6 @@ import type {
   StorageOperationErr,
   StorageOperationResult,
 } from "../stores/storageOperations"
-import type { EscrowCredentials } from "../utils/generateEscrowCredentials"
 import type { GiftInfo } from "./shared/getGiftInfo"
 import {
   type GiftClaimActorOutput,
@@ -20,10 +19,8 @@ import {
 } from "./shared/giftClaimActor"
 
 export type GiftMakerReadyActorInput = {
-  giftId: string
   giftInfo: GiftInfo
   signerCredentials: SignerCredentials
-  escrowCredentials: EscrowCredentials
   parsed: {
     token: BaseTokenInfo | UnifiedTokenInfo
     amount: TokenValue
@@ -47,7 +44,6 @@ export type GiftMakerReadyActorErrors = {
 }
 
 interface GiftMakerReadyActorContext extends GiftMakerReadyActorInput {
-  giftId: string
   error: null | GiftMakerReadyActorErrors
 }
 
@@ -74,7 +70,7 @@ export const giftMakerReadyActor = setup({
       }): Promise<StorageOperationResult> => {
         const result = await giftMakerHistoryStore
           .getState()
-          .removeGift(input.giftId, input.signerCredentials)
+          .removeGift(input.giftInfo.secretKey, input.signerCredentials)
 
         if (result.tag === "err") {
           return { tag: "err", reason: result.reason }
@@ -141,7 +137,7 @@ export const giftMakerReadyActor = setup({
             },
             onDone: [
               {
-                target: "removingGiftFromHistory",
+                target: "removing",
                 guard: {
                   type: "isTrue",
                   params: ({ event }) =>
@@ -174,7 +170,7 @@ export const giftMakerReadyActor = setup({
             },
           },
         },
-        removingGiftFromHistory: {
+        removing: {
           invoke: {
             src: "removeGiftFromHistory",
             input: ({ context }) => context,

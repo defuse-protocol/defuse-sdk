@@ -134,7 +134,7 @@ export const giftMakerHistoryStore = create<Store>()(
           return result
         } catch (error) {
           logger.error(new Error("Failed to remove gift", { cause: error }))
-          return { tag: "err", reason: "ERR_UPDATE_ITEM_FAILED_TO_STORAGE" }
+          return { tag: "err", reason: "ERR_REMOVE_ITEM_FAILED_FROM_STORAGE" }
         }
       },
     }),
