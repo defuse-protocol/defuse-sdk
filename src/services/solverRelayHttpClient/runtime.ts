@@ -6,19 +6,14 @@ async function request(
   body: unknown,
   config: types.RequestConfig = {}
 ): Promise<Response> {
-  let response: Response
-  try {
-    response = await fetch(url, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(body),
-      signal: config.signal,
-    })
-  } catch (err) {
-    throw new FetchError("The request failed", { cause: err })
-  }
+  const response = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+    signal: config.signal,
+  })
 
   if (response.ok) {
     return response
@@ -45,10 +40,6 @@ export async function jsonRPCRequest<
     config
   )
   return response.json()
-}
-
-export class FetchError extends Error {
-  name = "FetchError"
 }
 
 class ResponseError extends Error {

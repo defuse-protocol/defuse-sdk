@@ -5,9 +5,8 @@ import {
   type QuoteResult,
   queryQuote,
 } from "../../services/quoteService"
-import { FetchError } from "../../services/solverRelayHttpClient/runtime"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../types/base"
-import { findError } from "../../utils/errors"
+import { isAbortError } from "../../utils/errors"
 import { getUnderlyingBaseTokenInfos } from "../../utils/tokenUtils"
 
 export type QuoteInput =
@@ -139,7 +138,7 @@ function pollQuote(
     },
     onError: (error) => {
       // Ignore the error if the quote was cancelled
-      if (!findError(error, FetchError)) {
+      if (!isAbortError(error)) {
         logger.error(error)
       }
     },

@@ -2,18 +2,13 @@ import { config } from "../../config"
 import type * as types from "./types"
 
 async function request(url: string, body: unknown): Promise<Response> {
-  let response: Response
-  try {
-    response = await fetch(url, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(body),
-    })
-  } catch (err) {
-    throw new FetchError("The request failed", { cause: err })
-  }
+  const response = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+  })
 
   if (response.ok) {
     return response
@@ -33,11 +28,6 @@ export async function jsonRPCRequest<
   })
   return response.json()
 }
-
-class FetchError extends Error {
-  name = "FetchError"
-}
-
 class ResponseError extends Error {
   name = "ResponseError"
   constructor(
