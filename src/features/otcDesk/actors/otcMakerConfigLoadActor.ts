@@ -1,7 +1,8 @@
-import type { CodeResult } from "near-api-js/lib/providers/provider"
+import * as v from "valibot"
 import { assign, fromPromise, setup } from "xstate"
 import { config } from "../../../config"
 import { nearClient } from "../../../constants/nearClient"
+import { decodeQueryResult } from "../../../utils/near"
 
 export const otcMakerConfigLoadActor = setup({
   types: {
@@ -50,8 +51,7 @@ export const otcMakerConfigLoadActor = setup({
 })
 
 export async function fetchProtocolFee() {
-  // Warning: `CodeResult` is not correct type for `call_function`, but it's closest we have.
-  const output = await nearClient.query<CodeResult>({
+  const response = await nearClient.query({
     request_type: "call_function",
     account_id: config.env.contractID,
     method_name: "fee",
@@ -59,13 +59,6 @@ export async function fetchProtocolFee() {
     finality: "optimistic",
   })
 
-  const stringData = String.fromCharCode(...output.result)
-  const value = JSON.parse(stringData)
-
-  if (typeof value !== "number") {
-    throw new Error(`Expected number, got ${typeof value}`)
-  }
-
   // in bip: 1 bip = 0.0001% = 0.000001
-  return value
+  return decodeQueryResult(response, v.number())
 }

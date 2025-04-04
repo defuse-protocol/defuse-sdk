@@ -8,7 +8,6 @@ import { useQuery } from "@tanstack/react-query"
 import { Err, None, Ok, type Option, type Result, Some } from "@thames/monads"
 import { useSelector } from "@xstate/react"
 import clsx from "clsx"
-import type { CodeResult } from "near-api-js/lib/providers/provider"
 import {
   type ReactElement,
   type ReactNode,
@@ -30,6 +29,7 @@ import type { MultiPayload } from "../../../types/defuse-contracts-types"
 import { assert } from "../../../utils/assert"
 import { authHandleToIntentsUserId } from "../../../utils/authIdentity"
 import { formatTokenValue } from "../../../utils/format"
+import { decodeQueryResult } from "../../../utils/near"
 import { computeTotalBalanceDifferentDecimals } from "../../../utils/tokenUtils"
 import type { SendNearTransaction } from "../../machines/publicKeyVerifierMachine"
 import type { signIntentMachine } from "../../machines/signIntentMachine"
@@ -340,7 +340,7 @@ function useValidateTrade(tradeTerms: TradeTerms) {
     enabled: error.isNone(),
     queryKey: ["nonce_is_used", tradeTerms.userId, tradeTerms.nonceBase64],
     queryFn: async () => {
-      const output = await nearClient.query<CodeResult>({
+      const response = await nearClient.query({
         request_type: "call_function",
         account_id: config.env.contractID,
         method_name: "is_nonce_used",
@@ -353,8 +353,7 @@ function useValidateTrade(tradeTerms: TradeTerms) {
         finality: "optimistic",
       })
 
-      const stringData = String.fromCharCode(...output.result)
-      return v.parse(v.boolean(), JSON.parse(stringData))
+      return decodeQueryResult(response, v.boolean())
     },
     select: (nonceIsUsed): Option<"NONCE_ALREADY_USED"> => {
       return nonceIsUsed ? Some("NONCE_ALREADY_USED") : None

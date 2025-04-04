@@ -1,9 +1,10 @@
 import type { providers } from "near-api-js"
-import type { CodeResult } from "near-api-js/lib/providers/provider"
+import * as v from "valibot"
 import { assertEvent, assign, fromPromise, setup } from "xstate"
 import { config } from "../../config"
 import { logger } from "../../logger"
 import type { Transaction } from "../../types/deposit"
+import { decodeQueryResult } from "../../utils/near"
 import {
   type WalletErrorCode,
   extractWalletErrorCode,
@@ -211,7 +212,7 @@ async function checkPublicKeyOnchain({
   nearClient: providers.Provider
   nearAccount: { accountId: string; publicKey: string }
 }): Promise<boolean> {
-  const output = await nearClient.query<CodeResult>({
+  const response = await nearClient.query({
     request_type: "call_function",
     account_id: config.env.contractID,
     method_name: "has_public_key",
@@ -224,13 +225,7 @@ async function checkPublicKeyOnchain({
     finality: "optimistic",
   })
 
-  const stringData = String.fromCharCode(...output.result)
-  const value = JSON.parse(stringData)
-  if (typeof value !== "boolean") {
-    throw new Error("Unexpected response from has_public_key")
-  }
-
-  return value
+  return decodeQueryResult(response, v.boolean())
 }
 
 async function addPublicKeyToContract({

@@ -1,6 +1,5 @@
 import { useQuery } from "@tanstack/react-query"
 import { Err, Ok, type Result } from "@thames/monads"
-import type { CodeResult } from "near-api-js/lib/providers/provider"
 import { type ReactNode, useMemo, useState } from "react"
 import * as v from "valibot"
 import { WidgetRoot } from "../../../components/WidgetRoot"
@@ -12,6 +11,7 @@ import { SwapWidgetProvider } from "../../../providers/SwapWidgetProvider"
 import { getDepositedBalances } from "../../../services/defuseBalanceService"
 import type { AuthMethod } from "../../../types/authHandle"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../../types/base"
+import { decodeQueryResult } from "../../../utils/near"
 import type { SendNearTransaction } from "../../machines/publicKeyVerifierMachine"
 import { fetchProtocolFee } from "../actors/otcMakerConfigLoadActor"
 import { SignIntentActorProvider } from "../providers/SignIntentActorProvider"
@@ -223,7 +223,7 @@ function OtcTakerValidationOrder({
       tradeTerms.makerNonceBase64,
     ],
     queryFn: async () => {
-      const output = await nearClient.query<CodeResult>({
+      const response = await nearClient.query({
         request_type: "call_function",
         account_id: config.env.contractID,
         method_name: "is_nonce_used",
@@ -236,8 +236,7 @@ function OtcTakerValidationOrder({
         finality: "optimistic",
       })
 
-      const stringData = String.fromCharCode(...output.result)
-      return v.parse(v.boolean(), JSON.parse(stringData))
+      return decodeQueryResult(response, v.boolean())
     },
     select: (nonceIsUsed): Result<true, "NONCE_ALREADY_USED"> => {
       return nonceIsUsed ? Err("NONCE_ALREADY_USED") : Ok(true)

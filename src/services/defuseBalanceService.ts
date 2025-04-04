@@ -1,9 +1,9 @@
 import type { providers } from "near-api-js"
-import type { CodeResult } from "near-api-js/lib/providers/provider"
+import * as v from "valibot"
 import { config } from "../config"
 import type { BaseTokenInfo } from "../types/base"
 import type { IntentsUserId } from "../types/intentsUserId"
-import { assert } from "../utils/assert"
+import { decodeQueryResult } from "../utils/near"
 import { getDepositStatus } from "./poaBridgeClient"
 
 type TokenBalances = Record<BaseTokenInfo["defuseAssetId"], bigint>
@@ -13,9 +13,7 @@ export async function getDepositedBalances(
   tokenIds: BaseTokenInfo["defuseAssetId"][],
   nearClient: providers.Provider
 ): Promise<TokenBalances> {
-  // RPC call
-  // Warning: `CodeResult` is not correct type for `call_function`, but it's closest we have.
-  const output = await nearClient.query<CodeResult>({
+  const response = await nearClient.query({
     request_type: "call_function",
     account_id: config.env.contractID,
     method_name: "mt_batch_balance_of",
@@ -28,23 +26,13 @@ export async function getDepositedBalances(
     finality: "optimistic",
   })
 
-  // Decoding response
-  const uint8Array = new Uint8Array(output.result)
-  const decoder = new TextDecoder()
-  const parsed = JSON.parse(decoder.decode(uint8Array))
-
-  // Validating response
-  assert(
-    Array.isArray(parsed) && parsed.every((a) => typeof a === "string"),
-    "Invalid response"
-  )
-  assert(parsed.length === tokenIds.length, "Invalid response")
+  const parsed = decodeQueryResult(response, v.array(v.string()))
 
   // Transforming response
   const result: TokenBalances = {}
   for (let i = 0; i < tokenIds.length; i++) {
     // biome-ignore lint/style/noNonNullAssertion: always within bounds
-    result[tokenIds[i]!] = BigInt(parsed[i])
+    result[tokenIds[i]!] = BigInt(parsed[i]!)
   }
 
   return result

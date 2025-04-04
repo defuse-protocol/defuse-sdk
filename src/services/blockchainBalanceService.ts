@@ -1,14 +1,11 @@
 import { base64 } from "@scure/base"
 import { AccountLayout } from "@solana/spl-token"
 import { Connection, PublicKey } from "@solana/web3.js"
+import * as v from "valibot"
 import { http, type Address, createPublicClient, erc20Abi } from "viem"
+import { nearClient } from "../constants/nearClient"
 import { logger } from "../logger"
-import {
-  getNearBalance,
-  getNearNep141BalanceAccount,
-  getNearNep141StorageBalanceBounds,
-  getNearNep141StorageBalanceOf,
-} from "./nearHttpClient"
+import { decodeQueryResult } from "../utils/near"
 
 export const RESERVED_NEAR_BALANCE = 100000000000000000000000n // 0.1 NEAR reserved for transaction fees and storage
 
@@ -18,13 +15,15 @@ export const getNearNativeBalance = async ({
   accountId: string
 }): Promise<bigint | null> => {
   try {
-    const response = await getNearBalance({
+    const response = await nearClient.query({
       request_type: "view_account",
       finality: "final",
       account_id: accountId,
     })
 
-    const balance = BigInt(response.amount)
+    const parsed = v.parse(v.object({ amount: v.string() }), response)
+
+    const balance = BigInt(parsed.amount)
     return balance < RESERVED_NEAR_BALANCE
       ? 0n
       : balance - RESERVED_NEAR_BALANCE
@@ -47,7 +46,7 @@ export const getNearNep141Balance = async ({
     const args = { account_id: accountId }
     const argsBase64 = Buffer.from(JSON.stringify(args)).toString("base64")
 
-    const response = await getNearNep141BalanceAccount({
+    const response = await nearClient.query({
       request_type: "call_function",
       method_name: "ft_balance_of",
       account_id: tokenAddress,
@@ -55,10 +54,8 @@ export const getNearNep141Balance = async ({
       finality: "optimistic",
     })
 
-    const uint8Array = new Uint8Array(response.result)
-    const decoder = new TextDecoder()
-    const parsed = JSON.parse(decoder.decode(uint8Array))
-    const balance = BigInt(parsed)
+    const result = decodeQueryResult(response, v.string())
+    const balance = BigInt(result)
     return balance
   } catch (err: unknown) {
     logger.error(
@@ -79,7 +76,7 @@ export const getNearNep141StorageBalance = async ({
     const args = { account_id: accountId }
     const argsBase64 = Buffer.from(JSON.stringify(args)).toString("base64")
 
-    const response = await getNearNep141StorageBalanceOf({
+    const response = await nearClient.query({
       request_type: "call_function",
       method_name: "storage_balance_of",
       account_id: contractId,
@@ -87,9 +84,11 @@ export const getNearNep141StorageBalance = async ({
       finality: "optimistic",
     })
 
-    const uint8Array = new Uint8Array(response.result)
-    const decoder = new TextDecoder()
-    const parsed = JSON.parse(decoder.decode(uint8Array))
+    const parsed = decodeQueryResult(
+      response,
+      v.union([v.null(), v.object({ total: v.string() })])
+    )
+
     return BigInt(parsed?.total || "0")
   } catch (err: unknown) {
     throw new Error("Error fetching balance", { cause: err })
@@ -101,7 +100,7 @@ export const getNearNep141MinStorageBalance = async ({
 }: {
   contractId: string
 }): Promise<bigint> => {
-  const response = await getNearNep141StorageBalanceBounds({
+  const response = await nearClient.query({
     request_type: "call_function",
     method_name: "storage_balance_bounds",
     account_id: contractId,
@@ -109,9 +108,11 @@ export const getNearNep141MinStorageBalance = async ({
     finality: "optimistic",
   })
 
-  const uint8Array = new Uint8Array(response.result)
-  const decoder = new TextDecoder()
-  const parsed = JSON.parse(decoder.decode(uint8Array))
+  const parsed = decodeQueryResult(
+    response,
+    v.object({ min: v.string(), max: v.string() })
+  )
+
   return BigInt(parsed.min)
 }
 
