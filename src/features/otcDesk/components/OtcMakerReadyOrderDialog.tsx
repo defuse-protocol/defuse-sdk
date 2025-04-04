@@ -114,7 +114,7 @@ function OrderDialog({
 
       {/* Order Section */}
       {breakdown != null && (
-        <div className="flex justify-between items-center gap-2 px-4 py-3.5 rounded-lg bg-gray-50 mb-4">
+        <div className="flex justify-between items-center gap-2 px-4 py-3.5 rounded-lg bg-gray-3 mb-4">
           <div className="flex items-center">
             <div className="flex items-center relative">
               <AssetComboIcon {...context.parsed.tokenIn} />

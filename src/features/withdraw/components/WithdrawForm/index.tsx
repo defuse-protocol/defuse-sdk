@@ -333,7 +333,7 @@ export const WithdrawForm = ({
             handleSelect={() => {
               handleSelect()
             }}
-            className="border border-gray-200/50 rounded-xl"
+            className="border border-gray-4 rounded-xl"
             required
             min={
               minWithdrawalAmount != null
