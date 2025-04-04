@@ -68,7 +68,7 @@ export const AssetList = <T extends Token>({
               </Text>
               {renderBalance(balance)}
             </div>
-            <div className="flex justify-between items-center text-gray-600 dark:text-gray-500">
+            <div className="flex justify-between items-center text-gray-11">
               <Text as="span" size="2">
                 {token.symbol}
               </Text>

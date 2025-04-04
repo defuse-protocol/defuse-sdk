@@ -104,10 +104,10 @@ function OrderDialog({
             weight="bold"
           />
         </div>
-        <Dialog.Title className="text-2xl font-black text-gray-900 dark:text-gray-100 mb-2">
+        <Dialog.Title className="text-2xl font-black text-gray-12 mb-2">
           Your order is open
         </Dialog.Title>
-        <Dialog.Description className="text-sm font-medium text-gray-600 dark:text-gray-400">
+        <Dialog.Description className="text-sm font-medium text-gray-11">
           Share the link with the recipient to finalize the swap.
         </Dialog.Description>
       </div>

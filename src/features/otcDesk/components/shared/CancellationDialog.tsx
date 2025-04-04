@@ -45,10 +45,10 @@ export function CancellationDialog({
         </>
       ) : (
         <>
-          <Dialog.Title className="text-2xl font-black text-gray-900 dark:text-gray-100 mb-2">
+          <Dialog.Title className="text-2xl font-black text-gray-12 mb-2">
             Cancel order?
           </Dialog.Title>
-          <Dialog.Description className="text-sm font-medium text-gray-600 dark:text-gray-400">
+          <Dialog.Description className="text-sm font-medium text-gray-11">
             The funds will stay safely in your wallet, and the link will no
             longer work.
           </Dialog.Description>

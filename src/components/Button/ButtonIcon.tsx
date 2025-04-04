@@ -21,7 +21,7 @@ export const ButtonIcon = ({
     <button
       type="button"
       className={clsx(
-        "flex justify-center items-center w-[40px] h-[40px] rounded-md overflow-hidden bg-white dark:bg-black",
+        "flex justify-center items-center w-[40px] h-[40px] rounded-md overflow-hidden bg-gray-1",
         className && className
       )}
       onClick={onClick && onClick}

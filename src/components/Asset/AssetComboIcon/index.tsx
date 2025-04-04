@@ -33,7 +33,7 @@ export const AssetComboIcon = ({
         )}
       </div>
       {showChainIcon && (
-        <div className="absolute -right-[7px] bottom-0 flex justify-center items-center p-1 bg-black-300 rounded-full border-2 border-white dark:border-black-950">
+        <div className="absolute -right-[7px] bottom-0 flex justify-center items-center p-1 bg-gray-1 rounded-full border-2 border-gray-1">
           {chainIcon ? (
             <img
               src={chainIcon}
@@ -57,6 +57,6 @@ const EmptyAssetComboIcon = () => {
 
 const EmptyChainIcon = () => {
   return (
-    <div className="w-[6px] h-[6px] flex justify-center items-center bg-black-300 rounded-full border-2 border-white dark:border-black-950" />
+    <div className="w-[6px] h-[6px] flex justify-center items-center bg-black-300 rounded-full border-2 border-gray-1" />
   )
 }

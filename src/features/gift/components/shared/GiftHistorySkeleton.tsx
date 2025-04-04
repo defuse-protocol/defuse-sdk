@@ -3,7 +3,7 @@ import { Skeleton } from "@radix-ui/themes"
 export function GiftHistorySkeleton() {
   return (
     <div className="w-full flex flex-col gap-2">
-      <Skeleton className="w-20 h-5 text-sm font-bold text-black pb-1.5">
+      <Skeleton className="w-20 h-5 text-sm font-bold text-gray-12 pb-1.5">
         Your gifts
       </Skeleton>
       <GiftHistorySkeletonItem />
