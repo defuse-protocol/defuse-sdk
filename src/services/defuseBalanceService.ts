@@ -4,7 +4,7 @@ import { config } from "../config"
 import type { BaseTokenInfo } from "../types/base"
 import type { IntentsUserId } from "../types/intentsUserId"
 import { decodeQueryResult } from "../utils/near"
-import { getDepositStatus } from "./poaBridgeClient"
+import { getDepositStatus } from "./poaBridgeHttpClient"
 
 type TokenBalances = Record<BaseTokenInfo["defuseAssetId"], bigint>
 
