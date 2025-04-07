@@ -45,7 +45,7 @@ function Content({
 
   return (
     <GiftClaimActorProvider signerCredentials={signerCredentials}>
-      <div className="text-sm font-bold text-black pb-1.5">Your gifts</div>
+      <div className="text-sm font-bold text-gray-12 pb-1.5">Your gifts</div>
       {visibleGiftItems?.map((giftInfo) => (
         <GiftMakerHistoryItem
           key={crypto.randomUUID()}

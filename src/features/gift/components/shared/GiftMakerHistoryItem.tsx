@@ -40,7 +40,11 @@ export function GiftMakerHistoryItem({
         <GiftStrip
           token={giftInfo.token}
           amountSlot={
-            <GiftStrip.Amount token={giftInfo.token} amount={amount} />
+            <GiftStrip.Amount
+              token={giftInfo.token}
+              amount={amount}
+              className="text-gray-12"
+            />
           }
           dateSlot={<GiftStrip.Date updatedAt={giftInfo.updatedAt} />}
         />

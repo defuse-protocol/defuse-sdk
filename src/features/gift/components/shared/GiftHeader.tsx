@@ -16,12 +16,7 @@ export function GiftHeader({
   return (
     <div className="w-full mb-5 flex flex-row justify-between gap-5">
       <div className="flex flex-col justify-between gap-1.5">
-        <div
-          className={cn(
-            "text-2xl font-black text-gray-900 dark:text-gray-100",
-            className
-          )}
-        >
+        <div className={cn("text-2xl font-black text-gray-12", className)}>
           {title}
         </div>
         {children}

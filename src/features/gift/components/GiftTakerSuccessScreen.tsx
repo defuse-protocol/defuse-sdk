@@ -55,7 +55,11 @@ export function GiftTakerSuccessScreen({
           <GiftStrip
             token={giftInfo.token}
             amountSlot={
-              <GiftStrip.Amount token={giftInfo.token} amount={amount} />
+              <GiftStrip.Amount
+                token={giftInfo.token}
+                amount={amount}
+                className="text-gray-12"
+              />
             }
           />
         </div>

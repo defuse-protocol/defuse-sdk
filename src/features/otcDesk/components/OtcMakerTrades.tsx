@@ -272,7 +272,7 @@ function OtcMakerTradeItem({
             <div
               className={clsx(
                 "rounded-br-lg rounded-bl-lg px-4 py-2 text-xs font-medium",
-                !errIsCritical ? "bg-gray-6" : "bg-red-9 text-white"
+                !errIsCritical ? "bg-gray-6" : "bg-red-9 text-gray-1"
               )}
             >
               {err === "ORDER_EXPIRED" && <div>The order is expired</div>}

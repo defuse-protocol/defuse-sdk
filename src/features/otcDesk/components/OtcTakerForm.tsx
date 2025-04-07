@@ -173,10 +173,10 @@ export function OtcTakerForm({
     <div className="flex flex-col">
       {/* Header Section */}
       <div className="flex flex-col items-start text-center mb-5">
-        <div className="text-2xl font-black text-gray-900 dark:text-gray-100 mb-1.5">
+        <div className="text-2xl font-black text-gray-12 mb-1.5">
           Complete swap
         </div>
-        <div className="text-sm font-medium text-gray-600 dark:text-gray-400">
+        <div className="text-sm font-medium text-gray-11">
           Pay the specified amount to finalize the transaction.
         </div>
       </div>

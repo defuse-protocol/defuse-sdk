@@ -40,7 +40,7 @@ export const BlockMultiBalances = ({
             "text-xs px-2 py-0.5 rounded-full font-bold",
             active
               ? "bg-accent-a200 text-accent-900"
-              : "bg-gray-300/50 text-gray-600"
+              : "bg-gray-300/50 text-gray-11"
           )}
         >
           {formatTokenValue(balance, decimals, {
@@ -57,7 +57,7 @@ export const BlockMultiBalances = ({
               className="flex items-center gap-1 rounded-full bg-gray-300/50 px-2 py-0.5"
             >
               <div className="w-3 h-3 bg-[url('/static/images/process.gif')] bg-no-repeat bg-contain" />
-              <span className="text-xs font-bold text-gray-600">
+              <span className="text-xs font-bold text-gray-11">
                 {formatTokenValue(
                   transitBalance.amount,
                   transitBalance.decimals,

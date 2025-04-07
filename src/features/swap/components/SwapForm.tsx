@@ -213,7 +213,7 @@ export const SwapForm = ({ isLoggedIn, renderHostAppLink }: SwapFormProps) => {
             handleSelect={() => {
               openModalSelectAssets(SWAP_TOKEN_FLAGS.IN, tokenIn)
             }}
-            className="border border-gray-200/50 rounded-t-xl"
+            className="border border-gray-4 rounded-t-xl"
             required
             errors={errors}
             usdAmount={
@@ -235,7 +235,7 @@ export const SwapForm = ({ isLoggedIn, renderHostAppLink }: SwapFormProps) => {
             handleSelect={() => {
               openModalSelectAssets(SWAP_TOKEN_FLAGS.OUT, tokenOut)
             }}
-            className="border border-gray-200/50 rounded-b-xl mb-5"
+            className="border border-gray-4 rounded-b-xl mb-5"
             errors={errors}
             disabled={true}
             isLoading={snapshot.matches({ editing: "waiting_quote" })}

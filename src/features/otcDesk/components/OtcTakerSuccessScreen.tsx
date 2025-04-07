@@ -63,15 +63,15 @@ export function OtcTakerSuccessScreen({
       {/* Header Section */}
       <div className="flex flex-row justify-between mb-5">
         <div className="flex flex-col items-start gap-1.5">
-          <div className="text-2xl font-black text-gray-900 dark:text-gray-100 mb-2">
+          <div className="text-2xl font-black text-gray-12 mb-2">
             {intentStatus.isPending ? "Almost there" : "All done!"}
           </div>
           {intentStatus.isPending ? (
-            <div className="text-sm font-medium text-gray-600 dark:text-gray-400">
+            <div className="text-sm font-medium text-gray-11">
               Your swap is being processed. You will receive your funds shortly.
             </div>
           ) : (
-            <div className="text-sm font-medium text-gray-600 dark:text-gray-400">
+            <div className="text-sm font-medium text-gray-11">
               Your swap has been successfully completed, and the funds are now
               available in your account.
             </div>
