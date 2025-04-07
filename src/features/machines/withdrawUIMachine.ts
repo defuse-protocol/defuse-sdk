@@ -8,13 +8,12 @@ import {
   setup,
   spawnChild,
 } from "xstate"
-import { settings } from "../../constants/settings"
 import { logger } from "../../logger"
 import type { QuoteResult } from "../../services/quoteService"
+import type { AuthMethod } from "../../types/authHandle"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../types/base"
-import type { ChainType } from "../../types/deposit"
 import { assert } from "../../utils/assert"
-import { userAddressToDefuseUserId } from "../../utils/defuse"
+import { authHandleToIntentsUserId } from "../../utils/authIdentity"
 import {
   type Events as BackgroundQuoterEvents,
   type ParentEvents as BackgroundQuoterParentEvents,
@@ -54,7 +53,7 @@ export type Context = {
   poaBridgeInfoRef: ActorRefFrom<typeof poaBridgeInfoActor>
   submitDeps: {
     userAddress: string
-    userChainType: ChainType
+    userChainType: AuthMethod
     nearClient: providers.Provider
   } | null
   preparationOutput: PreparationOutput | null
@@ -193,10 +192,7 @@ export const withdrawUIMachine = setup({
 
     spawnBackgroundQuoterRef: spawnChild("backgroundQuoterActor", {
       id: "backgroundQuoterRef",
-      input: ({ self }) => ({
-        parentRef: self,
-        delayMs: settings.quotePollingIntervalMs,
-      }),
+      input: ({ self }) => ({ parentRef: self }),
     }),
     sendToBackgroundQuoterRefNewQuoteInput: sendTo(
       "backgroundQuoterRef",
@@ -540,7 +536,7 @@ export const withdrawUIMachine = setup({
           return {
             userAddress: context.submitDeps.userAddress,
             userChainType: context.submitDeps.userChainType,
-            defuseUserId: userAddressToDefuseUserId(
+            defuseUserId: authHandleToIntentsUserId(
               context.submitDeps.userAddress,
               context.submitDeps.userChainType
             ),

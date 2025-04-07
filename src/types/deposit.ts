@@ -1,27 +1,16 @@
 import type { Transaction as TransactionSolana } from "@solana/web3.js"
 import type { Address, Hash } from "viem"
+import type { AuthHandle } from "./authHandle"
 import type { SwappableToken } from "./swap"
 
-export type ChainType = "near" | "evm" | "solana" | "webauthn"
+export type DepositWidgetProps = {
+  userAddress: AuthHandle["identifier"] | undefined
+  chainType: AuthHandle["method"] | undefined
 
-export const ChainType = {
-  Near: "near",
-  EVM: "evm",
-  Solana: "solana",
-  WebAuthn: "webauthn",
-} as const
-
-export type UserInfo = {
-  userAddress?: string
-  chainType?: ChainType
-}
-
-export type DepositWidgetProps = UserInfo & {
   tokenList: SwappableToken[]
   sendTransactionNear: (tx: Transaction["NEAR"][]) => Promise<string | null>
   sendTransactionEVM: (tx: Transaction["EVM"]) => Promise<Hash | null>
   sendTransactionSolana: (tx: Transaction["Solana"]) => Promise<string | null>
-  chainType?: ChainType
 }
 
 export type Transaction = {

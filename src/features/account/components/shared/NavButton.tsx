@@ -1,5 +1,5 @@
 import { Button } from "@radix-ui/themes"
-import type { ReactNode } from "react"
+import { type ReactNode, useId } from "react"
 import type {
   HostAppRoute,
   RenderHostAppLink,
@@ -23,23 +23,32 @@ export function NavButton({
   renderHostAppLink,
   className,
 }: NavButtonProps) {
-  const children = (
-    <>
-      <Button
-        variant={variant === "primary" ? "solid" : "soft"}
-        color={variant === "primary" ? undefined : "gray"}
-        size="4"
-        className="w-full"
-        asChild
-      >
-        <div>{icon}</div>
-      </Button>
+  const id = useId()
+  return (
+    <div
+      className={cn("flex flex-col items-center gap-2 cursor-auto", className)}
+    >
+      {renderHostAppLink(
+        routeName,
+        <Button
+          variant={variant === "primary" ? "solid" : "soft"}
+          color={variant === "primary" ? undefined : "gray"}
+          size="4"
+          className="w-full"
+          aria-hidden
+          asChild
+        >
+          <div>{icon}</div>
+        </Button>,
+        {
+          className: "w-full block",
+          "aria-labelledby": id,
+        }
+      )}
 
-      <div className="text-gray-12 text-sm font-bold">{label}</div>
-    </>
+      <div id={id} className="text-gray-12 text-sm font-bold" aria-hidden>
+        {label}
+      </div>
+    </div>
   )
-
-  return renderHostAppLink(routeName, children, {
-    className: cn("flex flex-col items-center gap-2 cursor-auto", className),
-  })
 }

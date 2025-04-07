@@ -1,8 +1,8 @@
 import type { providers } from "near-api-js"
-import type { CodeResult } from "near-api-js/lib/providers/provider"
 import { assertEvent, assign, fromPromise, setup } from "xstate"
 import { config } from "../../config"
 import { logger } from "../../logger"
+import { hasPublicKey } from "../../services/intentsContractService"
 import type { Transaction } from "../../types/deposit"
 import {
   type WalletErrorCode,
@@ -43,8 +43,8 @@ export const publicKeyVerifierMachine = setup({
   },
   actors: {
     checkPubKeyActor: fromPromise(
-      ({ input }: { input: Parameters<typeof checkPublicKeyOnchain>[0] }) => {
-        return checkPublicKeyOnchain(input)
+      ({ input }: { input: Parameters<typeof hasPublicKey>[0] }) => {
+        return hasPublicKey(input)
       }
     ),
     addPubKeyActor: fromPromise(
@@ -107,8 +107,8 @@ export const publicKeyVerifierMachine = setup({
           }
 
           return {
-            nearAccount: context.nearAccount,
             nearClient: context.nearClient,
+            ...context.nearAccount,
           }
         },
         onDone: [
@@ -203,35 +203,6 @@ export const publicKeyVerifierMachine = setup({
     },
   },
 })
-
-async function checkPublicKeyOnchain({
-  nearAccount,
-  nearClient,
-}: {
-  nearClient: providers.Provider
-  nearAccount: { accountId: string; publicKey: string }
-}): Promise<boolean> {
-  const output = await nearClient.query<CodeResult>({
-    request_type: "call_function",
-    account_id: config.env.contractID,
-    method_name: "has_public_key",
-    args_base64: btoa(
-      JSON.stringify({
-        account_id: nearAccount.accountId,
-        public_key: nearAccount.publicKey,
-      })
-    ),
-    finality: "optimistic",
-  })
-
-  const stringData = String.fromCharCode(...output.result)
-  const value = JSON.parse(stringData)
-  if (typeof value !== "boolean") {
-    throw new Error("Unexpected response from has_public_key")
-  }
-
-  return value
-}
 
 async function addPublicKeyToContract({
   pubKey,

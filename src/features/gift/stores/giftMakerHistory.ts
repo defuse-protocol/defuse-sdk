@@ -1,203 +1,148 @@
+import type { KeyPairString } from "near-api-js/lib/utils"
+import type { BaseTokenInfo } from "src/types/base"
 import { create } from "zustand"
 import { persist } from "zustand/middleware"
 import type { SignerCredentials } from "../../../core/formatters"
 import { logger } from "../../../logger"
+import type { IntentsUserId } from "../../../types/intentsUserId"
+import { config as configDBStorage } from "./indexedDBStorage"
+import { migrateGiftStorage } from "./migrations"
 import {
-  type DefuseUserId,
-  userAddressToDefuseUserId,
-} from "../../../utils/defuse"
-import type { GiftInfo } from "../actors/shared/getGiftInfo"
-import { GIFT_STORAGE_NAME, indexedDBStorage } from "./indexedDBStorage"
-import { localStorageHandler } from "./localStorageHandler"
-import { sessionStorageHandler } from "./sessionStorageHandler"
+  type StorageOperationResult,
+  getUserId,
+  storage,
+} from "./storageOperations"
 
-export interface GiftMakerHistory extends GiftInfo {
-  giftId: string
+export interface GiftMakerHistory {
+  tokenDiff: Record<BaseTokenInfo["defuseAssetId"], bigint>
+  secretKey: KeyPairString
+  message: string
   intentHashes: string[]
+  createdAt: number
   updatedAt: number
 }
 
-type State = {
-  gifts: Record<DefuseUserId, GiftMakerHistory[]>
+export type State = {
+  gifts: Record<IntentsUserId, GiftMakerHistory[]>
 }
 
-type Actions = {
+export type GiftStorageState = {
+  state: {
+    gifts: Record<IntentsUserId, GiftMakerHistory[]>
+  }
+}
+
+export type Actions = {
   addGift: (
     gift: Omit<GiftMakerHistory, "updatedAt">,
-    userId: DefuseUserId | SignerCredentials
-  ) => void
+    userId: IntentsUserId | SignerCredentials
+  ) => Promise<StorageOperationResult>
   updateGift: (
-    giftId: string,
-    userId: DefuseUserId | SignerCredentials,
+    secretKey: string,
+    userId: IntentsUserId | SignerCredentials,
     intentHashes: string[]
-  ) => void
-  removeGift: (giftId: string, userId: DefuseUserId | SignerCredentials) => void
+  ) => Promise<StorageOperationResult>
+  removeGift: (
+    secretKey: string,
+    userId: IntentsUserId | SignerCredentials
+  ) => Promise<StorageOperationResult>
 }
 
-type Store = State & Actions
-
-type GiftData = {
-  state: {
-    gifts: Record<DefuseUserId, GiftMakerHistory[]>
-  }
-}
-
-function serializeGiftData(gift: GiftMakerHistory) {
-  return {
-    ...gift,
-    tokenDiff: Object.fromEntries(
-      Object.entries(gift.tokenDiff).map(([key, value]) => [
-        key,
-        typeof value === "bigint" ? value.toString() : value,
-      ])
-    ),
-  }
-}
-
-function deserializeGiftData(gift: GiftMakerHistory) {
-  return {
-    ...gift,
-    tokenDiff: Object.fromEntries(
-      Object.entries(gift.tokenDiff).map(([key, value]) => [
-        key,
-        typeof value === "string" ? BigInt(value) : value,
-      ])
-    ),
-  }
-}
-
-function processGiftData(data: GiftData | null) {
-  if (data?.state?.gifts) {
-    return {
-      ...data,
-      state: {
-        ...data.state,
-        gifts: Object.fromEntries(
-          Object.entries(data.state.gifts).map(([key, value]) => [
-            key,
-            value.map(deserializeGiftData),
-          ])
-        ),
-      },
-    }
-  }
-  return data
-}
-
-export const tripleStorage = {
-  getItem: async (name: string) => {
-    const localData = localStorageHandler.getItem(name)
-    const sessionData = sessionStorageHandler.getItem(name)
-    let indexedData = null
-    try {
-      indexedData = await indexedDBStorage.getItem(name)
-    } catch (error) {
-      logger.error(
-        new Error("Failed to fetch data from IndexedDB", { cause: error })
-      )
-    }
-    const data = localData || sessionData || indexedData
-    return data ? processGiftData(JSON.parse(data)) : null
-  },
-  setItem: async (
-    name: string,
-    value: Record<DefuseUserId, GiftMakerHistory[]>
-  ) => {
-    const stringValue = JSON.stringify(value)
-    localStorageHandler.setItem(name, stringValue)
-    sessionStorageHandler.setItem(name, stringValue)
-    try {
-      await indexedDBStorage.setItem(name, stringValue)
-    } catch (error) {
-      logger.error(
-        new Error("Failed to set data in IndexedDB", { cause: error })
-      )
-    }
-  },
-  updateItem: async (
-    name: string,
-    value: Record<DefuseUserId, GiftMakerHistory[]>
-  ) => {
-    const stringValue = JSON.stringify(value)
-    localStorageHandler.setItem(name, stringValue)
-    sessionStorageHandler.setItem(name, stringValue)
-    try {
-      await indexedDBStorage.setItem(name, stringValue)
-    } catch (error) {
-      logger.error(
-        new Error("Failed to update data in IndexedDB", { cause: error })
-      )
-    }
-  },
-  removeItem: async (name: string) => {
-    localStorageHandler.removeItem(name)
-    sessionStorageHandler.removeItem(name)
-    try {
-      await indexedDBStorage.removeItem(name)
-    } catch (error) {
-      logger.error(
-        new Error("Failed to remove data from IndexedDB", { cause: error })
-      )
-    }
-  },
-}
-
-function getUserId(user: DefuseUserId | SignerCredentials) {
-  return typeof user === "string"
-    ? user
-    : userAddressToDefuseUserId(user.credential, user.credentialType)
-}
+export type Store = State & Actions
 
 export const giftMakerHistoryStore = create<Store>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       gifts: {},
 
-      addGift: (gift, user) => {
+      addGift: async (gift, user) => {
         const userId = getUserId(user)
-
-        set((state) => ({
+        const newState = {
           gifts: {
-            ...state.gifts,
+            ...get().gifts,
             [userId]: [
-              ...(state.gifts[userId] ?? []),
+              ...(get().gifts[userId] ?? []),
               {
                 ...gift,
+                createdAt: Date.now(),
                 updatedAt: Date.now(),
               },
-            ].map(serializeGiftData),
+            ],
           },
-        }))
+        }
+
+        try {
+          const result = await storage.setItem(configDBStorage.dbName, {
+            state: newState,
+          })
+          if (result.tag === "err") {
+            return result
+          }
+          set(newState)
+          return result
+        } catch (error) {
+          logger.error(new Error("Failed to add gift", { cause: error }))
+          return { tag: "err", reason: "ERR_UPDATE_ITEM_FAILED_TO_STORAGE" }
+        }
       },
 
-      updateGift: (giftId, user, intentHashes) => {
+      updateGift: async (secretKey, user, intentHashes) => {
         const userId = getUserId(user)
-        set((state) => ({
+        const newState = {
           gifts: {
-            ...state.gifts,
-            [userId]: (state.gifts[userId] ?? [])
-              .map((g) => (g.giftId === giftId ? { ...g, intentHashes } : g))
-              .map(serializeGiftData),
+            ...get().gifts,
+            [userId]: (get().gifts[userId] ?? []).map((g) =>
+              g.secretKey === secretKey
+                ? { ...g, intentHashes, updatedAt: Date.now() }
+                : g
+            ),
           },
-        }))
+        }
+
+        try {
+          const result = await storage.updateItem(configDBStorage.dbName, {
+            state: newState,
+          })
+          if (result.tag === "err") {
+            return result
+          }
+          set(newState)
+          return result
+        } catch (error) {
+          logger.error(new Error("Failed to update gift", { cause: error }))
+          return { tag: "err", reason: "ERR_UPDATE_ITEM_FAILED_TO_STORAGE" }
+        }
       },
 
-      removeGift: (giftId: string, user) => {
+      removeGift: async (secretKey, user) => {
         const userId = getUserId(user)
-
-        set((state) => ({
+        const newState = {
           gifts: {
-            ...state.gifts,
-            [userId]: (state.gifts[userId] ?? [])
-              .filter((gift) => gift.giftId !== giftId)
-              .map(serializeGiftData),
+            ...get().gifts,
+            [userId]: (get().gifts[userId] ?? []).filter(
+              (gift) => gift.secretKey !== secretKey
+            ),
           },
-        }))
+        }
+
+        try {
+          const result = await storage.removeItem(configDBStorage.dbName)
+          if (result.tag === "err") {
+            return result
+          }
+          set(newState)
+          return result
+        } catch (error) {
+          logger.error(new Error("Failed to remove gift", { cause: error }))
+          return { tag: "err", reason: "ERR_REMOVE_ITEM_FAILED_FROM_STORAGE" }
+        }
       },
     }),
     {
-      name: GIFT_STORAGE_NAME,
-      storage: tripleStorage,
+      name: configDBStorage.dbName,
+      storage,
+      version: 2,
+      migrate: migrateGiftStorage,
     }
   )
 )

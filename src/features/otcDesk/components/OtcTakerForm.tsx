@@ -11,7 +11,7 @@ import { getDepositedBalances } from "../../../services/defuseBalanceService"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../../types/base"
 import type { MultiPayload } from "../../../types/defuse-contracts-types"
 import { assert } from "../../../utils/assert"
-import { userAddressToDefuseUserId } from "../../../utils/defuse"
+import { authHandleToIntentsUserId } from "../../../utils/authIdentity"
 import { formatTokenValue, formatUsdAmount } from "../../../utils/format"
 import getTokenUsdPrice from "../../../utils/getTokenUsdPrice"
 import {
@@ -53,7 +53,7 @@ export function OtcTakerForm({
 }: OtcTakerFormProps) {
   const signerId =
     signerCredentials != null
-      ? userAddressToDefuseUserId(
+      ? authHandleToIntentsUserId(
           signerCredentials.credential,
           signerCredentials.credentialType
         )
@@ -173,10 +173,10 @@ export function OtcTakerForm({
     <div className="flex flex-col">
       {/* Header Section */}
       <div className="flex flex-col items-start text-center mb-5">
-        <div className="text-2xl font-black text-gray-900 dark:text-gray-100 mb-1.5">
+        <div className="text-2xl font-black text-gray-12 mb-1.5">
           Complete swap
         </div>
-        <div className="text-sm font-medium text-gray-600 dark:text-gray-400">
+        <div className="text-sm font-medium text-gray-11">
           Pay the specified amount to finalize the transaction.
         </div>
       </div>

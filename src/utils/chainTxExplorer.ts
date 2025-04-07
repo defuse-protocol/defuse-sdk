@@ -23,7 +23,7 @@ export function chainTxExplorer(blockchain: SupportedChainName): string | null {
     case "xrpledger":
       return "https://livenet.xrpl.org/transactions/"
     case "zcash":
-      return "https://zcash.blockexplorer.com/tx/"
+      return "https://mainnet.zcashexplorer.app/transactions/"
     case "gnosis":
       return "https://gnosisscan.io/tx/"
     case "berachain":
@@ -31,5 +31,15 @@ export function chainTxExplorer(blockchain: SupportedChainName): string | null {
     default:
       blockchain satisfies never
       return null
+  }
+}
+
+export function blockExplorerTxLinkFactory(
+  blockchain: SupportedChainName,
+  txHash: string
+) {
+  const baseUrl = chainTxExplorer(blockchain)
+  if (baseUrl != null) {
+    return baseUrl + txHash
   }
 }

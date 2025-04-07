@@ -3,6 +3,7 @@ import { Button, Dialog, Spinner } from "@radix-ui/themes"
 import { useSelector } from "@xstate/react"
 import { useCallback } from "react"
 import type { SignerCredentials } from "src/core/formatters"
+import { assert } from "src/utils/assert"
 import type { ActorRefFrom } from "xstate"
 import { ButtonCustom } from "../../../components/Button/ButtonCustom"
 import { Copy } from "../../../components/IntentCard/CopyButton"
@@ -10,6 +11,7 @@ import { BaseModalDialog } from "../../../components/Modal/ModalDialog"
 import type { giftMakerReadyActor } from "../actors/giftMakerReadyActor"
 import type { GiftInfo } from "../actors/shared/getGiftInfo"
 import type { giftClaimActor } from "../actors/shared/giftClaimActor"
+import { giftMakerHistoryStore } from "../stores/giftMakerHistory"
 import type { GiftLinkData } from "../types/sharedTypes"
 import { ShareableGiftImage } from "./ShareableGiftImage"
 import { ErrorReason } from "./shared/ErrorReason"
@@ -69,14 +71,10 @@ function SuccessDialog({
 
   const copyGiftLink = useCallback(() => {
     return generateLink({
-      secretKey: context.escrowCredentials.secretKey,
+      secretKey: context.giftInfo.secretKey,
       message: context.parsed.message,
     })
-  }, [
-    generateLink,
-    context.escrowCredentials.secretKey,
-    context.parsed.message,
-  ])
+  }, [generateLink, context.giftInfo.secretKey, context.parsed.message])
 
   return (
     <BaseModalDialog open onClose={finish} isDismissable>
@@ -152,7 +150,11 @@ export function CancellationDialog({
 
   const ackCancellationImpossible = useCallback(() => {
     actorRef?.send({ type: "ACK_CLAIM_IMPOSSIBLE" })
-  }, [actorRef])
+    assert(giftInfo.secretKey, "giftInfo.secretKey is not set")
+    giftMakerHistoryStore
+      .getState()
+      .removeGift(giftInfo.secretKey, signerCredentials)
+  }, [actorRef, giftInfo, signerCredentials])
 
   const confirmCancellation = useCallback(() => {
     actorRef?.send({
@@ -177,10 +179,10 @@ export function CancellationDialog({
         </>
       ) : (
         <>
-          <Dialog.Title className="text-2xl font-black text-gray-900 dark:text-gray-100 mb-2">
+          <Dialog.Title className="text-2xl font-black text-gray-12 mb-2">
             Cancel gift?
           </Dialog.Title>
-          <Dialog.Description className="text-sm font-medium text-gray-600 dark:text-gray-400">
+          <Dialog.Description className="text-sm font-medium text-gray-11">
             The funds will return to your account, and the link will no longer
             work.
           </Dialog.Description>

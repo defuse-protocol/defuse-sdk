@@ -50,3 +50,7 @@ export function findError<T extends Error>(
   }
   return null
 }
+
+export function isAbortError(err: unknown): boolean {
+  return findError(err, DOMException)?.name === "AbortError"
+}

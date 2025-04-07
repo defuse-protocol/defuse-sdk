@@ -1,5 +1,5 @@
+import type { IntentsUserId } from "../types/intentsUserId"
 import type { WalletMessage } from "../types/swap"
-import type { DefuseUserId } from "../utils/defuse"
 import {
   type WithdrawParams,
   makeEmptyMessage,
@@ -16,7 +16,7 @@ export interface IntentMessageConfig {
    * User identifier either as DefuseUserId or SignerCredentials
    * If SignerCredentials is provided, it will be converted to DefuseUserId
    */
-  signerId: DefuseUserId | SignerCredentials
+  signerId: IntentsUserId | SignerCredentials
   /**
    * Optional deadline timestamp in milliseconds
    * @default 5 minutes from now
@@ -40,8 +40,8 @@ export interface IntentMessageConfig {
 export type WithdrawIntentMessageConfig = WithdrawParams
 
 function resolveSignerId(
-  signerId: DefuseUserId | SignerCredentials
-): DefuseUserId {
+  signerId: IntentsUserId | SignerCredentials
+): IntentsUserId {
   return typeof signerId === "string" ? signerId : formatUserIdentity(signerId)
 }
 
@@ -127,6 +127,7 @@ export function createTransferMessage(
     signerId: resolveSignerId(options.signerId),
     deadlineTimestamp: options.deadlineTimestamp ?? minutesFromNow(5),
     receiverId: options.receiverId,
+    memo: options.memo,
   })
 
   return makeSwapMessage({

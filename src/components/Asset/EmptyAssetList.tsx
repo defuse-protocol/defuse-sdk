@@ -23,7 +23,7 @@ export const EmptyAssetList = ({ className }: Pick<Props, "className">) => {
       <Text size="4" weight="bold">
         Your token not found
       </Text>
-      <Text size="2" weight="medium" className="text-gray-600">
+      <Text size="2" weight="medium" className="text-gray-11">
         Try depositing to your wallet.
       </Text>
     </div>

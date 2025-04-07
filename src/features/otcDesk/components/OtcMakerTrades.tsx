@@ -8,7 +8,6 @@ import { useQuery } from "@tanstack/react-query"
 import { Err, None, Ok, type Option, type Result, Some } from "@thames/monads"
 import { useSelector } from "@xstate/react"
 import clsx from "clsx"
-import type { CodeResult } from "near-api-js/lib/providers/provider"
 import {
   type ReactElement,
   type ReactNode,
@@ -18,17 +17,16 @@ import {
   useState,
 } from "react"
 import { nearClient } from "src/constants/nearClient"
-import * as v from "valibot"
 import { type ActorRefFrom, createActor, toPromise } from "xstate"
 import { AssetComboIcon } from "../../../components/Asset/AssetComboIcon"
 import { Copy } from "../../../components/IntentCard/CopyButton"
-import { config } from "../../../config"
-import type { DefuseUserId, SignerCredentials } from "../../../core/formatters"
+import type { IntentsUserId, SignerCredentials } from "../../../core/formatters"
 import { getDepositedBalances } from "../../../services/defuseBalanceService"
+import { isNonceUsed } from "../../../services/intentsContractService"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../../types/base"
 import type { MultiPayload } from "../../../types/defuse-contracts-types"
 import { assert } from "../../../utils/assert"
-import { userAddressToDefuseUserId } from "../../../utils/defuse"
+import { authHandleToIntentsUserId } from "../../../utils/authIdentity"
 import { formatTokenValue } from "../../../utils/format"
 import { computeTotalBalanceDifferentDecimals } from "../../../utils/tokenUtils"
 import type { SendNearTransaction } from "../../machines/publicKeyVerifierMachine"
@@ -71,7 +69,7 @@ export function OtcMakerTrades({
   sendNearTransaction,
 }: OtcMakerTradesProps) {
   const trades = useOtcMakerTrades((s) => {
-    const userId = userAddressToDefuseUserId(
+    const userId = authHandleToIntentsUserId(
       signerCredentials.credential,
       signerCredentials.credentialType
     )
@@ -272,7 +270,7 @@ function OtcMakerTradeItem({
             <div
               className={clsx(
                 "rounded-br-lg rounded-bl-lg px-4 py-2 text-xs font-medium",
-                !errIsCritical ? "bg-gray-6" : "bg-red-9 text-white"
+                !errIsCritical ? "bg-gray-6" : "bg-red-9 text-gray-1"
               )}
             >
               {err === "ORDER_EXPIRED" && <div>The order is expired</div>}
@@ -315,7 +313,7 @@ function useValidateTrade(tradeTerms: TradeTerms) {
     ],
     queryFn: () => {
       return getDepositedBalances(
-        tradeTerms.userId as DefuseUserId,
+        tradeTerms.userId as IntentsUserId,
         Object.keys(tradeTerms.tokenDiff),
         nearClient
       )
@@ -339,23 +337,12 @@ function useValidateTrade(tradeTerms: TradeTerms) {
   const nonceValidation = useQuery({
     enabled: error.isNone(),
     queryKey: ["nonce_is_used", tradeTerms.userId, tradeTerms.nonceBase64],
-    queryFn: async () => {
-      const output = await nearClient.query<CodeResult>({
-        request_type: "call_function",
-        account_id: config.env.contractID,
-        method_name: "is_nonce_used",
-        args_base64: btoa(
-          JSON.stringify({
-            account_id: tradeTerms.userId,
-            nonce: tradeTerms.nonceBase64,
-          })
-        ),
-        finality: "optimistic",
-      })
-
-      const stringData = String.fromCharCode(...output.result)
-      return v.parse(v.boolean(), JSON.parse(stringData))
-    },
+    queryFn: async () =>
+      isNonceUsed({
+        nearClient,
+        accountId: tradeTerms.userId,
+        nonce: tradeTerms.nonceBase64,
+      }),
     select: (nonceIsUsed): Option<"NONCE_ALREADY_USED"> => {
       return nonceIsUsed ? Some("NONCE_ALREADY_USED") : None
     },

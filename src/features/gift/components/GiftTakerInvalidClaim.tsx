@@ -1,6 +1,5 @@
-import { ExclamationTriangleIcon } from "@radix-ui/react-icons"
-import { Callout } from "@radix-ui/themes"
 import { ActionIcon } from "./shared/ActionIcon"
+import { ErrorReason } from "./shared/ErrorReason"
 import { GiftDescription } from "./shared/GiftDescription"
 import { GiftHeader } from "./shared/GiftHeader"
 
@@ -16,14 +15,7 @@ export function GiftTakerInvalidClaim({ error }: { error: string }) {
       </GiftHeader>
 
       {/* Error Section */}
-      {error != null && (
-        <Callout.Root size="1" color="red">
-          <Callout.Icon>
-            <ExclamationTriangleIcon />
-          </Callout.Icon>
-          <Callout.Text>{error}</Callout.Text>
-        </Callout.Root>
-      )}
+      {error != null && <ErrorReason reason={error} />}
     </>
   )
 }

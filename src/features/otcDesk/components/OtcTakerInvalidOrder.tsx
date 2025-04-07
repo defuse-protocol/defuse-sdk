@@ -61,14 +61,12 @@ export function OtcTakerInvalidOrder({
       {/* Header Section */}
       <div className="flex flex-row justify-between mb-5">
         <div className="flex flex-col items-start gap-1.5">
-          <div className="text-2xl font-black text-gray-900 dark:text-gray-100 mb-2">
-            Oops!
-          </div>
-          <div className="text-sm font-medium text-gray-600 dark:text-gray-400">
+          <div className="text-2xl font-black text-gray-12 mb-2">Oops!</div>
+          <div className="text-sm font-medium text-gray-11">
             Looks like this trade is no longer valid — either it expired or the
             funds aren’t there.
           </div>
-          <div className="text-sm font-medium text-gray-600 dark:text-gray-400">
+          <div className="text-sm font-medium text-gray-11">
             Check back with the sender for an update.
           </div>
         </div>

@@ -1,16 +1,17 @@
 import { useMemo } from "react"
+import { authHandleToIntentsUserId } from "src/utils/authIdentity"
 import { WidgetRoot } from "../../../components/WidgetRoot"
 import type { SignerCredentials } from "../../../core/formatters"
 import { SwapWidgetProvider } from "../../../providers/SwapWidgetProvider"
+import type { AuthMethod } from "../../../types/authHandle"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../../types/base"
-import type { ChainType } from "../../../types/deposit"
-import { TabProvider } from "../providers/TabProvider"
+import { useGiftMakerHistory } from "../stores/giftMakerHistory"
 import type { GiftLinkData } from "../types/sharedTypes"
 import { GiftHistory } from "./shared/GiftHistory"
 
 export type GiftHistoryWidgetProps = {
   userAddress: string | null | undefined
-  userChainType: ChainType | null | undefined
+  userChainType: AuthMethod | null | undefined
   generateLink: (giftLinkData: GiftLinkData) => string
   tokenList: (BaseTokenInfo | UnifiedTokenInfo)[]
 }
@@ -30,19 +31,29 @@ export function GiftHistoryWidget({
       : null
   }, [userChainType, userAddress])
 
+  const gifts = useGiftMakerHistory((s) => {
+    if (!signerCredentials) {
+      return undefined
+    }
+    const userId = authHandleToIntentsUserId(
+      signerCredentials.credential,
+      signerCredentials.credentialType
+    )
+    return s.gifts[userId]
+  })
+
   return (
     <WidgetRoot>
-      <SwapWidgetProvider>
-        <TabProvider>
-          {signerCredentials && (
-            <GiftHistory
-              signerCredentials={signerCredentials}
-              tokenList={tokenList}
-              generateLink={generateLink}
-            />
-          )}
-        </TabProvider>
-      </SwapWidgetProvider>
+      <div className="widget-container flex flex-col gap-5">
+        <SwapWidgetProvider>
+          <GiftHistory
+            signerCredentials={signerCredentials}
+            tokenList={tokenList}
+            generateLink={generateLink}
+            gifts={gifts}
+          />
+        </SwapWidgetProvider>
+      </div>
     </WidgetRoot>
   )
 }

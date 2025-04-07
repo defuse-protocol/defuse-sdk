@@ -8,18 +8,17 @@ import {
   setup,
   spawnChild,
 } from "xstate"
-import { settings } from "../../constants/settings"
 import { logger } from "../../logger"
 import type { QuoteResult } from "../../services/quoteService"
+import type { AuthMethod } from "../../types/authHandle"
 import type {
   BaseTokenInfo,
   TokenValue,
   UnifiedTokenInfo,
 } from "../../types/base"
-import type { ChainType } from "../../types/deposit"
 import type { SwappableToken } from "../../types/swap"
 import { assert } from "../../utils/assert"
-import { userAddressToDefuseUserId } from "../../utils/defuse"
+import { authHandleToIntentsUserId } from "../../utils/authIdentity"
 import { parseUnits } from "../../utils/parse"
 import {
   getAnyBaseTokenInfo,
@@ -95,7 +94,7 @@ export const swapUIMachine = setup({
           type: "submit"
           params: {
             userAddress: string
-            userChainType: ChainType
+            userChainType: AuthMethod
             nearClient: providers.Provider
           }
         }
@@ -176,10 +175,7 @@ export const swapUIMachine = setup({
     passthroughEvent: emit((_, event: PassthroughEvent) => event),
     spawnBackgroundQuoterRef: spawnChild("backgroundQuoterActor", {
       id: "backgroundQuoterRef",
-      input: ({ self }) => ({
-        parentRef: self,
-        delayMs: settings.quotePollingIntervalMs,
-      }),
+      input: ({ self }) => ({ parentRef: self }),
     }),
     // Warning: This cannot be properly typed, so you can send an incorrect event
     sendToBackgroundQuoterRefNewQuoteInput: sendTo(
@@ -415,7 +411,7 @@ export const swapUIMachine = setup({
           return {
             userAddress: event.params.userAddress,
             userChainType: event.params.userChainType,
-            defuseUserId: userAddressToDefuseUserId(
+            defuseUserId: authHandleToIntentsUserId(
               event.params.userAddress,
               event.params.userChainType
             ),

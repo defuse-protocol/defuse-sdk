@@ -1,7 +1,6 @@
-import { useEffect } from "react"
+import { TokenListUpdater } from "../../../components/TokenListUpdater"
 import { WidgetRoot } from "../../../components/WidgetRoot"
 import { SwapWidgetProvider } from "../../../providers/SwapWidgetProvider"
-import { useTokensStore } from "../../../providers/TokensStoreProvider"
 import type { SwapWidgetProps } from "../../../types/swap"
 import { SwapForm } from "./SwapForm"
 import { SwapFormProvider } from "./SwapFormProvider"
@@ -54,16 +53,4 @@ export const SwapWidget = ({
       </SwapWidgetProvider>
     </WidgetRoot>
   )
-}
-
-function TokenListUpdater({
-  tokenList,
-}: { tokenList: SwapWidgetProps["tokenList"] }) {
-  const { updateTokens } = useTokensStore((state) => state)
-
-  useEffect(() => {
-    updateTokens(tokenList)
-  }, [tokenList, updateTokens])
-
-  return null
 }

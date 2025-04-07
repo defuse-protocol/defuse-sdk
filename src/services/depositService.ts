@@ -30,18 +30,16 @@ import type { depositGenerateAddressMachine } from "../features/machines/deposit
 import { getNearTxSuccessValue } from "../features/machines/getTxMachine"
 import type { storageDepositAmountMachine } from "../features/machines/storageDepositAmountMachine"
 import { logger } from "../logger"
+import { AuthMethod } from "../types/authHandle"
 import type { BaseTokenInfo, SupportedChainName } from "../types/base"
-import {
-  ChainType,
-  type SendTransactionEVMParams,
-  type Transaction,
-} from "../types/deposit"
+import type { SendTransactionEVMParams, Transaction } from "../types/deposit"
+import type { IntentsUserId } from "../types/intentsUserId"
 import { BlockchainEnum } from "../types/interfaces"
 import { assert } from "../utils/assert"
-import { type DefuseUserId, userAddressToDefuseUserId } from "../utils/defuse"
+import { authHandleToIntentsUserId } from "../utils/authIdentity"
 import { getEVMChainId } from "../utils/evmChainId"
 import { isNativeToken } from "../utils/token"
-import { getDepositAddress, getSupportedTokens } from "./poaBridgeClient"
+import { getDepositAddress, getSupportedTokens } from "./poaBridgeHttpClient"
 
 export type PreparationOutput =
   | {
@@ -471,7 +469,7 @@ export function createDepositFromSiloTransaction(
       getAddress(tokenAddress),
       amount,
       depositAddress,
-      userAddressToDefuseUserId(userAddress, ChainType.EVM),
+      authHandleToIntentsUserId(userAddress, AuthMethod.EVM),
     ],
   })
   const tx: SendTransactionEVMParams = {
@@ -593,7 +591,7 @@ function createSPLTransferSolanaTransaction(
  * @returns A Promise that resolves to the generated deposit address
  */
 export async function generateDepositAddress(
-  userAddress: DefuseUserId,
+  userAddress: IntentsUserId,
   chain: BlockchainEnum
 ): Promise<string> {
   try {
@@ -699,11 +697,11 @@ export function waitEVMTransaction({
  * - `passiveDeposit` is deposit via generated address at QR code provided by POA bridge.
  */
 export function getAvailableDepositRoutes(
-  chainTypeFromWallet: ChainType,
+  chainTypeFromWallet: AuthMethod,
   network: BlockchainEnum
 ): { activeDeposit: boolean; passiveDeposit: boolean } | null {
   switch (chainTypeFromWallet) {
-    case ChainType.Near:
+    case AuthMethod.Near:
       switch (network) {
         case BlockchainEnum.NEAR:
           return {
@@ -734,7 +732,7 @@ export function getAvailableDepositRoutes(
           network satisfies never
           throw new Error("exhaustive check failed")
       }
-    case ChainType.EVM:
+    case AuthMethod.EVM:
       switch (network) {
         case BlockchainEnum.NEAR:
           return {
@@ -769,7 +767,7 @@ export function getAvailableDepositRoutes(
           network satisfies never
           throw new Error("exhaustive check failed")
       }
-    case ChainType.Solana:
+    case AuthMethod.Solana:
       switch (network) {
         case BlockchainEnum.NEAR:
         case BlockchainEnum.TURBOCHAIN:
@@ -800,7 +798,7 @@ export function getAvailableDepositRoutes(
           network satisfies never
           throw new Error("exhaustive check failed")
       }
-    case ChainType.WebAuthn:
+    case AuthMethod.WebAuthn:
       switch (network) {
         case BlockchainEnum.NEAR:
         case BlockchainEnum.TURBOCHAIN:

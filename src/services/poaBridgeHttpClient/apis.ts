@@ -30,3 +30,19 @@ export async function getDepositStatus(
   )
   return json.result ?? { deposits: [] }
 }
+
+export async function getWithdrawalStatus(
+  params: types.WithdrawalStatusRequest["params"][0]
+): Promise<types.WithdrawalStatusResponseOk["result"]> {
+  const json:
+    | types.WithdrawalStatusResponseOk
+    | types.WithdrawalStatusResponseErr =
+    await jsonRPCRequest<types.WithdrawalStatusRequest>(
+      "withdrawal_status",
+      params
+    )
+  if ("error" in json) {
+    throw new Error(json.error)
+  }
+  return json.result
+}

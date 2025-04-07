@@ -1,32 +1,41 @@
 import { useActorRef, useSelector } from "@xstate/react"
 import clsx from "clsx"
 import { useEffect, useMemo } from "react"
-import { ButtonCustom } from "src/components/Button/ButtonCustom"
-import type { ActorRefFrom } from "xstate"
+import type { ActorRefFrom, PromiseActorLogic } from "xstate"
 import { BlockMultiBalances } from "../../../components/Block/BlockMultiBalances"
+import { ButtonCustom } from "../../../components/Button/ButtonCustom"
 import type { ModalSelectAssetsPayload } from "../../../components/Modal/ModalSelectAssets"
 import { SelectAssets } from "../../../components/SelectAssets"
 import type { SignerCredentials } from "../../../core/formatters"
-import { useModalController } from "../../../hooks/useModalController"
+import { usePublicKeyModalOpener } from "../../../features/swap/hooks/usePublicKeyModalOpener"
 import { useTokensUsdPrices } from "../../../hooks/useTokensUsdPrices"
-import { useTokensStore } from "../../../providers/TokensStoreProvider"
+import { useModalStore } from "../../../providers/ModalStoreProvider"
 import { ModalType } from "../../../stores/modalStore"
+import type { AuthMethod } from "../../../types/authHandle"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../../types/base"
-import type { ChainType } from "../../../types/deposit"
+import type { SwappableToken } from "../../../types/swap"
 import { assert } from "../../../utils/assert"
 import { formatTokenValue, formatUsdAmount } from "../../../utils/format"
 import getTokenUsdPrice from "../../../utils/getTokenUsdPrice"
 import { TokenAmountInputCard } from "../../deposit/components/DepositForm/TokenAmountInputCard"
 import { balanceAllSelector } from "../../machines/depositedBalanceMachine"
+import type { SendNearTransaction } from "../../machines/publicKeyVerifierMachine"
+import type { publicKeyVerifierMachine } from "../../machines/publicKeyVerifierMachine"
 import { formValuesSelector } from "../actors/giftMakerFormMachine"
 import type { giftMakerReadyActor } from "../actors/giftMakerReadyActor"
 import { giftMakerRootMachine } from "../actors/giftMakerRootMachine"
+import type { giftMakerSignActor } from "../actors/giftMakerSignActor"
+import type {
+  GiftMakerSignActorInput,
+  GiftMakerSignActorOutput,
+} from "../actors/giftMakerSignActor"
 import { useBalanceUpdaterSyncWithHistory } from "../hooks/useBalanceUpdaterSyncWithHistory"
 import { useCheckSignerCredentials } from "../hooks/useCheckSignerCredentials"
 import type { GiftLinkData, SignMessage } from "../types/sharedTypes"
 import { checkInsufficientBalance, getButtonText } from "../utils/makerForm"
 import { GiftMakerReadyDialog } from "./GiftMakerReadyDialog"
 import { GiftMessageInput } from "./GiftMessageInput"
+import { ErrorReason } from "./shared/ErrorReason"
 import { GiftDescription } from "./shared/GiftDescription"
 import { GiftHeader } from "./shared/GiftHeader"
 
@@ -36,13 +45,16 @@ export type GiftMakerWidgetProps = {
 
   /** User's wallet address */
   userAddress: string | null | undefined
-  userChainType: ChainType | null | undefined
+  userChainType: AuthMethod | null | undefined
 
   /** Initial tokens for pre-filling the form */
   initialToken?: BaseTokenInfo | UnifiedTokenInfo
 
   /** Sign message callback */
   signMessage: SignMessage
+
+  /** Send NEAR transaction callback */
+  sendNearTransaction: SendNearTransaction
 
   /** Function to generate a shareable trade link */
   generateLink: (giftLinkData: GiftLinkData) => string
@@ -54,12 +66,15 @@ export type GiftMakerWidgetProps = {
   referral?: string
 }
 
+const MAX_MESSAGE_LENGTH = 50
+
 export function GiftMakerForm({
   tokenList,
   userAddress,
   userChainType,
   initialToken,
   signMessage,
+  sendNearTransaction,
   generateLink,
   referral,
 }: GiftMakerWidgetProps) {
@@ -106,22 +121,6 @@ export function GiftMakerForm({
   useCheckSignerCredentials(rootActorRef, signerCredentials)
   useBalanceUpdaterSyncWithHistory(rootActorRef, signerCredentials)
 
-  const { setModalType, data: modalSelectAssetsData } = useModalController<{
-    modalType: ModalType.MODAL_SELECT_ASSETS
-    token: BaseTokenInfo | UnifiedTokenInfo | undefined
-  }>(ModalType.MODAL_SELECT_ASSETS)
-
-  const updateTokens = useTokensStore((state) => state.updateTokens)
-
-  const handleSelect = (fieldName: string) => {
-    updateTokens(tokenList)
-    setModalType(ModalType.MODAL_SELECT_ASSETS, {
-      fieldName,
-      selectToken: undefined,
-      balances: tokenBalance,
-    })
-  }
-
   const { data: tokensUsdPriceData } = useTokensUsdPrices()
   const usdAmount = getTokenUsdPrice(
     formValues.amount,
@@ -129,25 +128,43 @@ export function GiftMakerForm({
     tokensUsdPriceData
   )
 
-  /**
-   * This is ModalSelectAssets "callback"
-   */
+  const depositedBalanceRef = useSelector(
+    rootActorRef,
+    (state) => state.children.depositedBalanceRef
+  )
+
+  const { setModalType, payload } = useModalStore((state) => state)
+
+  const openModalSelectAssets = (
+    fieldName: string,
+    token: SwappableToken | undefined
+  ) => {
+    setModalType(ModalType.MODAL_SELECT_ASSETS, {
+      ...(payload as ModalSelectAssetsPayload),
+      fieldName,
+      [fieldName]: token,
+      balances: depositedBalanceRef?.getSnapshot().context.balances,
+    })
+  }
+
   useEffect(() => {
-    const payload: ModalSelectAssetsPayload | undefined = modalSelectAssetsData
-    if (payload?.modalType !== ModalType.MODAL_SELECT_ASSETS) {
+    if (
+      (payload as ModalSelectAssetsPayload)?.modalType !==
+      ModalType.MODAL_SELECT_ASSETS
+    ) {
       return
     }
 
-    if (payload.token) {
-      const token = payload.token
-      payload.token = undefined // consume data, so it won't be triggered again
-
+    const { modalType, fieldName } = payload as ModalSelectAssetsPayload
+    const _payload = payload as ModalSelectAssetsPayload
+    const token = _payload[fieldName || "token"]
+    if (modalType === ModalType.MODAL_SELECT_ASSETS && fieldName && token) {
       formValuesRef.trigger.updateToken({ value: token })
     }
-  }, [modalSelectAssetsData, formValuesRef.trigger.updateToken])
+  }, [payload, formValuesRef])
 
   const balanceInsufficient = useMemo(() => {
-    if (tokenBalance == null) {
+    if (!tokenBalance) {
       return false
     }
     return checkInsufficientBalance(formValues.amount, tokenBalance)
@@ -158,6 +175,51 @@ export function GiftMakerForm({
     rootSnapshot.matches("signing") ||
     rootSnapshot.matches("publishing") ||
     rootSnapshot.matches("settling")
+
+  const error = rootSnapshot.context.error
+
+  const publicKeyVerifierRef = useSelector(
+    useSelector(
+      useSelector(
+        rootActorRef,
+        (state) =>
+          state.children.signRef as
+            | undefined
+            | ActorRefFrom<typeof giftMakerSignActor>
+      ),
+      (state) => {
+        if (state) {
+          return (
+            state as unknown as {
+              children: {
+                signRef: ActorRefFrom<
+                  PromiseActorLogic<
+                    GiftMakerSignActorOutput,
+                    GiftMakerSignActorInput
+                  >
+                >
+              }
+            }
+          ).children.signRef
+        }
+      }
+    ),
+    (state) => {
+      if (state) {
+        return (
+          state as unknown as {
+            children: {
+              publicKeyVerifierRef: ActorRefFrom<
+                typeof publicKeyVerifierMachine
+              >
+            }
+          }
+        ).children.publicKeyVerifierRef
+      }
+    }
+  )
+
+  usePublicKeyModalOpener(publicKeyVerifierRef, sendNearTransaction)
 
   return (
     <div className="flex flex-col">
@@ -214,12 +276,15 @@ export function GiftMakerForm({
                       value: e.target.value,
                     })
                   }
+                  disabled={processing}
                 />
               }
               tokenSlot={
                 <SelectAssets
                   selected={formValues.token ?? undefined}
-                  handleSelect={() => handleSelect("token")}
+                  handleSelect={() =>
+                    openModalSelectAssets("token", formValues.token)
+                  }
                 />
               }
               balanceSlot={
@@ -264,7 +329,15 @@ export function GiftMakerForm({
                       value: e.target.value,
                     })
                   }
+                  maxLength={MAX_MESSAGE_LENGTH}
                 />
+              }
+              countSlot={
+                formValues.message.length > 0 ? (
+                  <GiftMessageInput.DisplayCount
+                    count={MAX_MESSAGE_LENGTH - formValues.message.length}
+                  />
+                ) : null
               }
             />
           </div>
@@ -280,6 +353,11 @@ export function GiftMakerForm({
           {getButtonText(balanceInsufficient, editing, processing)}
         </ButtonCustom>
       </form>
+      {error != null && (
+        <div className="mt-2">
+          <ErrorReason reason={error.reason} />
+        </div>
+      )}
     </div>
   )
 }

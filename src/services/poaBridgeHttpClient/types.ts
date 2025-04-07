@@ -67,3 +67,34 @@ export type GetDepositStatusRequest = JSONRPCRequest<
 export type GetDepositStatusResponse = JSONRPCResponse<{
   deposits: DepositStatus[]
 }>
+
+export type WithdrawalStatusRequest = JSONRPCRequest<
+  "withdrawal_status",
+  {
+    withdrawal_hash: string
+  }
+>
+
+export type WithdrawalStatusResponseOk = JSONRPCResponse<{
+  withdrawals: {
+    status: "COMPLETED" | "PENDING"
+    data: {
+      tx_hash: string
+      transfer_tx_hash: string | null
+      chain: string
+      defuse_asset_identifier: string
+      near_token_id: string
+      decimals: number
+      amount: number
+      account_id: string // initiator
+      address: string // ??
+      created: string // ISO date
+    }
+  }[]
+}>
+
+export type WithdrawalStatusResponseErr = {
+  id: string
+  jsonrpc: "2.0"
+  error: string
+}

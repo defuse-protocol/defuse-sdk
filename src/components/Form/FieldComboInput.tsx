@@ -108,7 +108,7 @@ export const FieldComboInput = <T extends FieldValues>({
   return (
     <div
       className={clsx(
-        "relative flex flex-col px-5 pt-5 pb-6 w-full bg-gray-50 dark:bg-black-900 dark:border-black-950",
+        "relative flex flex-col px-5 pt-5 pb-6 w-full bg-gray-2 dark:border-gray-4",
         className
       )}
     >
@@ -125,15 +125,14 @@ export const FieldComboInput = <T extends FieldValues>({
             disabled={disabled}
             autoComplete="off"
             className={clsx(
-              "bg-gray-50 w-full text-3xl font-medium placeholder-black border-transparent focus:border-transparent focus:ring-0 dark:bg-black-900 dark:placeholder-white px-0 outline-none",
-              disabled &&
-                "text-black-200 pointer-events-none placeholder-black-200",
+              "w-full text-3xl font-medium border-transparent focus:border-transparent focus:ring-0 px-0 outline-none bg-transparent",
+              disabled && "pointer-events-none",
               {
                 hidden: isLoading,
               }
             )}
           />
-          <div className="pointer-events-none absolute top-0 right-0 bottom-0 w-12 bg-gradient-to-r from-transparent to-gray-2" />
+          <div className="pointer-events-none absolute top-0 right-0 bottom-0 w-12" />
         </div>
 
         {selected && (

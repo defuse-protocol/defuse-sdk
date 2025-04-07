@@ -2,8 +2,6 @@ import type { SupportedChainName } from "../types/base"
 
 interface Settings {
   swapExpirySec: number
-  quoteQueryTimeoutMs: number
-  quotePollingIntervalMs: number
   quoteMinDeadlineMs: number
   maxQuoteMinDeadlineMs: number
   rpcUrls: {
@@ -13,11 +11,6 @@ interface Settings {
 
 export const settings: Settings = {
   swapExpirySec: 600, // 10 minutes
-  /**
-   * Quote query lasts 1.4 seconds in good network conditions.
-   */
-  quoteQueryTimeoutMs: 4000,
-  quotePollingIntervalMs: 3000,
   /**
    * Minimum deadline for a quote.
    * The server will return quotes with at least this much time remaining.

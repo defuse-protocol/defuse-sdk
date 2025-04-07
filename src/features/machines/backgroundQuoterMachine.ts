@@ -1,8 +1,12 @@
 import { type ActorRef, type Snapshot, fromCallback } from "xstate"
-import { settings } from "../../constants/settings"
 import { logger } from "../../logger"
-import { type QuoteResult, queryQuote } from "../../services/quoteService"
+import {
+  type AggregatedQuoteParams,
+  type QuoteResult,
+  queryQuote,
+} from "../../services/quoteService"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../types/base"
+import { isAbortError } from "../../utils/errors"
 import { getUnderlyingBaseTokenInfos } from "../../utils/tokenUtils"
 
 export type QuoteInput =
@@ -47,7 +51,6 @@ type ParentActor = ActorRef<Snapshot<unknown>, ParentEvents>
 
 type Input = {
   parentRef: ParentActor
-  delayMs: number
 }
 
 export const backgroundQuoterMachine = fromCallback<
@@ -68,21 +71,16 @@ export const backgroundQuoterMachine = fromCallback<
       case "NEW_QUOTE_INPUT": {
         const quoteInput = event.params
 
-        pollQuote(
-          abortController.signal,
-          quoteInput,
-          input.delayMs,
-          (quote) => {
-            input.parentRef.send({
-              type: "NEW_QUOTE",
-              params: { quoteInput, quote },
-            })
-            emit({
-              type: "NEW_QUOTE",
-              params: { quoteInput, quote },
-            })
-          }
-        )
+        pollQuote(abortController.signal, quoteInput, (quote) => {
+          input.parentRef.send({
+            type: "NEW_QUOTE",
+            params: { quoteInput, quote },
+          })
+          emit({
+            type: "NEW_QUOTE",
+            params: { quoteInput, quote },
+          })
+        })
         break
       }
       default:
@@ -96,77 +94,102 @@ export const backgroundQuoterMachine = fromCallback<
   }
 })
 
+const FAST_QUOTE_WAIT_MS = 500 // immediate price discovery
+const NORMAL_QUOTE_WAIT_MS = 2000 // regular solvers
+const SLOW_QUOTE_WAIT_MS = 10000 // MPC solvers
+
+const QUOTE_POLLING_INTERVAL_MS = 5000
+
 function pollQuote(
   signal: AbortSignal,
   quoteInput: QuoteInput,
-  delayMs: number,
   onResult: (result: QuoteResult) => void
 ): void {
-  pollQuoteLoop(signal, quoteInput, delayMs, onResult).catch((error) =>
-    logger.error(
-      new Error("pollQuote terminated unexpectedly", { cause: error })
-    )
+  let lastSetRequestId = 0
+
+  getQuotes({
+    signal,
+    quoteParams: {
+      tokensIn: getUnderlyingBaseTokenInfos(
+        "tokensIn" in quoteInput ? quoteInput.tokensIn : quoteInput.tokenIn
+      ),
+      tokenOut: quoteInput.tokenOut,
+      amountIn: quoteInput.amountIn,
+      balances: quoteInput.balances,
+    },
+    onResult: ({ requestId, result }) => {
+      // Often the fast quote (#1) fails with "no quote".
+      // But it doesn't mean that there's no quote at all.
+      // It means Solvers couldn't provide a quote in a short time.
+      // So we ignore this error and wait for the next quote.
+      if (
+        requestId === 1 &&
+        result.tag === "err" &&
+        result.value.type === "NO_QUOTES"
+      ) {
+        return
+      }
+
+      // We're interested in the latest result only
+      if (lastSetRequestId < requestId) {
+        lastSetRequestId = requestId
+        onResult(result)
+      }
+    },
+    onError: (error) => {
+      // Ignore the error if the quote was cancelled
+      if (!isAbortError(error)) {
+        logger.error(error)
+      }
+    },
+  })
+}
+
+function getQuotes({
+  signal,
+  quoteParams,
+  onResult,
+  onError,
+}: {
+  signal: AbortSignal
+  quoteParams: Omit<AggregatedQuoteParams, "waitMs">
+  onResult: (arg: { result: QuoteResult; requestId: number }) => void
+  onError: (error: unknown) => void
+}) {
+  const queryQuote = queryQuoteWithRequestId()
+
+  queryQuote({ ...quoteParams, waitMs: FAST_QUOTE_WAIT_MS }, { signal }).then(
+    onResult,
+    onError
   )
-}
 
-async function pollQuoteLoop(
-  signal: AbortSignal,
-  quoteInput: QuoteInput,
-  delayMs: number,
-  onResult: (result: QuoteResult) => void
-): Promise<void> {
-  let lastPropagatedResultRequestedAt: number | null = null
+  queryQuote({ ...quoteParams, waitMs: NORMAL_QUOTE_WAIT_MS }, { signal }).then(
+    onResult,
+    onError
+  )
 
-  while (!signal.aborted) {
-    const requestedAt = Date.now()
+  queryQuote({ ...quoteParams, waitMs: SLOW_QUOTE_WAIT_MS }, { signal }).then(
+    onResult,
+    onError
+  )
 
-    queryQuote(
-      {
-        tokensIn: getUnderlyingBaseTokenInfos(
-          "tokensIn" in quoteInput ? quoteInput.tokensIn : quoteInput.tokenIn
-        ),
-        tokenOut: quoteInput.tokenOut,
-        amountIn: quoteInput.amountIn,
-        balances: quoteInput.balances,
-      },
-      {
-        signal: AbortSignal.timeout(settings.quoteQueryTimeoutMs),
-      }
-    ).then(
-      (quote) => {
-        // Don't propagate results if polling was cancelled
-        if (signal.aborted) return
-
-        if (
-          // We're interested in the latest result only
-          lastPropagatedResultRequestedAt == null ||
-          lastPropagatedResultRequestedAt < requestedAt
-        ) {
-          lastPropagatedResultRequestedAt = requestedAt
-          onResult(quote)
-        }
-      },
-      (e) => {
-        if (isTimedOut(e)) {
-          logger.info("Timeout querying quote", { quoteInput })
-        } else {
-          logger.error(e, { quoteInput })
-        }
-      }
+  const timer = setInterval(() => {
+    queryQuote({ ...quoteParams, waitMs: SLOW_QUOTE_WAIT_MS }, { signal }).then(
+      onResult,
+      onError
     )
+  }, QUOTE_POLLING_INTERVAL_MS)
 
-    await new Promise((resolve) => setTimeout(resolve, delayMs))
-  }
+  signal.addEventListener("abort", () => {
+    clearInterval(timer)
+  })
 }
 
-function isTimedOut(e: unknown): boolean {
-  if (e instanceof DOMException && e.name === "TimeoutError") {
-    return true
+function queryQuoteWithRequestId() {
+  let requestId = 0
+  return async (...args: Parameters<typeof queryQuote>) => {
+    const currentRequestId = ++requestId
+    const result = await queryQuote(...args)
+    return { requestId: currentRequestId, result }
   }
-
-  if (e instanceof Error) {
-    return isTimedOut(e.cause)
-  }
-
-  return false
 }

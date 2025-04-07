@@ -5,12 +5,12 @@ import { settings } from "../../constants/settings"
 import { logger } from "../../logger"
 import { publishIntent } from "../../services/intentService"
 import type { AggregatedQuote } from "../../services/quoteService"
+import type { AuthMethod } from "../../types/authHandle"
 import type { BaseTokenInfo, TokenValue } from "../../types/base"
 import type { Nep413DefuseMessageFor_DefuseIntents } from "../../types/defuse-contracts-types"
-import type { ChainType } from "../../types/deposit"
+import type { IntentsUserId } from "../../types/intentsUserId"
 import type { WalletMessage, WalletSignatureResult } from "../../types/swap"
 import { assert } from "../../utils/assert"
-import type { DefuseUserId } from "../../utils/defuse"
 import {
   makeInnerSwapMessage,
   makeSwapMessage,
@@ -75,13 +75,14 @@ export type IntentDescription =
     }
   | {
       type: "withdraw"
+      tokenOut: BaseTokenInfo
       amountWithdrawn: TokenValue
     }
 
 type Context = {
   userAddress: string
-  userChainType: ChainType
-  defuseUserId: DefuseUserId
+  userChainType: AuthMethod
+  defuseUserId: IntentsUserId
   referral?: string
   slippageBasisPoints: number
   nearClient: providers.Provider
@@ -120,8 +121,8 @@ type Context = {
 
 type Input = {
   userAddress: string
-  userChainType: ChainType
-  defuseUserId: DefuseUserId
+  userChainType: AuthMethod
+  defuseUserId: IntentsUserId
   referral?: string
   slippageBasisPoints: number
   nearClient: providers.Provider
@@ -227,7 +228,7 @@ export const swapIntentMachine = setup({
       }: {
         input: {
           signatureData: WalletSignatureResult
-          userInfo: { userAddress: string; userChainType: ChainType }
+          userInfo: { userAddress: string; userChainType: AuthMethod }
           quoteHashes: string[]
         }
       }) =>
@@ -311,6 +312,7 @@ export const swapIntentMachine = setup({
               intentHash: context.intentHash,
               intentDescription: {
                 type: "withdraw",
+                tokenOut: context.intentOperationParams.tokenOut,
                 amountWithdrawn: calcOperationAmountOut(
                   context.intentOperationParams,
                   context.quoteToPublish

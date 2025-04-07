@@ -1,3 +1,5 @@
+import type { TokenValue } from "../../../types/base"
+
 export function getButtonText(
   balanceInsufficient: boolean,
   editing: boolean,
@@ -17,17 +19,25 @@ export function getButtonText(
 
 export function checkInsufficientBalance(
   formAmount: string,
-  tokenBalance?: { amount: bigint; decimals: number }
+  tokenBalance: TokenValue
 ): boolean {
-  if (tokenBalance == null) {
-    return false
-  }
   if (formAmount.length === 0) {
     return false
   }
+  // Skip invalid number formats:
+  // - Single dot (.)
+  // - Single minus (-)
+  // - Multiple dots (1.2.3)
+  // - Bad minus (1-2)
+  const invalidFormAmount = !/^-?\d+(\.\d+)?$/.test(formAmount)
+  if (invalidFormAmount) {
+    return false
+  }
+  const parsedAmount = Number.parseFloat(formAmount)
+  if (Number.isNaN(parsedAmount)) {
+    return false
+  }
   const conversionFactor = 10 ** tokenBalance.decimals
-  const formAmountBigInt = BigInt(
-    Math.round(Number.parseFloat(formAmount) * conversionFactor)
-  )
+  const formAmountBigInt = BigInt(Math.round(parsedAmount * conversionFactor))
   return formAmountBigInt > tokenBalance.amount
 }

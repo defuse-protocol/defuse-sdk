@@ -13,9 +13,9 @@ import { useModalController } from "../../../hooks/useModalController"
 import { useTokensUsdPrices } from "../../../hooks/useTokensUsdPrices"
 import { useTokensStore } from "../../../providers/TokensStoreProvider"
 import { ModalType } from "../../../stores/modalStore"
+import type { AuthMethod } from "../../../types/authHandle"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../../types/base"
 import type { MultiPayload } from "../../../types/defuse-contracts-types"
-import type { ChainType } from "../../../types/deposit"
 import type { RenderHostAppLink } from "../../../types/hostAppLink"
 import type { SwappableToken } from "../../../types/swap"
 import { assert } from "../../../utils/assert"
@@ -39,7 +39,7 @@ export type OtcMakerWidgetProps = {
 
   /** User's wallet address */
   userAddress: string | null | undefined
-  userChainType: ChainType | null | undefined
+  userChainType: AuthMethod | null | undefined
 
   /** Initial tokens for pre-filling the form */
   initialTokenIn?: BaseTokenInfo | UnifiedTokenInfo
@@ -421,7 +421,7 @@ export function OtcMakerForm({
               onChange={(e) => {
                 formValuesRef.trigger.updateExpiry({ value: e.target.value })
               }}
-              className="bg-white border border-gray-7 rounded-full text-sm px-3 py-1 font-medium outline-none appearance-none cursor-pointer"
+              className="bg-gray-1 border border-gray-7 rounded-full text-sm px-3 py-1 font-medium outline-none appearance-none cursor-pointer"
             >
               <option value="5m">5 Minutes</option>
               <option value="30m">30 Minutes</option>

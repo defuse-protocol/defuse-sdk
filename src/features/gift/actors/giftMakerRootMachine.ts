@@ -20,6 +20,10 @@ import {
   depositedBalanceMachine,
 } from "../../machines/depositedBalanceMachine"
 import { giftMakerHistoryStore } from "../stores/giftMakerHistory"
+import type {
+  StorageOperationErr,
+  StorageOperationResult,
+} from "../stores/storageOperations"
 import type { GiftSignedResult } from "../types/sharedTypes"
 import {
   type EscrowCredentials,
@@ -34,7 +38,9 @@ import {
   giftMakerPublishingActor,
 } from "./giftMakerPublishingActor"
 import {
+  type GiftMakerReadyActorErrors,
   type GiftMakerReadyActorInput,
+  type GiftMakerReadyActorOutput,
   giftMakerReadyActor,
 } from "./giftMakerReadyActor"
 import type {
@@ -47,12 +53,14 @@ import { giftMakerSignActor } from "./giftMakerSignActor"
 type GiftMakerRootMachineErrors =
   | GiftMakerSignActorErrors
   | GiftMakerPublishingActorErrors
+  | { reason: StorageOperationErr }
+  | GiftMakerReadyActorErrors
 
 export type GiftMakerRootMachineContext = {
   error: null | GiftMakerRootMachineErrors
   formRef: ActorRefFrom<typeof giftMakerFormMachine>
   depositedBalanceRef: ActorRefFrom<typeof depositedBalanceMachine>
-  escrowCredentials: EscrowCredentials
+  escrowCredentials: null | EscrowCredentials
   referral: string | undefined
   signData: null | GiftSignedResult
   intentHashes: null | string[]
@@ -99,7 +107,7 @@ export const giftMakerRootMachine = setup({
       GiftMakerPublishingActorInput
     >,
     readyGiftActor: giftMakerReadyActor as unknown as PromiseActorLogic<
-      void,
+      GiftMakerReadyActorOutput,
       GiftMakerReadyActorInput
     >,
     settlingActor: fromPromise(
@@ -110,6 +118,68 @@ export const giftMakerRootMachine = setup({
         const intentHash = input.intentHashes[0]
         assert(intentHash, "intentHash is not defined")
         return waitForIntentSettlement(signal, intentHash)
+      }
+    ),
+    addGiftToHistory: fromPromise(
+      async ({
+        input,
+      }: {
+        input: GiftMakerRootMachineContext
+      }): Promise<StorageOperationResult> => {
+        assert(input.signData, "signData is not defined")
+        const giftInfo = assembleGiftInfo(input)
+        const result = await giftMakerHistoryStore.getState().addGift(
+          {
+            ...giftInfo,
+            createdAt: Date.now(),
+          },
+          input.signData.signerCredentials
+        )
+
+        if (result.tag === "err") {
+          return { tag: "err", reason: result.reason }
+        }
+        return { tag: "ok" }
+      }
+    ),
+    updateGiftToHistory: fromPromise(
+      async ({
+        input,
+      }: {
+        input: GiftMakerRootMachineContext
+      }): Promise<StorageOperationResult> => {
+        assert(input.signData, "signData is not defined")
+        const giftInfo = assembleGiftInfo(input)
+        const result = await giftMakerHistoryStore
+          .getState()
+          .updateGift(
+            giftInfo.secretKey,
+            input.signData.signerCredentials,
+            giftInfo.intentHashes
+          )
+
+        if (result.tag === "err") {
+          return { tag: "err", reason: result.reason }
+        }
+        return { tag: "ok" }
+      }
+    ),
+    removeGiftFromHistory: fromPromise(
+      async ({
+        input,
+      }: {
+        input: GiftMakerRootMachineContext
+      }): Promise<StorageOperationResult> => {
+        assert(input.signData, "signData is not defined")
+        const giftInfo = assembleGiftInfo(input)
+        const result = await giftMakerHistoryStore
+          .getState()
+          .removeGift(giftInfo.secretKey, input.signData.signerCredentials)
+
+        if (result.tag === "err") {
+          return { tag: "err", reason: result.reason }
+        }
+        return { tag: "ok" }
       }
     ),
   },
@@ -142,36 +212,16 @@ export const giftMakerRootMachine = setup({
     completeSign: ({ self }, event: GiftSignedResult) => {
       self.send({ type: "COMPLETE_SIGN", params: event })
     },
-    addGiftToHistory: ({ context }) => {
-      assert(context.signData, "signData is not defined")
-      const giftInfo = assembleGiftInfo(context)
-      giftMakerHistoryStore.getState().addGift(
-        {
-          ...giftInfo,
-        },
-        context.signData.signerCredentials
-      )
-    },
-    updateGiftToHistory: ({ context }) => {
-      assert(context.signData, "signData is not defined")
-      const giftInfo = assembleGiftInfo(context)
-      giftMakerHistoryStore
-        .getState()
-        .updateGift(
-          giftInfo.giftId,
-          context.signData.signerCredentials,
-          giftInfo.intentHashes
-        )
-    },
-    removeGiftFromHistory: ({ context }) => {
-      assert(context.signData, "signData is not defined")
-      giftMakerHistoryStore
-        .getState()
-        .removeGift(context.signData.giftId, context.signData.signerCredentials)
-    },
     cleanup: assign({
       error: null,
       signData: null,
+      escrowCredentials: null,
+    }),
+    clearEscrowCredentials: assign({
+      escrowCredentials: null,
+    }),
+    generateEscrowCredentials: assign({
+      escrowCredentials: () => generateEscrowCredentials(),
     }),
   },
   guards: {
@@ -196,7 +246,7 @@ export const giftMakerRootMachine = setup({
         // `depositedBalanceActor` is any, so we explicitly safeguard it with `satisfies`
       } satisfies InputFrom<typeof depositedBalanceMachine>,
     }),
-    escrowCredentials: generateEscrowCredentials(),
+    escrowCredentials: null,
     referral: input.referral,
     signData: null,
     intentHashes: null,
@@ -220,6 +270,8 @@ export const giftMakerRootMachine = setup({
   },
   states: {
     editing: {
+      entry: ["clearEscrowCredentials"],
+
       on: {
         REQUEST_SIGN: {
           guard: "isFormValid",
@@ -228,11 +280,11 @@ export const giftMakerRootMachine = setup({
       },
     },
     signing: {
-      entry: "cleanup",
+      entry: ["cleanup", "generateEscrowCredentials"],
 
       on: {
         COMPLETE_SIGN: {
-          target: "publishing",
+          target: "adding",
         },
       },
 
@@ -245,6 +297,8 @@ export const giftMakerRootMachine = setup({
 
           const form = context.formRef.getSnapshot()
           const parsed = form.context.parsedValues.getSnapshot()
+
+          assert(context.escrowCredentials != null)
 
           return {
             signerCredentials: event.signerCredentials,
@@ -296,7 +350,7 @@ export const giftMakerRootMachine = setup({
         ],
       },
     },
-    publishing: {
+    adding: {
       entry: [
         assign({
           signData: ({ event }) => {
@@ -304,8 +358,45 @@ export const giftMakerRootMachine = setup({
             return event.params
           },
         }),
-        "addGiftToHistory",
       ],
+      invoke: {
+        src: "addGiftToHistory",
+        input: ({ context }) => context,
+        onDone: [
+          {
+            guard: { type: "isOk", params: ({ event }) => event.output },
+            target: "publishing",
+          },
+          {
+            target: "editing",
+            actions: {
+              type: "setError",
+              params: ({ event }) => {
+                assert(event.output.tag === "err")
+                return { tag: "err", value: { reason: event.output.reason } }
+              },
+            },
+          },
+        ],
+        onError: {
+          target: "editing",
+          actions: [
+            {
+              type: "logError",
+              params: ({ event }) => event,
+            },
+            {
+              type: "setError",
+              params: {
+                tag: "err",
+                value: { reason: "ERR_STORAGE_OPERATION_EXCEPTION" },
+              },
+            },
+          ],
+        },
+      },
+    },
+    publishing: {
       invoke: {
         src: "publishingActor",
         input: ({ context }) => {
@@ -329,7 +420,7 @@ export const giftMakerRootMachine = setup({
             }),
           },
           {
-            target: "editing",
+            target: "removing",
             actions: [
               {
                 type: "setError",
@@ -338,18 +429,16 @@ export const giftMakerRootMachine = setup({
                   value: { reason: "ERR_GIFT_PUBLISHING" },
                 },
               },
-              "removeGiftFromHistory",
             ],
           },
         ],
         onError: {
-          target: "editing",
+          target: "removing",
           actions: [
             {
               type: "logError",
               params: { error: "EXCEPTION" },
             },
-            "removeGiftFromHistory",
           ],
         },
       },
@@ -365,8 +454,7 @@ export const giftMakerRootMachine = setup({
         },
 
         onDone: {
-          target: "settled",
-          actions: "updateGiftToHistory",
+          target: "updating",
         },
         onError: {
           target: "editing",
@@ -374,6 +462,44 @@ export const giftMakerRootMachine = setup({
             type: "logError",
             params: ({ event }) => event,
           },
+        },
+      },
+    },
+    updating: {
+      invoke: {
+        src: "updateGiftToHistory",
+        input: ({ context }) => context,
+        onDone: [
+          {
+            guard: { type: "isOk", params: ({ event }) => event.output },
+            target: "settled",
+          },
+          {
+            target: "editing",
+            actions: {
+              type: "setError",
+              params: ({ event }) => {
+                assert(event.output.tag === "err")
+                return { tag: "err", value: { reason: event.output.reason } }
+              },
+            },
+          },
+        ],
+        onError: {
+          target: "editing",
+          actions: [
+            {
+              type: "logError",
+              params: ({ event }) => event,
+            },
+            {
+              type: "setError",
+              params: {
+                tag: "err",
+                value: { reason: "ERR_STORAGE_OPERATION_EXCEPTION" },
+              },
+            },
+          ],
         },
       },
     },
@@ -388,11 +514,11 @@ export const giftMakerRootMachine = setup({
           assert(parsedValues.token, "token is not defined")
           assert(parsedValues.amount, "amount is not defined")
 
+          assert(context.escrowCredentials != null)
+
           return {
-            giftId: giftInfo.giftId,
             giftInfo,
             signerCredentials: context.signData.signerCredentials,
-            escrowCredentials: context.escrowCredentials,
             parsed: {
               token: parsedValues.token,
               amount: parsedValues.amount,
@@ -401,17 +527,76 @@ export const giftMakerRootMachine = setup({
           }
         },
 
-        onDone: {
-          target: "editing",
-          actions: "sendToDepositedBalanceRefRefresh",
-        },
+        onDone: [
+          {
+            target: "editing",
+            actions: "sendToDepositedBalanceRefRefresh",
+            guard: { type: "isOk", params: ({ event }) => event.output },
+          },
+          {
+            target: "editing",
+            actions: [
+              "sendToDepositedBalanceRefRefresh",
+              {
+                type: "setError",
+                params: ({ event }) => {
+                  assert(event.output.tag === "err")
+                  return {
+                    tag: "err",
+                    value: event.output.value.reason,
+                  }
+                },
+              },
+            ],
+          },
+        ],
 
         onError: {
           target: "editing",
           actions: {
             type: "logError",
-            params: ({ event }) => event,
+            params: ({ event }) => {
+              return event
+            },
           },
+        },
+      },
+    },
+    removing: {
+      invoke: {
+        src: "removeGiftFromHistory",
+        input: ({ context }) => context,
+        onDone: [
+          {
+            guard: { type: "isOk", params: ({ event }) => event.output },
+            target: "editing",
+          },
+          {
+            target: "editing",
+            actions: {
+              type: "setError",
+              params: ({ event }) => {
+                assert(event.output.tag === "err")
+                return { tag: "err", value: { reason: event.output.reason } }
+              },
+            },
+          },
+        ],
+        onError: {
+          target: "editing",
+          actions: [
+            {
+              type: "logError",
+              params: ({ event }) => event,
+            },
+            {
+              type: "setError",
+              params: {
+                tag: "err",
+                value: { reason: "ERR_STORAGE_OPERATION_EXCEPTION" },
+              },
+            },
+          ],
         },
       },
     },
