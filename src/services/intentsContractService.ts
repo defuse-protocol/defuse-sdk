@@ -38,3 +38,25 @@ export async function hasPublicKey({
 
   return v.parse(v.boolean(), data)
 }
+
+export async function isNonceUsed({
+  accountId,
+  nonce,
+  ...params
+}: {
+  nearClient: providers.Provider
+  accountId: string
+  nonce: string
+} & OptionalBlockReference): Promise<boolean> {
+  const data = await queryContract({
+    ...params,
+    contractId: config.env.contractID,
+    methodName: "is_nonce_used",
+    args: {
+      account_id: accountId,
+      nonce: nonce,
+    },
+  })
+
+  return v.parse(v.boolean(), data)
+}

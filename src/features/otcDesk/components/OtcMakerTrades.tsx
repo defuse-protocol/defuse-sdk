@@ -17,19 +17,17 @@ import {
   useState,
 } from "react"
 import { nearClient } from "src/constants/nearClient"
-import * as v from "valibot"
 import { type ActorRefFrom, createActor, toPromise } from "xstate"
 import { AssetComboIcon } from "../../../components/Asset/AssetComboIcon"
 import { Copy } from "../../../components/IntentCard/CopyButton"
-import { config } from "../../../config"
 import type { IntentsUserId, SignerCredentials } from "../../../core/formatters"
 import { getDepositedBalances } from "../../../services/defuseBalanceService"
+import { isNonceUsed } from "../../../services/intentsContractService"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../../types/base"
 import type { MultiPayload } from "../../../types/defuse-contracts-types"
 import { assert } from "../../../utils/assert"
 import { authHandleToIntentsUserId } from "../../../utils/authIdentity"
 import { formatTokenValue } from "../../../utils/format"
-import { decodeQueryResult } from "../../../utils/near"
 import { computeTotalBalanceDifferentDecimals } from "../../../utils/tokenUtils"
 import type { SendNearTransaction } from "../../machines/publicKeyVerifierMachine"
 import type { signIntentMachine } from "../../machines/signIntentMachine"
@@ -339,22 +337,12 @@ function useValidateTrade(tradeTerms: TradeTerms) {
   const nonceValidation = useQuery({
     enabled: error.isNone(),
     queryKey: ["nonce_is_used", tradeTerms.userId, tradeTerms.nonceBase64],
-    queryFn: async () => {
-      const response = await nearClient.query({
-        request_type: "call_function",
-        account_id: config.env.contractID,
-        method_name: "is_nonce_used",
-        args_base64: btoa(
-          JSON.stringify({
-            account_id: tradeTerms.userId,
-            nonce: tradeTerms.nonceBase64,
-          })
-        ),
-        finality: "optimistic",
-      })
-
-      return decodeQueryResult(response, v.boolean())
-    },
+    queryFn: async () =>
+      isNonceUsed({
+        nearClient,
+        accountId: tradeTerms.userId,
+        nonce: tradeTerms.nonceBase64,
+      }),
     select: (nonceIsUsed): Option<"NONCE_ALREADY_USED"> => {
       return nonceIsUsed ? Some("NONCE_ALREADY_USED") : None
     },
