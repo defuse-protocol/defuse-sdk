@@ -9,7 +9,7 @@ import type { IntentsUserId, SignerCredentials } from "../../../core/formatters"
 import { logger } from "../../../logger"
 import { SwapWidgetProvider } from "../../../providers/SwapWidgetProvider"
 import { getDepositedBalances } from "../../../services/defuseBalanceService"
-import { fetchProtocolFee } from "../../../services/intentsContractService"
+import { getProtocolFee } from "../../../services/intentsContractService"
 import type { AuthMethod } from "../../../types/authHandle"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../../types/base"
 import { decodeQueryResult } from "../../../utils/near"
@@ -82,7 +82,7 @@ function OtcTakerScreens({
 
   const { data: protocolFee } = useQuery({
     queryKey: ["protocol_fee"],
-    queryFn: () => fetchProtocolFee({ nearClient }),
+    queryFn: () => getProtocolFee({ nearClient }),
   })
 
   const enrichedTradeTerms = useMemo(() => {

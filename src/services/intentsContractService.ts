@@ -3,7 +3,7 @@ import * as v from "valibot"
 import { config } from "../config"
 import { type OptionalBlockReference, queryContract } from "../utils/near"
 
-export async function fetchProtocolFee(
+export async function getProtocolFee(
   params: { nearClient: providers.Provider } & OptionalBlockReference
 ) {
   const data = await queryContract({

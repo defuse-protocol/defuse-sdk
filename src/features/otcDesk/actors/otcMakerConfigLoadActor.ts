@@ -1,6 +1,6 @@
 import { assign, fromPromise, setup } from "xstate"
 import { nearClient } from "../../../constants/nearClient"
-import { fetchProtocolFee } from "../../../services/intentsContractService"
+import { getProtocolFee } from "../../../services/intentsContractService"
 
 export const otcMakerConfigLoadActor = setup({
   types: {
@@ -9,7 +9,7 @@ export const otcMakerConfigLoadActor = setup({
     },
   },
   actors: {
-    loadProtocolFee: fromPromise(() => fetchProtocolFee({ nearClient })),
+    loadProtocolFee: fromPromise(() => getProtocolFee({ nearClient })),
   },
   actions: {
     setProtocolFee: assign({
