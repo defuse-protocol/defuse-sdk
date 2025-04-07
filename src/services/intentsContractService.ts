@@ -60,3 +60,31 @@ export async function isNonceUsed({
 
   return v.parse(v.boolean(), data)
 }
+
+export async function batchBalanceOf({
+  accountId,
+  tokenIds,
+  ...params
+}: {
+  nearClient: providers.Provider
+  accountId: string
+  tokenIds: string[]
+} & OptionalBlockReference): Promise<bigint[]> {
+  const data = await queryContract({
+    ...params,
+    contractId: config.env.contractID,
+    methodName: "mt_batch_balance_of",
+    args: {
+      account_id: accountId,
+      token_ids: tokenIds,
+    },
+  })
+
+  return v.parse(
+    v.pipe(
+      v.array(v.string()),
+      v.transform((v) => v.map(BigInt))
+    ),
+    data
+  )
+}
