@@ -1,7 +1,7 @@
-import { Button } from "@radix-ui/themes"
 import { useSelector } from "@xstate/react"
 import { useCallback } from "react"
 import type { ActorRefFrom } from "xstate"
+import { AuthGate } from "../../../components/AuthGate"
 import { ButtonCustom } from "../../../components/Button/ButtonCustom"
 import type { SignerCredentials } from "../../../core/formatters"
 import type { RenderHostAppLink } from "../../../types/hostAppLink"
@@ -97,7 +97,11 @@ export function GiftTakerForm({
         <div className="flex justify-center mt-5">Gift claimed!</div>
       )}
 
-      {isLoggedIn ? (
+      <AuthGate
+        renderHostAppLink={renderHostAppLink}
+        shouldRender={isLoggedIn}
+        className="mt-5"
+      >
         <ButtonCustom
           onClick={claimGift}
           type="button"
@@ -109,15 +113,7 @@ export function GiftTakerForm({
         >
           {processing ? "Processing..." : "Claim gift"}
         </ButtonCustom>
-      ) : (
-        renderHostAppLink(
-          "sign-in",
-          <Button asChild size="4" className="w-full h-14 mt-5">
-            <div>Sign in</div>
-          </Button>,
-          { className: "w-full" }
-        )
-      )}
+      </AuthGate>
       {processing && <GiftClaimedMessage />}
     </div>
   )

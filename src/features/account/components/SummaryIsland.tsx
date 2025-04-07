@@ -1,5 +1,6 @@
 import { Gift, PaperPlaneRight, Plus } from "@phosphor-icons/react"
-import { Button, Skeleton } from "@radix-ui/themes"
+import { Skeleton } from "@radix-ui/themes"
+import { AuthGate } from "../../../components/AuthGate"
 import { Island } from "../../../components/Island"
 import { IslandHeader } from "../../../components/IslandHeader"
 import type { RenderHostAppLink } from "../../../types/hostAppLink"
@@ -54,7 +55,7 @@ export function SummaryIsland({
         </div>
       </div>
 
-      {isLoggedIn ? (
+      <AuthGate renderHostAppLink={renderHostAppLink} shouldRender={isLoggedIn}>
         <div className="flex gap-4">
           <NavButton
             routeName="deposit"
@@ -81,15 +82,7 @@ export function SummaryIsland({
             icon={<Gift weight="bold" className="size-5" />}
           />
         </div>
-      ) : (
-        renderHostAppLink(
-          "sign-in",
-          <Button asChild size="4" className="w-full h-14">
-            <div>Sign in</div>
-          </Button>,
-          {}
-        )
-      )}
+      </AuthGate>
     </Island>
   )
 }

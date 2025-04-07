@@ -1,8 +1,8 @@
-import { Button } from "@radix-ui/themes"
 import { useActorRef, useSelector } from "@xstate/react"
 import clsx from "clsx"
 import { useEffect, useMemo } from "react"
 import type { ActorRefFrom, PromiseActorLogic } from "xstate"
+import { AuthGate } from "../../../components/AuthGate"
 import { BlockMultiBalances } from "../../../components/Block/BlockMultiBalances"
 import { ButtonCustom } from "../../../components/Button/ButtonCustom"
 import type { ModalSelectAssetsPayload } from "../../../components/Modal/ModalSelectAssets"
@@ -349,7 +349,10 @@ export function GiftMakerForm({
           </div>
         </div>
 
-        {isLoggedIn ? (
+        <AuthGate
+          renderHostAppLink={renderHostAppLink}
+          shouldRender={isLoggedIn}
+        >
           <ButtonCustom
             type="submit"
             size="lg"
@@ -359,15 +362,7 @@ export function GiftMakerForm({
           >
             {getButtonText(balanceInsufficient, editing, processing)}
           </ButtonCustom>
-        ) : (
-          renderHostAppLink(
-            "sign-in",
-            <Button asChild size="4" className="w-full h-14">
-              <div>Sign in</div>
-            </Button>,
-            { className: "w-full" }
-          )
-        )}
+        </AuthGate>
       </form>
       {error != null && (
         <div className="mt-2">

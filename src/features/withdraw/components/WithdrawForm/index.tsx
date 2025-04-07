@@ -6,7 +6,6 @@ import {
 } from "@radix-ui/react-icons"
 import {
   Box,
-  Button,
   Callout,
   Flex,
   IconButton,
@@ -21,6 +20,7 @@ import { useTokensUsdPrices } from "src/hooks/useTokensUsdPrices"
 import { formatTokenValue, formatUsdAmount } from "src/utils/format"
 import getTokenUsdPrice from "src/utils/getTokenUsdPrice"
 import type { ActorRefFrom } from "xstate"
+import { AuthGate } from "../../../../components/AuthGate"
 import { ButtonCustom } from "../../../../components/Button/ButtonCustom"
 import { EmptyIcon } from "../../../../components/EmptyIcon"
 import { Form } from "../../../../components/Form"
@@ -523,7 +523,10 @@ export const WithdrawForm = ({
             </Text>
           </Flex>
 
-          {isLoggedIn ? (
+          <AuthGate
+            renderHostAppLink={renderHostAppLink}
+            shouldRender={isLoggedIn}
+          >
             <ButtonCustom
               size="lg"
               disabled={state.matches("submitting") || noLiquidity}
@@ -531,15 +534,7 @@ export const WithdrawForm = ({
             >
               {renderWithdrawButtonText(noLiquidity, insufficientTokenInAmount)}
             </ButtonCustom>
-          ) : (
-            renderHostAppLink(
-              "sign-in",
-              <Button asChild size="4" className="w-full h-14">
-                <div>Sign in</div>
-              </Button>,
-              { className: "w-full" }
-            )
-          )}
+          </AuthGate>
         </Flex>
       </Form>
 

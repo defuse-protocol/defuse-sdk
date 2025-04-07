@@ -1,8 +1,8 @@
 import { ArrowDown } from "@phosphor-icons/react"
-import { Button } from "@radix-ui/themes"
 import { useQuery } from "@tanstack/react-query"
 import { None } from "@thames/monads"
 import clsx from "clsx"
+import { AuthGate } from "../../../components/AuthGate"
 import { BlockMultiBalances } from "../../../components/Block/BlockMultiBalances"
 import { ButtonCustom } from "../../../components/Button/ButtonCustom"
 import { nearClient } from "../../../constants/nearClient"
@@ -281,7 +281,11 @@ export function OtcTakerForm({
         </div>
       </div>
 
-      {isLoggedIn ? (
+      <AuthGate
+        renderHostAppLink={renderHostAppLink}
+        shouldRender={isLoggedIn}
+        className="mt-5"
+      >
         <ButtonCustom
           type="button"
           size="lg"
@@ -306,15 +310,7 @@ export function OtcTakerForm({
             ? "Confirm in your wallet..."
             : "Confirm swap"}
         </ButtonCustom>
-      ) : (
-        renderHostAppLink(
-          "sign-in",
-          <Button asChild size="4" className="w-full h-14 mt-5">
-            <div>Sign in</div>
-          </Button>,
-          { className: "w-full" }
-        )
-      )}
+      </AuthGate>
     </div>
   )
 }

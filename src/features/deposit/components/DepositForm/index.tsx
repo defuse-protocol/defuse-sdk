@@ -1,5 +1,5 @@
 import { ExclamationTriangleIcon } from "@radix-ui/react-icons"
-import { Button, Callout } from "@radix-ui/themes"
+import { Callout } from "@radix-ui/themes"
 import { useSelector } from "@xstate/react"
 import { useEffect, useState } from "react"
 import { Controller, useFormContext } from "react-hook-form"
@@ -8,6 +8,7 @@ import {
   reverseAssetNetworkAdapter,
 } from "src/utils/adapters"
 import { AssetComboIcon } from "../../../../components/Asset/AssetComboIcon"
+import { AuthGate } from "../../../../components/AuthGate"
 import { EmptyIcon } from "../../../../components/EmptyIcon"
 import { Form } from "../../../../components/Form"
 import { Island } from "../../../../components/Island"
@@ -260,15 +261,12 @@ export const DepositForm = ({
           </>
         )}
 
-        {userAddress
-          ? null
-          : renderHostAppLink(
-              "sign-in",
-              <Button asChild size="4" className="w-full h-14">
-                <div>Sign in</div>
-              </Button>,
-              { className: "w-full" }
-            )}
+        <AuthGate
+          renderHostAppLink={renderHostAppLink}
+          shouldRender={!!userAddress}
+        >
+          {null}
+        </AuthGate>
 
         {userAddress && network && !isActiveDeposit && !isPassiveDeposit && (
           <NotSupportedDepositRoute />
