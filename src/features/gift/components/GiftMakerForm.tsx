@@ -1,3 +1,4 @@
+import { Button } from "@radix-ui/themes"
 import { useActorRef, useSelector } from "@xstate/react"
 import clsx from "clsx"
 import { useEffect, useMemo } from "react"
@@ -361,9 +362,9 @@ export function GiftMakerForm({
         ) : (
           renderHostAppLink(
             "sign-in",
-            <ButtonCustom type="button" size="lg" className="w-full">
-              Sign in
-            </ButtonCustom>,
+            <Button asChild size="4" className="w-full h-14">
+              <div>Sign in</div>
+            </Button>,
             { className: "w-full" }
           )
         )}

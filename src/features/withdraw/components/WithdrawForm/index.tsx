@@ -6,6 +6,7 @@ import {
 } from "@radix-ui/react-icons"
 import {
   Box,
+  Button,
   Callout,
   Flex,
   IconButton,
@@ -533,9 +534,9 @@ export const WithdrawForm = ({
           ) : (
             renderHostAppLink(
               "sign-in",
-              <ButtonCustom type="button" size="lg" className="w-full">
-                Sign in
-              </ButtonCustom>,
+              <Button asChild size="4" className="w-full h-14">
+                <div>Sign in</div>
+              </Button>,
               { className: "w-full" }
             )
           )}

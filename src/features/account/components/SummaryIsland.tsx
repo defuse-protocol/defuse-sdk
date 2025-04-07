@@ -1,6 +1,5 @@
 import { Gift, PaperPlaneRight, Plus } from "@phosphor-icons/react"
-import { Skeleton } from "@radix-ui/themes"
-import { ButtonCustom } from "../../../components/Button/ButtonCustom"
+import { Button, Skeleton } from "@radix-ui/themes"
 import { Island } from "../../../components/Island"
 import { IslandHeader } from "../../../components/IslandHeader"
 import type { RenderHostAppLink } from "../../../types/hostAppLink"
@@ -85,9 +84,9 @@ export function SummaryIsland({
       ) : (
         renderHostAppLink(
           "sign-in",
-          <ButtonCustom type="button" size="lg" className="w-full">
-            Sign in
-          </ButtonCustom>,
+          <Button asChild size="4" className="w-full h-14">
+            <div>Sign in</div>
+          </Button>,
           {}
         )
       )}

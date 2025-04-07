@@ -1,4 +1,5 @@
 import { ArrowDown } from "@phosphor-icons/react"
+import { Button } from "@radix-ui/themes"
 import { useQuery } from "@tanstack/react-query"
 import { None } from "@thames/monads"
 import clsx from "clsx"
@@ -308,9 +309,9 @@ export function OtcTakerForm({
       ) : (
         renderHostAppLink(
           "sign-in",
-          <ButtonCustom type="button" size="lg" className="w-full mt-5">
-            Sign in
-          </ButtonCustom>,
+          <Button asChild size="4" className="w-full h-14 mt-5">
+            <div>Sign in</div>
+          </Button>,
           { className: "w-full" }
         )
       )}

@@ -1,5 +1,5 @@
 import { ExclamationTriangleIcon } from "@radix-ui/react-icons"
-import { Callout } from "@radix-ui/themes"
+import { Button, Callout } from "@radix-ui/themes"
 import { useSelector } from "@xstate/react"
 import { useEffect, useState } from "react"
 import { Controller, useFormContext } from "react-hook-form"
@@ -8,7 +8,6 @@ import {
   reverseAssetNetworkAdapter,
 } from "src/utils/adapters"
 import { AssetComboIcon } from "../../../../components/Asset/AssetComboIcon"
-import { ButtonCustom } from "../../../../components/Button/ButtonCustom"
 import { EmptyIcon } from "../../../../components/EmptyIcon"
 import { Form } from "../../../../components/Form"
 import { Island } from "../../../../components/Island"
@@ -265,9 +264,9 @@ export const DepositForm = ({
           ? null
           : renderHostAppLink(
               "sign-in",
-              <ButtonCustom type="button" size="lg" className="w-full">
-                Sign in
-              </ButtonCustom>,
+              <Button asChild size="4" className="w-full h-14">
+                <div>Sign in</div>
+              </Button>,
               { className: "w-full" }
             )}
 

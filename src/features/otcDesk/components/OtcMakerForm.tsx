@@ -1,4 +1,5 @@
 import { ArrowsDownUp } from "@phosphor-icons/react"
+import { Button } from "@radix-ui/themes"
 import { useActorRef, useSelector } from "@xstate/react"
 import clsx from "clsx"
 import { useEffect, useMemo } from "react"
@@ -454,9 +455,9 @@ function renderSubmitButton(
   if (!isLoggedIn) {
     return renderHostAppLink(
       "sign-in",
-      <ButtonCustom type="button" size="lg" className="w-full">
-        Sign in
-      </ButtonCustom>,
+      <Button asChild size="4" className="w-full h-14">
+        <div>Sign in</div>
+      </Button>,
       { className: "w-full" }
     )
   }

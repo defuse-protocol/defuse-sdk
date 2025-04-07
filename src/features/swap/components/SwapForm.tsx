@@ -1,5 +1,5 @@
 import { ExclamationTriangleIcon } from "@radix-ui/react-icons"
-import { Box, Callout, Flex } from "@radix-ui/themes"
+import { Box, Button, Callout, Flex } from "@radix-ui/themes"
 import { useSelector } from "@xstate/react"
 import {
   Fragment,
@@ -251,17 +251,17 @@ export const SwapForm = ({ isLoggedIn, renderHostAppLink }: SwapFormProps) => {
             {!isLoggedIn ? (
               renderHostAppLink(
                 "sign-in",
-                <ButtonCustom type="button" size="lg" className="w-full">
-                  Sign in
-                </ButtonCustom>,
+                <Button asChild size="4" className="w-full h-14">
+                  <div>Sign in</div>
+                </Button>,
                 { className: "w-full" }
               )
             ) : showDepositButton ? (
               renderHostAppLink(
                 "deposit",
-                <ButtonCustom type="button" size="lg" className="w-full">
-                  Go to Deposit
-                </ButtonCustom>,
+                <Button asChild size="4" className="w-full h-14">
+                  <div>Go to Deposit</div>
+                </Button>,
                 { className: "w-full" }
               )
             ) : (

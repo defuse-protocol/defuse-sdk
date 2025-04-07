@@ -1,3 +1,4 @@
+import { Button } from "@radix-ui/themes"
 import { useSelector } from "@xstate/react"
 import { useCallback } from "react"
 import type { ActorRefFrom } from "xstate"
@@ -111,9 +112,9 @@ export function GiftTakerForm({
       ) : (
         renderHostAppLink(
           "sign-in",
-          <ButtonCustom type="button" size="lg" className="w-full mt-5">
-            Sign in
-          </ButtonCustom>,
+          <Button asChild size="4" className="w-full h-14 mt-5">
+            <div>Sign in</div>
+          </Button>,
           { className: "w-full" }
         )
       )}
