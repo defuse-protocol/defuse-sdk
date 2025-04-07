@@ -1,12 +1,13 @@
 import type { SendNearTransaction } from "../features/machines/publicKeyVerifierMachine"
 import type { AuthHandle } from "./authHandle"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "./base"
+import type { RenderHostAppLink } from "./hostAppLink"
 import type { WalletMessage, WalletSignatureResult } from "./swap"
 
 export type WithdrawWidgetProps = {
   userAddress: AuthHandle["identifier"] | undefined
   chainType: AuthHandle["method"] | undefined
-
+  renderHostAppLink: RenderHostAppLink
   tokenList: (BaseTokenInfo | UnifiedTokenInfo)[]
   signMessage: (params: WalletMessage) => Promise<WalletSignatureResult | null>
   sendNearTransaction: SendNearTransaction

@@ -78,7 +78,9 @@ export const WithdrawForm = ({
   chainType,
   tokenList,
   sendNearTransaction,
+  renderHostAppLink,
 }: WithdrawFormProps) => {
+  const isLoggedIn = userAddress != null
   const actorRef = WithdrawUIMachineContext.useActorRef()
   const {
     state,
@@ -520,13 +522,23 @@ export const WithdrawForm = ({
             </Text>
           </Flex>
 
-          <ButtonCustom
-            size="lg"
-            disabled={state.matches("submitting") || noLiquidity}
-            isLoading={state.matches("submitting")}
-          >
-            {renderWithdrawButtonText(noLiquidity, insufficientTokenInAmount)}
-          </ButtonCustom>
+          {isLoggedIn ? (
+            <ButtonCustom
+              size="lg"
+              disabled={state.matches("submitting") || noLiquidity}
+              isLoading={state.matches("submitting")}
+            >
+              {renderWithdrawButtonText(noLiquidity, insufficientTokenInAmount)}
+            </ButtonCustom>
+          ) : (
+            renderHostAppLink(
+              "sign-in",
+              <ButtonCustom type="button" size="lg" className="w-full">
+                Sign in
+              </ButtonCustom>,
+              { className: "w-full" }
+            )
+          )}
         </Flex>
       </Form>
 
