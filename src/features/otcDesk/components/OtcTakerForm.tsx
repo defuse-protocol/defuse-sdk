@@ -10,6 +10,7 @@ import { useTokensUsdPrices } from "../../../hooks/useTokensUsdPrices"
 import { getDepositedBalances } from "../../../services/defuseBalanceService"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../../types/base"
 import type { MultiPayload } from "../../../types/defuse-contracts-types"
+import type { RenderHostAppLink } from "../../../types/hostAppLink"
 import { assert } from "../../../utils/assert"
 import { authHandleToIntentsUserId } from "../../../utils/authIdentity"
 import { formatTokenValue, formatUsdAmount } from "../../../utils/format"
@@ -37,6 +38,7 @@ export type OtcTakerFormProps = {
   protocolFee: number
   onSuccessTrade: (arg: { intentHashes: string[] }) => void
   referral: string | undefined
+  renderHostAppLink: RenderHostAppLink
 }
 
 export function OtcTakerForm({
@@ -50,6 +52,7 @@ export function OtcTakerForm({
   signMessage,
   onSuccessTrade,
   referral,
+  renderHostAppLink,
 }: OtcTakerFormProps) {
   const signerId =
     signerCredentials != null
@@ -58,6 +61,7 @@ export function OtcTakerForm({
           signerCredentials.credentialType
         )
       : null
+  const isLoggedIn = signerId != null
 
   const { data: balances } = useQuery({
     queryKey: [
@@ -276,30 +280,40 @@ export function OtcTakerForm({
         </div>
       </div>
 
-      <ButtonCustom
-        type="button"
-        size="lg"
-        className="mt-5"
-        variant={confirmTradeMutation.isPending ? "secondary" : "primary"}
-        onClick={() => {
-          if (
-            !confirmTradeMutation.isPending &&
-            signerCredentials != null &&
-            preparation.data != null &&
-            preparation.data.isOk()
-          ) {
-            confirmTradeMutation.mutate({
-              signerCredentials,
-              preparation: preparation.data.unwrap(),
-            })
-          }
-        }}
-        isLoading={confirmTradeMutation.isPending}
-      >
-        {confirmTradeMutation.isPending
-          ? "Confirm in your wallet..."
-          : "Confirm swap"}
-      </ButtonCustom>
+      {isLoggedIn ? (
+        <ButtonCustom
+          type="button"
+          size="lg"
+          className="mt-5"
+          variant={confirmTradeMutation.isPending ? "secondary" : "primary"}
+          onClick={() => {
+            if (
+              !confirmTradeMutation.isPending &&
+              signerCredentials != null &&
+              preparation.data != null &&
+              preparation.data.isOk()
+            ) {
+              confirmTradeMutation.mutate({
+                signerCredentials,
+                preparation: preparation.data.unwrap(),
+              })
+            }
+          }}
+          isLoading={confirmTradeMutation.isPending}
+        >
+          {confirmTradeMutation.isPending
+            ? "Confirm in your wallet..."
+            : "Confirm swap"}
+        </ButtonCustom>
+      ) : (
+        renderHostAppLink(
+          "sign-in",
+          <ButtonCustom type="button" size="lg" className="w-full mt-5">
+            Sign in
+          </ButtonCustom>,
+          { className: "w-full" }
+        )
+      )}
     </div>
   )
 }

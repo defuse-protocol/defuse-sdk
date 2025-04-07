@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query"
 import { Err, Ok, type Result } from "@thames/monads"
 import { type ReactNode, useMemo, useState } from "react"
+import type { RenderHostAppLink } from "src/types/hostAppLink"
 import * as v from "valibot"
 import { WidgetRoot } from "../../../components/WidgetRoot"
 import { config } from "../../../config"
@@ -50,6 +51,8 @@ export type OtcTakerWidgetProps = {
 
   /** Frontend referral */
   referral?: string
+
+  renderHostAppLink: RenderHostAppLink
 }
 
 export function OtcTakerWidget(props: OtcTakerWidgetProps) {
@@ -72,6 +75,7 @@ function OtcTakerScreens({
   signMessage,
   sendNearTransaction,
   referral,
+  renderHostAppLink,
 }: OtcTakerWidgetProps) {
   const loading = <div>Loading...</div>
 
@@ -156,6 +160,7 @@ function OtcTakerScreens({
               protocolFee={protocolFee}
               onSuccessTrade={setPublishResult}
               referral={referral}
+              renderHostAppLink={renderHostAppLink}
             />
           </SignIntentActorProvider>
         </OtcTakerValidationOrder>
