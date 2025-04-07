@@ -13,6 +13,7 @@ import { useModalStore } from "../../../providers/ModalStoreProvider"
 import { ModalType } from "../../../stores/modalStore"
 import type { AuthMethod } from "../../../types/authHandle"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../../types/base"
+import type { RenderHostAppLink } from "../../../types/hostAppLink"
 import type { SwappableToken } from "../../../types/swap"
 import { assert } from "../../../utils/assert"
 import { formatTokenValue, formatUsdAmount } from "../../../utils/format"
@@ -64,6 +65,8 @@ export type GiftMakerWidgetProps = {
 
   /** Frontend referral */
   referral?: string
+
+  renderHostAppLink: RenderHostAppLink
 }
 
 const MAX_MESSAGE_LENGTH = 50
@@ -77,6 +80,7 @@ export function GiftMakerForm({
   sendNearTransaction,
   generateLink,
   referral,
+  renderHostAppLink,
 }: GiftMakerWidgetProps) {
   const signerCredentials: SignerCredentials | null = useMemo(
     () =>
@@ -88,6 +92,7 @@ export function GiftMakerForm({
         : null,
     [userAddress, userChainType]
   )
+  const isLoggedIn = signerCredentials != null
 
   const initialToken_ = initialToken ?? tokenList[0]
   assert(initialToken_ !== undefined, "Token list must not be empty")
@@ -343,15 +348,25 @@ export function GiftMakerForm({
           </div>
         </div>
 
-        <ButtonCustom
-          type="submit"
-          size="lg"
-          variant={processing ? "secondary" : "primary"}
-          isLoading={processing}
-          disabled={balanceInsufficient || processing}
-        >
-          {getButtonText(balanceInsufficient, editing, processing)}
-        </ButtonCustom>
+        {isLoggedIn ? (
+          <ButtonCustom
+            type="submit"
+            size="lg"
+            variant={processing ? "secondary" : "primary"}
+            isLoading={processing}
+            disabled={balanceInsufficient || processing}
+          >
+            {getButtonText(balanceInsufficient, editing, processing)}
+          </ButtonCustom>
+        ) : (
+          renderHostAppLink(
+            "sign-in",
+            <ButtonCustom type="button" size="lg" className="w-full">
+              Sign in
+            </ButtonCustom>,
+            { className: "w-full" }
+          )
+        )}
       </form>
       {error != null && (
         <div className="mt-2">
