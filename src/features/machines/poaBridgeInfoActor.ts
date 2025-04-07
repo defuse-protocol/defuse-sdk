@@ -8,7 +8,10 @@ import {
   waitFor,
 } from "xstate"
 import { logger } from "../../logger"
-import { getSupportedTokens, type types } from "../../services/poaBridgeClient"
+import {
+  getSupportedTokens,
+  type types,
+} from "../../services/poaBridgeHttpClient"
 import type { BaseTokenInfo } from "../../types/base"
 
 export interface Context {

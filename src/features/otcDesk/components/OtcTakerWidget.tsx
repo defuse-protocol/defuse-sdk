@@ -1,20 +1,20 @@
 import { useQuery } from "@tanstack/react-query"
 import { Err, Ok, type Result } from "@thames/monads"
 import { type ReactNode, useMemo, useState } from "react"
-import * as v from "valibot"
 import { WidgetRoot } from "../../../components/WidgetRoot"
-import { config } from "../../../config"
 import { nearClient } from "../../../constants/nearClient"
 import type { IntentsUserId, SignerCredentials } from "../../../core/formatters"
 import { logger } from "../../../logger"
 import { SwapWidgetProvider } from "../../../providers/SwapWidgetProvider"
 import { getDepositedBalances } from "../../../services/defuseBalanceService"
+import {
+  getProtocolFee,
+  isNonceUsed,
+} from "../../../services/intentsContractService"
 import type { AuthMethod } from "../../../types/authHandle"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../../types/base"
 import type { RenderHostAppLink } from "../../../types/hostAppLink"
-import { decodeQueryResult } from "../../../utils/near"
 import type { SendNearTransaction } from "../../machines/publicKeyVerifierMachine"
-import { fetchProtocolFee } from "../actors/otcMakerConfigLoadActor"
 import { SignIntentActorProvider } from "../providers/SignIntentActorProvider"
 import { useOtcTakerTrades } from "../stores/otcTakerTrades"
 import type { SignMessage } from "../types/sharedTypes"
@@ -86,7 +86,7 @@ function OtcTakerScreens({
 
   const { data: protocolFee } = useQuery({
     queryKey: ["protocol_fee"],
-    queryFn: fetchProtocolFee,
+    queryFn: () => getProtocolFee({ nearClient }),
   })
 
   const enrichedTradeTerms = useMemo(() => {
@@ -227,22 +227,12 @@ function OtcTakerValidationOrder({
       tradeTerms.makerUserId,
       tradeTerms.makerNonceBase64,
     ],
-    queryFn: async () => {
-      const response = await nearClient.query({
-        request_type: "call_function",
-        account_id: config.env.contractID,
-        method_name: "is_nonce_used",
-        args_base64: btoa(
-          JSON.stringify({
-            account_id: tradeTerms.makerUserId,
-            nonce: tradeTerms.makerNonceBase64,
-          })
-        ),
-        finality: "optimistic",
-      })
-
-      return decodeQueryResult(response, v.boolean())
-    },
+    queryFn: async () =>
+      isNonceUsed({
+        nearClient,
+        accountId: tradeTerms.makerUserId,
+        nonce: tradeTerms.makerNonceBase64,
+      }),
     select: (nonceIsUsed): Result<true, "NONCE_ALREADY_USED"> => {
       return nonceIsUsed ? Err("NONCE_ALREADY_USED") : Ok(true)
     },
