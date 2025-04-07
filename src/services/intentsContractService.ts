@@ -16,3 +16,25 @@ export async function getProtocolFee(
   // in bip: 1 bip = 0.0001% = 0.000001
   return v.parse(v.number(), data)
 }
+
+export async function hasPublicKey({
+  accountId,
+  publicKey,
+  ...params
+}: {
+  nearClient: providers.Provider
+  accountId: string
+  publicKey: string
+} & OptionalBlockReference): Promise<boolean> {
+  const data = await queryContract({
+    ...params,
+    contractId: config.env.contractID,
+    methodName: "has_public_key",
+    args: {
+      account_id: accountId,
+      public_key: publicKey,
+    },
+  })
+
+  return v.parse(v.boolean(), data)
+}
