@@ -1,3 +1,9 @@
+import type { providers } from "near-api-js"
+import type {
+  BlockId,
+  BlockReference,
+  Finality,
+} from "near-api-js/lib/providers/provider"
 import * as v from "valibot"
 
 /**
@@ -14,6 +20,52 @@ export function decodeQueryResult<
   const decoder = new TextDecoder()
   const result = decoder.decode(uint8Array)
   return v.parse(schema, JSON.parse(result))
+}
+
+export type OptionalBlockReference = {
+  blockId?: BlockId
+  finality?: Finality
+}
+
+function getBlockReference({
+  blockId,
+  finality,
+}: OptionalBlockReference): BlockReference {
+  if (blockId != null) {
+    return { blockId }
+  }
+
+  if (finality != null) {
+    return { finality }
+  }
+
+  return { finality: "optimistic" }
+}
+
+export async function queryContract({
+  nearClient,
+  contractId,
+  methodName,
+  args,
+  blockId,
+  finality,
+}: {
+  nearClient: providers.Provider
+  contractId: string
+  methodName: string
+  args: Record<string, unknown>
+  blockId?: BlockId
+  finality?: Finality
+}): Promise<unknown> {
+  const response = await nearClient.query({
+    request_type: "call_function",
+    account_id: contractId,
+    method_name: methodName,
+    args_base64: btoa(JSON.stringify(args)),
+    ...getBlockReference({ blockId, finality }),
+  })
+
+  return decodeQueryResult(response, v.unknown())
 }
 
 // Copied from https://github.com/mynearwallet/my-near-wallet/blob/3b1a6c6e5c62a0235f5e32d370f803fa2180c6f8/packages/frontend/src/utils/wallet.ts#L75

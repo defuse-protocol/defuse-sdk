@@ -1,8 +1,6 @@
-import * as v from "valibot"
 import { assign, fromPromise, setup } from "xstate"
-import { config } from "../../../config"
 import { nearClient } from "../../../constants/nearClient"
-import { decodeQueryResult } from "../../../utils/near"
+import { fetchProtocolFee } from "../../../services/intentsContractService"
 
 export const otcMakerConfigLoadActor = setup({
   types: {
@@ -11,7 +9,7 @@ export const otcMakerConfigLoadActor = setup({
     },
   },
   actors: {
-    loadProtocolFee: fromPromise(fetchProtocolFee),
+    loadProtocolFee: fromPromise(() => fetchProtocolFee({ nearClient })),
   },
   actions: {
     setProtocolFee: assign({
@@ -49,16 +47,3 @@ export const otcMakerConfigLoadActor = setup({
     },
   },
 })
-
-export async function fetchProtocolFee() {
-  const response = await nearClient.query({
-    request_type: "call_function",
-    account_id: config.env.contractID,
-    method_name: "fee",
-    args_base64: btoa(JSON.stringify({})),
-    finality: "optimistic",
-  })
-
-  // in bip: 1 bip = 0.0001% = 0.000001
-  return decodeQueryResult(response, v.number())
-}
