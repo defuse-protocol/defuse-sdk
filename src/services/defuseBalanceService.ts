@@ -2,7 +2,7 @@ import type { providers } from "near-api-js"
 import type { BaseTokenInfo } from "../types/base"
 import type { IntentsUserId } from "../types/intentsUserId"
 import { batchBalanceOf } from "./intentsContractService"
-import { getDepositStatus } from "./poaBridgeClient"
+import { getDepositStatus } from "./poaBridgeHttpClient"
 
 type TokenBalances = Record<BaseTokenInfo["defuseAssetId"], bigint>
 

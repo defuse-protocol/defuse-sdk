@@ -39,7 +39,7 @@ import { assert } from "../utils/assert"
 import { authHandleToIntentsUserId } from "../utils/authIdentity"
 import { getEVMChainId } from "../utils/evmChainId"
 import { isNativeToken } from "../utils/token"
-import { getDepositAddress, getSupportedTokens } from "./poaBridgeClient"
+import { getDepositAddress, getSupportedTokens } from "./poaBridgeHttpClient"
 
 export type PreparationOutput =
   | {

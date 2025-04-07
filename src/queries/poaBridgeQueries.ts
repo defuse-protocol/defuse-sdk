@@ -1,5 +1,5 @@
 import { queryOptions } from "@tanstack/react-query"
-import { getWithdrawalStatus } from "../services/poaBridgeClient"
+import { getWithdrawalStatus } from "../services/poaBridgeHttpClient"
 
 const DEFAULT_WITHDRAWAL_STATUS_INTERVAL_MS = 500
 
