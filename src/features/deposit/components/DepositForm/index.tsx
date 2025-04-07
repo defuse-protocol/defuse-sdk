@@ -8,6 +8,7 @@ import {
   reverseAssetNetworkAdapter,
 } from "src/utils/adapters"
 import { AssetComboIcon } from "../../../../components/Asset/AssetComboIcon"
+import { ButtonCustom } from "../../../../components/Button/ButtonCustom"
 import { EmptyIcon } from "../../../../components/EmptyIcon"
 import { Form } from "../../../../components/Form"
 import { Island } from "../../../../components/Island"
@@ -23,6 +24,7 @@ import { getAvailableDepositRoutes } from "../../../../services/depositService"
 import { ModalType } from "../../../../stores/modalStore"
 import type { AuthMethod } from "../../../../types/authHandle"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../../../types/base"
+import type { RenderHostAppLink } from "../../../../types/hostAppLink"
 import { BlockchainEnum } from "../../../../types/interfaces"
 import type { SwappableToken } from "../../../../types/swap"
 import { isBaseToken, isUnifiedToken } from "../../../../utils/token"
@@ -37,9 +39,16 @@ export type DepositFormValues = {
   token: BaseTokenInfo | UnifiedTokenInfo | null
   userAddress: string | null
   rpcUrl: string | undefined
+  renderHostAppLink: RenderHostAppLink
 }
 
-export const DepositForm = ({ chainType }: { chainType?: AuthMethod }) => {
+export const DepositForm = ({
+  chainType,
+  renderHostAppLink,
+}: {
+  chainType?: AuthMethod
+  renderHostAppLink: RenderHostAppLink
+}) => {
   const { handleSubmit, register, control, setValue, watch } =
     useFormContext<DepositFormValues>()
 
@@ -252,14 +261,15 @@ export const DepositForm = ({ chainType }: { chainType?: AuthMethod }) => {
           </>
         )}
 
-        {userAddress ? null : (
-          <Callout.Root size="1" color="yellow">
-            <Callout.Icon>
-              <ExclamationTriangleIcon />
-            </Callout.Icon>
-            <Callout.Text>Please connect your wallet to continue</Callout.Text>
-          </Callout.Root>
-        )}
+        {userAddress
+          ? null
+          : renderHostAppLink(
+              "sign-in",
+              <ButtonCustom type="button" size="lg" className="w-full">
+                Sign in
+              </ButtonCustom>,
+              { className: "w-full" }
+            )}
 
         {userAddress && network && !isActiveDeposit && !isPassiveDeposit && (
           <NotSupportedDepositRoute />
