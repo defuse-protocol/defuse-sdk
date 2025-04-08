@@ -20,6 +20,7 @@ import { useTokensUsdPrices } from "src/hooks/useTokensUsdPrices"
 import { formatTokenValue, formatUsdAmount } from "src/utils/format"
 import getTokenUsdPrice from "src/utils/getTokenUsdPrice"
 import type { ActorRefFrom } from "xstate"
+import { AuthGate } from "../../../../components/AuthGate"
 import { ButtonCustom } from "../../../../components/Button/ButtonCustom"
 import { EmptyIcon } from "../../../../components/EmptyIcon"
 import { Form } from "../../../../components/Form"
@@ -78,7 +79,9 @@ export const WithdrawForm = ({
   chainType,
   tokenList,
   sendNearTransaction,
+  renderHostAppLink,
 }: WithdrawFormProps) => {
+  const isLoggedIn = userAddress != null
   const actorRef = WithdrawUIMachineContext.useActorRef()
   const {
     state,
@@ -520,13 +523,18 @@ export const WithdrawForm = ({
             </Text>
           </Flex>
 
-          <ButtonCustom
-            size="lg"
-            disabled={state.matches("submitting") || noLiquidity}
-            isLoading={state.matches("submitting")}
+          <AuthGate
+            renderHostAppLink={renderHostAppLink}
+            shouldRender={isLoggedIn}
           >
-            {renderWithdrawButtonText(noLiquidity, insufficientTokenInAmount)}
-          </ButtonCustom>
+            <ButtonCustom
+              size="lg"
+              disabled={state.matches("submitting") || noLiquidity}
+              isLoading={state.matches("submitting")}
+            >
+              {renderWithdrawButtonText(noLiquidity, insufficientTokenInAmount)}
+            </ButtonCustom>
+          </AuthGate>
         </Flex>
       </Form>
 

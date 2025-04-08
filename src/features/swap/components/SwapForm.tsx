@@ -1,5 +1,5 @@
 import { ExclamationTriangleIcon } from "@radix-ui/react-icons"
-import { Box, Callout, Flex } from "@radix-ui/themes"
+import { Box, Button, Callout, Flex } from "@radix-ui/themes"
 import { useSelector } from "@xstate/react"
 import {
   Fragment,
@@ -14,6 +14,7 @@ import { useTokensUsdPrices } from "src/hooks/useTokensUsdPrices"
 import { formatUsdAmount } from "src/utils/format"
 import getTokenUsdPrice from "src/utils/getTokenUsdPrice"
 import type { ActorRefFrom } from "xstate"
+import { AuthGate } from "../../../components/AuthGate"
 import { ButtonCustom } from "../../../components/Button/ButtonCustom"
 import { ButtonSwitch } from "../../../components/Button/ButtonSwitch"
 import { Form } from "../../../components/Form"
@@ -248,41 +249,38 @@ export const SwapForm = ({ isLoggedIn, renderHostAppLink }: SwapFormProps) => {
           />
 
           <Flex align="stretch" direction="column">
-            {!isLoggedIn ? (
-              renderHostAppLink(
-                "sign-in",
-                <ButtonCustom type="button" size="lg" className="w-full">
-                  Sign in
-                </ButtonCustom>,
-                { className: "w-full" }
-              )
-            ) : showDepositButton ? (
-              renderHostAppLink(
-                "deposit",
-                <ButtonCustom type="button" size="lg" className="w-full">
-                  Go to Deposit
-                </ButtonCustom>,
-                { className: "w-full" }
-              )
-            ) : (
-              <ButtonCustom
-                type="submit"
-                size="lg"
-                fullWidth
-                isLoading={snapshot.matches("submitting")}
-                disabled={
-                  balanceInsufficient ||
-                  noLiquidity ||
-                  insufficientTokenInAmount
-                }
-              >
-                {renderSwapButtonText(
-                  noLiquidity,
-                  balanceInsufficient,
-                  insufficientTokenInAmount
-                )}
-              </ButtonCustom>
-            )}
+            <AuthGate
+              renderHostAppLink={renderHostAppLink}
+              shouldRender={isLoggedIn}
+            >
+              {showDepositButton ? (
+                renderHostAppLink(
+                  "deposit",
+                  <Button asChild size="4" className="w-full h-14">
+                    <div>Go to Deposit</div>
+                  </Button>,
+                  { className: "w-full" }
+                )
+              ) : (
+                <ButtonCustom
+                  type="submit"
+                  size="lg"
+                  fullWidth
+                  isLoading={snapshot.matches("submitting")}
+                  disabled={
+                    balanceInsufficient ||
+                    noLiquidity ||
+                    insufficientTokenInAmount
+                  }
+                >
+                  {renderSwapButtonText(
+                    noLiquidity,
+                    balanceInsufficient,
+                    insufficientTokenInAmount
+                  )}
+                </ButtonCustom>
+              )}
+            </AuthGate>
           </Flex>
 
           <SwapRateInfo tokenIn={tokenIn} tokenOut={tokenOut} />

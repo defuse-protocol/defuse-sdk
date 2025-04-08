@@ -4,6 +4,7 @@ import clsx from "clsx"
 import { useEffect, useMemo } from "react"
 import type { ModalSelectAssetsPayload } from "src/components/Modal/ModalSelectAssets"
 import type { ActorRefFrom, SnapshotFrom } from "xstate"
+import { AuthGate } from "../../../components/AuthGate"
 import { BlockMultiBalances } from "../../../components/Block/BlockMultiBalances"
 import { ButtonCustom } from "../../../components/Button/ButtonCustom"
 import { SelectAssets } from "../../../components/SelectAssets"
@@ -86,6 +87,7 @@ export function OtcMakerForm({
         : null,
     [userAddress, userChainType]
   )
+  const isLoggedIn = signerCredentials != null
 
   const initialTokenIn_ = initialTokenIn ?? tokenList[0]
   const initialTokenOut_ = initialTokenOut ?? tokenList[1]
@@ -436,31 +438,20 @@ export function OtcMakerForm({
           </div>
         </div>
 
-        {renderSubmitButton(
-          rootSnapshot,
-          userAddress != null,
-          renderHostAppLink
-        )}
+        <AuthGate
+          renderHostAppLink={renderHostAppLink}
+          shouldRender={isLoggedIn}
+        >
+          {renderSubmitButton(rootSnapshot)}
+        </AuthGate>
       </form>
     </div>
   )
 }
 
 function renderSubmitButton(
-  snapshot: SnapshotFrom<typeof otcMakerRootMachine>,
-  isLoggedIn: boolean,
-  renderHostAppLink: RenderHostAppLink
+  snapshot: SnapshotFrom<typeof otcMakerRootMachine>
 ) {
-  if (!isLoggedIn) {
-    return renderHostAppLink(
-      "sign-in",
-      <ButtonCustom type="button" size="lg" className="w-full">
-        Sign in
-      </ButtonCustom>,
-      { className: "w-full" }
-    )
-  }
-
   let caption = "Create swap link"
 
   switch (true) {
