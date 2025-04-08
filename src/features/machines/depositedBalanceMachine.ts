@@ -392,7 +392,7 @@ function createDepositedBalanceQueryObserver(
       )
     },
     enabled: (query) => query.queryKey[1].user != null,
-    refetchInterval: 30000,
+    refetchInterval: 10000,
   })
 }
 
@@ -417,6 +417,6 @@ function createTransitBalanceQueryObserver(
       return getTransitBalances(queryKey[1].user, queryKey[1].tokenIds)
     },
     enabled: (query) => query.queryKey[1].user != null,
-    refetchInterval: 30000,
+    refetchInterval: 10000,
   })
 }
