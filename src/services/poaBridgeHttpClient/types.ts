@@ -1,3 +1,8 @@
+export type RequestConfig = {
+  timeout?: number | undefined
+  fetchOptions?: Omit<RequestInit, "body"> | undefined
+}
+
 export type JSONRPCRequest<Method, Params> = {
   id: string
   jsonrpc: "2.0"
