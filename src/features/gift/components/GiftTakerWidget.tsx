@@ -5,6 +5,7 @@ import type { SignerCredentials } from "../../../core/formatters"
 import { SwapWidgetProvider } from "../../../providers/SwapWidgetProvider"
 import type { AuthMethod } from "../../../types/authHandle"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../../types/base"
+import type { RenderHostAppLink } from "../../../types/hostAppLink"
 import { giftTakerRootMachine } from "../actors/giftTakerRootMachine"
 import type { giftClaimActor } from "../actors/shared/giftClaimActor"
 import { GiftTakerForm } from "./GiftTakerForm"
@@ -23,6 +24,8 @@ export type GiftTakerWidgetProps = {
 
   /** Theme selection */
   theme?: "dark" | "light"
+
+  renderHostAppLink: RenderHostAppLink
 }
 
 export function GiftTakerWidget(props: GiftTakerWidgetProps) {
@@ -42,6 +45,7 @@ function GiftTakerScreens({
   tokenList,
   userAddress,
   userChainType,
+  renderHostAppLink,
 }: GiftTakerWidgetProps) {
   const loading = <div>Loading...</div>
 
@@ -93,6 +97,7 @@ function GiftTakerScreens({
           signerCredentials={signerCredentials}
           giftTakerRootRef={giftTakerRootRef}
           intentHashes={intentHashes}
+          renderHostAppLink={renderHostAppLink}
         />
       )}
     </>
