@@ -27,7 +27,7 @@ export const settings: Settings = {
    */
   rpcUrls: {
     near: "https://nearrpc.aurora.dev",
-    eth: "https://eth.drpc.org",
+    eth: "https://eth.llamarpc.com",
     base: "https://mainnet.base.org",
     arbitrum: "https://arb1.arbitrum.io/rpc",
     bitcoin: "https://mainnet.bitcoin.org",
