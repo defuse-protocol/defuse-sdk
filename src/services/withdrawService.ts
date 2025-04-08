@@ -256,7 +256,7 @@ async function determineNEP141StorageRequirement(
          */
         minDeadlineMs: settings.maxQuoteMinDeadlineMs,
       },
-      { signal }
+      { logBalanceSufficient: true, signal }
     )
     if (nep141StorageQuote.tag === "err") {
       return { tag: "err", value: { reason: nep141StorageQuote.value.type } }
