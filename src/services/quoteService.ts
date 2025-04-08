@@ -97,7 +97,7 @@ export async function queryQuote(
         min_deadline_ms: settings.quoteMinDeadlineMs,
         wait_ms: input.waitMs,
       },
-      { signal }
+      { fetchOptions: { signal } }
     )
 
     if (q == null) {
@@ -155,7 +155,7 @@ export async function queryQuoteExactOut(
       exact_amount_out: input.exactAmountOut.toString(),
       min_deadline_ms: input.minDeadlineMs ?? settings.quoteMinDeadlineMs,
     },
-    { signal }
+    { fetchOptions: { signal } }
   )
 
   if (quotes == null) {
@@ -432,7 +432,7 @@ async function fetchQuotesForTokens(
           min_deadline_ms: settings.quoteMinDeadlineMs,
           wait_ms: waitMs,
         },
-        { signal }
+        { fetchOptions: { signal } }
       )
     })
   )

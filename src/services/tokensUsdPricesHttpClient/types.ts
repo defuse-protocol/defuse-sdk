@@ -1,3 +1,8 @@
+export type RequestConfig = {
+  timeout?: number | undefined
+  fetchOptions?: Omit<RequestInit, "body"> | undefined
+}
+
 export type TokenUsdPriceInfo = {
   defuse_asset_id: string
   decimals: number
