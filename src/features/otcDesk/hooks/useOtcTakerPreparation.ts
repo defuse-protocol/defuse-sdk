@@ -127,7 +127,9 @@ export function useOtcTakerPreparation({
         }
       }
 
-      const quotesResult = await manyQuotes(quoteParams)
+      const quotesResult = await manyQuotes(quoteParams, {
+        logBalanceSufficient: true,
+      })
 
       return quotesResult.map((quotes) => {
         logger.verbose("return", { quotes, quoteParams, tokenDelta })

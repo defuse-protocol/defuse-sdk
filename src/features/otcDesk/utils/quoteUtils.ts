@@ -18,7 +18,8 @@ export type QuoteExactInParams = {
 }
 
 export async function manyQuotes(
-  swapParams: QuoteExactInParams[]
+  swapParams: QuoteExactInParams[],
+  config: { logBalanceSufficient: boolean }
 ): Promise<Result<AggregatedQuote[], AggregatedQuoteErr>> {
   const quoteResults = await Promise.all(
     swapParams.map(async ({ tokenIn, tokenOut, amountIn }) => {
@@ -29,7 +30,7 @@ export async function manyQuotes(
           exact_amount_in: amountIn.toString(),
           min_deadline_ms: settings.quoteMinDeadlineMs,
         },
-        {}
+        config
       ).then(handleQuote)
     })
   )
@@ -102,10 +103,11 @@ export function areQuotesExpired(quotes: AggregatedQuote[]): boolean {
 
 export async function getFreshQuoteHashes(
   quotes: AggregatedQuote[],
-  quoteParams: QuoteExactInParams[]
+  quoteParams: QuoteExactInParams[],
+  config: { logBalanceSufficient: boolean }
 ): Promise<Result<string[], AggregatedQuoteErr>> {
   if (areQuotesExpired(quotes)) {
-    const newQuotes = await manyQuotes(quoteParams)
+    const newQuotes = await manyQuotes(quoteParams, config)
     if (newQuotes.isErr()) {
       return Err(newQuotes.unwrapErr())
     }

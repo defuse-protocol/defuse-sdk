@@ -97,7 +97,10 @@ export async function queryQuote(
         min_deadline_ms: settings.quoteMinDeadlineMs,
         wait_ms: input.waitMs,
       },
-      { fetchOptions: { signal } }
+      {
+        logBalanceSufficient: false,
+        fetchOptions: { signal },
+      }
     )
 
     if (q == null) {
@@ -124,6 +127,7 @@ export async function queryQuote(
     input.waitMs,
     {
       signal,
+      logBalanceSufficient: true,
     }
   )
 
@@ -146,7 +150,13 @@ export async function queryQuoteExactOut(
     exactAmountOut: bigint
     minDeadlineMs?: number
   },
-  { signal }: { signal?: AbortSignal } = {}
+  {
+    logBalanceSufficient,
+    signal,
+  }: {
+    logBalanceSufficient: boolean
+    signal?: AbortSignal
+  }
 ): Promise<QuoteResult> {
   const quotes = await quoteWithLog(
     {
@@ -155,7 +165,11 @@ export async function queryQuoteExactOut(
       exact_amount_out: input.exactAmountOut.toString(),
       min_deadline_ms: input.minDeadlineMs ?? settings.quoteMinDeadlineMs,
     },
-    { fetchOptions: { signal } }
+
+    {
+      fetchOptions: { signal },
+      logBalanceSufficient: logBalanceSufficient,
+    }
   )
 
   if (quotes == null) {
@@ -420,7 +434,13 @@ async function fetchQuotesForTokens(
   tokenOut: string,
   amountsToQuote: Record<string, bigint>,
   waitMs: number,
-  { signal }: { signal?: AbortSignal } = {}
+  {
+    logBalanceSufficient,
+    signal,
+  }: {
+    logBalanceSufficient: boolean
+    signal?: AbortSignal
+  }
 ): Promise<null | NonNullable<QuoteResults>[]> {
   const quotes = await Promise.all(
     Object.entries(amountsToQuote).map(async ([tokenIn, amountIn]) => {
@@ -432,7 +452,10 @@ async function fetchQuotesForTokens(
           min_deadline_ms: settings.quoteMinDeadlineMs,
           wait_ms: waitMs,
         },
-        { fetchOptions: { signal } }
+        {
+          fetchOptions: { signal },
+          logBalanceSufficient,
+        }
       )
     })
   )
@@ -445,10 +468,22 @@ function ensureAllNonNull<T>(array: (T | null)[]): T[] | null {
   return filtered.length === array.length ? filtered : null
 }
 
-export const quoteWithLog = (async (params, config) => {
+export async function quoteWithLog(
+  params: Parameters<typeof quote>[0],
+  {
+    logBalanceSufficient,
+    ...config
+  }: { logBalanceSufficient: boolean } & Parameters<typeof quote>[1]
+) {
   const result = await quote(params, config)
   if (result == null) {
-    logger.warn("No liquidity", { quoteParams: params })
+    logger.warn("quote: No liquidity available", { quoteParams: params })
+    if (logBalanceSufficient) {
+      logger.warn(
+        "quote: No liquidity available for user with sufficient balance",
+        { quoteParams: params }
+      )
+    }
   }
   return result
-}) satisfies typeof quote
+}
