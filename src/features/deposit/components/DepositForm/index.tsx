@@ -264,9 +264,7 @@ export const DepositForm = ({
         <AuthGate
           renderHostAppLink={renderHostAppLink}
           shouldRender={!!userAddress}
-        >
-          {null}
-        </AuthGate>
+        />
 
         {userAddress && network && !isActiveDeposit && !isPassiveDeposit && (
           <NotSupportedDepositRoute />

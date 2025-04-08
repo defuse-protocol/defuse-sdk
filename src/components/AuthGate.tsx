@@ -1,20 +1,22 @@
 import { Button } from "@radix-ui/themes"
+import type { PropsWithChildren } from "react"
 import type { RenderHostAppLink } from "../types/hostAppLink"
 import { cn } from "../utils/cn"
+
+interface AuthGateProps extends PropsWithChildren {
+  renderHostAppLink: RenderHostAppLink
+  shouldRender: boolean
+  className?: string
+}
 
 export function AuthGate({
   renderHostAppLink,
   shouldRender,
   className,
   children,
-}: {
-  renderHostAppLink: RenderHostAppLink
-  shouldRender: boolean
-  children: React.ReactNode
-  className?: string
-}) {
+}: AuthGateProps) {
   return shouldRender
-    ? children
+    ? (children ?? null)
     : renderHostAppLink(
         "sign-in",
         <Button asChild size="4" className={cn("w-full h-14", className)}>
