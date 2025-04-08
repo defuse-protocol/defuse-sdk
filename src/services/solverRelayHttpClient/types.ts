@@ -1,7 +1,8 @@
 import type { MultiPayload } from "../../types/defuse-contracts-types"
 
 export type RequestConfig = {
-  signal?: AbortSignal
+  timeout?: number | undefined
+  fetchOptions?: Omit<RequestInit, "body"> | undefined
 }
 
 export type JSONRPCRequest<Method, Params> = {

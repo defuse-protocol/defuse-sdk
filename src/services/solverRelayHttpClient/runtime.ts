@@ -1,53 +1,27 @@
 import { config as globalConfig } from "../../config"
+import { request } from "../../utils/request"
 import type * as types from "./types"
-
-async function request(
-  url: string,
-  body: unknown,
-  config: types.RequestConfig = {}
-): Promise<Response> {
-  const response = await fetch(url, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(body),
-    signal: config.signal,
-  })
-
-  if (response.ok) {
-    return response
-  }
-
-  throw new ResponseError(response, "Response returned an error code")
-}
 
 export async function jsonRPCRequest<
   T extends types.JSONRPCRequest<unknown, unknown>,
 >(
   method: T["method"],
   params: T["params"][0],
-  config: types.RequestConfig = {}
+  config?: types.RequestConfig | undefined
 ) {
-  const response = await request(
-    `${globalConfig.env.solverRelayBaseURL}/rpc`,
-    {
+  const response = await request({
+    url: `${globalConfig.env.solverRelayBaseURL}/rpc`,
+    body: {
       id: "dontcare",
       jsonrpc: "2.0",
       method,
       params: params !== undefined ? [params] : undefined,
     },
-    config
-  )
+    ...config,
+    fetchOptions: {
+      ...config?.fetchOptions,
+      method: "POST",
+    },
+  })
   return response.json()
-}
-
-class ResponseError extends Error {
-  name = "ResponseError"
-  constructor(
-    public response: Response,
-    msg?: string
-  ) {
-    super(msg)
-  }
 }
