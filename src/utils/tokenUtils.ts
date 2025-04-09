@@ -1,3 +1,4 @@
+import { formatUnits } from "viem"
 import type { BalanceMapping } from "../features/machines/depositedBalanceMachine"
 import type { BaseTokenInfo, TokenValue, UnifiedTokenInfo } from "../types/base"
 import { assert } from "./assert"
@@ -351,4 +352,60 @@ export function accountSlippageExactIn(
     }
     return [token, amount]
   })
+}
+
+export function filterOutPoaBridgeTokens(
+  token: BaseTokenInfo | UnifiedTokenInfo
+): BaseTokenInfo | UnifiedTokenInfo | null {
+  if (isBaseToken(token)) {
+    return token.bridge === "poa" ? token : null
+  }
+
+  return {
+    ...token,
+    groupedTokens: token.groupedTokens.filter((t) => t.bridge === "poa"),
+  }
+}
+
+export function getTokenAssetIdsWithoutNep141(
+  token: BaseTokenInfo | UnifiedTokenInfo
+): string[] {
+  const stringCleaner = "nep141:"
+
+  if (isBaseToken(token)) {
+    return token.defuseAssetId.startsWith(stringCleaner)
+      ? [token.defuseAssetId.replace(stringCleaner, "")]
+      : [token.defuseAssetId]
+  }
+
+  return token.groupedTokens.map((t) => {
+    return t.defuseAssetId.startsWith(stringCleaner)
+      ? t.defuseAssetId.replace(stringCleaner, "")
+      : t.defuseAssetId
+  })
+}
+
+export function addNep141ToAddress(address: string): string {
+  const nep141 = "nep141:"
+
+  if (!address || address.toLowerCase().startsWith(nep141)) {
+    return address
+  }
+
+  return `${nep141}${address}`
+}
+
+export const adjustTo1kUsd = (
+  tokenValue: TokenValue & { price: number }
+): number => {
+  if (tokenValue.amount === 0n) {
+    return 0
+  }
+
+  const rounded = Math.round(
+    (Number(formatUnits(tokenValue.amount, tokenValue.decimals)) *
+      tokenValue.price) /
+      1000 // 1k
+  )
+  return rounded === 0 ? 1 : rounded
 }

@@ -56,3 +56,13 @@ export async function jsonRPCRequest<
 
   return handleRPCResponse(response, body, rpcResponseSchema)
 }
+
+export async function jsonConsoleBalancesRequest(params: string) {
+  const response = await request({
+    url: `${globalConfig.env.poaBridgeBaseURL}/console/tokenBalances?${params}`,
+    fetchOptions: {
+      method: "GET",
+    },
+  })
+  return response.json()
+}

@@ -1,4 +1,4 @@
-import { jsonRPCRequest } from "./runtime"
+import { jsonConsoleBalancesRequest, jsonRPCRequest } from "./runtime"
 import type * as types from "./types"
 
 export async function getSupportedTokens(
@@ -51,4 +51,17 @@ export async function getWithdrawalStatus(
   )
   // biome-ignore lint/suspicious/noExplicitAny: <explanation>
   return result as any
+}
+
+export async function getTokenBalancesRequest(
+  addresses: string[]
+): Promise<types.TokenBalancesRequestOk> {
+  const params = addresses.map((address) => `addresses[]=${address}`).join("&")
+  const balances = await jsonConsoleBalancesRequest(params)
+
+  if ("error" in balances) {
+    throw new Error(balances.error)
+  }
+
+  return balances || []
 }

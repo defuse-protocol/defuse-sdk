@@ -3,7 +3,9 @@ import * as RadixSelect from "@radix-ui/react-select"
 import { Theme } from "@radix-ui/themes"
 import type { ReactNode } from "react"
 import { useContext } from "react"
+import type { TokenValue } from "../../types/base"
 import { WidgetContext } from "../WidgetRoot"
+import { HotBalance } from "./HotBalance"
 
 type Props<T extends string> = {
   name: string
@@ -12,6 +14,11 @@ type Props<T extends string> = {
       label: string
       icon: ReactNode
       value: string
+      hotBalance?:
+        | (TokenValue & {
+            price: number
+          })
+        | null
     }
   }
   placeholder: { label: string; icon: ReactNode }
@@ -20,6 +27,7 @@ type Props<T extends string> = {
   value?: string
   hint?: ReactNode
   onChange?: (value: string) => void
+  showHotBalances?: boolean
 }
 
 export function Select<T extends string>({
@@ -31,6 +39,7 @@ export function Select<T extends string>({
   value,
   hint,
   onChange,
+  showHotBalances = false,
 }: Props<T>) {
   const { portalContainer } = useContext(WidgetContext)
   return (
@@ -77,21 +86,27 @@ export function Select<T extends string>({
             sideOffset={8}
           >
             <RadixSelect.Viewport className="flex flex-col gap-1 p-2">
-              {Object.keys(options).map((key: string) => (
-                <SelectItem
-                  key={key}
-                  value={options[key as keyof typeof options].value}
-                >
-                  <div className="flex w-full items-center justify-between gap-2">
-                    {options[key as keyof typeof options]?.icon && (
-                      <div className="flex-shrink-0">
-                        {options[key as keyof typeof options].icon}
+              {Object.keys(options).map((key: string) => {
+                return (
+                  <SelectItem
+                    key={key}
+                    value={options[key as keyof typeof options].value}
+                    hotBalance={options[key as keyof typeof options].hotBalance}
+                    showHotBalances={showHotBalances}
+                  >
+                    <div className="flex w-full items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        {options[key as keyof typeof options]?.icon && (
+                          <div className="flex-shrink-0">
+                            {options[key as keyof typeof options].icon}
+                          </div>
+                        )}
+                        <div>{options[key as keyof typeof options].label}</div>
                       </div>
-                    )}
-                    <div>{options[key as keyof typeof options].label}</div>
-                  </div>
-                </SelectItem>
-              ))}
+                    </div>
+                  </SelectItem>
+                )
+              })}
             </RadixSelect.Viewport>
           </RadixSelect.Content>
         </Theme>
@@ -103,15 +118,27 @@ export function Select<T extends string>({
 interface SelectItemProps {
   value: string
   children: ReactNode
+  hotBalance?:
+    | (TokenValue & {
+        price: number
+      })
+    | null
+  showHotBalances?: boolean
 }
 
-function SelectItem({ value, children }: SelectItemProps) {
+function SelectItem({
+  value,
+  children,
+  hotBalance,
+  showHotBalances,
+}: SelectItemProps) {
   return (
     <RadixSelect.Item
       className="relative flex w-full select-none items-center justify-between gap-3 self-stretch rounded-md p-2 font-bold text-gray-12 text-sm data-[disabled]:pointer-events-none data-[highlighted]:bg-gray-3 data-[state=checked]:bg-gray-3 data-[disabled]:text-gray-8 data-[highlighted]:outline-none"
       value={value}
     >
       <RadixSelect.ItemText>{children}</RadixSelect.ItemText>
+      {showHotBalances && <HotBalance hotBalance={hotBalance} />}
     </RadixSelect.Item>
   )
 }
