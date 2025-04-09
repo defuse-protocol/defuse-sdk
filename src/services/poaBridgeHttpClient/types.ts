@@ -97,9 +97,3 @@ export type WithdrawalStatusResponseOk = JSONRPCResponse<{
     }
   }[]
 }>
-
-export type WithdrawalStatusResponseErr = {
-  id: string
-  jsonrpc: "2.0"
-  error: string
-}
