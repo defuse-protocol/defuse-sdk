@@ -68,6 +68,12 @@ export const tokenMigrationMachine = setup({
         waitForIntentSettlement(signal, input.intentHash)
     ),
   },
+
+  actions: {
+    clearError: assign({
+      error: null,
+    }),
+  },
 }).createMachine({
   initial: "gettingBalances",
 
@@ -117,7 +123,10 @@ export const tokenMigrationMachine = setup({
       states: {
         idle: {
           on: {
-            PROCEED: "signing",
+            PROCEED: {
+              target: "signing",
+              actions: "clearError",
+            },
             CANCEL: "#(machine).finished",
           },
         },
