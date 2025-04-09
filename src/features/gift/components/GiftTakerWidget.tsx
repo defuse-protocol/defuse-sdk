@@ -90,6 +90,7 @@ function GiftTakerScreens({
         <GiftTakerSuccessScreen
           giftInfo={giftInfo}
           intentHashes={intentHashes}
+          renderHostAppLink={renderHostAppLink}
         />
       ) : (
         <GiftTakerForm
