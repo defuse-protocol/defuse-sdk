@@ -19,7 +19,11 @@ export function AuthGate({
     ? (children ?? null)
     : renderHostAppLink(
         "sign-in",
-        <Button asChild size="4" className={cn("w-full h-14", className)}>
+        <Button
+          asChild
+          size="4"
+          className={cn("w-full h-14 font-bold", className)}
+        >
           <div>Sign in</div>
         </Button>,
         { className: "w-full" }

@@ -133,6 +133,7 @@ function OtcTakerScreens({
           intentHashes={publishResult.intentHashes}
           tokenIn={tokenIn}
           tokenOut={tokenOut}
+          renderHostAppLink={renderHostAppLink}
         />
       ) : knownOtcTakerTrade?.status === "completed" ? (
         <OtcTakerSuccessScreen
@@ -140,6 +141,7 @@ function OtcTakerScreens({
           intentHashes={knownOtcTakerTrade.intentHashes}
           tokenIn={tokenIn}
           tokenOut={tokenOut}
+          renderHostAppLink={renderHostAppLink}
         />
       ) : (
         <OtcTakerValidationOrder

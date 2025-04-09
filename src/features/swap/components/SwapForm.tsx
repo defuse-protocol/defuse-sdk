@@ -256,7 +256,7 @@ export const SwapForm = ({ isLoggedIn, renderHostAppLink }: SwapFormProps) => {
               {showDepositButton ? (
                 renderHostAppLink(
                   "deposit",
-                  <Button asChild size="4" className="w-full h-14">
+                  <Button asChild size="4" className="w-full h-14 font-bold">
                     <div>Go to Deposit</div>
                   </Button>,
                   { className: "w-full" }
