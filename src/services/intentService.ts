@@ -1,5 +1,7 @@
 import { retry } from "@lifeomic/attempt"
 import { Err, Ok, type Result } from "@thames/monads"
+import { BaseError } from "../errors/base"
+import { HttpRequestError } from "../errors/request"
 import { logger } from "../logger"
 import type { AuthMethod } from "../types/authHandle"
 import type { WalletSignatureResult } from "../types/swap"
@@ -68,10 +70,28 @@ export async function waitForIntentSettlement(
   while (true) {
     signal.throwIfAborted()
 
-    // todo: add retry in case of network error
-    const res = await solverRelayClient.getStatus({
-      intent_hash: intentHash,
-    })
+    const res = await retry(
+      () =>
+        solverRelayClient.getStatus({
+          intent_hash: intentHash,
+        }),
+      {
+        delay: 1000,
+        factor: 1.5,
+        maxAttempts: Number.MAX_SAFE_INTEGER,
+        jitter: true,
+        handleError: (err, context) => {
+          if (
+            err instanceof BaseError &&
+            err.walk((err) => err instanceof HttpRequestError)
+          ) {
+            return
+          }
+
+          context.abort()
+        },
+      }
+    )
 
     const status = res.status
     switch (status) {
