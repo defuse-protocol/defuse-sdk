@@ -52,10 +52,12 @@ export function BaseModalDialog({
   open,
   children,
   onClose,
+  onCloseAnimationEnd,
   isDismissable,
 }: PropsWithChildren<{
   open: boolean
   onClose?: () => void
+  onCloseAnimationEnd?: () => void
   isDismissable?: boolean
 }>) {
   const { portalContainer } = useContext(WidgetContext)
@@ -77,6 +79,11 @@ export function BaseModalDialog({
               // Backdrop animation forces the dialog to animate
               "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0"
             )}
+            onAnimationEnd={() => {
+              if (!open && onCloseAnimationEnd) {
+                onCloseAnimationEnd()
+              }
+            }}
           >
             <div className="flex absolute bottom-0 left-0 right-0 md:inset-0 overflow-auto">
               <div className="flex-grow md:m-auto md:py-8 md:px-4">
