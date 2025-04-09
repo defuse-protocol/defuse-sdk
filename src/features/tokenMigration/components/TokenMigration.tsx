@@ -1,6 +1,5 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import type { AuthMethod } from "../../../types/authHandle"
-import { assert } from "../../../utils/assert"
 import type { SignMessage } from "../../otcDesk/types/sharedTypes"
 import { TokenMigrationDialog } from "./TokenMigrationDialog"
 
@@ -17,15 +16,17 @@ export function TokenMigration({
   userChainType,
   signMessage,
 }: TokenMigrationProps) {
-  const [enabled, setEnabled] = useState(
-    userAddress != null && userChainType != null
-  )
+  const [enabled, setEnabled] = useState(false)
 
-  if (!enabled) {
+  useEffect(() => {
+    if (userAddress != null && userChainType != null) {
+      setEnabled(true)
+    }
+  }, [userAddress, userChainType])
+
+  if (!enabled || userAddress == null || userChainType == null) {
     return null
   }
-
-  assert(userAddress != null && userChainType != null)
 
   return (
     <TokenMigrationDialog
