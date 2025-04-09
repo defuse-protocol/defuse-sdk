@@ -478,7 +478,12 @@ export async function quoteWithLog(
   const result = await quote(params, config)
   if (result == null) {
     logger.warn("quote: No liquidity available", { quoteParams: params })
-    if (logBalanceSufficient) {
+
+    if (
+      logBalanceSufficient &&
+      // We don't care about fast quotes, since they fail often
+      (params.wait_ms == null || params.wait_ms > 1000)
+    ) {
       logger.warn(
         "quote: No liquidity available for user with sufficient balance",
         { quoteParams: params }
