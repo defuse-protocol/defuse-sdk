@@ -13,12 +13,14 @@ export function TokenMigrationDialog({
   userAddress,
   userChainType,
   signMessage,
+  onExit,
 }: {
   /** User's wallet address */
   userAddress: string
   userChainType: AuthMethod
 
   signMessage: SignMessage
+  onExit: () => void
 }) {
   const userId = authHandleToIntentsUserId(userAddress, userChainType)
 
@@ -37,6 +39,7 @@ export function TokenMigrationDialog({
     <BaseModalDialog
       open={state.matches("migrating")}
       onClose={() => send({ type: "CANCEL" })}
+      onCloseAnimationEnd={onExit}
       isDismissable
     >
       {!state.matches({ migrating: "settled" }) ? (
