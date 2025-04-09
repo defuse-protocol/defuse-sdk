@@ -1,6 +1,7 @@
 import { useMemo } from "react"
-import { TradeNavigationLinks } from "src/components/TradeNavigationLinks"
 import { Island } from "../../../components/Island"
+import { TokenListUpdater } from "../../../components/TokenListUpdater"
+import { TradeNavigationLinks } from "../../../components/TradeNavigationLinks"
 import { WidgetRoot } from "../../../components/WidgetRoot"
 import type { SignerCredentials } from "../../../core/formatters"
 import { SwapWidgetProvider } from "../../../providers/SwapWidgetProvider"
@@ -25,6 +26,7 @@ export function OtcMakerWidget(props: OtcMakerWidgetProps) {
             currentRoute="otc"
             renderHostAppLink={props.renderHostAppLink}
           />
+          <TokenListUpdater tokenList={props.tokenList} />
           <OtcMakerForm {...props} />
 
           {signerCredentials != null && (
