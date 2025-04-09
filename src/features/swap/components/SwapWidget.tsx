@@ -2,6 +2,7 @@ import { TokenListUpdater } from "../../../components/TokenListUpdater"
 import { WidgetRoot } from "../../../components/WidgetRoot"
 import { SwapWidgetProvider } from "../../../providers/SwapWidgetProvider"
 import type { SwapWidgetProps } from "../../../types/swap"
+import { TokenMigration } from "../../tokenMigration/components/TokenMigration"
 import { SwapForm } from "./SwapForm"
 import { SwapFormProvider } from "./SwapFormProvider"
 import { SwapSubmitterProvider } from "./SwapSubmitter"
@@ -23,6 +24,12 @@ export const SwapWidget = ({
   return (
     <WidgetRoot>
       <SwapWidgetProvider>
+        <TokenMigration
+          userAddress={userAddress}
+          userChainType={userChainType}
+          signMessage={signMessage}
+        />
+
         <TokenListUpdater tokenList={tokenList} />
         <SwapFormProvider>
           <SwapUIMachineProvider
