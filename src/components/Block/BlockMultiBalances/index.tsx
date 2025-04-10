@@ -77,7 +77,7 @@ export function BlockMultiBalances({
 }
 
 interface ButtonProps {
-  onClick: () => void
+  onClick?: () => void
   active?: boolean
   disabled?: boolean
   balance: bigint
@@ -96,7 +96,7 @@ BlockMultiBalances.DisplayMaxButton = withActiveHOC(function DisplayMaxButton({
       onClick={(e) => {
         e.stopPropagation()
         e.preventDefault()
-        onClick()
+        onClick?.()
       }}
       className="text-xs font-bold leading-4"
       disabled={!active}
@@ -117,7 +117,7 @@ BlockMultiBalances.DisplayHalfButton = withActiveHOC(
         onClick={(e) => {
           e.stopPropagation()
           e.preventDefault()
-          onClick()
+          onClick?.()
         }}
         className="text-xs font-bold leading-4"
         disabled={!active}
@@ -128,18 +128,14 @@ BlockMultiBalances.DisplayHalfButton = withActiveHOC(
   }
 )
 
-function withActiveHOC<Props extends { onClick: () => void }>(
-  WrappedComponent: React.ComponentType<Props & { active: boolean }>
+function withActiveHOC<Props extends ButtonProps>(
+  WrappedComponent: React.ComponentType<Props>
 ) {
-  function WithActiveComponent(
-    props: Props & { balance: bigint; disabled?: boolean }
-  ) {
-    const { balance, disabled, ...restProps } = props
-    const active = balance > 0n && !disabled
+  function WithActiveComponent(props: Props & { disabled?: boolean }) {
+    const { disabled, ...restProps } = props
+    const active = props.balance > 0n && !disabled
 
-    return (
-      <WrappedComponent {...(restProps as unknown as Props)} active={active} />
-    )
+    return <WrappedComponent {...(restProps as Props)} active={active} />
   }
 
   WithActiveComponent.displayName = `withActive(${
