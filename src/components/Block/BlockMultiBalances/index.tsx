@@ -78,7 +78,6 @@ export function BlockMultiBalances({
 
 interface ButtonProps {
   onClick?: () => void
-  active?: boolean
   disabled?: boolean
   balance: bigint
 }
