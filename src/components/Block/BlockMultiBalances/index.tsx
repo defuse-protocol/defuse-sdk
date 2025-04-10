@@ -93,7 +93,10 @@ BlockMultiBalances.DisplayMaxButton = withActiveHOC(function DisplayMaxButton({
       size="1"
       color="gray"
       radius="full"
-      onClick={onClick}
+      onClick={(e) => {
+        e.preventDefault()
+        onClick()
+      }}
       className="text-xs font-bold leading-4"
       disabled={!active}
     >
@@ -110,7 +113,10 @@ BlockMultiBalances.DisplayHalfButton = withActiveHOC(
         size="1"
         color="gray"
         radius="full"
-        onClick={onClick}
+        onClick={(e) => {
+          e.preventDefault()
+          onClick()
+        }}
         className="text-xs font-bold leading-4"
         disabled={!active}
       >
