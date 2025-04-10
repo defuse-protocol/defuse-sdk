@@ -227,6 +227,28 @@ export function GiftMakerForm({
 
   usePublicKeyModalOpener(publicKeyVerifierRef, sendNearTransaction)
 
+  const handleSetMaxValue = async () => {
+    if (tokenBalance != null) {
+      formValuesRef.trigger.updateAmount({
+        value: formatTokenValue(tokenBalance.amount, tokenBalance.decimals),
+      })
+    }
+  }
+
+  const handleSetHalfValue = async () => {
+    if (tokenBalance != null) {
+      formValuesRef.trigger.updateAmount({
+        value: formatTokenValue(
+          tokenBalance.amount / 2n,
+          tokenBalance.decimals
+        ),
+      })
+    }
+  }
+
+  const balanceAmount = tokenBalance?.amount ?? 0n
+  const disabled = tokenBalance?.amount === 0n
+
   return (
     <div className="flex flex-col">
       {rootSnapshot.matches("settled") &&
@@ -295,23 +317,26 @@ export function GiftMakerForm({
               }
               balanceSlot={
                 <BlockMultiBalances
-                  balance={tokenBalance?.amount ?? 0n}
+                  balance={balanceAmount}
                   decimals={tokenBalance?.decimals ?? 0}
-                  handleClick={() => {
-                    if (tokenBalance != null) {
-                      formValuesRef.trigger.updateAmount({
-                        value: formatTokenValue(
-                          tokenBalance.amount,
-                          tokenBalance.decimals
-                        ),
-                      })
-                    }
-                  }}
-                  disabled={tokenBalance?.amount === 0n}
                   className={clsx(
                     "!static",
                     tokenBalance == null && "invisible"
                   )}
+                  maxButtonSlot={
+                    <BlockMultiBalances.DisplayMaxButton
+                      onClick={handleSetMaxValue}
+                      balance={balanceAmount}
+                      disabled={disabled}
+                    />
+                  }
+                  halfButtonSlot={
+                    <BlockMultiBalances.DisplayHalfButton
+                      onClick={handleSetHalfValue}
+                      balance={balanceAmount}
+                      disabled={disabled}
+                    />
+                  }
                 />
               }
               priceSlot={

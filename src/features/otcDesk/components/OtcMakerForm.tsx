@@ -228,6 +228,59 @@ export function OtcMakerForm({
   // @ts-expect-error ???
   usePublicKeyModalOpener(publicKeyVerifierRef, sendNearTransaction)
 
+  const handleSetMaxValue = async (
+    fieldName: typeof SWAP_TOKEN_FLAGS.IN | typeof SWAP_TOKEN_FLAGS.OUT
+  ) => {
+    if (fieldName === SWAP_TOKEN_FLAGS.IN) {
+      if (tokenInBalance != null) {
+        formValuesRef.trigger.updateAmountIn({
+          value: formatTokenValue(
+            tokenInBalance.amount,
+            tokenInBalance.decimals
+          ),
+        })
+      }
+    } else if (fieldName === SWAP_TOKEN_FLAGS.OUT) {
+      if (tokenOutBalance != null) {
+        formValuesRef.trigger.updateAmountOut({
+          value: formatTokenValue(
+            tokenOutBalance.amount,
+            tokenOutBalance.decimals
+          ),
+        })
+      }
+    }
+  }
+
+  const handleSetHalfValue = async (
+    fieldName: typeof SWAP_TOKEN_FLAGS.IN | typeof SWAP_TOKEN_FLAGS.OUT
+  ) => {
+    if (fieldName === SWAP_TOKEN_FLAGS.IN) {
+      if (tokenInBalance != null) {
+        formValuesRef.trigger.updateAmountIn({
+          value: formatTokenValue(
+            tokenInBalance.amount / 2n,
+            tokenInBalance.decimals
+          ),
+        })
+      }
+    } else if (fieldName === SWAP_TOKEN_FLAGS.OUT) {
+      if (tokenOutBalance != null) {
+        formValuesRef.trigger.updateAmountOut({
+          value: formatTokenValue(
+            tokenOutBalance.amount / 2n,
+            tokenOutBalance.decimals
+          ),
+        })
+      }
+    }
+  }
+
+  const balanceAmountIn = tokenInBalance?.amount ?? 0n
+  const balanceAmountOut = tokenOutBalance?.amount ?? 0n
+  const disabledIn = tokenInBalance?.amount === 0n
+  const disabledOut = tokenOutBalance?.amount === 0n
+
   return (
     <div className="flex flex-col">
       {rootSnapshot.matches("signed") &&
@@ -294,23 +347,26 @@ export function OtcMakerForm({
               }
               balanceSlot={
                 <BlockMultiBalances
-                  balance={tokenInBalance?.amount ?? 0n}
+                  balance={balanceAmountIn}
                   decimals={tokenInBalance?.decimals ?? 0}
-                  handleClick={() => {
-                    if (tokenInBalance != null) {
-                      formValuesRef.trigger.updateAmountIn({
-                        value: formatTokenValue(
-                          tokenInBalance.amount,
-                          tokenInBalance.decimals
-                        ),
-                      })
-                    }
-                  }}
-                  disabled={tokenInBalance?.amount === 0n}
                   className={clsx(
                     "!static",
                     tokenInBalance == null && "invisible"
                   )}
+                  maxButtonSlot={
+                    <BlockMultiBalances.DisplayMaxButton
+                      onClick={() => handleSetMaxValue(SWAP_TOKEN_FLAGS.IN)}
+                      balance={balanceAmountIn}
+                      disabled={disabledIn}
+                    />
+                  }
+                  halfButtonSlot={
+                    <BlockMultiBalances.DisplayHalfButton
+                      onClick={() => handleSetHalfValue(SWAP_TOKEN_FLAGS.IN)}
+                      balance={balanceAmountIn}
+                      disabled={disabledIn}
+                    />
+                  }
                 />
               }
               priceSlot={
@@ -371,23 +427,26 @@ export function OtcMakerForm({
               }
               balanceSlot={
                 <BlockMultiBalances
-                  balance={tokenOutBalance?.amount ?? 0n}
+                  balance={balanceAmountOut}
                   decimals={tokenOutBalance?.decimals ?? 0}
-                  handleClick={() => {
-                    if (tokenOutBalance != null) {
-                      formValuesRef.trigger.updateAmountOut({
-                        value: formatTokenValue(
-                          tokenOutBalance.amount,
-                          tokenOutBalance.decimals
-                        ),
-                      })
-                    }
-                  }}
-                  disabled={tokenOutBalance?.amount === 0n}
                   className={clsx(
                     "!static",
                     tokenOutBalance == null && "invisible"
                   )}
+                  maxButtonSlot={
+                    <BlockMultiBalances.DisplayMaxButton
+                      onClick={() => handleSetMaxValue(SWAP_TOKEN_FLAGS.OUT)}
+                      balance={balanceAmountOut}
+                      disabled={disabledOut}
+                    />
+                  }
+                  halfButtonSlot={
+                    <BlockMultiBalances.DisplayHalfButton
+                      onClick={() => handleSetHalfValue(SWAP_TOKEN_FLAGS.OUT)}
+                      balance={balanceAmountOut}
+                      disabled={disabledOut}
+                    />
+                  }
                 />
               }
               priceSlot={
