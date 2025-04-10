@@ -7,15 +7,17 @@ import {
 import {
   Box,
   Callout,
+  Checkbox,
   Flex,
   IconButton,
   Skeleton,
   Text,
   TextField,
+  Tooltip,
 } from "@radix-ui/themes"
 import { useSelector } from "@xstate/react"
 import { type ReactNode, useEffect } from "react"
-import { Controller, useForm } from "react-hook-form"
+import { Controller, useController, useForm } from "react-hook-form"
 import { useTokensUsdPrices } from "src/hooks/useTokensUsdPrices"
 import { formatTokenValue, formatUsdAmount } from "src/utils/format"
 import getTokenUsdPrice from "src/utils/getTokenUsdPrice"
@@ -70,6 +72,7 @@ export type WithdrawFormNearValues = {
   recipient: string
   blockchain: SupportedChainName
   destinationMemo?: string
+  isFundsLooseConfirmed?: boolean
 }
 
 type WithdrawFormProps = WithdrawWidgetProps
@@ -191,6 +194,19 @@ export const WithdrawForm = ({
     },
   })
 
+  const { field: fundsLooseConfirmedField } = useController({
+    control,
+    name: "isFundsLooseConfirmed",
+    rules: {
+      validate: {
+        pattern: (value, formValues) => {
+          if (formValues.blockchain !== "near") return true
+          if (!value) return "Required"
+        },
+      },
+    },
+  })
+
   const { setModalType, data: modalSelectAssetsData } = useModalController<{
     modalType: ModalType
     token: BaseTokenInfo | UnifiedTokenInfo | undefined
@@ -268,6 +284,24 @@ export const WithdrawForm = ({
         actorRef.send({
           type: "WITHDRAW_FORM.UPDATE_BLOCKCHAIN",
           params: { blockchain: value[name] ?? "" },
+        })
+
+        actorRef.send({
+          type: "WITHDRAW_FORM.CEX_FUNDS_LOOSE_CHANGED",
+          params: {
+            cexFundsLooseConfirmation:
+              value[name] === "near" ? "not_confirmed" : "not_required",
+          },
+        })
+      }
+      if (name === "isFundsLooseConfirmed") {
+        actorRef.send({
+          type: "WITHDRAW_FORM.CEX_FUNDS_LOOSE_CHANGED",
+          params: {
+            cexFundsLooseConfirmation: value[name]
+              ? "confirmed"
+              : "not_confirmed",
+          },
         })
       }
     })
@@ -501,6 +535,46 @@ export const WithdrawForm = ({
               </Flex>
             )}
           </Flex>
+
+          {blockchain === "near" && (
+            <Flex gap="2">
+              <Text
+                as="label"
+                size="1"
+                weight="medium"
+                color={errors.isFundsLooseConfirmed ? "red" : "gray"}
+              >
+                <Flex as="span" gap="2">
+                  <Checkbox
+                    size="3"
+                    {...fundsLooseConfirmedField}
+                    value={undefined}
+                    checked={fundsLooseConfirmedField.value}
+                    onCheckedChange={fundsLooseConfirmedField.onChange}
+                  />
+                  I understand CEX addresses may cause fund loss or issues.
+                  <Tooltip
+                    side="bottom"
+                    align="center"
+                    maxWidth="300px"
+                    content="Many centralized exchanges (CEXs) don’t support third-party protocol withdrawals. Using a CEX address may result in lost or delayed funds. Use a self-custodial wallet instead."
+                  >
+                    <Text
+                      size="1"
+                      color="gray"
+                      as="span"
+                      style={{
+                        textDecoration: "underline",
+                        textDecorationStyle: "dotted",
+                      }}
+                    >
+                      Why?
+                    </Text>
+                  </Tooltip>
+                </Flex>
+              </Text>
+            </Flex>
+          )}
 
           <Flex justify="between" px="2">
             <Text size="1" weight="medium" color="gray">
