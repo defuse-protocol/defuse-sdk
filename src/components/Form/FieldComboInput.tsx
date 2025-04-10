@@ -1,6 +1,6 @@
 import { Skeleton } from "@radix-ui/themes"
 import clsx from "clsx"
-import { useRef } from "react"
+import { useEffect, useRef, useState } from "react"
 import type {
   FieldError,
   FieldErrors,
@@ -111,6 +111,13 @@ export const FieldComboInput = <T extends FieldValues>({
 
   const allInputRefs = useMergedRef(inputRef, reactHookFormRegisterProps.ref)
   const fieldError = errors?.[fieldName]
+
+  const LONG_LOADING_THRESHOLD_MS = 3000
+  const isLongLoading = useThrottledValue(
+    isLoading,
+    isLoading ? LONG_LOADING_THRESHOLD_MS : 0
+  )
+
   return (
     <div
       className={clsx(
@@ -147,6 +154,12 @@ export const FieldComboInput = <T extends FieldValues>({
       </div>
 
       <div className="flex justify-between items-center min-h-6 gap-2 min-w-0">
+        {isLongLoading && (
+          <div className="text-xs sm:text-sm font-medium text-gray-400">
+            Searching for more liquidity...
+          </div>
+        )}
+
         <div className="relative flex flex-1 overflow-hidden whitespace-nowrap">
           {fieldError ? (
             <span className="text-xs sm:text-sm font-medium text-red-400">
@@ -188,3 +201,22 @@ export const FieldComboInput = <T extends FieldValues>({
 }
 
 FieldComboInput.displayName = FieldComboInputRegistryName
+
+/**
+ * Sets a value after a delay
+ */
+function useThrottledValue<T>(value: T, delayMs: number): T {
+  const [throttledValue, setThrottledValue] = useState(value)
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setThrottledValue(value)
+    }, delayMs)
+
+    return () => {
+      clearTimeout(timer)
+    }
+  }, [value, delayMs])
+
+  return throttledValue
+}
