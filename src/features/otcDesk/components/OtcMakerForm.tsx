@@ -168,44 +168,40 @@ export function OtcMakerForm({
       fieldName,
       [fieldName]: token,
       balances: depositedBalanceRef?.getSnapshot().context.balances,
+      onConfirm: (payload: ModalSelectAssetsPayload) => {
+        const { fieldName } = payload as ModalSelectAssetsPayload
+        const _payload = payload as ModalSelectAssetsPayload
+        const token = _payload[fieldName || "token"]
+
+        if (fieldName && token) {
+          switch (fieldName) {
+            case SWAP_TOKEN_FLAGS.IN:
+              if (
+                formValues.tokenOut === token &&
+                formValues.tokenIn !== null
+              ) {
+                formValuesRef.trigger.updateTokenOut({
+                  value: formValues.tokenIn,
+                })
+              }
+              formValuesRef.trigger.updateTokenIn({ value: token })
+              break
+            case SWAP_TOKEN_FLAGS.OUT:
+              if (
+                formValues.tokenIn === token &&
+                formValues.tokenOut !== null
+              ) {
+                formValuesRef.trigger.updateTokenIn({
+                  value: formValues.tokenOut,
+                })
+              }
+              formValuesRef.trigger.updateTokenOut({ value: token })
+              break
+          }
+        }
+      },
     })
   }
-
-  useEffect(() => {
-    if (
-      (payload as ModalSelectAssetsPayload)?.modalType !==
-      ModalType.MODAL_SELECT_ASSETS
-    ) {
-      return
-    }
-
-    const { modalType, fieldName } = payload as ModalSelectAssetsPayload
-    const _payload = payload as ModalSelectAssetsPayload
-    const token = _payload[fieldName || "token"]
-
-    if (modalType === ModalType.MODAL_SELECT_ASSETS && fieldName && token) {
-      switch (fieldName) {
-        case SWAP_TOKEN_FLAGS.IN:
-          if (formValues.tokenOut === token && formValues.tokenIn !== null) {
-            formValuesRef.trigger.updateTokenOut({
-              value: formValues.tokenIn,
-            })
-          }
-          formValuesRef.trigger.updateTokenIn({ value: token })
-          break
-        case SWAP_TOKEN_FLAGS.OUT:
-          if (formValues.tokenIn === token && formValues.tokenOut !== null) {
-            formValuesRef.trigger.updateTokenIn({
-              value: formValues.tokenOut,
-            })
-          }
-          formValuesRef.trigger.updateTokenOut({ value: token })
-          break
-        default:
-          throw new Error("Invalid field name")
-      }
-    }
-  }, [payload, formValuesRef, formValues.tokenIn, formValues.tokenOut])
 
   const publicKeyVerifierRef = useSelector(
     useSelector(
