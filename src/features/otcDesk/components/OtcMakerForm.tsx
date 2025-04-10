@@ -10,9 +10,8 @@ import { ButtonCustom } from "../../../components/Button/ButtonCustom"
 import { SelectAssets } from "../../../components/SelectAssets"
 import { SWAP_TOKEN_FLAGS } from "../../../constants/swap"
 import type { SignerCredentials } from "../../../core/formatters"
-import { useModalController } from "../../../hooks/useModalController"
 import { useTokensUsdPrices } from "../../../hooks/useTokensUsdPrices"
-import { useTokensStore } from "../../../providers/TokensStoreProvider"
+import { useModalStore } from "../../../providers/ModalStoreProvider"
 import { ModalType } from "../../../stores/modalStore"
 import type { AuthMethod } from "../../../types/authHandle"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../../types/base"
@@ -117,6 +116,10 @@ export function OtcMakerForm({
       tokenOutBalance: formValues.tokenOut,
     })
   )
+  const depositedBalanceRef = useSelector(
+    rootActorRef,
+    (s) => s.context.depositedBalanceRef
+  )
 
   const rootSnapshot = useSelector(rootActorRef, (s) => s)
   const { configRef, readyOrderRef } = useSelector(rootActorRef, (s) => ({
@@ -154,45 +157,34 @@ export function OtcMakerForm({
     }
   }, [rootActorRef, signerCredentials])
 
-  const { setModalType, data: modalSelectAssetsData } = useModalController<{
-    modalType: ModalType.MODAL_SELECT_ASSETS
-  }>(ModalType.MODAL_SELECT_ASSETS)
+  const { setModalType, payload } = useModalStore((state) => state)
 
-  const updateTokens = useTokensStore((state) => state.updateTokens)
-
-  const handleSelect = (
+  const openModalSelectAssets = (
     fieldName: string,
     token: SwappableToken | undefined
   ) => {
-    updateTokens(tokenList)
-    const payload: ModalSelectAssetsPayload | undefined = modalSelectAssetsData
-
     setModalType(ModalType.MODAL_SELECT_ASSETS, {
       ...(payload as ModalSelectAssetsPayload),
       fieldName,
       [fieldName]: token,
-      balances:
-        fieldName === SWAP_TOKEN_FLAGS.IN ? tokenInBalance : tokenOutBalance,
+      balances: depositedBalanceRef?.getSnapshot().context.balances,
     })
   }
 
-  /**
-   * This is ModalSelectAssets "callback"
-   */
   useEffect(() => {
-    const payload: ModalSelectAssetsPayload | undefined = modalSelectAssetsData
-    if (payload?.modalType !== ModalType.MODAL_SELECT_ASSETS) {
+    if (
+      (payload as ModalSelectAssetsPayload)?.modalType !==
+      ModalType.MODAL_SELECT_ASSETS
+    ) {
       return
     }
 
+    const { modalType, fieldName } = payload as ModalSelectAssetsPayload
     const _payload = payload as ModalSelectAssetsPayload
-    const { fieldName } = _payload
     const token = _payload[fieldName || "token"]
 
-    if (token) {
-      _payload[fieldName || "token"] = undefined // consume data, so it won't be triggered again
-
-      switch (payload.fieldName) {
+    if (modalType === ModalType.MODAL_SELECT_ASSETS && fieldName && token) {
+      switch (fieldName) {
         case SWAP_TOKEN_FLAGS.IN:
           if (formValues.tokenOut === token && formValues.tokenIn !== null) {
             formValuesRef.trigger.updateTokenOut({
@@ -213,13 +205,7 @@ export function OtcMakerForm({
           throw new Error("Invalid field name")
       }
     }
-  }, [
-    modalSelectAssetsData,
-    formValues.tokenIn,
-    formValues.tokenOut,
-    formValuesRef.trigger.updateTokenIn,
-    formValuesRef.trigger.updateTokenOut,
-  ])
+  }, [payload, formValuesRef, formValues.tokenIn, formValues.tokenOut])
 
   const publicKeyVerifierRef = useSelector(
     useSelector(
@@ -303,7 +289,10 @@ export function OtcMakerForm({
                 <SelectAssets
                   selected={formValues.tokenIn ?? undefined}
                   handleSelect={() =>
-                    handleSelect(SWAP_TOKEN_FLAGS.IN, formValues.tokenIn)
+                    openModalSelectAssets(
+                      SWAP_TOKEN_FLAGS.IN,
+                      formValues.tokenIn
+                    )
                   }
                 />
               }
@@ -377,7 +366,10 @@ export function OtcMakerForm({
                 <SelectAssets
                   selected={formValues.tokenOut ?? undefined}
                   handleSelect={() =>
-                    handleSelect(SWAP_TOKEN_FLAGS.OUT, formValues.tokenOut)
+                    openModalSelectAssets(
+                      SWAP_TOKEN_FLAGS.OUT,
+                      formValues.tokenOut
+                    )
                   }
                 />
               }
