@@ -124,7 +124,7 @@ function pollQuote(
       // It means Solvers couldn't provide a quote in a short time.
       // So we ignore this error and wait for the next quote.
       if (
-        requestId === 1 &&
+        requestId < 3 &&
         result.tag === "err" &&
         result.value.type === "NO_QUOTES"
       ) {
