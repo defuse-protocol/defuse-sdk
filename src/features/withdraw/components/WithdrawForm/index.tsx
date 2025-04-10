@@ -537,43 +537,41 @@ export const WithdrawForm = ({
           </Flex>
 
           {blockchain === "near" && (
-            <Flex gap="2">
-              <Text
-                as="label"
-                size="1"
-                weight="medium"
-                color={errors.isFundsLooseConfirmed ? "red" : "gray"}
-              >
-                <Flex as="span" gap="2">
-                  <Checkbox
-                    size="3"
-                    {...fundsLooseConfirmedField}
-                    value={undefined}
-                    checked={fundsLooseConfirmedField.value}
-                    onCheckedChange={fundsLooseConfirmedField.onChange}
-                  />
-                  I understand CEX addresses may cause fund loss or issues.
-                  <Tooltip
-                    side="bottom"
-                    align="center"
-                    maxWidth="300px"
-                    content="Many centralized exchanges (CEXs) don’t support third-party protocol withdrawals. Using a CEX address may result in lost or delayed funds. Use a self-custodial wallet instead."
+            <Text
+              as="label"
+              size="1"
+              weight="medium"
+              color={errors.isFundsLooseConfirmed ? "red" : "gray"}
+            >
+              <Flex as="span" gap="2">
+                <Checkbox
+                  size="3"
+                  {...fundsLooseConfirmedField}
+                  value={undefined}
+                  checked={fundsLooseConfirmedField.value}
+                  onCheckedChange={fundsLooseConfirmedField.onChange}
+                />
+                I understand CEX addresses may cause fund loss or issues.
+                <Tooltip
+                  side="bottom"
+                  align="center"
+                  maxWidth="300px"
+                  content="Many centralized exchanges (CEXs) don’t support third-party protocol withdrawals. Using a CEX address may result in lost or delayed funds. Use a self-custodial wallet instead."
+                >
+                  <Text
+                    size="1"
+                    color="gray"
+                    as="span"
+                    style={{
+                      textDecoration: "underline",
+                      textDecorationStyle: "dotted",
+                    }}
                   >
-                    <Text
-                      size="1"
-                      color="gray"
-                      as="span"
-                      style={{
-                        textDecoration: "underline",
-                        textDecorationStyle: "dotted",
-                      }}
-                    >
-                      Why?
-                    </Text>
-                  </Tooltip>
-                </Flex>
-              </Text>
-            </Flex>
+                    Why?
+                  </Text>
+                </Tooltip>
+              </Flex>
+            </Text>
           )}
 
           <Flex justify="between" px="2">
