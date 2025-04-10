@@ -1,14 +1,10 @@
 import { Text } from "@radix-ui/themes"
 import type { FC } from "react"
-import type { TokenValue } from "../../types/base"
+import type { TokenValueWithPrice } from "../../types/base"
 import { adjustTo1kUsd } from "../../utils/tokenUtils"
 
 interface HotBalanceProps {
-  hotBalance?:
-    | (TokenValue & {
-        price: number
-      })
-    | null
+  hotBalance?: TokenValueWithPrice | null
 }
 
 export const HotBalance: FC<HotBalanceProps> = ({ hotBalance }) => {

@@ -3,6 +3,7 @@ import { useTokenBalancesQueryOptions } from "../../../../../queries/poaBridgeQu
 import type { TokenBalances } from "../../../../../services/poaBridgeHttpClient/types"
 import type { TokenValue } from "../../../../../types/base"
 import type { SwappableToken } from "../../../../../types/swap"
+import { assert } from "../../../../../utils/assert"
 import { isBaseToken } from "../../../../../utils/token"
 import {
   addNep141ToAddress,
@@ -68,9 +69,12 @@ export const useBlockchainSelectItems = (
               price = tokensUsdPriceData[address]?.price ?? 1
             }
 
+            const addressBalance = balances[address]
+            assert(addressBalance != null)
+
             hotBalance = {
-              amount: BigInt((balances[address] as TokenBalances).vaultBalance),
-              decimals: (balances[address] as TokenBalances).decimals,
+              amount: BigInt(addressBalance.vaultBalance),
+              decimals: addressBalance.decimals,
               price,
             }
           }

@@ -3,7 +3,7 @@ import * as RadixSelect from "@radix-ui/react-select"
 import { Theme } from "@radix-ui/themes"
 import type { ReactNode } from "react"
 import { useContext } from "react"
-import type { TokenValue } from "../../types/base"
+import type { TokenValueWithPrice } from "../../types/base"
 import { WidgetContext } from "../WidgetRoot"
 import { HotBalance } from "./HotBalance"
 
@@ -14,11 +14,7 @@ type Props<T extends string> = {
       label: string
       icon: ReactNode
       value: string
-      hotBalance?:
-        | (TokenValue & {
-            price: number
-          })
-        | null
+      hotBalance?: TokenValueWithPrice | null
     }
   }
   placeholder: { label: string; icon: ReactNode }
@@ -118,12 +114,8 @@ export function Select<T extends string>({
 interface SelectItemProps {
   value: string
   children: ReactNode
-  hotBalance?:
-    | (TokenValue & {
-        price: number
-      })
-    | null
   showHotBalances?: boolean
+  hotBalance?: TokenValueWithPrice | null
 }
 
 function SelectItem({
