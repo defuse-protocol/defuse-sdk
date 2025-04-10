@@ -92,6 +92,12 @@ export const FieldComboInput = <T extends FieldValues>({
     }
   }
 
+  const handleSetHalfValue = () => {
+    if (!disabled && balance != null && selected && inputRef.current) {
+      setInputValue(formatUnits(balance.amount / 2n, balance.decimals))
+    }
+  }
+
   // react-hook-form specific props
   const reactHookFormRegisterProps = register(fieldName, {
     min,
@@ -158,10 +164,22 @@ export const FieldComboInput = <T extends FieldValues>({
           <BlockMultiBalances
             balance={balance.amount}
             decimals={balance.decimals}
-            handleClick={handleSetMaxValue}
-            disabled={disabled}
             className="ml-auto"
             transitBalance={transitBalance}
+            maxButtonSlot={
+              <BlockMultiBalances.DisplayMaxButton
+                onClick={handleSetMaxValue}
+                balance={balance.amount}
+                disabled={disabled}
+              />
+            }
+            halfButtonSlot={
+              <BlockMultiBalances.DisplayHalfButton
+                onClick={handleSetHalfValue}
+                balance={balance.amount}
+                disabled={disabled}
+              />
+            }
           />
         )}
       </div>
