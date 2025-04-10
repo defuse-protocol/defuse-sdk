@@ -65,6 +65,7 @@ const config = [
       "@noble/curves/secp256k1",
       "@noble/hashes/sha3",
       "@noble/hashes/sha256",
+      "near-api-js/lib/providers",
     ],
   },
   {
