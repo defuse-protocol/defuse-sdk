@@ -174,6 +174,9 @@ export function OtcTakerForm({
     tokensUsdPriceData
   )
 
+  const balanceAmountIn = balances?.tokenIn?.amount ?? 0n
+  const balanceAmountOut = balances?.tokenOut?.amount ?? 0n
+
   return (
     <div className="flex flex-col">
       {/* Header Section */}
@@ -216,12 +219,24 @@ export function OtcTakerForm({
             tokenSlot={<TokenAmountInputCard.DisplayToken token={tokenIn} />}
             balanceSlot={
               <BlockMultiBalances
-                balance={balances?.tokenIn?.amount ?? 0n}
+                balance={balanceAmountIn}
                 decimals={balances?.tokenIn?.decimals ?? 0}
                 className={clsx(
                   "!static",
                   balances?.tokenIn == null && "invisible"
                 )}
+                maxButtonSlot={
+                  <BlockMultiBalances.DisplayMaxButton
+                    balance={balanceAmountIn}
+                    disabled
+                  />
+                }
+                halfButtonSlot={
+                  <BlockMultiBalances.DisplayHalfButton
+                    balance={balanceAmountIn}
+                    disabled
+                  />
+                }
               />
             }
             priceSlot={
@@ -262,12 +277,24 @@ export function OtcTakerForm({
             tokenSlot={<TokenAmountInputCard.DisplayToken token={tokenOut} />}
             balanceSlot={
               <BlockMultiBalances
-                balance={balances?.tokenOut?.amount ?? 0n}
+                balance={balanceAmountOut}
                 decimals={balances?.tokenOut?.decimals ?? 0}
                 className={clsx(
                   "!static",
                   balances?.tokenOut == null && "invisible"
                 )}
+                maxButtonSlot={
+                  <BlockMultiBalances.DisplayMaxButton
+                    balance={balanceAmountOut}
+                    disabled
+                  />
+                }
+                halfButtonSlot={
+                  <BlockMultiBalances.DisplayHalfButton
+                    balance={balanceAmountOut}
+                    disabled
+                  />
+                }
               />
             }
             priceSlot={

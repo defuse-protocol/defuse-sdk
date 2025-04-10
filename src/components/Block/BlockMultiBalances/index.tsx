@@ -1,4 +1,6 @@
+import { Button } from "@radix-ui/themes"
 import clsx from "clsx"
+import type { ReactNode } from "react"
 import { TooltipInfo } from "src/components/TooltipInfo"
 import type { TokenValue } from "../../../types/base"
 import { formatTokenValue } from "../../../utils/format"
@@ -7,48 +9,42 @@ export interface BlockMultiBalancesProps {
   balance: bigint
   transitBalance?: TokenValue
   decimals: number
-  handleClick?: () => void
-  disabled?: boolean
   className?: string
+  maxButtonSlot?: ReactNode
+  halfButtonSlot?: ReactNode
 }
 
-export const BlockMultiBalances = ({
+export function BlockMultiBalances({
   balance,
   transitBalance,
   decimals,
-  handleClick,
-  disabled,
   className,
-}: BlockMultiBalancesProps) => {
-  const active = balance > 0n && !disabled
+  maxButtonSlot,
+  halfButtonSlot,
+}: BlockMultiBalancesProps) {
+  const active = balance > 0n
   return (
-    <div className={clsx("flex gap-1", className)}>
-      <button
-        type="button"
-        onClick={handleClick}
-        disabled={!active}
-        className="flex items-center gap-1"
+    <div className={clsx("flex items-center gap-1.5", className)}>
+      {/* Balance */}
+      <div
+        className={clsx(
+          "text-xs font-bold",
+          active ? "text-gray-12" : "text-gray-8"
+        )}
       >
-        <div
-          className={clsx(
-            "w-4 h-4  [mask-image:url(/static/icons/wallet_no_active.svg)] bg-no-repeat bg-contain",
-            active ? "bg-accent-800" : "bg-gray-600/90"
-          )}
-        />
-        <span
-          className={clsx(
-            "text-xs px-2 py-0.5 rounded-full font-bold",
-            active
-              ? "bg-accent-a200 text-accent-900"
-              : "bg-gray-300/50 text-gray-11"
-          )}
-        >
-          {formatTokenValue(balance, decimals, {
-            min: 0.0001,
-            fractionDigits: 4,
-          })}
-        </span>
-      </button>
+        {formatTokenValue(balance, decimals, {
+          min: 0.0001,
+          fractionDigits: 4,
+        })}
+      </div>
+
+      {/* Full Balance Button */}
+      <div className="shrink-0">{maxButtonSlot}</div>
+
+      {/* 50% Balance Button */}
+      <div className="shrink-0">{halfButtonSlot}</div>
+
+      {/* Transit Balance */}
       {transitBalance ? (
         <TooltipInfo
           icon={
@@ -77,5 +73,61 @@ export const BlockMultiBalances = ({
         </TooltipInfo>
       ) : null}
     </div>
+  )
+}
+
+interface ButtonProps {
+  onClick?: () => void
+  disabled?: boolean
+  balance: bigint
+}
+
+BlockMultiBalances.DisplayMaxButton = function DisplayMaxButton({
+  onClick,
+  balance,
+  disabled,
+}: ButtonProps) {
+  const active = balance > 0n && !disabled
+  return (
+    <Button
+      variant="outline"
+      size="1"
+      color="gray"
+      radius="full"
+      onClick={(e) => {
+        e.stopPropagation()
+        e.preventDefault()
+        onClick?.()
+      }}
+      className="text-xs font-bold leading-4"
+      disabled={!active}
+    >
+      Max
+    </Button>
+  )
+}
+
+BlockMultiBalances.DisplayHalfButton = function DisplayHalfButton({
+  onClick,
+  balance,
+  disabled,
+}: ButtonProps) {
+  const active = balance > 0n && !disabled
+  return (
+    <Button
+      variant="outline"
+      size="1"
+      color="gray"
+      radius="full"
+      onClick={(e) => {
+        e.stopPropagation()
+        e.preventDefault()
+        onClick?.()
+      }}
+      className="text-xs font-bold leading-4"
+      disabled={!active}
+    >
+      50%
+    </Button>
   )
 }
