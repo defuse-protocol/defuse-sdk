@@ -1,11 +1,5 @@
-import { formatUnits } from "viem"
 import type { BalanceMapping } from "../features/machines/depositedBalanceMachine"
-import type {
-  BaseTokenInfo,
-  TokenValue,
-  TokenValueWithPrice,
-  UnifiedTokenInfo,
-} from "../types/base"
+import type { BaseTokenInfo, TokenValue, UnifiedTokenInfo } from "../types/base"
 import { assert } from "./assert"
 import { isBaseToken } from "./token"
 
@@ -372,7 +366,7 @@ export function filterOutPoaBridgeTokens(
   }
 }
 
-export function getTokenAssetIdsWithoutNep141(
+export function getTokenAccountIds(
   token: BaseTokenInfo | UnifiedTokenInfo
 ): string[] {
   const stringCleaner = "nep141:"
@@ -390,7 +384,7 @@ export function getTokenAssetIdsWithoutNep141(
   })
 }
 
-export function addNep141ToAddress(address: string): string {
+export function tokenAccountIdToDefuseAssetId(address: string): string {
   const nep141 = "nep141:"
 
   if (!address || address.toLowerCase().startsWith(nep141)) {
@@ -398,18 +392,4 @@ export function addNep141ToAddress(address: string): string {
   }
 
   return `${nep141}${address}`
-}
-
-export const adjustTo1kUsd = (tokenValue: TokenValueWithPrice): number => {
-  if (tokenValue.amount === 0n) {
-    return 0
-  }
-
-  const rounded = Math.round(
-    (Number(formatUnits(tokenValue.amount, tokenValue.decimals)) *
-      tokenValue.price) /
-      1000 // 1k
-  )
-
-  return rounded === 0 ? 1 : rounded
 }

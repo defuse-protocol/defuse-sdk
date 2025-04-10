@@ -109,10 +109,4 @@ export type TokenBalances = {
   balanceOnDefuse: string
 }
 
-export type TokenBalancesRequestOk = TokenBalances[]
-
-export type WithdrawalStatusResponseErr = {
-  id: string
-  jsonrpc: "2.0"
-  error: string
-}
+export type BridgeBalanceResponse = TokenBalances[]

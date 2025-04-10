@@ -1,91 +1,41 @@
 import type { TokenUsdPriceData } from "../../../../../hooks/useTokensUsdPrices"
-import { useTokenBalancesQueryOptions } from "../../../../../queries/poaBridgeQueries"
 import type { TokenBalances } from "../../../../../services/poaBridgeHttpClient/types"
-import type { TokenValue } from "../../../../../types/base"
 import type { SwappableToken } from "../../../../../types/swap"
 import { assert } from "../../../../../utils/assert"
-import { isBaseToken } from "../../../../../utils/token"
-import {
-  addNep141ToAddress,
-  compareAmounts,
-  filterOutPoaBridgeTokens,
-  getTokenAssetIdsWithoutNep141,
-} from "../../../../../utils/tokenUtils"
 import { allBlockchains } from "../constants"
+import { getAvailableBlockchains } from "../utils"
 
 export const useBlockchainSelectItems = (
   token: SwappableToken,
-  tokensUsdPriceData?: TokenUsdPriceData,
-  tokenInBalance?: TokenValue
+  balances: { [address: string]: TokenBalances },
+  tokensUsdPriceData?: TokenUsdPriceData
 ) => {
-  const availableBlockchains = isBaseToken(token)
-    ? { [token.chainName]: token.defuseAssetId }
-    : token.groupedTokens.reduce((acc: { [key: string]: string }, curr) => {
-        acc[curr.chainName] = curr.defuseAssetId
-        return acc
-      }, {})
+  const availableBlockchains = getAvailableBlockchains(token)
 
-  const onlyPoaToken = filterOutPoaBridgeTokens(token)
-  const addresses = onlyPoaToken
-    ? getTokenAssetIdsWithoutNep141(onlyPoaToken)
-    : []
-  const { amount: userBalance, decimals: userBalanceDecimals } =
-    tokenInBalance || { amount: 0n, decimals: 1 }
-  let showHotBalances = userBalance > 0
-
-  const { data } = useTokenBalancesQueryOptions(addresses, showHotBalances)
-
-  let anyHotBalanceIsLessThanUserBalance = false
-
-  const balances =
-    data?.reduce((acc: { [key: string]: TokenBalances }, curr) => {
-      if (
-        compareAmounts(
-          { amount: userBalance, decimals: userBalanceDecimals },
-          { amount: BigInt(curr.vaultBalance), decimals: curr.decimals }
-        ) > 0
-      ) {
-        // we should show in case user's balance is MORE than any of the HOT chain balances
-        anyHotBalanceIsLessThanUserBalance = true
-      }
-
-      acc[addNep141ToAddress(curr.nearAddress)] = curr
-      return acc
-    }, {}) || {}
-
-  showHotBalances = showHotBalances && anyHotBalanceIsLessThanUserBalance
-
-  const blockchainSelectItems = Object.fromEntries(
+  return Object.fromEntries(
     allBlockchains
       .filter((blockchain) => availableBlockchains[blockchain.value])
       .map((a) => {
         const address = availableBlockchains[a.value]
+        assert(address != null)
+
         let hotBalance = null
+        const balance = balances[address]
 
-        if (address != null) {
-          if (balances[address]?.vaultBalance != null) {
-            let price = 1
-            if (tokensUsdPriceData) {
-              price = tokensUsdPriceData[address]?.price ?? 1
-            }
+        if (balance != null) {
+          let price = 1
+          if (tokensUsdPriceData) {
+            price = tokensUsdPriceData[address]?.price ?? 1
+          }
 
-            const addressBalance = balances[address]
-            assert(addressBalance != null)
-
-            hotBalance = {
-              amount: BigInt(addressBalance.vaultBalance),
-              decimals: addressBalance.decimals,
-              price,
-            }
+          hotBalance = {
+            amount: BigInt(balance.vaultBalance),
+            decimals: balance.decimals,
+            price,
           }
         }
 
         return [a.value, { ...a, hotBalance }]
       })
   )
-
-  return {
-    blockchainSelectItems,
-    showHotBalances,
-  }
 }

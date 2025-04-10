@@ -1,13 +1,13 @@
-import {
-  type UseQueryResult,
-  queryOptions,
-  useQuery,
-} from "@tanstack/react-query"
+import { queryOptions, useQuery } from "@tanstack/react-query"
 import {
   getTokenBalancesRequest,
   getWithdrawalStatus,
 } from "../services/poaBridgeHttpClient"
-import type * as types from "../services/poaBridgeHttpClient/types"
+import type { SwappableToken } from "../types/swap"
+import {
+  filterOutPoaBridgeTokens,
+  getTokenAccountIds,
+} from "../utils/tokenUtils"
 
 const DEFAULT_WITHDRAWAL_STATUS_INTERVAL_MS = 500
 
@@ -35,10 +35,10 @@ export function createWithdrawalStatusQueryOptions({
   })
 }
 
-export function useTokenBalancesQueryOptions(
-  addresses: string[],
-  enabled = true
-): UseQueryResult<types.TokenBalancesRequestOk, Error> {
+export function useTokenBalancesQuery(token: SwappableToken, enabled = true) {
+  const onlyPoaToken = filterOutPoaBridgeTokens(token)
+  const addresses = onlyPoaToken ? getTokenAccountIds(onlyPoaToken) : []
+
   const sortedAddressesKey =
     addresses.length > 0 ? [...addresses].sort().join(",") : ""
 

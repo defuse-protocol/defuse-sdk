@@ -59,7 +59,3 @@ export interface TokenValue {
   amount: bigint
   decimals: number
 }
-
-export interface TokenValueWithPrice extends TokenValue {
-  price: number
-}

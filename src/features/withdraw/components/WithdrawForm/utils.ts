@@ -1,5 +1,11 @@
+import { formatUnits } from "viem"
+import type { TokenBalances } from "../../../../services/poaBridgeHttpClient/types"
 import { AuthMethod } from "../../../../types/authHandle"
-import type { SupportedChainName } from "../../../../types/base"
+import type { SupportedChainName, TokenValue } from "../../../../types/base"
+import type { SwappableToken } from "../../../../types/swap"
+import { isBaseToken } from "../../../../utils/token"
+import { compareAmounts } from "../../../../utils/tokenUtils"
+import type { TokenValueWithPrice } from "./types"
 
 export function chainTypeSatisfiesChainName(
   chainType: AuthMethod | undefined,
@@ -25,4 +31,56 @@ export function chainTypeSatisfiesChainName(
 
 export function truncateUserAddress(hash: string) {
   return `${hash.slice(0, 6)}...${hash.slice(-4)}`
+}
+
+export const adjustTo1kUsd = (tokenValue: TokenValueWithPrice): number => {
+  if (tokenValue.amount === 0n) {
+    return 0
+  }
+
+  const rounded = Math.round(
+    (Number(formatUnits(tokenValue.amount, tokenValue.decimals)) *
+      tokenValue.price) /
+      1000 // 1k
+  )
+
+  return rounded === 0 ? 1 : rounded
+}
+
+export const getAvailableBlockchains = (token: SwappableToken) =>
+  isBaseToken(token)
+    ? { [token.chainName]: token.defuseAssetId }
+    : token.groupedTokens.reduce((acc: { [key: string]: string }, curr) => {
+        acc[curr.chainName] = curr.defuseAssetId
+        return acc
+      }, {})
+
+export const shouldShowHotBalance = (
+  balances: { [address: string]: TokenBalances },
+  tokenInBalance?: TokenValue
+) => {
+  const { amount: userBalance, decimals: userBalanceDecimals } =
+    tokenInBalance ?? { amount: 0n, decimals: 1 }
+  let showHotBalances = userBalance > 0
+
+  let anyHotBalanceIsLessThanUserBalance = false
+  for (const address in balances) {
+    const balance = balances[address] as TokenBalances
+
+    if (
+      compareAmounts(
+        { amount: userBalance, decimals: userBalanceDecimals },
+        { amount: BigInt(balance.vaultBalance), decimals: balance.decimals }
+      ) > 0
+    ) {
+      // we should show in case user's balance is MORE than any of the HOT chain balances
+      anyHotBalanceIsLessThanUserBalance = true
+    }
+  }
+
+  showHotBalances = showHotBalances && anyHotBalanceIsLessThanUserBalance
+
+  return {
+    showHotBalances,
+  }
 }

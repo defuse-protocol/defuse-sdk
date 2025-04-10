@@ -1,4 +1,6 @@
-import { jsonConsoleBalancesRequest, jsonRPCRequest } from "./runtime"
+import { config as globalConfig } from "../../config"
+import { request } from "../../utils/request"
+import { jsonRPCRequest } from "./runtime"
 import type * as types from "./types"
 
 export async function getSupportedTokens(
@@ -55,13 +57,14 @@ export async function getWithdrawalStatus(
 
 export async function getTokenBalancesRequest(
   addresses: string[]
-): Promise<types.TokenBalancesRequestOk> {
+): Promise<types.BridgeBalanceResponse> {
   const params = addresses.map((address) => `addresses[]=${address}`).join("&")
-  const balances = await jsonConsoleBalancesRequest(params)
+  const response = await await request({
+    url: `${globalConfig.env.poaBridgeBaseURL}/console/tokenBalances?${params}`,
+    fetchOptions: {
+      method: "GET",
+    },
+  })
 
-  if ("error" in balances) {
-    throw new Error(balances.error)
-  }
-
-  return balances || []
+  return response.json()
 }

@@ -3,9 +3,7 @@ import * as RadixSelect from "@radix-ui/react-select"
 import { Theme } from "@radix-ui/themes"
 import type { ReactNode } from "react"
 import { useContext } from "react"
-import type { TokenValueWithPrice } from "../../types/base"
 import { WidgetContext } from "../WidgetRoot"
-import { HotBalance } from "./HotBalance"
 
 type Props<T extends string> = {
   name: string
@@ -14,7 +12,6 @@ type Props<T extends string> = {
       label: string
       icon: ReactNode
       value: string
-      hotBalance?: TokenValueWithPrice | null
     }
   }
   placeholder: { label: string; icon: ReactNode }
@@ -22,8 +19,8 @@ type Props<T extends string> = {
   disabled?: boolean
   value?: string
   hint?: ReactNode
+  renderValueDetails?: (address: string) => ReactNode
   onChange?: (value: string) => void
-  showHotBalances?: boolean
 }
 
 export function Select<T extends string>({
@@ -35,7 +32,7 @@ export function Select<T extends string>({
   value,
   hint,
   onChange,
-  showHotBalances = false,
+  renderValueDetails,
 }: Props<T>) {
   const { portalContainer } = useContext(WidgetContext)
   return (
@@ -87,8 +84,7 @@ export function Select<T extends string>({
                   <SelectItem
                     key={key}
                     value={options[key as keyof typeof options].value}
-                    hotBalance={options[key as keyof typeof options].hotBalance}
-                    showHotBalances={showHotBalances}
+                    renderValueDetails={renderValueDetails}
                   >
                     <div className="flex w-full items-center justify-between">
                       <div className="flex items-center gap-2">
@@ -114,23 +110,17 @@ export function Select<T extends string>({
 interface SelectItemProps {
   value: string
   children: ReactNode
-  showHotBalances?: boolean
-  hotBalance?: TokenValueWithPrice | null
+  renderValueDetails?: (address: string) => ReactNode
 }
 
-function SelectItem({
-  value,
-  children,
-  hotBalance,
-  showHotBalances,
-}: SelectItemProps) {
+function SelectItem({ value, children, renderValueDetails }: SelectItemProps) {
   return (
     <RadixSelect.Item
       className="relative flex w-full select-none items-center justify-between gap-3 self-stretch rounded-md p-2 font-bold text-gray-12 text-sm data-[disabled]:pointer-events-none data-[highlighted]:bg-gray-3 data-[state=checked]:bg-gray-3 data-[disabled]:text-gray-8 data-[highlighted]:outline-none"
       value={value}
     >
       <RadixSelect.ItemText>{children}</RadixSelect.ItemText>
-      {showHotBalances && <HotBalance hotBalance={hotBalance} />}
+      {renderValueDetails?.(value)}
     </RadixSelect.Item>
   )
 }

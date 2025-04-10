@@ -4,20 +4,19 @@ import {
   DuplicateTokenError,
   accountSlippageExactIn,
   addAmounts,
-  addNep141ToAddress,
   adjustDecimals,
-  adjustTo1kUsd,
   compareAmounts,
   computeTotalBalance,
   computeTotalBalanceDifferentDecimals,
   computeTotalDeltaDifferentDecimals,
   filterOutPoaBridgeTokens,
   getDerivedToken,
-  getTokenAssetIdsWithoutNep141,
+  getTokenAccountIds,
   getUnderlyingBaseTokenInfos,
   grossUpAmount,
   netDownAmount,
   subtractAmounts,
+  tokenAccountIdToDefuseAssetId,
 } from "./tokenUtils"
 
 describe("computeTotalBalance", () => {
@@ -1058,7 +1057,7 @@ describe("accountSlippageExactIn", () => {
     })
   })
 
-  describe("getTokenAssetIdsWithoutNep141", () => {
+  describe("getTokenAccountIds", () => {
     it('removes "nep141:" prefix for BaseTokenInfo', () => {
       const token: BaseTokenInfo = {
         defuseAssetId: "nep141:token1",
@@ -1071,7 +1070,7 @@ describe("accountSlippageExactIn", () => {
         bridge: "poa",
       }
 
-      const result = getTokenAssetIdsWithoutNep141(token)
+      const result = getTokenAccountIds(token)
 
       expect(result).toEqual(["token1"])
     })
@@ -1088,7 +1087,7 @@ describe("accountSlippageExactIn", () => {
         bridge: "poa",
       }
 
-      const result = getTokenAssetIdsWithoutNep141(token)
+      const result = getTokenAccountIds(token)
 
       expect(result).toEqual(["token2"])
     })
@@ -1123,7 +1122,7 @@ describe("accountSlippageExactIn", () => {
         ],
       }
 
-      const result = getTokenAssetIdsWithoutNep141(token)
+      const result = getTokenAccountIds(token)
 
       expect(result).toEqual(["token3", "token4"])
     })
@@ -1158,7 +1157,7 @@ describe("accountSlippageExactIn", () => {
         ],
       }
 
-      const result = getTokenAssetIdsWithoutNep141(token)
+      const result = getTokenAccountIds(token)
 
       expect(result).toEqual(["token5", "token6"])
     })
@@ -1193,106 +1192,39 @@ describe("accountSlippageExactIn", () => {
         ],
       }
 
-      const result = getTokenAssetIdsWithoutNep141(token)
+      const result = getTokenAccountIds(token)
 
       expect(result).toEqual(["token7", "token8"])
     })
   })
 
-  describe("addNep141ToAddress", () => {
+  describe("tokenAccountIdToDefuseAssetId", () => {
     it('returns the address unchanged if it already starts with "nep141:" lowercase', () => {
       const address = "nep141:existingAddress"
-      const result = addNep141ToAddress(address)
+      const result = tokenAccountIdToDefuseAssetId(address)
 
       expect(result).toBe("nep141:existingAddress")
     })
 
     it('returns the address unchanged if it starts with "NEP141:" uppercase', () => {
       const address = "NEP141:existingAddressUpper"
-      const result = addNep141ToAddress(address)
+      const result = tokenAccountIdToDefuseAssetId(address)
 
       expect(result).toBe("NEP141:existingAddressUpper")
     })
 
     it('adds "nep141:" prefix if address does not already have it', () => {
       const address = "newAddress"
-      const result = addNep141ToAddress(address)
+      const result = tokenAccountIdToDefuseAssetId(address)
 
       expect(result).toBe("nep141:newAddress")
     })
 
     it("returns empty string if input is empty", () => {
       const address = ""
-      const result = addNep141ToAddress(address)
+      const result = tokenAccountIdToDefuseAssetId(address)
 
       expect(result).toBe("")
-    })
-  })
-
-  describe("adjustTo1kUsd", () => {
-    it("calculates the correct adjusted value when amount is small", () => {
-      const tokenValue = {
-        amount: 2500000000000000000n,
-        decimals: 18,
-        price: 100, // USD
-      }
-
-      const result = adjustTo1kUsd(tokenValue)
-
-      // (2.5 * 100) / 1000 = 0.25 => Math.ceil(0.25) = 1
-      expect(result).toBe(1)
-    })
-
-    it("calculates the correct adjusted value when amount is large", () => {
-      const tokenValue = {
-        amount: 1200000000000000000000n,
-        decimals: 18,
-        price: 2, // USD
-      }
-
-      const result = adjustTo1kUsd(tokenValue)
-
-      // (1200 * 2) / 1000 = 2.4 => Math.ceil(2.4) = 2
-      expect(result).toBe(2)
-    })
-
-    it("returns 0 if the calculated amount is 0", () => {
-      const tokenValue = {
-        amount: 0n,
-        decimals: 18,
-        price: 500,
-      }
-
-      const result = adjustTo1kUsd(tokenValue)
-
-      // (0 * 500) / 1000 = 0 => Math.ceil(0) = 0
-      expect(result).toBe(0)
-    })
-
-    it("handles fractional prices properly", () => {
-      const tokenValue = {
-        amount: 1500000000000000000n,
-        decimals: 18,
-        price: 33.33,
-      }
-
-      const result = adjustTo1kUsd(tokenValue)
-
-      // (1.5 * 33.33) / 1000 ≈ 0.049995 => Math.ceil(0.049995) = 1
-      expect(result).toBe(1)
-    })
-
-    it("handles when formatUnits returns integer string", () => {
-      const tokenValue = {
-        amount: 1000000000000000000000n,
-        decimals: 18,
-        price: 1,
-      }
-
-      const result = adjustTo1kUsd(tokenValue)
-
-      // (1000 * 1) / 1000 = 1 => Math.ceil(1) = 1
-      expect(result).toBe(1)
     })
   })
 })

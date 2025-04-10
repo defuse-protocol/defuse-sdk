@@ -28,6 +28,7 @@ import { FieldComboInput } from "../../../../components/Form/FieldComboInput"
 import { WithdrawIntentCard } from "../../../../components/IntentCard/WithdrawIntentCard"
 import { Island } from "../../../../components/Island"
 import { IslandHeader } from "../../../../components/IslandHeader"
+import { HotBalance } from "../../../../components/Select/HotBalance"
 import { Select } from "../../../../components/Select/Select"
 import { nearClient } from "../../../../constants/nearClient"
 import { useModalController } from "../../../../hooks/useModalController"
@@ -58,12 +59,17 @@ import { WithdrawUIMachineContext } from "../../WithdrawUIMachineContext"
 import { LongWithdrawWarning } from "./LongWithdrawWarning"
 import type { allBlockchains } from "./constants"
 import { useBlockchainSelectItems } from "./hooks/useBlockchainSelectItems"
+import { useTokenBalances } from "./hooks/useTokenBalances"
 import {
   isLiquidityUnavailableSelector,
   isUnsufficientTokenInAmount,
   totalAmountReceivedSelector,
 } from "./selectors"
-import { chainTypeSatisfiesChainName, truncateUserAddress } from "./utils"
+import {
+  chainTypeSatisfiesChainName,
+  shouldShowHotBalance,
+  truncateUserAddress,
+} from "./utils"
 
 export type WithdrawFormNearValues = {
   amountIn: string
@@ -297,11 +303,17 @@ export const WithdrawForm = ({
     tokensUsdPriceData
   )
 
-  const { showHotBalances, blockchainSelectItems } = useBlockchainSelectItems(
+  const hasAnyBalance = tokenInBalance != null && tokenInBalance?.amount > 0
+
+  const balances = useTokenBalances(token, hasAnyBalance)
+
+  const blockchainSelectItems = useBlockchainSelectItems(
     token,
-    tokensUsdPriceData,
-    tokenInBalance
+    balances,
+    tokensUsdPriceData
   )
+
+  const showHotBalances = shouldShowHotBalance(balances, tokenInBalance)
 
   return (
     <Island className="widget-container flex flex-col gap-4">
@@ -388,7 +400,6 @@ export const WithdrawForm = ({
                     onChange={field.onChange}
                     disabled={Object.keys(blockchainSelectItems).length === 1}
                     options={blockchainSelectItems}
-                    showHotBalances={showHotBalances}
                     placeholder={{
                       label: "Select network",
                       icon: <EmptyIcon />,
@@ -399,6 +410,17 @@ export const WithdrawForm = ({
                           ? "This network only"
                           : "Network"}
                       </Select.Hint>
+                    }
+                    renderValueDetails={
+                      showHotBalances
+                        ? (address: string) => (
+                            <HotBalance
+                              hotBalance={
+                                blockchainSelectItems[address]?.hotBalance
+                              }
+                            />
+                          )
+                        : undefined
                     }
                   />
                 )
