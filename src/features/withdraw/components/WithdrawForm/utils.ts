@@ -61,10 +61,10 @@ export const getAvailableBlockchains = (token: SwappableToken) =>
 export const shouldShowHotBalance = (
   balances: { [address: string]: TokenBalances },
   tokenInBalance?: TokenValue
-) => {
+): boolean => {
   const { amount: userBalance, decimals: userBalanceDecimals } =
     tokenInBalance ?? { amount: 0n, decimals: 1 }
-  let showHotBalances = userBalance > 0
+  const showHotBalances = userBalance > 0
 
   let anyHotBalanceIsLessThanUserBalance = false
   for (const address in balances) {
@@ -81,11 +81,7 @@ export const shouldShowHotBalance = (
     }
   }
 
-  showHotBalances = showHotBalances && anyHotBalanceIsLessThanUserBalance
-
-  return {
-    showHotBalances,
-  }
+  return showHotBalances && anyHotBalanceIsLessThanUserBalance
 }
 
 export const getBlockchainSelectItems = (
