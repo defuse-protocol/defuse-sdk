@@ -64,7 +64,10 @@ export const shouldShowHotBalance = (
 ): boolean => {
   const { amount: userBalance, decimals: userBalanceDecimals } =
     tokenInBalance ?? { amount: 0n, decimals: 1 }
-  const showHotBalances = userBalance > 0
+  const userHasAnyBalance = userBalance > 0
+  if (!userHasAnyBalance) {
+    return false
+  }
 
   let anyHotBalanceIsLessThanUserBalance = false
   for (const address in balances) {
@@ -81,7 +84,7 @@ export const shouldShowHotBalance = (
     }
   }
 
-  return showHotBalances && anyHotBalanceIsLessThanUserBalance
+  return anyHotBalanceIsLessThanUserBalance
 }
 
 export const getBlockchainSelectItems = (
