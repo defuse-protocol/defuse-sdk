@@ -3,73 +3,70 @@ import { InfoCircledIcon } from "@radix-ui/react-icons"
 import { Text } from "@radix-ui/themes"
 import { type ReactNode, useMemo, useState } from "react"
 import {
-  filterBlockchainsOptions,
+  availableChainsForToken,
   getBlockchainsOptions,
 } from "src/features/deposit/components/DepositForm"
-import type { BaseTokenInfo, UnifiedTokenInfo } from "src/types/base"
+import type {
+  BaseTokenInfo,
+  SupportedChainName,
+  UnifiedTokenInfo,
+} from "src/types/base"
 import type { BlockchainEnum } from "src/types/interfaces"
-import { useModalStore } from "../../providers/ModalStoreProvider"
+import { filterChains } from "src/utils/blockchain"
+import { BaseModalDialog } from "../Modal/ModalDialog"
+import { ModalNoResults } from "../Modal/ModalNoResults"
 import { SearchBar } from "../SearchBar"
 import { TooltipInfo } from "../TooltipInfo"
-import { ModalDialog } from "./ModalDialog"
-import { ModalNoResults } from "./ModalNoResults"
 import { NetworkList } from "./NetworksList"
 
-export const ModalSelectNetwork = () => {
+interface ModalSelectNetworkProps {
+  token: BaseTokenInfo | UnifiedTokenInfo
+  selectNetwork: (network: SupportedChainName) => void
+  selectedNetwork: SupportedChainName | null
+  isOpen?: boolean
+  onClose: () => void
+}
+
+export const ModalSelectNetwork = ({
+  token,
+  selectNetwork,
+  selectedNetwork,
+  isOpen,
+  onClose,
+}: ModalSelectNetworkProps) => {
   const [searchValue, setSearchValue] = useState("")
   const chains = getBlockchainsOptions()
-  const { token, selectNetwork, selectedNetwork } = useModalStore(
-    (state) => state.payload
-  ) as {
-    token: BaseTokenInfo | UnifiedTokenInfo
-    selectNetwork: (network: BlockchainEnum) => void
-    selectedNetwork: BlockchainEnum | null
-  }
 
-  const filteredChains = useMemo(() => {
-    return Object.fromEntries(
-      Object.entries(filterBlockchainsOptions(token)).filter(
-        ([key, chain]) =>
-          chain.label.toLowerCase().includes(searchValue.toLowerCase()) ||
-          chain.value.toLowerCase().includes(searchValue.toLowerCase()) ||
-          key.toLowerCase().includes(searchValue.toLowerCase())
-      )
-    )
-  }, [token, searchValue])
+  const availableChains = useMemo(() => availableChainsForToken(token), [token])
+  const filteredChains = filterChains(availableChains, searchValue)
 
-  const disabledChains = useMemo(() => {
+  const disabledChains = () => {
     const disabledChains: Record<
       string,
       { label: string; icon: ReactNode; value: string }
     > = {}
     Object.values(chains).map((chain) => {
       if (!filteredChains[chain.value]) {
-        disabledChains[chain.value] = {
-          label: chain.label,
-          icon: chain.icon,
-          value: chain.value,
-        }
+        disabledChains[chain.value] = chain
       }
     })
-    return Object.fromEntries(
-      Object.entries(disabledChains).filter(
-        ([key, chain]) =>
-          chain.label.toLowerCase().includes(searchValue.toLowerCase()) ||
-          chain.value.toLowerCase().includes(searchValue.toLowerCase()) ||
-          key.toLowerCase().includes(searchValue.toLowerCase())
-      )
-    )
-  }, [chains, filteredChains, searchValue])
-
-  const onChangeNetwork = (network: BlockchainEnum) => {
-    selectNetwork(network)
-    onCloseModal()
+    return filterChains(disabledChains, searchValue)
   }
 
-  const { onCloseModal } = useModalStore((state) => state)
+  const onChangeNetwork = (network: SupportedChainName) => {
+    selectNetwork(network)
+    onClose()
+  }
+
+  const availableNetworks = Object.keys(filteredChains).map(
+    (key) => key as BlockchainEnum
+  )
+  const disabledNetworks = Object.keys(disabledChains()).map(
+    (key) => key as BlockchainEnum
+  )
 
   return (
-    <ModalDialog>
+    <BaseModalDialog open={!!isOpen}>
       <div className="flex flex-col min-h-[680px] md:max-h-[680px] h-full">
         <div className="z-20 h-auto flex-none -mt-[var(--inset-padding-top)] -mr-[var(--inset-padding-right)] -ml-[var(--inset-padding-left)] px-5 pt-7 pb-4 sticky -top-[var(--inset-padding-top)] bg-gray-1">
           <div className="flex flex-col gap-4">
@@ -77,7 +74,7 @@ export const ModalSelectNetwork = () => {
               <Text size="5" weight="bold">
                 Select network
               </Text>
-              <button type="button" onClick={onCloseModal} className="p-3">
+              <button type="button" onClick={onClose} className="p-3">
                 <CrossIcon width={18} height={18} />
               </button>
             </div>
@@ -101,13 +98,13 @@ export const ModalSelectNetwork = () => {
               {Object.keys(filteredChains).length > 0 && (
                 <div className="flex flex-col gap-2">
                   <NetworkList
-                    networks={filteredChains}
+                    networks={availableNetworks}
                     selectedNetwork={selectedNetwork}
                     onChangeNetwork={onChangeNetwork}
                   />
                 </div>
               )}
-              {Object.keys(disabledChains).length > 0 && (
+              {Object.keys(disabledNetworks).length > 0 && (
                 <div className="flex flex-col gap-2 pt-4">
                   <div className="flex flex-row justify-start items-center gap-2">
                     <Text size="1" weight="bold" className="text-gray-500">
@@ -128,7 +125,7 @@ export const ModalSelectNetwork = () => {
                   </div>
                   <NetworkList
                     disabled
-                    networks={disabledChains}
+                    networks={disabledNetworks}
                     selectedNetwork={selectedNetwork}
                     onChangeNetwork={onChangeNetwork}
                   />
@@ -138,6 +135,6 @@ export const ModalSelectNetwork = () => {
           )}
         </div>
       </div>
-    </ModalDialog>
+    </BaseModalDialog>
   )
 }

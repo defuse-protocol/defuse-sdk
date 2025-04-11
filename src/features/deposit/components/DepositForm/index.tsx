@@ -3,6 +3,7 @@ import { Callout } from "@radix-ui/themes"
 import { useSelector } from "@xstate/react"
 import { useEffect, useState } from "react"
 import { Controller, useFormContext } from "react-hook-form"
+import { ModalSelectNetwork } from "src/components/Network/ModalSelectNetwork"
 import {
   assetNetworkAdapter,
   reverseAssetNetworkAdapter,
@@ -22,7 +23,11 @@ import { useModalStore } from "../../../../providers/ModalStoreProvider"
 import { getAvailableDepositRoutes } from "../../../../services/depositService"
 import { ModalType } from "../../../../stores/modalStore"
 import type { AuthMethod } from "../../../../types/authHandle"
-import type { BaseTokenInfo, UnifiedTokenInfo } from "../../../../types/base"
+import type {
+  BaseTokenInfo,
+  SupportedChainName,
+  UnifiedTokenInfo,
+} from "../../../../types/base"
 import { BlockchainEnum } from "../../../../types/interfaces"
 import type { SwappableToken } from "../../../../types/swap"
 import { isBaseToken, isUnifiedToken } from "../../../../utils/token"
@@ -40,6 +45,7 @@ export type DepositFormValues = {
 }
 
 export const DepositForm = ({ chainType }: { chainType?: AuthMethod }) => {
+  const [isNetworkModalOpen, setIsNetworkModalOpen] = useState(false)
   const { handleSubmit, register, control, setValue, watch } =
     useFormContext<DepositFormValues>()
 
@@ -47,7 +53,7 @@ export const DepositForm = ({ chainType }: { chainType?: AuthMethod }) => {
   const snapshot = DepositUIMachineContext.useSelector((snapshot) => snapshot)
   const preparationOutput = snapshot.context.preparationOutput
 
-  const { token, derivedToken, blockchain, userAddress, poaBridgeInfoRef } =
+  const { token, derivedToken, network, userAddress, poaBridgeInfoRef } =
     DepositUIMachineContext.useSelector((snapshot) => {
       const token = snapshot.context.depositFormRef.getSnapshot().context.token
       const derivedToken =
@@ -60,7 +66,7 @@ export const DepositForm = ({ chainType }: { chainType?: AuthMethod }) => {
       return {
         token,
         derivedToken,
-        blockchain,
+        network: blockchain,
         userAddress,
         poaBridgeInfoRef,
       }
@@ -71,15 +77,16 @@ export const DepositForm = ({ chainType }: { chainType?: AuthMethod }) => {
     ? preparationOutput.value.generateDepositAddress
     : null
 
-  const network = blockchain ? assetNetworkAdapter[blockchain] : null
-
   const { setModalType, payload, onCloseModal } = useModalStore(
     (state) => state
   )
 
-  const onChangeNetwork = (network: BlockchainEnum) => {
-    setValue("network", network)
-    onCloseModal()
+  const onCloseNetworkModal = () => setIsNetworkModalOpen(false)
+
+  const onChangeNetwork = (network: SupportedChainName) => {
+    // console.log("onChangeNetwork", network)
+    setValue("network", assetNetworkAdapter[network])
+    onCloseNetworkModal()
   }
 
   const openModalSelectAssets = (
@@ -89,14 +96,6 @@ export const DepositForm = ({ chainType }: { chainType?: AuthMethod }) => {
     setModalType(ModalType.MODAL_SELECT_ASSETS, {
       fieldName,
       [fieldName]: selectToken,
-    })
-  }
-
-  const openModalSelectNetwork = () => {
-    setModalType(ModalType.MODAL_SELECT_NETWORK, {
-      token,
-      selectNetwork: onChangeNetwork,
-      selectedNetwork: network,
     })
   }
 
@@ -147,7 +146,9 @@ export const DepositForm = ({ chainType }: { chainType?: AuthMethod }) => {
   })
 
   const availableDepositRoutes =
-    chainType && network && getAvailableDepositRoutes(chainType, network)
+    chainType &&
+    network &&
+    getAvailableDepositRoutes(chainType, assetNetworkAdapter[network])
   const isActiveDeposit = availableDepositRoutes?.activeDeposit
   const isPassiveDeposit = availableDepositRoutes?.passiveDeposit
 
@@ -164,7 +165,8 @@ export const DepositForm = ({ chainType }: { chainType?: AuthMethod }) => {
           ? "active"
           : null
 
-  const chainOptions = token != null ? filterBlockchainsOptions(token) : {}
+  const chainOptions = token != null ? availableChainsForToken(token) : {}
+  const networkEnum = assetNetworkAdapter[network as SupportedChainName]
 
   return (
     <Island className="widget-container flex flex-col gap-4">
@@ -199,23 +201,33 @@ export const DepositForm = ({ chainType }: { chainType?: AuthMethod }) => {
               name="network"
               control={control}
               render={({ field }) => (
-                <SelectTriggerLike
-                  label={chainOptions[network ?? ""]?.label ?? "Select network"}
-                  icon={chainOptions[network ?? ""]?.icon ?? <EmptyIcon />}
-                  onClick={() => openModalSelectNetwork()}
-                  hint={
-                    <Select.Hint>
-                      {Object.keys(chainOptions).length === 1
-                        ? "This network only"
-                        : "Network"}
-                    </Select.Hint>
-                  }
-                  disabled={
-                    chainOptions &&
-                    Object.keys(chainOptions).length === 1 &&
-                    field.value === Object.values(chainOptions)[0]?.value
-                  }
-                />
+                <>
+                  <SelectTriggerLike
+                    label={chainOptions[networkEnum]?.label ?? "Select network"}
+                    icon={chainOptions[networkEnum]?.icon ?? <EmptyIcon />}
+                    onClick={() => setIsNetworkModalOpen(true)}
+                    hint={
+                      <Select.Hint>
+                        {Object.keys(chainOptions).length === 1
+                          ? "This network only"
+                          : "Network"}
+                      </Select.Hint>
+                    }
+                    disabled={
+                      chainOptions &&
+                      Object.keys(chainOptions).length === 1 &&
+                      field.value === Object.values(chainOptions)[0]?.value
+                    }
+                  />
+
+                  <ModalSelectNetwork
+                    token={token}
+                    selectNetwork={onChangeNetwork}
+                    selectedNetwork={network}
+                    isOpen={isNetworkModalOpen}
+                    onClose={onCloseNetworkModal}
+                  />
+                </>
               )}
             />
           )}
@@ -244,7 +256,7 @@ export const DepositForm = ({ chainType }: { chainType?: AuthMethod }) => {
               network != null &&
               derivedToken != null && (
                 <ActiveDeposit
-                  network={network}
+                  network={assetNetworkAdapter[network]}
                   token={derivedToken}
                   minDepositAmount={minDepositAmount}
                 />
@@ -254,7 +266,7 @@ export const DepositForm = ({ chainType }: { chainType?: AuthMethod }) => {
               network != null &&
               derivedToken != null && (
                 <PassiveDeposit
-                  network={network}
+                  network={assetNetworkAdapter[network]}
                   depositAddress={depositAddress}
                   minDepositAmount={minDepositAmount}
                   token={derivedToken}
@@ -278,11 +290,6 @@ export const DepositForm = ({ chainType }: { chainType?: AuthMethod }) => {
       </Form>
     </Island>
   )
-}
-
-export function isAuroraVirtualChain(network: BlockchainEnum): boolean {
-  const virtualChains = [BlockchainEnum.TURBOCHAIN]
-  return virtualChains.includes(network)
 }
 
 export function getBlockchainsOptions(): Record<
@@ -424,7 +431,7 @@ export function getBlockchainsOptions(): Record<
   return options
 }
 
-export function filterBlockchainsOptions(
+export function availableChainsForToken(
   token: BaseTokenInfo | UnifiedTokenInfo
 ): Record<string, { label: string; icon: React.ReactNode; value: string }> {
   const tokens = isUnifiedToken(token) ? token.groupedTokens : [token]

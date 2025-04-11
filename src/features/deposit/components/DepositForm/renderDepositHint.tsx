@@ -1,5 +1,5 @@
 import { Callout } from "@radix-ui/themes"
-import { blockchainToChainMap } from "src/utils/blockchain"
+import { reverseAssetNetworkAdapter } from "src/utils/adapters"
 import type { BaseTokenInfo } from "../../../../types/base"
 import type { BlockchainEnum } from "../../../../types/interfaces"
 import { formatTokenValue } from "../../../../utils/format"
@@ -15,8 +15,8 @@ export function renderDepositHint(
         <Callout.Text className="text-xs">
           <span className="font-bold">
             {/* biome-ignore lint/nursery/useConsistentCurlyBraces: <explanation> */}
-            Only deposit {token.symbol} from the {blockchainToChainMap[network]}{" "}
-            network.
+            Only deposit {token.symbol} from the{" "}
+            {reverseAssetNetworkAdapter[network]} network.
             {/* biome-ignore lint/nursery/useConsistentCurlyBraces: <explanation> */}
           </span>{" "}
           <span>
