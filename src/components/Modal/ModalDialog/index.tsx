@@ -16,14 +16,12 @@ export const ModalDialog = ({
   children,
   onClose,
   isDismissable,
-  isOpen,
 }: PropsWithChildren<{
   onClose?: () => void
   isDismissable?: boolean
-  isOpen?: boolean
 }>) => {
   const { onCloseModal } = useModalStore((state) => state)
-  const [open, setOpen] = useState(isOpen ?? true)
+  const [open, setOpen] = useState(true)
 
   const handleCloseModal = useCallback(() => {
     if (!open) {
