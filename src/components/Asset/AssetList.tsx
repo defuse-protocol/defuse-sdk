@@ -50,7 +50,7 @@ export const AssetList = <T extends Token>({
               style={
                 selected
                   ? {
-                      mask: "radial-gradient(7px at 28px 86%, transparent 100%, rgb(255, 255, 255) 100%)",
+                      mask: "radial-gradient(7px at 28px 86%, transparent 99%, rgb(255, 255, 255) 100%)",
                     }
                   : undefined
               }
