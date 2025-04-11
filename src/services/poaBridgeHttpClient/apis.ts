@@ -1,3 +1,5 @@
+import { config as globalConfig } from "../../config"
+import { request } from "../../utils/request"
 import { jsonRPCRequest } from "./runtime"
 import type * as types from "./types"
 
@@ -51,4 +53,18 @@ export async function getWithdrawalStatus(
   )
   // biome-ignore lint/suspicious/noExplicitAny: <explanation>
   return result as any
+}
+
+export async function getTokenBalancesRequest(
+  addresses: string[]
+): Promise<types.BridgeBalanceResponse> {
+  const params = addresses.map((address) => `addresses[]=${address}`).join("&")
+  const response = await await request({
+    url: `${globalConfig.env.poaBridgeBaseURL}/console/tokenBalances?${params}`,
+    fetchOptions: {
+      method: "GET",
+    },
+  })
+
+  return response.json()
 }

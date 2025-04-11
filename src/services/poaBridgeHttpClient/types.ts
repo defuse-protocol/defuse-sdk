@@ -97,3 +97,16 @@ export type WithdrawalStatusResponseOk = JSONRPCResponse<{
     }
   }[]
 }>
+
+export type TokenBalances = {
+  symbol: string
+  address: string
+  nearAddress: string
+  decimals: number
+  totalSupply: string
+  vaultBalance: string
+  coldWalletBalance: string
+  balanceOnDefuse: string
+}
+
+export type BridgeBalanceResponse = TokenBalances[]

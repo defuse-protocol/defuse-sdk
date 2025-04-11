@@ -19,6 +19,7 @@ type Props<T extends string> = {
   disabled?: boolean
   value?: string
   hint?: ReactNode
+  renderValueDetails?: (address: string) => ReactNode
   onChange?: (value: string) => void
 }
 
@@ -31,6 +32,7 @@ export function Select<T extends string>({
   value,
   hint,
   onChange,
+  renderValueDetails,
 }: Props<T>) {
   const { portalContainer } = useContext(WidgetContext)
   return (
@@ -77,21 +79,26 @@ export function Select<T extends string>({
             sideOffset={8}
           >
             <RadixSelect.Viewport className="flex flex-col gap-1 p-2">
-              {Object.keys(options).map((key: string) => (
-                <SelectItem
-                  key={key}
-                  value={options[key as keyof typeof options].value}
-                >
-                  <div className="flex w-full items-center justify-between gap-2">
-                    {options[key as keyof typeof options]?.icon && (
-                      <div className="flex-shrink-0">
-                        {options[key as keyof typeof options].icon}
+              {Object.keys(options).map((key: string) => {
+                return (
+                  <SelectItem
+                    key={key}
+                    value={options[key as keyof typeof options].value}
+                    renderValueDetails={renderValueDetails}
+                  >
+                    <div className="flex w-full items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        {options[key as keyof typeof options]?.icon && (
+                          <div className="flex-shrink-0">
+                            {options[key as keyof typeof options].icon}
+                          </div>
+                        )}
+                        <div>{options[key as keyof typeof options].label}</div>
                       </div>
-                    )}
-                    <div>{options[key as keyof typeof options].label}</div>
-                  </div>
-                </SelectItem>
-              ))}
+                    </div>
+                  </SelectItem>
+                )
+              })}
             </RadixSelect.Viewport>
           </RadixSelect.Content>
         </Theme>
@@ -103,15 +110,17 @@ export function Select<T extends string>({
 interface SelectItemProps {
   value: string
   children: ReactNode
+  renderValueDetails?: (address: string) => ReactNode
 }
 
-function SelectItem({ value, children }: SelectItemProps) {
+function SelectItem({ value, children, renderValueDetails }: SelectItemProps) {
   return (
     <RadixSelect.Item
       className="relative flex w-full select-none items-center justify-between gap-3 self-stretch rounded-md p-2 font-bold text-gray-12 text-sm data-[disabled]:pointer-events-none data-[highlighted]:bg-gray-3 data-[state=checked]:bg-gray-3 data-[disabled]:text-gray-8 data-[highlighted]:outline-none"
       value={value}
     >
       <RadixSelect.ItemText>{children}</RadixSelect.ItemText>
+      {renderValueDetails?.(value)}
     </RadixSelect.Item>
   )
 }
