@@ -10,10 +10,8 @@ import {
   setup,
 } from "xstate"
 import { queryClient } from "../../providers/QueryClientProvider"
-import {
-  getDepositedBalances,
-  getPendingDeposits,
-} from "../../services/defuseBalanceService"
+import { getDepositedBalances } from "../../services/defuseBalanceService"
+import { getPendingDeposits } from "../../services/poaBridgeService"
 import type { AuthMethod } from "../../types/authHandle"
 import type {
   BaseTokenInfo,

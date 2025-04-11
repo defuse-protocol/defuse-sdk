@@ -1,9 +1,7 @@
 import type { QueryObserverOptions } from "@tanstack/react-query"
 import { nearClient } from "../../../constants/nearClient"
-import {
-  getDepositedBalances,
-  getPendingDeposits,
-} from "../../../services/defuseBalanceService"
+import { getDepositedBalances } from "../../../services/defuseBalanceService"
+import { getPendingDeposits } from "../../../services/poaBridgeService"
 import type { IntentsUserId } from "../../../types/intentsUserId"
 import { assert } from "../../../utils/assert"
 import type { BalanceMapping } from "../../machines/depositedBalanceMachine"
