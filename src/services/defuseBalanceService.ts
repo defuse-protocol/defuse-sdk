@@ -1,6 +1,7 @@
 import type { providers } from "near-api-js"
 import type { BaseTokenInfo } from "../types/base"
 import type { IntentsUserId } from "../types/intentsUserId"
+import { tokenAccountIdToDefuseAssetId } from "../utils/tokenUtils"
 import { batchBalanceOf } from "./intentsContractService"
 import { getDepositStatus } from "./poaBridgeHttpClient"
 
@@ -35,16 +36,16 @@ export async function getTransitBalances(
     account_id: accountId,
   })
 
-  const result: TokenBalances = {}
+  const pendingDeposits: TokenBalances = {}
+
   for (const deposit of depositStatus.deposits) {
-    if (
-      // POA bridge returns token IDs without the 'nep141:' prefix (e.g. 'base.omft.near')
-      tokenIds.includes(`nep141:${deposit.near_token_id}`) &&
-      deposit.status === "PENDING"
-    ) {
-      result[`nep141:${deposit.near_token_id}`] = BigInt(deposit.amount)
+    // POA bridge returns token IDs without the 'nep141:' prefix (e.g. 'base.omft.near')
+    const defuseAssetId = tokenAccountIdToDefuseAssetId(deposit.near_token_id)
+
+    if (tokenIds.includes(defuseAssetId) && deposit.status === "PENDING") {
+      pendingDeposits[defuseAssetId] = BigInt(deposit.amount)
     }
   }
 
-  return result
+  return pendingDeposits
 }
