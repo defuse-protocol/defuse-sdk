@@ -2,6 +2,8 @@ import { HttpRequestError, TimeoutError } from "../errors/request"
 import { isNetworkError } from "../errors/utils/isNetworkError"
 import { withTimeout } from "./promise/withTimeout"
 
+export type RequestErrorType = HttpRequestError | TimeoutError
+
 export async function request({
   url,
   body,

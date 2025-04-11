@@ -7,6 +7,7 @@ import {
   fromPromise,
   getNextSnapshot,
 } from "xstate"
+import { wait } from "../../utils/wait"
 import type { swapIntentMachine } from "./swapIntentMachine"
 import { swapUIMachine } from "./swapUIMachine"
 
@@ -107,7 +108,7 @@ describe.skip("swapUIMachine", () => {
     service.send({ type: "input" })
     simulatedClock.increment(10000)
     // give some time for machine to transition
-    await new Promise((resolve) => setTimeout(resolve, 0))
+    await wait(0)
 
     // assert
     expect(service.getSnapshot().context.error).toBe(err)

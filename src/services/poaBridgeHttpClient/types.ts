@@ -1,3 +1,6 @@
+import type { RpcRequestError } from "../../errors/request"
+import type { RequestErrorType } from "../../utils/request"
+
 export type RequestConfig = {
   timeout?: number | undefined
   fetchOptions?: Omit<RequestInit, "body"> | undefined
@@ -15,6 +18,8 @@ export type JSONRPCResponse<Result> = {
   jsonrpc: "2.0"
   result: Result
 }
+
+export type JSONRPCErrorType = RequestErrorType | RpcRequestError
 
 export type GetSupportedTokensRequest = JSONRPCRequest<
   "supported_tokens",

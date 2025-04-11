@@ -1,3 +1,5 @@
+export type { RequestErrorType } from "../../utils/request"
+
 export type RequestConfig = {
   timeout?: number | undefined
   fetchOptions?: Omit<RequestInit, "body"> | undefined

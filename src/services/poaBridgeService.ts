@@ -1,12 +1,16 @@
-import { QueryObserver } from "@tanstack/query-core"
-import { queryClient } from "../providers/QueryClientProvider"
-import { createWithdrawalStatusQueryOptions } from "../queries/poaBridgeQueries"
-import { assert } from "../utils/assert"
+import { RpcRequestError } from "../errors/request"
+import { assert, type AssertErrorType } from "../utils/assert"
+import { wait } from "../utils/wait"
+import { getWithdrawalStatus, type types } from "./poaBridgeHttpClient"
 
-type WaitForWithdrawalCompletionResult = {
+export type WaitForWithdrawalCompletionOkType = {
   destinationTxHash: string
   chain: string
 }
+
+export type WaitForWithdrawalCompletionErrorType =
+  | types.JSONRPCErrorType
+  | AssertErrorType
 
 export async function waitForWithdrawalCompletion({
   txHash,
@@ -14,20 +18,22 @@ export async function waitForWithdrawalCompletion({
 }: {
   txHash: string
   signal: AbortSignal
-}) {
-  const queryObserver = new QueryObserver(
-    queryClient,
-    createWithdrawalStatusQueryOptions({ txHash: txHash })
-  )
+}): Promise<WaitForWithdrawalCompletionOkType> {
+  const DEFAULT_WITHDRAWAL_STATUS_INTERVAL_MS = 500
 
-  return new Promise<WaitForWithdrawalCompletionResult>((resolve, reject) => {
-    const unsubscribe = queryObserver.subscribe((result) => {
-      if (result.data == null) {
-        return
+  while (!signal.aborted) {
+    const result = await getWithdrawalStatus({
+      withdrawal_hash: txHash,
+    }).catch((err) => {
+      // WITHDRAWALS_NOT_FOUND error is transient, we should keep retrying
+      if (isWithdrawalNotFound(err)) {
+        return null
       }
+      throw err
+    })
 
-      // We expect it having a single withdrawal, so we take first
-      const withdrawal = result.data.withdrawals[0]
+    if (result != null) {
+      const withdrawal = result.withdrawals[0]
       assert(withdrawal, "POA Bridge didn't return withdrawal")
 
       if (withdrawal.status === "COMPLETED") {
@@ -37,16 +43,23 @@ export async function waitForWithdrawalCompletion({
           "transfer_tx_hash is null"
         )
 
-        resolve({
+        return {
           destinationTxHash: withdrawal.data.transfer_tx_hash,
           chain: withdrawal.data.chain,
-        })
+        }
       }
-    })
+    }
 
-    signal.addEventListener("abort", () => {
-      unsubscribe()
-      reject(signal.reason)
-    })
-  })
+    await wait(DEFAULT_WITHDRAWAL_STATUS_INTERVAL_MS)
+  }
+
+  throw signal.reason
+}
+
+function isWithdrawalNotFound(err: unknown) {
+  const RPC_ERR_MSG_WITHDRAWALS_NOT_FOUND = "Withdrawals not found"
+  return (
+    err instanceof RpcRequestError &&
+    err.details === RPC_ERR_MSG_WITHDRAWALS_NOT_FOUND
+  )
 }
