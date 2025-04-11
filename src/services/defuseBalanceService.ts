@@ -28,7 +28,7 @@ export async function getDepositedBalances(
   return result
 }
 
-export async function getTransitBalances(
+export async function getPendingDeposits(
   accountId: IntentsUserId,
   tokenIds: BaseTokenInfo["defuseAssetId"][]
 ): Promise<TokenBalances> {

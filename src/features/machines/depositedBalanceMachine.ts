@@ -12,7 +12,7 @@ import {
 import { queryClient } from "../../providers/QueryClientProvider"
 import {
   getDepositedBalances,
-  getTransitBalances,
+  getPendingDeposits,
 } from "../../services/defuseBalanceService"
 import type { AuthMethod } from "../../types/authHandle"
 import type {
@@ -414,7 +414,7 @@ function createTransitBalanceQueryObserver(
         throw new Error("user is null")
       }
 
-      return getTransitBalances(queryKey[1].user, queryKey[1].tokenIds)
+      return getPendingDeposits(queryKey[1].user, queryKey[1].tokenIds)
     },
     enabled: (query) => query.queryKey[1].user != null,
     refetchInterval: 10000,

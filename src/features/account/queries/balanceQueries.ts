@@ -2,7 +2,7 @@ import type { QueryObserverOptions } from "@tanstack/react-query"
 import { nearClient } from "../../../constants/nearClient"
 import {
   getDepositedBalances,
-  getTransitBalances,
+  getPendingDeposits,
 } from "../../../services/defuseBalanceService"
 import type { IntentsUserId } from "../../../types/intentsUserId"
 import { assert } from "../../../utils/assert"
@@ -42,7 +42,7 @@ export function createTransitBalanceQueryOptions({
     queryKey: ["intents_sdk.transit_balance", { userId, tokenIds }],
     queryFn: ({ queryKey }) => {
       assert(queryKey[1].userId != null)
-      return getTransitBalances(queryKey[1].userId, queryKey[1].tokenIds)
+      return getPendingDeposits(queryKey[1].userId, queryKey[1].tokenIds)
     },
     enabled: (query) => query.queryKey[1].userId != null,
     refetchInterval: 10000,
