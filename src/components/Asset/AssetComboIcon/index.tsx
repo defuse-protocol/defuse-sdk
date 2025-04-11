@@ -16,7 +16,7 @@ export const AssetComboIcon = ({
   chainIcon,
   chainName,
   showChainIcon = false,
-  className,
+  className = "",
   style,
 }: AssetComboIconProps) => {
   return (
