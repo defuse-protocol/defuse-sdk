@@ -1,12 +1,13 @@
 import type { Transaction as TransactionSolana } from "@solana/web3.js"
 import type { Address, Hash } from "viem"
 import type { AuthHandle } from "./authHandle"
+import type { RenderHostAppLink } from "./hostAppLink"
 import type { SwappableToken } from "./swap"
 
 export type DepositWidgetProps = {
   userAddress: AuthHandle["identifier"] | undefined
   chainType: AuthHandle["method"] | undefined
-
+  renderHostAppLink: RenderHostAppLink
   tokenList: SwappableToken[]
   sendTransactionNear: (tx: Transaction["NEAR"][]) => Promise<string | null>
   sendTransactionEVM: (tx: Transaction["EVM"]) => Promise<Hash | null>

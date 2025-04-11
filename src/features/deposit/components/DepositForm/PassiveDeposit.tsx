@@ -4,7 +4,10 @@ import { QRCodeSVG } from "qrcode.react"
 import { Copy } from "../../../../components/IntentCard/CopyButton"
 import type { BaseTokenInfo } from "../../../../types/base"
 import type { BlockchainEnum } from "../../../../types/interfaces"
-import { renderDepositHint } from "./renderDepositHint"
+import {
+  renderDepositHint,
+  renderMinDepositAmountHint,
+} from "./renderDepositHint"
 
 export type PassiveDepositProps = {
   network: BlockchainEnum
@@ -39,6 +42,11 @@ export function PassiveDeposit({
             <Spinner loading={true} />
           )}
         </div>
+      </div>
+
+      <div className="mb-4 px-3">
+        {minDepositAmount != null &&
+          renderMinDepositAmountHint(minDepositAmount, token)}
       </div>
 
       <div className="mb-4 flex items-center rounded-lg bg-gray-3 px-4 py-2">
@@ -84,8 +92,7 @@ export function PassiveDeposit({
           </Copy>
         </div>
       </div>
-
-      {renderDepositHint(network, minDepositAmount, token)}
+      {renderDepositHint(network, token)}
     </div>
   )
 }

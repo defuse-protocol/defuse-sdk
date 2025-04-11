@@ -81,7 +81,9 @@ export function useOtcTakerConfirmTrade({
 
       // todo: UI performance: add re-quoting in the background
       // It's totally alright do async stuff after singing
-      const quoteHashesResult = await getFreshQuoteHashes(quotes, quoteParams)
+      const quoteHashesResult = await getFreshQuoteHashes(quotes, quoteParams, {
+        logBalanceSufficient: true,
+      })
       if (quoteHashesResult.isErr()) {
         return Err(quoteHashesResult.unwrapErr())
       }

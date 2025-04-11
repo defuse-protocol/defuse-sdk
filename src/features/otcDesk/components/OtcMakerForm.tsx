@@ -4,14 +4,14 @@ import clsx from "clsx"
 import { useEffect, useMemo } from "react"
 import type { ModalSelectAssetsPayload } from "src/components/Modal/ModalSelectAssets"
 import type { ActorRefFrom, SnapshotFrom } from "xstate"
+import { AuthGate } from "../../../components/AuthGate"
 import { BlockMultiBalances } from "../../../components/Block/BlockMultiBalances"
 import { ButtonCustom } from "../../../components/Button/ButtonCustom"
 import { SelectAssets } from "../../../components/SelectAssets"
 import { SWAP_TOKEN_FLAGS } from "../../../constants/swap"
 import type { SignerCredentials } from "../../../core/formatters"
-import { useModalController } from "../../../hooks/useModalController"
 import { useTokensUsdPrices } from "../../../hooks/useTokensUsdPrices"
-import { useTokensStore } from "../../../providers/TokensStoreProvider"
+import { useModalStore } from "../../../providers/ModalStoreProvider"
 import { ModalType } from "../../../stores/modalStore"
 import type { AuthMethod } from "../../../types/authHandle"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../../types/base"
@@ -86,6 +86,7 @@ export function OtcMakerForm({
         : null,
     [userAddress, userChainType]
   )
+  const isLoggedIn = signerCredentials != null
 
   const initialTokenIn_ = initialTokenIn ?? tokenList[0]
   const initialTokenOut_ = initialTokenOut ?? tokenList[1]
@@ -114,6 +115,10 @@ export function OtcMakerForm({
       tokenInBalance: formValues.tokenIn,
       tokenOutBalance: formValues.tokenOut,
     })
+  )
+  const depositedBalanceRef = useSelector(
+    rootActorRef,
+    (s) => s.context.depositedBalanceRef
   )
 
   const rootSnapshot = useSelector(rootActorRef, (s) => s)
@@ -152,72 +157,51 @@ export function OtcMakerForm({
     }
   }, [rootActorRef, signerCredentials])
 
-  const { setModalType, data: modalSelectAssetsData } = useModalController<{
-    modalType: ModalType.MODAL_SELECT_ASSETS
-  }>(ModalType.MODAL_SELECT_ASSETS)
+  const { setModalType, payload } = useModalStore((state) => state)
 
-  const updateTokens = useTokensStore((state) => state.updateTokens)
-
-  const handleSelect = (
+  const openModalSelectAssets = (
     fieldName: string,
     token: SwappableToken | undefined
   ) => {
-    updateTokens(tokenList)
-    const payload: ModalSelectAssetsPayload | undefined = modalSelectAssetsData
-
     setModalType(ModalType.MODAL_SELECT_ASSETS, {
       ...(payload as ModalSelectAssetsPayload),
       fieldName,
       [fieldName]: token,
-      balances:
-        fieldName === SWAP_TOKEN_FLAGS.IN ? tokenInBalance : tokenOutBalance,
+      balances: depositedBalanceRef?.getSnapshot().context.balances,
+      onConfirm: (payload: ModalSelectAssetsPayload) => {
+        const { fieldName } = payload as ModalSelectAssetsPayload
+        const _payload = payload as ModalSelectAssetsPayload
+        const token = _payload[fieldName || "token"]
+
+        if (fieldName && token) {
+          switch (fieldName) {
+            case SWAP_TOKEN_FLAGS.IN:
+              if (
+                formValues.tokenOut === token &&
+                formValues.tokenIn !== null
+              ) {
+                formValuesRef.trigger.updateTokenOut({
+                  value: formValues.tokenIn,
+                })
+              }
+              formValuesRef.trigger.updateTokenIn({ value: token })
+              break
+            case SWAP_TOKEN_FLAGS.OUT:
+              if (
+                formValues.tokenIn === token &&
+                formValues.tokenOut !== null
+              ) {
+                formValuesRef.trigger.updateTokenIn({
+                  value: formValues.tokenOut,
+                })
+              }
+              formValuesRef.trigger.updateTokenOut({ value: token })
+              break
+          }
+        }
+      },
     })
   }
-
-  /**
-   * This is ModalSelectAssets "callback"
-   */
-  useEffect(() => {
-    const payload: ModalSelectAssetsPayload | undefined = modalSelectAssetsData
-    if (payload?.modalType !== ModalType.MODAL_SELECT_ASSETS) {
-      return
-    }
-
-    const _payload = payload as ModalSelectAssetsPayload
-    const { fieldName } = _payload
-    const token = _payload[fieldName || "token"]
-
-    if (token) {
-      _payload[fieldName || "token"] = undefined // consume data, so it won't be triggered again
-
-      switch (payload.fieldName) {
-        case SWAP_TOKEN_FLAGS.IN:
-          if (formValues.tokenOut === token && formValues.tokenIn !== null) {
-            formValuesRef.trigger.updateTokenOut({
-              value: formValues.tokenIn,
-            })
-          }
-          formValuesRef.trigger.updateTokenIn({ value: token })
-          break
-        case SWAP_TOKEN_FLAGS.OUT:
-          if (formValues.tokenIn === token && formValues.tokenOut !== null) {
-            formValuesRef.trigger.updateTokenIn({
-              value: formValues.tokenOut,
-            })
-          }
-          formValuesRef.trigger.updateTokenOut({ value: token })
-          break
-        default:
-          throw new Error("Invalid field name")
-      }
-    }
-  }, [
-    modalSelectAssetsData,
-    formValues.tokenIn,
-    formValues.tokenOut,
-    formValuesRef.trigger.updateTokenIn,
-    formValuesRef.trigger.updateTokenOut,
-  ])
 
   const publicKeyVerifierRef = useSelector(
     useSelector(
@@ -243,6 +227,59 @@ export function OtcMakerForm({
 
   // @ts-expect-error ???
   usePublicKeyModalOpener(publicKeyVerifierRef, sendNearTransaction)
+
+  const handleSetMaxValue = async (
+    fieldName: typeof SWAP_TOKEN_FLAGS.IN | typeof SWAP_TOKEN_FLAGS.OUT
+  ) => {
+    if (fieldName === SWAP_TOKEN_FLAGS.IN) {
+      if (tokenInBalance != null) {
+        formValuesRef.trigger.updateAmountIn({
+          value: formatTokenValue(
+            tokenInBalance.amount,
+            tokenInBalance.decimals
+          ),
+        })
+      }
+    } else if (fieldName === SWAP_TOKEN_FLAGS.OUT) {
+      if (tokenOutBalance != null) {
+        formValuesRef.trigger.updateAmountOut({
+          value: formatTokenValue(
+            tokenOutBalance.amount,
+            tokenOutBalance.decimals
+          ),
+        })
+      }
+    }
+  }
+
+  const handleSetHalfValue = async (
+    fieldName: typeof SWAP_TOKEN_FLAGS.IN | typeof SWAP_TOKEN_FLAGS.OUT
+  ) => {
+    if (fieldName === SWAP_TOKEN_FLAGS.IN) {
+      if (tokenInBalance != null) {
+        formValuesRef.trigger.updateAmountIn({
+          value: formatTokenValue(
+            tokenInBalance.amount / 2n,
+            tokenInBalance.decimals
+          ),
+        })
+      }
+    } else if (fieldName === SWAP_TOKEN_FLAGS.OUT) {
+      if (tokenOutBalance != null) {
+        formValuesRef.trigger.updateAmountOut({
+          value: formatTokenValue(
+            tokenOutBalance.amount / 2n,
+            tokenOutBalance.decimals
+          ),
+        })
+      }
+    }
+  }
+
+  const balanceAmountIn = tokenInBalance?.amount ?? 0n
+  const balanceAmountOut = tokenOutBalance?.amount ?? 0n
+  const disabledIn = tokenInBalance?.amount === 0n
+  const disabledOut = tokenOutBalance?.amount === 0n
 
   return (
     <div className="flex flex-col">
@@ -301,29 +338,35 @@ export function OtcMakerForm({
                 <SelectAssets
                   selected={formValues.tokenIn ?? undefined}
                   handleSelect={() =>
-                    handleSelect(SWAP_TOKEN_FLAGS.IN, formValues.tokenIn)
+                    openModalSelectAssets(
+                      SWAP_TOKEN_FLAGS.IN,
+                      formValues.tokenIn
+                    )
                   }
                 />
               }
               balanceSlot={
                 <BlockMultiBalances
-                  balance={tokenInBalance?.amount ?? 0n}
+                  balance={balanceAmountIn}
                   decimals={tokenInBalance?.decimals ?? 0}
-                  handleClick={() => {
-                    if (tokenInBalance != null) {
-                      formValuesRef.trigger.updateAmountIn({
-                        value: formatTokenValue(
-                          tokenInBalance.amount,
-                          tokenInBalance.decimals
-                        ),
-                      })
-                    }
-                  }}
-                  disabled={tokenInBalance?.amount === 0n}
                   className={clsx(
                     "!static",
                     tokenInBalance == null && "invisible"
                   )}
+                  maxButtonSlot={
+                    <BlockMultiBalances.DisplayMaxButton
+                      onClick={() => handleSetMaxValue(SWAP_TOKEN_FLAGS.IN)}
+                      balance={balanceAmountIn}
+                      disabled={disabledIn}
+                    />
+                  }
+                  halfButtonSlot={
+                    <BlockMultiBalances.DisplayHalfButton
+                      onClick={() => handleSetHalfValue(SWAP_TOKEN_FLAGS.IN)}
+                      balance={balanceAmountIn}
+                      disabled={disabledIn}
+                    />
+                  }
                 />
               }
               priceSlot={
@@ -375,29 +418,35 @@ export function OtcMakerForm({
                 <SelectAssets
                   selected={formValues.tokenOut ?? undefined}
                   handleSelect={() =>
-                    handleSelect(SWAP_TOKEN_FLAGS.OUT, formValues.tokenOut)
+                    openModalSelectAssets(
+                      SWAP_TOKEN_FLAGS.OUT,
+                      formValues.tokenOut
+                    )
                   }
                 />
               }
               balanceSlot={
                 <BlockMultiBalances
-                  balance={tokenOutBalance?.amount ?? 0n}
+                  balance={balanceAmountOut}
                   decimals={tokenOutBalance?.decimals ?? 0}
-                  handleClick={() => {
-                    if (tokenOutBalance != null) {
-                      formValuesRef.trigger.updateAmountOut({
-                        value: formatTokenValue(
-                          tokenOutBalance.amount,
-                          tokenOutBalance.decimals
-                        ),
-                      })
-                    }
-                  }}
-                  disabled={tokenOutBalance?.amount === 0n}
                   className={clsx(
                     "!static",
                     tokenOutBalance == null && "invisible"
                   )}
+                  maxButtonSlot={
+                    <BlockMultiBalances.DisplayMaxButton
+                      onClick={() => handleSetMaxValue(SWAP_TOKEN_FLAGS.OUT)}
+                      balance={balanceAmountOut}
+                      disabled={disabledOut}
+                    />
+                  }
+                  halfButtonSlot={
+                    <BlockMultiBalances.DisplayHalfButton
+                      onClick={() => handleSetHalfValue(SWAP_TOKEN_FLAGS.OUT)}
+                      balance={balanceAmountOut}
+                      disabled={disabledOut}
+                    />
+                  }
                 />
               }
               priceSlot={
@@ -436,31 +485,20 @@ export function OtcMakerForm({
           </div>
         </div>
 
-        {renderSubmitButton(
-          rootSnapshot,
-          userAddress != null,
-          renderHostAppLink
-        )}
+        <AuthGate
+          renderHostAppLink={renderHostAppLink}
+          shouldRender={isLoggedIn}
+        >
+          {renderSubmitButton(rootSnapshot)}
+        </AuthGate>
       </form>
     </div>
   )
 }
 
 function renderSubmitButton(
-  snapshot: SnapshotFrom<typeof otcMakerRootMachine>,
-  isLoggedIn: boolean,
-  renderHostAppLink: RenderHostAppLink
+  snapshot: SnapshotFrom<typeof otcMakerRootMachine>
 ) {
-  if (!isLoggedIn) {
-    return renderHostAppLink(
-      "sign-in",
-      <ButtonCustom type="button" size="lg" className="w-full">
-        Sign in
-      </ButtonCustom>,
-      { className: "w-full" }
-    )
-  }
-
   let caption = "Create swap link"
 
   switch (true) {

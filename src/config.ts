@@ -19,14 +19,14 @@ const configsByEnvironment: Record<NearIntentsEnv, EnvConfig> = {
     contractID: "intents.near",
     poaBridgeBaseURL: "https://bridge.chaindefuser.com",
     solverRelayBaseURL: "https://solver-relay-v2.chaindefuser.com",
-    managerConsoleBaseURL: "https://api-mng-console.chaindefuser.com/api",
+    managerConsoleBaseURL: "https://api-mng-console.chaindefuser.com/api/",
   },
   stage: {
     contractID: "staging-intents.near",
     // todo: update URLs when available
     poaBridgeBaseURL: "https://bridge.chaindefuser.com",
     solverRelayBaseURL: "https://solver-relay-v2.chaindefuser.com",
-    managerConsoleBaseURL: "https://api-mng-console.chaindefuser.com/api",
+    managerConsoleBaseURL: "https://api-mng-console.chaindefuser.com/api/",
   },
 }
 

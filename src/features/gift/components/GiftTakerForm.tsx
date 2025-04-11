@@ -1,13 +1,15 @@
 import { useSelector } from "@xstate/react"
 import { useCallback } from "react"
-import { assert } from "src/utils/assert"
+import type { ActorRefFrom } from "xstate"
+import { AuthGate } from "../../../components/AuthGate"
+import { ButtonCustom } from "../../../components/Button/ButtonCustom"
+import type { SignerCredentials } from "../../../core/formatters"
+import type { RenderHostAppLink } from "../../../types/hostAppLink"
+import { assert } from "../../../utils/assert"
 import {
   computeTotalBalanceDifferentDecimals,
   getUnderlyingBaseTokenInfos,
-} from "src/utils/tokenUtils"
-import type { ActorRefFrom } from "xstate"
-import { ButtonCustom } from "../../../components/Button/ButtonCustom"
-import type { SignerCredentials } from "../../../core/formatters"
+} from "../../../utils/tokenUtils"
 import type { giftTakerRootMachine } from "../actors/giftTakerRootMachine"
 import type { GiftInfo } from "../actors/shared/getGiftInfo"
 import type { giftClaimActor } from "../actors/shared/giftClaimActor"
@@ -22,6 +24,7 @@ export type GiftTakerFormProps = {
   signerCredentials: SignerCredentials | null
   giftTakerRootRef: ActorRefFrom<typeof giftTakerRootMachine>
   intentHashes: string[] | null
+  renderHostAppLink: RenderHostAppLink
 }
 
 export function GiftTakerForm({
@@ -29,7 +32,9 @@ export function GiftTakerForm({
   signerCredentials,
   giftTakerRootRef,
   intentHashes,
+  renderHostAppLink,
 }: GiftTakerFormProps) {
+  const isLoggedIn = signerCredentials != null
   const amount = computeTotalBalanceDifferentDecimals(
     getUnderlyingBaseTokenInfos(giftInfo.token),
     giftInfo.tokenDiff,
@@ -92,23 +97,23 @@ export function GiftTakerForm({
         <div className="flex justify-center mt-5">Gift claimed!</div>
       )}
 
-      <ButtonCustom
-        onClick={claimGift}
-        type="button"
-        size="lg"
+      <AuthGate
+        renderHostAppLink={renderHostAppLink}
+        shouldRender={isLoggedIn}
         className="mt-5"
-        variant={
-          processing || signerCredentials === null ? "secondary" : "primary"
-        }
-        isLoading={processing}
-        disabled={signerCredentials === null}
       >
-        {signerCredentials !== null
-          ? processing
-            ? "Processing..."
-            : "Claim gift"
-          : "Sign in to claim gift"}
-      </ButtonCustom>
+        <ButtonCustom
+          onClick={claimGift}
+          type="button"
+          size="lg"
+          className="mt-5"
+          variant={processing ? "secondary" : "primary"}
+          isLoading={processing}
+          disabled={processing}
+        >
+          {processing ? "Processing..." : "Claim gift"}
+        </ButtonCustom>
+      </AuthGate>
       {processing && <GiftClaimedMessage />}
     </div>
   )

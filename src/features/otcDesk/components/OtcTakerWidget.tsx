@@ -13,6 +13,7 @@ import {
 } from "../../../services/intentsContractService"
 import type { AuthMethod } from "../../../types/authHandle"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../../types/base"
+import type { RenderHostAppLink } from "../../../types/hostAppLink"
 import type { SendNearTransaction } from "../../machines/publicKeyVerifierMachine"
 import { SignIntentActorProvider } from "../providers/SignIntentActorProvider"
 import { useOtcTakerTrades } from "../stores/otcTakerTrades"
@@ -50,6 +51,8 @@ export type OtcTakerWidgetProps = {
 
   /** Frontend referral */
   referral?: string
+
+  renderHostAppLink: RenderHostAppLink
 }
 
 export function OtcTakerWidget(props: OtcTakerWidgetProps) {
@@ -72,6 +75,7 @@ function OtcTakerScreens({
   signMessage,
   sendNearTransaction,
   referral,
+  renderHostAppLink,
 }: OtcTakerWidgetProps) {
   const loading = <div>Loading...</div>
 
@@ -129,6 +133,7 @@ function OtcTakerScreens({
           intentHashes={publishResult.intentHashes}
           tokenIn={tokenIn}
           tokenOut={tokenOut}
+          renderHostAppLink={renderHostAppLink}
         />
       ) : knownOtcTakerTrade?.status === "completed" ? (
         <OtcTakerSuccessScreen
@@ -136,6 +141,7 @@ function OtcTakerScreens({
           intentHashes={knownOtcTakerTrade.intentHashes}
           tokenIn={tokenIn}
           tokenOut={tokenOut}
+          renderHostAppLink={renderHostAppLink}
         />
       ) : (
         <OtcTakerValidationOrder
@@ -156,6 +162,7 @@ function OtcTakerScreens({
               protocolFee={protocolFee}
               onSuccessTrade={setPublishResult}
               referral={referral}
+              renderHostAppLink={renderHostAppLink}
             />
           </SignIntentActorProvider>
         </OtcTakerValidationOrder>

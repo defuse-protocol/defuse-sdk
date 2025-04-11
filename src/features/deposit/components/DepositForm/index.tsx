@@ -9,6 +9,7 @@ import {
   reverseAssetNetworkAdapter,
 } from "src/utils/adapters"
 import { AssetComboIcon } from "../../../../components/Asset/AssetComboIcon"
+import { AuthGate } from "../../../../components/AuthGate"
 import { EmptyIcon } from "../../../../components/EmptyIcon"
 import { Form } from "../../../../components/Form"
 import { Island } from "../../../../components/Island"
@@ -28,6 +29,7 @@ import type {
   SupportedChainName,
   UnifiedTokenInfo,
 } from "../../../../types/base"
+import type { RenderHostAppLink } from "../../../../types/hostAppLink"
 import { BlockchainEnum } from "../../../../types/interfaces"
 import type { SwappableToken } from "../../../../types/swap"
 import { isBaseToken, isUnifiedToken } from "../../../../utils/token"
@@ -42,9 +44,16 @@ export type DepositFormValues = {
   token: BaseTokenInfo | UnifiedTokenInfo | null
   userAddress: string | null
   rpcUrl: string | undefined
+  renderHostAppLink: RenderHostAppLink
 }
 
-export const DepositForm = ({ chainType }: { chainType?: AuthMethod }) => {
+export const DepositForm = ({
+  chainType,
+  renderHostAppLink,
+}: {
+  chainType?: AuthMethod
+  renderHostAppLink: RenderHostAppLink
+}) => {
   const [isNetworkModalOpen, setIsNetworkModalOpen] = useState(false)
   const { handleSubmit, register, control, setValue, watch } =
     useFormContext<DepositFormValues>()
@@ -275,14 +284,10 @@ export const DepositForm = ({ chainType }: { chainType?: AuthMethod }) => {
           </>
         )}
 
-        {userAddress ? null : (
-          <Callout.Root size="1" color="yellow">
-            <Callout.Icon>
-              <ExclamationTriangleIcon />
-            </Callout.Icon>
-            <Callout.Text>Please connect your wallet to continue</Callout.Text>
-          </Callout.Root>
-        )}
+        <AuthGate
+          renderHostAppLink={renderHostAppLink}
+          shouldRender={!!userAddress}
+        />
 
         {userAddress && network && !isActiveDeposit && !isPassiveDeposit && (
           <NotSupportedDepositRoute />

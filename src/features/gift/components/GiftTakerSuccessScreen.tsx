@@ -1,3 +1,4 @@
+import { Button } from "@radix-ui/themes"
 import { useQuery } from "@tanstack/react-query"
 import {
   computeTotalBalanceDifferentDecimals,
@@ -5,6 +6,7 @@ import {
 } from "src/utils/tokenUtils"
 import { CopyButton } from "../../../components/IntentCard/CopyButton"
 import { waitForIntentSettlement } from "../../../services/intentService"
+import type { RenderHostAppLink } from "../../../types/hostAppLink"
 import { assert } from "../../../utils/assert"
 import type { GiftInfo } from "../actors/shared/getGiftInfo"
 import { GiftStrip } from "./GiftStrip"
@@ -17,9 +19,11 @@ const NEAR_EXPLORER = "https://nearblocks.io"
 export function GiftTakerSuccessScreen({
   giftInfo,
   intentHashes,
+  renderHostAppLink,
 }: {
   giftInfo: GiftInfo
   intentHashes: string[]
+  renderHostAppLink: RenderHostAppLink
 }) {
   const amount = computeTotalBalanceDifferentDecimals(
     getUnderlyingBaseTokenInfos(giftInfo.token),
@@ -97,6 +101,30 @@ export function GiftTakerSuccessScreen({
             </div>
           )}
         </div>
+      </div>
+
+      {/* Navigation Actions */}
+      <div className="flex flex-col justify-center gap-3 mt-5">
+        {renderHostAppLink(
+          "account",
+          <Button asChild size="4" className="w-full h-14 font-bold">
+            <div>Go to account</div>
+          </Button>,
+          { className: "w-full" }
+        )}
+        {renderHostAppLink(
+          "withdraw",
+          <Button
+            asChild
+            size="4"
+            className="w-full h-14 font-bold"
+            variant="outline"
+            color="gray"
+          >
+            <div>Withdraw</div>
+          </Button>,
+          { className: "w-full" }
+        )}
       </div>
     </>
   )

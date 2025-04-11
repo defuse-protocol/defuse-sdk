@@ -1,4 +1,6 @@
 import { type ActorRef, type Snapshot, fromCallback } from "xstate"
+import { BaseError } from "../../errors/base"
+import { TimeoutError } from "../../errors/request"
 import { logger } from "../../logger"
 import {
   type AggregatedQuoteParams,
@@ -6,7 +8,6 @@ import {
   queryQuote,
 } from "../../services/quoteService"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../types/base"
-import { isAbortError } from "../../utils/errors"
 import { getUnderlyingBaseTokenInfos } from "../../utils/tokenUtils"
 
 export type QuoteInput =
@@ -123,7 +124,7 @@ function pollQuote(
       // It means Solvers couldn't provide a quote in a short time.
       // So we ignore this error and wait for the next quote.
       if (
-        requestId === 1 &&
+        requestId < 3 &&
         result.tag === "err" &&
         result.value.type === "NO_QUOTES"
       ) {
@@ -138,7 +139,10 @@ function pollQuote(
     },
     onError: (error) => {
       // Ignore the error if the quote was cancelled
-      if (!isAbortError(error)) {
+      if (
+        error instanceof BaseError &&
+        !error.walk((err) => err instanceof TimeoutError)
+      ) {
         logger.error(error)
       }
     },

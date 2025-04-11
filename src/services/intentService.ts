@@ -1,9 +1,12 @@
 import { retry } from "@lifeomic/attempt"
 import { Err, Ok, type Result } from "@thames/monads"
+import { BaseError } from "../errors/base"
+import { HttpRequestError } from "../errors/request"
 import { logger } from "../logger"
 import type { AuthMethod } from "../types/authHandle"
 import type { WalletSignatureResult } from "../types/swap"
 import { prepareSwapSignedData } from "../utils/prepareBroadcastRequest"
+import { wait } from "../utils/wait"
 import * as solverRelayClient from "./solverRelayHttpClient"
 import type * as types from "./solverRelayHttpClient/types"
 
@@ -68,10 +71,28 @@ export async function waitForIntentSettlement(
   while (true) {
     signal.throwIfAborted()
 
-    // todo: add retry in case of network error
-    const res = await solverRelayClient.getStatus({
-      intent_hash: intentHash,
-    })
+    const res = await retry(
+      () =>
+        solverRelayClient.getStatus({
+          intent_hash: intentHash,
+        }),
+      {
+        delay: 1000,
+        factor: 1.5,
+        maxAttempts: Number.MAX_SAFE_INTEGER,
+        jitter: true,
+        handleError: (err, context) => {
+          if (
+            err instanceof BaseError &&
+            err.walk((err) => err instanceof HttpRequestError)
+          ) {
+            return
+          }
+
+          context.abort()
+        },
+      }
+    )
 
     const status = res.status
     switch (status) {
@@ -113,7 +134,7 @@ export async function waitForIntentSettlement(
     lastSeenResult = res
 
     // Wait a bit before polling again
-    await new Promise((resolve) => setTimeout(resolve, 200))
+    await wait(200)
   }
 }
 

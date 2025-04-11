@@ -303,7 +303,9 @@ export const withdrawUIMachine = setup({
     isWithdrawParamsComplete: ({ context }) => {
       const formContext = context.withdrawFormRef.getSnapshot().context
       return (
-        formContext.parsedAmount != null && formContext.parsedRecipient != null
+        formContext.parsedAmount != null &&
+        formContext.parsedRecipient != null &&
+        formContext.cexFundsLooseConfirmation !== "not_confirmed"
       )
     },
 

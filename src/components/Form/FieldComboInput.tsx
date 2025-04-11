@@ -1,6 +1,6 @@
 import { Skeleton } from "@radix-ui/themes"
 import clsx from "clsx"
-import { useRef } from "react"
+import { useEffect, useRef, useState } from "react"
 import type {
   FieldError,
   FieldErrors,
@@ -92,6 +92,12 @@ export const FieldComboInput = <T extends FieldValues>({
     }
   }
 
+  const handleSetHalfValue = () => {
+    if (!disabled && balance != null && selected && inputRef.current) {
+      setInputValue(formatUnits(balance.amount / 2n, balance.decimals))
+    }
+  }
+
   // react-hook-form specific props
   const reactHookFormRegisterProps = register(fieldName, {
     min,
@@ -105,6 +111,13 @@ export const FieldComboInput = <T extends FieldValues>({
 
   const allInputRefs = useMergedRef(inputRef, reactHookFormRegisterProps.ref)
   const fieldError = errors?.[fieldName]
+
+  const LONG_LOADING_THRESHOLD_MS = 3000
+  const isLongLoading = useThrottledValue(
+    isLoading,
+    isLoading ? LONG_LOADING_THRESHOLD_MS : 0
+  )
+
   return (
     <div
       className={clsx(
@@ -141,6 +154,12 @@ export const FieldComboInput = <T extends FieldValues>({
       </div>
 
       <div className="flex justify-between items-center min-h-6 gap-2 min-w-0">
+        {isLongLoading && (
+          <div className="text-xs sm:text-sm font-medium text-gray-400">
+            Searching for more liquidity...
+          </div>
+        )}
+
         <div className="relative flex flex-1 overflow-hidden whitespace-nowrap">
           {fieldError ? (
             <span className="text-xs sm:text-sm font-medium text-red-400">
@@ -158,10 +177,22 @@ export const FieldComboInput = <T extends FieldValues>({
           <BlockMultiBalances
             balance={balance.amount}
             decimals={balance.decimals}
-            handleClick={handleSetMaxValue}
-            disabled={disabled}
             className="ml-auto"
             transitBalance={transitBalance}
+            maxButtonSlot={
+              <BlockMultiBalances.DisplayMaxButton
+                onClick={handleSetMaxValue}
+                balance={balance.amount}
+                disabled={disabled}
+              />
+            }
+            halfButtonSlot={
+              <BlockMultiBalances.DisplayHalfButton
+                onClick={handleSetHalfValue}
+                balance={balance.amount}
+                disabled={disabled}
+              />
+            }
           />
         )}
       </div>
@@ -170,3 +201,22 @@ export const FieldComboInput = <T extends FieldValues>({
 }
 
 FieldComboInput.displayName = FieldComboInputRegistryName
+
+/**
+ * Sets a value after a delay
+ */
+function useThrottledValue<T>(value: T, delayMs: number): T {
+  const [throttledValue, setThrottledValue] = useState(value)
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setThrottledValue(value)
+    }, delayMs)
+
+    return () => {
+      clearTimeout(timer)
+    }
+  }, [value, delayMs])
+
+  return throttledValue
+}

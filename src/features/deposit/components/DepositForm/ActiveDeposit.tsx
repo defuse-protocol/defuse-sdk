@@ -19,7 +19,10 @@ import { DepositUIMachineContext } from "../DepositUIMachineProvider"
 import { DepositWarning } from "../DepositWarning"
 import { TokenAmountInputCard } from "./TokenAmountInputCard"
 import type { DepositFormValues } from "./index"
-import { renderDepositHint } from "./renderDepositHint"
+import {
+  renderDepositHint,
+  renderMinDepositAmountHint,
+} from "./renderDepositHint"
 
 export type ActiveDepositProps = {
   network: BlockchainEnum
@@ -79,6 +82,12 @@ export function ActiveDeposit({
     setValue("amount", amountToFormat)
   }
 
+  const handleSetHalfValue = async () => {
+    if (token == null || balance == null) return
+    const amountToFormat = formatTokenValue(balance / 2n, token.decimals)
+    setValue("amount", amountToFormat)
+  }
+
   const inputId = useId()
 
   const { data: tokensUsdPriceData } = useTokensUsdPrices()
@@ -106,7 +115,8 @@ export function ActiveDeposit({
             <Balance
               balance={balance}
               token={token}
-              onClick={handleSetMaxValue}
+              handleSetMaxValue={handleSetMaxValue}
+              handleSetHalfValue={handleSetHalfValue}
             />
           }
           priceSlot={
@@ -118,6 +128,12 @@ export function ActiveDeposit({
           }
         />
       </div>
+
+      {minDepositAmount != null && (
+        <div className="px-3">
+          {renderMinDepositAmountHint(minDepositAmount, token)}
+        </div>
+      )}
 
       <DepositWarning depositWarning={depositOutput || preparationOutput} />
 
@@ -142,7 +158,7 @@ export function ActiveDeposit({
         )}
       </ButtonCustom>
 
-      {renderDepositHint(network, minDepositAmount, token)}
+      {renderDepositHint(network, token)}
 
       <DepositResult
         chainName={reverseAssetNetworkAdapter[network]}
@@ -155,22 +171,38 @@ export function ActiveDeposit({
 function Balance({
   balance,
   token,
-  onClick,
+  handleSetMaxValue,
+  handleSetHalfValue,
 }: {
   balance: bigint | null
   token: BaseTokenInfo
-  onClick: () => void
+  handleSetMaxValue: () => void
+  handleSetHalfValue: () => void
 }) {
   const { accentColor } = useThemeContext()
+  const balanceAmount = balance ?? 0n
+  const disabled = balanceAmount === 0n
 
   return (
     <div className="flex items-center gap-1">
       <BlockMultiBalances
-        balance={balance ?? 0n}
+        balance={balanceAmount}
         decimals={token.decimals}
-        handleClick={onClick}
-        disabled={balance === 0n}
         className={clsx("!static", balance == null && "invisible")}
+        maxButtonSlot={
+          <BlockMultiBalances.DisplayMaxButton
+            onClick={handleSetMaxValue}
+            balance={balanceAmount}
+            disabled={disabled}
+          />
+        }
+        halfButtonSlot={
+          <BlockMultiBalances.DisplayHalfButton
+            onClick={handleSetHalfValue}
+            balance={balanceAmount}
+            disabled={disabled}
+          />
+        }
       />
 
       {isFungibleToken(token) && token.address === "wrap.near" && (

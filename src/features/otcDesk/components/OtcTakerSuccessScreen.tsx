@@ -1,8 +1,10 @@
 import { Check as CheckIcon } from "@phosphor-icons/react"
+import { Button } from "@radix-ui/themes"
 import { useQuery } from "@tanstack/react-query"
 import { CopyButton } from "src/components/IntentCard/CopyButton"
 import { waitForIntentSettlement } from "../../../services/intentService"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../../types/base"
+import type { RenderHostAppLink } from "../../../types/hostAppLink"
 import { assert } from "../../../utils/assert"
 import {
   computeTotalBalanceDifferentDecimals,
@@ -19,11 +21,13 @@ export function OtcTakerSuccessScreen({
   intentHashes,
   tokenIn,
   tokenOut,
+  renderHostAppLink,
 }: {
   tradeTerms: TradeTerms
   intentHashes: string[]
   tokenIn: BaseTokenInfo | UnifiedTokenInfo
   tokenOut: BaseTokenInfo | UnifiedTokenInfo
+  renderHostAppLink: RenderHostAppLink
 }) {
   const amountIn = computeTotalBalanceDifferentDecimals(
     getUnderlyingBaseTokenInfos(tokenIn),
@@ -127,19 +131,28 @@ export function OtcTakerSuccessScreen({
         )}
       </div>
 
-      {/* TODO: Finish withdraw button */}
-      {/* <div className="flex flex-col justify-center gap-3 mt-5">
-        <Button
-          type="button"
-          size="3"
-          variant="outline"
-          color="gray"
-          className="font-bold"
-          onClick={onNavigateWithdraw}
-        >
-          Withdraw
-        </Button>
-      </div> */}
+      <div className="flex flex-col justify-center gap-3 mt-5">
+        {renderHostAppLink(
+          "account",
+          <Button asChild size="4" className="w-full h-14 font-bold">
+            <div>Go to account</div>
+          </Button>,
+          { className: "w-full" }
+        )}
+        {renderHostAppLink(
+          "withdraw",
+          <Button
+            asChild
+            size="4"
+            className="w-full h-14 font-bold"
+            variant="outline"
+            color="gray"
+          >
+            <div>Withdraw</div>
+          </Button>,
+          { className: "w-full" }
+        )}
+      </div>
     </div>
   )
 }
