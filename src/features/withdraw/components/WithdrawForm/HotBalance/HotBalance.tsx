@@ -7,11 +7,13 @@ interface HotBalanceProps {
 }
 
 export const HotBalance: FC<HotBalanceProps> = ({ hotBalance }) => {
-  const hotBalanceUSD_1k = hotBalance ? adjustTo1kUsd(hotBalance) : null
+  if (!hotBalance) {
+    return null
+  }
 
   return (
     <div className="text-gray-11 text-xs font-medium">
-      {hotBalanceUSD_1k ? `Instant: ~$${hotBalanceUSD_1k}k` : "Unlimited"}
+      Fast withdrawal: ~${adjustTo1kUsd(hotBalance)}k
     </div>
   )
 }
