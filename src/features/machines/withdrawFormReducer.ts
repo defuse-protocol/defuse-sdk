@@ -16,13 +16,20 @@ const fields: Fields = [
   "parsedAmount",
   "parsedRecipient",
   "parsedDestinationMemo",
+  "cexFundsLooseConfirmation",
 ]
 
 export type ParentEvents = {
   type: "WITHDRAW_FORM_FIELDS_CHANGED"
   fields: Fields
 }
+
 type ParentActor = ActorRef<Snapshot<unknown>, ParentEvents>
+
+type CexFundsLooseConfirmationStatus =
+  | "confirmed"
+  | "not_confirmed"
+  | "not_required"
 
 export type Events =
   | {
@@ -67,6 +74,12 @@ export type Events =
         destinationMemo: string
       }
     }
+  | {
+      type: "WITHDRAW_FORM.CEX_FUNDS_LOOSE_CHANGED"
+      params: {
+        cexFundsLooseConfirmation: CexFundsLooseConfirmationStatus
+      }
+    }
 
 export type State = {
   parentRef: ParentActor
@@ -78,6 +91,7 @@ export type State = {
   parsedRecipient: string | null
   destinationMemo: string
   parsedDestinationMemo: string | null
+  cexFundsLooseConfirmation: CexFundsLooseConfirmationStatus
 }
 
 export const withdrawFormReducer = fromTransition(
@@ -146,6 +160,13 @@ export const withdrawFormReducer = fromTransition(
         }
         break
       }
+      case "WITHDRAW_FORM.CEX_FUNDS_LOOSE_CHANGED": {
+        newState = {
+          ...state,
+          cexFundsLooseConfirmation: event.params.cexFundsLooseConfirmation,
+        }
+        break
+      }
       default: {
         event satisfies never
         return state
@@ -182,6 +203,7 @@ export const withdrawFormReducer = fromTransition(
       parsedRecipient: null,
       destinationMemo: "",
       parsedDestinationMemo: null,
+      cexFundsLooseConfirmation: "not_required",
     }
   }
 )
