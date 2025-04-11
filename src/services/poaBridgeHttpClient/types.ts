@@ -1,3 +1,6 @@
+import type { RpcRequestError } from "../../errors/request"
+import type { RequestErrorType } from "../../utils/request"
+
 export type RequestConfig = {
   timeout?: number | undefined
   fetchOptions?: Omit<RequestInit, "body"> | undefined
@@ -15,6 +18,8 @@ export type JSONRPCResponse<Result> = {
   jsonrpc: "2.0"
   result: Result
 }
+
+export type JSONRPCErrorType = RequestErrorType | RpcRequestError
 
 export type GetSupportedTokensRequest = JSONRPCRequest<
   "supported_tokens",
@@ -97,3 +102,16 @@ export type WithdrawalStatusResponseOk = JSONRPCResponse<{
     }
   }[]
 }>
+
+export type TokenBalances = {
+  symbol: string
+  address: string
+  nearAddress: string
+  decimals: number
+  totalSupply: string
+  vaultBalance: string
+  coldWalletBalance: string
+  balanceOnDefuse: string
+}
+
+export type BridgeBalanceResponse = TokenBalances[]

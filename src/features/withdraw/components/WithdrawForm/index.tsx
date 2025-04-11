@@ -30,14 +30,12 @@ import { FieldComboInput } from "../../../../components/Form/FieldComboInput"
 import { WithdrawIntentCard } from "../../../../components/IntentCard/WithdrawIntentCard"
 import { Island } from "../../../../components/Island"
 import { IslandHeader } from "../../../../components/IslandHeader"
-import { NetworkIcon } from "../../../../components/Network/NetworkIcon"
 import { Select } from "../../../../components/Select/Select"
 import { nearClient } from "../../../../constants/nearClient"
 import { useModalController } from "../../../../hooks/useModalController"
 import { logger } from "../../../../logger"
 import { useTokensStore } from "../../../../providers/TokensStoreProvider"
 import { ModalType } from "../../../../stores/modalStore"
-import { AuthMethod } from "../../../../types/authHandle"
 import type {
   BaseTokenInfo,
   SupportedChainName,
@@ -46,7 +44,6 @@ import type {
 } from "../../../../types/base"
 import type { WithdrawWidgetProps } from "../../../../types/withdraw"
 import { parseUnits } from "../../../../utils/parse"
-import { isBaseToken } from "../../../../utils/token"
 import { getTokenMaxDecimals } from "../../../../utils/tokenUtils"
 import { validateAddress } from "../../../../utils/validateAddress"
 import {
@@ -60,12 +57,21 @@ import { parseDestinationMemo } from "../../../machines/withdrawFormReducer"
 import { renderIntentCreationResult } from "../../../swap/components/SwapForm"
 import { usePublicKeyModalOpener } from "../../../swap/hooks/usePublicKeyModalOpener"
 import { WithdrawUIMachineContext } from "../../WithdrawUIMachineContext"
-import LongWithdrawWarning from "./LongWithdrawWarning"
+import { HotBalance } from "./HotBalance/HotBalance"
+import { LongWithdrawWarning } from "./LongWithdrawWarning"
+import type { allBlockchains } from "./constants"
+import { useTokenBalances } from "./hooks/useTokenBalances"
 import {
   isLiquidityUnavailableSelector,
   isUnsufficientTokenInAmount,
   totalAmountReceivedSelector,
 } from "./selectors"
+import {
+  chainTypeSatisfiesChainName,
+  getBlockchainSelectItems,
+  shouldShowHotBalance,
+  truncateUserAddress,
+} from "./utils"
 
 export type WithdrawFormNearValues = {
   amountIn: string
@@ -320,16 +326,6 @@ export const WithdrawForm = ({
     }
   }, [actorRef, setValue])
 
-  const availableBlockchains = isBaseToken(token)
-    ? [token.chainName]
-    : token.groupedTokens.map((token) => token.chainName)
-
-  const blockchainSelectItems = Object.fromEntries(
-    allBlockchains
-      .filter((blockchain) => availableBlockchains.includes(blockchain.value))
-      .map((a) => [a.value, a])
-  )
-
   const isChainTypeSatisfiesChainName = chainTypeSatisfiesChainName(
     chainType,
     tokenOut.chainName
@@ -340,6 +336,18 @@ export const WithdrawForm = ({
     token,
     tokensUsdPriceData
   )
+
+  const hasAnyBalance = tokenInBalance != null && tokenInBalance?.amount > 0
+
+  const balances = useTokenBalances(token, hasAnyBalance)
+
+  const blockchainSelectItems = getBlockchainSelectItems(
+    token,
+    balances,
+    tokensUsdPriceData
+  )
+
+  const showHotBalances = shouldShowHotBalance(balances, tokenInBalance)
 
   return (
     <Island className="widget-container flex flex-col gap-4">
@@ -367,9 +375,7 @@ export const WithdrawForm = ({
           <FieldComboInput<WithdrawFormNearValues>
             fieldName="amountIn"
             selected={token}
-            handleSelect={() => {
-              handleSelect()
-            }}
+            handleSelect={handleSelect}
             className="border border-gray-4 rounded-xl"
             required
             min={
@@ -406,11 +412,6 @@ export const WithdrawForm = ({
           />
 
           {renderMinWithdrawalAmount(minWithdrawalAmount, tokenOut)}
-          <LongWithdrawWarning
-            amountIn={parsedAmountIn}
-            token={tokenOut}
-            tokensUsdPriceData={tokensUsdPriceData}
-          />
 
           <Flex direction="column" gap="2">
             <Box px="2" asChild>
@@ -444,10 +445,32 @@ export const WithdrawForm = ({
                           : "Network"}
                       </Select.Hint>
                     }
+                    renderValueDetails={
+                      showHotBalances
+                        ? (address: string) => (
+                            <HotBalance
+                              hotBalance={
+                                blockchainSelectItems[address]?.hotBalance
+                              }
+                            />
+                          )
+                        : undefined
+                    }
                   />
                 )
               }}
             />
+
+            {showHotBalances && (
+              <LongWithdrawWarning
+                amountIn={parsedAmountIn}
+                token={tokenOut}
+                tokensUsdPriceData={tokensUsdPriceData}
+                hotBalance={
+                  blockchainSelectItems[tokenOut.chainName]?.hotBalance
+                }
+              />
+            )}
 
             <Flex direction="column" gap="1">
               <Flex gap="2" align="center">
@@ -627,143 +650,6 @@ function renderWithdrawButtonText(
   return "Withdraw"
 }
 
-const allBlockchains = [
-  {
-    label: "Near",
-    icon: (
-      <NetworkIcon
-        chainIcon="/static/icons/network/near_dark.svg"
-        chainName="Near"
-      />
-    ),
-    value: "near",
-  },
-  {
-    label: "Ethereum",
-    icon: (
-      <NetworkIcon
-        chainIcon="/static/icons/network/ethereum.svg"
-        chainName="Ethereum"
-      />
-    ),
-    value: "eth",
-  },
-  {
-    label: "Base",
-    icon: (
-      <NetworkIcon
-        chainIcon="/static/icons/network/base.svg"
-        chainName="Base"
-      />
-    ),
-    value: "base",
-  },
-  {
-    label: "Arbitrum",
-    icon: (
-      <NetworkIcon
-        chainIcon="/static/icons/network/arbitrum.svg"
-        chainName="Arbitrum"
-      />
-    ),
-    value: "arbitrum",
-  },
-  {
-    label: "Bitcoin",
-    icon: (
-      <NetworkIcon
-        chainIcon="/static/icons/network/btc.svg"
-        chainName="Bitcoin"
-      />
-    ),
-    value: "bitcoin",
-  },
-  {
-    label: "Solana",
-    icon: (
-      <NetworkIcon
-        chainIcon="/static/icons/network/solana.svg"
-        chainName="Solana"
-      />
-    ),
-    value: "solana",
-  },
-  {
-    label: "Dogecoin",
-    icon: (
-      <NetworkIcon
-        chainIcon="/static/icons/network/dogecoin.svg"
-        chainName="Dogecoin"
-      />
-    ),
-    value: "dogecoin",
-  },
-  {
-    label: "TurboChain",
-    icon: (
-      <NetworkIcon
-        chainIcon="/static/icons/network/turbochain.png"
-        chainName="TurboChain"
-      />
-    ),
-    value: "turbochain",
-  },
-  {
-    label: "Aurora",
-    icon: (
-      <NetworkIcon
-        chainIcon="/static/icons/network/aurora.svg"
-        chainName="Aurora"
-      />
-    ),
-    value: "aurora",
-  },
-  {
-    label: "XRP Ledger",
-    icon: (
-      <NetworkIcon
-        chainIcon="/static/icons/network/xrpledger.svg"
-        chainName="XRP Ledger"
-      />
-    ),
-    value: "xrpledger",
-  },
-  {
-    label: "Zcash",
-    icon: (
-      <NetworkIcon
-        chainIcon="/static/icons/network/zcash-icon-black.svg"
-        chainName="Zcash"
-      />
-    ),
-    value: "zcash",
-  },
-  {
-    label: "Gnosis",
-    icon: (
-      <NetworkIcon
-        chainIcon="/static/icons/network/gnosis.svg"
-        chainName="Gnosis"
-      />
-    ),
-    value: "gnosis",
-  },
-  {
-    label: "BeraChain",
-    icon: (
-      <NetworkIcon
-        chainIcon="/static/icons/network/berachain.svg"
-        chainName="BeraChain"
-      />
-    ),
-    value: "berachain",
-  },
-] as const satisfies Array<{
-  label: string
-  icon: ReactNode
-  value: SupportedChainName
-}>
-
 type TypeEqualityGuard<A, B> = Exclude<A, B> | Exclude<B, A> extends never
   ? true
   : never
@@ -861,30 +747,4 @@ function Intents({
       ))}
     </div>
   )
-}
-
-function chainTypeSatisfiesChainName(
-  chainType: AuthMethod | undefined,
-  chainName: SupportedChainName
-) {
-  if (chainType == null) return false
-
-  switch (true) {
-    case chainType === AuthMethod.Near && chainName === "near":
-    case chainType === AuthMethod.EVM && chainName === "eth":
-    case chainType === AuthMethod.EVM && chainName === "arbitrum":
-    case chainType === AuthMethod.EVM && chainName === "base":
-    case chainType === AuthMethod.EVM && chainName === "turbochain":
-    case chainType === AuthMethod.EVM && chainName === "aurora":
-    case chainType === AuthMethod.EVM && chainName === "gnosis":
-    case chainType === AuthMethod.EVM && chainName === "berachain":
-    case chainType === AuthMethod.Solana && chainName === "solana":
-      return true
-  }
-
-  return false
-}
-
-function truncateUserAddress(hash: string) {
-  return `${hash.slice(0, 6)}...${hash.slice(-4)}`
 }

@@ -352,3 +352,27 @@ export function accountSlippageExactIn(
     return [token, amount]
   })
 }
+
+export function filterOutPoaBridgeTokens(
+  token: BaseTokenInfo | UnifiedTokenInfo
+): BaseTokenInfo[] {
+  if (isBaseToken(token)) {
+    return token.bridge === "poa" ? [token] : []
+  }
+
+  return token.groupedTokens.filter((t) => t.bridge === "poa")
+}
+
+export function getTokenAccountIds(tokens: BaseTokenInfo[]): string[] {
+  const stringCleaner = "nep141:"
+
+  return tokens.map((t) => {
+    return t.defuseAssetId.startsWith(stringCleaner)
+      ? t.defuseAssetId.replace(stringCleaner, "")
+      : t.defuseAssetId
+  })
+}
+
+export function tokenAccountIdToDefuseAssetId(address: string): string {
+  return `nep141:${address}`
+}

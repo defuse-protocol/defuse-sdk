@@ -1,4 +1,6 @@
+import type { RpcRequestError } from "../../errors/request"
 import type { MultiPayload } from "../../types/defuse-contracts-types"
+import type { RequestErrorType } from "../../utils/request"
 
 export type RequestConfig = {
   timeout?: number | undefined
@@ -17,6 +19,8 @@ export type JSONRPCResponse<Result> = {
   jsonrpc: "2.0"
   result: Result
 }
+
+export type JSONRPCErrorType = RequestErrorType | RpcRequestError
 
 export type QuoteRequest = JSONRPCRequest<
   "quote",
