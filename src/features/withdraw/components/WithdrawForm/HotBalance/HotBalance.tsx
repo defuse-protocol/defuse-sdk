@@ -1,6 +1,6 @@
 import type { FC } from "react"
-import type { TokenValueWithPrice } from "../../features/withdraw/components/WithdrawForm/types"
-import { adjustTo1kUsd } from "../../features/withdraw/components/WithdrawForm/utils"
+import type { TokenValueWithPrice } from "../types"
+import { adjustTo1kUsd } from "../utils"
 
 interface HotBalanceProps {
   hotBalance?: TokenValueWithPrice | null

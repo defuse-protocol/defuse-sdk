@@ -355,29 +355,18 @@ export function accountSlippageExactIn(
 
 export function filterOutPoaBridgeTokens(
   token: BaseTokenInfo | UnifiedTokenInfo
-): BaseTokenInfo | UnifiedTokenInfo | null {
+): BaseTokenInfo[] {
   if (isBaseToken(token)) {
-    return token.bridge === "poa" ? token : null
+    return token.bridge === "poa" ? [token] : []
   }
 
-  return {
-    ...token,
-    groupedTokens: token.groupedTokens.filter((t) => t.bridge === "poa"),
-  }
+  return token.groupedTokens.filter((t) => t.bridge === "poa")
 }
 
-export function getTokenAccountIds(
-  token: BaseTokenInfo | UnifiedTokenInfo
-): string[] {
+export function getTokenAccountIds(tokens: BaseTokenInfo[]): string[] {
   const stringCleaner = "nep141:"
 
-  if (isBaseToken(token)) {
-    return token.defuseAssetId.startsWith(stringCleaner)
-      ? [token.defuseAssetId.replace(stringCleaner, "")]
-      : [token.defuseAssetId]
-  }
-
-  return token.groupedTokens.map((t) => {
+  return tokens.map((t) => {
     return t.defuseAssetId.startsWith(stringCleaner)
       ? t.defuseAssetId.replace(stringCleaner, "")
       : t.defuseAssetId
@@ -385,11 +374,5 @@ export function getTokenAccountIds(
 }
 
 export function tokenAccountIdToDefuseAssetId(address: string): string {
-  const nep141 = "nep141:"
-
-  if (!address || address.toLowerCase().startsWith(nep141)) {
-    return address
-  }
-
-  return `${nep141}${address}`
+  return `nep141:${address}`
 }

@@ -946,120 +946,116 @@ describe("accountSlippageExactIn", () => {
       expect(accountSlippageExactIn(delta, bip)).toEqual(expected)
     }
   )
+})
 
-  describe("filterOutPoaBridgeTokens", () => {
-    it('returns token if it is BaseTokenInfo with bridge "poa"', () => {
-      const baseToken: BaseTokenInfo = {
-        defuseAssetId: "token1",
-        address: "0x123",
-        symbol: "TKN",
-        name: "Token",
-        decimals: 18,
-        icon: "icon.png",
-        chainName: "eth",
-        bridge: "poa",
-      }
+describe("filterOutPoaBridgeTokens", () => {
+  it('returns token if it is BaseTokenInfo with bridge "poa"', () => {
+    const baseToken: BaseTokenInfo = {
+      defuseAssetId: "token1",
+      address: "0x123",
+      symbol: "TKN",
+      name: "Token",
+      decimals: 18,
+      icon: "icon.png",
+      chainName: "eth",
+      bridge: "poa",
+    }
 
-      const result = filterOutPoaBridgeTokens(baseToken)
+    const result = filterOutPoaBridgeTokens(baseToken)
 
-      expect(result).toBe(baseToken)
-    })
-
-    it('returns null if it is BaseTokenInfo without bridge "poa"', () => {
-      const notBaseToken: BaseTokenInfo = {
-        defuseAssetId: "token1",
-        address: "0x123",
-        symbol: "TKN",
-        name: "Token",
-        decimals: 18,
-        icon: "icon.png",
-        chainName: "eth",
-        bridge: "aurora_engine",
-      }
-
-      const result = filterOutPoaBridgeTokens(notBaseToken)
-
-      expect(result).toBeNull()
-    })
-
-    it("filters groupedTokens when token is UnifiedTokenInfo", () => {
-      const poaToken: BaseTokenInfo = {
-        defuseAssetId: "token1",
-        address: "0x123",
-        symbol: "TKN1",
-        name: "Token1",
-        decimals: 18,
-        icon: "icon1.png",
-        chainName: "eth",
-        bridge: "poa",
-      }
-      const notPoaToken: BaseTokenInfo = {
-        defuseAssetId: "token2",
-        address: "0x456",
-        symbol: "TKN2",
-        name: "Token2",
-        decimals: 18,
-        icon: "icon2.png",
-        chainName: "base",
-        bridge: "aurora_engine",
-      }
-      const unifiedToken: UnifiedTokenInfo = {
-        unifiedAssetId: "unified1",
-        symbol: "UTKN",
-        name: "Unified Token",
-        icon: "icon.png",
-        groupedTokens: [poaToken, notPoaToken],
-      }
-
-      const result = filterOutPoaBridgeTokens(unifiedToken)
-
-      expect(result).toEqual({
-        ...unifiedToken,
-        groupedTokens: [poaToken],
-      })
-    })
-
-    it('returns UnifiedTokenInfo with empty groupedTokens if none match "poa"', () => {
-      const notPoaToken1: BaseTokenInfo = {
-        defuseAssetId: "token2",
-        address: "0x456",
-        symbol: "TKN2",
-        name: "Token2",
-        decimals: 18,
-        icon: "icon2.png",
-        chainName: "base",
-        bridge: "direct",
-      }
-      const notPoaToken2: BaseTokenInfo = {
-        defuseAssetId: "token2",
-        address: "0x456",
-        symbol: "TKN2",
-        name: "Token2",
-        decimals: 18,
-        icon: "icon2.png",
-        chainName: "base",
-        bridge: "aurora_engine",
-      }
-      const token: UnifiedTokenInfo = {
-        unifiedAssetId: "unified1",
-        symbol: "UTKN",
-        name: "Unified Token",
-        icon: "icon.png",
-        groupedTokens: [notPoaToken1, notPoaToken2],
-      }
-
-      const result = filterOutPoaBridgeTokens(token)
-
-      expect(result).toEqual({
-        ...token,
-        groupedTokens: [],
-      })
-    })
+    expect(result).toEqual([baseToken])
   })
 
-  describe("getTokenAccountIds", () => {
-    it('removes "nep141:" prefix for BaseTokenInfo', () => {
-      const token: BaseTokenInfo = {
+  it('returns null if it is BaseTokenInfo without bridge "poa"', () => {
+    const notBaseToken: BaseTokenInfo = {
+      defuseAssetId: "token1",
+      address: "0x123",
+      symbol: "TKN",
+      name: "Token",
+      decimals: 18,
+      icon: "icon.png",
+      chainName: "eth",
+      bridge: "aurora_engine",
+    }
+
+    const result = filterOutPoaBridgeTokens(notBaseToken)
+
+    expect(result).toEqual([])
+  })
+
+  it("filters groupedTokens when token is UnifiedTokenInfo", () => {
+    const poaToken: BaseTokenInfo = {
+      defuseAssetId: "token1",
+      address: "0x123",
+      symbol: "TKN1",
+      name: "Token1",
+      decimals: 18,
+      icon: "icon1.png",
+      chainName: "eth",
+      bridge: "poa",
+    }
+    const notPoaToken: BaseTokenInfo = {
+      defuseAssetId: "token2",
+      address: "0x456",
+      symbol: "TKN2",
+      name: "Token2",
+      decimals: 18,
+      icon: "icon2.png",
+      chainName: "base",
+      bridge: "aurora_engine",
+    }
+    const unifiedToken: UnifiedTokenInfo = {
+      unifiedAssetId: "unified1",
+      symbol: "UTKN",
+      name: "Unified Token",
+      icon: "icon.png",
+      groupedTokens: [poaToken, notPoaToken],
+    }
+
+    const result = filterOutPoaBridgeTokens(unifiedToken)
+
+    expect(result).toEqual([poaToken])
+  })
+
+  it('returns UnifiedTokenInfo with empty groupedTokens if none match "poa"', () => {
+    const notPoaToken1: BaseTokenInfo = {
+      defuseAssetId: "token2",
+      address: "0x456",
+      symbol: "TKN2",
+      name: "Token2",
+      decimals: 18,
+      icon: "icon2.png",
+      chainName: "base",
+      bridge: "direct",
+    }
+    const notPoaToken2: BaseTokenInfo = {
+      defuseAssetId: "token2",
+      address: "0x456",
+      symbol: "TKN2",
+      name: "Token2",
+      decimals: 18,
+      icon: "icon2.png",
+      chainName: "base",
+      bridge: "aurora_engine",
+    }
+    const token: UnifiedTokenInfo = {
+      unifiedAssetId: "unified1",
+      symbol: "UTKN",
+      name: "Unified Token",
+      icon: "icon.png",
+      groupedTokens: [notPoaToken1, notPoaToken2],
+    }
+
+    const result = filterOutPoaBridgeTokens(token)
+
+    expect(result).toEqual([])
+  })
+})
+
+describe("getTokenAccountIds", () => {
+  it('removes "nep141:" prefix for BaseTokenInfo', () => {
+    const tokens: BaseTokenInfo[] = [
+      {
         defuseAssetId: "nep141:token1",
         address: "0x123",
         symbol: "TKN",
@@ -1068,15 +1064,17 @@ describe("accountSlippageExactIn", () => {
         icon: "icon.png",
         chainName: "eth",
         bridge: "poa",
-      }
+      },
+    ]
 
-      const result = getTokenAccountIds(token)
+    const result = getTokenAccountIds(tokens)
 
-      expect(result).toEqual(["token1"])
-    })
+    expect(result).toEqual(["token1"])
+  })
 
-    it('returns defuseAssetId as-is if no "nep141:" prefix for BaseTokenInfo', () => {
-      const token: BaseTokenInfo = {
+  it('returns defuseAssetId as-is if no "nep141:" prefix for BaseTokenInfo', () => {
+    const tokens: BaseTokenInfo[] = [
+      {
         defuseAssetId: "token2",
         address: "0x123",
         symbol: "TKN",
@@ -1085,146 +1083,107 @@ describe("accountSlippageExactIn", () => {
         icon: "icon.png",
         chainName: "eth",
         bridge: "poa",
-      }
+      },
+    ]
 
-      const result = getTokenAccountIds(token)
+    const result = getTokenAccountIds(tokens)
 
-      expect(result).toEqual(["token2"])
-    })
-
-    it('removes "nep141:" prefix for each groupedToken in UnifiedTokenInfo', () => {
-      const token: UnifiedTokenInfo = {
-        unifiedAssetId: "unified1",
-        symbol: "UTKN",
-        name: "Unified Token",
-        icon: "icon.png",
-        groupedTokens: [
-          {
-            defuseAssetId: "nep141:token3",
-            address: "0x456",
-            symbol: "TKN2",
-            name: "Token2",
-            decimals: 18,
-            icon: "icon2.png",
-            chainName: "base",
-            bridge: "direct",
-          },
-          {
-            defuseAssetId: "nep141:token4",
-            address: "0x456",
-            symbol: "TKN2",
-            name: "Token2",
-            decimals: 18,
-            icon: "icon2.png",
-            chainName: "base",
-            bridge: "aurora_engine",
-          },
-        ],
-      }
-
-      const result = getTokenAccountIds(token)
-
-      expect(result).toEqual(["token3", "token4"])
-    })
-
-    it('handles groupedTokens without "nep141:" prefix in UnifiedTokenInfo', () => {
-      const token: UnifiedTokenInfo = {
-        unifiedAssetId: "unified1",
-        symbol: "UTKN",
-        name: "Unified Token",
-        icon: "icon.png",
-        groupedTokens: [
-          {
-            defuseAssetId: "token5",
-            address: "0x456",
-            symbol: "TKN2",
-            name: "Token2",
-            decimals: 18,
-            icon: "icon2.png",
-            chainName: "base",
-            bridge: "direct",
-          },
-          {
-            defuseAssetId: "token6",
-            address: "0x456",
-            symbol: "TKN2",
-            name: "Token2",
-            decimals: 18,
-            icon: "icon2.png",
-            chainName: "base",
-            bridge: "aurora_engine",
-          },
-        ],
-      }
-
-      const result = getTokenAccountIds(token)
-
-      expect(result).toEqual(["token5", "token6"])
-    })
-
-    it("handles mixed groupedTokens (some with prefix, some without)", () => {
-      const token: UnifiedTokenInfo = {
-        unifiedAssetId: "unified1",
-        symbol: "UTKN",
-        name: "Unified Token",
-        icon: "icon.png",
-        groupedTokens: [
-          {
-            defuseAssetId: "nep141:token7",
-            address: "0x456",
-            symbol: "TKN2",
-            name: "Token2",
-            decimals: 18,
-            icon: "icon2.png",
-            chainName: "base",
-            bridge: "direct",
-          },
-          {
-            defuseAssetId: "token8",
-            address: "0x456",
-            symbol: "TKN2",
-            name: "Token2",
-            decimals: 18,
-            icon: "icon2.png",
-            chainName: "base",
-            bridge: "aurora_engine",
-          },
-        ],
-      }
-
-      const result = getTokenAccountIds(token)
-
-      expect(result).toEqual(["token7", "token8"])
-    })
+    expect(result).toEqual(["token2"])
   })
 
-  describe("tokenAccountIdToDefuseAssetId", () => {
-    it('returns the address unchanged if it already starts with "nep141:" lowercase', () => {
-      const address = "nep141:existingAddress"
-      const result = tokenAccountIdToDefuseAssetId(address)
+  it('removes "nep141:" prefix for each groupedToken in UnifiedTokenInfo', () => {
+    const tokens: BaseTokenInfo[] = [
+      {
+        defuseAssetId: "nep141:token3",
+        address: "0x456",
+        symbol: "TKN2",
+        name: "Token2",
+        decimals: 18,
+        icon: "icon2.png",
+        chainName: "base",
+        bridge: "direct",
+      },
+      {
+        defuseAssetId: "nep141:token4",
+        address: "0x456",
+        symbol: "TKN2",
+        name: "Token2",
+        decimals: 18,
+        icon: "icon2.png",
+        chainName: "base",
+        bridge: "aurora_engine",
+      },
+    ]
 
-      expect(result).toBe("nep141:existingAddress")
-    })
+    const result = getTokenAccountIds(tokens)
 
-    it('returns the address unchanged if it starts with "NEP141:" uppercase', () => {
-      const address = "NEP141:existingAddressUpper"
-      const result = tokenAccountIdToDefuseAssetId(address)
+    expect(result).toEqual(["token3", "token4"])
+  })
 
-      expect(result).toBe("NEP141:existingAddressUpper")
-    })
+  it('handles groupedTokens without "nep141:" prefix in UnifiedTokenInfo', () => {
+    const tokens: BaseTokenInfo[] = [
+      {
+        defuseAssetId: "token5",
+        address: "0x456",
+        symbol: "TKN2",
+        name: "Token2",
+        decimals: 18,
+        icon: "icon2.png",
+        chainName: "base",
+        bridge: "direct",
+      },
+      {
+        defuseAssetId: "token6",
+        address: "0x456",
+        symbol: "TKN2",
+        name: "Token2",
+        decimals: 18,
+        icon: "icon2.png",
+        chainName: "base",
+        bridge: "aurora_engine",
+      },
+    ]
 
-    it('adds "nep141:" prefix if address does not already have it', () => {
-      const address = "newAddress"
-      const result = tokenAccountIdToDefuseAssetId(address)
+    const result = getTokenAccountIds(tokens)
 
-      expect(result).toBe("nep141:newAddress")
-    })
+    expect(result).toEqual(["token5", "token6"])
+  })
 
-    it("returns empty string if input is empty", () => {
-      const address = ""
-      const result = tokenAccountIdToDefuseAssetId(address)
+  it("handles mixed groupedTokens (some with prefix, some without)", () => {
+    const tokens: BaseTokenInfo[] = [
+      {
+        defuseAssetId: "nep141:token7",
+        address: "0x456",
+        symbol: "TKN2",
+        name: "Token2",
+        decimals: 18,
+        icon: "icon2.png",
+        chainName: "base",
+        bridge: "direct",
+      },
+      {
+        defuseAssetId: "token8",
+        address: "0x456",
+        symbol: "TKN2",
+        name: "Token2",
+        decimals: 18,
+        icon: "icon2.png",
+        chainName: "base",
+        bridge: "aurora_engine",
+      },
+    ]
 
-      expect(result).toBe("")
-    })
+    const result = getTokenAccountIds(tokens)
+
+    expect(result).toEqual(["token7", "token8"])
+  })
+})
+
+describe("tokenAccountIdToDefuseAssetId", () => {
+  it('adds "nep141:" prefix if address does not already have it', () => {
+    const address = "newAddress"
+    const result = tokenAccountIdToDefuseAssetId(address)
+
+    expect(result).toBe("nep141:newAddress")
   })
 })

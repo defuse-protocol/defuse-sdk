@@ -1,10 +1,13 @@
 import { formatUnits } from "viem"
+import type { TokenUsdPriceData } from "../../../../hooks/useTokensUsdPrices"
 import type { TokenBalances } from "../../../../services/poaBridgeHttpClient/types"
 import { AuthMethod } from "../../../../types/authHandle"
 import type { SupportedChainName, TokenValue } from "../../../../types/base"
 import type { SwappableToken } from "../../../../types/swap"
+import { assert } from "../../../../utils/assert"
 import { isBaseToken } from "../../../../utils/token"
 import { compareAmounts } from "../../../../utils/tokenUtils"
+import { allBlockchains } from "./constants"
 import type { TokenValueWithPrice } from "./types"
 
 export function chainTypeSatisfiesChainName(
@@ -83,4 +86,35 @@ export const shouldShowHotBalance = (
   return {
     showHotBalances,
   }
+}
+
+export const getBlockchainSelectItems = (
+  token: SwappableToken,
+  balances: { [address: string]: TokenBalances },
+  tokensUsdPriceData?: TokenUsdPriceData
+) => {
+  const availableBlockchains = getAvailableBlockchains(token)
+
+  return Object.fromEntries(
+    allBlockchains
+      .filter((blockchain) => availableBlockchains[blockchain.value])
+      .map((a) => {
+        const address = availableBlockchains[a.value]
+        assert(address != null)
+
+        let hotBalance: TokenValueWithPrice | null = null
+        const balance = balances[address]
+        const price = tokensUsdPriceData?.[address]?.price
+
+        if (balance != null && price != null) {
+          hotBalance = {
+            amount: BigInt(balance.vaultBalance),
+            decimals: balance.decimals,
+            price,
+          }
+        }
+
+        return [a.value, { ...a, hotBalance }]
+      })
+  )
 }

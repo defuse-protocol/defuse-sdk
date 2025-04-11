@@ -28,7 +28,6 @@ import { FieldComboInput } from "../../../../components/Form/FieldComboInput"
 import { WithdrawIntentCard } from "../../../../components/IntentCard/WithdrawIntentCard"
 import { Island } from "../../../../components/Island"
 import { IslandHeader } from "../../../../components/IslandHeader"
-import { HotBalance } from "../../../../components/Select/HotBalance"
 import { Select } from "../../../../components/Select/Select"
 import { nearClient } from "../../../../constants/nearClient"
 import { useModalController } from "../../../../hooks/useModalController"
@@ -56,9 +55,9 @@ import { parseDestinationMemo } from "../../../machines/withdrawFormReducer"
 import { renderIntentCreationResult } from "../../../swap/components/SwapForm"
 import { usePublicKeyModalOpener } from "../../../swap/hooks/usePublicKeyModalOpener"
 import { WithdrawUIMachineContext } from "../../WithdrawUIMachineContext"
+import { HotBalance } from "./HotBalance/HotBalance"
 import { LongWithdrawWarning } from "./LongWithdrawWarning"
 import type { allBlockchains } from "./constants"
-import { useBlockchainSelectItems } from "./hooks/useBlockchainSelectItems"
 import { useTokenBalances } from "./hooks/useTokenBalances"
 import {
   isLiquidityUnavailableSelector,
@@ -67,6 +66,7 @@ import {
 } from "./selectors"
 import {
   chainTypeSatisfiesChainName,
+  getBlockchainSelectItems,
   shouldShowHotBalance,
   truncateUserAddress,
 } from "./utils"
@@ -307,7 +307,7 @@ export const WithdrawForm = ({
 
   const balances = useTokenBalances(token, hasAnyBalance)
 
-  const blockchainSelectItems = useBlockchainSelectItems(
+  const blockchainSelectItems = getBlockchainSelectItems(
     token,
     balances,
     tokensUsdPriceData

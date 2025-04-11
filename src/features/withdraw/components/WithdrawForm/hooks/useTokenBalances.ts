@@ -9,7 +9,7 @@ export const useTokenBalances = (
 ) => {
   const { data } = useTokenBalancesQuery(token, hasAnyBalance)
 
-  const balances: { [key: string]: TokenBalances } = {}
+  const balances: Record<string, TokenBalances> = {}
   if (data) {
     for (const balance of data) {
       balances[tokenAccountIdToDefuseAssetId(balance.nearAddress)] = balance

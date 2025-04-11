@@ -36,17 +36,14 @@ export function createWithdrawalStatusQueryOptions({
 }
 
 export function useTokenBalancesQuery(token: SwappableToken, enabled = true) {
-  const onlyPoaToken = filterOutPoaBridgeTokens(token)
-  const addresses = onlyPoaToken ? getTokenAccountIds(onlyPoaToken) : []
-
-  const sortedAddressesKey =
-    addresses.length > 0 ? [...addresses].sort().join(",") : ""
+  const onlyPoaTokens = filterOutPoaBridgeTokens(token)
+  const addresses = getTokenAccountIds(onlyPoaTokens)
 
   return useQuery({
-    queryKey: ["intents_sdk.token_balances", sortedAddressesKey],
+    queryKey: ["intents_sdk.token_balances", addresses.slice().sort()],
     queryFn: () => getTokenBalancesRequest(addresses),
     staleTime: 60 * 1000, // 1 min
     gcTime: 60 * 1000, // 1 min
-    enabled: Boolean(sortedAddressesKey) && enabled,
+    enabled: addresses.length > 0 && enabled,
   })
 }
