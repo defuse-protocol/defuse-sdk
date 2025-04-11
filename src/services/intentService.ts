@@ -6,6 +6,7 @@ import { logger } from "../logger"
 import type { AuthMethod } from "../types/authHandle"
 import type { WalletSignatureResult } from "../types/swap"
 import { prepareSwapSignedData } from "../utils/prepareBroadcastRequest"
+import { wait } from "../utils/wait"
 import * as solverRelayClient from "./solverRelayHttpClient"
 import type * as types from "./solverRelayHttpClient/types"
 
@@ -133,7 +134,7 @@ export async function waitForIntentSettlement(
     lastSeenResult = res
 
     // Wait a bit before polling again
-    await new Promise((resolve) => setTimeout(resolve, 200))
+    await wait(200)
   }
 }
 
