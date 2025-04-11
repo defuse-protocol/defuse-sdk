@@ -1,4 +1,8 @@
-import { Check as CheckIcon, Copy as CopyIcon } from "@phosphor-icons/react"
+import {
+  Check as CheckIcon,
+  Copy as CopyIcon,
+  Warning as WarningIcon,
+} from "@phosphor-icons/react"
 import { Button, Dialog, Spinner } from "@radix-ui/themes"
 import { useSelector } from "@xstate/react"
 import { useCallback } from "react"
@@ -171,11 +175,33 @@ export function CancellationDialog({
     >
       {snapshot?.matches("idleUnclaimable") ? (
         <>
-          <div>This gift is either already cancelled or executed.</div>
+          <div className="flex justify-center mb-4">
+            <div className="w-16 h-16 rounded-full bg-red-4 flex justify-center items-center">
+              <WarningIcon weight="bold" className="size-7 text-red-a11" />
+            </div>
+          </div>
+          <Dialog.Title className="text-2xl font-black text-gray-12 mb-2 text-center">
+            Your gift is claimed
+            <br />
+            or already cancelled
+          </Dialog.Title>
+          <Dialog.Description className="text-sm font-medium text-gray-11 text-center">
+            This gift has either been successfully claimed or was previously
+            cancelled. 
+          </Dialog.Description>
 
-          <Button type="button" onClick={ackCancellationImpossible}>
-            Ok
-          </Button>
+          <div className="flex flex-col md:flex-row justify-center gap-3 mt-5">
+            <Button
+              type="button"
+              size="4"
+              className="w-full font-bold"
+              variant="outline"
+              color="gray"
+              onClick={ackCancellationImpossible}
+            >
+              Ok
+            </Button>
+          </div>
         </>
       ) : (
         <>
