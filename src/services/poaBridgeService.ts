@@ -71,28 +71,26 @@ function isWithdrawalNotFound(err: unknown) {
   )
 }
 
-export type GetPendingDepositsOkType = Record<
-  BaseTokenInfo["defuseAssetId"],
-  bigint
->
+type TokenBalances = Record<BaseTokenInfo["defuseAssetId"], bigint>
+
+export type GetPendingDepositsOkType = TokenBalances
 
 export type GetPendingDepositsErrorType = types.JSONRPCErrorType
 
 export async function getPendingDeposits(
-  accountId: IntentsUserId,
-  tokenIds: BaseTokenInfo["defuseAssetId"][]
+  accountId: IntentsUserId
 ): Promise<GetPendingDepositsOkType> {
   const depositStatus = await getDepositStatus({
     account_id: accountId,
   })
 
-  const pendingDeposits: GetPendingDepositsOkType = {}
+  const pendingDeposits: TokenBalances = {}
 
   for (const deposit of depositStatus.deposits) {
     // POA bridge returns token IDs without the 'nep141:' prefix (e.g. 'base.omft.near')
     const defuseAssetId = tokenAccountIdToDefuseAssetId(deposit.near_token_id)
 
-    if (tokenIds.includes(defuseAssetId) && deposit.status === "PENDING") {
+    if (deposit.status === "PENDING") {
       pendingDeposits[defuseAssetId] = BigInt(deposit.amount)
     }
   }

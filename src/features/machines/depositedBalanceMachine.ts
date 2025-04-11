@@ -203,10 +203,8 @@ export const depositedBalanceMachine = setup({
         queryClient,
         tokenIds
       ),
-      transitBalanceQueryObserver: createTransitBalanceQueryObserver(
-        queryClient,
-        tokenIds
-      ),
+      transitBalanceQueryObserver:
+        createTransitBalanceQueryObserver(queryClient),
       balances: {},
       transitBalances: {},
       parentRef: input.parentRef,
@@ -398,21 +396,18 @@ type TransitBalanceQueryObserver = ReturnType<
   typeof createTransitBalanceQueryObserver
 >
 
-function createTransitBalanceQueryObserver(
-  queryClient: QueryClient,
-  tokenIds: string[]
-) {
+function createTransitBalanceQueryObserver(queryClient: QueryClient) {
   return new QueryObserver(queryClient, {
-    queryKey: ["transit_balance", { user: null, tokenIds }] as [
+    queryKey: ["transit_balance", { user: null }] as [
       string,
-      { user: null | IntentsUserId; tokenIds: string[] },
+      { user: null | IntentsUserId },
     ],
     queryFn: ({ queryKey }) => {
       if (queryKey[1].user == null) {
         throw new Error("user is null")
       }
 
-      return getPendingDeposits(queryKey[1].user, queryKey[1].tokenIds)
+      return getPendingDeposits(queryKey[1].user)
     },
     enabled: (query) => query.queryKey[1].user != null,
     refetchInterval: 10000,

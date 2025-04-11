@@ -34,13 +34,12 @@ export function createDepositedBalanceQueryOptions({
 
 export function createTransitBalanceQueryOptions({
   userId,
-  tokenIds,
-}: { userId: null | IntentsUserId; tokenIds: string[] }) {
+}: { userId: null | IntentsUserId }) {
   return {
-    queryKey: ["intents_sdk.transit_balance", { userId, tokenIds }],
+    queryKey: ["intents_sdk.transit_balance", { userId }],
     queryFn: ({ queryKey }) => {
       assert(queryKey[1].userId != null)
-      return getPendingDeposits(queryKey[1].userId, queryKey[1].tokenIds)
+      return getPendingDeposits(queryKey[1].userId)
     },
     enabled: (query) => query.queryKey[1].userId != null,
     refetchInterval: 10000,
@@ -49,6 +48,6 @@ export function createTransitBalanceQueryOptions({
     Error,
     BalanceMapping,
     BalanceMapping,
-    [string, { userId: null | IntentsUserId; tokenIds: string[] }]
+    [string, { userId: null | IntentsUserId }]
   >
 }
