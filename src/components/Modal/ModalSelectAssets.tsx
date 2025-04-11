@@ -37,6 +37,7 @@ export type ModalSelectAssetsPayload = {
   fieldName?: "tokenIn" | "tokenOut" | "token"
   balances?: BalanceMapping
   accountId?: string
+  onConfirm?: (payload: ModalSelectAssetsPayload) => void
 }
 
 export type SelectItemToken<T = Token> = {
@@ -82,6 +83,10 @@ export const ModalSelectAssets = () => {
         selectedItem.token,
     }
     onCloseModal(newPayload)
+
+    if (newPayload?.onConfirm) {
+      newPayload.onConfirm(newPayload)
+    }
   }
 
   useEffect(() => {
