@@ -95,8 +95,12 @@ export const backgroundQuoterMachine = fromCallback<
   }
 })
 
-const FAST_QUOTE_WAIT_MS = 500 // immediate price discovery
-const NORMAL_QUOTE_WAIT_MS = 2000 // regular solvers
+const INITIAL_QUOTE_WAIT_MS = [
+  500, // immediate price discovery
+  2000, // normal solvers
+  4000, // slow solvers
+  10000, // slow-MPC solvers
+]
 const SLOW_QUOTE_WAIT_MS = 10000 // MPC solvers
 
 const QUOTE_POLLING_INTERVAL_MS = 5000
@@ -119,12 +123,13 @@ function pollQuote(
       balances: quoteInput.balances,
     },
     onResult: ({ requestId, result }) => {
-      // Often the fast quote (#1) fails with "no quote".
+      // Often fast initial quotes fail with "no quote".
       // But it doesn't mean that there's no quote at all.
       // It means Solvers couldn't provide a quote in a short time.
       // So we ignore this error and wait for the next quote.
       if (
-        requestId < 3 &&
+        // strictly less is used deliberately, because we ignore only all quotes except MPC quotes
+        requestId < INITIAL_QUOTE_WAIT_MS.length &&
         result.tag === "err" &&
         result.value.type === "NO_QUOTES"
       ) {
@@ -162,20 +167,9 @@ function getQuotes({
 }) {
   const queryQuote = queryQuoteWithRequestId()
 
-  queryQuote({ ...quoteParams, waitMs: FAST_QUOTE_WAIT_MS }, { signal }).then(
-    onResult,
-    onError
-  )
-
-  queryQuote({ ...quoteParams, waitMs: NORMAL_QUOTE_WAIT_MS }, { signal }).then(
-    onResult,
-    onError
-  )
-
-  queryQuote({ ...quoteParams, waitMs: SLOW_QUOTE_WAIT_MS }, { signal }).then(
-    onResult,
-    onError
-  )
+  for (const waitMs of INITIAL_QUOTE_WAIT_MS) {
+    queryQuote({ ...quoteParams, waitMs }, { signal }).then(onResult, onError)
+  }
 
   const timer = setInterval(() => {
     queryQuote({ ...quoteParams, waitMs: SLOW_QUOTE_WAIT_MS }, { signal }).then(
