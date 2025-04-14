@@ -40,7 +40,7 @@ export function SwapRateInfo({ tokenIn, tokenOut }: SwapRateInfoProps) {
   }
 
   return (
-    <Accordion.Root type="single" collapsible className="mt-5">
+    <Accordion.Root type="single" collapsible className="mt-3">
       <Accordion.Item value="show">
         <div className="flex justify-between items-center flex-1 text-gray-11">
           <button

@@ -34,6 +34,7 @@ import {
 } from "../../machines/depositedBalanceMachine"
 import type { intentStatusMachine } from "../../machines/intentStatusMachine"
 import type { Context } from "../../machines/swapUIMachine"
+import { SwapPriceImpact } from "./SwapPriceImpact"
 import { SwapRateInfo } from "./SwapRateInfo"
 import { SwapSubmitterContext } from "./SwapSubmitter"
 import { SwapUIMachineContext } from "./SwapUIMachineProvider"
@@ -283,6 +284,9 @@ export const SwapForm = ({ isLoggedIn, renderHostAppLink }: SwapFormProps) => {
             </AuthGate>
           </Flex>
 
+          <div className="mt-5">
+            <SwapPriceImpact amountIn={usdAmountIn} amountOut={usdAmountOut} />
+          </div>
           <SwapRateInfo tokenIn={tokenIn} tokenOut={tokenOut} />
         </Form>
         {renderIntentCreationResult(intentCreationResult)}
