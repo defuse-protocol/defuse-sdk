@@ -1,6 +1,7 @@
 import { settings } from "../constants/settings"
 import { logger } from "../logger"
 import type { BaseTokenInfo, TokenValue } from "../types/base"
+import { assert } from "../utils/assert"
 import {
   adjustDecimals,
   compareAmounts,
@@ -231,12 +232,6 @@ export async function queryQuoteExactOut(
 
 function min(a: bigint, b: bigint): bigint {
   return a < b ? a : b
-}
-
-function assert(condition: unknown, msg?: string): asserts condition {
-  if (!condition) {
-    throw new Error(msg)
-  }
 }
 
 /**
