@@ -18,4 +18,5 @@ export const CHAIN_IDS: Record<SupportedChainName, number | undefined> = {
   zcash: undefined,
   gnosis: 100,
   berachain: 80094,
+  tron: undefined,
 }

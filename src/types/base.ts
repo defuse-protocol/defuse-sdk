@@ -12,6 +12,7 @@ export type SupportedChainName =
   | "zcash"
   | "gnosis"
   | "berachain"
+  | "tron"
 
 export type SupportedBridge = "direct" | "poa" | "aurora_engine"
 

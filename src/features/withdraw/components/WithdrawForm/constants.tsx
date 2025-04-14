@@ -133,6 +133,16 @@ export const allBlockchains = [
     ),
     value: "berachain",
   },
+  {
+    label: "Tron",
+    icon: (
+      <NetworkIcon
+        chainIcon="/static/icons/network/tron.svg"
+        chainName="Tron"
+      />
+    ),
+    value: "tron",
+  },
 ] as const satisfies Array<{
   label: string
   icon: ReactNode
