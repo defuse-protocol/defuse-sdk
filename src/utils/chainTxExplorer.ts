@@ -28,6 +28,8 @@ export function chainTxExplorer(blockchain: SupportedChainName): string | null {
       return "https://gnosisscan.io/tx/"
     case "berachain":
       return "https://berascan.com/tx/"
+    case "tron":
+      return "https://tronscan.org/#/transaction/"
     default:
       blockchain satisfies never
       return null
