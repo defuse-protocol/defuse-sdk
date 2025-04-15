@@ -10,8 +10,8 @@ import {
   setup,
 } from "xstate"
 import { queryClient } from "../../providers/QueryClientProvider"
-import { getPendingDeposits } from "../../sdk/poaBridge/getPendingDeposits"
 import { getDepositedBalances } from "../../services/defuseBalanceService"
+import { getTransitBalance } from "../../services/getTransitBalance"
 import type { AuthMethod } from "../../types/authHandle"
 import type {
   BaseTokenInfo,
@@ -407,7 +407,7 @@ function createTransitBalanceQueryObserver(queryClient: QueryClient) {
         throw new Error("user is null")
       }
 
-      return getPendingDeposits(queryKey[1].user)
+      return getTransitBalance(queryKey[1].user)
     },
     enabled: (query) => query.queryKey[1].user != null,
     refetchInterval: 10000,
