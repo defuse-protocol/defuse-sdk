@@ -456,7 +456,6 @@ export const WithdrawForm = ({
                       </Select.Hint>
                     }
                     disabled={
-                      blockchainSelectItems &&
                       Object.keys(blockchainSelectItems).length === 1 &&
                       field.value ===
                         Object.values(blockchainSelectItems)[0]?.value

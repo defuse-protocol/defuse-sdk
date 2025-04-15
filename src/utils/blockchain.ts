@@ -13,12 +13,15 @@ export const filterChains = (
   if (searchValue === "") {
     return candidates
   }
+
+  const lowerCaseSearchValue = searchValue.toLowerCase()
+
   return Object.fromEntries(
     Object.entries(candidates).filter(
       ([key, chain]) =>
-        chain.label.toLowerCase().includes(searchValue.toLowerCase()) ||
-        chain.value.toLowerCase().includes(searchValue.toLowerCase()) ||
-        key.toLowerCase().includes(searchValue.toLowerCase())
+        chain.label.toLowerCase().includes(lowerCaseSearchValue) ||
+        chain.value.toLowerCase().includes(lowerCaseSearchValue) ||
+        key.toLowerCase().includes(lowerCaseSearchValue)
     )
   )
 }

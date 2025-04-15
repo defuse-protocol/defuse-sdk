@@ -40,18 +40,16 @@ export const ModalSelectNetwork = ({
   const availableChains = useMemo(() => availableChainsForToken(token), [token])
   const filteredChains = filterChains(availableChains, searchValue)
 
-  const disabledChains = () => {
-    const disabledChains: Record<
-      string,
-      { label: string; icon: ReactNode; value: string }
-    > = {}
-    Object.values(chains).map((chain) => {
+  const disabledChains = useMemo(() => {
+    return Object.values(chains).reduce<
+      Record<string, { label: string; icon: ReactNode; value: string }>
+    >((acc, chain) => {
       if (!filteredChains[chain.value]) {
-        disabledChains[chain.value] = chain
+        acc[chain.value] = chain
       }
-    })
-    return filterChains(disabledChains, searchValue)
-  }
+      return acc
+    }, {})
+  }, [chains, filteredChains])
 
   const onChangeNetwork = (network: SupportedChainName) => {
     selectNetwork(network)
@@ -61,7 +59,7 @@ export const ModalSelectNetwork = ({
   const availableNetworks = Object.keys(filteredChains).map(
     (key) => key as BlockchainEnum
   )
-  const disabledNetworks = Object.keys(disabledChains()).map(
+  const disabledNetworks = Object.keys(disabledChains).map(
     (key) => key as BlockchainEnum
   )
 
@@ -87,15 +85,14 @@ export const ModalSelectNetwork = ({
         </div>
 
         <div className="z-10 flex-1 overflow-y-auto  -mr-[var(--inset-padding-right)] pr-[var(--inset-padding-right)]">
-          {Object.keys({ ...filteredChains, ...disabledChains }).length ===
-          0 ? (
+          {[...availableNetworks, ...disabledNetworks].length === 0 ? (
             <ModalNoResults
               text="No networks found"
               handleSearchClear={() => setSearchValue("")}
             />
           ) : (
             <div className="flex flex-col gap-2 divide-y divide-gray-300">
-              {Object.keys(filteredChains).length > 0 && (
+              {availableNetworks.length > 0 && (
                 <div className="flex flex-col gap-2">
                   <NetworkList
                     networks={availableNetworks}
@@ -104,7 +101,7 @@ export const ModalSelectNetwork = ({
                   />
                 </div>
               )}
-              {Object.keys(disabledNetworks).length > 0 && (
+              {disabledNetworks.length > 0 && (
                 <div className="flex flex-col gap-2 pt-4">
                   <div className="flex flex-row justify-start items-center gap-2">
                     <Text size="1" weight="bold" className="text-gray-500">

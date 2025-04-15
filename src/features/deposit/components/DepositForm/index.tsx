@@ -93,7 +93,6 @@ export const DepositForm = ({
   const onCloseNetworkModal = () => setIsNetworkModalOpen(false)
 
   const onChangeNetwork = (network: SupportedChainName) => {
-    // console.log("onChangeNetwork", network)
     setValue("network", assetNetworkAdapter[network])
     onCloseNetworkModal()
   }
@@ -176,7 +175,7 @@ export const DepositForm = ({
 
   const chainOptions = token != null ? availableChainsForToken(token) : {}
   const networkEnum = assetNetworkAdapter[network as SupportedChainName]
-
+  const singleNetwork = Object.keys(chainOptions).length === 1
   return (
     <Island className="widget-container flex flex-col gap-4">
       <IslandHeader heading="Deposit" condensed />
@@ -217,9 +216,7 @@ export const DepositForm = ({
                     onClick={() => setIsNetworkModalOpen(true)}
                     hint={
                       <Select.Hint>
-                        {Object.keys(chainOptions).length === 1
-                          ? "This network only"
-                          : "Network"}
+                        {singleNetwork ? "This network only" : "Network"}
                       </Select.Hint>
                     }
                     disabled={
