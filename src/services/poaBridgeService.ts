@@ -1,14 +1,14 @@
 import { RpcRequestError } from "../errors/request"
+import {
+  getDepositStatus,
+  getWithdrawalStatus,
+  type types,
+} from "../sdk/poaBridgeHttpClient"
 import type { BaseTokenInfo } from "../types/base"
 import type { IntentsUserId } from "../types/intentsUserId"
 import { assert, type AssertErrorType } from "../utils/assert"
 import { tokenAccountIdToDefuseAssetId } from "../utils/tokenUtils"
 import { wait } from "../utils/wait"
-import {
-  getDepositStatus,
-  getWithdrawalStatus,
-  type types,
-} from "./poaBridgeHttpClient"
 
 export type WaitForWithdrawalCompletionOkType = {
   destinationTxHash: string

@@ -30,6 +30,10 @@ import type { depositGenerateAddressMachine } from "../features/machines/deposit
 import { getNearTxSuccessValue } from "../features/machines/getTxMachine"
 import type { storageDepositAmountMachine } from "../features/machines/storageDepositAmountMachine"
 import { logger } from "../logger"
+import {
+  getDepositAddress,
+  getSupportedTokens,
+} from "../sdk/poaBridgeHttpClient"
 import { AuthMethod } from "../types/authHandle"
 import type { BaseTokenInfo, SupportedChainName } from "../types/base"
 import type { SendTransactionEVMParams, Transaction } from "../types/deposit"
@@ -39,7 +43,6 @@ import { assert } from "../utils/assert"
 import { authHandleToIntentsUserId } from "../utils/authIdentity"
 import { getEVMChainId } from "../utils/evmChainId"
 import { isNativeToken } from "../utils/token"
-import { getDepositAddress, getSupportedTokens } from "./poaBridgeHttpClient"
 
 export type PreparationOutput =
   | {

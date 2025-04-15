@@ -1,5 +1,5 @@
 import { useTokenBalancesQuery } from "../../../../../queries/poaBridgeQueries"
-import type { TokenBalances } from "../../../../../services/poaBridgeHttpClient/types"
+import type { TokenBalances } from "../../../../../sdk/poaBridgeHttpClient/types"
 import type { SwappableToken } from "../../../../../types/swap"
 import { tokenAccountIdToDefuseAssetId } from "../../../../../utils/tokenUtils"
 
