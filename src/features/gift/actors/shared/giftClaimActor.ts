@@ -6,7 +6,7 @@ import {
   type PublishIntentsErr,
   publishIntents,
   waitForIntentSettlement,
-} from "../../../../services/intentService"
+} from "../../../../sdk/solverRelay/intentService"
 import { assert } from "../../../../utils/assert"
 import { signGiftTakerMessage } from "../../utils/signGiftTakerMessage"
 import type { GiftInfo } from "./getGiftInfo"

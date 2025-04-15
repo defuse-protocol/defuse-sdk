@@ -1,4 +1,4 @@
-import { waitForIntentSettlement } from "src/services/intentService"
+import { waitForIntentSettlement } from "src/sdk/solverRelay/intentService"
 import {
   type ActorRefFrom,
   type InputFrom,

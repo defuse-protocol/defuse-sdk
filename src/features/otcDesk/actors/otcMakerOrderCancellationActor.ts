@@ -6,7 +6,7 @@ import { logger } from "../../../logger"
 import {
   type PublishIntentsErr,
   publishIntents,
-} from "../../../services/intentService"
+} from "../../../sdk/solverRelay/intentService"
 import type { MultiPayload } from "../../../types/defuse-contracts-types"
 import type { WalletSignatureResult } from "../../../types/walletMessage"
 import { assert } from "../../../utils/assert"
