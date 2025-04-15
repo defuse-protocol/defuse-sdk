@@ -16,4 +16,5 @@ export enum BlockchainEnum {
   ZCASH = "zec:mainnet",
   GNOSIS = "eth:100",
   BERACHAIN = "eth:80094",
+  TRON = "tron:mainnet",
 }

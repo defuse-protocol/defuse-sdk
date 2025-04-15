@@ -1,6 +1,6 @@
 import { formatUnits } from "viem"
 import type { TokenUsdPriceData } from "../../../../hooks/useTokensUsdPrices"
-import type { TokenBalances } from "../../../../services/poaBridgeHttpClient/types"
+import type { TokenBalances } from "../../../../sdk/poaBridgeHttpClient/types"
 import { AuthMethod } from "../../../../types/authHandle"
 import type { SupportedChainName, TokenValue } from "../../../../types/base"
 import type { SwappableToken } from "../../../../types/swap"
@@ -61,10 +61,13 @@ export const getAvailableBlockchains = (token: SwappableToken) =>
 export const shouldShowHotBalance = (
   balances: { [address: string]: TokenBalances },
   tokenInBalance?: TokenValue
-) => {
+): boolean => {
   const { amount: userBalance, decimals: userBalanceDecimals } =
     tokenInBalance ?? { amount: 0n, decimals: 1 }
-  let showHotBalances = userBalance > 0
+  const userHasAnyBalance = userBalance > 0
+  if (!userHasAnyBalance) {
+    return false
+  }
 
   let anyHotBalanceIsLessThanUserBalance = false
   for (const address in balances) {
@@ -81,11 +84,7 @@ export const shouldShowHotBalance = (
     }
   }
 
-  showHotBalances = showHotBalances && anyHotBalanceIsLessThanUserBalance
-
-  return {
-    showHotBalances,
-  }
+  return anyHotBalanceIsLessThanUserBalance
 }
 
 export const getBlockchainSelectItems = (

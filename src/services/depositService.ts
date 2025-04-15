@@ -30,6 +30,10 @@ import type { depositGenerateAddressMachine } from "../features/machines/deposit
 import { getNearTxSuccessValue } from "../features/machines/getTxMachine"
 import type { storageDepositAmountMachine } from "../features/machines/storageDepositAmountMachine"
 import { logger } from "../logger"
+import {
+  getDepositAddress,
+  getSupportedTokens,
+} from "../sdk/poaBridgeHttpClient"
 import { AuthMethod } from "../types/authHandle"
 import type { BaseTokenInfo, SupportedChainName } from "../types/base"
 import type { SendTransactionEVMParams, Transaction } from "../types/deposit"
@@ -39,7 +43,6 @@ import { assert } from "../utils/assert"
 import { authHandleToIntentsUserId } from "../utils/authIdentity"
 import { getEVMChainId } from "../utils/evmChainId"
 import { isNativeToken } from "../utils/token"
-import { getDepositAddress, getSupportedTokens } from "./poaBridgeHttpClient"
 
 export type PreparationOutput =
   | {
@@ -718,6 +721,7 @@ export function getAvailableDepositRoutes(
         case BlockchainEnum.ZCASH:
         case BlockchainEnum.GNOSIS:
         case BlockchainEnum.BERACHAIN:
+        case BlockchainEnum.TRON:
           return {
             activeDeposit: false,
             passiveDeposit: true,
@@ -759,6 +763,7 @@ export function getAvailableDepositRoutes(
         case BlockchainEnum.DOGECOIN:
         case BlockchainEnum.XRPLEDGER:
         case BlockchainEnum.ZCASH:
+        case BlockchainEnum.TRON:
           return {
             activeDeposit: false,
             passiveDeposit: true,
@@ -785,6 +790,7 @@ export function getAvailableDepositRoutes(
         case BlockchainEnum.ZCASH:
         case BlockchainEnum.GNOSIS:
         case BlockchainEnum.BERACHAIN:
+        case BlockchainEnum.TRON:
           return {
             activeDeposit: false,
             passiveDeposit: true,
@@ -817,6 +823,7 @@ export function getAvailableDepositRoutes(
         case BlockchainEnum.GNOSIS:
         case BlockchainEnum.BERACHAIN:
         case BlockchainEnum.SOLANA:
+        case BlockchainEnum.TRON:
           return {
             activeDeposit: false,
             passiveDeposit: true,
@@ -860,6 +867,8 @@ export function getWalletRpcUrl(network: BlockchainEnum): string {
       return settings.rpcUrls.gnosis
     case BlockchainEnum.BERACHAIN:
       return settings.rpcUrls.berachain
+    case BlockchainEnum.TRON:
+      return settings.rpcUrls.tron
     default:
       network satisfies never
       throw new Error("exhaustive check failed")

@@ -14,7 +14,7 @@ import {
   createWithdrawIntentMessage,
 } from "../../../core/messages"
 import type { MultiPayload } from "../../../types/defuse-contracts-types"
-import type { WalletMessage } from "../../../types/swap"
+import type { WalletMessage } from "../../../types/walletMessage"
 import { normalizeERC191Signature } from "../../../utils/prepareBroadcastRequest"
 import {
   GeneralPayloadObjectSchema,

@@ -26,7 +26,7 @@ export function useWatchHoldings({
   return useQueries({
     queries: [
       createDepositedBalanceQueryOptions({ userId, tokenIds }),
-      createTransitBalanceQueryOptions({ userId, tokenIds }),
+      createTransitBalanceQueryOptions({ userId }),
       createTokenUsdPricesQueryOptions(),
     ],
     combine: (results) => combineBalances(tokenList, results),

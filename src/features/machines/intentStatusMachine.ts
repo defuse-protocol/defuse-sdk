@@ -18,6 +18,7 @@ import type {
   SupportedBridge,
   UnifiedTokenInfo,
 } from "../../types/base"
+import { assert } from "../../utils/assert"
 import type { IntentDescription } from "./swapIntentMachine"
 
 type ChildEvent = {
@@ -233,9 +234,3 @@ export const intentStatusMachine = setup({
     },
   },
 })
-
-function assert(condition: unknown, msg?: string): asserts condition {
-  if (!condition) {
-    throw new Error(msg)
-  }
-}

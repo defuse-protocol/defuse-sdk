@@ -97,4 +97,11 @@ describe("validateAddress", () => {
     expect(validateAddress(unifiedAddress, "zcash")).toBe(false)
     expect(validateAddress(texAddress, "zcash")).toBe(true)
   })
+
+  it("should validate Tron addresses", () => {
+    const base58Address = "TNPeeaaFB7K9cmo4uQpcU32zGK8G1NYqeL"
+    const hexAddress = "418840E6C55B9ADA326D211D818C34A994AECED808"
+    expect(validateAddress(base58Address, "tron")).toBe(true)
+    expect(validateAddress(hexAddress, "tron")).toBe(true)
+  })
 })

@@ -1,18 +1,19 @@
 import { settings } from "../constants/settings"
 import { logger } from "../logger"
+import { quote } from "../sdk/solverRelayHttpClient"
+import type {
+  FailedQuote,
+  Quote,
+  QuoteResponse,
+} from "../sdk/solverRelayHttpClient/types"
 import type { BaseTokenInfo, TokenValue } from "../types/base"
+import { assert } from "../utils/assert"
 import {
   adjustDecimals,
   compareAmounts,
   computeTotalBalanceDifferentDecimals,
   deduplicateTokens,
 } from "../utils/tokenUtils"
-import { quote } from "./solverRelayHttpClient"
-import type {
-  FailedQuote,
-  Quote,
-  QuoteResponse,
-} from "./solverRelayHttpClient/types"
 
 export function isFailedQuote(
   quote: Quote | FailedQuote
@@ -231,12 +232,6 @@ export async function queryQuoteExactOut(
 
 function min(a: bigint, b: bigint): bigint {
   return a < b ? a : b
-}
-
-function assert(condition: unknown, msg?: string): asserts condition {
-  if (!condition) {
-    throw new Error(msg)
-  }
 }
 
 /**
@@ -482,7 +477,7 @@ export async function quoteWithLog(
     if (
       logBalanceSufficient &&
       // We don't care about fast quotes, since they fail often
-      (params.wait_ms == null || params.wait_ms > 1000)
+      (params.wait_ms == null || params.wait_ms > 2500)
     ) {
       logger.warn(
         "quote: No liquidity available for user with sufficient balance",

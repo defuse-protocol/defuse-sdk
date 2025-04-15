@@ -3,12 +3,12 @@ import { Err, Ok, type Result } from "@thames/monads"
 import { BaseError } from "../errors/base"
 import { HttpRequestError } from "../errors/request"
 import { logger } from "../logger"
+import * as solverRelayClient from "../sdk/solverRelayHttpClient"
+import type * as types from "../sdk/solverRelayHttpClient/types"
 import type { AuthMethod } from "../types/authHandle"
-import type { WalletSignatureResult } from "../types/swap"
+import type { WalletSignatureResult } from "../types/walletMessage"
 import { prepareSwapSignedData } from "../utils/prepareBroadcastRequest"
 import { wait } from "../utils/wait"
-import * as solverRelayClient from "./solverRelayHttpClient"
-import type * as types from "./solverRelayHttpClient/types"
 
 export type PublishIntentResult =
   | { tag: "ok"; value: string }

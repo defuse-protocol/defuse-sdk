@@ -1,4 +1,5 @@
-import { bech32m } from "@scure/base"
+import { sha256 } from "@noble/hashes/sha256"
+import { base58, bech32m, hex } from "@scure/base"
 import { PublicKey } from "@solana/web3.js"
 import {
   isValidClassicAddress as xrp_isValidClassicAddress,
@@ -46,6 +47,9 @@ export function validateAddress(
     case "zcash":
       return validateZcashAddress(address)
 
+    case "tron":
+      return validateTronAddress(address)
+
     default:
       blockchain satisfies never
       return false
@@ -80,4 +84,45 @@ function validateZcashAddress(address: string) {
   }
 
   return false
+}
+
+/**
+ * Validates Tron addresses
+ * Supports:
+ * - hex addresses
+ * - base58 addresses
+ * https://developers.tron.network/docs/account
+ */
+function validateTronAddress(address: string): boolean {
+  return validateTronBase58Address(address) || validateTronHexAddress(address)
+}
+
+function validateTronBase58Address(address: string): boolean {
+  try {
+    const decoded = base58.decode(address)
+
+    if (decoded.length !== 25) return false
+
+    // The first 21 bytes are the address data, the last 4 bytes are the checksum.
+    const data = decoded.slice(0, 21)
+    const checksum = decoded.slice(21)
+
+    const expectedChecksum = sha256(sha256(data)).slice(0, 4)
+    for (let i = 0; i < 4; i++) {
+      if (checksum[i] !== expectedChecksum[i]) return false
+    }
+
+    return data[0] === 0x41
+  } catch {
+    return false
+  }
+}
+
+function validateTronHexAddress(address: string): boolean {
+  try {
+    const decoded = hex.decode(address)
+    return decoded.length === 21 && decoded[0] === 0x41
+  } catch {
+    return false
+  }
 }

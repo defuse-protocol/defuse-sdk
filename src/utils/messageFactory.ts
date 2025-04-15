@@ -7,10 +7,10 @@ import type {
   Intent,
   Nep413DefuseMessageFor_DefuseIntents,
 } from "../types/defuse-contracts-types"
-import type { WalletMessage } from "../types/swap"
 import { assert } from "./assert"
 
 import type { IntentsUserId } from "../types/intentsUserId"
+import type { WalletMessage } from "../types/walletMessage"
 
 /**
  * @param tokenDeltas

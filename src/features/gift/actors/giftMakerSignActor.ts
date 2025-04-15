@@ -17,7 +17,10 @@ import type {
   TokenValue,
   UnifiedTokenInfo,
 } from "../../../types/base"
-import type { WalletMessage, WalletSignatureResult } from "../../../types/swap"
+import type {
+  WalletMessage,
+  WalletSignatureResult,
+} from "../../../types/walletMessage"
 import { findError } from "../../../utils/errors"
 import { randomDefuseNonce } from "../../../utils/messageFactory"
 import {

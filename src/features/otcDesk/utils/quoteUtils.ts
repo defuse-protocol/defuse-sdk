@@ -1,11 +1,11 @@
 import { Err, Ok, type Result } from "@thames/monads"
 import { settings } from "../../../constants/settings"
+import type { FailedQuote } from "../../../sdk/solverRelayHttpClient/types"
 import {
   type AggregatedQuote,
   isFailedQuote,
   quoteWithLog,
 } from "../../../services/quoteService"
-import type { FailedQuote } from "../../../services/solverRelayHttpClient/types"
 
 export type AggregatedQuoteErr =
   | { reason: "NO_QUOTES" }

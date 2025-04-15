@@ -10,7 +10,10 @@ import {
 } from "../../core/formatters"
 import { logger } from "../../logger"
 import type { MultiPayload } from "../../types/defuse-contracts-types"
-import type { WalletMessage, WalletSignatureResult } from "../../types/swap"
+import type {
+  WalletMessage,
+  WalletSignatureResult,
+} from "../../types/walletMessage"
 import { assert } from "../../utils/assert"
 import { toError } from "../../utils/errors"
 import {

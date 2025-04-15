@@ -12,7 +12,10 @@ import {
 import type { SignerCredentials } from "../../../core/formatters"
 import { logger } from "../../../logger"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../../types/base"
-import type { WalletMessage, WalletSignatureResult } from "../../../types/swap"
+import type {
+  WalletMessage,
+  WalletSignatureResult,
+} from "../../../types/walletMessage"
 import { assert } from "../../../utils/assert"
 import { toError } from "../../../utils/errors"
 import {

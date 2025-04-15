@@ -9,11 +9,11 @@ import {
   type SnapshotFrom,
   fromPromise,
 } from "xstate"
+import type { SwappableToken } from "../../../types/swap"
 import type {
-  SwappableToken,
   WalletMessage,
   WalletSignatureResult,
-} from "../../../types/swap"
+} from "../../../types/walletMessage"
 import { computeTotalDeltaDifferentDecimals } from "../../../utils/tokenUtils"
 import { swapIntentMachine } from "../../machines/swapIntentMachine"
 import { swapUIMachine } from "../../machines/swapUIMachine"

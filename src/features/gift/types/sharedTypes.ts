@@ -1,6 +1,9 @@
 import type { SignerCredentials } from "../../../core/formatters"
 import type { MultiPayload } from "../../../types/defuse-contracts-types"
-import type { WalletMessage, WalletSignatureResult } from "../../../types/swap"
+import type {
+  WalletMessage,
+  WalletSignatureResult,
+} from "../../../types/walletMessage"
 
 export type SignMessage = (
   params: WalletMessage

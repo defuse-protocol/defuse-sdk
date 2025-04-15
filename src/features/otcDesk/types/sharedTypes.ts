@@ -1,6 +1,9 @@
 import type { Result } from "@thames/monads"
 import type { TokenValue } from "../../../types/base"
-import type { WalletMessage, WalletSignatureResult } from "../../../types/swap"
+import type {
+  WalletMessage,
+  WalletSignatureResult,
+} from "../../../types/walletMessage"
 
 export type SignMessage = (
   params: WalletMessage

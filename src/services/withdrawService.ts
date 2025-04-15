@@ -17,6 +17,7 @@ import {
 } from "../features/machines/swapIntentMachine"
 import type { State as WithdrawFormContext } from "../features/machines/withdrawFormReducer"
 import { logger } from "../logger"
+import type { FailedQuote } from "../sdk/solverRelayHttpClient/types"
 import type { BaseTokenInfo, TokenValue, UnifiedTokenInfo } from "../types/base"
 import { assert } from "../utils/assert"
 import { isBaseToken, isFungibleToken } from "../utils/token"
@@ -30,7 +31,6 @@ import {
 } from "../utils/tokenUtils"
 import { getNEP141StorageRequired } from "./nep141StorageService"
 import { type QuoteResult, queryQuoteExactOut } from "./quoteService"
-import type { FailedQuote } from "./solverRelayHttpClient/types"
 
 interface SwapRequirement {
   swapParams: QuoteInput

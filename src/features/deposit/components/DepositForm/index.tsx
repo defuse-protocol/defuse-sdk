@@ -429,6 +429,16 @@ export function getBlockchainsOptions(): Record<
       ),
       value: BlockchainEnum.BERACHAIN,
     },
+    [BlockchainEnum.TRON]: {
+      label: "Tron",
+      icon: (
+        <NetworkIcon
+          chainIcon="/static/icons/network/tron.svg"
+          chainName="Tron"
+        />
+      ),
+      value: BlockchainEnum.TRON,
+    },
   }
   return options
 }
