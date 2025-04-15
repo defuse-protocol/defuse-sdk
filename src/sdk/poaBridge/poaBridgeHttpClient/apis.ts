@@ -1,5 +1,5 @@
-import { config as globalConfig } from "../../config"
-import { request } from "../../utils/request"
+import { config as globalConfig } from "../../../config"
+import { request } from "../../../utils/request"
 import { jsonRPCRequest } from "./runtime"
 import type * as types from "./types"
 
@@ -39,7 +39,7 @@ export async function getDepositStatus(
     config
   )
   // biome-ignore lint/suspicious/noExplicitAny: <explanation>
-  return (result as any) ?? { deposits: [] }
+  return result as any
 }
 
 export async function getWithdrawalStatus(

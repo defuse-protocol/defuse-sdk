@@ -21,6 +21,7 @@ import { SelectTriggerLike } from "../../../../components/Select/SelectTriggerLi
 import { Separator } from "../../../../components/Separator"
 import { getPOABridgeInfo } from "../../../../features/machines/poaBridgeInfoActor"
 import { useModalStore } from "../../../../providers/ModalStoreProvider"
+import { BlockchainEnum } from "../../../../sdk/poaBridge/constants/blockchains"
 import { getAvailableDepositRoutes } from "../../../../services/depositService"
 import { ModalType } from "../../../../stores/modalStore"
 import type { AuthMethod } from "../../../../types/authHandle"
@@ -30,7 +31,6 @@ import type {
   UnifiedTokenInfo,
 } from "../../../../types/base"
 import type { RenderHostAppLink } from "../../../../types/hostAppLink"
-import { BlockchainEnum } from "../../../../types/interfaces"
 import type { SwappableToken } from "../../../../types/swap"
 import { isBaseToken, isUnifiedToken } from "../../../../utils/token"
 import { DepositUIMachineContext } from "../DepositUIMachineProvider"

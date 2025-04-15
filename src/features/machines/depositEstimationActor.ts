@@ -6,12 +6,12 @@ import { assert } from "src/utils/assert"
 import { getEVMChainId } from "src/utils/evmChainId"
 import type { Address } from "viem"
 import { assign, fromPromise, setup } from "xstate"
+import { BlockchainEnum } from "../../sdk/poaBridge/constants/blockchains"
 import {
   estimateEVMTransferCost,
   estimateSolanaTransferCost,
 } from "../../services/estimateService"
 import type { BaseTokenInfo, SupportedChainName } from "../../types/base"
-import { BlockchainEnum } from "../../types/interfaces"
 import { assetNetworkAdapter } from "../../utils/adapters"
 import { isFungibleToken, isNativeToken } from "../../utils/token"
 import { validateAddress } from "../../utils/validateAddress"
