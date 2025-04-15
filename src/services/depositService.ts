@@ -30,6 +30,7 @@ import type { depositGenerateAddressMachine } from "../features/machines/deposit
 import { getNearTxSuccessValue } from "../features/machines/getTxMachine"
 import type { storageDepositAmountMachine } from "../features/machines/storageDepositAmountMachine"
 import { logger } from "../logger"
+import { BlockchainEnum } from "../sdk/poaBridge/constants/blockchains"
 import {
   getDepositAddress,
   getSupportedTokens,
@@ -38,7 +39,6 @@ import { AuthMethod } from "../types/authHandle"
 import type { BaseTokenInfo, SupportedChainName } from "../types/base"
 import type { SendTransactionEVMParams, Transaction } from "../types/deposit"
 import type { IntentsUserId } from "../types/intentsUserId"
-import { BlockchainEnum } from "../types/interfaces"
 import { assert } from "../utils/assert"
 import { authHandleToIntentsUserId } from "../utils/authIdentity"
 import { getEVMChainId } from "../utils/evmChainId"
