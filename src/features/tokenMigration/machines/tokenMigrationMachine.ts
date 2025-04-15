@@ -10,7 +10,7 @@ import {
   waitForIntentSettlement,
 } from "../../../services/intentService"
 import type { IntentsUserId } from "../../../types/intentsUserId"
-import type { WalletSignatureResult } from "../../../types/swap"
+import type { WalletSignatureResult } from "../../../types/walletMessage"
 import { assert } from "../../../utils/assert"
 import { makeSwapMessage } from "../../../utils/messageFactory"
 import { signIntentMachine } from "../../machines/signIntentMachine"

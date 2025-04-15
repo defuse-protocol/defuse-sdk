@@ -9,7 +9,10 @@ import type { AuthMethod } from "../../types/authHandle"
 import type { BaseTokenInfo, TokenValue } from "../../types/base"
 import type { Nep413DefuseMessageFor_DefuseIntents } from "../../types/defuse-contracts-types"
 import type { IntentsUserId } from "../../types/intentsUserId"
-import type { WalletMessage, WalletSignatureResult } from "../../types/swap"
+import type {
+  WalletMessage,
+  WalletSignatureResult,
+} from "../../types/walletMessage"
 import { assert } from "../../utils/assert"
 import {
   makeInnerSwapMessage,

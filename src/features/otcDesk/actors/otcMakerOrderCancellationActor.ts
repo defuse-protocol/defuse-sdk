@@ -8,7 +8,7 @@ import {
   publishIntents,
 } from "../../../services/intentService"
 import type { MultiPayload } from "../../../types/defuse-contracts-types"
-import type { WalletSignatureResult } from "../../../types/swap"
+import type { WalletSignatureResult } from "../../../types/walletMessage"
 import { assert } from "../../../utils/assert"
 import {
   type Errors as SignIntentErrors,

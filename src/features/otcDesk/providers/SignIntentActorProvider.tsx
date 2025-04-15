@@ -3,7 +3,7 @@ import { useSelector } from "@xstate/react"
 import { type ReactNode, createContext, useEffect, useState } from "react"
 import { type ActorRefFrom, createActor, toPromise } from "xstate"
 import type { SignerCredentials } from "../../../core/formatters"
-import type { WalletMessage } from "../../../types/swap"
+import type { WalletMessage } from "../../../types/walletMessage"
 import type { SendNearTransaction } from "../../machines/publicKeyVerifierMachine"
 import {
   type Errors,
