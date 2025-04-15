@@ -39,7 +39,7 @@ export async function getDepositStatus(
     config
   )
   // biome-ignore lint/suspicious/noExplicitAny: <explanation>
-  return (result as any) ?? { deposits: [] }
+  return result as any
 }
 
 export async function getWithdrawalStatus(
