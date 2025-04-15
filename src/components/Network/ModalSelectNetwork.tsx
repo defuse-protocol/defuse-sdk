@@ -6,12 +6,12 @@ import {
   availableChainsForToken,
   getBlockchainsOptions,
 } from "src/features/deposit/components/DepositForm"
+import type { BlockchainEnum } from "src/sdk/poaBridge/constants/blockchains"
 import type {
   BaseTokenInfo,
   SupportedChainName,
   UnifiedTokenInfo,
 } from "src/types/base"
-import type { BlockchainEnum } from "src/types/interfaces"
 import { filterChains } from "src/utils/blockchain"
 import { BaseModalDialog } from "../Modal/ModalDialog"
 import { ModalNoResults } from "../Modal/ModalNoResults"
