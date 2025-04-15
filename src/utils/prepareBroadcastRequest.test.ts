@@ -5,7 +5,7 @@ import type {
   SolanaSignatureData,
   WalletMessage,
   WebAuthnSignatureData,
-} from "../types/swap"
+} from "../types/walletMessage"
 import { authHandleToIntentsUserId } from "./authIdentity"
 import { makeInnerSwapMessage, makeSwapMessage } from "./messageFactory"
 import { prepareSwapSignedData } from "./prepareBroadcastRequest"

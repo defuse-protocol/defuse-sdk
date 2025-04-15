@@ -1,7 +1,7 @@
 import { base58 } from "@scure/base"
 import { sign } from "tweetnacl"
 import { verifyMessage as verifyMessageViem } from "viem"
-import type { WalletSignatureResult } from "../types/swap"
+import type { WalletSignatureResult } from "../types/walletMessage"
 import { parsePublicKey, verifyAuthenticatorAssertion } from "./webAuthn"
 
 export async function verifyWalletSignature(

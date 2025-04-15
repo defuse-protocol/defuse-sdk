@@ -4,7 +4,7 @@ import type {
   PublishIntentRequest,
 } from "../services/solverRelayHttpClient/types"
 import type { AuthMethod } from "../types/authHandle"
-import type { WalletSignatureResult } from "../types/swap"
+import type { WalletSignatureResult } from "../types/walletMessage"
 import { assert } from "./assert"
 import { makeWebAuthnMultiPayload } from "./multiPayload/webauthn"
 

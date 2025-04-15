@@ -16,7 +16,10 @@ import type {
   UnifiedTokenInfo,
 } from "../../../types/base"
 import type { MultiPayload } from "../../../types/defuse-contracts-types"
-import type { WalletMessage, WalletSignatureResult } from "../../../types/swap"
+import type {
+  WalletMessage,
+  WalletSignatureResult,
+} from "../../../types/walletMessage"
 import { findError } from "../../../utils/errors"
 import { randomDefuseNonce } from "../../../utils/messageFactory"
 import {

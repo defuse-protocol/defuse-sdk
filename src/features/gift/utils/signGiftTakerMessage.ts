@@ -3,7 +3,7 @@ import { KeyPair } from "near-api-js"
 import { authHandleToIntentsUserId } from "src/utils/authIdentity"
 import type { IntentsUserId, SignerCredentials } from "../../../core/formatters"
 import { formatUserIdentity } from "../../../core/formatters"
-import type { NEP413SignatureData } from "../../../types/swap"
+import type { NEP413SignatureData } from "../../../types/walletMessage"
 import {
   makeInnerTransferMessage,
   makeSwapMessage,
