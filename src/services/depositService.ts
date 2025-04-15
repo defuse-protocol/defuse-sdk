@@ -34,7 +34,7 @@ import { BlockchainEnum } from "../sdk/poaBridge/constants/blockchains"
 import {
   getDepositAddress,
   getSupportedTokens,
-} from "../sdk/poaBridgeHttpClient"
+} from "../sdk/poaBridge/poaBridgeHttpClient"
 import { AuthMethod } from "../types/authHandle"
 import type { BaseTokenInfo, SupportedChainName } from "../types/base"
 import type { SendTransactionEVMParams, Transaction } from "../types/deposit"

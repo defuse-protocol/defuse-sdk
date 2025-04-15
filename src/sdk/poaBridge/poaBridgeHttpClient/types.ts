@@ -1,5 +1,5 @@
-import type { RpcRequestError } from "../../errors/request"
-import type { RequestErrorType } from "../../utils/request"
+import type { RpcRequestError } from "../../../errors/request"
+import type { RequestErrorType } from "../../../utils/request"
 
 export type RequestConfig = {
   timeout?: number | undefined

@@ -1,8 +1,8 @@
 import { RpcRequestError } from "../../errors/request"
 import { assert, type AssertErrorType } from "../../utils/assert"
 import { wait } from "../../utils/wait"
-import { getWithdrawalStatus } from "../poaBridgeHttpClient"
-import type { types } from "../poaBridgeHttpClient"
+import { getWithdrawalStatus } from "./poaBridgeHttpClient"
+import type { types } from "./poaBridgeHttpClient"
 
 export type WaitForWithdrawalCompletionOkType = {
   destinationTxHash: string

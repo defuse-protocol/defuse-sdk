@@ -1,7 +1,7 @@
 import type { BaseTokenInfo } from "../../types/base"
 import type { IntentsUserId } from "../../types/intentsUserId"
 import { tokenAccountIdToDefuseAssetId } from "../../utils/tokenUtils"
-import { getDepositStatus, type types } from "../poaBridgeHttpClient"
+import { getDepositStatus, type types } from "./poaBridgeHttpClient"
 
 type TokenBalances = Record<BaseTokenInfo["defuseAssetId"], bigint>
 

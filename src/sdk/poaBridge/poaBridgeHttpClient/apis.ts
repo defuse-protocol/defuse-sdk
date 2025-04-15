@@ -1,5 +1,5 @@
-import { config as globalConfig } from "../../config"
-import { request } from "../../utils/request"
+import { config as globalConfig } from "../../../config"
+import { request } from "../../../utils/request"
 import { jsonRPCRequest } from "./runtime"
 import type * as types from "./types"
 
