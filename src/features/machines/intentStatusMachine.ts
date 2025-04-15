@@ -8,11 +8,11 @@ import {
   setup,
 } from "xstate"
 import { logger } from "../../logger"
+import { waitForWithdrawalCompletion } from "../../sdk/poaBridge/waitForWithdrawalCompletion"
 import {
   type IntentSettlementResult,
   waitForIntentSettlement,
 } from "../../services/intentService"
-import { waitForWithdrawalCompletion } from "../../services/poaBridgeService"
 import type {
   BaseTokenInfo,
   SupportedBridge,

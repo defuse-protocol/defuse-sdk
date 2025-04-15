@@ -1,6 +1,6 @@
 import { Callout } from "@radix-ui/themes"
+import { BlockchainEnum } from "../../../../sdk/poaBridge/constants/blockchains"
 import type { BaseTokenInfo } from "../../../../types/base"
-import { BlockchainEnum } from "../../../../types/interfaces"
 import { formatTokenValue } from "../../../../utils/format"
 
 const networkSelectToLabel: Record<BlockchainEnum, string> = {

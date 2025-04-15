@@ -2,7 +2,7 @@ import { queryOptions, useQuery } from "@tanstack/react-query"
 import {
   getTokenBalancesRequest,
   getWithdrawalStatus,
-} from "../sdk/poaBridgeHttpClient"
+} from "../sdk/poaBridge/poaBridgeHttpClient"
 import type { SwappableToken } from "../types/swap"
 import {
   filterOutPoaBridgeTokens,

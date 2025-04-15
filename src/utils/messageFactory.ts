@@ -9,6 +9,7 @@ import type {
 } from "../types/defuse-contracts-types"
 import { assert } from "./assert"
 
+import { createWithdrawMemo } from "../sdk/poaBridge/createWithdrawMemo"
 import type { IntentsUserId } from "../types/intentsUserId"
 import type { WalletMessage } from "../types/walletMessage"
 
@@ -200,17 +201,15 @@ function makeInnerWithdrawMessage(params: WithdrawParams): Intent {
       }
 
     case "via_poa_bridge": {
-      const memo = ["WITHDRAW_TO", params.destinationAddress]
-      if (params.destinationMemo) {
-        memo.push(params.destinationMemo)
-      }
-
       return {
         intent: "ft_withdraw",
         token: params.tokenAccountId,
         receiver_id: params.tokenAccountId,
         amount: params.amount.toString(),
-        memo: memo.join(":"),
+        memo: createWithdrawMemo({
+          receiverAddress: params.destinationAddress,
+          xrpMemo: params.destinationMemo,
+        }),
       }
     }
 

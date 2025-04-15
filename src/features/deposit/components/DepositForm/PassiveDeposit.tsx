@@ -2,8 +2,8 @@ import { CheckIcon, CopyIcon } from "@radix-ui/react-icons"
 import { Button, Spinner } from "@radix-ui/themes"
 import { QRCodeSVG } from "qrcode.react"
 import { Copy } from "../../../../components/IntentCard/CopyButton"
+import type { BlockchainEnum } from "../../../../sdk/poaBridge/constants/blockchains"
 import type { BaseTokenInfo } from "../../../../types/base"
-import type { BlockchainEnum } from "../../../../types/interfaces"
 import {
   renderDepositHint,
   renderMinDepositAmountHint,
