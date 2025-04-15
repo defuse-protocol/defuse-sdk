@@ -10,7 +10,7 @@ import {
   setup,
 } from "xstate"
 import { queryClient } from "../../providers/QueryClientProvider"
-import { getPendingDeposits } from "../../sdk/poaBridge/poaBridgeService"
+import { getPendingDeposits } from "../../sdk/poaBridge/getPendingDeposits"
 import { getDepositedBalances } from "../../services/defuseBalanceService"
 import type { AuthMethod } from "../../types/authHandle"
 import type {
