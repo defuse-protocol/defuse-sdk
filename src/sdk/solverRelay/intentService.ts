@@ -7,8 +7,8 @@ import type { AuthMethod } from "../../types/authHandle"
 import type { WalletSignatureResult } from "../../types/walletMessage"
 import { prepareSwapSignedData } from "../../utils/prepareBroadcastRequest"
 import { wait } from "../../utils/wait"
-import * as solverRelayClient from "../solverRelayHttpClient"
-import type * as types from "../solverRelayHttpClient/types"
+import * as solverRelayClient from "./solverRelayHttpClient"
+import type * as types from "./solverRelayHttpClient/types"
 
 export type PublishIntentResult =
   | { tag: "ok"; value: string }

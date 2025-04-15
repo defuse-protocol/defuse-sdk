@@ -1,6 +1,6 @@
 import { Err, Ok, type Result } from "@thames/monads"
 import { settings } from "../../../constants/settings"
-import type { FailedQuote } from "../../../sdk/solverRelayHttpClient/types"
+import type { FailedQuote } from "../../../sdk/solverRelay/solverRelayHttpClient/types"
 import {
   type AggregatedQuote,
   isFailedQuote,

@@ -1,7 +1,7 @@
 import * as v from "valibot"
-import { config as globalConfig } from "../../config"
-import { handleRPCResponse } from "../../utils/handleRPCResponse"
-import { request } from "../../utils/request"
+import { config as globalConfig } from "../../../config"
+import { handleRPCResponse } from "../../../utils/handleRPCResponse"
+import { request } from "../../../utils/request"
 import type * as types from "./types"
 
 const rpcResponseSchema = v.union([

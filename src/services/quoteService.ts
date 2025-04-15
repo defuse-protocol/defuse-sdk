@@ -1,11 +1,11 @@
 import { settings } from "../constants/settings"
 import { logger } from "../logger"
-import { quote } from "../sdk/solverRelayHttpClient"
+import { quote } from "../sdk/solverRelay/solverRelayHttpClient"
 import type {
   FailedQuote,
   Quote,
   QuoteResponse,
-} from "../sdk/solverRelayHttpClient/types"
+} from "../sdk/solverRelay/solverRelayHttpClient/types"
 import type { BaseTokenInfo, TokenValue } from "../types/base"
 import { assert } from "../utils/assert"
 import {
