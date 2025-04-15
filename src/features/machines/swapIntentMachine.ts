@@ -748,6 +748,6 @@ function makeQuotePriorityQueue(tokenOut: BaseTokenInfo) {
       [tokenOut],
       quoteB.tokenDeltas
     )
-    return compareAmounts(amountOutA, amountOutB)
+    return compareAmounts(amountOutB, amountOutA)
   })
 }
