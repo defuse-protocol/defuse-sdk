@@ -9,7 +9,7 @@ import {
   spawnChild,
 } from "xstate"
 import { logger } from "../../logger"
-import type { QuoteResult } from "../../services/quoteService"
+import type { QuoteResult } from "../../sdk/solverRelay/quoteService"
 import type { AuthMethod } from "../../types/authHandle"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../types/base"
 import { assert } from "../../utils/assert"

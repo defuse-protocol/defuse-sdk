@@ -17,6 +17,10 @@ import {
 } from "../features/machines/swapIntentMachine"
 import type { State as WithdrawFormContext } from "../features/machines/withdrawFormReducer"
 import { logger } from "../logger"
+import {
+  type QuoteResult,
+  queryQuoteExactOut,
+} from "../sdk/solverRelay/quoteService"
 import type { FailedQuote } from "../sdk/solverRelay/solverRelayHttpClient/types"
 import type { BaseTokenInfo, TokenValue, UnifiedTokenInfo } from "../types/base"
 import { assert } from "../utils/assert"
@@ -30,7 +34,6 @@ import {
   truncateTokenValue,
 } from "../utils/tokenUtils"
 import { getNEP141StorageRequired } from "./nep141StorageService"
-import { type QuoteResult, queryQuoteExactOut } from "./quoteService"
 
 interface SwapRequirement {
   swapParams: QuoteInput

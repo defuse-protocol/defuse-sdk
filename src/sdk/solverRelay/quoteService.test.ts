@@ -1,15 +1,9 @@
 import { assert, afterEach, describe, expect, it, vi } from "vitest"
-import * as relayClient from "../sdk/solverRelay/solverRelayHttpClient"
-import type {
-  FailedQuote,
-  Quote,
-  QuoteResponse,
-} from "../sdk/solverRelay/solverRelayHttpClient/types"
-import type { BaseTokenInfo, TokenValue } from "../types/base"
+import type { BaseTokenInfo, TokenValue } from "../../types/base"
 import {
   adjustDecimals,
   computeTotalBalanceDifferentDecimals,
-} from "../utils/tokenUtils"
+} from "../../utils/tokenUtils"
 import {
   AmountMismatchError,
   aggregateQuotes,
@@ -17,6 +11,12 @@ import {
   queryQuote,
   sortForOptimalAmountSplitting,
 } from "./quoteService"
+import * as relayClient from "./solverRelayHttpClient"
+import type {
+  FailedQuote,
+  Quote,
+  QuoteResponse,
+} from "./solverRelayHttpClient/types"
 
 vi.spyOn(relayClient, "quote")
 

@@ -1,19 +1,19 @@
-import { settings } from "../constants/settings"
-import { logger } from "../logger"
-import { quote } from "../sdk/solverRelay/solverRelayHttpClient"
-import type {
-  FailedQuote,
-  Quote,
-  QuoteResponse,
-} from "../sdk/solverRelay/solverRelayHttpClient/types"
-import type { BaseTokenInfo, TokenValue } from "../types/base"
-import { assert } from "../utils/assert"
+import { settings } from "../../constants/settings"
+import { logger } from "../../logger"
+import type { BaseTokenInfo, TokenValue } from "../../types/base"
+import { assert } from "../../utils/assert"
 import {
   adjustDecimals,
   compareAmounts,
   computeTotalBalanceDifferentDecimals,
   deduplicateTokens,
-} from "../utils/tokenUtils"
+} from "../../utils/tokenUtils"
+import { quote } from "./solverRelayHttpClient"
+import type {
+  FailedQuote,
+  Quote,
+  QuoteResponse,
+} from "./solverRelayHttpClient/types"
 
 export function isFailedQuote(
   quote: Quote | FailedQuote

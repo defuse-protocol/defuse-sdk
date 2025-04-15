@@ -11,7 +11,7 @@ import { logger } from "../../../logger"
 import {
   AmountMismatchError,
   calculateSplitAmounts,
-} from "../../../services/quoteService"
+} from "../../../sdk/solverRelay/quoteService"
 import type {
   BaseTokenInfo,
   TokenValue,
