@@ -4,12 +4,16 @@ import type { WalletSignatureResult } from "../../types/walletMessage"
 import { prepareSwapSignedData } from "../../utils/prepareBroadcastRequest"
 import * as solverRelayClient from "./solverRelayHttpClient"
 import type * as types from "./solverRelayHttpClient/types"
+import {
+  type ParsedPublishErrors,
+  parseFailedPublishError,
+} from "./utils/parseFailedPublishError"
 
 export type PublishIntentResult =
   | { tag: "ok"; value: string }
   | {
       tag: "err"
-      value: { reason: types.PublishIntentResponseFailure["reason"] }
+      value: ParsedPublishErrors
     }
 
 export async function publishIntent(
@@ -39,12 +43,5 @@ export async function publishIntent(
     return { tag: "ok", value: result.intent_hash }
   }
 
-  if (
-    result.status === "FAILED" &&
-    result.reason.includes("nonce was already used")
-  ) {
-    return { tag: "err", value: { reason: "nonce_used" } }
-  }
-
-  return { tag: "err", value: { reason: result.status } }
+  return { tag: "err", value: parseFailedPublishError(result) }
 }
