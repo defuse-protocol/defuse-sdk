@@ -1,4 +1,3 @@
-import { waitForIntentSettlement } from "src/sdk/solverRelay/intentService"
 import {
   type ActorRefFrom,
   type InputFrom,
@@ -11,6 +10,7 @@ import {
 } from "xstate"
 import type { SignerCredentials } from "../../../core/formatters"
 import { logger } from "../../../logger"
+import { waitForIntentSettlement } from "../../../sdk/solverRelay/waitForIntentSettlement"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../../types/base"
 import type {
   WalletMessage,

@@ -9,7 +9,7 @@ import { createSwapIntentMessage } from "../../../core/messages"
 import {
   type PublishIntentsErr,
   publishIntents,
-} from "../../../sdk/solverRelay/intentService"
+} from "../../../sdk/solverRelay/publishIntents"
 import type { MultiPayload } from "../../../types/defuse-contracts-types"
 import { authHandleToIntentsUserId } from "../../../utils/authIdentity"
 import {

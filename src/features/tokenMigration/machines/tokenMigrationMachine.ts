@@ -3,11 +3,11 @@ import { config } from "../../../config"
 import { nearClient } from "../../../constants/nearClient"
 import type { SignerCredentials } from "../../../core/formatters"
 import { logger } from "../../../logger"
+import { publishIntent } from "../../../sdk/solverRelay/publishIntent"
 import {
   type IntentSettlementResult,
-  publishIntent,
   waitForIntentSettlement,
-} from "../../../sdk/solverRelay/intentService"
+} from "../../../sdk/solverRelay/waitForIntentSettlement"
 import { getDepositedBalances } from "../../../services/defuseBalanceService"
 import type { IntentsUserId } from "../../../types/intentsUserId"
 import type { WalletSignatureResult } from "../../../types/walletMessage"

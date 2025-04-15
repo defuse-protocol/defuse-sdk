@@ -5,7 +5,7 @@ import {
   getUnderlyingBaseTokenInfos,
 } from "src/utils/tokenUtils"
 import { CopyButton } from "../../../components/IntentCard/CopyButton"
-import { waitForIntentSettlement } from "../../../sdk/solverRelay/intentService"
+import { waitForIntentSettlement } from "../../../sdk/solverRelay/waitForIntentSettlement"
 import type { RenderHostAppLink } from "../../../types/hostAppLink"
 import { assert } from "../../../utils/assert"
 import type { GiftInfo } from "../actors/shared/getGiftInfo"

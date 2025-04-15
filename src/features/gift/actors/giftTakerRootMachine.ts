@@ -2,7 +2,7 @@ import { assert } from "src/utils/assert"
 import { type PromiseActorLogic, assign, setup } from "xstate"
 import type { SignerCredentials } from "../../../core/formatters"
 import { logger } from "../../../logger"
-import type { PublishIntentsErr } from "../../../sdk/solverRelay/intentService"
+import type { PublishIntentsErr } from "../../../sdk/solverRelay/publishIntents"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../../types/base"
 import type { MultiPayload } from "../../../types/defuse-contracts-types"
 import {

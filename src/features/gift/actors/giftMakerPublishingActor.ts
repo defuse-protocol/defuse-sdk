@@ -3,7 +3,7 @@ import { logger } from "../../../logger"
 import {
   type PublishIntentsErr,
   publishIntents,
-} from "../../../sdk/solverRelay/intentService"
+} from "../../../sdk/solverRelay/publishIntents"
 import type { MultiPayload } from "../../../types/defuse-contracts-types"
 import { assert } from "../../../utils/assert"
 import type { Errors as SignIntentErrors } from "../../machines/signIntentMachine"
