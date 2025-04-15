@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query"
-import { tokens } from "src/services/tokensUsdPricesHttpClient"
-import type { TokenUsdPriceInfo } from "src/services/tokensUsdPricesHttpClient/types"
+import { tokens } from "src/sdk/tokensUsdPricesHttpClient"
+import type { TokenUsdPriceInfo } from "src/sdk/tokensUsdPricesHttpClient/types"
 
 export const tokensUsdPricesQueryKey = ["tokens-usd-prices"]
 export type TokenUsdPriceData = Record<

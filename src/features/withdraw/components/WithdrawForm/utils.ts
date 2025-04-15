@@ -1,6 +1,6 @@
 import { formatUnits } from "viem"
 import type { TokenUsdPriceData } from "../../../../hooks/useTokensUsdPrices"
-import type { TokenBalances } from "../../../../services/poaBridgeHttpClient/types"
+import type { TokenBalances } from "../../../../sdk/poaBridgeHttpClient/types"
 import { AuthMethod } from "../../../../types/authHandle"
 import type { SupportedChainName, TokenValue } from "../../../../types/base"
 import type { SwappableToken } from "../../../../types/swap"
