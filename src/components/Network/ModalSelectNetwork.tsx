@@ -25,6 +25,7 @@ interface ModalSelectNetworkProps {
   selectedNetwork: SupportedChainName | null
   isOpen?: boolean
   onClose: () => void
+  renderValueDetails?: (address: string) => ReactNode
 }
 
 export const ModalSelectNetwork = ({
@@ -33,6 +34,7 @@ export const ModalSelectNetwork = ({
   selectedNetwork,
   isOpen,
   onClose,
+  renderValueDetails,
 }: ModalSelectNetworkProps) => {
   const [searchValue, setSearchValue] = useState("")
   const chains = getBlockchainsOptions()
@@ -98,6 +100,7 @@ export const ModalSelectNetwork = ({
                     networks={availableNetworks}
                     selectedNetwork={selectedNetwork}
                     onChangeNetwork={onChangeNetwork}
+                    renderValueDetails={renderValueDetails}
                   />
                 </div>
               )}

@@ -24,8 +24,10 @@ import type { intentStatusMachine } from "src/features/machines/intentStatusMach
 import { useModalController } from "src/hooks/useModalController"
 import { useTokensUsdPrices } from "src/hooks/useTokensUsdPrices"
 import { useTokensStore } from "src/providers/TokensStoreProvider"
+import type { BlockchainEnum } from "src/sdk/poaBridge/constants/blockchains"
 import type { PreparationOutput } from "src/services/withdrawService"
 import { ModalType } from "src/stores/modalStore"
+import { reverseAssetNetworkAdapter } from "src/utils/adapters"
 import { formatTokenValue, formatUsdAmount } from "src/utils/format"
 import getTokenUsdPrice from "src/utils/getTokenUsdPrice"
 import { getTokenMaxDecimals } from "src/utils/tokenUtils"
@@ -475,6 +477,21 @@ export const WithdrawForm = ({
                     selectedNetwork={blockchain}
                     isOpen={isNetworkModalOpen}
                     onClose={onCloseNetworkModal}
+                    renderValueDetails={
+                      showHotBalances
+                        ? (address: string) => (
+                            <HotBalance
+                              hotBalance={
+                                blockchainSelectItems[
+                                  reverseAssetNetworkAdapter[
+                                    address as BlockchainEnum
+                                  ]
+                                ]?.hotBalance
+                              }
+                            />
+                          )
+                        : undefined
+                    }
                   />
                 </>
               )}
