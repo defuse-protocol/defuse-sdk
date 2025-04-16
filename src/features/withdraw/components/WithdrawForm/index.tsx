@@ -16,11 +16,19 @@ import {
   Tooltip,
 } from "@radix-ui/themes"
 import { useSelector } from "@xstate/react"
-import { type ReactNode, useEffect } from "react"
+import { type ReactNode, useEffect, useState } from "react"
 import { Controller, useController, useForm } from "react-hook-form"
+import { ModalSelectNetwork } from "src/components/Network/ModalSelectNetwork"
+import { SelectTriggerLike } from "src/components/Select/SelectTriggerLike"
+import type { intentStatusMachine } from "src/features/machines/intentStatusMachine"
+import { useModalController } from "src/hooks/useModalController"
 import { useTokensUsdPrices } from "src/hooks/useTokensUsdPrices"
+import { useTokensStore } from "src/providers/TokensStoreProvider"
+import type { PreparationOutput } from "src/services/withdrawService"
+import { ModalType } from "src/stores/modalStore"
 import { formatTokenValue, formatUsdAmount } from "src/utils/format"
 import getTokenUsdPrice from "src/utils/getTokenUsdPrice"
+import { getTokenMaxDecimals } from "src/utils/tokenUtils"
 import type { ActorRefFrom } from "xstate"
 import { AuthGate } from "../../../../components/AuthGate"
 import { ButtonCustom } from "../../../../components/Button/ButtonCustom"
@@ -32,10 +40,7 @@ import { Island } from "../../../../components/Island"
 import { IslandHeader } from "../../../../components/IslandHeader"
 import { Select } from "../../../../components/Select/Select"
 import { nearClient } from "../../../../constants/nearClient"
-import { useModalController } from "../../../../hooks/useModalController"
 import { logger } from "../../../../logger"
-import { useTokensStore } from "../../../../providers/TokensStoreProvider"
-import { ModalType } from "../../../../stores/modalStore"
 import type {
   BaseTokenInfo,
   SupportedChainName,
@@ -44,15 +49,12 @@ import type {
 } from "../../../../types/base"
 import type { WithdrawWidgetProps } from "../../../../types/withdraw"
 import { parseUnits } from "../../../../utils/parse"
-import { getTokenMaxDecimals } from "../../../../utils/tokenUtils"
 import { validateAddress } from "../../../../utils/validateAddress"
 import {
   balanceSelector,
   transitBalanceSelector,
 } from "../../../machines/depositedBalanceMachine"
-import type { intentStatusMachine } from "../../../machines/intentStatusMachine"
 import { getPOABridgeInfo } from "../../../machines/poaBridgeInfoActor"
-import type { PreparationOutput } from "../../../machines/prepareWithdrawActor"
 import { parseDestinationMemo } from "../../../machines/withdrawFormReducer"
 import { renderIntentCreationResult } from "../../../swap/components/SwapForm"
 import { usePublicKeyModalOpener } from "../../../swap/hooks/usePublicKeyModalOpener"
@@ -90,6 +92,8 @@ export const WithdrawForm = ({
   sendNearTransaction,
   renderHostAppLink,
 }: WithdrawFormProps) => {
+  const [isNetworkModalOpen, setIsNetworkModalOpen] = useState(false)
+
   const isLoggedIn = userAddress != null
   const actorRef = WithdrawUIMachineContext.useActorRef()
   const {
@@ -217,6 +221,13 @@ export const WithdrawForm = ({
     modalType: ModalType
     token: BaseTokenInfo | UnifiedTokenInfo | undefined
   }>(ModalType.MODAL_SELECT_ASSETS)
+
+  const onCloseNetworkModal = () => setIsNetworkModalOpen(false)
+
+  const onChangeNetwork = (network: SupportedChainName) => {
+    setValue("blockchain", network)
+    onCloseNetworkModal()
+  }
 
   const updateTokens = useTokensStore((state) => state.updateTokens)
 
@@ -426,18 +437,17 @@ export const WithdrawForm = ({
                 required: "This field is required",
                 deps: "recipient",
               }}
-              render={({ field }) => {
-                return (
-                  <Select
-                    name={field.name}
-                    value={field.value}
-                    onChange={field.onChange}
-                    disabled={Object.keys(blockchainSelectItems).length === 1}
-                    options={blockchainSelectItems}
-                    placeholder={{
-                      label: "Select network",
-                      icon: <EmptyIcon />,
-                    }}
+              render={({ field }) => (
+                <>
+                  <SelectTriggerLike
+                    label={
+                      blockchainSelectItems[field.value]?.label ??
+                      "Select network"
+                    }
+                    icon={
+                      blockchainSelectItems[field.value]?.icon ?? <EmptyIcon />
+                    }
+                    onClick={() => setIsNetworkModalOpen(true)}
                     hint={
                       <Select.Hint>
                         {Object.keys(blockchainSelectItems).length === 1
@@ -445,20 +455,29 @@ export const WithdrawForm = ({
                           : "Network"}
                       </Select.Hint>
                     }
-                    renderValueDetails={
-                      showHotBalances
-                        ? (address: string) => (
-                            <HotBalance
-                              hotBalance={
-                                blockchainSelectItems[address]?.hotBalance
-                              }
-                            />
-                          )
-                        : undefined
+                    disabled={
+                      Object.keys(blockchainSelectItems).length === 1 &&
+                      field.value ===
+                        Object.values(blockchainSelectItems)[0]?.value
                     }
                   />
-                )
-              }}
+                  {showHotBalances && (
+                    <HotBalance
+                      hotBalance={
+                        blockchainSelectItems[field.value]?.hotBalance
+                      }
+                    />
+                  )}
+
+                  <ModalSelectNetwork
+                    token={token}
+                    selectNetwork={onChangeNetwork}
+                    selectedNetwork={blockchain}
+                    isOpen={isNetworkModalOpen}
+                    onClose={onCloseNetworkModal}
+                  />
+                </>
+              )}
             />
 
             {showHotBalances && (
