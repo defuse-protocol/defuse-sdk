@@ -1,5 +1,6 @@
 import { Text } from "@radix-ui/themes"
 import clsx from "clsx"
+import type { ReactNode } from "react"
 import { getBlockchainsOptions } from "src/features/deposit/components/DepositForm"
 import type { BlockchainEnum } from "src/sdk/poaBridge/constants/blockchains"
 import type { SupportedChainName } from "src/types/base"
@@ -12,6 +13,7 @@ interface NetworkListProps {
   selectedNetwork: SupportedChainName | null
   onChangeNetwork: (network: SupportedChainName) => void
   disabled?: boolean
+  renderValueDetails?: (address: string) => ReactNode
 }
 
 export const NetworkList = ({
@@ -19,6 +21,7 @@ export const NetworkList = ({
   selectedNetwork,
   onChangeNetwork,
   disabled = false,
+  renderValueDetails,
 }: NetworkListProps) => {
   const chains = getBlockchainsOptions()
 
@@ -51,6 +54,7 @@ export const NetworkList = ({
             {isAuroraVirtualChain(reverseAssetNetworkAdapter[chain]) && (
               <PoweredByAuroraLabel />
             )}
+            {renderValueDetails?.(chains[chain].value)}
           </div>
         </button>
       ))}

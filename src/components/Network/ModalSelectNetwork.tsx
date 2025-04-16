@@ -21,6 +21,7 @@ import { NetworkList } from "./NetworksList"
 
 interface ModalSelectNetworkProps {
   token: BaseTokenInfo | UnifiedTokenInfo
+  renderValueDetails?: (address: string) => ReactNode
   selectNetwork: (network: SupportedChainName) => void
   selectedNetwork: SupportedChainName | null
   isOpen?: boolean
@@ -29,6 +30,7 @@ interface ModalSelectNetworkProps {
 
 export const ModalSelectNetwork = ({
   token,
+  renderValueDetails,
   selectNetwork,
   selectedNetwork,
   isOpen,
@@ -98,6 +100,7 @@ export const ModalSelectNetwork = ({
                     networks={availableNetworks}
                     selectedNetwork={selectedNetwork}
                     onChangeNetwork={onChangeNetwork}
+                    renderValueDetails={renderValueDetails}
                   />
                 </div>
               )}
@@ -125,6 +128,7 @@ export const ModalSelectNetwork = ({
                     networks={disabledNetworks}
                     selectedNetwork={selectedNetwork}
                     onChangeNetwork={onChangeNetwork}
+                    renderValueDetails={renderValueDetails}
                   />
                 </div>
               )}
