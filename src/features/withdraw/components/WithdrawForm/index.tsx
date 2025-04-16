@@ -463,13 +463,6 @@ export const WithdrawForm = ({
                         Object.values(blockchainSelectItems)[0]?.value
                     }
                   />
-                  {showHotBalances && (
-                    <HotBalance
-                      hotBalance={
-                        blockchainSelectItems[field.value]?.hotBalance
-                      }
-                    />
-                  )}
 
                   <ModalSelectNetwork
                     token={token}
