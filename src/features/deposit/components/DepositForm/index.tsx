@@ -4,10 +4,11 @@ import { useSelector } from "@xstate/react"
 import { useEffect, useState } from "react"
 import { Controller, useFormContext } from "react-hook-form"
 import { ModalSelectNetwork } from "src/components/Network/ModalSelectNetwork"
+import { assetNetworkAdapter } from "src/utils/adapters"
 import {
-  assetNetworkAdapter,
-  reverseAssetNetworkAdapter,
-} from "src/utils/adapters"
+  availableChainsForToken,
+  getDefaultBlockchainOptionValue,
+} from "src/utils/blockchain"
 import { AssetComboIcon } from "../../../../components/Asset/AssetComboIcon"
 import { AuthGate } from "../../../../components/AuthGate"
 import { EmptyIcon } from "../../../../components/EmptyIcon"
@@ -15,13 +16,12 @@ import { Form } from "../../../../components/Form"
 import { Island } from "../../../../components/Island"
 import { IslandHeader } from "../../../../components/IslandHeader"
 import type { ModalSelectAssetsPayload } from "../../../../components/Modal/ModalSelectAssets"
-import { NetworkIcon } from "../../../../components/Network/NetworkIcon"
 import { Select } from "../../../../components/Select/Select"
 import { SelectTriggerLike } from "../../../../components/Select/SelectTriggerLike"
 import { Separator } from "../../../../components/Separator"
 import { getPOABridgeInfo } from "../../../../features/machines/poaBridgeInfoActor"
 import { useModalStore } from "../../../../providers/ModalStoreProvider"
-import { BlockchainEnum } from "../../../../sdk/poaBridge/constants/blockchains"
+import type { BlockchainEnum } from "../../../../sdk/poaBridge/constants/blockchains"
 import { getAvailableDepositRoutes } from "../../../../services/depositService"
 import { ModalType } from "../../../../stores/modalStore"
 import type { AuthMethod } from "../../../../types/authHandle"
@@ -32,7 +32,7 @@ import type {
 } from "../../../../types/base"
 import type { RenderHostAppLink } from "../../../../types/hostAppLink"
 import type { SwappableToken } from "../../../../types/swap"
-import { isBaseToken, isUnifiedToken } from "../../../../utils/token"
+import { isBaseToken } from "../../../../utils/token"
 import { DepositUIMachineContext } from "../DepositUIMachineProvider"
 import { ActiveDeposit } from "./ActiveDeposit"
 import { DepositMethodSelector } from "./DepositMethodSelector"
@@ -292,183 +292,6 @@ export const DepositForm = ({
       </Form>
     </Island>
   )
-}
-
-export function getBlockchainsOptions(): Record<
-  BlockchainEnum,
-  { label: string; icon: React.ReactNode; value: BlockchainEnum }
-> {
-  const options = {
-    [BlockchainEnum.NEAR]: {
-      label: "Near",
-      icon: (
-        <NetworkIcon
-          chainIcon="/static/icons/network/near.svg"
-          chainName="near"
-        />
-      ),
-      value: BlockchainEnum.NEAR,
-    },
-    [BlockchainEnum.ETHEREUM]: {
-      label: "Ethereum",
-      icon: (
-        <NetworkIcon
-          chainIcon="/static/icons/network/ethereum.svg"
-          chainName="eth"
-        />
-      ),
-      value: BlockchainEnum.ETHEREUM,
-    },
-    [BlockchainEnum.BASE]: {
-      label: "Base",
-      icon: (
-        <NetworkIcon
-          chainIcon="/static/icons/network/base.svg"
-          chainName="base"
-        />
-      ),
-      value: BlockchainEnum.BASE,
-    },
-    [BlockchainEnum.ARBITRUM]: {
-      label: "Arbitrum",
-      icon: (
-        <NetworkIcon
-          chainIcon="/static/icons/network/arbitrum.svg"
-          chainName="arbitrum"
-        />
-      ),
-      value: BlockchainEnum.ARBITRUM,
-    },
-    [BlockchainEnum.BITCOIN]: {
-      label: "Bitcoin",
-      icon: (
-        <NetworkIcon
-          chainIcon="/static/icons/network/btc.svg"
-          chainName="bitcoin"
-        />
-      ),
-      value: BlockchainEnum.BITCOIN,
-    },
-    [BlockchainEnum.SOLANA]: {
-      label: "Solana",
-      icon: (
-        <NetworkIcon
-          chainIcon="/static/icons/network/solana.svg"
-          chainName="solana"
-        />
-      ),
-      value: BlockchainEnum.SOLANA,
-    },
-    [BlockchainEnum.DOGECOIN]: {
-      label: "Dogecoin",
-      icon: (
-        <NetworkIcon
-          chainIcon="/static/icons/network/dogecoin.svg"
-          chainName="dogecoin"
-        />
-      ),
-      value: BlockchainEnum.DOGECOIN,
-    },
-    [BlockchainEnum.TURBOCHAIN]: {
-      label: "TurboChain",
-      icon: (
-        <NetworkIcon
-          chainIcon="/static/icons/network/turbochain.png"
-          chainName="turbochain"
-        />
-      ),
-      value: BlockchainEnum.TURBOCHAIN,
-    },
-    [BlockchainEnum.AURORA]: {
-      label: "Aurora",
-      icon: (
-        <NetworkIcon
-          chainIcon="/static/icons/network/aurora.svg"
-          chainName="aurora"
-        />
-      ),
-      value: BlockchainEnum.AURORA,
-    },
-    [BlockchainEnum.XRPLEDGER]: {
-      label: "XRP Ledger",
-      icon: (
-        <NetworkIcon
-          chainIcon="/static/icons/network/xrpledger.svg"
-          chainName="XRP Ledger"
-        />
-      ),
-      value: BlockchainEnum.XRPLEDGER,
-    },
-    [BlockchainEnum.ZCASH]: {
-      label: "Zcash",
-      icon: (
-        <NetworkIcon
-          chainIcon="/static/icons/network/zcash-icon-black.svg"
-          chainName="zcash"
-        />
-      ),
-      value: BlockchainEnum.ZCASH,
-    },
-    [BlockchainEnum.GNOSIS]: {
-      label: "Gnosis",
-      icon: (
-        <NetworkIcon
-          chainIcon="/static/icons/network/gnosis.svg"
-          chainName="Gnosis"
-        />
-      ),
-      value: BlockchainEnum.GNOSIS,
-    },
-    [BlockchainEnum.BERACHAIN]: {
-      label: "BeraChain",
-      icon: (
-        <NetworkIcon
-          chainIcon="/static/icons/network/berachain.svg"
-          chainName="BeraChain"
-        />
-      ),
-      value: BlockchainEnum.BERACHAIN,
-    },
-    [BlockchainEnum.TRON]: {
-      label: "Tron",
-      icon: (
-        <NetworkIcon
-          chainIcon="/static/icons/network/tron.svg"
-          chainName="Tron"
-        />
-      ),
-      value: BlockchainEnum.TRON,
-    },
-  }
-  return options
-}
-
-export function availableChainsForToken(
-  token: BaseTokenInfo | UnifiedTokenInfo
-): Record<string, { label: string; icon: React.ReactNode; value: string }> {
-  const tokens = isUnifiedToken(token) ? token.groupedTokens : [token]
-  const chains = tokens.map((token) => token.chainName)
-
-  const options = getBlockchainsOptions()
-
-  const res = Object.values(options)
-    .filter((option) =>
-      chains.includes(reverseAssetNetworkAdapter[option.value])
-    )
-    .map((option) => [option.value, option])
-  return Object.fromEntries(res)
-}
-
-function getDefaultBlockchainOptionValue(
-  token: SwappableToken
-): BlockchainEnum | null {
-  if (isBaseToken(token)) {
-    const key = assetNetworkAdapter[token.chainName]
-    return key
-      ? (getBlockchainsOptions()[key]?.value as BlockchainEnum | null)
-      : null
-  }
-  return null
 }
 
 function NotSupportedDepositRoute() {
