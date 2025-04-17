@@ -1,4 +1,4 @@
-import { QuoteError } from "./errors/QuoteError"
+import { QuoteError } from "./errors/quote"
 import type { quote } from "./solverRelayHttpClient"
 import type {
   FailedQuote,
