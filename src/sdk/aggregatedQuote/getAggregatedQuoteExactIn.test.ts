@@ -1,9 +1,9 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
 import type { BaseTokenInfo } from "../../types/base"
 import { adjustDecimals } from "../../utils/tokenUtils"
-import { AggregatedQuoteError, QuoteError } from "./errors/quote"
+import { AggregatedQuoteError, QuoteError } from "../solverRelay/errors/quote"
+import * as relayClient from "../solverRelay/solverRelayHttpClient"
 import { getAggregatedQuoteExactIn } from "./getAggregatedQuoteExactIn"
-import * as relayClient from "./solverRelayHttpClient"
 
 vi.spyOn(relayClient, "quote")
 

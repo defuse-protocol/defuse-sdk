@@ -6,18 +6,19 @@ import {
   compareAmounts,
   computeTotalBalanceDifferentDecimals,
 } from "../../utils/tokenUtils"
-import { AggregatedQuoteError, QuoteError } from "./errors/quote"
+import type { AggregatedQuoteError } from "../solverRelay/errors/quote"
 import {
   type GetQuoteParams,
   type GetQuoteReturnType,
   getQuote,
-} from "./getQuote"
-import type { JSONRPCErrorType } from "./solverRelayHttpClient/types"
-import type { AggregatedQuote } from "./types/quote"
+} from "../solverRelay/getQuote"
+import type { JSONRPCErrorType } from "../solverRelay/solverRelayHttpClient/types"
+import type { AggregatedQuote } from "../solverRelay/types/quote"
+import { aggregateQuotes } from "./aggregateQuotes"
 import {
   type AmountMismatchError,
   calculateSplitAmounts,
-} from "./utils/calculateSplitAmounts"
+} from "./calculateSplitAmounts"
 
 type TokenSlice = BaseTokenInfo
 
@@ -99,71 +100,6 @@ export async function getAggregatedQuoteExactIn({
   )
 
   return aggregateQuotes(quotes, quoteParams)
-}
-
-export function aggregateQuotes(
-  quotes: PromiseSettledResult<GetQuoteReturnType>[],
-  quoteParams: GetQuoteParams["quoteParams"][]
-): AggregatedQuote {
-  const quoteHashes: string[] = []
-  let expirationTime = Number.POSITIVE_INFINITY
-  const tokenDeltas: [string, bigint][] = []
-  const validQuoteParams: GetQuoteParams["quoteParams"][] = []
-  const quoteErrors: QuoteError[] = []
-
-  for (const [i, quoteResult] of quotes.entries()) {
-    if (quoteResult.status === "rejected") {
-      if (quoteResult.reason instanceof QuoteError) {
-        quoteErrors.push(quoteResult.reason)
-      } else {
-        throw quoteResult.reason
-      }
-      continue
-    }
-
-    const quote = quoteResult.value
-    const amountOut = BigInt(quote.amount_out)
-    const amountIn = BigInt(quote.amount_in)
-
-    expirationTime = Math.min(
-      expirationTime,
-      new Date(quote.expiration_time).getTime()
-    )
-
-    tokenDeltas.push([quote.defuse_asset_identifier_in, -amountIn])
-    tokenDeltas.push([quote.defuse_asset_identifier_out, amountOut])
-
-    quoteHashes.push(quote.quote_hash)
-
-    const currQuoteParams = quoteParams[i]
-    assert(currQuoteParams != null)
-    validQuoteParams.push(currQuoteParams)
-  }
-
-  if (quoteHashes.length === 0) {
-    throw new AggregatedQuoteError({ errors: quoteErrors })
-  }
-
-  let aggregatedQuote: AggregatedQuote = {
-    quoteHashes,
-    expirationTime: new Date(
-      expirationTime === Number.POSITIVE_INFINITY ? 0 : expirationTime
-    ).toISOString(),
-    tokenDeltas,
-    quoteParams: validQuoteParams,
-    isSimulation: false,
-    fillStatus: "FULL",
-  }
-
-  if (quoteErrors.length > 0) {
-    aggregatedQuote = {
-      ...aggregatedQuote,
-      fillStatus: "PARTIAL",
-      quoteErrors: quoteErrors,
-    }
-  }
-
-  return aggregatedQuote
 }
 
 async function fetchQuotesForTokens(

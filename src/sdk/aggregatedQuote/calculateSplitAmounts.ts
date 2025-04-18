@@ -1,6 +1,6 @@
-import type { BaseTokenInfo, TokenValue } from "../../../types/base"
-import { assert } from "../../../utils/assert"
-import { adjustDecimals, deduplicateTokens } from "../../../utils/tokenUtils"
+import type { BaseTokenInfo, TokenValue } from "../../types/base"
+import { assert } from "../../utils/assert"
+import { adjustDecimals, deduplicateTokens } from "../../utils/tokenUtils"
 
 type TokenSlice = BaseTokenInfo
 type Balances = Record<string, bigint>

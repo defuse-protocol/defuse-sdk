@@ -1,9 +1,9 @@
 import { assert, describe, expect, it } from "vitest"
-import type { BaseTokenInfo, TokenValue } from "../../../types/base"
+import type { BaseTokenInfo, TokenValue } from "../../types/base"
 import {
   adjustDecimals,
   computeTotalBalanceDifferentDecimals,
-} from "../../../utils/tokenUtils"
+} from "../../utils/tokenUtils"
 import {
   AmountMismatchError,
   calculateSplitAmounts,
