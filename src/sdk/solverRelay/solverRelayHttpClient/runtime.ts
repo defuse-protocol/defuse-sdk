@@ -1,7 +1,7 @@
 import * as v from "valibot"
-import { config as globalConfig } from "../../config"
-import { handleRPCResponse } from "../../utils/handleRPCResponse"
-import { request } from "../../utils/request"
+import { config as globalConfig } from "../../../config"
+import { handleRPCResponse } from "../../../utils/handleRPCResponse"
+import { request } from "../../../utils/request"
 import type * as types from "./types"
 
 const rpcResponseSchema = v.union([
@@ -41,7 +41,7 @@ export async function jsonRPCRequest<
   const url = `${globalConfig.env.solverRelayBaseURL}/rpc`
 
   const body = {
-    id: "dontcare",
+    id: config?.requestId ?? "dontcare",
     jsonrpc: "2.0",
     method,
     params: params !== undefined ? [params] : undefined,

@@ -1,8 +1,10 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
-import * as relayClient from "../sdk/solverRelay/solverRelayHttpClient"
-import type { BaseTokenInfo } from "../types/base"
-import { adjustDecimals } from "../utils/tokenUtils"
-import { queryQuote } from "./quoteService"
+import type { BaseTokenInfo } from "../../types/base"
+import { adjustDecimals } from "../../utils/tokenUtils"
+import { QuoteError } from "../solverRelay/errors/quote"
+import * as relayClient from "../solverRelay/solverRelayHttpClient"
+import { AggregatedQuoteError } from "./errors/aggregatedQuoteError"
+import { getAggregatedQuoteExactIn } from "./getAggregatedQuoteExactIn"
 
 vi.spyOn(relayClient, "quote")
 
@@ -37,7 +39,7 @@ const tokenOut = {
   defuseAssetId: "tokenOut",
 }
 
-describe("queryQuote()", () => {
+describe("getAggregatedQuoteExactIn()", () => {
   afterEach(() => {
     vi.clearAllMocks()
   })
@@ -62,29 +64,33 @@ describe("queryQuote()", () => {
       },
     ])
 
-    const result = await queryQuote(input)
+    const result = await getAggregatedQuoteExactIn({
+      aggregatedQuoteParams: input,
+    })
+
+    const quoteParams = {
+      defuse_asset_identifier_in: "token1",
+      defuse_asset_identifier_out: "tokenOut",
+      exact_amount_in: "150000000",
+      min_deadline_ms: 60_000,
+      wait_ms: 0,
+    }
 
     expect(relayClient.quote).toHaveBeenCalledTimes(1)
     expect(relayClient.quote).toHaveBeenCalledWith(
-      {
-        defuse_asset_identifier_in: "token1",
-        defuse_asset_identifier_out: "tokenOut",
-        exact_amount_in: "150000000",
-        min_deadline_ms: 60_000,
-        wait_ms: 0,
-      },
+      quoteParams,
       expect.any(Object)
     )
     expect(result).toEqual({
-      tag: "ok",
-      value: {
-        expirationTime: "2024-01-15T12:02:00.000Z",
-        quoteHashes: ["q1"],
-        tokenDeltas: [
-          ["token1", -150000000n],
-          ["tokenOut", 200n],
-        ],
-      },
+      expirationTime: "2024-01-15T12:02:00.000Z",
+      quoteHashes: ["q1"],
+      tokenDeltas: [
+        ["token1", -150000000n],
+        ["tokenOut", 200n],
+      ],
+      quoteParams: [quoteParams],
+      fillStatus: "FULL",
+      isSimulation: true,
     })
   })
 
@@ -123,10 +129,11 @@ describe("queryQuote()", () => {
         },
       ])
 
-    const result = await queryQuote(input)
+    const result = await getAggregatedQuoteExactIn({
+      aggregatedQuoteParams: input,
+    })
 
-    expect(relayClient.quote).toHaveBeenCalledTimes(2)
-    expect(relayClient.quote).toHaveBeenCalledWith(
+    const quoteParams = [
       {
         defuse_asset_identifier_in: "token1",
         defuse_asset_identifier_out: "tokenOut",
@@ -134,9 +141,6 @@ describe("queryQuote()", () => {
         min_deadline_ms: 60_000,
         wait_ms: 0,
       },
-      expect.any(Object)
-    )
-    expect(relayClient.quote).toHaveBeenCalledWith(
       {
         defuse_asset_identifier_in: "token2",
         defuse_asset_identifier_out: "tokenOut",
@@ -144,20 +148,29 @@ describe("queryQuote()", () => {
         min_deadline_ms: 60_000,
         wait_ms: 0,
       },
+    ]
+
+    expect(relayClient.quote).toHaveBeenCalledTimes(2)
+    expect(relayClient.quote).toHaveBeenCalledWith(
+      quoteParams[0],
+      expect.any(Object)
+    )
+    expect(relayClient.quote).toHaveBeenCalledWith(
+      quoteParams[1],
       expect.any(Object)
     )
     expect(result).toEqual({
-      tag: "ok",
-      value: {
-        expirationTime: "2024-01-15T12:01:30.000Z",
-        quoteHashes: ["q1", "q2"],
-        tokenDeltas: [
-          ["token1", -100000000n],
-          ["tokenOut", 20n],
-          ["token2", -5000000000n],
-          ["tokenOut", 10n],
-        ],
-      },
+      expirationTime: "2024-01-15T12:01:30.000Z",
+      quoteHashes: ["q1", "q2"],
+      tokenDeltas: [
+        ["token1", -100000000n],
+        ["tokenOut", 20n],
+        ["token2", -5000000000n],
+        ["tokenOut", 10n],
+      ],
+      quoteParams,
+      fillStatus: "FULL",
+      isSimulation: false,
     })
   })
 
@@ -197,22 +210,32 @@ describe("queryQuote()", () => {
       },
     ])
 
-    const result = await queryQuote(input)
+    const result = await getAggregatedQuoteExactIn({
+      aggregatedQuoteParams: input,
+    })
 
     expect(result).toEqual({
-      tag: "ok",
-      value: {
-        expirationTime: "2024-01-15T12:02:00.000Z",
-        quoteHashes: ["q2"],
-        tokenDeltas: [
-          ["token1", -150n],
-          ["tokenOut", 200n],
-        ],
-      },
+      expirationTime: "2024-01-15T12:02:00.000Z",
+      quoteHashes: ["q2"],
+      tokenDeltas: [
+        ["token1", -150n],
+        ["tokenOut", 200n],
+      ],
+      quoteParams: [
+        {
+          defuse_asset_identifier_in: "token1",
+          defuse_asset_identifier_out: "tokenOut",
+          exact_amount_in: "150000000",
+          min_deadline_ms: 60000,
+          wait_ms: 0,
+        },
+      ],
+      fillStatus: "FULL",
+      isSimulation: true,
     })
   })
 
-  it("returns empty result if quote is null", async () => {
+  it("throws AggregatedQuoteError if quote is null", async () => {
     const input = {
       tokensIn: [token1],
       tokenOut: tokenOut,
@@ -225,19 +248,12 @@ describe("queryQuote()", () => {
       .mockImplementationOnce(async () => null)
       .mockImplementationOnce(async () => [])
 
-    await expect(queryQuote(input)).resolves.toEqual({
-      tag: "err",
-      value: {
-        type: "NO_QUOTES",
-      },
-    })
-
-    await expect(queryQuote(input)).resolves.toEqual({
-      tag: "err",
-      value: {
-        type: "NO_QUOTES",
-      },
-    })
+    await expect(
+      getAggregatedQuoteExactIn({ aggregatedQuoteParams: input })
+    ).rejects.toBeInstanceOf(AggregatedQuoteError)
+    await expect(
+      getAggregatedQuoteExactIn({ aggregatedQuoteParams: input })
+    ).rejects.toBeInstanceOf(AggregatedQuoteError)
   })
 
   it("returns partial fill if some quotes are null", async () => {
@@ -252,6 +268,23 @@ describe("queryQuote()", () => {
       waitMs: 0,
     }
 
+    const quoteParams = [
+      {
+        defuse_asset_identifier_in: "token1",
+        defuse_asset_identifier_out: "tokenOut",
+        exact_amount_in: "100000000",
+        min_deadline_ms: 60000,
+        wait_ms: 0,
+      },
+      {
+        defuse_asset_identifier_in: "token2",
+        defuse_asset_identifier_out: "tokenOut",
+        exact_amount_in: "5000000000",
+        min_deadline_ms: 60000,
+        wait_ms: 0,
+      },
+    ]
+
     vi.mocked(relayClient.quote)
       .mockImplementationOnce(async () => [
         {
@@ -265,16 +298,27 @@ describe("queryQuote()", () => {
       ])
       .mockImplementationOnce(async () => null)
 
-    await expect(queryQuote(input)).resolves.toEqual({
-      tag: "ok",
-      value: {
-        quoteHashes: ["q1"],
-        expirationTime: "2024-01-15T12:02:00.000Z",
-        tokenDeltas: [
-          ["token1", -100n],
-          ["tokenOut", 20n],
-        ],
-      },
+    await expect(
+      getAggregatedQuoteExactIn({
+        aggregatedQuoteParams: input,
+      })
+    ).resolves.toEqual({
+      quoteHashes: ["q1"],
+      expirationTime: "2024-01-15T12:02:00.000Z",
+      tokenDeltas: [
+        ["token1", -100n],
+        ["tokenOut", 20n],
+      ],
+      quoteParams: [quoteParams[0]],
+      isSimulation: false,
+      fillStatus: "PARTIAL",
+      quoteErrors: [
+        new QuoteError({
+          quote: null,
+          // biome-ignore lint/style/noNonNullAssertion: <explanation>
+          quoteParams: quoteParams[1]!,
+        }),
+      ],
     })
   })
 
@@ -298,19 +342,29 @@ describe("queryQuote()", () => {
       },
     ])
 
-    const result = await queryQuote(input)
+    const result = await getAggregatedQuoteExactIn({
+      aggregatedQuoteParams: input,
+    })
 
     expect(relayClient.quote).toHaveBeenCalledTimes(1)
     expect(result).toEqual({
-      tag: "ok",
-      value: {
-        expirationTime: expect.any(String),
-        quoteHashes: ["q1"],
-        tokenDeltas: [
-          ["token1", -150n],
-          ["tokenOut", 200n],
-        ],
-      },
+      expirationTime: expect.any(String),
+      quoteHashes: ["q1"],
+      tokenDeltas: [
+        ["token1", -150n],
+        ["tokenOut", 200n],
+      ],
+      quoteParams: [
+        {
+          defuse_asset_identifier_in: "token1",
+          defuse_asset_identifier_out: "tokenOut",
+          exact_amount_in: "150000000",
+          min_deadline_ms: 60000,
+          wait_ms: 0,
+        },
+      ],
+      isSimulation: true,
+      fillStatus: "FULL",
     })
   })
 })

@@ -1,8 +1,9 @@
-import type { RpcRequestError } from "../../errors/request"
-import type { MultiPayload } from "../../types/defuse-contracts-types"
-import type { RequestErrorType } from "../../utils/request"
+import type { RpcRequestError } from "../../../errors/request"
+import type { MultiPayload } from "../../../types/defuse-contracts-types"
+import type { RequestErrorType } from "../../../utils/request"
 
 export type RequestConfig = {
+  requestId?: string | undefined
   timeout?: number | undefined
   fetchOptions?: Omit<RequestInit, "body"> | undefined
 }
