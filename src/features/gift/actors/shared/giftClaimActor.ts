@@ -5,8 +5,8 @@ import { logger } from "../../../../logger"
 import {
   type PublishIntentsErr,
   publishIntents,
-  waitForIntentSettlement,
-} from "../../../../services/intentService"
+} from "../../../../sdk/solverRelay/publishIntents"
+import { waitForIntentSettlement } from "../../../../sdk/solverRelay/waitForIntentSettlement"
 import { assert } from "../../../../utils/assert"
 import { signGiftTakerMessage } from "../../utils/signGiftTakerMessage"
 import type { GiftInfo } from "./getGiftInfo"

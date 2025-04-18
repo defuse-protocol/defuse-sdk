@@ -12,7 +12,7 @@ import { waitForWithdrawalCompletion } from "../../sdk/poaBridge/waitForWithdraw
 import {
   type IntentSettlementResult,
   waitForIntentSettlement,
-} from "../../services/intentService"
+} from "../../sdk/solverRelay/waitForIntentSettlement"
 import type {
   BaseTokenInfo,
   SupportedBridge,

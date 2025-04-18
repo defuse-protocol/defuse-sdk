@@ -1,10 +1,10 @@
 import { Err, Ok, type Result } from "@thames/monads"
 import { settings } from "../../../constants/settings"
-import type { FailedQuote } from "../../../sdk/solverRelayHttpClient/types"
+import type { FailedQuote } from "../../../sdk/solverRelay/solverRelayHttpClient/types"
+import { quoteWithLog } from "../../../sdk/solverRelay/utils/quoteWithLog"
 import {
   type AggregatedQuote,
   isFailedQuote,
-  quoteWithLog,
 } from "../../../services/quoteService"
 
 export type AggregatedQuoteErr =
