@@ -1,10 +1,11 @@
 import { assert } from "../../utils/assert"
-import { AggregatedQuoteError, QuoteError } from "../solverRelay/errors/quote"
+import { QuoteError } from "../solverRelay/errors/quote"
 import type {
   GetQuoteParams,
   GetQuoteReturnType,
 } from "../solverRelay/getQuote"
 import type { AggregatedQuote } from "../solverRelay/types/quote"
+import { AggregatedQuoteError } from "./errors/aggregatedQuoteError"
 
 export function aggregateQuotes(
   quotes: PromiseSettledResult<GetQuoteReturnType>[],

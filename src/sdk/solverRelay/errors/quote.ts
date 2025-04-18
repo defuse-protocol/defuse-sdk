@@ -27,20 +27,3 @@ export class QuoteError extends BaseError {
     this.quoteParams = quoteParams
   }
 }
-
-export class AggregatedQuoteError extends BaseError {
-  errors: Array<QuoteError>
-
-  constructor({
-    errors,
-  }: {
-    errors: Array<QuoteError>
-  }) {
-    super("Aggregated quote error", {
-      cause: errors,
-      name: "AggregatedQuoteError",
-    })
-
-    this.errors = errors
-  }
-}

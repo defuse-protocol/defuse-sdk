@@ -1,6 +1,7 @@
 import type { BaseTokenInfo, TokenValue } from "../../types/base"
 import { assert } from "../../utils/assert"
 import { adjustDecimals, deduplicateTokens } from "../../utils/tokenUtils"
+import { AmountMismatchError } from "./errors/amountMismatchError"
 
 type TokenSlice = BaseTokenInfo
 type Balances = Record<string, bigint>
@@ -104,15 +105,6 @@ export function calculateSplitAmounts(
   }
 
   return amountsToQuote
-}
-
-export class AmountMismatchError extends Error {
-  constructor(requested: TokenValue, remaining: TokenValue) {
-    super(
-      `Unable to fulfill requested amount ${requested.amount} (decimals: ${requested.decimals}) with remaining amount ${remaining.amount} (decimals: ${remaining.decimals})`
-    )
-    this.name = "AmountMismatchError"
-  }
 }
 
 function min(a: bigint, b: bigint): bigint {

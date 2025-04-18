@@ -5,10 +5,10 @@ import {
   computeTotalBalanceDifferentDecimals,
 } from "../../utils/tokenUtils"
 import {
-  AmountMismatchError,
   calculateSplitAmounts,
   sortForOptimalAmountSplitting,
 } from "./calculateSplitAmounts"
+import { AmountMismatchError } from "./errors/amountMismatchError"
 
 const tokenInfo: BaseTokenInfo = {
   defuseAssetId: "",

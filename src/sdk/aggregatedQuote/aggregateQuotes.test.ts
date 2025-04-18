@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest"
-import { AggregatedQuoteError, QuoteError } from "../solverRelay/errors/quote"
+import { QuoteError } from "../solverRelay/errors/quote"
 import type { Quote } from "../solverRelay/solverRelayHttpClient/types"
 import { aggregateQuotes } from "./aggregateQuotes"
+import { AggregatedQuoteError } from "./errors/aggregatedQuoteError"
 
 describe("aggregateQuotes()", () => {
   const defaultQuoteParams = {

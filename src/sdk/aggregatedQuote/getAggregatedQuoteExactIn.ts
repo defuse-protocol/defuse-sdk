@@ -6,7 +6,6 @@ import {
   compareAmounts,
   computeTotalBalanceDifferentDecimals,
 } from "../../utils/tokenUtils"
-import type { AggregatedQuoteError } from "../solverRelay/errors/quote"
 import {
   type GetQuoteParams,
   type GetQuoteReturnType,
@@ -15,10 +14,9 @@ import {
 import type { JSONRPCErrorType } from "../solverRelay/solverRelayHttpClient/types"
 import type { AggregatedQuote } from "../solverRelay/types/quote"
 import { aggregateQuotes } from "./aggregateQuotes"
-import {
-  type AmountMismatchError,
-  calculateSplitAmounts,
-} from "./calculateSplitAmounts"
+import { calculateSplitAmounts } from "./calculateSplitAmounts"
+import type { AggregatedQuoteError } from "./errors/aggregatedQuoteError"
+import type { AmountMismatchError } from "./errors/amountMismatchError"
 
 type TokenSlice = BaseTokenInfo
 
