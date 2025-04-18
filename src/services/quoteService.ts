@@ -1,9 +1,12 @@
-import { settings } from "../../constants/settings"
-import type { BaseTokenInfo, TokenValue } from "../../types/base"
-import { AggregatedQuoteError } from "../aggregatedQuote/errors/aggregatedQuoteError"
-import { getAggregatedQuoteExactIn } from "../aggregatedQuote/getAggregatedQuoteExactIn"
-import type { FailedQuote, Quote } from "./solverRelayHttpClient/types"
-import { quoteWithLog } from "./utils/quoteWithLog"
+import { settings } from "../constants/settings"
+import { AggregatedQuoteError } from "../sdk/aggregatedQuote/errors/aggregatedQuoteError"
+import { getAggregatedQuoteExactIn } from "../sdk/aggregatedQuote/getAggregatedQuoteExactIn"
+import type {
+  FailedQuote,
+  Quote,
+} from "../sdk/solverRelay/solverRelayHttpClient/types"
+import { quoteWithLog } from "../sdk/solverRelay/utils/quoteWithLog"
+import type { BaseTokenInfo, TokenValue } from "../types/base"
 
 export function isFailedQuote(
   quote: Quote | FailedQuote

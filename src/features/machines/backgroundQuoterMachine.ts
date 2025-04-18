@@ -6,7 +6,7 @@ import {
   type AggregatedQuoteParams,
   type QuoteResult,
   queryQuote,
-} from "../../sdk/solverRelay/quoteService"
+} from "../../services/quoteService"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../types/base"
 import { getUnderlyingBaseTokenInfos } from "../../utils/tokenUtils"
 

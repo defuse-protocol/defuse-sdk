@@ -1,8 +1,8 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
-import type { BaseTokenInfo } from "../../types/base"
-import { adjustDecimals } from "../../utils/tokenUtils"
+import * as relayClient from "../sdk/solverRelay/solverRelayHttpClient"
+import type { BaseTokenInfo } from "../types/base"
+import { adjustDecimals } from "../utils/tokenUtils"
 import { queryQuote } from "./quoteService"
-import * as relayClient from "./solverRelayHttpClient"
 
 vi.spyOn(relayClient, "quote")
 
