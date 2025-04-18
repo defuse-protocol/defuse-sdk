@@ -3,9 +3,9 @@ import { settings } from "../../../constants/settings"
 import {
   type AggregatedQuote,
   isFailedQuote,
-  quoteWithLog,
 } from "../../../sdk/solverRelay/quoteService"
 import type { FailedQuote } from "../../../sdk/solverRelay/solverRelayHttpClient/types"
+import { quoteWithLog } from "../../../sdk/solverRelay/utils/quoteWithLog"
 
 export type AggregatedQuoteErr =
   | { reason: "NO_QUOTES" }

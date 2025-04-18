@@ -8,10 +8,8 @@ import {
 } from "../../../core/formatters"
 import { createTransferMessage } from "../../../core/messages"
 import { logger } from "../../../logger"
-import {
-  AmountMismatchError,
-  calculateSplitAmounts,
-} from "../../../sdk/solverRelay/quoteService"
+import { calculateSplitAmounts } from "../../../sdk/aggregatedQuote/calculateSplitAmounts"
+import { AmountMismatchError } from "../../../sdk/aggregatedQuote/errors/amountMismatchError"
 import type {
   BaseTokenInfo,
   TokenValue,
