@@ -8,7 +8,8 @@ export async function quoteWithLog(
     ...config
   }: { logBalanceSufficient: boolean } & Parameters<typeof quote>[1]
 ) {
-  const result = await quote(params, config)
+  const requestId = crypto.randomUUID()
+  const result = await quote(params, { ...config, requestId })
   if (result == null) {
     logger.warn("quote: No liquidity available", { quoteParams: params })
 
@@ -19,7 +20,7 @@ export async function quoteWithLog(
     ) {
       logger.warn(
         "quote: No liquidity available for user with sufficient balance",
-        { quoteParams: params }
+        { quoteParams: params, quoteRequestInfo: { requestId } }
       )
     }
   }
