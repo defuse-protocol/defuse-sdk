@@ -1,6 +1,6 @@
 import type { FC } from "react"
-import type { TokenValueWithPrice } from "../types"
-import { adjustTo1kUsd } from "../utils"
+import type { TokenValueWithPrice } from "../../types"
+import { adjustTo1kUsd } from "../../utils"
 
 interface HotBalanceProps {
   hotBalance?: TokenValueWithPrice | null

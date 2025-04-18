@@ -1,8 +1,12 @@
 import { formatUnits } from "viem"
 import type { TokenUsdPriceData } from "../../../../hooks/useTokensUsdPrices"
-import type { TokenBalances } from "../../../../sdk/poaBridge/poaBridgeHttpClient/types"
+import type { TokenBalances as TokenBalancesRecord } from "../../../../services/defuseBalanceService"
 import { AuthMethod } from "../../../../types/authHandle"
-import type { SupportedChainName, TokenValue } from "../../../../types/base"
+import type {
+  BaseTokenInfo,
+  SupportedChainName,
+  TokenValue,
+} from "../../../../types/base"
 import type { SwappableToken } from "../../../../types/swap"
 import { assert } from "../../../../utils/assert"
 import { isBaseToken } from "../../../../utils/token"
@@ -50,16 +54,36 @@ export const adjustTo1kUsd = (tokenValue: TokenValueWithPrice): number => {
   return rounded === 0 ? 1 : rounded
 }
 
-export const getAvailableBlockchains = (token: SwappableToken) =>
-  isBaseToken(token)
-    ? { [token.chainName]: token.defuseAssetId }
-    : token.groupedTokens.reduce((acc: { [key: string]: string }, curr) => {
-        acc[curr.chainName] = curr.defuseAssetId
-        return acc
-      }, {})
+export const getAvailableBlockchains = (token: SwappableToken) => {
+  return isBaseToken(token)
+    ? {
+        [token.chainName]: {
+          defuseAssetId: token.defuseAssetId,
+          bridge: token.bridge,
+        },
+      }
+    : token.groupedTokens.reduce(
+        (
+          acc: {
+            [key: string]: {
+              defuseAssetId: string
+              bridge: string
+            }
+          },
+          curr
+        ) => {
+          acc[curr.chainName] = {
+            defuseAssetId: curr.defuseAssetId,
+            bridge: curr.bridge,
+          }
+          return acc
+        },
+        {}
+      )
+}
 
 export const shouldShowHotBalance = (
-  balances: { [address: string]: TokenBalances },
+  balances: Record<string, TokenValue>,
   tokenInBalance?: TokenValue
 ): boolean => {
   const { amount: userBalance, decimals: userBalanceDecimals } =
@@ -71,12 +95,12 @@ export const shouldShowHotBalance = (
 
   let anyHotBalanceIsLessThanUserBalance = false
   for (const address in balances) {
-    const balance = balances[address] as TokenBalances
+    const balance = balances[address] as TokenValue
 
     if (
       compareAmounts(
         { amount: userBalance, decimals: userBalanceDecimals },
-        { amount: BigInt(balance.vaultBalance), decimals: balance.decimals }
+        { amount: BigInt(balance.amount), decimals: balance.decimals }
       ) > 0
     ) {
       // we should show in case user's balance is MORE than any of the HOT chain balances
@@ -87,9 +111,32 @@ export const shouldShowHotBalance = (
   return anyHotBalanceIsLessThanUserBalance
 }
 
+export const getMinAmountToken = (
+  token1: TokenValue | undefined,
+  token2: TokenValue | undefined
+): TokenValue | undefined => {
+  if (
+    (token1 == null || token1.amount === 0n) &&
+    (token2 == null || token2.amount === 0n)
+  ) {
+    return undefined
+  }
+  if (token1 == null || token1.amount === 0n) {
+    return token2
+  }
+  if (token2 == null || token2.amount === 0n) {
+    return token1
+  }
+  // we consider equal decimals
+  return BigInt(token1?.amount || 0n) > BigInt(token2?.amount || 0n)
+    ? token2
+    : token1
+}
+
 export const getBlockchainSelectItems = (
   token: SwappableToken,
-  balances: { [address: string]: TokenBalances },
+  poaBalances: Record<string, TokenValue>,
+  nonPoaBalances: Record<string, TokenValue>,
   tokensUsdPriceData?: TokenUsdPriceData
 ) => {
   const availableBlockchains = getAvailableBlockchains(token)
@@ -98,16 +145,24 @@ export const getBlockchainSelectItems = (
     allBlockchains
       .filter((blockchain) => availableBlockchains[blockchain.value])
       .map((a) => {
-        const address = availableBlockchains[a.value]
-        assert(address != null)
+        const addressData = availableBlockchains[a.value]
+        assert(addressData != null)
 
         let hotBalance: TokenValueWithPrice | null = null
-        const balance = balances[address]
-        const price = tokensUsdPriceData?.[address]?.price
+        const balance =
+          addressData.bridge === "poa"
+            ? getMinAmountToken(
+                // we choose min between poa hot balance and solver's hot balance
+                poaBalances[addressData.defuseAssetId],
+                nonPoaBalances[addressData.defuseAssetId]
+              )
+            : nonPoaBalances[addressData.defuseAssetId]
+
+        const price = tokensUsdPriceData?.[addressData.defuseAssetId]?.price
 
         if (balance != null && price != null) {
           hotBalance = {
-            amount: BigInt(balance.vaultBalance),
+            amount: BigInt(balance.amount),
             decimals: balance.decimals,
             price,
           }
@@ -116,4 +171,80 @@ export const getBlockchainSelectItems = (
         return [a.value, { ...a, hotBalance }]
       })
   )
+}
+
+export const mergeBridgeBalances = (
+  poaBalances: Record<string, TokenValue>,
+  nonPoaBalances: Record<string, TokenValue>
+): Record<string, TokenValue> => {
+  const balances: Record<string, TokenValue> = { ...nonPoaBalances }
+
+  for (const address in poaBalances) {
+    const balance = balances[address]
+    const balance_ =
+      balance == null
+        ? poaBalances[address]
+        : getMinAmountToken(poaBalances[address], balances[address])
+
+    if (balance_ != null) {
+      balances[address] = balance_
+    }
+  }
+
+  return balances
+}
+
+export const mapDepositBalancesToDecimals = (
+  balances: TokenBalancesRecord | undefined,
+  token: SwappableToken
+): Record<BaseTokenInfo["defuseAssetId"], TokenValue> => {
+  const tokenValueWithPrice: Record<
+    BaseTokenInfo["defuseAssetId"],
+    TokenValue
+  > = {}
+
+  if (balances == null) {
+    return tokenValueWithPrice
+  }
+
+  const isBaseT = isBaseToken(token)
+  for (const address in balances) {
+    const amount = balances[address]
+    if (amount == null) {
+      continue
+    }
+
+    if (isBaseT) {
+      if (token.defuseAssetId === address) {
+        tokenValueWithPrice[address] = { amount, decimals: token.decimals }
+      }
+    } else {
+      const found = token.groupedTokens.find(
+        (token) => token.defuseAssetId === address
+      )
+      if (found) {
+        tokenValueWithPrice[address] = { amount, decimals: found.decimals }
+      }
+    }
+  }
+
+  return tokenValueWithPrice
+}
+
+export const areAllTokenAddressesSame = (token: SwappableToken) => {
+  return (
+    !isBaseToken(token) &&
+    token.groupedTokens.every(
+      (t) => t.defuseAssetId === token.groupedTokens[0]?.defuseAssetId
+    )
+  )
+}
+
+export const getWithdrawButtonText = (
+  noLiquidity: boolean,
+  insufficientTokenInAmount: boolean
+) => {
+  if (noLiquidity) return "No liquidity providers"
+  if (insufficientTokenInAmount) return "Insufficient amount"
+  return "Withdraw"
 }

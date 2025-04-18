@@ -1,9 +1,9 @@
 import { Callout } from "@radix-ui/themes"
 import type { TokenUsdPriceData } from "src/hooks/useTokensUsdPrices"
 import { formatUnits } from "viem"
-import type { BaseTokenInfo, TokenValue } from "../../../../../types/base"
-import type { TokenValueWithPrice } from "../types"
-import { adjustTo1kUsd } from "../utils"
+import type { BaseTokenInfo, TokenValue } from "../../../../../../types/base"
+import type { TokenValueWithPrice } from "../../types"
+import { adjustTo1kUsd } from "../../utils"
 
 export const LongWithdrawWarning = ({
   amountIn,

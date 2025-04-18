@@ -3,7 +3,7 @@ import type { BaseTokenInfo } from "../types/base"
 import type { IntentsUserId } from "../types/intentsUserId"
 import { batchBalanceOf } from "./intentsContractService"
 
-type TokenBalances = Record<BaseTokenInfo["defuseAssetId"], bigint>
+export type TokenBalances = Record<BaseTokenInfo["defuseAssetId"], bigint>
 
 export async function getDepositedBalances(
   accountId: IntentsUserId,
