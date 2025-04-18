@@ -164,7 +164,17 @@ export const swapUIMachine = setup({
       throw new Error("not implemented")
     },
     setQuote: assign({
-      quote: (_, value: QuoteResult) => value,
+      quote: ({ context }, newQuote: QuoteResult) => {
+        const prevQuote = context.quote
+        if (
+          newQuote.tag === "ok" ||
+          prevQuote == null ||
+          prevQuote.tag === "err"
+        ) {
+          return newQuote
+        }
+        return prevQuote
+      },
     }),
     clearQuote: assign({ quote: null }),
     clearError: assign({ error: null }),
@@ -255,11 +265,7 @@ export const swapUIMachine = setup({
     })),
   },
   guards: {
-    isQuoteRelevant: ({ context }) => {
-      // todo: implement real check for fetched quotes if they're expired or not
-      logger.warn(
-        "Implement real check for fetched quotes if they're expired or not"
-      )
+    isQuoteValid: ({ context }) => {
       return context.quote != null && context.quote.tag === "ok"
     },
 
@@ -332,7 +338,7 @@ export const swapUIMachine = setup({
       on: {
         submit: {
           target: "submitting",
-          guard: "isQuoteRelevant",
+          guard: "isQuoteValid",
           actions: "clearIntentCreationResult",
         },
 
