@@ -22,11 +22,14 @@ export async function publishIntent(
   quoteHashes: string[]
 ): Promise<PublishIntentResult> {
   const result = await retry<types.PublishIntentResponse["result"]>(
-    async () =>
-      solverRelayClient.publishIntent({
-        signed_data: prepareSwapSignedData(signatureData, userInfo),
-        quote_hashes: quoteHashes,
-      }),
+    () =>
+      solverRelayClient.publishIntent(
+        {
+          signed_data: prepareSwapSignedData(signatureData, userInfo),
+          quote_hashes: quoteHashes,
+        },
+        { timeout: 30000 }
+      ),
     {
       delay: 1000,
       factor: 1.5,
