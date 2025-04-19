@@ -1,7 +1,9 @@
+import { retry } from "@lifeomic/attempt"
 import * as v from "valibot"
 import { config as globalConfig } from "../../../config"
 import { handleRPCResponse } from "../../../utils/handleRPCResponse"
 import { request } from "../../../utils/request"
+import { requestShouldRetry } from "../../../utils/requestShouldRetry"
 import type * as types from "./types"
 
 const rpcResponseSchema = v.union([
@@ -44,15 +46,28 @@ export async function jsonRPCRequest<
     params: params !== undefined ? [params] : undefined,
   }
 
-  const response = await request({
-    url,
-    body,
-    ...config,
-    fetchOptions: {
-      ...config?.fetchOptions,
-      method: "POST",
+  const response = await retry(
+    () => {
+      return request({
+        url,
+        body,
+        ...config,
+        fetchOptions: {
+          ...config?.fetchOptions,
+          method: "POST",
+        },
+      })
     },
-  })
+    {
+      delay: 200,
+      maxAttempts: 3,
+      handleError: (err, context) => {
+        if (!requestShouldRetry(err)) {
+          context.abort
+        }
+      },
+    }
+  )
 
   return handleRPCResponse(response, body, rpcResponseSchema)
 }
