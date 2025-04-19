@@ -38,7 +38,7 @@ export async function jsonRPCRequest<
   const url = `${globalConfig.env.poaBridgeBaseURL}/rpc`
 
   const body = {
-    id: "dontcare",
+    id: config?.requestId ?? "dontcare",
     jsonrpc: "2.0",
     method,
     params: params !== undefined ? [params] : undefined,
