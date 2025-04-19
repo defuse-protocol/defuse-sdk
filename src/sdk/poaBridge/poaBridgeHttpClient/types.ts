@@ -2,6 +2,7 @@ import type { RpcRequestError } from "../../../errors/request"
 import type { RequestErrorType } from "../../../utils/request"
 
 export type RequestConfig = {
+  requestId?: string | undefined
   timeout?: number | undefined
   fetchOptions?: Omit<RequestInit, "body"> | undefined
 }
