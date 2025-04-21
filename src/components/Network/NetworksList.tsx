@@ -49,11 +49,11 @@ export const NetworkList = ({
             <Text as="span" size="3" weight="bold">
               {chains[chain].label}
             </Text>
-          </div>
-          <div className="flex items-center gap-2">
             {isAuroraVirtualChain(reverseAssetNetworkAdapter[chain]) && (
               <PoweredByAuroraLabel />
             )}
+          </div>
+          <div className="flex items-center gap-2">
             {renderValueDetails?.(chains[chain].value)}
           </div>
         </button>
