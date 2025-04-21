@@ -1,12 +1,6 @@
-import {
-  ExclamationTriangleIcon,
-  InfoCircledIcon,
-  MagicWandIcon,
-  PersonIcon,
-} from "@radix-ui/react-icons"
+import { MagicWandIcon, PersonIcon } from "@radix-ui/react-icons"
 import {
   Box,
-  Callout,
   Checkbox,
   Flex,
   IconButton,
@@ -16,28 +10,24 @@ import {
   Tooltip,
 } from "@radix-ui/themes"
 import { useSelector } from "@xstate/react"
-import { type ReactNode, useEffect, useState } from "react"
+import { useEffect, useState } from "react"
 import { Controller, useController, useForm } from "react-hook-form"
 import { ModalSelectNetwork } from "src/components/Network/ModalSelectNetwork"
 import { SelectTriggerLike } from "src/components/Select/SelectTriggerLike"
-import type { intentStatusMachine } from "src/features/machines/intentStatusMachine"
 import { useModalController } from "src/hooks/useModalController"
 import { useTokensUsdPrices } from "src/hooks/useTokensUsdPrices"
 import { useTokensStore } from "src/providers/TokensStoreProvider"
 import type { BlockchainEnum } from "src/sdk/poaBridge/constants/blockchains"
-import type { PreparationOutput } from "src/services/withdrawService"
 import { ModalType } from "src/stores/modalStore"
 import { reverseAssetNetworkAdapter } from "src/utils/adapters"
 import { formatTokenValue, formatUsdAmount } from "src/utils/format"
 import getTokenUsdPrice from "src/utils/getTokenUsdPrice"
 import { getTokenMaxDecimals } from "src/utils/tokenUtils"
-import type { ActorRefFrom } from "xstate"
 import { AuthGate } from "../../../../components/AuthGate"
 import { ButtonCustom } from "../../../../components/Button/ButtonCustom"
 import { EmptyIcon } from "../../../../components/EmptyIcon"
 import { Form } from "../../../../components/Form"
 import { FieldComboInput } from "../../../../components/Form/FieldComboInput"
-import { WithdrawIntentCard } from "../../../../components/IntentCard/WithdrawIntentCard"
 import { Island } from "../../../../components/Island"
 import { IslandHeader } from "../../../../components/IslandHeader"
 import { Select } from "../../../../components/Select/Select"
@@ -61,10 +51,16 @@ import { parseDestinationMemo } from "../../../machines/withdrawFormReducer"
 import { renderIntentCreationResult } from "../../../swap/components/SwapForm"
 import { usePublicKeyModalOpener } from "../../../swap/hooks/usePublicKeyModalOpener"
 import { WithdrawUIMachineContext } from "../../WithdrawUIMachineContext"
-import { HotBalance } from "./HotBalance/HotBalance"
-import { LongWithdrawWarning } from "./LongWithdrawWarning"
-import type { allBlockchains } from "./constants"
+import {
+  HotBalance,
+  Intents,
+  LongWithdrawWarning,
+  MinWithdrawalAmount,
+  PreparationResult,
+} from "./components"
+import { SolverId, type allBlockchains } from "./constants"
 import { useTokenBalances } from "./hooks/useTokenBalances"
+import { useDepositBalances } from "./hooks/useTransitBalances"
 import {
   isLiquidityUnavailableSelector,
   isUnsufficientTokenInAmount,
@@ -73,6 +69,8 @@ import {
 import {
   chainTypeSatisfiesChainName,
   getBlockchainSelectItems,
+  getWithdrawButtonText,
+  mergeBridgeBalances,
   shouldShowHotBalance,
   truncateUserAddress,
 } from "./utils"
@@ -352,14 +350,20 @@ export const WithdrawForm = ({
 
   const hasAnyBalance = tokenInBalance != null && tokenInBalance?.amount > 0
 
-  const balances = useTokenBalances(token, hasAnyBalance)
+  const poaBridgeBalances = useTokenBalances(token, hasAnyBalance)
+  const nonPoaBridgeBalances = useDepositBalances(
+    { userId: SolverId, token },
+    hasAnyBalance
+  )
 
   const blockchainSelectItems = getBlockchainSelectItems(
     token,
-    balances,
+    poaBridgeBalances,
+    nonPoaBridgeBalances,
     tokensUsdPriceData
   )
 
+  const balances = mergeBridgeBalances(poaBridgeBalances, nonPoaBridgeBalances)
   const showHotBalances = shouldShowHotBalance(balances, tokenInBalance)
 
   return (
@@ -424,7 +428,10 @@ export const WithdrawForm = ({
             }
           />
 
-          {renderMinWithdrawalAmount(minWithdrawalAmount, tokenOut)}
+          <MinWithdrawalAmount
+            minWithdrawalAmount={minWithdrawalAmount}
+            tokenOut={tokenOut}
+          />
 
           <Flex direction="column" gap="2">
             <Box px="2" asChild>
@@ -656,27 +663,18 @@ export const WithdrawForm = ({
               disabled={state.matches("submitting") || noLiquidity}
               isLoading={state.matches("submitting")}
             >
-              {renderWithdrawButtonText(noLiquidity, insufficientTokenInAmount)}
+              {getWithdrawButtonText(noLiquidity, insufficientTokenInAmount)}
             </ButtonCustom>
           </AuthGate>
         </Flex>
       </Form>
 
-      {renderPreparationResult(state.context.preparationOutput)}
+      <PreparationResult preparationOutput={state.context.preparationOutput} />
       {renderIntentCreationResult(intentCreationResult)}
 
       {intentRefs.length !== 0 && <Intents intentRefs={intentRefs} />}
     </Island>
   )
-}
-
-function renderWithdrawButtonText(
-  noLiquidity: boolean,
-  insufficientTokenInAmount: boolean
-) {
-  if (noLiquidity) return "No liquidity providers"
-  if (insufficientTokenInAmount) return "Insufficient amount"
-  return "Withdraw"
 }
 
 type TypeEqualityGuard<A, B> = Exclude<A, B> | Exclude<B, A> extends never
@@ -686,94 +684,3 @@ const _typeCheck: TypeEqualityGuard<
   SupportedChainName,
   (typeof allBlockchains)[number]["value"]
 > = true
-
-function renderMinWithdrawalAmount(
-  minWithdrawalAmount: TokenValue | null,
-  tokenOut: BaseTokenInfo
-) {
-  return (
-    minWithdrawalAmount != null &&
-    minWithdrawalAmount.amount > 1n && (
-      <Callout.Root size="1" color="gray" variant="surface">
-        <Callout.Icon>
-          <InfoCircledIcon />
-        </Callout.Icon>
-        <Callout.Text>
-          {/* biome-ignore lint/nursery/useConsistentCurlyBraces: space is needed here */}
-          Minimal amount to withdraw is{" "}
-          <Text size="1" weight="bold">
-            {formatTokenValue(
-              minWithdrawalAmount.amount,
-              minWithdrawalAmount.decimals
-              // biome-ignore lint/nursery/useConsistentCurlyBraces: space is needed here
-            )}{" "}
-            {tokenOut.symbol}
-          </Text>
-        </Callout.Text>
-      </Callout.Root>
-    )
-  )
-}
-
-function renderPreparationResult(preparationOutput: PreparationOutput | null) {
-  if (preparationOutput?.tag !== "err") return null
-
-  let content: ReactNode = null
-  const err = preparationOutput.value
-  const val = err.reason
-
-  switch (val) {
-    case "ERR_NEP141_STORAGE":
-      content = val
-      break
-    case "ERR_CANNOT_FETCH_POA_BRIDGE_INFO":
-      content = "Cannot fetch POA Bridge info"
-      break
-    case "ERR_BALANCE_INSUFFICIENT":
-      // Don't duplicate error messages, this should be handled by input validation
-      break
-    case "ERR_AMOUNT_TOO_LOW":
-      content = `Need ${formatTokenValue(err.minWithdrawalAmount - err.receivedAmount, err.token.decimals)} ${err.token.symbol} more to withdraw`
-      break
-    case "NO_QUOTES":
-    case "INSUFFICIENT_AMOUNT":
-      // Don't duplicate error messages, message should be displayed in the submit button
-      break
-    case "ERR_CANNOT_FETCH_QUOTE":
-      content = "Cannot fetch quote"
-      break
-    case "ERR_BALANCE_FETCH":
-    case "ERR_BALANCE_MISSING":
-      content = "Cannot fetch balance"
-      break
-    default:
-      val satisfies never
-      content = val
-  }
-
-  if (content == null) return null
-
-  return (
-    <Callout.Root size="1" color="red">
-      <Callout.Icon>
-        <ExclamationTriangleIcon />
-      </Callout.Icon>
-      <Callout.Text>{content}</Callout.Text>
-    </Callout.Root>
-  )
-}
-
-function Intents({
-  intentRefs,
-}: { intentRefs: ActorRefFrom<typeof intentStatusMachine>[] }) {
-  return (
-    <div>
-      {intentRefs.map((intentRef) => (
-        <WithdrawIntentCard
-          key={intentRef.id}
-          intentStatusActorRef={intentRef}
-        />
-      ))}
-    </div>
-  )
-}

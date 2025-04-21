@@ -1,6 +1,7 @@
 import type { ReactNode } from "react"
 import { NetworkIcon } from "../../../../components/Network/NetworkIcon"
 import type { SupportedChainName } from "../../../../types/base"
+import type { IntentsUserId } from "../../../../types/intentsUserId"
 
 export const allBlockchains = [
   {
@@ -148,3 +149,5 @@ export const allBlockchains = [
   icon: ReactNode
   value: SupportedChainName
 }>
+
+export const SolverId = "solver-multichain-asset.near" as IntentsUserId // currently we have only this multychain solver
