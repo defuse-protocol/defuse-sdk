@@ -16,6 +16,10 @@ export const assetNetworkAdapter: Record<SupportedChainName, BlockchainEnum> = {
   gnosis: BlockchainEnum.GNOSIS,
   berachain: BlockchainEnum.BERACHAIN,
   tron: BlockchainEnum.TRON,
+  tuxappchain: BlockchainEnum.TUXAPPCHAIN,
+  vertex: BlockchainEnum.VERTEX,
+  optima: BlockchainEnum.OPTIMA,
+  coineasy: BlockchainEnum.COINEASY,
 }
 
 export const reverseAssetNetworkAdapter: Record<
@@ -36,4 +40,8 @@ export const reverseAssetNetworkAdapter: Record<
   [BlockchainEnum.GNOSIS]: "gnosis",
   [BlockchainEnum.BERACHAIN]: "berachain",
   [BlockchainEnum.TRON]: "tron",
+  [BlockchainEnum.TUXAPPCHAIN]: "tuxappchain",
+  [BlockchainEnum.VERTEX]: "vertex",
+  [BlockchainEnum.OPTIMA]: "optima",
+  [BlockchainEnum.COINEASY]: "coineasy",
 }

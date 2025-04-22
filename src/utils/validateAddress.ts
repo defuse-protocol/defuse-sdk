@@ -19,6 +19,10 @@ export function validateAddress(
     case "base":
     case "arbitrum":
     case "turbochain":
+    case "tuxappchain":
+    case "vertex":
+    case "optima":
+    case "coineasy":
     case "aurora":
     case "gnosis":
     case "berachain":

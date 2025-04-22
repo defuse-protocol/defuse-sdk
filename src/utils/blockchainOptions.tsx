@@ -147,5 +147,45 @@ export function getBlockchainsOptions(): Record<
       ),
       value: BlockchainEnum.TRON,
     },
+    [BlockchainEnum.TUXAPPCHAIN]: {
+      label: "TuxAppChain",
+      icon: (
+        <NetworkIcon
+          chainIcon="/static/icons/network/tuxappchain.svg"
+          chainName="tuxappchain"
+        />
+      ),
+      value: BlockchainEnum.TUXAPPCHAIN,
+    },
+    [BlockchainEnum.VERTEX]: {
+      label: "Vertex",
+      icon: (
+        <NetworkIcon
+          chainIcon="/static/icons/network/vertex.svg"
+          chainName="vertex"
+        />
+      ),
+      value: BlockchainEnum.VERTEX,
+    },
+    [BlockchainEnum.OPTIMA]: {
+      label: "Optima",
+      icon: (
+        <NetworkIcon
+          chainIcon="/static/icons/network/optima.svg"
+          chainName="optima"
+        />
+      ),
+      value: BlockchainEnum.OPTIMA,
+    },
+    [BlockchainEnum.COINEASY]: {
+      label: "CoinEasy",
+      icon: (
+        <NetworkIcon
+          chainIcon="/static/icons/network/coineasy.svg"
+          chainName="coineasy"
+        />
+      ),
+      value: BlockchainEnum.COINEASY,
+    },
   }
 }

@@ -10,13 +10,16 @@ export enum BlockchainEnum {
   BITCOIN = "btc:mainnet",
   SOLANA = "sol:mainnet",
   DOGECOIN = "doge:mainnet",
-  // todo: remove TURBOCHAIN because it's not supported by the bridge
-  TURBOCHAIN = "eth:1313161567",
-  // todo: remove AURORA because it's not supported by the bridge
-  AURORA = "eth:1313161554",
   XRPLEDGER = "xrp:mainnet",
   ZCASH = "zec:mainnet",
   GNOSIS = "eth:100",
   BERACHAIN = "eth:80094",
   TRON = "tron:mainnet",
+  // todo: remove BELOW because they're not supported by the bridge
+  TURBOCHAIN = "eth:1313161567",
+  TUXAPPCHAIN = "eth:1313161573",
+  VERTEX = "eth:1313161587",
+  OPTIMA = "eth:1313161569",
+  COINEASY = "eth:1313161752",
+  AURORA = "eth:1313161554",
 }

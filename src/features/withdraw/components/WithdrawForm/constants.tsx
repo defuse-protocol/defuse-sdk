@@ -144,6 +144,46 @@ export const allBlockchains = [
     ),
     value: "tron",
   },
+  {
+    label: "TuxAppChain",
+    icon: (
+      <NetworkIcon
+        chainIcon="/static/icons/network/tuxappchain.svg"
+        chainName="TuxAppChain"
+      />
+    ),
+    value: "tuxappchain",
+  },
+  {
+    label: "Vertex",
+    icon: (
+      <NetworkIcon
+        chainIcon="/static/icons/network/vertex.svg"
+        chainName="Vertex"
+      />
+    ),
+    value: "vertex",
+  },
+  {
+    label: "Optima",
+    icon: (
+      <NetworkIcon
+        chainIcon="/static/icons/network/optima.svg"
+        chainName="Optima"
+      />
+    ),
+    value: "optima",
+  },
+  {
+    label: "CoinEasy",
+    icon: (
+      <NetworkIcon
+        chainIcon="/static/icons/network/coineasy.svg"
+        chainName="CoinEasy"
+      />
+    ),
+    value: "coineasy",
+  },
 ] as const satisfies Array<{
   label: string
   icon: ReactNode

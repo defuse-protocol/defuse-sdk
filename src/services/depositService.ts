@@ -483,7 +483,15 @@ export function createDepositFromSiloTransaction(
     chainId,
   }
 
-  if (chainId === getEVMChainId("turbochain")) {
+  const virtualChainIds = [
+    getEVMChainId("turbochain"),
+    getEVMChainId("tuxappchain"),
+    getEVMChainId("vertex"),
+    getEVMChainId("optima"),
+    getEVMChainId("coineasy"),
+  ]
+
+  if (virtualChainIds.includes(chainId)) {
     // Fake gas price for EVM wallets as relayer doesn't take fee for relaying
     // a transaction to siloToSilo contract.
     tx.gas = 2_300_000n
@@ -727,6 +735,10 @@ export function getAvailableDepositRoutes(
             passiveDeposit: true,
           }
         case BlockchainEnum.TURBOCHAIN:
+        case BlockchainEnum.TUXAPPCHAIN:
+        case BlockchainEnum.VERTEX:
+        case BlockchainEnum.OPTIMA:
+        case BlockchainEnum.COINEASY:
         case BlockchainEnum.AURORA:
           return {
             activeDeposit: false,
@@ -744,6 +756,10 @@ export function getAvailableDepositRoutes(
             passiveDeposit: false,
           }
         case BlockchainEnum.TURBOCHAIN:
+        case BlockchainEnum.TUXAPPCHAIN:
+        case BlockchainEnum.VERTEX:
+        case BlockchainEnum.OPTIMA:
+        case BlockchainEnum.COINEASY:
         case BlockchainEnum.AURORA:
           return {
             activeDeposit: true,
@@ -776,6 +792,10 @@ export function getAvailableDepositRoutes(
       switch (network) {
         case BlockchainEnum.NEAR:
         case BlockchainEnum.TURBOCHAIN:
+        case BlockchainEnum.TUXAPPCHAIN:
+        case BlockchainEnum.VERTEX:
+        case BlockchainEnum.OPTIMA:
+        case BlockchainEnum.COINEASY:
         case BlockchainEnum.AURORA:
           return {
             activeDeposit: false,
@@ -808,6 +828,10 @@ export function getAvailableDepositRoutes(
       switch (network) {
         case BlockchainEnum.NEAR:
         case BlockchainEnum.TURBOCHAIN:
+        case BlockchainEnum.TUXAPPCHAIN:
+        case BlockchainEnum.VERTEX:
+        case BlockchainEnum.OPTIMA:
+        case BlockchainEnum.COINEASY:
         case BlockchainEnum.AURORA:
           return {
             activeDeposit: false,
@@ -869,6 +893,14 @@ export function getWalletRpcUrl(network: BlockchainEnum): string {
       return settings.rpcUrls.berachain
     case BlockchainEnum.TRON:
       return settings.rpcUrls.tron
+    case BlockchainEnum.TUXAPPCHAIN:
+      return settings.rpcUrls.tuxappchain
+    case BlockchainEnum.VERTEX:
+      return settings.rpcUrls.vertex
+    case BlockchainEnum.OPTIMA:
+      return settings.rpcUrls.optima
+    case BlockchainEnum.COINEASY:
+      return settings.rpcUrls.coineasy
     default:
       network satisfies never
       throw new Error("exhaustive check failed")
