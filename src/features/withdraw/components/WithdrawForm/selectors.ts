@@ -34,3 +34,19 @@ export function totalAmountReceivedSelector(
 
   return state.context.preparationOutput.value.receivedAmount
 }
+
+/**
+ * @return null | TokenValue - null if not enough info to determine
+ */
+export function withdrawalEstimateDataSelector(
+  state: SnapshotFrom<typeof withdrawUIMachine>
+): TokenValue | null {
+  if (
+    state.context.preparationOutput == null ||
+    state.context.preparationOutput.tag !== "ok"
+  ) {
+    return null
+  }
+
+  return state.context.preparationOutput.value.withdrawalEstimateData
+}

@@ -17,14 +17,17 @@ import {
 } from "../features/machines/swapIntentMachine"
 import type { State as WithdrawFormContext } from "../features/machines/withdrawFormReducer"
 import { logger } from "../logger"
+import { getWithdrawalEstimate } from "../sdk/poaBridge/poaBridgeHttpClient"
 import type { FailedQuote } from "../sdk/solverRelay/solverRelayHttpClient/types"
 import type { BaseTokenInfo, TokenValue, UnifiedTokenInfo } from "../types/base"
+import { assetNetworkAdapter } from "../utils/adapters"
 import { assert } from "../utils/assert"
 import { isBaseToken, isFungibleToken } from "../utils/token"
 import {
   adjustDecimalsTokenValue,
   compareAmounts,
   computeTotalBalanceDifferentDecimals,
+  getTokenAccountId,
   minAmounts,
   subtractAmounts,
   truncateTokenValue,
@@ -45,6 +48,7 @@ export type PreparationOutput =
         swap: SwapRequirement | null
         nep141Storage: NEP141StorageRequirement | null
         receivedAmount: TokenValue
+        withdrawalEstimateData: TokenValue | null
       }
     }
   | {
@@ -66,6 +70,7 @@ export type PreparationOutput =
             receivedAmount: bigint
             minWithdrawalAmount: bigint
             token: BaseTokenInfo
+            withdrawalEstimateData: TokenValue | null
           }
     }
 
@@ -75,15 +80,46 @@ export async function prepareWithdraw(
     depositedBalanceRef,
     poaBridgeInfoRef,
     backgroundQuoteRef,
+    userAddress,
   }: {
     formValues: WithdrawFormContext
     depositedBalanceRef: ActorRefFrom<typeof depositedBalanceMachine>
     poaBridgeInfoRef: ActorRefFrom<typeof poaBridgeInfoActor>
     backgroundQuoteRef: ActorRefFrom<typeof backgroundQuoterMachine>
+    userAddress: string | null
   },
   { signal }: { signal: AbortSignal }
 ): Promise<PreparationOutput> {
-  const balances = await getBalances({ depositedBalanceRef }, { signal })
+  const withdrawalEstimateDataPromise = () => {
+    if (userAddress == null || formValues.tokenOut.bridge !== "poa") {
+      return null
+    }
+    return getWithdrawalEstimate({
+      token: getTokenAccountId(formValues.tokenOut.defuseAssetId),
+      address: userAddress,
+      chain: assetNetworkAdapter[formValues.tokenOut.chainName],
+    })
+  }
+
+  const [balances_, withdrawalEstimateData_] = await Promise.allSettled([
+    getBalances({ depositedBalanceRef }, { signal }),
+    withdrawalEstimateDataPromise(),
+  ])
+
+  if (balances_.status === "rejected") {
+    logger.error(balances_.reason)
+    return {
+      tag: "err",
+      value: { reason: "ERR_BALANCE_FETCH" },
+    }
+  }
+
+  const balances = balances_.value
+  const withdrawalEstimateData =
+    withdrawalEstimateData_.status === "rejected"
+      ? null
+      : withdrawalEstimateData_.value
+
   if (balances.tag === "err") {
     return balances
   }
@@ -175,6 +211,7 @@ export async function prepareWithdraw(
         // todo: provide decimals too
         minWithdrawalAmount: minWithdrawal.amount,
         token: formValues.tokenOut,
+        withdrawalEstimateData: null,
       },
     }
   }
@@ -186,6 +223,12 @@ export async function prepareWithdraw(
       swap: swapRequirement,
       nep141Storage: nep141Storage.value,
       receivedAmount: receivedAmount,
+      withdrawalEstimateData: withdrawalEstimateData
+        ? {
+            amount: BigInt(withdrawalEstimateData.withdrawalFee),
+            decimals: withdrawalEstimateData.withdrawalFeeDecimals,
+          }
+        : null,
     },
   }
 }

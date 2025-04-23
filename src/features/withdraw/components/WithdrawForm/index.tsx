@@ -4,7 +4,6 @@ import {
   Checkbox,
   Flex,
   IconButton,
-  Skeleton,
   Text,
   TextField,
   Tooltip,
@@ -57,6 +56,7 @@ import {
   LongWithdrawWarning,
   MinWithdrawalAmount,
   PreparationResult,
+  ReceivedAmountAndFee,
 } from "./components"
 import { SolverId, type allBlockchains } from "./constants"
 import { useTokenBalances } from "./hooks/useTokenBalances"
@@ -65,6 +65,7 @@ import {
   isLiquidityUnavailableSelector,
   isUnsufficientTokenInAmount,
   totalAmountReceivedSelector,
+  withdrawalEstimateDataSelector,
 } from "./selectors"
 import {
   chainTypeSatisfiesChainName,
@@ -107,6 +108,7 @@ export const WithdrawForm = ({
     noLiquidity,
     insufficientTokenInAmount,
     totalAmountReceived,
+    withdrawalEstimateData,
   } = WithdrawUIMachineContext.useSelector((state) => {
     return {
       state,
@@ -119,6 +121,7 @@ export const WithdrawForm = ({
       noLiquidity: isLiquidityUnavailableSelector(state),
       insufficientTokenInAmount: isUnsufficientTokenInAmount(state),
       totalAmountReceived: totalAmountReceivedSelector(state),
+      withdrawalEstimateData: withdrawalEstimateDataSelector(state),
     }
   })
 
@@ -633,26 +636,12 @@ export const WithdrawForm = ({
             </Text>
           )}
 
-          <Flex justify="between" px="2">
-            <Text size="1" weight="medium" color="gray">
-              Received amount
-            </Text>
-
-            <Text size="1" weight="bold">
-              {state.matches({ editing: "preparation" }) ? (
-                <Skeleton>100.000000</Skeleton>
-              ) : totalAmountReceived == null ? (
-                "–"
-              ) : (
-                formatTokenValue(
-                  totalAmountReceived.amount,
-                  totalAmountReceived.decimals
-                )
-                // biome-ignore lint/nursery/useConsistentCurlyBraces: space is needed here
-              )}{" "}
-              {token.symbol}
-            </Text>
-          </Flex>
+          <ReceivedAmountAndFee
+            fee={withdrawalEstimateData}
+            totalAmountReceived={totalAmountReceived}
+            symbol={token.symbol}
+            isLoading={state.matches({ editing: "preparation" })}
+          />
 
           <AuthGate
             renderHostAppLink={renderHostAppLink}
