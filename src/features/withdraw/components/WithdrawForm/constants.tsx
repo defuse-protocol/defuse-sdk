@@ -145,11 +145,11 @@ export const allBlockchains = [
     value: "tron",
   },
   {
-    label: "TuxAppChain",
+    label: "TuxaChain",
     icon: (
       <NetworkIcon
         chainIcon="/static/icons/network/tuxappchain.svg"
-        chainName="TuxAppChain"
+        chainName="TuxaChain"
       />
     ),
     value: "tuxappchain",

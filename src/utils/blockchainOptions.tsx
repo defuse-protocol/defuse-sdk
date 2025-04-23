@@ -148,7 +148,7 @@ export function getBlockchainsOptions(): Record<
       value: BlockchainEnum.TRON,
     },
     [BlockchainEnum.TUXAPPCHAIN]: {
-      label: "TuxAppChain",
+      label: "TuxaChain",
       icon: (
         <NetworkIcon
           chainIcon="/static/icons/network/tuxappchain.svg"
