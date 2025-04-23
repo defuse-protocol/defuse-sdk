@@ -14,10 +14,16 @@ import { isBaseToken, isUnifiedToken } from "src/utils/token"
 import { getBlockchainsOptions } from "./blockchainOptions"
 
 export function isAuroraVirtualChain(network: SupportedChainName): boolean {
-  const virtualChains = ["turbochain", "aurora"]
+  const virtualChains = [
+    "turbochain",
+    "aurora",
+    "tuxappchain",
+    "vertex",
+    "optima",
+    "coineasy",
+  ]
   return virtualChains.includes(network)
 }
-
 export const filterChains = (
   candidates: Record<string, { label: string; icon: ReactNode; value: string }>,
   searchValue: string

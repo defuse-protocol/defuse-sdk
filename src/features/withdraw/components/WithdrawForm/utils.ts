@@ -26,6 +26,10 @@ export function chainTypeSatisfiesChainName(
     case chainType === AuthMethod.EVM && chainName === "arbitrum":
     case chainType === AuthMethod.EVM && chainName === "base":
     case chainType === AuthMethod.EVM && chainName === "turbochain":
+    case chainType === AuthMethod.EVM && chainName === "tuxappchain":
+    case chainType === AuthMethod.EVM && chainName === "vertex":
+    case chainType === AuthMethod.EVM && chainName === "optima":
+    case chainType === AuthMethod.EVM && chainName === "coineasy":
     case chainType === AuthMethod.EVM && chainName === "aurora":
     case chainType === AuthMethod.EVM && chainName === "gnosis":
     case chainType === AuthMethod.EVM && chainName === "berachain":

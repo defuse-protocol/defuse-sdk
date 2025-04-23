@@ -68,6 +68,10 @@ export const depositUIMachine = setup({
       depositEVMRef: "depositEVMActor"
       depositSolanaRef: "depositSolanaActor"
       depositTurboRef: "depositTurboActor"
+      depositTuxappchainRef: "depositTuxappchainActor"
+      depositVertexRef: "depositVertexActor"
+      depositOptimaRef: "depositOptimaActor"
+      depositCoineasyRef: "depositCoineasyActor"
     },
   },
   actors: {
@@ -76,6 +80,10 @@ export const depositUIMachine = setup({
     depositEVMActor: depositMachine,
     depositSolanaActor: depositMachine,
     depositTurboActor: depositMachine,
+    depositTuxappchainActor: depositMachine,
+    depositVertexActor: depositMachine,
+    depositOptimaActor: depositMachine,
+    depositCoineasyActor: depositMachine,
     prepareDepositActor: prepareDepositActor,
     depositFormActor: depositFormReducer,
     depositGenerateAddressActor: depositGenerateAddressMachine,
@@ -188,7 +196,13 @@ export const depositUIMachine = setup({
     },
     isChainAuroraEngineSelected: ({ context }) => {
       const blockchain = context.depositFormRef.getSnapshot().context.blockchain
-      return blockchain === "turbochain" || blockchain === "aurora"
+      return [
+        "turbochain",
+        "tuxappchain",
+        "vertex",
+        "optima",
+        "coineasy",
+      ].includes(blockchain ?? "")
     },
     isOk: (_, a: { tag: "err" | "ok" }) => a.tag === "ok",
     isDepositParamsComplete: and([
@@ -290,6 +304,30 @@ export const depositUIMachine = setup({
           },
           {
             target: "submittingTurboTx",
+            guard: "isChainAuroraEngineSelected",
+            actions: "clearResults",
+            reenter: true,
+          },
+          {
+            target: "submittingTuxappchainTx",
+            guard: "isChainAuroraEngineSelected",
+            actions: "clearResults",
+            reenter: true,
+          },
+          {
+            target: "submittingVertexTx",
+            guard: "isChainAuroraEngineSelected",
+            actions: "clearResults",
+            reenter: true,
+          },
+          {
+            target: "submittingOptimaTx",
+            guard: "isChainAuroraEngineSelected",
+            actions: "clearResults",
+            reenter: true,
+          },
+          {
+            target: "submittingCoineasyTx",
             guard: "isChainAuroraEngineSelected",
             actions: "clearResults",
             reenter: true,
@@ -456,6 +494,110 @@ export const depositUIMachine = setup({
           return {
             ...params,
             type: "depositTurbo",
+            depositAddress: config.env.contractID,
+          }
+        },
+        onDone: {
+          target: "editing.reset_previous_preparation",
+          actions: [
+            {
+              type: "setDepositOutput",
+              params: ({ event }) => event.output,
+            },
+            { type: "clearUIDepositAmount" },
+          ],
+          reenter: true,
+        },
+      },
+    },
+    submittingTuxappchainTx: {
+      invoke: {
+        id: "depositTuxappchainRef",
+        src: "depositTuxappchainActor",
+        input: ({ context, event }) => {
+          assertEvent(event, "SUBMIT")
+          const params = extractDepositParams(context)
+          return {
+            ...params,
+            type: "depositTuxappchain",
+            depositAddress: config.env.contractID,
+          }
+        },
+        onDone: {
+          target: "editing.reset_previous_preparation",
+          actions: [
+            {
+              type: "setDepositOutput",
+              params: ({ event }) => event.output,
+            },
+            { type: "clearUIDepositAmount" },
+          ],
+          reenter: true,
+        },
+      },
+    },
+    submittingVertexTx: {
+      invoke: {
+        id: "depositVertexRef",
+        src: "depositVertexActor",
+        input: ({ context, event }) => {
+          assertEvent(event, "SUBMIT")
+          const params = extractDepositParams(context)
+          return {
+            ...params,
+            type: "depositVertex",
+            depositAddress: config.env.contractID,
+          }
+        },
+        onDone: {
+          target: "editing.reset_previous_preparation",
+          actions: [
+            {
+              type: "setDepositOutput",
+              params: ({ event }) => event.output,
+            },
+            { type: "clearUIDepositAmount" },
+          ],
+          reenter: true,
+        },
+      },
+    },
+    submittingOptimaTx: {
+      invoke: {
+        id: "depositOptimaRef",
+        src: "depositOptimaActor",
+        input: ({ context, event }) => {
+          assertEvent(event, "SUBMIT")
+          const params = extractDepositParams(context)
+          return {
+            ...params,
+            type: "depositOptima",
+            depositAddress: config.env.contractID,
+          }
+        },
+        onDone: {
+          target: "editing.reset_previous_preparation",
+          actions: [
+            {
+              type: "setDepositOutput",
+              params: ({ event }) => event.output,
+            },
+            { type: "clearUIDepositAmount" },
+          ],
+          reenter: true,
+        },
+      },
+    },
+    submittingCoineasyTx: {
+      invoke: {
+        id: "depositCoineasyRef",
+        src: "depositCoineasyActor",
+        input: ({ context, event }) => {
+          assertEvent(event, "SUBMIT")
+          const params = extractDepositParams(context)
+          return {
+            ...params,
+            type: "depositCoineasy",
             depositAddress: config.env.contractID,
           }
         },

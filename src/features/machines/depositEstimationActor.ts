@@ -49,6 +49,10 @@ export const depositEstimateMaxValueActor = fromPromise(
       case BlockchainEnum.BASE:
       case BlockchainEnum.ARBITRUM:
       case BlockchainEnum.TURBOCHAIN:
+      case BlockchainEnum.TUXAPPCHAIN:
+      case BlockchainEnum.VERTEX:
+      case BlockchainEnum.OPTIMA:
+      case BlockchainEnum.COINEASY:
       case BlockchainEnum.AURORA:
       case BlockchainEnum.GNOSIS:
       case BlockchainEnum.BERACHAIN: {
