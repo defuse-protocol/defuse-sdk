@@ -65,7 +65,7 @@ import {
   isLiquidityUnavailableSelector,
   isUnsufficientTokenInAmount,
   totalAmountReceivedSelector,
-  withdrawalEstimateDataSelector,
+  withdtrawalFeeSelector,
 } from "./selectors"
 import {
   chainTypeSatisfiesChainName,
@@ -108,7 +108,7 @@ export const WithdrawForm = ({
     noLiquidity,
     insufficientTokenInAmount,
     totalAmountReceived,
-    withdrawalEstimateData,
+    withdtrawalFee,
   } = WithdrawUIMachineContext.useSelector((state) => {
     return {
       state,
@@ -121,7 +121,7 @@ export const WithdrawForm = ({
       noLiquidity: isLiquidityUnavailableSelector(state),
       insufficientTokenInAmount: isUnsufficientTokenInAmount(state),
       totalAmountReceived: totalAmountReceivedSelector(state),
-      withdrawalEstimateData: withdrawalEstimateDataSelector(state),
+      withdtrawalFee: withdtrawalFeeSelector(state),
     }
   })
 
@@ -637,7 +637,7 @@ export const WithdrawForm = ({
           )}
 
           <ReceivedAmountAndFee
-            fee={withdrawalEstimateData}
+            fee={withdtrawalFee}
             totalAmountReceived={totalAmountReceived}
             symbol={token.symbol}
             isLoading={state.matches({ editing: "preparation" })}

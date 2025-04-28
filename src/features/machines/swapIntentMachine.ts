@@ -694,7 +694,7 @@ export function calcOperationAmountOut(
         quoteToPublish,
         operation.nep141Storage,
         operation.directWithdrawalAmount
-      )
+      ).withdrawAmount
 
     default:
       operationType satisfies never
@@ -706,8 +706,12 @@ export function calcWithdrawAmount(
   tokenOut: BaseTokenInfo,
   swapInfo: AggregatedQuote | null,
   nep141Storage: NEP141StorageRequirement | null,
-  directWithdrawalAmount: TokenValue
-): TokenValue {
+  directWithdrawalAmount: TokenValue,
+  estimatedWithdrawalFee?: TokenValue
+): {
+  withdrawAmount: TokenValue
+  withdrawFee: TokenValue
+} {
   const gotFromSwap =
     swapInfo == null
       ? { amount: 0n, decimals: 0 }
@@ -732,10 +736,21 @@ export function calcWithdrawAmount(
     }
   }
 
-  return subtractAmounts(
-    addAmounts(directWithdrawalAmount, gotFromSwap),
-    spentOnStorage
-  )
+  let spentOnStorageWithEstiamtedFee = spentOnStorage
+  if (estimatedWithdrawalFee != null) {
+    spentOnStorageWithEstiamtedFee = addAmounts(
+      estimatedWithdrawalFee,
+      spentOnStorage
+    )
+  }
+
+  return {
+    withdrawAmount: subtractAmounts(
+      addAmounts(directWithdrawalAmount, gotFromSwap),
+      spentOnStorageWithEstiamtedFee
+    ),
+    withdrawFee: spentOnStorageWithEstiamtedFee,
+  }
 }
 
 function makeQuotePriorityQueue(tokenOut: BaseTokenInfo) {

@@ -40,6 +40,18 @@ interface SwapRequirement {
   swapQuote: QuoteResult
 }
 
+export type WithdtrawalFee =
+  | {
+      tag: "ok"
+      value: TokenValue
+    }
+  | {
+      tag: "err"
+      value: {
+        reason: "ERR_WITHDRAWAL_FEE_FETCH"
+      }
+    }
+
 export type PreparationOutput =
   | {
       tag: "ok"
@@ -48,7 +60,7 @@ export type PreparationOutput =
         swap: SwapRequirement | null
         nep141Storage: NEP141StorageRequirement | null
         receivedAmount: TokenValue
-        withdrawalEstimateData: TokenValue | null
+        withdtrawalFee: WithdtrawalFee
       }
     }
   | {
@@ -70,7 +82,7 @@ export type PreparationOutput =
             receivedAmount: bigint
             minWithdrawalAmount: bigint
             token: BaseTokenInfo
-            withdrawalEstimateData: TokenValue | null
+            withdtrawalFee: WithdtrawalFee
           }
     }
 
@@ -90,7 +102,7 @@ export async function prepareWithdraw(
   },
   { signal }: { signal: AbortSignal }
 ): Promise<PreparationOutput> {
-  const withdrawalEstimateDataPromise = () => {
+  const withdtrawalFeePromise = () => {
     if (userAddress == null || formValues.tokenOut.bridge !== "poa") {
       return null
     }
@@ -101,9 +113,9 @@ export async function prepareWithdraw(
     })
   }
 
-  const [balances_, withdrawalEstimateData_] = await Promise.allSettled([
+  const [balances_, withdtrawalFee_] = await Promise.allSettled([
     getBalances({ depositedBalanceRef }, { signal }),
-    withdrawalEstimateDataPromise(),
+    withdtrawalFeePromise(),
   ])
 
   if (balances_.status === "rejected") {
@@ -115,10 +127,16 @@ export async function prepareWithdraw(
   }
 
   const balances = balances_.value
-  const withdrawalEstimateData =
-    withdrawalEstimateData_.status === "rejected"
-      ? null
-      : withdrawalEstimateData_.value
+
+  const withdtrawalFee_Rejected = withdtrawalFee_.status === "rejected"
+
+  if (withdtrawalFee_Rejected) {
+    logger.error(
+      new Error("Cannot fetch estimate fee for POA token", {
+        cause: withdtrawalFee_.reason,
+      })
+    )
+  }
 
   if (balances.tag === "err") {
     return balances
@@ -192,14 +210,37 @@ export async function prepareWithdraw(
     { signal }
   )
 
-  const receivedAmount = calcWithdrawAmount(
+  const withdtrawalFee: WithdtrawalFee = withdtrawalFee_Rejected
+    ? { tag: "err", value: { reason: "ERR_WITHDRAWAL_FEE_FETCH" } }
+    : {
+        tag: "ok",
+        value:
+          withdtrawalFee_.value == null
+            ? {
+                amount: BigInt(0), // no fee
+                decimals: 0, // not important as no fee
+              }
+            : {
+                amount: BigInt(withdtrawalFee_.value.withdrawalFee),
+                decimals: withdtrawalFee_.value.withdrawalFeeDecimals,
+              },
+      }
+
+  const { withdrawAmount: receivedAmount, withdrawFee } = calcWithdrawAmount(
     formValues.tokenOut,
     swapRequirement?.swapQuote?.tag === "ok"
       ? swapRequirement.swapQuote.value
       : null,
     nep141Storage.value,
-    directWithdrawAvailable
+    directWithdrawAvailable,
+    withdtrawalFee.tag === "ok"
+      ? withdtrawalFee.value
+      : { amount: 0n, decimals: 0 }
   )
+
+  if (withdtrawalFee.tag === "ok") {
+    withdtrawalFee.value = withdrawFee // withdrawFee is considering all fees including estimated and swaping
+  }
 
   if (compareAmounts(receivedAmount, minWithdrawal) === -1) {
     return {
@@ -211,7 +252,7 @@ export async function prepareWithdraw(
         // todo: provide decimals too
         minWithdrawalAmount: minWithdrawal.amount,
         token: formValues.tokenOut,
-        withdrawalEstimateData: null,
+        withdtrawalFee,
       },
     }
   }
@@ -223,12 +264,7 @@ export async function prepareWithdraw(
       swap: swapRequirement,
       nep141Storage: nep141Storage.value,
       receivedAmount: receivedAmount,
-      withdrawalEstimateData: withdrawalEstimateData
-        ? {
-            amount: BigInt(withdrawalEstimateData.withdrawalFee),
-            decimals: withdrawalEstimateData.withdrawalFeeDecimals,
-          }
-        : null,
+      withdtrawalFee,
     },
   }
 }

@@ -1,4 +1,5 @@
 import type { SnapshotFrom } from "xstate"
+import type { WithdtrawalFee } from "../../../../services/withdrawService"
 import type { TokenValue } from "../../../../types/base"
 import type { withdrawUIMachine } from "../../../machines/withdrawUIMachine"
 
@@ -36,17 +37,23 @@ export function totalAmountReceivedSelector(
 }
 
 /**
- * @return null | TokenValue - null if not enough info to determine
+ * @return amount 0, decimals 0 | TokenValue if not enough info to determine
  */
-export function withdrawalEstimateDataSelector(
+export function withdtrawalFeeSelector(
   state: SnapshotFrom<typeof withdrawUIMachine>
-): TokenValue | null {
+): WithdtrawalFee {
   if (
     state.context.preparationOutput == null ||
     state.context.preparationOutput.tag !== "ok"
   ) {
-    return null
+    return {
+      tag: "ok",
+      value: {
+        amount: BigInt(0),
+        decimals: 0,
+      },
+    }
   }
 
-  return state.context.preparationOutput.value.withdrawalEstimateData
+  return state.context.preparationOutput.value.withdtrawalFee
 }

@@ -24,7 +24,7 @@ export const PreparationResult = ({
       // Don't duplicate error messages, this should be handled by input validation
       break
     case "ERR_AMOUNT_TOO_LOW":
-      content = `Need ${formatTokenValue(err.minWithdrawalAmount - err.receivedAmount, err.token.decimals)} ${err.token.symbol} more to withdraw`
+      content = `Need ${formatTokenValue(err.minWithdrawalAmount - err.receivedAmount, err.token.decimals)} ${err.token.symbol} more to withdraw (considering fee)`
       break
     case "NO_QUOTES":
     case "INSUFFICIENT_AMOUNT":
