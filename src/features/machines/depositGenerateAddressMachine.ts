@@ -1,6 +1,6 @@
 import type { SupportedChainName } from "src/types/base"
 import { assert } from "src/utils/assert"
-import { assign, fromPromise, setup } from "xstate"
+import { assertEvent, assign, fromPromise, setup } from "xstate"
 import type { AuthMethod } from "../../types/authHandle"
 
 export type Context = {
@@ -26,12 +26,16 @@ export type Context = {
 export const depositGenerateAddressMachine = setup({
   types: {
     context: {} as Context,
-    events: {} as {
-      type: "REQUEST_GENERATE_ADDRESS"
-      params: NonNullable<
-        Pick<Context, "userAddress" | "userChainType" | "blockchain">
-      >
-    },
+    events: {} as
+      | {
+          type: "REQUEST_GENERATE_ADDRESS"
+          params: NonNullable<
+            Pick<Context, "userAddress" | "userChainType" | "blockchain">
+          >
+        }
+      | {
+          type: "REQUEST_CLEAR_ADDRESS"
+        },
   },
   actors: {
     generateDepositAddress: fromPromise(
@@ -48,6 +52,7 @@ export const depositGenerateAddressMachine = setup({
   },
   actions: {
     setInputParams: assign(({ event }) => {
+      assertEvent(event, "REQUEST_GENERATE_ADDRESS")
       return {
         userAddress: event.params.userAddress,
         userChainType: event.params.userChainType,
@@ -62,6 +67,7 @@ export const depositGenerateAddressMachine = setup({
   },
   guards: {
     isInputSufficient: ({ event }) => {
+      assertEvent(event, "REQUEST_GENERATE_ADDRESS")
       if (
         event.params.blockchain === "turbochain" ||
         event.params.blockchain === "tuxappchain" ||
@@ -98,6 +104,12 @@ export const depositGenerateAddressMachine = setup({
         guard: "isInputSufficient",
       },
       ".completed",
+    ],
+    REQUEST_CLEAR_ADDRESS: [
+      {
+        actions: ["resetPreparationOutput"],
+        target: ".idle",
+      },
     ],
   },
 
