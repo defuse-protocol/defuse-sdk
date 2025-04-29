@@ -63,7 +63,6 @@ export const depositGenerateAddressMachine = setup({
   guards: {
     isInputSufficient: ({ event }) => {
       if (
-        event.params.blockchain === "near" ||
         event.params.blockchain === "turbochain" ||
         event.params.blockchain === "tuxappchain" ||
         event.params.blockchain === "vertex" ||
