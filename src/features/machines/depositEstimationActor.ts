@@ -40,7 +40,7 @@ export const depositEstimateMaxValueActor = fromPromise(
       case BlockchainEnum.NEAR:
         // Max value for NEAR is the sum of the selected token balance (wrap.near) and the NEAR native balance
         if (isFungibleToken(token) && token.address === "wrap.near") {
-          // nearBalance is always null for passive deposits form non-NEAR wallets
+          // nearBalance is always null for passive deposits from non-NEAR wallets
           return nearBalance ?? 0n + balance
         }
         return balance
