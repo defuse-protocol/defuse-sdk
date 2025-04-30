@@ -115,14 +115,21 @@ export async function prepareDeposit(
 ): Promise<PreparationOutput> {
   assert(formValues.derivedToken, "Token is required")
 
-  const storageDepositAmount = await getStorageDepositAmount(
-    {
-      storageDepositAmountRef,
-    },
-    { signal }
-  )
-  if (storageDepositAmount.tag === "err") {
-    return storageDepositAmount
+  const userChainType =
+    depositGenerateAddressRef.getSnapshot().context.userChainType
+  let storageDepositRequired: bigint | null = null
+  // Getting storage deposit amount makes sense only for user NEAR wallet
+  if (userChainType === AuthMethod.Near) {
+    const storageDepositAmount = await getStorageDepositAmount(
+      {
+        storageDepositAmountRef,
+      },
+      { signal }
+    )
+    if (storageDepositAmount.tag === "err") {
+      return storageDepositAmount
+    }
+    storageDepositRequired = storageDepositAmount.value.maxDepositValue
   }
 
   const generateDepositAddress = await getGeneratedDepositAddress(
@@ -171,7 +178,7 @@ export async function prepareDeposit(
     value: {
       generateDepositAddress:
         generateDepositAddress.value.generateDepositAddress,
-      storageDepositRequired: storageDepositAmount.value.maxDepositValue,
+      storageDepositRequired,
       balance: balances.value.balance,
       nearBalance: balances.value.nearBalance,
       maxDepositValue: estimation.value.maxDepositValue,
@@ -717,7 +724,7 @@ export function getAvailableDepositRoutes(
         case BlockchainEnum.NEAR:
           return {
             activeDeposit: true,
-            passiveDeposit: false,
+            passiveDeposit: true,
           }
         case BlockchainEnum.ETHEREUM:
         case BlockchainEnum.BASE:
@@ -753,7 +760,7 @@ export function getAvailableDepositRoutes(
         case BlockchainEnum.NEAR:
           return {
             activeDeposit: false,
-            passiveDeposit: false,
+            passiveDeposit: true,
           }
         case BlockchainEnum.TURBOCHAIN:
         case BlockchainEnum.TUXAPPCHAIN:
@@ -791,6 +798,10 @@ export function getAvailableDepositRoutes(
     case AuthMethod.Solana:
       switch (network) {
         case BlockchainEnum.NEAR:
+          return {
+            activeDeposit: false,
+            passiveDeposit: true,
+          }
         case BlockchainEnum.TURBOCHAIN:
         case BlockchainEnum.TUXAPPCHAIN:
         case BlockchainEnum.VERTEX:
@@ -827,6 +838,10 @@ export function getAvailableDepositRoutes(
     case AuthMethod.WebAuthn:
       switch (network) {
         case BlockchainEnum.NEAR:
+          return {
+            activeDeposit: false,
+            passiveDeposit: true,
+          }
         case BlockchainEnum.TURBOCHAIN:
         case BlockchainEnum.TUXAPPCHAIN:
         case BlockchainEnum.VERTEX:

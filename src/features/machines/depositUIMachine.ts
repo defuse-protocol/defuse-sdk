@@ -112,6 +112,7 @@ export const depositUIMachine = setup({
             tag: "ok",
             value: {
               ...context.preparationOutput.value,
+              generateDepositAddress: null,
               // We don't need to clear the balances, instead we'll update them on the next balance refresh
               balance: context.preparationOutput.value.balance,
               nearBalance: context.preparationOutput.value.nearBalance,
@@ -142,6 +143,9 @@ export const depositUIMachine = setup({
         }
       }
     ),
+    requestClearAddress: sendTo("depositGenerateAddressRef", () => ({
+      type: "REQUEST_CLEAR_ADDRESS",
+    })),
     requestStorageDepositAmount: sendTo(
       "storageDepositAmountRef",
       ({ context }) => {
@@ -256,14 +260,17 @@ export const depositUIMachine = setup({
           userChainType: ({ event }) => event.params.userChainType,
         }),
       ],
+      target: ".editing.reset_previous_preparation",
     },
 
     LOGOUT: {
       actions: [
         "clearResults",
+        "clearPreparationOutput",
         assign({
           userAddress: () => "",
         }),
+        "requestClearAddress",
       ],
     },
   },

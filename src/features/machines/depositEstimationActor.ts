@@ -2,7 +2,6 @@ import {
   createDepositEVMERC20Transaction,
   getWalletRpcUrl,
 } from "src/services/depositService"
-import { assert } from "src/utils/assert"
 import { getEVMChainId } from "src/utils/evmChainId"
 import type { Address } from "viem"
 import { assign, fromPromise, setup } from "xstate"
@@ -41,8 +40,8 @@ export const depositEstimateMaxValueActor = fromPromise(
       case BlockchainEnum.NEAR:
         // Max value for NEAR is the sum of the selected token balance (wrap.near) and the NEAR native balance
         if (isFungibleToken(token) && token.address === "wrap.near") {
-          assert(nearBalance !== null, "Near balance is required")
-          return nearBalance + balance
+          // nearBalance is always null for passive deposits from non-NEAR wallets
+          return nearBalance ?? 0n + balance
         }
         return balance
       case BlockchainEnum.ETHEREUM:
