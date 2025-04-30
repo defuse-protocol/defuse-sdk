@@ -17,14 +17,17 @@ import {
 } from "../features/machines/swapIntentMachine"
 import type { State as WithdrawFormContext } from "../features/machines/withdrawFormReducer"
 import { logger } from "../logger"
+import { getWithdrawalEstimate } from "../sdk/poaBridge/poaBridgeHttpClient"
 import type { FailedQuote } from "../sdk/solverRelay/solverRelayHttpClient/types"
 import type { BaseTokenInfo, TokenValue, UnifiedTokenInfo } from "../types/base"
+import { assetNetworkAdapter } from "../utils/adapters"
 import { assert } from "../utils/assert"
 import { isBaseToken, isFungibleToken } from "../utils/token"
 import {
   adjustDecimalsTokenValue,
   compareAmounts,
   computeTotalBalanceDifferentDecimals,
+  getTokenAccountId,
   minAmounts,
   subtractAmounts,
   truncateTokenValue,
@@ -37,6 +40,18 @@ interface SwapRequirement {
   swapQuote: QuoteResult
 }
 
+export type WithdtrawalFee =
+  | {
+      tag: "ok"
+      value: TokenValue
+    }
+  | {
+      tag: "err"
+      value: {
+        reason: "ERR_WITHDRAWAL_FEE_FETCH"
+      }
+    }
+
 export type PreparationOutput =
   | {
       tag: "ok"
@@ -45,6 +60,7 @@ export type PreparationOutput =
         swap: SwapRequirement | null
         nep141Storage: NEP141StorageRequirement | null
         receivedAmount: TokenValue
+        withdtrawalFee: WithdtrawalFee
       }
     }
   | {
@@ -66,6 +82,7 @@ export type PreparationOutput =
             receivedAmount: bigint
             minWithdrawalAmount: bigint
             token: BaseTokenInfo
+            withdtrawalFee: WithdtrawalFee
           }
     }
 
@@ -75,15 +92,52 @@ export async function prepareWithdraw(
     depositedBalanceRef,
     poaBridgeInfoRef,
     backgroundQuoteRef,
+    userAddress,
   }: {
     formValues: WithdrawFormContext
     depositedBalanceRef: ActorRefFrom<typeof depositedBalanceMachine>
     poaBridgeInfoRef: ActorRefFrom<typeof poaBridgeInfoActor>
     backgroundQuoteRef: ActorRefFrom<typeof backgroundQuoterMachine>
+    userAddress: string | null
   },
   { signal }: { signal: AbortSignal }
 ): Promise<PreparationOutput> {
-  const balances = await getBalances({ depositedBalanceRef }, { signal })
+  const withdtrawalFeePromise = () => {
+    if (userAddress == null || formValues.tokenOut.bridge !== "poa") {
+      return null
+    }
+    return getWithdrawalEstimate({
+      token: getTokenAccountId(formValues.tokenOut.defuseAssetId),
+      address: userAddress,
+      chain: assetNetworkAdapter[formValues.tokenOut.chainName],
+    })
+  }
+
+  const [balances_, withdtrawalFee_] = await Promise.allSettled([
+    getBalances({ depositedBalanceRef }, { signal }),
+    withdtrawalFeePromise(),
+  ])
+
+  if (balances_.status === "rejected") {
+    logger.error(balances_.reason)
+    return {
+      tag: "err",
+      value: { reason: "ERR_BALANCE_FETCH" },
+    }
+  }
+
+  const balances = balances_.value
+
+  const withdtrawalFee_Rejected = withdtrawalFee_.status === "rejected"
+
+  if (withdtrawalFee_Rejected) {
+    logger.error(
+      new Error("Cannot fetch estimate fee for POA token", {
+        cause: withdtrawalFee_.reason,
+      })
+    )
+  }
+
   if (balances.tag === "err") {
     return balances
   }
@@ -156,14 +210,37 @@ export async function prepareWithdraw(
     { signal }
   )
 
-  const receivedAmount = calcWithdrawAmount(
+  const withdtrawalFee: WithdtrawalFee = withdtrawalFee_Rejected
+    ? { tag: "err", value: { reason: "ERR_WITHDRAWAL_FEE_FETCH" } }
+    : {
+        tag: "ok",
+        value:
+          withdtrawalFee_.value == null
+            ? {
+                amount: BigInt(0), // no fee
+                decimals: 0, // not important as no fee
+              }
+            : {
+                amount: BigInt(withdtrawalFee_.value.withdrawalFee),
+                decimals: withdtrawalFee_.value.withdrawalFeeDecimals,
+              },
+      }
+
+  const { withdrawAmount: receivedAmount, withdrawFee } = calcWithdrawAmount(
     formValues.tokenOut,
     swapRequirement?.swapQuote?.tag === "ok"
       ? swapRequirement.swapQuote.value
       : null,
     nep141Storage.value,
-    directWithdrawAvailable
+    directWithdrawAvailable,
+    withdtrawalFee.tag === "ok"
+      ? withdtrawalFee.value
+      : { amount: 0n, decimals: 0 }
   )
+
+  if (withdtrawalFee.tag === "ok") {
+    withdtrawalFee.value = withdrawFee // withdrawFee is considering all fees including estimated and swaping
+  }
 
   if (compareAmounts(receivedAmount, minWithdrawal) === -1) {
     return {
@@ -175,6 +252,7 @@ export async function prepareWithdraw(
         // todo: provide decimals too
         minWithdrawalAmount: minWithdrawal.amount,
         token: formValues.tokenOut,
+        withdtrawalFee,
       },
     }
   }
@@ -186,6 +264,7 @@ export async function prepareWithdraw(
       swap: swapRequirement,
       nep141Storage: nep141Storage.value,
       receivedAmount: receivedAmount,
+      withdtrawalFee,
     },
   }
 }

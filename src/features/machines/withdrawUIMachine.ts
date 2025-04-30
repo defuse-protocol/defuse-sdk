@@ -58,6 +58,7 @@ export type Context = {
   } | null
   preparationOutput: PreparationOutput | null
   referral?: string
+  userAddress: string | null
 }
 
 type PassthroughEvent = {
@@ -173,6 +174,12 @@ export const withdrawUIMachine = setup({
       },
     }),
 
+    setUserAddress: assign({
+      userAddress: (_, value: Context["userAddress"]) => value,
+    }),
+    clearUserAddress: assign({
+      userAddress: null,
+    }),
     setIntentCreationResult: assign({
       intentCreationResult: (_, value: SwapIntentMachineOutput) => value,
     }),
@@ -328,6 +335,7 @@ export const withdrawUIMachine = setup({
     intentRefs: [],
     tokenList: input.tokenList,
     withdrawalSpec: null,
+    userAddress: null,
     depositedBalanceRef: spawn("depositedBalanceActor", {
       id: "depositedBalanceRef",
       input: {
@@ -364,17 +372,28 @@ export const withdrawUIMachine = setup({
     },
 
     LOGIN: {
-      actions: {
-        type: "relayToDepositedBalanceRef",
-        params: ({ event }) => event,
-      },
+      actions: [
+        {
+          type: "relayToDepositedBalanceRef",
+          params: ({ event }) => event,
+        },
+        {
+          type: "setUserAddress",
+          params: ({ event }) => event.params.userAddress,
+        },
+      ],
     },
 
     LOGOUT: {
-      actions: {
-        type: "relayToDepositedBalanceRef",
-        params: ({ event }) => event,
-      },
+      actions: [
+        {
+          type: "relayToDepositedBalanceRef",
+          params: ({ event }) => event,
+        },
+        {
+          type: "clearUserAddress",
+        },
+      ],
     },
   },
 
@@ -482,6 +501,7 @@ export const withdrawUIMachine = setup({
                 formValues: context.withdrawFormRef.getSnapshot().context,
                 depositedBalanceRef: context.depositedBalanceRef,
                 poaBridgeInfoRef: context.poaBridgeInfoRef,
+                userAddress: context.userAddress,
                 backgroundQuoteRef: backgroundQuoteRef,
               }
             },

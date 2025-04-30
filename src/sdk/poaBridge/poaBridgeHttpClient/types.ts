@@ -1,5 +1,7 @@
 import type { RpcRequestError } from "../../../errors/request"
+import type { BaseTokenInfo } from "../../../types/base"
 import type { RequestErrorType } from "../../../utils/request"
+import type { BlockchainEnum } from "../constants/blockchains"
 
 export type RequestConfig = {
   requestId?: string | undefined
@@ -116,3 +118,19 @@ export type TokenBalances = {
 }
 
 export type BridgeBalanceResponse = TokenBalances[]
+
+export type GetWithdrawalEstimateRequest = JSONRPCRequest<
+  "withdrawal_estimate",
+  {
+    token: string
+    address: string
+    chain: BlockchainEnum
+  }
+>
+export type WithdrawalEstimateResponse = {
+  token: BaseTokenInfo
+  tokenAddress: string
+  userAddress: string
+  withdrawalFee: string
+  withdrawalFeeDecimals: number
+}

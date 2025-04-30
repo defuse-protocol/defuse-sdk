@@ -11,6 +11,7 @@ import {
   computeTotalDeltaDifferentDecimals,
   filterOutPoaBridgeTokens,
   getDerivedToken,
+  getTokenAccountId,
   getTokenAccountIds,
   getUnderlyingBaseTokenInfos,
   grossUpAmount,
@@ -1176,6 +1177,20 @@ describe("getTokenAccountIds", () => {
     const result = getTokenAccountIds(tokens)
 
     expect(result).toEqual(["token7", "token8"])
+  })
+})
+
+describe("getTokenAccountId", () => {
+  it('removes "nep141:" prefix from assetId', () => {
+    const result = getTokenAccountId("nep141:token1")
+
+    expect(result).toEqual("token1")
+  })
+
+  it('returns assetId as-is if no "nep141:"', () => {
+    const result = getTokenAccountId("token2")
+
+    expect(result).toEqual("token2")
   })
 })
 
