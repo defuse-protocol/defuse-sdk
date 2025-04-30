@@ -364,13 +364,15 @@ export function filterOutPoaBridgeTokens(
 }
 
 export function getTokenAccountIds(tokens: BaseTokenInfo[]): string[] {
+  return tokens.map((t) => getTokenAccountId(t.defuseAssetId))
+}
+
+export function getTokenAccountId(assetId: string): string {
   const stringCleaner = "nep141:"
 
-  return tokens.map((t) => {
-    return t.defuseAssetId.startsWith(stringCleaner)
-      ? t.defuseAssetId.replace(stringCleaner, "")
-      : t.defuseAssetId
-  })
+  return assetId.startsWith(stringCleaner)
+    ? assetId.replace(stringCleaner, "")
+    : assetId
 }
 
 export function tokenAccountIdToDefuseAssetId(address: string): string {

@@ -68,3 +68,16 @@ export async function getTokenBalancesRequest(
 
   return response.json()
 }
+
+export async function getWithdrawalEstimate(
+  params: types.GetWithdrawalEstimateRequest["params"][0],
+  config: types.RequestConfig = {}
+): Promise<types.WithdrawalEstimateResponse> {
+  const result = await jsonRPCRequest<types.GetWithdrawalEstimateRequest>(
+    "withdrawal_estimate",
+    params,
+    config
+  )
+  // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+  return result as any
+}
