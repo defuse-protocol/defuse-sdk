@@ -201,6 +201,7 @@ export const depositUIMachine = setup({
     isChainAuroraEngineSelected: ({ context }) => {
       const blockchain = context.depositFormRef.getSnapshot().context.blockchain
       return [
+        "aurora",
         "turbochain",
         "tuxappchain",
         "vertex",
