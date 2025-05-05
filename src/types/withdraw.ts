@@ -1,3 +1,4 @@
+import { CHAIN_IDS } from "src/constants/evm"
 import type { SendNearTransaction } from "../features/machines/publicKeyVerifierMachine"
 import type { AuthHandle } from "./authHandle"
 import type {
@@ -7,7 +8,6 @@ import type {
 } from "./base"
 import type { RenderHostAppLink } from "./hostAppLink"
 import type { WalletMessage, WalletSignatureResult } from "./walletMessage"
-
 export type WithdrawWidgetProps = {
   userAddress: AuthHandle["identifier"] | undefined
   chainType: AuthHandle["method"] | undefined
@@ -29,23 +29,6 @@ export type WithdrawWidgetProps = {
 export function isSupportedChainName(
   chainName: string
 ): chainName is SupportedChainName {
-  return [
-    "near",
-    "base",
-    "arbitrum",
-    "bitcoin",
-    "solana",
-    "dogecoin",
-    "turbochain",
-    "tuxappchain",
-    "vertex",
-    "optima",
-    "coineasy",
-    "aurora",
-    "xrpledger",
-    "zcash",
-    "gnosis",
-    "berachain",
-    "tron",
-  ].includes(chainName)
+  const supportedChainNames = Object.keys(CHAIN_IDS)
+  return supportedChainNames.includes(chainName)
 }

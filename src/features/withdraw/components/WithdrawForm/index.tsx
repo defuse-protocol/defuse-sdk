@@ -127,7 +127,6 @@ export const WithdrawForm = ({
       totalAmountReceived: totalAmountReceivedSelector(state),
     }
   })
-
   const publicKeyVerifierRef = useSelector(swapRef, (state) => {
     if (state) {
       return state.children.publicKeyVerifierRef
@@ -275,7 +274,6 @@ export const WithdrawForm = ({
     const sub = watch(async (value, { name }) => {
       if (name === "amountIn") {
         const amount = value[name] ?? ""
-
         let parsedAmount: TokenValue | null = null
         try {
           const decimals = getTokenMaxDecimals(token)
