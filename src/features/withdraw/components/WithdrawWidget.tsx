@@ -20,7 +20,15 @@ import { WithdrawUIMachineContext } from "../WithdrawUIMachineContext"
 import { WithdrawForm } from "./WithdrawForm"
 
 export const WithdrawWidget = (props: WithdrawWidgetProps) => {
-  const [initialTokenIn] = props.tokenList
+  const initialTokenIn =
+    props.presetTokenSymbol !== undefined
+      ? (props.tokenList.find(
+          (el) =>
+            el.symbol.toLowerCase().normalize() ===
+            props.presetTokenSymbol?.toLowerCase().normalize()
+        ) ?? props.tokenList[0])
+      : props.tokenList[0]
+
   assert(initialTokenIn, "Token list must have at least 1 token")
 
   const initialTokenOut = isBaseToken(initialTokenIn)

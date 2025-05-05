@@ -39,7 +39,10 @@ import type {
   TokenValue,
   UnifiedTokenInfo,
 } from "../../../../types/base"
-import type { WithdrawWidgetProps } from "../../../../types/withdraw"
+import {
+  type WithdrawWidgetProps,
+  isSupportedChainName,
+} from "../../../../types/withdraw"
 import { parseUnits } from "../../../../utils/parse"
 import { validateAddress } from "../../../../utils/validateAddress"
 import {
@@ -89,6 +92,9 @@ export const WithdrawForm = ({
   userAddress,
   chainType,
   tokenList,
+  presetAmount,
+  presetNetwork,
+  presetRecipient,
   sendNearTransaction,
   renderHostAppLink,
 }: WithdrawFormProps) => {
@@ -255,7 +261,6 @@ export const WithdrawForm = ({
       try {
         parsedAmount.amount = parseUnits(amountIn, parsedAmount.decimals)
       } catch {}
-
       actorRef.send({
         type: "WITHDRAW_FORM.UPDATE_TOKEN",
         params: {
@@ -326,6 +331,18 @@ export const WithdrawForm = ({
       sub.unsubscribe()
     }
   }, [watch, actorRef, token])
+
+  useEffect(() => {
+    if (presetAmount != null) {
+      setValue("amountIn", presetAmount)
+    }
+    if (presetNetwork != null && isSupportedChainName(presetNetwork)) {
+      setValue("blockchain", presetNetwork)
+    }
+    if (presetRecipient != null) {
+      setValue("recipient", presetRecipient)
+    }
+  }, [presetAmount, presetNetwork, presetRecipient, setValue])
 
   useEffect(() => {
     const sub = actorRef.on("INTENT_PUBLISHED", () => {
@@ -542,8 +559,12 @@ export const WithdrawForm = ({
                       }}
                       variant="outline"
                       size="3"
-                      title={`Autofill with your address ${truncateUserAddress(userAddress)}`}
-                      aria-label={`Autofill with your address ${truncateUserAddress(userAddress)}`}
+                      title={`Autofill with your address ${truncateUserAddress(
+                        userAddress
+                      )}`}
+                      aria-label={`Autofill with your address ${truncateUserAddress(
+                        userAddress
+                      )}`}
                     >
                       <MagicWandIcon />
                     </IconButton>
