@@ -5,14 +5,17 @@ import {
   Trash as TrashIcon,
 } from "@phosphor-icons/react"
 import { IconButton } from "@radix-ui/themes"
-import { useContext } from "react"
+import { useCallback, useContext } from "react"
 import type { SignerCredentials } from "src/core/formatters"
+import { Copy } from "../../../../components/IntentCard/CopyButton"
+import { logger } from "../../../../logger"
+import { assert } from "../../../../utils/assert"
 import {
   computeTotalBalanceDifferentDecimals,
   getUnderlyingBaseTokenInfos,
-} from "src/utils/tokenUtils"
-import { Copy } from "../../../../components/IntentCard/CopyButton"
+} from "../../../../utils/tokenUtils"
 import { GiftClaimActorContext } from "../../providers/GiftClaimActorProvider"
+import { giftMakerHistoryStore } from "../../stores/giftMakerHistory"
 import type { GiftLinkData } from "../../types/sharedTypes"
 import type { GiftInfo } from "../../utils/parseGiftInfos"
 import { GiftStrip } from "../GiftStrip"
@@ -33,6 +36,14 @@ export function GiftMakerHistoryItem({
   )
 
   const { cancelGift } = useContext(GiftClaimActorContext)
+
+  const cancellationOrRemoval = useCallback(async () => {
+    if (giftInfo.status === "claimed") {
+      await removeClaimedGiftFromStore({ giftInfo, signerCredentials })
+    } else {
+      await cancelGift({ giftInfo, signerCredentials })
+    }
+  }, [giftInfo, signerCredentials, cancelGift])
 
   return (
     <div className="py-2.5 flex items-center justify-between gap-2.5">
@@ -85,12 +96,7 @@ export function GiftMakerHistoryItem({
         )}
         <IconButton
           type="button"
-          onClick={() => {
-            cancelGift({
-              giftInfo: giftInfo,
-              signerCredentials: signerCredentials,
-            })
-          }}
+          onClick={cancellationOrRemoval}
           variant="outline"
           color="gray"
           className="rounded-lg"
@@ -100,4 +106,20 @@ export function GiftMakerHistoryItem({
       </div>
     </div>
   )
+}
+
+async function removeClaimedGiftFromStore({
+  giftInfo,
+  signerCredentials,
+}: {
+  giftInfo: GiftInfo
+  signerCredentials: SignerCredentials
+}) {
+  assert(giftInfo.secretKey, "giftInfo.secretKey is not set")
+  const result = await giftMakerHistoryStore
+    .getState()
+    .removeGift(giftInfo.secretKey, signerCredentials)
+  if (result.tag === "err") {
+    logger.error(new Error("Failed to remove gift", { cause: result.reason }))
+  }
 }
