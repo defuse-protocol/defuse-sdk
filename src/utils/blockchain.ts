@@ -1,4 +1,5 @@
 import type { ReactNode } from "react"
+import { CHAIN_IDS } from "src/constants/evm"
 import type { BlockchainEnum } from "src/sdk/poaBridge/constants/blockchains"
 import type {
   BaseTokenInfo,
@@ -12,7 +13,6 @@ import {
 } from "src/utils/adapters"
 import { isBaseToken, isUnifiedToken } from "src/utils/token"
 import { getBlockchainsOptions } from "./blockchainOptions"
-
 export function isAuroraVirtualChain(network: SupportedChainName): boolean {
   const virtualChains = [
     "turbochain",
@@ -70,4 +70,11 @@ export function getDefaultBlockchainOptionValue(
       : null
   }
   return null
+}
+
+export function isSupportedChainName(
+  chainName: string
+): chainName is SupportedChainName {
+  const supportedChainNames = Object.keys(CHAIN_IDS)
+  return supportedChainNames.includes(chainName)
 }
