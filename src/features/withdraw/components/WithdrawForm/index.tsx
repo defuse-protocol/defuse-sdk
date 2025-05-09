@@ -20,6 +20,7 @@ import { useTokensStore } from "src/providers/TokensStoreProvider"
 import type { BlockchainEnum } from "src/sdk/poaBridge/constants/blockchains"
 import { ModalType } from "src/stores/modalStore"
 import { reverseAssetNetworkAdapter } from "src/utils/adapters"
+import { isSupportedChainName } from "src/utils/blockchain"
 import { formatTokenValue, formatUsdAmount } from "src/utils/format"
 import getTokenUsdPrice from "src/utils/getTokenUsdPrice"
 import { getTokenMaxDecimals } from "src/utils/tokenUtils"
@@ -39,10 +40,7 @@ import type {
   TokenValue,
   UnifiedTokenInfo,
 } from "../../../../types/base"
-import {
-  type WithdrawWidgetProps,
-  isSupportedChainName,
-} from "../../../../types/withdraw"
+import type { WithdrawWidgetProps } from "../../../../types/withdraw"
 import { parseUnits } from "../../../../utils/parse"
 import { validateAddress } from "../../../../utils/validateAddress"
 import {
