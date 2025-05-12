@@ -30,7 +30,6 @@ import {
   type Errors as SignIntentErrors,
   signIntentMachine,
 } from "../../machines/signIntentMachine"
-import { otcMakerTradesStore } from "../stores/otcMakerTrades"
 import type { SignMessage } from "../types/sharedTypes"
 import { type Expiry, expiryToSeconds } from "../utils/expiryUtils"
 import { genTradeId } from "../utils/genLocalTradeId"
@@ -189,24 +188,6 @@ export const otcMakerSignMachine = setup({
             {
               type: "complete",
               params: ({ event }) => event.output,
-            },
-            ({ event, context }) => {
-              if (event.output.tag === "ok") {
-                const multiPayload = formatSignedIntent(
-                  event.output.value.signatureResult,
-                  context.signerCredentials
-                )
-
-                const tradeId = genLocalTradeId(JSON.stringify(multiPayload))
-
-                otcMakerTradesStore.getState().addTrade(
-                  {
-                    tradeId,
-                    makerMultiPayload: multiPayload,
-                  },
-                  context.signerCredentials
-                )
-              }
             },
           ],
         },

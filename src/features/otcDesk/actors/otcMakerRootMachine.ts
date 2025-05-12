@@ -20,6 +20,7 @@ import {
   type Events as DepositedBalanceEvents,
   depositedBalanceMachine,
 } from "../../machines/depositedBalanceMachine"
+import { otcMakerTradesStore } from "../stores/otcMakerTrades"
 import { otcMakerConfigLoadActor } from "./otcMakerConfigLoadActor"
 import { otcMakerFormMachine } from "./otcMakerFormMachine"
 import {
@@ -219,6 +220,13 @@ export const otcMakerRootMachine = setup({
               type: "completeSign",
               params: ({ event }) => {
                 assert(event.output.tag === "ok")
+                otcMakerTradesStore.getState().addTrade(
+                  {
+                    tradeId: event.output.value.tradeId,
+                    makerMultiPayload: event.output.value.multiPayload,
+                  },
+                  event.output.value.signerCredentials
+                )
                 return event.output.value
               },
             },
