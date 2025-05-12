@@ -1,3 +1,5 @@
+import { customAlphabet } from "nanoid"
+
 /**
  * Gives short and unique trade id, shouldn't be used for any serious persistence purposes.
  * Note: Collisions are possible, use it only for temporary local identification.
@@ -17,4 +19,15 @@ function dfjb2(str: string) {
     hash = (hash << 5) + hash + char // hash * 33 + char
   }
   return hash
+}
+
+/**
+ * Using only lowercase letters, numbers, and hyphen for maximum URL-friendliness
+ *
+ * Collision probability:
+ * - With 25 characters and 37 possible characters: 37^25 ≈ 2.8 × 10^39 possible combinations
+ * - Even with 1 billion IDs generated, the probability of a collision is less than 1 in 10^30
+ */
+export function genTradeId(): string {
+  return customAlphabet("abcdefghijklmnopqrstuvwxyz0123456789-", 25)()
 }

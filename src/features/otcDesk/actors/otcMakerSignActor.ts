@@ -33,7 +33,7 @@ import {
 import { otcMakerTradesStore } from "../stores/otcMakerTrades"
 import type { SignMessage } from "../types/sharedTypes"
 import { type Expiry, expiryToSeconds } from "../utils/expiryUtils"
-import { genLocalTradeId } from "../utils/genLocalTradeId"
+import { genTradeId } from "../utils/genLocalTradeId"
 
 export type OTCMakerSignActorInput = {
   parsed: {
@@ -231,7 +231,7 @@ export const otcMakerSignMachine = setup({
           context.signerCredentials
         )
 
-        const tradeId = genLocalTradeId(JSON.stringify(multiPayload))
+        const tradeId = genTradeId()
 
         return {
           tag: "ok",

@@ -25,7 +25,7 @@ import {
   deriveTradeTerms,
   determineInvolvedTokens,
 } from "../utils/deriveTradeTerms"
-import { genLocalTradeId } from "../utils/genLocalTradeId"
+import { genTradeId } from "../utils/genLocalTradeId"
 import { OtcTakerForm } from "./OtcTakerForm"
 import { OtcTakerInvalidOrder } from "./OtcTakerInvalidOrder"
 import { OtcTakerSuccessScreen } from "./OtcTakerSuccessScreen"
@@ -117,7 +117,7 @@ function OtcTakerScreens({
     intentHashes: string[]
   } | null>(null)
 
-  const tradeId = genLocalTradeId(multiPayload)
+  const tradeId = genTradeId()
 
   const knownOtcTakerTrade = useOtcTakerTrades((state) => state.trades[tradeId])
 
