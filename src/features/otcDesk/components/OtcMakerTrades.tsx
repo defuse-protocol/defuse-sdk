@@ -225,6 +225,7 @@ function OtcMakerTradeItem({
                   variant="outline"
                   color="gray"
                   className="rounded-lg"
+                  disabled={!generatedLink}
                 >
                   {copied ? (
                     <CheckIcon weight="bold" />
