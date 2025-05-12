@@ -52,7 +52,7 @@ export type OtcMakerWidgetProps = {
   sendNearTransaction: SendNearTransaction
 
   /** Function to generate a shareable trade link */
-  generateLink: (multiPayload: MultiPayload) => string
+  generateLink: (multiPayload: MultiPayload, tradeId: string) => Promise<string>
 
   /** Theme selection */
   theme?: "dark" | "light"

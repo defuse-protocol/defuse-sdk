@@ -31,7 +31,7 @@ import { OtcTakerInvalidOrder } from "./OtcTakerInvalidOrder"
 import { OtcTakerSuccessScreen } from "./OtcTakerSuccessScreen"
 
 export type OtcTakerWidgetProps = {
-  multiPayload: string
+  multiPayload: string | null
 
   /** List of available tokens for trading */
   tokenList: (BaseTokenInfo | UnifiedTokenInfo)[]
@@ -90,7 +90,7 @@ function OtcTakerScreens({
   })
 
   const enrichedTradeTerms = useMemo(() => {
-    if (protocolFee == null) {
+    if (protocolFee == null || multiPayload == null) {
       return null
     }
 

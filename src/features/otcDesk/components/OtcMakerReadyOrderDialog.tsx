@@ -16,6 +16,7 @@ import { formatTokenValue } from "../../../utils/format"
 import type { otcMakerConfigLoadActor } from "../actors/otcMakerConfigLoadActor"
 import type { otcMakerOrderCancellationActor } from "../actors/otcMakerOrderCancellationActor"
 import type { otcMakerReadyOrderActor } from "../actors/otcMakerReadyOrderActor"
+import { useGenerateOrderLink } from "../hooks/useGenerateOrderLink"
 import type { SignMessage } from "../types/sharedTypes"
 import { computeTradeBreakdown } from "../utils/otcMakerBreakdown"
 import { CancellationDialog } from "./shared/CancellationDialog"
@@ -25,7 +26,7 @@ type OtcMakerReadyOrderDialogProps = {
   readyOrderRef: ActorRefFrom<typeof otcMakerReadyOrderActor>
   signerCredentials: SignerCredentials
   signMessage: SignMessage
-  generateLink: (multiPayload: MultiPayload) => string
+  generateLink: (multiPayload: MultiPayload, tradeId: string) => Promise<string>
 }
 
 export function OtcMakerReadyOrderDialog({
@@ -65,11 +66,17 @@ function OrderDialog({
 }: {
   readyOrderRef: ActorRefFrom<typeof otcMakerReadyOrderActor>
   configRef: ActorRefFrom<typeof otcMakerConfigLoadActor>
-  generateLink: (multiPayload: MultiPayload) => string
+  generateLink: (multiPayload: MultiPayload, tradeId: string) => Promise<string>
 }) {
   const { context } = useSelector(readyOrderRef, (state) => ({
     context: state.context,
   }))
+
+  const { generatedLink } = useGenerateOrderLink({
+    multiPayload: context.multiPayload,
+    tradeId: context.tradeId,
+    generateLink,
+  })
 
   const protocolFee = useSelector(
     configRef,
@@ -191,7 +198,7 @@ function OrderDialog({
       )}
 
       <div className="flex flex-col justify-center gap-3 mt-5">
-        <Copy text={() => generateLink(context.multiPayload)}>
+        <Copy text={() => generatedLink ?? ""}>
           {(copied) => (
             <ButtonCustom
               type="button"

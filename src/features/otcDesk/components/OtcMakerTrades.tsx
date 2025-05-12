@@ -37,6 +37,7 @@ import {
   otcMakerOrderCancellationActor,
 } from "../actors/otcMakerOrderCancellationActor"
 import { useCountdownTimer } from "../hooks/useCountdownTimer"
+import { useGenerateOrderLink } from "../hooks/useGenerateOrderLink"
 import {
   otcMakerTradesStore,
   useOtcMakerTrades,
@@ -55,7 +56,7 @@ import { CancellationDialog } from "./shared/CancellationDialog"
 
 interface OtcMakerTradesProps {
   tokenList: (BaseTokenInfo | UnifiedTokenInfo)[]
-  generateLink: (multiPayload: MultiPayload) => string
+  generateLink: (multiPayload: MultiPayload, tradeId: string) => Promise<string>
   signerCredentials: SignerCredentials
   signMessage: SignMessage
   sendNearTransaction: SendNearTransaction
@@ -112,7 +113,7 @@ interface OtcMakerTradeItemProps {
   multiPayload: MultiPayload
   updatedAt: number
   tokenList: (BaseTokenInfo | UnifiedTokenInfo)[]
-  generateLink: (multiPayload: MultiPayload) => string
+  generateLink: (multiPayload: MultiPayload, tradeId: string) => Promise<string>
   signerCredentials: SignerCredentials
 }
 
@@ -134,6 +135,12 @@ function OtcMakerTradeItem({
         })
       )
     )
+
+  const { generatedLink } = useGenerateOrderLink({
+    multiPayload,
+    tradeId,
+    generateLink,
+  })
 
   if (tradeTermsResult.isErr()) {
     return <div>Error: {tradeTermsResult.unwrapErr()}</div>
@@ -211,7 +218,7 @@ function OtcMakerTradeItem({
 
         <div className="flex gap-2">
           {err.isNone() && (
-            <Copy text={() => generateLink(multiPayload)}>
+            <Copy text={() => generatedLink ?? ""}>
               {(copied) => (
                 <IconButton
                   type="button"
