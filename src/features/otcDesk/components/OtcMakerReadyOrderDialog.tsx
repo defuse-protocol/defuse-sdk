@@ -2,6 +2,7 @@ import {
   Check as CheckIcon,
   Copy as CopyIcon,
   HourglassHigh,
+  HourglassSimpleHigh,
 } from "@phosphor-icons/react"
 import { Dialog } from "@radix-ui/themes"
 import { useSelector } from "@xstate/react"
@@ -72,7 +73,7 @@ function OrderDialog({
     context: state.context,
   }))
 
-  const { generatedLink } = useGenerateOrderLink({
+  const { generatedLink, isLoading, handleRetry } = useGenerateOrderLink({
     multiPayload: context.multiPayload,
     tradeId: context.tradeId,
     generateLink,
@@ -200,21 +201,39 @@ function OrderDialog({
       <div className="flex flex-col justify-center gap-3 mt-5">
         <Copy text={() => generatedLink ?? ""}>
           {(copied) => (
-            <ButtonCustom
-              type="button"
-              size="lg"
-              variant="primary"
-              variantRadix={copied ? "soft" : undefined}
-            >
-              <div className="flex gap-2 items-center">
-                {copied ? (
-                  <CheckIcon weight="bold" />
-                ) : (
-                  <CopyIcon weight="bold" />
-                )}
-                {copied ? "Copied" : "Copy link"}
-              </div>
-            </ButtonCustom>
+            <div className="flex flex-col gap-2">
+              <ButtonCustom
+                type="button"
+                size="lg"
+                variant="primary"
+                variantRadix={copied ? "soft" : undefined}
+                disabled={!generatedLink}
+              >
+                <div className="flex gap-2 items-center">
+                  <ButtonIcon
+                    isLoading={isLoading}
+                    generatedLink={generatedLink}
+                    copied={copied}
+                  />
+                  <ButtonText
+                    isLoading={isLoading}
+                    generatedLink={generatedLink}
+                    copied={copied}
+                  />
+                </div>
+              </ButtonCustom>
+
+              {!generatedLink && !isLoading && (
+                <ButtonCustom
+                  type="button"
+                  size="lg"
+                  variant="danger"
+                  onClick={handleRetry}
+                >
+                  Retry
+                </ButtonCustom>
+              )}
+            </div>
           )}
         </Copy>
 
@@ -229,4 +248,26 @@ function OrderDialog({
       </div>
     </BaseModalDialog>
   )
+}
+
+type ButtonProps = {
+  isLoading: boolean
+  generatedLink: string | null
+  copied: boolean
+}
+
+function ButtonIcon({ isLoading, generatedLink, copied }: ButtonProps) {
+  if (isLoading) {
+    return <HourglassSimpleHigh weight="bold" />
+  }
+  if (!generatedLink) {
+    return <HourglassSimpleHigh weight="bold" />
+  }
+  return copied ? <CheckIcon weight="bold" /> : <CopyIcon weight="bold" />
+}
+
+function ButtonText({ isLoading, generatedLink, copied }: ButtonProps) {
+  if (isLoading) return "Generating link..."
+  if (!generatedLink) return "Failed to generate link"
+  return copied ? "Copied" : "Copy link"
 }
