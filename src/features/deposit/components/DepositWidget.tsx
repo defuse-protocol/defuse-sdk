@@ -13,6 +13,7 @@ export const DepositWidget = ({
   chainType,
   sendTransactionNear,
   sendTransactionEVM,
+  sendTransactionVirtualChain,
   sendTransactionSolana,
   renderHostAppLink,
 }: DepositWidgetProps) => {
@@ -26,6 +27,7 @@ export const DepositWidget = ({
             sendTransactionNear={sendTransactionNear}
             sendTransactionEVM={sendTransactionEVM}
             sendTransactionSolana={sendTransactionSolana}
+            sendTransactionVirtualChain={sendTransactionVirtualChain}
           >
             <DepositUIMachineFormSyncProvider
               userAddress={userAddress}

@@ -1,3 +1,5 @@
+import type { SupportedChainName } from "src/types/base"
+
 /**
  * SiloToSilo addresses on blockchains within Aurora Engine
  */
@@ -21,4 +23,4 @@ export const auroraEngineContractId = {
   vertex: "0x4e454173.c.aurora",
   optima: "0x4e454161.c.aurora",
   coineasy: "0x4e454218.c.aurora",
-} as const
+} as Record<SupportedChainName, string>

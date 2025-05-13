@@ -1,6 +1,7 @@
 import type { Transaction as TransactionSolana } from "@solana/web3.js"
 import type { Address, Hash } from "viem"
 import type { AuthHandle } from "./authHandle"
+import type { BaseTokenInfo } from "./base"
 import type { RenderHostAppLink } from "./hostAppLink"
 import type { SwappableToken } from "./swap"
 
@@ -11,6 +12,7 @@ export type DepositWidgetProps = {
   tokenList: SwappableToken[]
   sendTransactionNear: (tx: Transaction["NEAR"][]) => Promise<string | null>
   sendTransactionEVM: (tx: Transaction["EVM"]) => Promise<Hash | null>
+  sendTransactionVirtualChain: (tx: Transaction["EVM"]) => Promise<Hash | null>
   sendTransactionSolana: (tx: Transaction["Solana"]) => Promise<string | null>
 }
 
@@ -51,6 +53,7 @@ export interface SendTransactionEVMParams {
   value?: bigint
   gasPrice?: bigint
   gas?: bigint
+  token?: BaseTokenInfo
 }
 
 export interface SendTransactionSolanaParams extends TransactionSolana {}

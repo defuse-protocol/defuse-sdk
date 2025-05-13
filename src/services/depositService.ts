@@ -19,14 +19,13 @@ import {
   erc20Abi,
   getAddress,
 } from "viem"
-import type { depositEstimationMachine } from "../features/machines/depositEstimationActor"
-import type { depositTokenBalanceMachine } from "../features/machines/depositTokenBalanceMachine"
-
 import { type ActorRefFrom, waitFor } from "xstate"
 import { config } from "../config"
 import { settings } from "../constants/settings"
+import type { depositEstimationMachine } from "../features/machines/depositEstimationActor"
 import type { State as DepositFormContext } from "../features/machines/depositFormReducer"
 import type { depositGenerateAddressMachine } from "../features/machines/depositGenerateAddressMachine"
+import type { depositTokenBalanceMachine } from "../features/machines/depositTokenBalanceMachine"
 import { getNearTxSuccessValue } from "../features/machines/getTxMachine"
 import type { storageDepositAmountMachine } from "../features/machines/storageDepositAmountMachine"
 import { logger } from "../logger"
@@ -506,6 +505,34 @@ export function createDepositFromSiloTransaction(
   }
 
   return tx
+}
+
+//   {
+//     from: transfer.sender,
+//     to: etherExitToNearPrecompile,
+//     value: ethers.BigNumber.from(transfer.amount).toHexString(),
+//     data: exitToNearData,
+//     gas: ethers.BigNumber.from(121000).toHexString()
+//   }
+export function createExitToNearPrecompileTransaction(
+  from: string,
+  amount: bigint,
+  depositAddress: string,
+  chainId: number,
+  token?: BaseTokenInfo
+): SendTransactionEVMParams {
+  const etherExitToNearPrecompile = "0xe9217bc70b7ed1f598ddd3199e80b093fa71124f"
+  const exitToNearData = `0x00${Buffer.from(depositAddress).toString("hex")}`
+
+  return {
+    from: getAddress(from),
+    to: etherExitToNearPrecompile,
+    value: amount,
+    data: exitToNearData as `0x${string}`,
+    gas: 121000n,
+    chainId,
+    token,
+  }
 }
 
 export function createDepositEVMNativeTransaction(

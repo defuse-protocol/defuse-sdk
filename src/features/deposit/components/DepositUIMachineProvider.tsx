@@ -20,6 +20,7 @@ import {
   createDepositEVMNativeTransaction,
   createDepositFromSiloTransaction,
   createDepositSolanaTransaction,
+  createExitToNearPrecompileTransaction,
   generateDepositAddress,
   getAllowance,
   waitEVMTransaction,
@@ -34,7 +35,6 @@ import { isFungibleToken, isNativeToken } from "../../../utils/token"
 import { depositGenerateAddressMachine } from "../../machines/depositGenerateAddressMachine"
 import { depositUIMachine } from "../../machines/depositUIMachine"
 import type { DepositFormValues } from "./DepositForm"
-
 /**
  * We explicitly define the type of `depositUIMachine` to avoid:
  * ```
@@ -65,6 +65,7 @@ interface DepositUIMachineProviderProps extends PropsWithChildren {
   sendTransactionNear: (tx: Transaction["NEAR"][]) => Promise<string | null>
   sendTransactionEVM: (tx: Transaction["EVM"]) => Promise<Hash | null>
   sendTransactionSolana: (tx: Transaction["Solana"]) => Promise<string | null>
+  sendTransactionVirtualChain: (tx: Transaction["EVM"]) => Promise<Hash | null>
 }
 
 export function DepositUIMachineProvider({
@@ -73,6 +74,7 @@ export function DepositUIMachineProvider({
   sendTransactionNear,
   sendTransactionEVM,
   sendTransactionSolana,
+  sendTransactionVirtualChain,
 }: DepositUIMachineProviderProps) {
   const { setValue } = useFormContext<DepositFormValues>()
   return (
@@ -328,6 +330,59 @@ export function DepositUIMachineProvider({
                 )
                 logger.verbose("Sending deposit from Silo EVM transaction")
                 const txHash = await sendTransactionEVM(tx)
+                assert(txHash != null, "Transaction failed")
+
+                logger.verbose(
+                  "Waiting for deposit from Silo EVM transaction",
+                  { txHash }
+                )
+                const receipt = await waitEVMTransaction({ txHash, chainName })
+                if (receipt.status === "reverted") {
+                  throw new Error("Deposit from Silo transaction reverted")
+                }
+
+                return txHash
+              }),
+            },
+            guards: {
+              isDepositParamsValid: ({ context }) => {
+                return context.depositAddress !== null
+              },
+            },
+          }),
+          depositVirtualChainActor: depositMachine.provide({
+            actors: {
+              signAndSendTransactions: fromPromise(async ({ input }) => {
+                const {
+                  amount,
+                  userAddress,
+                  derivedToken,
+                  depositAddress,
+                  chainName,
+                } = input
+
+                assert(depositAddress != null, "Deposit address is required")
+                assert(
+                  isFungibleToken(derivedToken),
+                  "Derived token is not a fungible token"
+                )
+
+                const chainId = getEVMChainId(chainName)
+
+                logger.verbose("Sending deposit through exitToNearPrecompile")
+
+                const precompilerTx = createExitToNearPrecompileTransaction(
+                  userAddress,
+                  amount,
+                  depositAddress,
+                  chainId,
+                  derivedToken
+                )
+                logger.verbose("About to call sendTransactionVirtualChain", {
+                  derivedToken,
+                })
+                const txHash = await sendTransactionVirtualChain(precompilerTx)
+
                 assert(txHash != null, "Transaction failed")
 
                 logger.verbose(

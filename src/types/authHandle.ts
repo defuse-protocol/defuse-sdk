@@ -5,6 +5,7 @@ export const AuthMethod = {
   EVM: "evm",
   Solana: "solana",
   WebAuthn: "webauthn",
+  VirtualChain: "virtualchain",
 } as const
 
 /**
