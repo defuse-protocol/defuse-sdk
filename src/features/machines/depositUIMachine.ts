@@ -6,6 +6,7 @@ import {
   assign,
   sendTo,
   setup,
+  stateIn,
 } from "xstate"
 import { config } from "../../config"
 import type { AuthMethod } from "../../types/authHandle"
@@ -294,49 +295,64 @@ export const depositUIMachine = setup({
         SUBMIT: [
           {
             target: "submittingNearTx",
-            guard: "isChainNearSelected",
+            guard: and(["isChainNearSelected", stateIn("editing.idle")]),
             actions: "clearResults",
             reenter: true,
           },
           {
             target: "submittingEVMTx",
-            guard: "isChainEVMSelected",
+            guard: and(["isChainEVMSelected", stateIn("editing.idle")]),
             actions: "clearResults",
             reenter: true,
           },
           {
             target: "submittingSolanaTx",
-            guard: "isChainSolanaSelected",
+            guard: and(["isChainSolanaSelected", stateIn("editing.idle")]),
             actions: "clearResults",
             reenter: true,
           },
           {
             target: "submittingTurboTx",
-            guard: "isChainAuroraEngineSelected",
+            guard: and([
+              "isChainAuroraEngineSelected",
+              stateIn("editing.idle"),
+            ]),
             actions: "clearResults",
             reenter: true,
           },
           {
             target: "submittingTuxappchainTx",
-            guard: "isChainAuroraEngineSelected",
+            guard: and([
+              "isChainAuroraEngineSelected",
+              stateIn("editing.idle"),
+            ]),
             actions: "clearResults",
             reenter: true,
           },
           {
             target: "submittingVertexTx",
-            guard: "isChainAuroraEngineSelected",
+            guard: and([
+              "isChainAuroraEngineSelected",
+              stateIn("editing.idle"),
+            ]),
             actions: "clearResults",
             reenter: true,
           },
           {
             target: "submittingOptimaTx",
-            guard: "isChainAuroraEngineSelected",
+            guard: and([
+              "isChainAuroraEngineSelected",
+              stateIn("editing.idle"),
+            ]),
             actions: "clearResults",
             reenter: true,
           },
           {
             target: "submittingCoineasyTx",
-            guard: "isChainAuroraEngineSelected",
+            guard: and([
+              "isChainAuroraEngineSelected",
+              stateIn("editing.idle"),
+            ]),
             actions: "clearResults",
             reenter: true,
           },

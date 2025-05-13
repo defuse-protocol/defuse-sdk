@@ -4,7 +4,6 @@ import { useSelector } from "@xstate/react"
 import { useEffect, useState } from "react"
 import { Controller, useFormContext } from "react-hook-form"
 import { ModalSelectNetwork } from "src/components/Network/ModalSelectNetwork"
-import { logger } from "src/logger"
 import { assetNetworkAdapter } from "src/utils/adapters"
 import {
   availableChainsForToken,
@@ -130,19 +129,9 @@ export const DepositForm = ({
   }, [payload, onCloseModal, depositUIActorRef, setValue])
 
   const onSubmit = () => {
-    const snapshot = depositUIActorRef.getSnapshot()
-    const isFormReadyForSubmission =
-      typeof snapshot.value === "object" &&
-      "editing" in snapshot.value &&
-      snapshot.value.editing !== "preparation"
-
-    if (isFormReadyForSubmission) {
-      depositUIActorRef.send({
-        type: "SUBMIT",
-      })
-    } else {
-      logger.warn("Deposit preparation is not complete")
-    }
+    depositUIActorRef.send({
+      type: "SUBMIT",
+    })
   }
 
   const formNetwork = watch("network")
