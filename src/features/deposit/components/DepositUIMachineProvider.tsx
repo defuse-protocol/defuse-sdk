@@ -20,6 +20,7 @@ import {
   createDepositEVMNativeTransaction,
   createDepositFromSiloTransaction,
   createDepositSolanaTransaction,
+  createDepositVirtualChainERC20Transaction,
   createExitToNearPrecompileTransaction,
   generateDepositAddress,
   getAllowance,
@@ -65,7 +66,6 @@ interface DepositUIMachineProviderProps extends PropsWithChildren {
   sendTransactionNear: (tx: Transaction["NEAR"][]) => Promise<string | null>
   sendTransactionEVM: (tx: Transaction["EVM"]) => Promise<Hash | null>
   sendTransactionSolana: (tx: Transaction["Solana"]) => Promise<string | null>
-  sendTransactionVirtualChain: (tx: Transaction["EVM"]) => Promise<Hash | null>
 }
 
 export function DepositUIMachineProvider({
@@ -74,7 +74,6 @@ export function DepositUIMachineProvider({
   sendTransactionNear,
   sendTransactionEVM,
   sendTransactionSolana,
-  sendTransactionVirtualChain,
 }: DepositUIMachineProviderProps) {
   const { setValue } = useFormContext<DepositFormValues>()
   return (
@@ -369,19 +368,28 @@ export function DepositUIMachineProvider({
 
                 const chainId = getEVMChainId(chainName)
 
-                logger.verbose("Sending deposit through exitToNearPrecompile")
-
-                const precompilerTx = createExitToNearPrecompileTransaction(
-                  userAddress,
-                  amount,
-                  depositAddress,
-                  chainId,
-                  derivedToken
-                )
-                logger.verbose("About to call sendTransactionVirtualChain", {
-                  derivedToken,
-                })
-                const txHash = await sendTransactionVirtualChain(precompilerTx)
+                let tx: Transaction["EVM"]
+                if (isNativeToken(derivedToken)) {
+                  logger.verbose(
+                    "Sending deposit through exitToNearPrecompile contract"
+                  )
+                  tx = createExitToNearPrecompileTransaction(
+                    userAddress,
+                    amount,
+                    depositAddress,
+                    chainId
+                  )
+                } else {
+                  logger.verbose("Sending deposit through auroraErc20 contract")
+                  tx = createDepositVirtualChainERC20Transaction(
+                    userAddress,
+                    derivedToken.address,
+                    depositAddress,
+                    amount,
+                    chainId
+                  )
+                }
+                const txHash = await sendTransactionEVM(tx)
 
                 assert(txHash != null, "Transaction failed")
 

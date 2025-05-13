@@ -10,6 +10,7 @@ import {
   SystemProgram,
   Transaction as TransactionSolana,
 } from "@solana/web3.js"
+import { auroraErc20ABI } from "src/utils/blockchain"
 import {
   http,
   type Address,
@@ -442,6 +443,26 @@ export function createBatchDepositNearNativeTransaction(
   ]
 }
 
+export function createDepositVirtualChainERC20Transaction(
+  userAddress: string,
+  assetAccountId: string,
+  generatedAddress: string,
+  amount: bigint,
+  chainId: number
+): SendTransactionEVMParams {
+  const data = encodeFunctionData({
+    abi: auroraErc20ABI,
+    functionName: "withdrawToNear",
+    args: [`0x${Buffer.from(generatedAddress).toString("hex")}`, amount],
+  })
+  return {
+    from: getAddress(userAddress),
+    to: getAddress(assetAccountId),
+    data,
+    chainId,
+  }
+}
+
 export function createDepositEVMERC20Transaction(
   userAddress: string,
   assetAccountId: string,
@@ -514,12 +535,25 @@ export function createDepositFromSiloTransaction(
 //     data: exitToNearData,
 //     gas: ethers.BigNumber.from(121000).toHexString()
 //   }
+
+// const erc20Contract = new ethers.Contract(
+//   "address" in tx.token
+//     ? derivedToken.address
+//     : derivedToken.defuseAssetId,
+//   auroraErc20Abi
+// )
+
+// const withdrawTx = erc20Contract.withdrawToNear(
+//   Buffer.from(tx.to as `0x${string}`),
+//   tx.value,
+//   { gasLimit: 100000 }
+// )
+
 export function createExitToNearPrecompileTransaction(
   from: string,
   amount: bigint,
   depositAddress: string,
-  chainId: number,
-  token?: BaseTokenInfo
+  chainId: number
 ): SendTransactionEVMParams {
   const etherExitToNearPrecompile = "0xe9217bc70b7ed1f598ddd3199e80b093fa71124f"
   const exitToNearData = `0x00${Buffer.from(depositAddress).toString("hex")}`
@@ -531,7 +565,6 @@ export function createExitToNearPrecompileTransaction(
     data: exitToNearData as `0x${string}`,
     gas: 121000n,
     chainId,
-    token,
   }
 }
 

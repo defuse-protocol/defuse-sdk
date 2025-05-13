@@ -1,6 +1,6 @@
 {
   "name": "@defuse-protocol/defuse-sdk",
-  "version": "1.0.0-beta.127",
+  "version": "1.0.0-beta.128",
   "author": "Defuse Protocol",
   "license": "MIT",
   "type": "module",
@@ -31,9 +31,6 @@
   },
   "dependencies": {
     "@lifeomic/attempt": "^3.1.0",
-    "@near-eth/client": "^1.13.0",
-    "@near-eth/nep141-erc20": "^2.6.0",
-    "@near-eth/rainbow": "^2.1.1",
     "@noble/curves": "1.4.0",
     "@noble/hashes": "^1.7.1",
     "@peculiar/asn1-ecc": "^2.3.15",
@@ -59,8 +56,6 @@
     "@xstate/store": "^3.0.1",
     "borsher": "^3.5.0",
     "clsx": "^2.1.1",
-    "ethers": "5.7.2",
-    "near-api-js": "^5.1.1",
     "qrcode.react": "^4.0.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",

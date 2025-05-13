@@ -12,7 +12,6 @@ export type DepositWidgetProps = {
   tokenList: SwappableToken[]
   sendTransactionNear: (tx: Transaction["NEAR"][]) => Promise<string | null>
   sendTransactionEVM: (tx: Transaction["EVM"]) => Promise<Hash | null>
-  sendTransactionVirtualChain: (tx: Transaction["EVM"]) => Promise<Hash | null>
   sendTransactionSolana: (tx: Transaction["Solana"]) => Promise<string | null>
 }
 
