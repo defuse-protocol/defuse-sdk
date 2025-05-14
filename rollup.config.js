@@ -14,7 +14,7 @@ import radixSelectPackageJson from "./src/lib/@radix-ui/react-select/package.jso
 
 const config = [
   {
-    input: ["src/index.ts", "src/config.ts"],
+    input: ["src/index.ts", "src/config.ts", "src/types.ts", "src/utils.ts"],
     output: [
       {
         dir: "dist",
@@ -76,6 +76,16 @@ const config = [
   {
     input: "src/config.ts",
     output: [{ file: "dist/config.d.ts", format: "es" }],
+    plugins: [dts()],
+  },
+  {
+    input: "src/types.ts",
+    output: [{ file: "dist/types.d.ts", format: "es" }],
+    plugins: [dts()],
+  },
+  {
+    input: "src/utils.ts",
+    output: [{ file: "dist/utils.d.ts", format: "es" }],
     plugins: [dts()],
   },
 ]

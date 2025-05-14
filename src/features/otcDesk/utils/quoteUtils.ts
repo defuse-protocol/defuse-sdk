@@ -85,7 +85,8 @@ function handleQuote(
   if (failedQuote) {
     return Err({
       reason: failedQuote.type,
-      minAmount: BigInt(failedQuote.min_amount),
+      minAmount:
+        failedQuote.min_amount != null ? BigInt(failedQuote.min_amount) : 0n,
     })
   }
 
