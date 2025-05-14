@@ -361,11 +361,6 @@ export function DepositUIMachineProvider({
                 } = input
 
                 assert(depositAddress != null, "Deposit address is required")
-                assert(
-                  isFungibleToken(derivedToken),
-                  "Derived token is not a fungible token"
-                )
-
                 const chainId = getEVMChainId(chainName)
 
                 let tx: Transaction["EVM"]
