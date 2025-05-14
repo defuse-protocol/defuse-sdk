@@ -1,6 +1,3 @@
-import type { ethers } from "ethers"
-import type { Account, providers as najProviders } from "near-api-js"
-
 export type SupportedChainName =
   | "eth"
   | "near"
@@ -66,24 +63,4 @@ export interface UnifiedTokenInfo {
 export interface TokenValue {
   amount: bigint
   decimals: number
-}
-
-export type ExitToPrecompileTx = {
-  nep141Address: string
-  amount: string | ethers.BigNumber
-  recipient: string
-  options?: {
-    symbol?: string
-    decimals?: number
-    sender?: string
-    auroraChainId?: number
-    provider?: ethers.providers.JsonRpcProvider
-    auroraErc20Abi?: string
-    auroraErc20Address?: string
-    signer?: ethers.Signer
-    nearAccount?: Account
-    nearProvider?: najProviders.Provider
-    auroraEvmAccount?: string
-    unwrapWNear?: boolean
-  }
 }
