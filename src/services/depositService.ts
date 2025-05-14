@@ -528,27 +528,6 @@ export function createDepositFromSiloTransaction(
   return tx
 }
 
-//   {
-//     from: transfer.sender,
-//     to: etherExitToNearPrecompile,
-//     value: ethers.BigNumber.from(transfer.amount).toHexString(),
-//     data: exitToNearData,
-//     gas: ethers.BigNumber.from(121000).toHexString()
-//   }
-
-// const erc20Contract = new ethers.Contract(
-//   "address" in tx.token
-//     ? derivedToken.address
-//     : derivedToken.defuseAssetId,
-//   auroraErc20Abi
-// )
-
-// const withdrawTx = erc20Contract.withdrawToNear(
-//   Buffer.from(tx.to as `0x${string}`),
-//   tx.value,
-//   { gasLimit: 100000 }
-// )
-
 export function createExitToNearPrecompileTransaction(
   from: string,
   amount: bigint,

@@ -393,13 +393,10 @@ export function DepositUIMachineProvider({
 
                 assert(txHash != null, "Transaction failed")
 
-                logger.verbose(
-                  "Waiting for deposit from Silo EVM transaction",
-                  { txHash }
-                )
+                logger.verbose("Waiting for deposit transaction", { txHash })
                 const receipt = await waitEVMTransaction({ txHash, chainName })
                 if (receipt.status === "reverted") {
-                  throw new Error("Deposit from Silo transaction reverted")
+                  throw new Error("Deposit transaction reverted")
                 }
 
                 return txHash
