@@ -291,60 +291,63 @@ export const depositUIMachine = setup({
           ],
         },
         DEPOSIT_FORM_FIELDS_CHANGED: ".reset_previous_preparation",
-        SUBMIT: [
-          {
-            target: "submittingNearTx",
-            guard: "isChainNearSelected",
-            actions: "clearResults",
-            reenter: true,
-          },
-          {
-            target: "submittingEVMTx",
-            guard: "isChainEVMSelected",
-            actions: "clearResults",
-            reenter: true,
-          },
-          {
-            target: "submittingSolanaTx",
-            guard: "isChainSolanaSelected",
-            actions: "clearResults",
-            reenter: true,
-          },
-          {
-            target: "submittingTurboTx",
-            guard: "isChainAuroraEngineSelected",
-            actions: "clearResults",
-            reenter: true,
-          },
-          {
-            target: "submittingTuxappchainTx",
-            guard: "isChainAuroraEngineSelected",
-            actions: "clearResults",
-            reenter: true,
-          },
-          {
-            target: "submittingVertexTx",
-            guard: "isChainAuroraEngineSelected",
-            actions: "clearResults",
-            reenter: true,
-          },
-          {
-            target: "submittingOptimaTx",
-            guard: "isChainAuroraEngineSelected",
-            actions: "clearResults",
-            reenter: true,
-          },
-          {
-            target: "submittingCoineasyTx",
-            guard: "isChainAuroraEngineSelected",
-            actions: "clearResults",
-            reenter: true,
-          },
-        ],
       },
 
       states: {
-        idle: {},
+        idle: {
+          on: {
+            SUBMIT: [
+              {
+                target: "#deposit-ui.submittingNearTx",
+                guard: "isChainNearSelected",
+                actions: "clearResults",
+                reenter: true,
+              },
+              {
+                target: "#deposit-ui.submittingEVMTx",
+                guard: "isChainEVMSelected",
+                actions: "clearResults",
+                reenter: true,
+              },
+              {
+                target: "#deposit-ui.submittingSolanaTx",
+                guard: "isChainSolanaSelected",
+                actions: "clearResults",
+                reenter: true,
+              },
+              {
+                target: "#deposit-ui.submittingTurboTx",
+                guard: "isChainAuroraEngineSelected",
+                actions: "clearResults",
+                reenter: true,
+              },
+              {
+                target: "#deposit-ui.submittingTuxappchainTx",
+                guard: "isChainAuroraEngineSelected",
+                actions: "clearResults",
+                reenter: true,
+              },
+              {
+                target: "#deposit-ui.submittingVertexTx",
+                guard: "isChainAuroraEngineSelected",
+                actions: "clearResults",
+                reenter: true,
+              },
+              {
+                target: "#deposit-ui.submittingOptimaTx",
+                guard: "isChainAuroraEngineSelected",
+                actions: "clearResults",
+                reenter: true,
+              },
+              {
+                target: "#deposit-ui.submittingCoineasyTx",
+                guard: "isChainAuroraEngineSelected",
+                actions: "clearResults",
+                reenter: true,
+              },
+            ],
+          },
+        },
 
         reset_previous_preparation: {
           always: [
