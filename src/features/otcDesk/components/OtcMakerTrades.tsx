@@ -37,7 +37,6 @@ import {
   otcMakerOrderCancellationActor,
 } from "../actors/otcMakerOrderCancellationActor"
 import { useCountdownTimer } from "../hooks/useCountdownTimer"
-import { useGenerateOrderLink } from "../hooks/useGenerateOrderLink"
 import {
   otcMakerTradesStore,
   useOtcMakerTrades,
@@ -56,7 +55,7 @@ import { CancellationDialog } from "./shared/CancellationDialog"
 
 interface OtcMakerTradesProps {
   tokenList: (BaseTokenInfo | UnifiedTokenInfo)[]
-  generateLink: (multiPayload: MultiPayload, tradeId: string) => Promise<string>
+  generateLink: (tradeId: string, pKey: string) => string
   signerCredentials: SignerCredentials
   signMessage: SignMessage
   sendNearTransaction: SendNearTransaction
@@ -95,6 +94,7 @@ export function OtcMakerTrades({
             <OtcMakerTradeItem
               key={trade.tradeId}
               tradeId={trade.tradeId}
+              pKey={trade.pKey}
               multiPayload={trade.makerMultiPayload}
               updatedAt={trade.updatedAt}
               tokenList={tokenList}
@@ -110,15 +110,17 @@ export function OtcMakerTrades({
 
 interface OtcMakerTradeItemProps {
   tradeId: string
+  pKey: string
   multiPayload: MultiPayload
   updatedAt: number
   tokenList: (BaseTokenInfo | UnifiedTokenInfo)[]
-  generateLink: (multiPayload: MultiPayload, tradeId: string) => Promise<string>
+  generateLink: (tradeId: string, pKey: string) => string
   signerCredentials: SignerCredentials
 }
 
 function OtcMakerTradeItem({
   tradeId,
+  pKey,
   multiPayload,
   tokenList,
   generateLink,
@@ -135,12 +137,6 @@ function OtcMakerTradeItem({
         })
       )
     )
-
-  const { generatedLink } = useGenerateOrderLink({
-    multiPayload,
-    tradeId,
-    generateLink,
-  })
 
   if (tradeTermsResult.isErr()) {
     return <div>Error: {tradeTermsResult.unwrapErr()}</div>
@@ -218,14 +214,13 @@ function OtcMakerTradeItem({
 
         <div className="flex gap-2">
           {err.isNone() && (
-            <Copy text={() => generatedLink ?? ""}>
+            <Copy text={generateLink(tradeId, pKey)}>
               {(copied) => (
                 <IconButton
                   type="button"
                   variant="outline"
                   color="gray"
                   className="rounded-lg"
-                  disabled={!generatedLink}
                 >
                   {copied ? (
                     <CheckIcon weight="bold" />

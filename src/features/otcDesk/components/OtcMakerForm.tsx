@@ -61,7 +61,7 @@ export type OtcMakerWidgetProps = {
   deleteOtcTrade: (tradeId: string) => Promise<{ success: boolean }>
 
   /** Function to generate a shareable trade link */
-  generateLink: (multiPayload: MultiPayload, tradeId: string) => Promise<string>
+  generateLink: (tradeId: string, pKey: string) => string
 
   /** Theme selection */
   theme?: "dark" | "light"

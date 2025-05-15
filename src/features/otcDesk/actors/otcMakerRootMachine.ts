@@ -47,6 +47,7 @@ type EVENT = {
   signerCredentials: SignerCredentials
   usedNonceBase64: string
   tradeId: string
+  pKey?: string
 }
 
 type InputType = {
@@ -327,6 +328,7 @@ export const otcMakerRootMachine = setup({
 
         input: ({ context, event }) => {
           assertEvent(event, "COMPLETE_STORING")
+          assert(event.pKey, "pKey is required")
 
           const form = context.formRef.getSnapshot()
           const formValuesSnapshot = form.context.formValues.getSnapshot()
@@ -351,6 +353,7 @@ export const otcMakerRootMachine = setup({
             multiPayload: event.multiPayload,
             tradeId: event.tradeId,
             signerCredentials: event.signerCredentials,
+            pKey: event.pKey,
           }
         },
 

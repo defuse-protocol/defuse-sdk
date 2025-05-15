@@ -2,7 +2,6 @@ import {
   Check as CheckIcon,
   Copy as CopyIcon,
   HourglassHigh,
-  HourglassSimpleHigh,
 } from "@phosphor-icons/react"
 import { Dialog } from "@radix-ui/themes"
 import { useSelector } from "@xstate/react"
@@ -12,12 +11,10 @@ import { ButtonCustom } from "../../../components/Button/ButtonCustom"
 import { Copy } from "../../../components/IntentCard/CopyButton"
 import { BaseModalDialog } from "../../../components/Modal/ModalDialog"
 import type { SignerCredentials } from "../../../core/formatters"
-import type { MultiPayload } from "../../../types/defuse-contracts-types"
 import { formatTokenValue } from "../../../utils/format"
 import type { otcMakerConfigLoadActor } from "../actors/otcMakerConfigLoadActor"
 import type { otcMakerOrderCancellationActor } from "../actors/otcMakerOrderCancellationActor"
 import type { otcMakerReadyOrderActor } from "../actors/otcMakerReadyOrderActor"
-import { useGenerateOrderLink } from "../hooks/useGenerateOrderLink"
 import type { SignMessage } from "../types/sharedTypes"
 import { computeTradeBreakdown } from "../utils/otcMakerBreakdown"
 import { CancellationDialog } from "./shared/CancellationDialog"
@@ -27,7 +24,7 @@ type OtcMakerReadyOrderDialogProps = {
   readyOrderRef: ActorRefFrom<typeof otcMakerReadyOrderActor>
   signerCredentials: SignerCredentials
   signMessage: SignMessage
-  generateLink: (multiPayload: MultiPayload, tradeId: string) => Promise<string>
+  generateLink: (tradeId: string, pKey: string) => string
 }
 
 export function OtcMakerReadyOrderDialog({
@@ -67,17 +64,11 @@ function OrderDialog({
 }: {
   readyOrderRef: ActorRefFrom<typeof otcMakerReadyOrderActor>
   configRef: ActorRefFrom<typeof otcMakerConfigLoadActor>
-  generateLink: (multiPayload: MultiPayload, tradeId: string) => Promise<string>
+  generateLink: (tradeId: string, pKey: string) => string
 }) {
   const { context } = useSelector(readyOrderRef, (state) => ({
     context: state.context,
   }))
-
-  const { generatedLink, isLoading, handleRetry } = useGenerateOrderLink({
-    multiPayload: context.multiPayload,
-    tradeId: context.tradeId,
-    generateLink,
-  })
 
   const protocolFee = useSelector(
     configRef,
@@ -199,41 +190,23 @@ function OrderDialog({
       )}
 
       <div className="flex flex-col justify-center gap-3 mt-5">
-        <Copy text={() => generatedLink ?? ""}>
+        <Copy text={() => generateLink(context.tradeId, context.pKey)}>
           {(copied) => (
-            <div className="flex flex-col gap-2">
-              <ButtonCustom
-                type="button"
-                size="lg"
-                variant="primary"
-                variantRadix={copied ? "soft" : undefined}
-                disabled={!generatedLink}
-              >
-                <div className="flex gap-2 items-center">
-                  <ButtonIcon
-                    isLoading={isLoading}
-                    generatedLink={generatedLink}
-                    copied={copied}
-                  />
-                  <ButtonText
-                    isLoading={isLoading}
-                    generatedLink={generatedLink}
-                    copied={copied}
-                  />
-                </div>
-              </ButtonCustom>
-
-              {!generatedLink && !isLoading && (
-                <ButtonCustom
-                  type="button"
-                  size="lg"
-                  variant="danger"
-                  onClick={handleRetry}
-                >
-                  Retry
-                </ButtonCustom>
-              )}
-            </div>
+            <ButtonCustom
+              type="button"
+              size="lg"
+              variant="primary"
+              variantRadix={copied ? "soft" : undefined}
+            >
+              <div className="flex gap-2 items-center">
+                {copied ? (
+                  <CheckIcon weight="bold" />
+                ) : (
+                  <CopyIcon weight="bold" />
+                )}
+                {copied ? "Copied" : "Copy link"}
+              </div>
+            </ButtonCustom>
           )}
         </Copy>
 
@@ -248,26 +221,4 @@ function OrderDialog({
       </div>
     </BaseModalDialog>
   )
-}
-
-type ButtonProps = {
-  isLoading: boolean
-  generatedLink: string | null
-  copied: boolean
-}
-
-function ButtonIcon({ isLoading, generatedLink, copied }: ButtonProps) {
-  if (isLoading) {
-    return <HourglassSimpleHigh weight="bold" />
-  }
-  if (!generatedLink) {
-    return <HourglassSimpleHigh weight="bold" />
-  }
-  return copied ? <CheckIcon weight="bold" /> : <CopyIcon weight="bold" />
-}
-
-function ButtonText({ isLoading, generatedLink, copied }: ButtonProps) {
-  if (isLoading) return "Generating link..."
-  if (!generatedLink) return "Failed to generate link"
-  return copied ? "Copied" : "Copy link"
 }

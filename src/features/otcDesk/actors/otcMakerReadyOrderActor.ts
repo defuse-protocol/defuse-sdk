@@ -30,6 +30,7 @@ export type OTCMakerReadyOrderActorInput = {
   usedNonceBase64: string
   multiPayload: MultiPayload
   signerCredentials: SignerCredentials
+  pKey: string
 }
 
 type OTCMakerReadyOrderActorErrors = { reason: "EXCEPTION" }
@@ -37,6 +38,7 @@ type OTCMakerReadyOrderActorErrors = { reason: "EXCEPTION" }
 interface OTCMakerReadyOrderActorContext extends OTCMakerReadyOrderActorInput {
   tradeId: string
   usedNonceBase64: string
+  pKey: string
   error: null | OTCMakerReadyOrderActorErrors
 }
 
