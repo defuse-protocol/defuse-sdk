@@ -21,6 +21,7 @@ import {
   depositedBalanceMachine,
 } from "../../machines/depositedBalanceMachine"
 import { otcMakerTradesStore } from "../stores/otcMakerTrades"
+import type { CreateOtcTrade } from "../types/sharedTypes"
 import { otcMakerConfigLoadActor } from "./otcMakerConfigLoadActor"
 import { otcMakerFormMachine } from "./otcMakerFormMachine"
 import {
@@ -33,46 +34,63 @@ import {
   type OTCMakerSignActorOutput,
   otcMakerSignMachine,
 } from "./otcMakerSignActor"
+import {
+  type OtcMakerStoreActorErrors,
+  type OtcMakerStoreActorInput,
+  type OtcMakerStoreActorOutput,
+  otcMakerStoreActor,
+} from "./otcMakerStoreActor"
+
+type EVENT = {
+  type: "COMPLETE_SIGN" | "COMPLETE_STORING"
+  multiPayload: MultiPayload
+  signerCredentials: SignerCredentials
+  usedNonceBase64: string
+  tradeId: string
+}
+
+type InputType = {
+  tokenList: (BaseTokenInfo | UnifiedTokenInfo)[]
+  initialTokenIn: BaseTokenInfo | UnifiedTokenInfo
+  initialTokenOut: BaseTokenInfo | UnifiedTokenInfo
+  referral: string | undefined
+  createOtcTrade: CreateOtcTrade
+}
+
+type EventType =
+  | DepositedBalanceEvents
+  | {
+      type: "START_OVER"
+    }
+  | {
+      type: "REQUEST_SIGN"
+      signerCredentials: SignerCredentials
+      signMessage: (
+        params: WalletMessage
+      ) => Promise<WalletSignatureResult | null>
+    }
+  | EVENT
+
+type ContextType = {
+  error: null | OTCMakerSignActorErrors | OtcMakerStoreActorErrors
+  formRef: ActorRefFrom<typeof otcMakerFormMachine>
+  depositedBalanceRef: ActorRefFrom<typeof depositedBalanceMachine>
+  otcMakerConfigLoadRef: ActorRefFrom<typeof otcMakerConfigLoadActor>
+  referral: string | undefined
+  createOtcTrade: CreateOtcTrade
+}
+
+type ChildrenType = {
+  readyOrderRef: "readyOrderActor"
+  otcMakerConfigLoadRef: "otcMakerConfigLoadActor"
+}
 
 export const otcMakerRootMachine = setup({
   types: {
-    input: {} as {
-      tokenList: (BaseTokenInfo | UnifiedTokenInfo)[]
-      initialTokenIn: BaseTokenInfo | UnifiedTokenInfo
-      initialTokenOut: BaseTokenInfo | UnifiedTokenInfo
-      referral: string | undefined
-    },
-    events: {} as
-      | DepositedBalanceEvents
-      | {
-          type: "START_OVER"
-        }
-      | {
-          type: "REQUEST_SIGN"
-          signerCredentials: SignerCredentials
-          signMessage: (
-            params: WalletMessage
-          ) => Promise<WalletSignatureResult | null>
-        }
-      | {
-          type: "COMPLETE_SIGN"
-          multiPayload: MultiPayload
-          signerCredentials: SignerCredentials
-          usedNonceBase64: string
-          tradeId: string
-        },
-
-    context: {} as {
-      error: null | OTCMakerSignActorErrors
-      formRef: ActorRefFrom<typeof otcMakerFormMachine>
-      depositedBalanceRef: ActorRefFrom<typeof depositedBalanceMachine>
-      otcMakerConfigLoadRef: ActorRefFrom<typeof otcMakerConfigLoadActor>
-      referral: string | undefined
-    },
-    children: {} as {
-      readyOrderRef: "readyOrderActor"
-      otcMakerConfigLoadRef: "otcMakerConfigLoadActor"
-    },
+    input: {} as InputType,
+    events: {} as EventType,
+    context: {} as ContextType,
+    children: {} as ChildrenType,
   },
   actors: {
     formActor: otcMakerFormMachine,
@@ -86,6 +104,10 @@ export const otcMakerRootMachine = setup({
       OTCMakerReadyOrderActorInput
     >,
     otcMakerConfigLoadActor: otcMakerConfigLoadActor,
+    storeActor: otcMakerStoreActor as unknown as PromiseActorLogic<
+      OtcMakerStoreActorOutput,
+      OtcMakerStoreActorInput
+    >,
   },
   actions: {
     logError: (_, event: { error: unknown }) => {
@@ -95,7 +117,12 @@ export const otcMakerRootMachine = setup({
     setError: assign({
       error: (
         _,
-        result: { tag: "err"; value: OTCMakerSignActorErrors } | { tag: "ok" }
+        result:
+          | {
+              tag: "err"
+              value: OTCMakerSignActorErrors | OtcMakerStoreActorErrors
+            }
+          | { tag: "ok" }
       ) => {
         assert(result.tag === "err")
         return result.value
@@ -105,7 +132,7 @@ export const otcMakerRootMachine = setup({
       "depositedBalanceRef",
       (_, event: DepositedBalanceEvents) => event
     ),
-    completeSign: (
+    completeEvent: (
       { self },
       event: {
         multiPayload: MultiPayload
@@ -143,6 +170,7 @@ export const otcMakerRootMachine = setup({
       id: "otcMakerConfigLoadRef",
     }),
     referral: input.referral,
+    createOtcTrade: input.createOtcTrade,
   }),
 
   initial: "editing",
@@ -172,7 +200,8 @@ export const otcMakerRootMachine = setup({
     },
     signing: {
       on: {
-        COMPLETE_SIGN: "signed",
+        COMPLETE_SIGN: "storing",
+        COMPLETE_STORING: "signed",
       },
 
       invoke: {
@@ -217,16 +246,9 @@ export const otcMakerRootMachine = setup({
           {
             guard: { type: "isOk", params: ({ event }) => event.output },
             actions: {
-              type: "completeSign",
+              type: "completeEvent",
               params: ({ event }) => {
                 assert(event.output.tag === "ok")
-                otcMakerTradesStore.getState().addTrade(
-                  {
-                    tradeId: event.output.value.tradeId,
-                    makerMultiPayload: event.output.value.multiPayload,
-                  },
-                  event.output.value.signerCredentials
-                )
                 return event.output.value
               },
             },
@@ -241,13 +263,70 @@ export const otcMakerRootMachine = setup({
         ],
       },
     },
+    storing: {
+      invoke: {
+        id: "storeRef",
+        src: "storeActor",
+        input: ({ context, event }) => {
+          assertEvent(event, "COMPLETE_SIGN")
+          return {
+            createOtcTrade: context.createOtcTrade,
+            ...event,
+          }
+        },
+
+        onError: {
+          target: "editing",
+          actions: [
+            {
+              type: "logError",
+              params: ({ event }) => event,
+            },
+            {
+              type: "setError",
+              params: { tag: "err", value: { reason: "EXCEPTION" } },
+            },
+          ],
+        },
+
+        onDone: [
+          {
+            guard: { type: "isOk", params: ({ event }) => event.output },
+            actions: {
+              type: "completeEvent",
+              params: ({ event }) => {
+                assert(event.output.tag === "ok")
+                otcMakerTradesStore.getState().addTrade(
+                  {
+                    tradeId: event.output.value.tradeId,
+                    makerMultiPayload: event.output.value.multiPayload,
+                    pKey: event.output.value.pKey,
+                  },
+                  event.output.value.signerCredentials
+                )
+                return event.output.value
+              },
+            },
+          },
+          {
+            target: "editing",
+            actions: [
+              {
+                type: "setError",
+                params: ({ event }) => event.output,
+              },
+            ],
+          },
+        ],
+      },
+    },
     signed: {
       invoke: {
         id: "readyOrderRef",
         src: "readyOrderActor",
 
         input: ({ context, event }) => {
-          assertEvent(event, "COMPLETE_SIGN")
+          assertEvent(event, "COMPLETE_STORING")
 
           const form = context.formRef.getSnapshot()
           const formValuesSnapshot = form.context.formValues.getSnapshot()

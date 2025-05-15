@@ -1,5 +1,6 @@
 import type { Result } from "@thames/monads"
 import type { TokenValue } from "../../../types/base"
+import type { MultiPayload } from "../../../types/defuse-contracts-types"
 import type {
   WalletMessage,
   WalletSignatureResult,
@@ -35,3 +36,7 @@ export type ExtractErr<R extends Result<any, any>> = R extends Result<
 >
   ? T
   : never
+
+export type CreateOtcTrade = (
+  multiPayload: MultiPayload
+) => Promise<{ tradeId: string; pKey: string }>

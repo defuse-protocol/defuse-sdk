@@ -30,7 +30,7 @@ import { formValuesSelector } from "../actors/otcMakerFormMachine"
 import type { otcMakerReadyOrderActor } from "../actors/otcMakerReadyOrderActor"
 import { otcMakerRootMachine } from "../actors/otcMakerRootMachine"
 import type { otcMakerSignMachine } from "../actors/otcMakerSignActor"
-import type { SignMessage } from "../types/sharedTypes"
+import type { CreateOtcTrade, SignMessage } from "../types/sharedTypes"
 import { OtcMakerReadyOrderDialog } from "./OtcMakerReadyOrderDialog"
 
 export type OtcMakerWidgetProps = {
@@ -50,6 +50,15 @@ export type OtcMakerWidgetProps = {
 
   /** Send NEAR transaction callback */
   sendNearTransaction: SendNearTransaction
+
+  /** Create OTCTrade in the database */
+  createOtcTrade: CreateOtcTrade
+
+  /** Get OTCTrade from the database by tradeId */
+  getOtcTrade: (tradeId: string) => Promise<{ multiPayload: MultiPayload }>
+
+  /** Delete OTCTrade from the database */
+  deleteOtcTrade: (tradeId: string) => Promise<{ success: boolean }>
 
   /** Function to generate a shareable trade link */
   generateLink: (multiPayload: MultiPayload, tradeId: string) => Promise<string>
@@ -75,6 +84,7 @@ export function OtcMakerForm({
   generateLink,
   renderHostAppLink,
   referral,
+  createOtcTrade,
 }: OtcMakerWidgetProps) {
   const signerCredentials: SignerCredentials | null = useMemo(
     () =>
@@ -102,6 +112,7 @@ export function OtcMakerForm({
       initialTokenOut: initialTokenOut_,
       tokenList,
       referral,
+      createOtcTrade,
     },
   })
 
