@@ -9,6 +9,7 @@ type OtcMakerTrade = {
   tradeId: string
   updatedAt: number
   makerMultiPayload: MultiPayload
+  pKey: string
 }
 
 type State = {
