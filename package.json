@@ -12,6 +12,14 @@
     "./config": {
       "import": "./dist/config.esm.js",
       "types": "./dist/config.d.ts"
+    },
+    "./types": {
+      "import": "./dist/types.esm.js",
+      "types": "./dist/types.d.ts"
+    },
+    "./utils": {
+      "import": "./dist/utils.esm.js",
+      "types": "./dist/utils.d.ts"
     }
   },
   "module": "./dist/index.esm.js",
