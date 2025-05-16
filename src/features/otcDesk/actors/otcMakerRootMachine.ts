@@ -46,7 +46,6 @@ type CompleteSignEvent = {
   multiPayload: MultiPayload
   signerCredentials: SignerCredentials
   usedNonceBase64: string
-  tradeId: string
 }
 
 type CompleteStoringEvent = {
@@ -155,7 +154,6 @@ export const otcMakerRootMachine = setup({
         multiPayload: MultiPayload
         signerCredentials: SignerCredentials
         usedNonceBase64: string
-        tradeId: string
       }
     ) => {
       self.send({ type: "COMPLETE_SIGN", ...event })

@@ -32,7 +32,6 @@ import {
 } from "../../machines/signIntentMachine"
 import type { SignMessage } from "../types/sharedTypes"
 import { type Expiry, expiryToSeconds } from "../utils/expiryUtils"
-import { genTradeId } from "../utils/genLocalTradeId"
 
 export type OTCMakerSignActorInput = {
   parsed: {
@@ -53,7 +52,6 @@ export type OTCMakerSignActorOutput =
   | { tag: "ok"; value: OTCMakerSignActorSuccess }
 
 export type OTCMakerSignActorSuccess = {
-  tradeId: string
   multiPayload: MultiPayload
   signatureResult: WalletSignatureResult
   signerCredentials: SignerCredentials
@@ -212,12 +210,9 @@ export const otcMakerSignMachine = setup({
           context.signerCredentials
         )
 
-        const tradeId = genTradeId()
-
         return {
           tag: "ok",
           value: {
-            tradeId,
             multiPayload,
             signatureResult: event.output.value.signatureResult,
             signerCredentials: context.signerCredentials,
