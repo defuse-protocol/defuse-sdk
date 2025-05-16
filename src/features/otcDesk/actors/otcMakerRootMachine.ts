@@ -41,13 +41,21 @@ import {
   otcMakerStoreActor,
 } from "./otcMakerStoreActor"
 
-type EVENT = {
-  type: "COMPLETE_SIGN" | "COMPLETE_STORING"
+type CompleteSignEvent = {
+  type: "COMPLETE_SIGN"
   multiPayload: MultiPayload
   signerCredentials: SignerCredentials
   usedNonceBase64: string
   tradeId: string
-  pKey?: string
+}
+
+type CompleteStoringEvent = {
+  type: "COMPLETE_STORING"
+  multiPayload: MultiPayload
+  signerCredentials: SignerCredentials
+  usedNonceBase64: string
+  tradeId: string
+  pKey: string
 }
 
 type InputType = {
@@ -70,7 +78,15 @@ type EventType =
         params: WalletMessage
       ) => Promise<WalletSignatureResult | null>
     }
-  | EVENT
+  | CompleteSignEvent
+  | CompleteStoringEvent
+  | {
+      type: "xstate.done.actor.storeRef"
+      output: {
+        tag: "ok"
+        value: CompleteStoringEvent
+      }
+    }
 
 type ContextType = {
   error: null | OTCMakerSignActorErrors | OtcMakerStoreActorErrors
@@ -133,7 +149,7 @@ export const otcMakerRootMachine = setup({
       "depositedBalanceRef",
       (_, event: DepositedBalanceEvents) => event
     ),
-    completeEvent: (
+    completeSign: (
       { self },
       event: {
         multiPayload: MultiPayload
@@ -143,6 +159,25 @@ export const otcMakerRootMachine = setup({
       }
     ) => {
       self.send({ type: "COMPLETE_SIGN", ...event })
+    },
+    completeStoring: (
+      { self },
+      event: {
+        multiPayload: MultiPayload
+        signerCredentials: SignerCredentials
+        usedNonceBase64: string
+        tradeId: string
+        pKey: string
+      }
+    ) => {
+      self.send({
+        type: "COMPLETE_STORING",
+        multiPayload: event.multiPayload,
+        signerCredentials: event.signerCredentials,
+        usedNonceBase64: event.usedNonceBase64,
+        tradeId: event.tradeId,
+        pKey: event.pKey,
+      })
     },
   },
   guards: {
@@ -202,7 +237,6 @@ export const otcMakerRootMachine = setup({
     signing: {
       on: {
         COMPLETE_SIGN: "storing",
-        COMPLETE_STORING: "signed",
       },
 
       invoke: {
@@ -247,7 +281,7 @@ export const otcMakerRootMachine = setup({
           {
             guard: { type: "isOk", params: ({ event }) => event.output },
             actions: {
-              type: "completeEvent",
+              type: "completeSign",
               params: ({ event }) => {
                 assert(event.output.tag === "ok")
                 return event.output.value
@@ -265,6 +299,10 @@ export const otcMakerRootMachine = setup({
       },
     },
     storing: {
+      on: {
+        COMPLETE_STORING: "signed",
+      },
+
       invoke: {
         id: "storeRef",
         src: "storeActor",
@@ -294,16 +332,17 @@ export const otcMakerRootMachine = setup({
           {
             guard: { type: "isOk", params: ({ event }) => event.output },
             actions: {
-              type: "completeEvent",
+              type: "completeStoring",
               params: ({ event }) => {
                 assert(event.output.tag === "ok")
+                const storeEvent = event.output.value
                 otcMakerTradesStore.getState().addTrade(
                   {
-                    tradeId: event.output.value.tradeId,
-                    makerMultiPayload: event.output.value.multiPayload,
-                    pKey: event.output.value.pKey,
+                    tradeId: storeEvent.tradeId,
+                    makerMultiPayload: storeEvent.multiPayload,
+                    pKey: storeEvent.pKey,
                   },
-                  event.output.value.signerCredentials
+                  storeEvent.signerCredentials
                 )
                 return event.output.value
               },
@@ -328,7 +367,6 @@ export const otcMakerRootMachine = setup({
 
         input: ({ context, event }) => {
           assertEvent(event, "COMPLETE_STORING")
-          assert(event.pKey, "pKey is required")
 
           const form = context.formRef.getSnapshot()
           const formValuesSnapshot = form.context.formValues.getSnapshot()
