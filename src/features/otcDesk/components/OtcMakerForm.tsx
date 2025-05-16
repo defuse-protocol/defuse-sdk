@@ -15,7 +15,6 @@ import { useModalStore } from "../../../providers/ModalStoreProvider"
 import { ModalType } from "../../../stores/modalStore"
 import type { AuthMethod } from "../../../types/authHandle"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../../types/base"
-import type { MultiPayload } from "../../../types/defuse-contracts-types"
 import type { RenderHostAppLink } from "../../../types/hostAppLink"
 import type { SwappableToken } from "../../../types/swap"
 import { assert } from "../../../utils/assert"
@@ -53,12 +52,6 @@ export type OtcMakerWidgetProps = {
 
   /** Create OTCTrade in the database */
   createOtcTrade: CreateOtcTrade
-
-  /** Get OTCTrade from the database by tradeId */
-  getOtcTrade: (tradeId: string) => Promise<{ multiPayload: MultiPayload }>
-
-  /** Delete OTCTrade from the database */
-  deleteOtcTrade: (tradeId: string) => Promise<{ success: boolean }>
 
   /** Function to generate a shareable trade link */
   generateLink: (tradeId: string, pKey: string) => string
