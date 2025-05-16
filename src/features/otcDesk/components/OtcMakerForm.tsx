@@ -522,7 +522,7 @@ function renderSubmitButton(
       type="submit"
       size="lg"
       variant={snapshot.matches("signing") ? "secondary" : "primary"}
-      isLoading={snapshot.matches("signing")}
+      isLoading={snapshot.matches("signing") || snapshot.matches("storing")}
     >
       {caption}
     </ButtonCustom>
