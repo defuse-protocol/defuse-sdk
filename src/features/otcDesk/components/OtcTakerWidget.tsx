@@ -25,12 +25,12 @@ import {
   deriveTradeTerms,
   determineInvolvedTokens,
 } from "../utils/deriveTradeTerms"
-import { genTradeId } from "../utils/genLocalTradeId"
 import { OtcTakerForm } from "./OtcTakerForm"
 import { OtcTakerInvalidOrder } from "./OtcTakerInvalidOrder"
 import { OtcTakerSuccessScreen } from "./OtcTakerSuccessScreen"
 
 export type OtcTakerWidgetProps = {
+  tradeId: string | null
   multiPayload: string | null
 
   /** List of available tokens for trading */
@@ -68,6 +68,7 @@ export function OtcTakerWidget(props: OtcTakerWidgetProps) {
 }
 
 function OtcTakerScreens({
+  tradeId,
   multiPayload,
   tokenList,
   userAddress,
@@ -117,11 +118,11 @@ function OtcTakerScreens({
     intentHashes: string[]
   } | null>(null)
 
-  const tradeId = genTradeId()
+  const knownOtcTakerTrade = useOtcTakerTrades((state) =>
+    tradeId != null ? state.trades[tradeId] : null
+  )
 
-  const knownOtcTakerTrade = useOtcTakerTrades((state) => state.trades[tradeId])
-
-  if (enrichedTradeTerms == null || protocolFee == null) {
+  if (enrichedTradeTerms == null || protocolFee == null || tradeId == null) {
     return loading
   }
 
