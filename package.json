@@ -64,7 +64,6 @@
     "@xstate/store": "^3.0.1",
     "borsher": "^3.5.0",
     "clsx": "^2.1.1",
-    "nanoid": "^5.1.5",
     "near-api-js": "^5.1.1",
     "qrcode.react": "^4.0.1",
     "react": "^18.3.1",
