@@ -31,13 +31,13 @@ export function chainTxExplorer(blockchain: SupportedChainName): string | null {
     case "tron":
       return "https://tronscan.org/#/transaction/"
     case "tuxappchain":
-      return "https://explorer.tuxa.aurora.dev"
+      return "https://explorer.tuxa.aurora.dev/tx/"
     case "vertex":
-      return "https://explorer.0x4e454173.aurora-cloud.dev"
+      return "https://explorer.0x4e454173.aurora-cloud.dev/tx/"
     case "optima":
-      return "https://explorer.optima.aurora.dev"
+      return "https://explorer.optima.aurora.dev/tx/"
     case "coineasy":
-      return "https://0x4e454218.explorer.aurora-cloud.dev"
+      return "https://0x4e454218.explorer.aurora-cloud.dev/tx/"
     default:
       blockchain satisfies never
       return null
