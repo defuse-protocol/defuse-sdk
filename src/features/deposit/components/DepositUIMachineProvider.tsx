@@ -20,6 +20,8 @@ import {
   createDepositEVMNativeTransaction,
   createDepositFromSiloTransaction,
   createDepositSolanaTransaction,
+  createDepositVirtualChainERC20Transaction,
+  createExitToNearPrecompileTransaction,
   generateDepositAddress,
   getAllowance,
   waitEVMTransaction,
@@ -34,7 +36,6 @@ import { isFungibleToken, isNativeToken } from "../../../utils/token"
 import { depositGenerateAddressMachine } from "../../machines/depositGenerateAddressMachine"
 import { depositUIMachine } from "../../machines/depositUIMachine"
 import type { DepositFormValues } from "./DepositForm"
-
 /**
  * We explicitly define the type of `depositUIMachine` to avoid:
  * ```
@@ -337,6 +338,60 @@ export function DepositUIMachineProvider({
                 const receipt = await waitEVMTransaction({ txHash, chainName })
                 if (receipt.status === "reverted") {
                   throw new Error("Deposit from Silo transaction reverted")
+                }
+
+                return txHash
+              }),
+            },
+            guards: {
+              isDepositParamsValid: ({ context }) => {
+                return context.depositAddress !== null
+              },
+            },
+          }),
+          depositVirtualChainActor: depositMachine.provide({
+            actors: {
+              signAndSendTransactions: fromPromise(async ({ input }) => {
+                const {
+                  amount,
+                  userAddress,
+                  derivedToken,
+                  depositAddress,
+                  chainName,
+                } = input
+
+                assert(depositAddress != null, "Deposit address is required")
+                const chainId = getEVMChainId(chainName)
+
+                let tx: Transaction["EVM"]
+                if (isNativeToken(derivedToken)) {
+                  logger.verbose(
+                    "Sending deposit through exitToNearPrecompile contract"
+                  )
+                  tx = createExitToNearPrecompileTransaction(
+                    userAddress,
+                    amount,
+                    depositAddress,
+                    chainId
+                  )
+                } else {
+                  logger.verbose("Sending deposit through auroraErc20 contract")
+                  tx = createDepositVirtualChainERC20Transaction(
+                    userAddress,
+                    derivedToken.address,
+                    depositAddress,
+                    amount,
+                    chainId
+                  )
+                }
+                const txHash = await sendTransactionEVM(tx)
+
+                assert(txHash != null, "Transaction failed")
+
+                logger.verbose("Waiting for deposit transaction", { txHash })
+                const receipt = await waitEVMTransaction({ txHash, chainName })
+                if (receipt.status === "reverted") {
+                  throw new Error("Deposit transaction reverted")
                 }
 
                 return txHash
