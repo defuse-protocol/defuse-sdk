@@ -25,13 +25,13 @@ import {
   deriveTradeTerms,
   determineInvolvedTokens,
 } from "../utils/deriveTradeTerms"
-import { genLocalTradeId } from "../utils/genLocalTradeId"
 import { OtcTakerForm } from "./OtcTakerForm"
 import { OtcTakerInvalidOrder } from "./OtcTakerInvalidOrder"
 import { OtcTakerSuccessScreen } from "./OtcTakerSuccessScreen"
 
 export type OtcTakerWidgetProps = {
-  multiPayload: string
+  tradeId: string | null
+  multiPayload: string | null
 
   /** List of available tokens for trading */
   tokenList: (BaseTokenInfo | UnifiedTokenInfo)[]
@@ -68,6 +68,7 @@ export function OtcTakerWidget(props: OtcTakerWidgetProps) {
 }
 
 function OtcTakerScreens({
+  tradeId,
   multiPayload,
   tokenList,
   userAddress,
@@ -90,7 +91,7 @@ function OtcTakerScreens({
   })
 
   const enrichedTradeTerms = useMemo(() => {
-    if (protocolFee == null) {
+    if (protocolFee == null || multiPayload == null) {
       return null
     }
 
@@ -117,11 +118,11 @@ function OtcTakerScreens({
     intentHashes: string[]
   } | null>(null)
 
-  const tradeId = genLocalTradeId(multiPayload)
+  const knownOtcTakerTrade = useOtcTakerTrades((state) =>
+    tradeId != null ? state.trades[tradeId] : null
+  )
 
-  const knownOtcTakerTrade = useOtcTakerTrades((state) => state.trades[tradeId])
-
-  if (enrichedTradeTerms == null || protocolFee == null) {
+  if (enrichedTradeTerms == null || protocolFee == null || tradeId == null) {
     return loading
   }
 

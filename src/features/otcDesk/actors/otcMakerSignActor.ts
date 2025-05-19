@@ -30,10 +30,8 @@ import {
   type Errors as SignIntentErrors,
   signIntentMachine,
 } from "../../machines/signIntentMachine"
-import { otcMakerTradesStore } from "../stores/otcMakerTrades"
 import type { SignMessage } from "../types/sharedTypes"
 import { type Expiry, expiryToSeconds } from "../utils/expiryUtils"
-import { genLocalTradeId } from "../utils/genLocalTradeId"
 
 export type OTCMakerSignActorInput = {
   parsed: {
@@ -54,7 +52,6 @@ export type OTCMakerSignActorOutput =
   | { tag: "ok"; value: OTCMakerSignActorSuccess }
 
 export type OTCMakerSignActorSuccess = {
-  tradeId: string
   multiPayload: MultiPayload
   signatureResult: WalletSignatureResult
   signerCredentials: SignerCredentials
@@ -190,24 +187,6 @@ export const otcMakerSignMachine = setup({
               type: "complete",
               params: ({ event }) => event.output,
             },
-            ({ event, context }) => {
-              if (event.output.tag === "ok") {
-                const multiPayload = formatSignedIntent(
-                  event.output.value.signatureResult,
-                  context.signerCredentials
-                )
-
-                const tradeId = genLocalTradeId(JSON.stringify(multiPayload))
-
-                otcMakerTradesStore.getState().addTrade(
-                  {
-                    tradeId,
-                    makerMultiPayload: multiPayload,
-                  },
-                  context.signerCredentials
-                )
-              }
-            },
           ],
         },
       },
@@ -231,12 +210,9 @@ export const otcMakerSignMachine = setup({
           context.signerCredentials
         )
 
-        const tradeId = genLocalTradeId(JSON.stringify(multiPayload))
-
         return {
           tag: "ok",
           value: {
-            tradeId,
             multiPayload,
             signatureResult: event.output.value.signatureResult,
             signerCredentials: context.signerCredentials,

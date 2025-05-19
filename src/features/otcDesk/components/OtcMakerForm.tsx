@@ -15,7 +15,6 @@ import { useModalStore } from "../../../providers/ModalStoreProvider"
 import { ModalType } from "../../../stores/modalStore"
 import type { AuthMethod } from "../../../types/authHandle"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../../types/base"
-import type { MultiPayload } from "../../../types/defuse-contracts-types"
 import type { RenderHostAppLink } from "../../../types/hostAppLink"
 import type { SwappableToken } from "../../../types/swap"
 import { assert } from "../../../utils/assert"
@@ -30,7 +29,13 @@ import { formValuesSelector } from "../actors/otcMakerFormMachine"
 import type { otcMakerReadyOrderActor } from "../actors/otcMakerReadyOrderActor"
 import { otcMakerRootMachine } from "../actors/otcMakerRootMachine"
 import type { otcMakerSignMachine } from "../actors/otcMakerSignActor"
-import type { SignMessage } from "../types/sharedTypes"
+import { ErrorReason } from "../components/shared/ErrorReason"
+
+import type {
+  CreateOtcTrade,
+  GenerateLink,
+  SignMessage,
+} from "../types/sharedTypes"
 import { OtcMakerReadyOrderDialog } from "./OtcMakerReadyOrderDialog"
 
 export type OtcMakerWidgetProps = {
@@ -51,8 +56,11 @@ export type OtcMakerWidgetProps = {
   /** Send NEAR transaction callback */
   sendNearTransaction: SendNearTransaction
 
+  /** Create OTCTrade in the database */
+  createOtcTrade: CreateOtcTrade
+
   /** Function to generate a shareable trade link */
-  generateLink: (multiPayload: MultiPayload) => string
+  generateLink: GenerateLink
 
   /** Theme selection */
   theme?: "dark" | "light"
@@ -75,6 +83,7 @@ export function OtcMakerForm({
   generateLink,
   renderHostAppLink,
   referral,
+  createOtcTrade,
 }: OtcMakerWidgetProps) {
   const signerCredentials: SignerCredentials | null = useMemo(
     () =>
@@ -102,6 +111,7 @@ export function OtcMakerForm({
       initialTokenOut: initialTokenOut_,
       tokenList,
       referral,
+      createOtcTrade,
     },
   })
 
@@ -280,6 +290,8 @@ export function OtcMakerForm({
   const balanceAmountOut = tokenOutBalance?.amount ?? 0n
   const disabledIn = tokenInBalance?.amount === 0n
   const disabledOut = tokenOutBalance?.amount === 0n
+
+  const error = rootSnapshot.context.error
 
   return (
     <div className="flex flex-col">
@@ -492,6 +504,11 @@ export function OtcMakerForm({
           {renderSubmitButton(rootSnapshot)}
         </AuthGate>
       </form>
+      {error != null && (
+        <div className="mt-2">
+          <ErrorReason reason={error.reason} />
+        </div>
+      )}
     </div>
   )
 }
@@ -518,7 +535,7 @@ function renderSubmitButton(
       type="submit"
       size="lg"
       variant={snapshot.matches("signing") ? "secondary" : "primary"}
-      isLoading={snapshot.matches("signing")}
+      isLoading={snapshot.matches("signing") || snapshot.matches("storing")}
     >
       {caption}
     </ButtonCustom>
