@@ -144,6 +144,7 @@ export const otcMakerRootMachine = setup({
         return result.value
       },
     }),
+    clearError: assign({ error: null }),
     relayToDepositedBalanceRef: sendTo(
       "depositedBalanceRef",
       (_, event: DepositedBalanceEvents) => event
@@ -233,6 +234,8 @@ export const otcMakerRootMachine = setup({
       },
     },
     signing: {
+      entry: "clearError",
+
       on: {
         COMPLETE_SIGN: "storing",
       },
