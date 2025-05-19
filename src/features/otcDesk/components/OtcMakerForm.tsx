@@ -29,6 +29,8 @@ import { formValuesSelector } from "../actors/otcMakerFormMachine"
 import type { otcMakerReadyOrderActor } from "../actors/otcMakerReadyOrderActor"
 import { otcMakerRootMachine } from "../actors/otcMakerRootMachine"
 import type { otcMakerSignMachine } from "../actors/otcMakerSignActor"
+import { ErrorReason } from "../components/shared/ErrorReason"
+
 import type {
   CreateOtcTrade,
   GenerateLink,
@@ -289,6 +291,8 @@ export function OtcMakerForm({
   const disabledIn = tokenInBalance?.amount === 0n
   const disabledOut = tokenOutBalance?.amount === 0n
 
+  const error = rootSnapshot.context.error
+
   return (
     <div className="flex flex-col">
       {rootSnapshot.matches("signed") &&
@@ -500,6 +504,11 @@ export function OtcMakerForm({
           {renderSubmitButton(rootSnapshot)}
         </AuthGate>
       </form>
+      {error != null && (
+        <div className="mt-2">
+          <ErrorReason reason={error.reason} />
+        </div>
+      )}
     </div>
   )
 }
