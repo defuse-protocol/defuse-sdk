@@ -29,7 +29,11 @@ import { formValuesSelector } from "../actors/otcMakerFormMachine"
 import type { otcMakerReadyOrderActor } from "../actors/otcMakerReadyOrderActor"
 import { otcMakerRootMachine } from "../actors/otcMakerRootMachine"
 import type { otcMakerSignMachine } from "../actors/otcMakerSignActor"
-import type { CreateOtcTrade, SignMessage } from "../types/sharedTypes"
+import type {
+  CreateOtcTrade,
+  GenerateLink,
+  SignMessage,
+} from "../types/sharedTypes"
 import { OtcMakerReadyOrderDialog } from "./OtcMakerReadyOrderDialog"
 
 export type OtcMakerWidgetProps = {
@@ -54,7 +58,7 @@ export type OtcMakerWidgetProps = {
   createOtcTrade: CreateOtcTrade
 
   /** Function to generate a shareable trade link */
-  generateLink: (tradeId: string, pKey: string) => string
+  generateLink: GenerateLink
 
   /** Theme selection */
   theme?: "dark" | "light"

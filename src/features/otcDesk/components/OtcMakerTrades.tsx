@@ -41,7 +41,7 @@ import {
   otcMakerTradesStore,
   useOtcMakerTrades,
 } from "../stores/otcMakerTrades"
-import type { SignMessage } from "../types/sharedTypes"
+import type { GenerateLink, SignMessage } from "../types/sharedTypes"
 import {
   type DetermineInvolvedTokensErr,
   determineInvolvedTokens,
@@ -55,7 +55,7 @@ import { CancellationDialog } from "./shared/CancellationDialog"
 
 interface OtcMakerTradesProps {
   tokenList: (BaseTokenInfo | UnifiedTokenInfo)[]
-  generateLink: (tradeId: string, pKey: string) => string
+  generateLink: GenerateLink
   signerCredentials: SignerCredentials
   signMessage: SignMessage
   sendNearTransaction: SendNearTransaction
@@ -114,7 +114,7 @@ interface OtcMakerTradeItemProps {
   multiPayload: MultiPayload
   updatedAt: number
   tokenList: (BaseTokenInfo | UnifiedTokenInfo)[]
-  generateLink: (tradeId: string, pKey: string) => string
+  generateLink: GenerateLink
   signerCredentials: SignerCredentials
 }
 
@@ -214,7 +214,7 @@ function OtcMakerTradeItem({
 
         <div className="flex gap-2">
           {err.isNone() && (
-            <Copy text={generateLink(tradeId, pKey)}>
+            <Copy text={() => generateLink(tradeId, pKey, multiPayload)}>
               {(copied) => (
                 <IconButton
                   type="button"
