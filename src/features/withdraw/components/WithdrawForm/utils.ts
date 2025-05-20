@@ -1,6 +1,7 @@
 import { formatUnits } from "viem"
 import type { TokenUsdPriceData } from "../../../../hooks/useTokensUsdPrices"
 import type { TokenBalances as TokenBalancesRecord } from "../../../../services/defuseBalanceService"
+import { DeprecatedTokensService } from "../../../../services/deprecatedTokensService"
 import { AuthMethod } from "../../../../types/authHandle"
 import type {
   BaseTokenInfo,
@@ -153,16 +154,20 @@ export const getBlockchainSelectItems = (
         assert(addressData != null)
 
         let hotBalance: TokenValueWithPrice | null = null
+        const defuseAssetId =
+          DeprecatedTokensService.makeInstance().getValidToken(
+            addressData.defuseAssetId
+          )
         const balance =
           addressData.bridge === "poa"
             ? getMinAmountToken(
                 // we choose min between poa hot balance and solver's hot balance
-                poaBalances[addressData.defuseAssetId],
-                nonPoaBalances[addressData.defuseAssetId]
+                poaBalances[defuseAssetId],
+                nonPoaBalances[defuseAssetId]
               )
-            : nonPoaBalances[addressData.defuseAssetId]
+            : nonPoaBalances[defuseAssetId]
 
-        const price = tokensUsdPriceData?.[addressData.defuseAssetId]?.price
+        const price = tokensUsdPriceData?.[defuseAssetId]?.price
 
         if (balance != null && price != null) {
           hotBalance = {
@@ -181,9 +186,19 @@ export const mergeBridgeBalances = (
   poaBalances: Record<string, TokenValue>,
   nonPoaBalances: Record<string, TokenValue>
 ): Record<string, TokenValue> => {
-  const balances: Record<string, TokenValue> = { ...nonPoaBalances }
+  const balances: Record<string, TokenValue> = {}
 
-  for (const address in poaBalances) {
+  for (const address_ in nonPoaBalances) {
+    const address =
+      DeprecatedTokensService.makeInstance().getValidToken(address_)
+    const val = nonPoaBalances[address] ?? nonPoaBalances[address_]
+    assert(val != null)
+    balances[address_] = val
+  }
+
+  for (const address_ in poaBalances) {
+    const address =
+      DeprecatedTokensService.makeInstance().getValidToken(address_)
     const balance = balances[address]
     const balance_ =
       balance == null
@@ -191,7 +206,7 @@ export const mergeBridgeBalances = (
         : getMinAmountToken(poaBalances[address], balances[address])
 
     if (balance_ != null) {
-      balances[address] = balance_
+      balances[address_] = balance_
     }
   }
 

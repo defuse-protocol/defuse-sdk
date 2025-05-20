@@ -1,8 +1,10 @@
 import type { SendNearTransaction } from "../features/machines/publicKeyVerifierMachine"
+import type { DeprecatedTokenToValidToken } from "../services/deprecatedTokensService"
 import type { AuthHandle } from "./authHandle"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "./base"
 import type { RenderHostAppLink } from "./hostAppLink"
 import type { WalletMessage, WalletSignatureResult } from "./walletMessage"
+
 export type WithdrawWidgetProps = {
   userAddress: AuthHandle["identifier"] | undefined
   chainType: AuthHandle["method"] | undefined
@@ -19,4 +21,5 @@ export type WithdrawWidgetProps = {
    * Prop is not reactive, set it once when the component is created.
    */
   referral?: string
+  deprecatedTokenList?: DeprecatedTokenToValidToken
 }
