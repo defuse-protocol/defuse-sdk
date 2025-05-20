@@ -21,5 +21,9 @@ export type WithdrawWidgetProps = {
    * Prop is not reactive, set it once when the component is created.
    */
   referral?: string
+
+  /**
+   * Optional token list mapper used for deprecated tokens that might have corner logic in the app.
+   */
   deprecatedTokenToReplacementList?: DeprecatedTokenToReplacedToken
 }

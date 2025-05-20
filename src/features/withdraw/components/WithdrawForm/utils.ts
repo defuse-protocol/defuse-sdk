@@ -155,7 +155,7 @@ export const getBlockchainSelectItems = (
 
         let hotBalance: TokenValueWithPrice | null = null
         const defuseAssetId =
-          DeprecatedTokensService.makeInstance().getValidToken(
+          DeprecatedTokensService.getInstance().getValidToken(
             addressData.defuseAssetId
           )
         const balance =
@@ -190,7 +190,7 @@ export const mergeBridgeBalances = (
 
   for (const address_ in nonPoaBalances) {
     const address =
-      DeprecatedTokensService.makeInstance().getValidToken(address_)
+      DeprecatedTokensService.getInstance().getValidToken(address_)
     const val = nonPoaBalances[address] ?? nonPoaBalances[address_]
     assert(val != null)
     balances[address_] = val
@@ -198,7 +198,7 @@ export const mergeBridgeBalances = (
 
   for (const address_ in poaBalances) {
     const address =
-      DeprecatedTokensService.makeInstance().getValidToken(address_)
+      DeprecatedTokensService.getInstance().getValidToken(address_)
     const balance = balances[address]
     const balance_ =
       balance == null

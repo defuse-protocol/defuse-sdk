@@ -1,5 +1,6 @@
-import { type Mock, describe, expect, it, vi } from "vitest"
+import { type Mock, beforeEach, describe, expect, it, vi } from "vitest"
 import type { TokenBalances as TokenBalancesRecord } from "../../../../services/defuseBalanceService"
+import { DeprecatedTokensService } from "../../../../services/deprecatedTokensService"
 import type { BaseTokenInfo, TokenValue } from "../../../../types/base"
 import type { SwappableToken } from "../../../../types/swap"
 import * as tokenUtils from "../../../../utils/token"
@@ -161,6 +162,10 @@ describe("getWithdrawButtonText", () => {
 })
 
 describe("mergeBridgeBalances", () => {
+  beforeEach(() => {
+    DeprecatedTokensService.makeInstance({ tokenOld: "tokenNew" })
+  })
+
   const items: {
     name: string
     poaBalances: Record<string, TokenValue>
@@ -205,6 +210,22 @@ describe("mergeBridgeBalances", () => {
         token5: { amount: 25n, decimals: 18 }, // min(25, 30)
         token6: { amount: 70n, decimals: 18 }, // from poa only
         token7: { amount: 90n, decimals: 18 }, // from non-poa only
+      },
+    },
+    {
+      name: "consider deprecated token, which should look into it's new versopm",
+      poaBalances: {
+        token5: { amount: 25n, decimals: 18 },
+        tokenOld: { amount: 100n, decimals: 18 },
+        tokenNew: { amount: 101n, decimals: 6 },
+      },
+      nonPoaBalances: {
+        token5: { amount: 30n, decimals: 18 },
+      },
+      expected: {
+        token5: { amount: 25n, decimals: 18 },
+        tokenNew: { amount: 101n, decimals: 6 },
+        tokenOld: { amount: 101n, decimals: 6 }, // user value of new one
       },
     },
   ]
