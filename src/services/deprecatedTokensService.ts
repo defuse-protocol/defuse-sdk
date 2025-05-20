@@ -1,18 +1,18 @@
-export type DeprecatedTokenToValidToken = Record<string, string>
+export type DeprecatedTokenToReplacedToken = Record<string, string>
 
 export class DeprecatedTokensService {
   static #instance: DeprecatedTokensService
 
-  deprecatedTokenToValidToken: DeprecatedTokenToValidToken | null = null
+  deprecatedTokenToValidToken: DeprecatedTokenToReplacedToken | null = null
 
   private constructor(
-    deprecatedTokenToValidToken: DeprecatedTokenToValidToken | null = null
+    deprecatedTokenToValidToken: DeprecatedTokenToReplacedToken | null = null
   ) {
     this.deprecatedTokenToValidToken = deprecatedTokenToValidToken
   }
 
   public static makeInstance(
-    deprecatedTokenToValidToken?: DeprecatedTokenToValidToken
+    deprecatedTokenToValidToken?: DeprecatedTokenToReplacedToken
   ): DeprecatedTokensService {
     if (!DeprecatedTokensService.#instance) {
       DeprecatedTokensService.#instance = new DeprecatedTokensService(

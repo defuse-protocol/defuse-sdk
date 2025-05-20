@@ -21,7 +21,7 @@ import { WithdrawUIMachineContext } from "../WithdrawUIMachineContext"
 import { WithdrawForm } from "./WithdrawForm"
 
 export const WithdrawWidget = (props: WithdrawWidgetProps) => {
-  DeprecatedTokensService.makeInstance(props.deprecatedTokenList)
+  DeprecatedTokensService.makeInstance(props.deprecatedTokenToReplacementList)
 
   const initialTokenIn =
     props.presetTokenSymbol !== undefined
