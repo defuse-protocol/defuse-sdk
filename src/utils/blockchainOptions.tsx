@@ -2,11 +2,18 @@ import type { ReactNode } from "react"
 import { NetworkIcon } from "src/components/Network/NetworkIcon"
 import { BlockchainEnum } from "src/sdk/poaBridge/constants/blockchains"
 
+type BlockchainOption = {
+  label: string
+  icon: ReactNode
+  value: BlockchainEnum
+  tags?: string[]
+}
+
 export function getBlockchainsOptions(): Record<
   BlockchainEnum,
-  { label: string; icon: ReactNode; value: BlockchainEnum }
+  BlockchainOption
 > {
-  return {
+  const options: Record<BlockchainEnum, BlockchainOption> = {
     [BlockchainEnum.NEAR]: {
       label: "Near",
       icon: (
@@ -16,6 +23,7 @@ export function getBlockchainsOptions(): Record<
         />
       ),
       value: BlockchainEnum.NEAR,
+      tags: ["vol:4"],
     },
     [BlockchainEnum.ETHEREUM]: {
       label: "Ethereum",
@@ -26,6 +34,7 @@ export function getBlockchainsOptions(): Record<
         />
       ),
       value: BlockchainEnum.ETHEREUM,
+      tags: ["vol:6"],
     },
     [BlockchainEnum.BASE]: {
       label: "Base",
@@ -36,6 +45,7 @@ export function getBlockchainsOptions(): Record<
         />
       ),
       value: BlockchainEnum.BASE,
+      tags: ["vol:9"],
     },
     [BlockchainEnum.ARBITRUM]: {
       label: "Arbitrum",
@@ -46,6 +56,7 @@ export function getBlockchainsOptions(): Record<
         />
       ),
       value: BlockchainEnum.ARBITRUM,
+      tags: ["vol:10"],
     },
     [BlockchainEnum.BITCOIN]: {
       label: "Bitcoin",
@@ -56,6 +67,7 @@ export function getBlockchainsOptions(): Record<
         />
       ),
       value: BlockchainEnum.BITCOIN,
+      tags: ["vol:8"],
     },
     [BlockchainEnum.SOLANA]: {
       label: "Solana",
@@ -66,6 +78,7 @@ export function getBlockchainsOptions(): Record<
         />
       ),
       value: BlockchainEnum.SOLANA,
+      tags: ["vol:3"],
     },
     [BlockchainEnum.DOGECOIN]: {
       label: "Dogecoin",
@@ -76,6 +89,7 @@ export function getBlockchainsOptions(): Record<
         />
       ),
       value: BlockchainEnum.DOGECOIN,
+      tags: ["vol:7"],
     },
     [BlockchainEnum.TURBOCHAIN]: {
       label: "TurboChain",
@@ -86,6 +100,7 @@ export function getBlockchainsOptions(): Record<
         />
       ),
       value: BlockchainEnum.TURBOCHAIN,
+      tags: ["vol:102"],
     },
     [BlockchainEnum.AURORA]: {
       label: "Aurora",
@@ -96,6 +111,7 @@ export function getBlockchainsOptions(): Record<
         />
       ),
       value: BlockchainEnum.AURORA,
+      tags: ["vol:101"],
     },
     [BlockchainEnum.XRPLEDGER]: {
       label: "XRP Ledger",
@@ -106,6 +122,7 @@ export function getBlockchainsOptions(): Record<
         />
       ),
       value: BlockchainEnum.XRPLEDGER,
+      tags: ["vol:10"],
     },
     [BlockchainEnum.ZCASH]: {
       label: "Zcash",
@@ -116,6 +133,7 @@ export function getBlockchainsOptions(): Record<
         />
       ),
       value: BlockchainEnum.ZCASH,
+      tags: ["vol:1"],
     },
     [BlockchainEnum.GNOSIS]: {
       label: "Gnosis",
@@ -126,6 +144,7 @@ export function getBlockchainsOptions(): Record<
         />
       ),
       value: BlockchainEnum.GNOSIS,
+      tags: ["vol:5"],
     },
     [BlockchainEnum.BERACHAIN]: {
       label: "BeraChain",
@@ -136,6 +155,7 @@ export function getBlockchainsOptions(): Record<
         />
       ),
       value: BlockchainEnum.BERACHAIN,
+      tags: ["vol:11"],
     },
     [BlockchainEnum.TRON]: {
       label: "Tron",
@@ -146,6 +166,7 @@ export function getBlockchainsOptions(): Record<
         />
       ),
       value: BlockchainEnum.TRON,
+      tags: ["vol:2"],
     },
     [BlockchainEnum.TUXAPPCHAIN]: {
       label: "TuxaChain",
@@ -156,6 +177,7 @@ export function getBlockchainsOptions(): Record<
         />
       ),
       value: BlockchainEnum.TUXAPPCHAIN,
+      tags: ["vol:103"],
     },
     [BlockchainEnum.VERTEX]: {
       label: "Vertex",
@@ -166,6 +188,7 @@ export function getBlockchainsOptions(): Record<
         />
       ),
       value: BlockchainEnum.VERTEX,
+      tags: ["vol:104"],
     },
     [BlockchainEnum.OPTIMA]: {
       label: "Optima",
@@ -176,6 +199,7 @@ export function getBlockchainsOptions(): Record<
         />
       ),
       value: BlockchainEnum.OPTIMA,
+      tags: ["vol:105"],
     },
     [BlockchainEnum.COINEASY]: {
       label: "CoinEasy",
@@ -186,6 +210,28 @@ export function getBlockchainsOptions(): Record<
         />
       ),
       value: BlockchainEnum.COINEASY,
+      tags: ["vol:106"],
     },
   }
+
+  return sortBlockchainOptionsByVolume(options)
+}
+
+function sortBlockchainOptionsByVolume(
+  options: Record<BlockchainEnum, BlockchainOption>
+): Record<BlockchainEnum, BlockchainOption> {
+  const sortedEntries = Object.entries(options).sort(([, a], [, b]) => {
+    const volTagA = a.tags?.find((tag) => tag.startsWith("vol:"))
+    const volTagB = b.tags?.find((tag) => tag.startsWith("vol:"))
+
+    const volA = Number.parseInt(volTagA?.split(":")[1] ?? "0")
+    const volB = Number.parseInt(volTagB?.split(":")[1] ?? "0")
+
+    return volA - volB
+  })
+
+  return Object.fromEntries(sortedEntries) as Record<
+    BlockchainEnum,
+    BlockchainOption
+  >
 }
