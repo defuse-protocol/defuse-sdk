@@ -36,7 +36,7 @@
     "test": "vitest --passWithNoTests",
     "coverage": "vitest run --coverage",
     "build": "rollup -c && tsc",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit --emitDeclarationOnly false",
     "check": "biome check",
     "format": "biome format --write src/",
     "prepare": "husky && ./scripts/gen-defuse-types.sh"

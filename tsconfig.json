@@ -5,7 +5,6 @@
     "outDir": "dist",
     "target": "es2020",
     "declaration": true,
-    "declarationMap": true,
     "emitDeclarationOnly": true,
     "strict": true,
     "esModuleInterop": true,
