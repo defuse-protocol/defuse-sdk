@@ -21,7 +21,7 @@
       "import": "./dist/utils.js",
       "types": "./dist/utils.d.ts"
     },
-    "./*": {
+    "./dist/*": {
       "import": "./dist/*.js",
       "types": "./dist/*.d.ts"
     }
