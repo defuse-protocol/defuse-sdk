@@ -26,7 +26,10 @@
   "types": "./dist/index.d.ts",
   "files": [
     "dist",
-    "README.md"
+    "README.md",
+    "src",
+    "rollup.config.js",
+    "tailwind.config.js"
   ],
   "scripts": {
     "test": "vitest --passWithNoTests",
