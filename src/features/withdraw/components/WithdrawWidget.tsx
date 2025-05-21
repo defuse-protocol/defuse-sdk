@@ -3,7 +3,6 @@ import { WidgetRoot } from "../../../components/WidgetRoot"
 import { auroraEngineContractId } from "../../../constants/aurora"
 import { settings } from "../../../constants/settings"
 import { WithdrawWidgetProvider } from "../../../providers/WithdrawWidgetProvider"
-import { DeprecatedTokensService } from "../../../services/deprecatedTokensService"
 import type { WithdrawWidgetProps } from "../../../types/withdraw"
 import { assert } from "../../../utils/assert"
 import {
@@ -21,8 +20,6 @@ import { WithdrawUIMachineContext } from "../WithdrawUIMachineContext"
 import { WithdrawForm } from "./WithdrawForm"
 
 export const WithdrawWidget = (props: WithdrawWidgetProps) => {
-  DeprecatedTokensService.makeInstance(props.deprecatedTokenToReplacementList)
-
   const initialTokenIn =
     props.presetTokenSymbol !== undefined
       ? (props.tokenList.find(
