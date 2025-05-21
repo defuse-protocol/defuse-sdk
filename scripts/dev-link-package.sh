@@ -30,12 +30,13 @@ hrm_package_folder="$target_project/tmp/$this_package_name"
 # Hot Module Replacement (HMR) in the target project. Otherwise watchers
 # ignore changes in `node_modules`.
 #
-echo "Creating hardlink to $hrm_package_folder"
+echo "Mirroring dist/ into $hrm_package_folder with hard-links"
 rm -rf "$hrm_package_folder"
 mkdir -p "$hrm_package_folder/dist"
 
-ln ./dist/* "$hrm_package_folder/dist"
-ln ./package.json "$hrm_package_folder"
+# copy dirs, hard-link files
+cp -al ./dist/. "$hrm_package_folder/dist"
+ln ./package.json "$hrm_package_folder/"
 
 #
 # We create a symlink to this package in the target project's `node_modules`
@@ -46,8 +47,8 @@ rm -rf "$node_modules_package_folder/dist"
 rm -f "$node_modules_package_folder/package.json"
 mkdir -p "$node_modules_package_folder"
 
-ln -s $(realpath "$hrm_package_folder/dist") "$node_modules_package_folder/dist"
-ln -s $(realpath "$hrm_package_folder/package.json") "$node_modules_package_folder"
+ln -s "$(realpath "$hrm_package_folder/dist")" "$node_modules_package_folder/dist"
+ln -s "$(realpath "$hrm_package_folder/package.json")" "$node_modules_package_folder"
 
 echo "
 Package linked successfully to $target_project 🚀
