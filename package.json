@@ -29,7 +29,8 @@
     "README.md",
     "src",
     "rollup.config.js",
-    "tailwind.config.js"
+    "tailwind.config.js",
+    "tsconfig.json"
   ],
   "scripts": {
     "test": "vitest --passWithNoTests",
