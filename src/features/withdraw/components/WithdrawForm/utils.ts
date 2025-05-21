@@ -76,6 +76,10 @@ export const getAvailableBlockchains = (token: SwappableToken) => {
           },
           curr
         ) => {
+          // as if already set, means higher order defuseAssetId as higher priority
+          if (acc[curr.chainName]) {
+            return acc
+          }
           acc[curr.chainName] = {
             defuseAssetId: curr.defuseAssetId,
             bridge: curr.bridge,
@@ -153,16 +157,17 @@ export const getBlockchainSelectItems = (
         assert(addressData != null)
 
         let hotBalance: TokenValueWithPrice | null = null
+        const defuseAssetId = addressData.defuseAssetId
         const balance =
           addressData.bridge === "poa"
             ? getMinAmountToken(
                 // we choose min between poa hot balance and solver's hot balance
-                poaBalances[addressData.defuseAssetId],
-                nonPoaBalances[addressData.defuseAssetId]
+                poaBalances[defuseAssetId],
+                nonPoaBalances[defuseAssetId]
               )
-            : nonPoaBalances[addressData.defuseAssetId]
+            : nonPoaBalances[defuseAssetId]
 
-        const price = tokensUsdPriceData?.[addressData.defuseAssetId]?.price
+        const price = tokensUsdPriceData?.[defuseAssetId]?.price
 
         if (balance != null && price != null) {
           hotBalance = {
