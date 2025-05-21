@@ -34,7 +34,7 @@
   "scripts": {
     "test": "vitest --passWithNoTests",
     "coverage": "vitest run --coverage",
-    "build": "rollup -c",
+    "build": "rollup -c && tsc",
     "typecheck": "tsc --noEmit",
     "check": "biome check",
     "format": "biome format --write src/",
