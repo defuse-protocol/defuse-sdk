@@ -29,13 +29,14 @@
     "README.md",
     "src",
     "rollup.config.js",
-    "tailwind.config.js"
+    "tailwind.config.js",
+    "tsconfig.json"
   ],
   "scripts": {
     "test": "vitest --passWithNoTests",
     "coverage": "vitest run --coverage",
-    "build": "rollup -c",
-    "typecheck": "tsc --noEmit",
+    "build": "rollup -c && tsc",
+    "typecheck": "tsc --noEmit --emitDeclarationOnly false",
     "check": "biome check",
     "format": "biome format --write src/",
     "prepare": "husky && ./scripts/gen-defuse-types.sh"
@@ -107,7 +108,6 @@
     "postcss": "^8.4.47",
     "postcss-import": "^15.1.0",
     "rollup": "^4.22.5",
-    "rollup-plugin-dts": "^6.1.1",
     "rollup-plugin-postcss": "^4.0.2",
     "semantic-release": "^24.0.0",
     "tailwindcss": "^3.4.13",

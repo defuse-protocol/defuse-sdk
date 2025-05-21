@@ -4,11 +4,10 @@ import json from "@rollup/plugin-json"
 import typescript from "@rollup/plugin-typescript"
 import autoprefixer from "autoprefixer"
 import atImport from "postcss-import"
-import { dts } from "rollup-plugin-dts"
 import postcss from "rollup-plugin-postcss"
 import tailwindcss from "tailwindcss"
-import packageJson from "./package.json" assert { type: "json" }
-import radixSelectPackageJson from "./src/lib/@radix-ui/react-select/package.json" assert {
+import packageJson from "./package.json" with { type: "json" }
+import radixSelectPackageJson from "./src/lib/@radix-ui/react-select/package.json" with {
   type: "json",
 }
 
@@ -20,7 +19,9 @@ const config = [
         dir: "dist",
         format: "es",
         sourcemap: true,
-        entryFileNames: "[name].esm.js",
+        preserveModules: true,
+        preserveModulesRoot: "src",
+        entryFileNames: "[name].js",
       },
     ],
     plugins: [
@@ -67,26 +68,6 @@ const config = [
       "@noble/hashes/sha256",
       "near-api-js/lib/providers",
     ],
-  },
-  {
-    input: "src/index.ts",
-    output: [{ file: "dist/index.d.ts", format: "es" }],
-    plugins: [dts()],
-  },
-  {
-    input: "src/config.ts",
-    output: [{ file: "dist/config.d.ts", format: "es" }],
-    plugins: [dts()],
-  },
-  {
-    input: "src/types.ts",
-    output: [{ file: "dist/types.d.ts", format: "es" }],
-    plugins: [dts()],
-  },
-  {
-    input: "src/utils.ts",
-    output: [{ file: "dist/utils.d.ts", format: "es" }],
-    plugins: [dts()],
   },
 ]
 
