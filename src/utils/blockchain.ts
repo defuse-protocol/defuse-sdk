@@ -11,7 +11,7 @@ import {
   assetNetworkAdapter,
   reverseAssetNetworkAdapter,
 } from "src/utils/adapters"
-import { isBaseToken, isUnifiedToken } from "src/utils/token"
+import { isBaseToken, isNativeToken, isUnifiedToken } from "src/utils/token"
 import { getBlockchainsOptions } from "./blockchainOptions"
 export function isAuroraVirtualChain(network: SupportedChainName): boolean {
   const virtualChains = [
@@ -65,6 +65,17 @@ export function getDefaultBlockchainOptionValue(
 ): BlockchainEnum | null {
   if (isBaseToken(token)) {
     const key = assetNetworkAdapter[token.chainName]
+    return key
+      ? (getBlockchainsOptions()[key]?.value as BlockchainEnum | null)
+      : null
+  }
+  // For unified tokens, default to the native token's network
+  if (isUnifiedToken(token)) {
+    const nativeToken = token.groupedTokens.find((t) => isNativeToken(t))
+    if (nativeToken == null) {
+      return null
+    }
+    const key = assetNetworkAdapter[nativeToken.chainName]
     return key
       ? (getBlockchainsOptions()[key]?.value as BlockchainEnum | null)
       : null
