@@ -17,6 +17,8 @@ export type SupportedChainName =
   | "gnosis"
   | "berachain"
   | "tron"
+  | "polygon"
+  | "bsc"
 
 export type SupportedBridge = "direct" | "poa" | "aurora_engine"
 

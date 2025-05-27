@@ -38,6 +38,10 @@ export function chainTxExplorer(blockchain: SupportedChainName): string | null {
       return "https://explorer.optima.aurora.dev/tx/"
     case "coineasy":
       return "https://0x4e454218.explorer.aurora-cloud.dev/tx/"
+    case "polygon":
+      return "https://polygonscan.com/tx/"
+    case "bsc":
+      return "https://bscscan.com/tx/"
     default:
       blockchain satisfies never
       return null

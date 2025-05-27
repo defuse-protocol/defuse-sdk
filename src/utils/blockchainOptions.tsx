@@ -212,6 +212,28 @@ export function getBlockchainsOptions(): Record<
       value: BlockchainEnum.COINEASY,
       tags: ["vol:106"],
     },
+    [BlockchainEnum.POLYGON]: {
+      label: "Polygon",
+      icon: (
+        <NetworkIcon
+          chainIcon="/static/icons/network/polygon.svg"
+          chainName="Polygon"
+        />
+      ),
+      value: BlockchainEnum.POLYGON,
+      tags: [],
+    },
+    [BlockchainEnum.BSC]: {
+      label: "Binance Smart Chain",
+      icon: (
+        <NetworkIcon
+          chainIcon="/static/icons/network/bsc.svg"
+          chainName="Binance Smart Chain"
+        />
+      ),
+      value: BlockchainEnum.BSC,
+      tags: [],
+    },
   }
 
   return sortBlockchainOptionsByVolume(options)
