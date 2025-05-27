@@ -55,11 +55,24 @@ export async function getWithdrawalStatus(
   return result as any
 }
 
+export async function hotOmniWithdraw(
+  params: types.HotOmniWithdrawRequest["params"][0],
+  config: types.RequestConfig = {}
+): Promise<types.HotOmniWithdrawResponse["result"]> {
+  const result = await jsonRPCRequest<types.HotOmniWithdrawRequest>(
+    "hot_omni_withdraw",
+    params,
+    config
+  )
+  // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+  return result as any
+}
+
 export async function getTokenBalancesRequest(
   addresses: string[]
 ): Promise<types.BridgeBalanceResponse> {
   const params = addresses.map((address) => `addresses[]=${address}`).join("&")
-  const response = await await request({
+  const response = await request({
     url: `${globalConfig.env.poaBridgeBaseURL}/console/tokenBalances?${params}`,
     fetchOptions: {
       method: "GET",

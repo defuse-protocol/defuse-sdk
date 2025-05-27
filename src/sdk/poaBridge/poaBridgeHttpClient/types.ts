@@ -106,6 +106,25 @@ export type WithdrawalStatusResponseOk = JSONRPCResponse<{
   }[]
 }>
 
+export type HotOmniWithdrawRequest = JSONRPCRequest<
+  "hot_omni_withdraw",
+  {
+    account_id: string // intent user
+    tx_hash: string // near tx hash
+    receiver: string // address destination chain
+    chain_id: string // special HOT Network ID
+  }
+>
+
+export type HotOmniWithdrawResponse = JSONRPCResponse<{
+  withdrawals: {
+    status: "COMPLETED" | "PENDING"
+    data: {
+      transfer_tx_hash: string | null
+    }
+  }[]
+}>
+
 export type TokenBalances = {
   symbol: string
   address: string
