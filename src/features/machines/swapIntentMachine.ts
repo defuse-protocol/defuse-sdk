@@ -6,7 +6,11 @@ import { logger } from "../../logger"
 import { publishIntent } from "../../sdk/solverRelay/publishIntent"
 import type { AggregatedQuote } from "../../services/quoteService"
 import type { AuthMethod } from "../../types/authHandle"
-import type { BaseTokenInfo, TokenValue } from "../../types/base"
+import type {
+  BaseTokenInfo,
+  SupportedChainName,
+  TokenValue,
+} from "../../types/base"
 import type { Nep413DefuseMessageFor_DefuseIntents } from "../../types/defuse-contracts-types"
 import type { IntentsUserId } from "../../types/intentsUserId"
 import type {
@@ -80,6 +84,9 @@ export type IntentDescription =
       type: "withdraw"
       tokenOut: BaseTokenInfo
       amountWithdrawn: TokenValue
+      accountId: IntentsUserId
+      chainName: SupportedChainName
+      recipient: string
     }
 
 type Context = {
@@ -320,6 +327,9 @@ export const swapIntentMachine = setup({
                   context.intentOperationParams,
                   context.quoteToPublish
                 ),
+                accountId: context.defuseUserId,
+                chainName: context.intentOperationParams.tokenOut.chainName,
+                recipient: context.intentOperationParams.recipient,
               },
             },
           }

@@ -16,8 +16,10 @@ import {
 import type {
   BaseTokenInfo,
   SupportedBridge,
+  SupportedChainName,
   UnifiedTokenInfo,
 } from "../../types/base"
+import type { IntentsUserId } from "../../types/intentsUserId"
 import { assert } from "../../utils/assert"
 import type { IntentDescription } from "./swapIntentMachine"
 
@@ -83,6 +85,9 @@ export const intentStatusMachine = setup({
         input: {
           sourceTxHash: string
           bridge: SupportedBridge
+          accountId: IntentsUserId
+          chainName: SupportedChainName
+          recipient: string
         }
         signal: AbortSignal
       }) => {
@@ -185,6 +190,9 @@ export const intentStatusMachine = setup({
           return {
             bridge: context.intentDescription.tokenOut.bridge,
             sourceTxHash: context.txHash,
+            accountId: context.intentDescription.accountId,
+            chainName: context.intentDescription.chainName,
+            recipient: context.intentDescription.recipient,
           }
         },
 
