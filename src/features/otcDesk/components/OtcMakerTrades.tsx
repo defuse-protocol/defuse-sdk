@@ -95,6 +95,7 @@ export function OtcMakerTrades({
               key={trade.tradeId}
               tradeId={trade.tradeId}
               pKey={trade.pKey}
+              iv={trade.iv}
               multiPayload={trade.makerMultiPayload}
               updatedAt={trade.updatedAt}
               tokenList={tokenList}
@@ -111,6 +112,7 @@ export function OtcMakerTrades({
 interface OtcMakerTradeItemProps {
   tradeId: string
   pKey: string
+  iv: string
   multiPayload: MultiPayload
   updatedAt: number
   tokenList: (BaseTokenInfo | UnifiedTokenInfo)[]
@@ -121,6 +123,7 @@ interface OtcMakerTradeItemProps {
 function OtcMakerTradeItem({
   tradeId,
   pKey,
+  iv,
   multiPayload,
   tokenList,
   generateLink,
@@ -214,7 +217,7 @@ function OtcMakerTradeItem({
 
         <div className="flex gap-2">
           {err.isNone() && (
-            <Copy text={() => generateLink(tradeId, pKey, multiPayload)}>
+            <Copy text={() => generateLink(tradeId, pKey, multiPayload, iv)}>
               {(copied) => (
                 <IconButton
                   type="button"

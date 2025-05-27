@@ -39,14 +39,13 @@ export type ExtractErr<R extends Result<any, any>> = R extends Result<
 
 export type CreateOtcTrade = (
   multiPayload: MultiPayload
-) => Promise<{ tradeId: string; pKey: string }>
+) => Promise<{ tradeId: string; pKey: string; iv: string }>
 
 export type GenerateLink = (
   tradeId: string,
+  /** @deprecated Required for backwards compatibility */
   pKey: string,
-  /**
-   * Required for backwards compatibility, generation links from multiPayload
-   * @deprecated
-   */
-  multiPayload: MultiPayload
+  /** @deprecated Required for backwards compatibility */
+  multiPayload: MultiPayload,
+  iv: string
 ) => string
