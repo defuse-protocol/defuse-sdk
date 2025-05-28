@@ -116,14 +116,14 @@ export type HotOmniWithdrawRequest = JSONRPCRequest<
   }
 >
 
-export type HotOmniWithdrawResponse = JSONRPCResponse<{
-  withdrawals: {
+export type HotOmniWithdrawResponse = JSONRPCResponse<
+  {
     status: "COMPLETED" | "PENDING"
     data: {
       transfer_tx_hash: string | null
     }
   }[]
-}>
+>
 
 export type TokenBalances = {
   symbol: string
