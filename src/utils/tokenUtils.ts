@@ -1,6 +1,7 @@
 import type { BalanceMapping } from "../features/machines/depositedBalanceMachine"
 import type { BaseTokenInfo, TokenValue, UnifiedTokenInfo } from "../types/base"
 import { assert, type AssertErrorType } from "./assert"
+import { isLegitAccountId } from "./near"
 import { isBaseToken } from "./token"
 
 export function computeTotalBalance(
@@ -399,7 +400,12 @@ export function parseDefuseAssetId(
   assetId: string
 ): ParseDefuseAssetIdReturnType {
   const [tokenStandard, tokenContractId, multiTokenId] = assetId.split(":")
-  assert(tokenContractId != null, "Incorrect format of assetId")
+
+  assert(
+    tokenContractId != null && isLegitAccountId(tokenContractId),
+    "Incorrect format of assetId"
+  )
+
   switch (tokenStandard) {
     case "nep141":
       return {
