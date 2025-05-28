@@ -1,6 +1,7 @@
 import type { BalanceMapping } from "../features/machines/depositedBalanceMachine"
 import type { BaseTokenInfo, TokenValue, UnifiedTokenInfo } from "../types/base"
-import { assert } from "./assert"
+import { assert, type AssertErrorType } from "./assert"
+import { isLegitAccountId } from "./near"
 import { isBaseToken } from "./token"
 
 export function computeTotalBalance(
@@ -367,12 +368,61 @@ export function getTokenAccountIds(tokens: BaseTokenInfo[]): string[] {
   return tokens.map((t) => getTokenAccountId(t.defuseAssetId))
 }
 
+/**
+ * Converts Defuse asset ID to token contract ID.
+ * nep141:wrap.near → wrap.near
+ * nep245:v2_1.omni.hot.tg:56_11111111111111111111 → v2_1.omni.hot.tg
+ */
 export function getTokenAccountId(assetId: string): string {
-  const stringCleaner = "nep141:"
+  const { contractId } = parseDefuseAssetId(assetId)
+  return contractId
+}
 
-  return assetId.startsWith(stringCleaner)
-    ? assetId.replace(stringCleaner, "")
-    : assetId
+export type ParseDefuseAssetIdReturnType =
+  | {
+      standard: "nep141"
+      contractId: string
+    }
+  | {
+      standard: "nep245"
+      contractId: string
+      tokenId: string
+    }
+
+export type ParseDefuseAssetIdErrorType = AssertErrorType
+
+/**
+ * Parses Defuse asset ID into its components based on the token standard.
+ * nep141:wrap.near → { standard: nep141, contractId: wrap.near }
+ * nep245:v2_1.omni.hot.tg:56_11111111111111111111 -> { standard: nep245, contractId: v2_1.omni.hot.tg, tokenId: 56_11111111111111111111 }
+ */
+export function parseDefuseAssetId(
+  assetId: string
+): ParseDefuseAssetIdReturnType {
+  const [tokenStandard, tokenContractId, multiTokenId] = assetId.split(":")
+
+  assert(
+    tokenContractId != null && isLegitAccountId(tokenContractId),
+    "Incorrect format of assetId"
+  )
+
+  switch (tokenStandard) {
+    case "nep141":
+      return {
+        standard: "nep141",
+        contractId: tokenContractId,
+      }
+    case "nep245": {
+      assert(multiTokenId != null, "Incorrect NEP-245 token format")
+      return {
+        standard: "nep245",
+        contractId: tokenContractId,
+        tokenId: multiTokenId,
+      }
+    }
+    default:
+      assert(false, `Unsupported token standard: ${tokenStandard}`)
+  }
 }
 
 export function tokenAccountIdToDefuseAssetId(address: string): string {

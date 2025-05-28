@@ -8,6 +8,7 @@ import {
   setup,
 } from "xstate"
 import { logger } from "../../logger"
+import { waitForHotOmniWithdrawalCompletion } from "../../sdk/poaBridge/waitForHotWithdrawalCompletion"
 import { waitForWithdrawalCompletion } from "../../sdk/poaBridge/waitForWithdrawalCompletion"
 import {
   type IntentSettlementResult,
@@ -16,8 +17,10 @@ import {
 import type {
   BaseTokenInfo,
   SupportedBridge,
+  SupportedChainName,
   UnifiedTokenInfo,
 } from "../../types/base"
+import type { IntentsUserId } from "../../types/intentsUserId"
 import { assert } from "../../utils/assert"
 import type { IntentDescription } from "./swapIntentMachine"
 
@@ -48,7 +51,7 @@ export const intentStatusMachine = setup({
       tokenOut: BaseTokenInfo | UnifiedTokenInfo
       txHash: string | null
       intentDescription: IntentDescription
-      bridgeTransactionResult: null | { destinationTxHash: string }
+      bridgeTransactionResult: null | { destinationTxHash: string | null }
     },
   },
   actions: {
@@ -60,8 +63,10 @@ export const intentStatusMachine = setup({
         settlementResult.txHash,
     }),
     setBridgeTransactionResult: assign({
-      bridgeTransactionResult: (_, v: null | { destinationTxHash: string }) =>
-        v,
+      bridgeTransactionResult: (
+        _,
+        v: null | { destinationTxHash: string | null }
+      ) => v,
     }),
   },
   actors: {
@@ -83,6 +88,9 @@ export const intentStatusMachine = setup({
         input: {
           sourceTxHash: string
           bridge: SupportedBridge
+          accountId: IntentsUserId
+          chainName: SupportedChainName
+          recipient: string
         }
         signal: AbortSignal
       }) => {
@@ -98,6 +106,15 @@ export const intentStatusMachine = setup({
 
           case "poa":
             return waitForWithdrawalCompletion({
+              txHash: input.sourceTxHash,
+              signal,
+            })
+
+          case "hot_omni":
+            return waitForHotOmniWithdrawalCompletion({
+              accountId: input.accountId,
+              chainName: input.chainName,
+              recipient: input.recipient,
               txHash: input.sourceTxHash,
               signal,
             })
@@ -185,6 +202,9 @@ export const intentStatusMachine = setup({
           return {
             bridge: context.intentDescription.tokenOut.bridge,
             sourceTxHash: context.txHash,
+            accountId: context.intentDescription.accountId,
+            chainName: context.intentDescription.chainName,
+            recipient: context.intentDescription.recipient,
           }
         },
 

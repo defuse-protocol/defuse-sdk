@@ -1,7 +1,10 @@
 import { base58, base64, base64urlnopad, hex } from "@scure/base"
 import * as v from "valibot"
+import { AssertionError } from "../../../errors/assert"
+import { findError } from "../../../utils/errors"
 import { isLegitAccountId } from "../../../utils/near"
 import { normalizeERC191Signature } from "../../../utils/prepareBroadcastRequest"
+import { parseDefuseAssetId } from "../../../utils/tokenUtils"
 import { normalizeSignatureS } from "../../../utils/webAuthn"
 
 export const ToBigIntSchema = v.pipe(
@@ -17,12 +20,13 @@ export const NonceSchema = createBytesSchema("", "base64", base64, 32)
 
 export const TokenIdSchema = v.pipe(
   v.string(),
-  v.startsWith("nep141:"),
   v.rawCheck(({ dataset, addIssue }) => {
     if (dataset.typed) {
-      const key = dataset.value.split(":")[1] ?? ""
-      if (!isLegitAccountId(key)) {
-        addIssue({ message: "Invalid NEP-141 token account ID" })
+      try {
+        parseDefuseAssetId(dataset.value)
+      } catch (err: unknown) {
+        const e = findError(err, AssertionError)
+        addIssue({ message: e ? e.message : "unknown error" })
       }
     }
   })

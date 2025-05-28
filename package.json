@@ -40,12 +40,14 @@
     "test": "vitest --passWithNoTests",
     "coverage": "vitest run --coverage",
     "build": "rollup -c && tsc",
+    "build:watch": "concurrently \"rollup -c -w\" \"tsc -w\"",
     "typecheck": "tsc --noEmit --emitDeclarationOnly false",
     "check": "biome check",
     "format": "biome format --write src/",
     "prepare": "husky && ./scripts/gen-defuse-types.sh"
   },
   "dependencies": {
+    "@hot-labs/omni-sdk": "2.6.0",
     "@lifeomic/attempt": "^3.1.0",
     "@noble/curves": "1.4.0",
     "@noble/hashes": "^1.7.1",
@@ -106,6 +108,7 @@
     "@types/react-dom": "^18.3.0",
     "@vitest/coverage-v8": "2.1.2",
     "autoprefixer": "^10.4.20",
+    "concurrently": "^9.1.2",
     "conventional-changelog-conventionalcommits": "^8.0.0",
     "husky": "^9.1.1",
     "lint-staged": "^15.2.10",

@@ -3,15 +3,16 @@ import { base64 } from "@scure/base"
 import { getAddress } from "viem"
 import { config } from "../config"
 import { logger } from "../logger"
+import { createWithdrawMemo } from "../sdk/poaBridge/createWithdrawMemo"
+import type { SupportedChainName } from "../types/base"
 import type {
   Intent,
   Nep413DefuseMessageFor_DefuseIntents,
 } from "../types/defuse-contracts-types"
-import { assert } from "./assert"
-
-import { createWithdrawMemo } from "../sdk/poaBridge/createWithdrawMemo"
 import type { IntentsUserId } from "../types/intentsUserId"
 import type { WalletMessage } from "../types/walletMessage"
+import { assert } from "./assert"
+import { buildHotOmniWithdrawIntent } from "./hotOmniUtils"
 
 /**
  * @param tokenDeltas
@@ -177,6 +178,13 @@ export type WithdrawParams =
       auroraEngineContractId: string
       destinationAddress: string
     }
+  | {
+      type: "hot_omni"
+      chainName: SupportedChainName
+      amount: bigint
+      defuseAssetId: string
+      destinationAddress: string // todo: consider renaming `receiverId` and `destinationAddress` to `recipient`?
+    }
 
 function makeInnerWithdrawMessage(params: WithdrawParams): Intent {
   const paramsType = params.type
@@ -195,9 +203,7 @@ function makeInnerWithdrawMessage(params: WithdrawParams): Intent {
         receiver_id: params.receiverId,
         amount: params.amount.toString(),
         storage_deposit:
-          params.storageDeposit > 0n
-            ? params.storageDeposit.toString()
-            : undefined,
+          params.storageDeposit > 0n ? params.storageDeposit.toString() : null,
       }
 
     case "via_poa_bridge": {
@@ -221,6 +227,15 @@ function makeInnerWithdrawMessage(params: WithdrawParams): Intent {
         amount: params.amount.toString(),
         msg: makeAuroraEngineDepositMsg(params.destinationAddress),
       }
+
+    case "hot_omni": {
+      return buildHotOmniWithdrawIntent({
+        chainName: params.chainName,
+        defuseAssetId: params.defuseAssetId,
+        amount: params.amount,
+        receiver: params.destinationAddress,
+      })
+    }
 
     default:
       paramsType satisfies never

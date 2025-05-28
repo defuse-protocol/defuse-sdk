@@ -513,7 +513,7 @@ export const WithdrawForm = ({
               )}
             />
 
-            {showHotBalances && (
+            {tokenOut.bridge === "poa" && showHotBalances && (
               <LongWithdrawWarning
                 amountIn={parsedAmountIn}
                 token={tokenOut}
