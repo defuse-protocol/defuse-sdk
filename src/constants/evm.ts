@@ -23,4 +23,6 @@ export const CHAIN_IDS: Record<SupportedChainName, number | undefined> = {
   gnosis: 100,
   berachain: 80094,
   tron: undefined,
+  polygon: 137,
+  bsc: 56,
 }

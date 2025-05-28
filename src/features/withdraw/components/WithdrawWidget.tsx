@@ -152,6 +152,19 @@ export const WithdrawWidget = (props: WithdrawWidgetProps) => {
                                 destinationMemo,
                               }
 
+                            case "hot_omni":
+                              return {
+                                type: "hot_omni",
+                                chainName: tokenOut.chainName,
+                                defuseAssetId: tokenOut.defuseAssetId,
+                                amount: adjustDecimals(
+                                  totalAmountWithdrawn.amount,
+                                  totalAmountWithdrawn.decimals,
+                                  tokenOut.decimals
+                                ),
+                                destinationAddress: recipient,
+                              }
+
                             default:
                               bridge satisfies never
                               throw new Error(`Unsupported bridge "${bridge}"`)

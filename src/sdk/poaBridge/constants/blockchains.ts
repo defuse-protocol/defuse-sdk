@@ -15,6 +15,8 @@ export enum BlockchainEnum {
   GNOSIS = "eth:100",
   BERACHAIN = "eth:80094",
   TRON = "tron:mainnet",
+  POLYGON = "eth:137",
+  BSC = "eth:56",
   // todo: remove BELOW because they're not supported by the bridge
   TURBOCHAIN = "eth:1313161567",
   TUXAPPCHAIN = "eth:1313161573",
