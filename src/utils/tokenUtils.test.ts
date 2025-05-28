@@ -1073,7 +1073,7 @@ describe("getTokenAccountIds", () => {
     expect(result).toEqual(["token1"])
   })
 
-  it('returns defuseAssetId as-is if no "nep141:" prefix for BaseTokenInfo', () => {
+  it('throws if no "nep141:" prefix for BaseTokenInfo', () => {
     const tokens: BaseTokenInfo[] = [
       {
         defuseAssetId: "token2",
@@ -1087,9 +1087,7 @@ describe("getTokenAccountIds", () => {
       },
     ]
 
-    const result = getTokenAccountIds(tokens)
-
-    expect(result).toEqual(["token2"])
+    expect(() => getTokenAccountIds(tokens)).toThrow()
   })
 
   it('removes "nep141:" prefix for each groupedToken in UnifiedTokenInfo', () => {
@@ -1121,7 +1119,7 @@ describe("getTokenAccountIds", () => {
     expect(result).toEqual(["token3", "token4"])
   })
 
-  it('handles groupedTokens without "nep141:" prefix in UnifiedTokenInfo', () => {
+  it('throws when groupedTokens without "nep141:" prefix in UnifiedTokenInfo', () => {
     const tokens: BaseTokenInfo[] = [
       {
         defuseAssetId: "token5",
@@ -1145,12 +1143,10 @@ describe("getTokenAccountIds", () => {
       },
     ]
 
-    const result = getTokenAccountIds(tokens)
-
-    expect(result).toEqual(["token5", "token6"])
+    expect(() => getTokenAccountIds(tokens)).toThrow()
   })
 
-  it("handles mixed groupedTokens (some with prefix, some without)", () => {
+  it("throws when mixed groupedTokens (some with prefix, some without)", () => {
     const tokens: BaseTokenInfo[] = [
       {
         defuseAssetId: "nep141:token7",
@@ -1174,9 +1170,7 @@ describe("getTokenAccountIds", () => {
       },
     ]
 
-    const result = getTokenAccountIds(tokens)
-
-    expect(result).toEqual(["token7", "token8"])
+    expect(() => getTokenAccountIds(tokens)).toThrow()
   })
 })
 
@@ -1187,10 +1181,8 @@ describe("getTokenAccountId", () => {
     expect(result).toEqual("token1")
   })
 
-  it('returns assetId as-is if no "nep141:"', () => {
-    const result = getTokenAccountId("token2")
-
-    expect(result).toEqual("token2")
+  it('throws if not starts with "nep141:"', () => {
+    expect(() => getTokenAccountId("token2")).toThrow()
   })
 })
 

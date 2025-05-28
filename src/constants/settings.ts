@@ -44,5 +44,7 @@ export const settings: Settings = {
     gnosis: "https://rpc.gnosischain.com",
     berachain: "https://rpc.berachain.com",
     tron: "",
+    polygon: "https://polygon-rpc.com",
+    bsc: "https://bsc-dataseed.bnbchain.org",
   },
 }

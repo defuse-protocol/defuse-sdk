@@ -20,6 +20,8 @@ export const assetNetworkAdapter: Record<SupportedChainName, BlockchainEnum> = {
   vertex: BlockchainEnum.VERTEX,
   optima: BlockchainEnum.OPTIMA,
   coineasy: BlockchainEnum.COINEASY,
+  polygon: BlockchainEnum.POLYGON,
+  bsc: BlockchainEnum.BSC,
 }
 
 export const reverseAssetNetworkAdapter: Record<
@@ -44,4 +46,6 @@ export const reverseAssetNetworkAdapter: Record<
   [BlockchainEnum.VERTEX]: "vertex",
   [BlockchainEnum.OPTIMA]: "optima",
   [BlockchainEnum.COINEASY]: "coineasy",
+  [BlockchainEnum.POLYGON]: "polygon",
+  [BlockchainEnum.BSC]: "bsc",
 }

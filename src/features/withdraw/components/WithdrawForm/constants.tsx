@@ -184,6 +184,26 @@ export const allBlockchains = [
     ),
     value: "coineasy",
   },
+  {
+    label: "Polygon",
+    icon: (
+      <NetworkIcon
+        chainIcon="/static/icons/network/polygon.svg"
+        chainName="Polygon"
+      />
+    ),
+    value: "polygon",
+  },
+  {
+    label: "Binance Smart Chain",
+    icon: (
+      <NetworkIcon
+        chainIcon="/static/icons/network/bsc.svg"
+        chainName="Binance Smart Chain"
+      />
+    ),
+    value: "bsc",
+  },
 ] as const satisfies Array<{
   label: string
   icon: ReactNode

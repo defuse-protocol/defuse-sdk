@@ -63,6 +63,7 @@ describe("createWithdrawIntentMessage()", () => {
           token: "token.near",
           receiver_id: "receiver.near",
           amount: "100",
+          storage_deposit: null,
         },
       ],
       signer_id: "user.near",
