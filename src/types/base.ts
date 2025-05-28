@@ -20,7 +20,7 @@ export type SupportedChainName =
   | "polygon"
   | "bsc"
 
-export type SupportedBridge = "direct" | "poa" | "aurora_engine"
+export type SupportedBridge = "direct" | "poa" | "aurora_engine" | "hot_omni"
 
 export interface FungibleTokenInfo {
   defuseAssetId: string

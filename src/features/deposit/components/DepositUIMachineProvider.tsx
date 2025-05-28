@@ -219,6 +219,7 @@ export function DepositUIMachineProvider({
 
                 return txHash
               }),
+              // todo: add `validateTransaction` actor
             },
             guards: {
               isDepositParamsValid: ({ context }) => {

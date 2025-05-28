@@ -8,6 +8,7 @@ import {
   setup,
 } from "xstate"
 import { logger } from "../../logger"
+import { waitForHotOmniWithdrawalCompletion } from "../../sdk/poaBridge/waitForHotWithdrawalCompletion"
 import { waitForWithdrawalCompletion } from "../../sdk/poaBridge/waitForWithdrawalCompletion"
 import {
   type IntentSettlementResult,
@@ -50,7 +51,7 @@ export const intentStatusMachine = setup({
       tokenOut: BaseTokenInfo | UnifiedTokenInfo
       txHash: string | null
       intentDescription: IntentDescription
-      bridgeTransactionResult: null | { destinationTxHash: string }
+      bridgeTransactionResult: null | { destinationTxHash: string | null }
     },
   },
   actions: {
@@ -62,8 +63,10 @@ export const intentStatusMachine = setup({
         settlementResult.txHash,
     }),
     setBridgeTransactionResult: assign({
-      bridgeTransactionResult: (_, v: null | { destinationTxHash: string }) =>
-        v,
+      bridgeTransactionResult: (
+        _,
+        v: null | { destinationTxHash: string | null }
+      ) => v,
     }),
   },
   actors: {
@@ -103,6 +106,15 @@ export const intentStatusMachine = setup({
 
           case "poa":
             return waitForWithdrawalCompletion({
+              txHash: input.sourceTxHash,
+              signal,
+            })
+
+          case "hot_omni":
+            return waitForHotOmniWithdrawalCompletion({
+              accountId: input.accountId,
+              chainName: input.chainName,
+              recipient: input.recipient,
               txHash: input.sourceTxHash,
               signal,
             })
