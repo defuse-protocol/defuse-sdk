@@ -8,7 +8,7 @@ import {
 } from "../../utils/parseGiftSecret"
 
 export type GiftOpenSecretActorInput = {
-  secretKey: string
+  payload: string
   tokenList: (BaseTokenInfo | UnifiedTokenInfo)[]
 }
 
@@ -44,7 +44,7 @@ export const getGiftInfo = fromPromise(
   }: {
     input: GiftOpenSecretActorInput
   }): Promise<GiftOpenSecretActorOutput> => {
-    const parseResult = parseGiftSecret(input.secretKey)
+    const parseResult = parseGiftSecret(input.payload)
     if (parseResult.isErr()) {
       return {
         tag: "err",

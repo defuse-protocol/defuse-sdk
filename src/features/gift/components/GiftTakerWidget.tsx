@@ -1,4 +1,5 @@
 import { useActorRef, useSelector } from "@xstate/react"
+import { useCallback, useEffect } from "react"
 import type { ActorRefFrom } from "xstate"
 import { WidgetRoot } from "../../../components/WidgetRoot"
 import type { SignerCredentials } from "../../../core/formatters"
@@ -13,7 +14,7 @@ import { GiftTakerInvalidClaim } from "./GiftTakerInvalidClaim"
 import { GiftTakerSuccessScreen } from "./GiftTakerSuccessScreen"
 
 export type GiftTakerWidgetProps = {
-  secretKey: string
+  payload: string | null
 
   /** List of available tokens for trading */
   tokenList: (BaseTokenInfo | UnifiedTokenInfo)[]
@@ -41,25 +42,21 @@ export function GiftTakerWidget(props: GiftTakerWidgetProps) {
 }
 
 function GiftTakerScreens({
-  secretKey,
+  payload,
   tokenList,
   userAddress,
   userChainType,
   renderHostAppLink,
 }: GiftTakerWidgetProps) {
   const loading = <div>Loading...</div>
-
+  // biome-ignore lint/suspicious/noConsole: <explanation>
+  console.log(">>>", payload)
   const giftTakerRootRef = useActorRef(giftTakerRootMachine, {
     input: {
-      secretKey,
+      payload,
       tokenList,
     },
   })
-
-  const signerCredentials: SignerCredentials | null =
-    userAddress != null && userChainType != null
-      ? { credential: userAddress, credentialType: userChainType }
-      : null
 
   const { snapshot, giftTakerClaimRef } = useSelector(
     giftTakerRootRef,
@@ -75,6 +72,21 @@ function GiftTakerScreens({
 
   const claimSnapshot = useSelector(giftTakerClaimRef, (state) => state)
   const error = claimSnapshot?.context.error ?? snapshot.context.error
+
+  const setPayload = useCallback(() => {
+    if (payload) {
+      giftTakerRootRef.send({ type: "SET_PAYLOAD", params: { payload } })
+    }
+  }, [giftTakerRootRef, payload])
+
+  useEffect(() => {
+    setPayload()
+  }, [setPayload])
+
+  const signerCredentials: SignerCredentials | null =
+    userAddress != null && userChainType != null
+      ? { credential: userAddress, credentialType: userChainType }
+      : null
 
   if (error != null) {
     return <GiftTakerInvalidClaim error={error.reason} />
