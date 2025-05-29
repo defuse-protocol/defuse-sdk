@@ -8,7 +8,6 @@ import {
 } from "./parseMultiPayload"
 
 type ReadyGiftInfo = GiftInfo & {
-  giftId: string
   intentHashes: string[]
 }
 
@@ -24,7 +23,6 @@ export function assembleGiftInfo(
   assert(context.escrowCredentials != null)
 
   return {
-    giftId: signData.giftId,
     // `intentHashes` is initially undefined when storing giftInfo to history before publishing.
     // The actual intentHashes will be populated after successful publishing.
     intentHashes: context?.intentHashes ?? [],
