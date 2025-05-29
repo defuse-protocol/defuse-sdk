@@ -131,7 +131,7 @@ function pollQuote(
         // strictly less is used deliberately, because we ignore only all quotes except MPC quotes
         requestId < INITIAL_QUOTE_WAIT_MS.length &&
         result.tag === "err" &&
-        result.value.type === "NO_QUOTES"
+        result.value.reason === "ERR_NO_QUOTES"
       ) {
         return
       }

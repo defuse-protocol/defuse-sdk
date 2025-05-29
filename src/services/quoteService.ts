@@ -1,5 +1,6 @@
 import { settings } from "../constants/settings"
 import { AggregatedQuoteError } from "../sdk/aggregatedQuote/errors/aggregatedQuoteError"
+import { AmountMismatchError } from "../sdk/aggregatedQuote/errors/amountMismatchError"
 import { getAggregatedQuoteExactIn } from "../sdk/aggregatedQuote/getAggregatedQuoteExactIn"
 import type {
   FailedQuote,
@@ -42,9 +43,13 @@ export type QuoteResult =
   | {
       tag: "err"
       value:
-        | FailedQuote
         | {
-            type: "NO_QUOTES"
+            reason: "ERR_INSUFFICIENT_AMOUNT" | "ERR_NO_QUOTES"
+          }
+        | {
+            reason: "ERR_UNFULFILLABLE_AMOUNT"
+            shortfall: TokenValue
+            overage: TokenValue | null
           }
     }
 export async function queryQuote(
@@ -83,13 +88,26 @@ export async function queryQuote(
       if (quoteError?.quote) {
         return {
           tag: "err",
-          value: quoteError.quote,
+          value: {
+            reason: `ERR_${quoteError.quote.type}`,
+          },
         }
       }
       return {
         tag: "err",
         value: {
-          type: "NO_QUOTES",
+          reason: "ERR_NO_QUOTES",
+        },
+      }
+    }
+
+    if (err instanceof AmountMismatchError) {
+      return {
+        tag: "err",
+        value: {
+          reason: "ERR_UNFULFILLABLE_AMOUNT",
+          shortfall: err.shortfall,
+          overage: err.overage,
         },
       }
     }
@@ -131,7 +149,7 @@ export async function queryQuoteExactOut(
     return {
       tag: "err",
       value: {
-        type: "NO_QUOTES",
+        reason: "ERR_NO_QUOTES",
       },
     }
   }
@@ -172,14 +190,16 @@ export async function queryQuoteExactOut(
   if (failedQuotes[0]) {
     return {
       tag: "err",
-      value: failedQuotes[0],
+      value: {
+        reason: `ERR_${failedQuotes[0].type}`,
+      },
     }
   }
 
   return {
     tag: "err",
     value: {
-      type: "NO_QUOTES",
+      reason: "ERR_NO_QUOTES",
     },
   }
 }

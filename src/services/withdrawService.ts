@@ -18,7 +18,6 @@ import {
 import type { State as WithdrawFormContext } from "../features/machines/withdrawFormReducer"
 import { logger } from "../logger"
 import { getWithdrawalEstimate } from "../sdk/poaBridge/poaBridgeHttpClient"
-import type { FailedQuote } from "../sdk/solverRelay/solverRelayHttpClient/types"
 import type { BaseTokenInfo, TokenValue, UnifiedTokenInfo } from "../types/base"
 import { assetNetworkAdapter } from "../utils/adapters"
 import { assert } from "../utils/assert"
@@ -66,6 +65,7 @@ export type PreparationOutput =
   | {
       tag: "err"
       value:
+        | Extract<QuoteResult, { tag: "err" }>["value"]
         | {
             reason:
               | "ERR_BALANCE_FETCH"
@@ -74,8 +74,6 @@ export type PreparationOutput =
               | "ERR_NEP141_STORAGE"
               | "ERR_CANNOT_FETCH_POA_BRIDGE_INFO"
               | "ERR_CANNOT_FETCH_QUOTE"
-              | "NO_QUOTES"
-              | "INSUFFICIENT_AMOUNT"
           }
         | {
             reason: "ERR_AMOUNT_TOO_LOW"
@@ -188,10 +186,7 @@ export async function prepareWithdraw(
   }
 
   if (swapRequirement && swapRequirement.swapQuote.tag === "err") {
-    return {
-      tag: "err",
-      value: { reason: swapRequirement.swapQuote.value.type },
-    }
+    return { tag: "err", value: swapRequirement.swapQuote.value }
   }
 
   const nep141Storage = await determineNEP141StorageRequirement(
@@ -284,13 +279,9 @@ async function determineNEP141StorageRequirement(
   | { tag: "ok"; value: NEP141StorageRequirement | null }
   | {
       tag: "err"
-      value: {
-        reason:
-          | "ERR_NEP141_STORAGE"
-          | FailedQuote["type"]
-          | "NO_QUOTES"
-          | "ERR_CANNOT_FETCH_QUOTE"
-      }
+      value:
+        | Extract<QuoteResult, { tag: "err" }>["value"]
+        | { reason: "ERR_NEP141_STORAGE" | "ERR_CANNOT_FETCH_QUOTE" }
     }
 > {
   // We withdraw unwrapped near so no storage deposit is required for withdrawal of NEAR
@@ -338,7 +329,7 @@ async function determineNEP141StorageRequirement(
       { logBalanceSufficient: true, signal }
     )
     if (nep141StorageQuote.tag === "err") {
-      return { tag: "err", value: { reason: nep141StorageQuote.value.type } }
+      return { tag: "err", value: nep141StorageQuote.value }
     }
     return {
       tag: "ok",

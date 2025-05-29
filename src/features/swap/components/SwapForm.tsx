@@ -70,11 +70,11 @@ export const SwapForm = ({ isLoggedIn, renderHostAppLink }: SwapFormProps) => {
       const noLiquidity =
         snapshot.context.quote &&
         snapshot.context.quote.tag === "err" &&
-        snapshot.context.quote.value.type === "NO_QUOTES"
+        snapshot.context.quote.value.reason === "ERR_NO_QUOTES"
       const insufficientTokenInAmount =
         snapshot.context.quote &&
         snapshot.context.quote.tag === "err" &&
-        snapshot.context.quote.value.type === "INSUFFICIENT_AMOUNT"
+        snapshot.context.quote.value.reason === "ERR_INSUFFICIENT_AMOUNT"
 
       return {
         tokenIn,
