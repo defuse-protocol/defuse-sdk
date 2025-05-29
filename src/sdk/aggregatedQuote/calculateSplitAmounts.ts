@@ -55,7 +55,6 @@ export function sortForOptimalAmountSplitting(
  * Function to calculate how to split the input amounts based on available balances.
  * Duplicate tokens are processed only once and their balances are considered only once.
  */
-
 export function calculateSplitAmounts(
   tokensIn: TokenSlice[],
   amountIn: TokenValue,
