@@ -10,6 +10,7 @@ type OtcMakerTrade = {
   updatedAt: number
   makerMultiPayload: MultiPayload
   pKey: string
+  iv: string
 }
 
 type State = {

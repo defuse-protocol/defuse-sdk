@@ -17,6 +17,7 @@ export type OtcMakerStoreActorOutput =
 export interface OtcMakerStoreActorSuccess extends OtcMakerStoreActorInput {
   tradeId: string
   pKey: string
+  iv: string
 }
 
 export type OtcMakerStoreActorErrors = { reason: "ERR_STORE_FAILED" }
@@ -87,6 +88,7 @@ export const otcMakerStoreActor = setup({
             ...context,
             tradeId: event.output.value.tradeId,
             pKey: event.output.value.pKey,
+            iv: event.output.value.iv,
           },
         }
       },
