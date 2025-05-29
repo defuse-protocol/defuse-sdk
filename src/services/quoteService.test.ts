@@ -228,14 +228,14 @@ describe("queryQuote()", () => {
     await expect(queryQuote(input)).resolves.toEqual({
       tag: "err",
       value: {
-        type: "NO_QUOTES",
+        reason: "ERR_NO_QUOTES",
       },
     })
 
     await expect(queryQuote(input)).resolves.toEqual({
       tag: "err",
       value: {
-        type: "NO_QUOTES",
+        reason: "ERR_NO_QUOTES",
       },
     })
   })
