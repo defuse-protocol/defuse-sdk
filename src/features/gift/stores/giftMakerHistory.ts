@@ -17,6 +17,7 @@ export interface GiftMakerHistory {
   tokenDiff: Record<BaseTokenInfo["defuseAssetId"], bigint>
   secretKey: KeyPairString
   message: string
+  iv: string
   intentHashes: string[]
   createdAt: number
   updatedAt: number

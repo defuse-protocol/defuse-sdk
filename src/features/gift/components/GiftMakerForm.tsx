@@ -33,7 +33,11 @@ import type {
 } from "../actors/giftMakerSignActor"
 import { useBalanceUpdaterSyncWithHistory } from "../hooks/useBalanceUpdaterSyncWithHistory"
 import { useCheckSignerCredentials } from "../hooks/useCheckSignerCredentials"
-import type { GiftLinkData, SignMessage } from "../types/sharedTypes"
+import type {
+  CreateGiftIntent,
+  GiftLinkData,
+  SignMessage,
+} from "../types/sharedTypes"
 import { checkInsufficientBalance, getButtonText } from "../utils/makerForm"
 import { GiftMakerReadyDialog } from "./GiftMakerReadyDialog"
 import { GiftMessageInput } from "./GiftMessageInput"
@@ -57,6 +61,9 @@ export type GiftMakerWidgetProps = {
 
   /** Send NEAR transaction callback */
   sendNearTransaction: SendNearTransaction
+
+  /** Create Gift in the database */
+  createGiftIntent: CreateGiftIntent
 
   /** Function to generate a shareable trade link */
   generateLink: (giftLinkData: GiftLinkData) => string
@@ -82,6 +89,7 @@ export function GiftMakerForm({
   generateLink,
   referral,
   renderHostAppLink,
+  createGiftIntent,
 }: GiftMakerWidgetProps) {
   const signerCredentials: SignerCredentials | null = useMemo(
     () =>
@@ -103,6 +111,7 @@ export function GiftMakerForm({
       initialToken: initialToken_,
       tokenList,
       referral,
+      createGiftIntent,
     },
   })
 
@@ -179,8 +188,11 @@ export function GiftMakerForm({
   const editing = rootSnapshot.matches("editing")
   const processing =
     rootSnapshot.matches("signing") ||
+    rootSnapshot.matches("saving") ||
     rootSnapshot.matches("publishing") ||
-    rootSnapshot.matches("settling")
+    rootSnapshot.matches("updating") ||
+    rootSnapshot.matches("settling") ||
+    rootSnapshot.matches("removing")
 
   const error = rootSnapshot.context.error
 

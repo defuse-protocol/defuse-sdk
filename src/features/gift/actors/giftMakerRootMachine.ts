@@ -27,7 +27,7 @@ import type {
   StorageOperationErr,
   StorageOperationResult,
 } from "../stores/storageOperations"
-import type { GiftSignedResult } from "../types/sharedTypes"
+import type { CreateGiftIntent, GiftSignedResult } from "../types/sharedTypes"
 import {
   type EscrowCredentials,
   generateEscrowCredentials,
@@ -67,6 +67,7 @@ export type GiftMakerRootMachineContext = {
   referral: string | undefined
   signData: null | GiftSignedResult
   intentHashes: null | string[]
+  createGiftIntent: CreateGiftIntent
 }
 
 export const giftMakerRootMachine = setup({
@@ -75,6 +76,7 @@ export const giftMakerRootMachine = setup({
       tokenList: (BaseTokenInfo | UnifiedTokenInfo)[]
       initialToken: BaseTokenInfo | UnifiedTokenInfo
       referral: string | undefined
+      createGiftIntent: CreateGiftIntent
     },
     events: {} as
       | DepositedBalanceEvents
@@ -123,29 +125,41 @@ export const giftMakerRootMachine = setup({
         return waitForIntentSettlement(signal, intentHash)
       }
     ),
-    addGiftToHistory: fromPromise(
+    savingGift: fromPromise(
       async ({
         input,
       }: {
         input: GiftMakerRootMachineContext
       }): Promise<StorageOperationResult> => {
-        assert(input.signData, "signData is not defined")
-        const giftInfo = assembleGiftInfo(input)
-        const result = await giftMakerHistoryStore.getState().addGift(
-          {
-            ...giftInfo,
-            createdAt: Date.now(),
-          },
-          input.signData.signerCredentials
-        )
+        try {
+          assert(input.signData, "signData is not defined")
+          const giftInfo = assembleGiftInfo(input)
 
-        if (result.tag === "err") {
-          return { tag: "err", reason: result.reason }
+          // Create a record and generate an IV
+          const { iv } = await input.createGiftIntent({
+            secretKey: giftInfo.secretKey,
+            message: giftInfo.message,
+          })
+
+          const result = await giftMakerHistoryStore.getState().addGift(
+            {
+              ...giftInfo,
+              iv,
+              createdAt: Date.now(),
+            },
+            input.signData.signerCredentials
+          )
+
+          if (result.tag === "err") {
+            return { tag: "err", reason: result.reason }
+          }
+          return { tag: "ok" }
+        } catch {
+          return { tag: "err", reason: "ERR_STORAGE_OPERATION_EXCEPTION" }
         }
-        return { tag: "ok" }
       }
     ),
-    updateGiftToHistory: fromPromise(
+    updatingGift: fromPromise(
       async ({
         input,
       }: {
@@ -167,7 +181,7 @@ export const giftMakerRootMachine = setup({
         return { tag: "ok" }
       }
     ),
-    removeGiftFromHistory: fromPromise(
+    removingGift: fromPromise(
       async ({
         input,
       }: {
@@ -253,6 +267,7 @@ export const giftMakerRootMachine = setup({
     referral: input.referral,
     signData: null,
     intentHashes: null,
+    createGiftIntent: input.createGiftIntent,
   }),
 
   initial: "editing",
@@ -287,7 +302,7 @@ export const giftMakerRootMachine = setup({
 
       on: {
         COMPLETE_SIGN: {
-          target: "adding",
+          target: "saving",
         },
       },
 
@@ -353,7 +368,7 @@ export const giftMakerRootMachine = setup({
         ],
       },
     },
-    adding: {
+    saving: {
       entry: [
         assign({
           signData: ({ event }) => {
@@ -363,7 +378,7 @@ export const giftMakerRootMachine = setup({
         }),
       ],
       invoke: {
-        src: "addGiftToHistory",
+        src: "savingGift",
         input: ({ context }) => context,
         onDone: [
           {
@@ -470,7 +485,7 @@ export const giftMakerRootMachine = setup({
     },
     updating: {
       invoke: {
-        src: "updateGiftToHistory",
+        src: "updatingGift",
         input: ({ context }) => context,
         onDone: [
           {
@@ -567,7 +582,7 @@ export const giftMakerRootMachine = setup({
     },
     removing: {
       invoke: {
-        src: "removeGiftFromHistory",
+        src: "removingGift",
         input: ({ context }) => context,
         onDone: [
           {

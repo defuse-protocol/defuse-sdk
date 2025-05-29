@@ -15,8 +15,13 @@ export type GiftLinkData = {
 }
 
 export type GiftSignedResult = {
-  giftId: string
   multiPayload: MultiPayload
   signerCredentials: SignerCredentials
   signatureResult: WalletSignatureResult
 }
+
+export type CreateGiftIntent = (
+  payload: GiftLinkData
+) => Promise<{ iv: string }>
+
+export type GenerateLink = (giftId: string, iv: string) => string
