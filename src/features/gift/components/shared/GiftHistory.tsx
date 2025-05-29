@@ -6,7 +6,7 @@ import { useGiftInfos } from "../../hooks/useGiftInfos"
 import { useGiftPagination } from "../../hooks/useGiftPagination"
 import { GiftClaimActorProvider } from "../../providers/GiftClaimActorProvider"
 import type { GiftMakerHistory } from "../../stores/giftMakerHistory"
-import type { GiftLinkData } from "../../types/sharedTypes"
+import type { GenerateLink } from "../../types/sharedTypes"
 import { GiftHistoryEmpty } from "./GiftHistoryEmpty"
 import { GiftHistorySkeleton } from "./GiftHistorySkeleton"
 import { GiftMakerHistoryItem } from "./GiftMakerHistoryItem"
@@ -14,7 +14,7 @@ import { GiftMakerHistoryItem } from "./GiftMakerHistoryItem"
 export type GiftHistoryProps = {
   signerCredentials: SignerCredentials | null
   tokenList: (BaseTokenInfo | UnifiedTokenInfo)[]
-  generateLink: (giftLinkData: GiftLinkData) => string
+  generateLink: GenerateLink
   gifts: GiftMakerHistory[] | undefined
 }
 

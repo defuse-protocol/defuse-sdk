@@ -4,6 +4,7 @@ import type {
   WalletMessage,
   WalletSignatureResult,
 } from "../../../types/walletMessage"
+import type { StorageOperationErr } from "../stores/storageOperations"
 
 export type SignMessage = (
   params: WalletMessage
@@ -24,4 +25,13 @@ export type CreateGiftIntent = (
   payload: GiftLinkData
 ) => Promise<{ iv: string }>
 
-export type GenerateLink = (giftId: string, iv: string) => string
+export type GenerateLink = (params: {
+  secretKey: string
+  message: string
+  // Fallback to empty string for backwards compatibility with gifts created before IV was added
+  iv: null | string
+}) => string
+
+export type SavingGiftResult =
+  | { tag: "ok"; value: { iv: string } }
+  | { tag: "err"; reason: StorageOperationErr }

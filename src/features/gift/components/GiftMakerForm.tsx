@@ -35,7 +35,7 @@ import { useBalanceUpdaterSyncWithHistory } from "../hooks/useBalanceUpdaterSync
 import { useCheckSignerCredentials } from "../hooks/useCheckSignerCredentials"
 import type {
   CreateGiftIntent,
-  GiftLinkData,
+  GenerateLink,
   SignMessage,
 } from "../types/sharedTypes"
 import { checkInsufficientBalance, getButtonText } from "../utils/makerForm"
@@ -66,7 +66,7 @@ export type GiftMakerWidgetProps = {
   createGiftIntent: CreateGiftIntent
 
   /** Function to generate a shareable trade link */
-  generateLink: (giftLinkData: GiftLinkData) => string
+  generateLink: GenerateLink
 
   /** Theme selection */
   theme?: "dark" | "light"

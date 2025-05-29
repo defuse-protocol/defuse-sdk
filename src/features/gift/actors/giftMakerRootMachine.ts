@@ -1,5 +1,6 @@
 import {
   type ActorRefFrom,
+  type DoneActorEvent,
   type InputFrom,
   type PromiseActorLogic,
   assertEvent,
@@ -27,7 +28,11 @@ import type {
   StorageOperationErr,
   StorageOperationResult,
 } from "../stores/storageOperations"
-import type { CreateGiftIntent, GiftSignedResult } from "../types/sharedTypes"
+import type {
+  CreateGiftIntent,
+  GiftSignedResult,
+  SavingGiftResult,
+} from "../types/sharedTypes"
 import {
   type EscrowCredentials,
   generateEscrowCredentials,
@@ -68,6 +73,7 @@ export type GiftMakerRootMachineContext = {
   signData: null | GiftSignedResult
   intentHashes: null | string[]
   createGiftIntent: CreateGiftIntent
+  iv: null | string
 }
 
 export const giftMakerRootMachine = setup({
@@ -93,7 +99,8 @@ export const giftMakerRootMachine = setup({
       | {
           type: "COMPLETE_SIGN"
           params: GiftSignedResult
-        },
+        }
+      | DoneActorEvent<SavingGiftResult>,
     context: {} as GiftMakerRootMachineContext,
     children: {} as {
       readyGiftRef: "readyGiftActor"
@@ -130,7 +137,7 @@ export const giftMakerRootMachine = setup({
         input,
       }: {
         input: GiftMakerRootMachineContext
-      }): Promise<StorageOperationResult> => {
+      }): Promise<SavingGiftResult> => {
         try {
           assert(input.signData, "signData is not defined")
           const giftInfo = assembleGiftInfo(input)
@@ -153,7 +160,7 @@ export const giftMakerRootMachine = setup({
           if (result.tag === "err") {
             return { tag: "err", reason: result.reason }
           }
-          return { tag: "ok" }
+          return { tag: "ok", value: { iv } }
         } catch {
           return { tag: "err", reason: "ERR_STORAGE_OPERATION_EXCEPTION" }
         }
@@ -240,6 +247,17 @@ export const giftMakerRootMachine = setup({
     generateEscrowCredentials: assign({
       escrowCredentials: () => generateEscrowCredentials(),
     }),
+    setIV: assign({
+      iv: (_, event: { output?: SavingGiftResult }) => {
+        if (event?.output?.tag === "ok") {
+          return event.output.value.iv
+        }
+        return null
+      },
+    }),
+    clearIV: assign({
+      iv: null,
+    }),
   },
   guards: {
     isOk: (_, params: { tag: "ok" | "err" }) => params.tag === "ok",
@@ -268,6 +286,7 @@ export const giftMakerRootMachine = setup({
     signData: null,
     intentHashes: null,
     createGiftIntent: input.createGiftIntent,
+    iv: null,
   }),
 
   initial: "editing",
@@ -288,7 +307,7 @@ export const giftMakerRootMachine = setup({
   },
   states: {
     editing: {
-      entry: ["clearEscrowCredentials"],
+      entry: ["clearEscrowCredentials", "clearIV"],
 
       on: {
         REQUEST_SIGN: {
@@ -384,6 +403,10 @@ export const giftMakerRootMachine = setup({
           {
             guard: { type: "isOk", params: ({ event }) => event.output },
             target: "publishing",
+            actions: {
+              type: "setIV",
+              params: ({ event }) => event,
+            },
           },
           {
             target: "editing",
@@ -542,6 +565,7 @@ export const giftMakerRootMachine = setup({
               amount: parsedValues.amount,
               message: parsedValues.message,
             },
+            iv: context.iv,
           }
         },
 

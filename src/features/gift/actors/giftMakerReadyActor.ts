@@ -26,6 +26,7 @@ export type GiftMakerReadyActorInput = {
     amount: TokenValue
     message: string
   }
+  iv: null | string
 }
 
 export type GiftMakerReadyActorOutput =

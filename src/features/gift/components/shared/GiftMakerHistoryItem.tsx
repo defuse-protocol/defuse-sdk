@@ -16,7 +16,7 @@ import {
 } from "../../../../utils/tokenUtils"
 import { GiftClaimActorContext } from "../../providers/GiftClaimActorProvider"
 import { giftMakerHistoryStore } from "../../stores/giftMakerHistory"
-import type { GiftLinkData } from "../../types/sharedTypes"
+import type { GenerateLink } from "../../types/sharedTypes"
 import type { GiftInfo } from "../../utils/parseGiftInfos"
 import { GiftStrip } from "../GiftStrip"
 
@@ -26,7 +26,7 @@ export function GiftMakerHistoryItem({
   signerCredentials,
 }: {
   giftInfo: GiftInfo
-  generateLink: (giftLinkData: GiftLinkData) => string
+  generateLink: GenerateLink
   signerCredentials: SignerCredentials
 }) {
   const amount = computeTotalBalanceDifferentDecimals(
@@ -67,6 +67,7 @@ export function GiftMakerHistoryItem({
               generateLink({
                 secretKey: giftInfo.secretKey,
                 message: giftInfo.message,
+                iv: giftInfo.iv,
               })
             }
           >
