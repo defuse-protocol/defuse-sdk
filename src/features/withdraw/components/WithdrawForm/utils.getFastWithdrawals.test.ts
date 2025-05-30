@@ -20,10 +20,7 @@ describe("getFastWithdrawals", () => {
     }
 
     const liquidity = {
-      "ETH#ETH": {
-        validatedAmount: { value: "100" },
-        amount: { value: "100" },
-      },
+      "ETH#ETH": 100n,
     }
 
     const result = getFastWithdrawals(
@@ -42,10 +39,7 @@ describe("getFastWithdrawals", () => {
     }
 
     const liquidity = {
-      "ETH#ETH": {
-        validatedAmount: { value: "100" },
-        amount: { value: "100" },
-      },
+      "ETH#ETH": 100n,
     }
 
     const result = getFastWithdrawals(
@@ -67,8 +61,8 @@ describe("getFastWithdrawals", () => {
     }
 
     const liquidity = {
-      "ETH#USDC": { validatedAmount: { value: "30" }, amount: { value: "30" } },
-      "USDC#ETH": { validatedAmount: { value: "20" }, amount: { value: "20" } },
+      "ETH#USDC": 30n,
+      "USDC#ETH": 20n,
     }
 
     const result = getFastWithdrawals(

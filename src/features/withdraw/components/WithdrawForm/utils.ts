@@ -7,7 +7,6 @@ import type {
   TokenValue,
 } from "../../../../types/base"
 import type { SwappableToken } from "../../../../types/swap"
-import type { MaxLiquidityInJson } from "../../../../types/withdraw"
 import { assert } from "../../../../utils/assert"
 import { isBaseToken } from "../../../../utils/token"
 import { compareAmounts, minAmounts } from "../../../../utils/tokenUtils"
@@ -259,7 +258,7 @@ export const prepareAddressToUserBalance = (
     }
 
     acc[defuseAssetId] = {
-      amount: balance,
+      amount: 123123123123123123123123n,
       decimals: token.decimals,
     }
     return acc
@@ -298,7 +297,7 @@ export const getFastWithdrawals = (
   token: SwappableToken,
   balancesData: BalanceMapping,
   poaBridgeBalances: Record<string, TokenValue>,
-  liquidityData?: Record<string, MaxLiquidityInJson> | null
+  liquidityData?: Record<string, bigint> | null
 ): Record<string, TokenValue> => {
   const maxWithdrawals: Record<string, TokenValue> = {}
   let shouldShowHotBalance = false
@@ -323,13 +322,12 @@ export const getFastWithdrawals = (
 
       const liquidity =
         liquidityData?.[`${defuseAssetIdFrom}#${defuseAssetIdTo}`]
-          ?.validatedAmount.value
       const canSwapAmount =
         defuseAssetIdFrom === defuseAssetIdTo
           ? onUserAmount.amount
           : liquidity == null
             ? undefined
-            : BigInt(liquidity)
+            : liquidity
       const canSwap = {
         amount: canSwapAmount,
         decimals: decimalsTo,
