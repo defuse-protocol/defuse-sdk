@@ -258,7 +258,7 @@ export const prepareAddressToUserBalance = (
     }
 
     acc[defuseAssetId] = {
-      amount: 123123123123123123123123n,
+      amount: balance,
       decimals: token.decimals,
     }
     return acc
