@@ -192,7 +192,12 @@ function OrderDialog({
       <div className="flex flex-col justify-center gap-3 mt-5">
         <Copy
           text={() =>
-            generateLink(context.tradeId, context.pKey, context.multiPayload)
+            generateLink(
+              context.tradeId,
+              context.pKey,
+              context.multiPayload,
+              context.iv
+            )
           }
         >
           {(copied) => (

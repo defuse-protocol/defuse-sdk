@@ -55,6 +55,7 @@ type CompleteStoringEvent = {
   usedNonceBase64: string
   tradeId: string
   pKey: string
+  iv: string
 }
 
 type InputType = {
@@ -167,6 +168,7 @@ export const otcMakerRootMachine = setup({
         usedNonceBase64: string
         tradeId: string
         pKey: string
+        iv: string
       }
     ) => {
       self.send({
@@ -176,6 +178,7 @@ export const otcMakerRootMachine = setup({
         usedNonceBase64: event.usedNonceBase64,
         tradeId: event.tradeId,
         pKey: event.pKey,
+        iv: event.iv,
       })
     },
   },
@@ -342,6 +345,7 @@ export const otcMakerRootMachine = setup({
                     tradeId: storeEvent.tradeId,
                     makerMultiPayload: storeEvent.multiPayload,
                     pKey: storeEvent.pKey,
+                    iv: storeEvent.iv,
                   },
                   storeEvent.signerCredentials
                 )
@@ -393,6 +397,7 @@ export const otcMakerRootMachine = setup({
             tradeId: event.tradeId,
             signerCredentials: event.signerCredentials,
             pKey: event.pKey,
+            iv: event.iv,
           }
         },
 

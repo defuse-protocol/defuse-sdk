@@ -122,7 +122,7 @@ function OtcTakerScreens({
     tradeId != null ? state.trades[tradeId] : null
   )
 
-  if (enrichedTradeTerms == null || protocolFee == null || tradeId == null) {
+  if (enrichedTradeTerms == null) {
     return loading
   }
 
@@ -152,19 +152,21 @@ function OtcTakerScreens({
           fallback={loading}
         >
           <SignIntentActorProvider sendNearTransaction={sendNearTransaction}>
-            <OtcTakerForm
-              tradeId={tradeId}
-              tradeTerms={tradeTerms}
-              tokenIn={tokenIn}
-              tokenOut={tokenOut}
-              makerMultiPayload={tradeTerms.makerMultiPayload}
-              signerCredentials={signerCredentials}
-              signMessage={signMessage}
-              protocolFee={protocolFee}
-              onSuccessTrade={setPublishResult}
-              referral={referral}
-              renderHostAppLink={renderHostAppLink}
-            />
+            {tradeId != null && protocolFee != null && (
+              <OtcTakerForm
+                tradeId={tradeId}
+                tradeTerms={tradeTerms}
+                tokenIn={tokenIn}
+                tokenOut={tokenOut}
+                makerMultiPayload={tradeTerms.makerMultiPayload}
+                signerCredentials={signerCredentials}
+                signMessage={signMessage}
+                protocolFee={protocolFee}
+                onSuccessTrade={setPublishResult}
+                referral={referral}
+                renderHostAppLink={renderHostAppLink}
+              />
+            )}
           </SignIntentActorProvider>
         </OtcTakerValidationOrder>
       ),
