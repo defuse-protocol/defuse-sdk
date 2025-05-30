@@ -86,6 +86,7 @@ describe("processGiftData", () => {
     intentHashes: ["intentHash"],
     message: "message",
     secretKey: "ed25519:secretKey",
+    iv: "e9QTDukeRo97zGVZ",
     tokenDiff: {
       "nep141:usdc": 1000n,
     },
@@ -114,6 +115,7 @@ describe("processGiftData", () => {
                 "intentHashes": [
                   "intentHash",
                 ],
+                "iv": "e9QTDukeRo97zGVZ",
                 "message": "message",
                 "secretKey": "ed25519:secretKey",
                 "tokenDiff": {

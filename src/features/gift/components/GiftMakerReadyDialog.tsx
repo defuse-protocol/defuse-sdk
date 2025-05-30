@@ -16,7 +16,7 @@ import type { giftMakerReadyActor } from "../actors/giftMakerReadyActor"
 import type { GiftInfo } from "../actors/shared/getGiftInfo"
 import type { giftClaimActor } from "../actors/shared/giftClaimActor"
 import { giftMakerHistoryStore } from "../stores/giftMakerHistory"
-import type { GiftLinkData } from "../types/sharedTypes"
+import type { GenerateLink } from "../types/sharedTypes"
 import { ShareableGiftImage } from "./ShareableGiftImage"
 import { ErrorReason } from "./shared/ErrorReason"
 import { GiftDescription } from "./shared/GiftDescription"
@@ -24,7 +24,7 @@ import { GiftHeader } from "./shared/GiftHeader"
 
 type GiftMakerReadyDialogProps = {
   readyGiftRef: ActorRefFrom<typeof giftMakerReadyActor>
-  generateLink: (giftLinkData: GiftLinkData) => string
+  generateLink: GenerateLink
   signerCredentials: SignerCredentials
 }
 
@@ -59,7 +59,7 @@ function SuccessDialog({
   generateLink,
 }: {
   readyGiftRef: ActorRefFrom<typeof giftMakerReadyActor>
-  generateLink: (giftLinkData: GiftLinkData) => string
+  generateLink: GenerateLink
 }) {
   const { context } = useSelector(readyGiftRef, (state) => ({
     context: state.context,
@@ -77,8 +77,14 @@ function SuccessDialog({
     return generateLink({
       secretKey: context.giftInfo.secretKey,
       message: context.parsed.message,
+      iv: context.iv,
     })
-  }, [generateLink, context.giftInfo.secretKey, context.parsed.message])
+  }, [
+    generateLink,
+    context.giftInfo.secretKey,
+    context.parsed.message,
+    context.iv,
+  ])
 
   return (
     <BaseModalDialog open onClose={finish} isDismissable>

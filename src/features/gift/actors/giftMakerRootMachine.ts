@@ -1,5 +1,6 @@
 import {
   type ActorRefFrom,
+  type DoneActorEvent,
   type InputFrom,
   type PromiseActorLogic,
   assertEvent,
@@ -27,7 +28,11 @@ import type {
   StorageOperationErr,
   StorageOperationResult,
 } from "../stores/storageOperations"
-import type { GiftSignedResult } from "../types/sharedTypes"
+import type {
+  CreateGiftIntent,
+  GiftSignedResult,
+  SavingGiftResult,
+} from "../types/sharedTypes"
 import {
   type EscrowCredentials,
   generateEscrowCredentials,
@@ -67,6 +72,8 @@ export type GiftMakerRootMachineContext = {
   referral: string | undefined
   signData: null | GiftSignedResult
   intentHashes: null | string[]
+  createGiftIntent: CreateGiftIntent
+  iv: null | string
 }
 
 export const giftMakerRootMachine = setup({
@@ -75,6 +82,7 @@ export const giftMakerRootMachine = setup({
       tokenList: (BaseTokenInfo | UnifiedTokenInfo)[]
       initialToken: BaseTokenInfo | UnifiedTokenInfo
       referral: string | undefined
+      createGiftIntent: CreateGiftIntent
     },
     events: {} as
       | DepositedBalanceEvents
@@ -91,7 +99,8 @@ export const giftMakerRootMachine = setup({
       | {
           type: "COMPLETE_SIGN"
           params: GiftSignedResult
-        },
+        }
+      | DoneActorEvent<SavingGiftResult>,
     context: {} as GiftMakerRootMachineContext,
     children: {} as {
       readyGiftRef: "readyGiftActor"
@@ -123,29 +132,41 @@ export const giftMakerRootMachine = setup({
         return waitForIntentSettlement(signal, intentHash)
       }
     ),
-    addGiftToHistory: fromPromise(
+    savingGift: fromPromise(
       async ({
         input,
       }: {
         input: GiftMakerRootMachineContext
-      }): Promise<StorageOperationResult> => {
-        assert(input.signData, "signData is not defined")
-        const giftInfo = assembleGiftInfo(input)
-        const result = await giftMakerHistoryStore.getState().addGift(
-          {
-            ...giftInfo,
-            createdAt: Date.now(),
-          },
-          input.signData.signerCredentials
-        )
+      }): Promise<SavingGiftResult> => {
+        try {
+          assert(input.signData, "signData is not defined")
+          const giftInfo = assembleGiftInfo(input)
 
-        if (result.tag === "err") {
-          return { tag: "err", reason: result.reason }
+          // Create a record and generate an IV
+          const { iv } = await input.createGiftIntent({
+            secretKey: giftInfo.secretKey,
+            message: giftInfo.message,
+          })
+
+          const result = await giftMakerHistoryStore.getState().addGift(
+            {
+              ...giftInfo,
+              iv,
+              createdAt: Date.now(),
+            },
+            input.signData.signerCredentials
+          )
+
+          if (result.tag === "err") {
+            return { tag: "err", reason: result.reason }
+          }
+          return { tag: "ok", value: { iv } }
+        } catch {
+          return { tag: "err", reason: "ERR_STORAGE_OPERATION_EXCEPTION" }
         }
-        return { tag: "ok" }
       }
     ),
-    updateGiftToHistory: fromPromise(
+    updatingGift: fromPromise(
       async ({
         input,
       }: {
@@ -167,7 +188,7 @@ export const giftMakerRootMachine = setup({
         return { tag: "ok" }
       }
     ),
-    removeGiftFromHistory: fromPromise(
+    removingGift: fromPromise(
       async ({
         input,
       }: {
@@ -226,6 +247,17 @@ export const giftMakerRootMachine = setup({
     generateEscrowCredentials: assign({
       escrowCredentials: () => generateEscrowCredentials(),
     }),
+    setIV: assign({
+      iv: (_, event: { output?: SavingGiftResult }) => {
+        if (event?.output?.tag === "ok") {
+          return event.output.value.iv
+        }
+        return null
+      },
+    }),
+    clearIV: assign({
+      iv: null,
+    }),
   },
   guards: {
     isOk: (_, params: { tag: "ok" | "err" }) => params.tag === "ok",
@@ -253,6 +285,8 @@ export const giftMakerRootMachine = setup({
     referral: input.referral,
     signData: null,
     intentHashes: null,
+    createGiftIntent: input.createGiftIntent,
+    iv: null,
   }),
 
   initial: "editing",
@@ -273,7 +307,7 @@ export const giftMakerRootMachine = setup({
   },
   states: {
     editing: {
-      entry: ["clearEscrowCredentials"],
+      entry: ["clearEscrowCredentials", "clearIV"],
 
       on: {
         REQUEST_SIGN: {
@@ -287,7 +321,7 @@ export const giftMakerRootMachine = setup({
 
       on: {
         COMPLETE_SIGN: {
-          target: "adding",
+          target: "saving",
         },
       },
 
@@ -353,7 +387,7 @@ export const giftMakerRootMachine = setup({
         ],
       },
     },
-    adding: {
+    saving: {
       entry: [
         assign({
           signData: ({ event }) => {
@@ -363,12 +397,16 @@ export const giftMakerRootMachine = setup({
         }),
       ],
       invoke: {
-        src: "addGiftToHistory",
+        src: "savingGift",
         input: ({ context }) => context,
         onDone: [
           {
             guard: { type: "isOk", params: ({ event }) => event.output },
             target: "publishing",
+            actions: {
+              type: "setIV",
+              params: ({ event }) => event,
+            },
           },
           {
             target: "editing",
@@ -470,7 +508,7 @@ export const giftMakerRootMachine = setup({
     },
     updating: {
       invoke: {
-        src: "updateGiftToHistory",
+        src: "updatingGift",
         input: ({ context }) => context,
         onDone: [
           {
@@ -527,6 +565,7 @@ export const giftMakerRootMachine = setup({
               amount: parsedValues.amount,
               message: parsedValues.message,
             },
+            iv: context.iv,
           }
         },
 
@@ -567,7 +606,7 @@ export const giftMakerRootMachine = setup({
     },
     removing: {
       invoke: {
-        src: "removeGiftFromHistory",
+        src: "removingGift",
         input: ({ context }) => context,
         onDone: [
           {

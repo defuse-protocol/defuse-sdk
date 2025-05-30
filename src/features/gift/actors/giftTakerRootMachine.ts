@@ -25,7 +25,7 @@ type GiftTakerClaimingActorErrors =
   | GiftInfoErr
 
 type GiftTakerRootMachineInput = {
-  secretKey: string
+  payload: string | null
   tokenList: (BaseTokenInfo | UnifiedTokenInfo)[]
 }
 
@@ -34,7 +34,7 @@ type GiftTakerRootMachineContext = {
   giftInfo: null | GiftInfo
   multiPayload: null | MultiPayload
   intentHashes: null | string[]
-  secretKey: string
+  payload: string | null
   tokenList: (BaseTokenInfo | UnifiedTokenInfo)[]
   signerCredentials: null | SignerCredentials
 }
@@ -62,6 +62,10 @@ export const giftTakerRootMachine = setup({
     output: {} as GiftTakerRootMachineOutput,
     children: {} as {
       giftTakerClaimRef: "claimGiftActor"
+    },
+    events: {} as {
+      type: "SET_PAYLOAD"
+      params: { payload: string }
     },
   },
   actors: {
@@ -101,10 +105,20 @@ export const giftTakerRootMachine = setup({
 
   states: {
     idle: {
+      on: {
+        SET_PAYLOAD: "reading",
+      },
+    },
+    reading: {
       invoke: {
         id: "getGiftInfoRef",
         src: "getGiftInfoActor",
-        input: ({ context }) => context,
+        input: ({ context, event }) => {
+          return {
+            ...context,
+            payload: event.params.payload,
+          }
+        },
         onDone: [
           {
             target: "claiming",

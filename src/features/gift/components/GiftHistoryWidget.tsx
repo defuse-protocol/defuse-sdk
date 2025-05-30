@@ -6,13 +6,13 @@ import { SwapWidgetProvider } from "../../../providers/SwapWidgetProvider"
 import type { AuthMethod } from "../../../types/authHandle"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../../types/base"
 import { useGiftMakerHistory } from "../stores/giftMakerHistory"
-import type { GiftLinkData } from "../types/sharedTypes"
+import type { GenerateLink } from "../types/sharedTypes"
 import { GiftHistory } from "./shared/GiftHistory"
 
 export type GiftHistoryWidgetProps = {
   userAddress: string | null | undefined
   userChainType: AuthMethod | null | undefined
-  generateLink: (giftLinkData: GiftLinkData) => string
+  generateLink: GenerateLink
   tokenList: (BaseTokenInfo | UnifiedTokenInfo)[]
 }
 
