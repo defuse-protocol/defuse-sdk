@@ -8,7 +8,7 @@ export function isLiquidityUnavailableSelector(
 ): boolean {
   return (
     state.context.preparationOutput?.tag === "err" &&
-    state.context.preparationOutput.value.reason === "NO_QUOTES"
+    state.context.preparationOutput.value.reason === "ERR_NO_QUOTES"
   )
 }
 export function isUnsufficientTokenInAmount(
@@ -16,7 +16,7 @@ export function isUnsufficientTokenInAmount(
 ): boolean {
   return (
     state.context.preparationOutput?.tag === "err" &&
-    state.context.preparationOutput.value.reason === "INSUFFICIENT_AMOUNT"
+    state.context.preparationOutput.value.reason === "ERR_INSUFFICIENT_AMOUNT"
   )
 }
 

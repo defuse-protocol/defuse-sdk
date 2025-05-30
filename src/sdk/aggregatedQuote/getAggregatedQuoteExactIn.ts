@@ -1,4 +1,5 @@
 import { settings } from "../../constants/settings"
+import type { AssertionError } from "../../errors/assert"
 import type { BaseTokenInfo, TokenValue } from "../../types/base"
 import { assert } from "../../utils/assert"
 import {
@@ -33,6 +34,7 @@ export type GetAggregatedQuoteExactInErrorType =
   | JSONRPCErrorType
   | AggregatedQuoteError
   | AmountMismatchError
+  | AssertionError
 
 export async function getAggregatedQuoteExactIn({
   aggregatedQuoteParams,

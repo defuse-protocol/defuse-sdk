@@ -1,12 +1,19 @@
 import { ExclamationTriangleIcon } from "@radix-ui/react-icons"
-import { Callout } from "@radix-ui/themes"
+import { Button, Callout } from "@radix-ui/themes"
 import type { ReactNode } from "react"
+import type { TokenValue } from "src/types/base"
 import type { PreparationOutput } from "../../../../../../services/withdrawService"
 import { formatTokenValue } from "../../../../../../utils/format"
 
 export const PreparationResult = ({
   preparationOutput,
-}: { preparationOutput: PreparationOutput | null }) => {
+  increaseAmount,
+  decreaseAmount,
+}: {
+  preparationOutput: PreparationOutput | null
+  increaseAmount: (v: TokenValue) => void
+  decreaseAmount: (v: TokenValue) => void
+}) => {
   if (preparationOutput?.tag !== "err") return null
 
   let content: ReactNode = null
@@ -26,8 +33,8 @@ export const PreparationResult = ({
     case "ERR_AMOUNT_TOO_LOW":
       content = `Need ${formatTokenValue(err.minWithdrawalAmount - err.receivedAmount, err.token.decimals)} ${err.token.symbol} more to withdraw (considering fee)`
       break
-    case "NO_QUOTES":
-    case "INSUFFICIENT_AMOUNT":
+    case "ERR_NO_QUOTES":
+    case "ERR_INSUFFICIENT_AMOUNT":
       // Don't duplicate error messages, message should be displayed in the submit button
       break
     case "ERR_CANNOT_FETCH_QUOTE":
@@ -36,6 +43,38 @@ export const PreparationResult = ({
     case "ERR_BALANCE_FETCH":
     case "ERR_BALANCE_MISSING":
       content = "Cannot fetch balance"
+      break
+    case "ERR_UNFULFILLABLE_AMOUNT":
+      content = (
+        <>
+          {/* biome-ignore lint/nursery/useConsistentCurlyBraces: <explanation> */}
+          Specified amount cannot be withdrawn. Please,{" "}
+          <Button
+            onClick={() => {
+              decreaseAmount(err.shortfall)
+            }}
+            variant="ghost"
+            className="underline"
+          >
+            decrease
+          </Button>
+          {/* biome-ignore lint/nursery/useConsistentCurlyBraces: <explanation> */}
+          {" or "}
+          <Button
+            onClick={() => {
+              if (err.overage != null) {
+                increaseAmount(err.overage)
+              }
+            }}
+            variant="ghost"
+            className="underline"
+          >
+            increase
+          </Button>
+          {/* biome-ignore lint/nursery/useConsistentCurlyBraces: <explanation> */}
+          {" for slight amount."}
+        </>
+      )
       break
     default:
       val satisfies never

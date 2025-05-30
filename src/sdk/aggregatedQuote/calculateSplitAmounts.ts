@@ -58,55 +58,64 @@ export function sortForOptimalAmountSplitting(
 export function calculateSplitAmounts(
   tokensIn: TokenSlice[],
   amountIn: TokenValue,
-  balances: Balances
+  balances: Record<string, bigint>
 ): Record<string, bigint> {
-  const amountsToQuote: Record<string, bigint> = {}
-
-  const uniqueTokensIn_ = deduplicateTokens(tokensIn)
-  const uniqueTokensIn = sortForOptimalAmountSplitting(
-    uniqueTokensIn_,
+  const unique = sortForOptimalAmountSplitting(
+    deduplicateTokens(tokensIn),
     balances
   )
 
-  let remainingAmount = amountIn.amount
-  const remainingDecimals = amountIn.decimals
+  // 1) no tokens → immediate error
+  if (unique.length === 0) {
+    throw new AmountMismatchError({
+      requested: amountIn,
+      fulfilled: { amount: 0n, decimals: amountIn.decimals },
+      nextFulfillable: null,
+    })
+  }
 
-  for (const tokenIn of uniqueTokensIn) {
-    const availableIn = balances[tokenIn.defuseAssetId] ?? 0n
+  // 2) greedy fill in each token's own decimals
+  let remaining = amountIn.amount
+  const dec = amountIn.decimals
+  const out: Record<string, bigint> = {}
 
-    // Convert remaining amount to token's decimals
-    const normalizedRemainingAmount = adjustDecimals(
-      remainingAmount,
-      remainingDecimals,
-      tokenIn.decimals
-    )
-
-    const amountToQuote = min(availableIn, normalizedRemainingAmount)
-
-    if (amountToQuote > 0n) {
-      amountsToQuote[tokenIn.defuseAssetId] = amountToQuote
-
-      // Convert back to original decimals to subtract from remaining
-      remainingAmount -= adjustDecimals(
-        amountToQuote,
-        tokenIn.decimals,
-        remainingDecimals
-      )
+  for (const t of unique) {
+    const avail = balances[t.defuseAssetId] ?? 0n
+    const need = adjustDecimals(remaining, dec, t.decimals)
+    const take = avail < need ? avail : need
+    if (take > 0n) {
+      out[t.defuseAssetId] = take
+      remaining -= adjustDecimals(take, t.decimals, dec)
     }
-
-    if (remainingAmount === 0n) break
+    if (remaining === 0n) break
   }
 
-  if (remainingAmount !== 0n) {
-    throw new AmountMismatchError(
-      { amount: amountIn.amount, decimals: amountIn.decimals },
-      { amount: remainingAmount, decimals: remainingDecimals }
-    )
+  // 3) if still short, build the error
+  if (remaining !== 0n) {
+    // what we did fill vs what's left
+    const fulfilledAmt = amountIn.amount - remaining
+
+    // total available in the input's decimals
+    const totalAvail = unique
+      .map((t) =>
+        adjustDecimals(balances[t.defuseAssetId] ?? 0n, t.decimals, dec)
+      )
+      .reduce((sum, v) => sum + v, 0n)
+
+    const oneUnit = 10n ** BigInt(dec)
+    const nextAmt = ceilDiv(amountIn.amount, oneUnit) * oneUnit
+
+    const nextFulfillable =
+      totalAvail >= nextAmt ? { amount: nextAmt, decimals: dec } : null
+
+    throw new AmountMismatchError({
+      requested: amountIn,
+      fulfilled: { amount: fulfilledAmt, decimals: dec },
+      nextFulfillable: nextFulfillable,
+    })
   }
 
-  return amountsToQuote
+  return out
 }
 
-function min(a: bigint, b: bigint): bigint {
-  return a < b ? a : b
-}
+const ceilDiv = (a: bigint, b: bigint) => (a + b - 1n) / b

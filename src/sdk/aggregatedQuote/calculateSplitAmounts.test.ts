@@ -312,9 +312,22 @@ describe("calculateSplitAmounts", () => {
       token2: adjustDecimals(50n, 0, token2.decimals),
     }
 
-    expect(() => calculateSplitAmounts(tokensIn, amountIn, balances)).toThrow(
-      AmountMismatchError
-    )
+    try {
+      calculateSplitAmounts(tokensIn, amountIn, balances)
+    } catch (err: unknown) {
+      expect(err).toBeInstanceOf(AmountMismatchError)
+      expect(err).toEqual(
+        expect.objectContaining({
+          requested: { amount: 200000000n, decimals: 6 },
+          fulfilled: { amount: 150000000n, decimals: 6 },
+          shortfall: { amount: 50000000n, decimals: 6 },
+          nextFulfillable: null,
+          overage: null,
+        })
+      )
+    }
+
+    expect.assertions(2)
   })
 
   it("throws AmountMismatchError when balances are zero", () => {
@@ -325,9 +338,22 @@ describe("calculateSplitAmounts", () => {
       token2: 0n,
     }
 
-    expect(() => calculateSplitAmounts(tokensIn, amountIn, balances)).toThrow(
-      AmountMismatchError
-    )
+    try {
+      calculateSplitAmounts(tokensIn, amountIn, balances)
+    } catch (err: unknown) {
+      expect(err).toBeInstanceOf(AmountMismatchError)
+      expect(err).toEqual(
+        expect.objectContaining({
+          requested: { amount: 100n, decimals: 6 },
+          fulfilled: { amount: 0n, decimals: 6 },
+          shortfall: { amount: 100n, decimals: 6 },
+          nextFulfillable: null,
+          overage: null,
+        })
+      )
+    }
+
+    expect.assertions(2)
   })
 
   it("throws AmountMismatchError when no balances available", () => {
@@ -335,9 +361,20 @@ describe("calculateSplitAmounts", () => {
     const amountIn = { amount: 100n, decimals: 6 }
     const balances = {}
 
-    expect(() => calculateSplitAmounts(tokensIn, amountIn, balances)).toThrow(
-      AmountMismatchError
-    )
+    try {
+      calculateSplitAmounts(tokensIn, amountIn, balances)
+    } catch (err: unknown) {
+      expect(err).toBeInstanceOf(AmountMismatchError)
+      expect(err).toEqual(
+        expect.objectContaining({
+          requested: { amount: 100n, decimals: 6 },
+          fulfilled: { amount: 0n, decimals: 6 },
+          shortfall: { amount: 100n, decimals: 6 },
+          nextFulfillable: null,
+          overage: null,
+        })
+      )
+    }
   })
 
   it("throws AmountMismatchError when tokens array is empty", () => {
@@ -345,9 +382,49 @@ describe("calculateSplitAmounts", () => {
     const amountIn = { amount: 100n, decimals: 6 }
     const balances = {}
 
-    expect(() => calculateSplitAmounts(tokensIn, amountIn, balances)).toThrow(
-      AmountMismatchError
-    )
+    try {
+      calculateSplitAmounts(tokensIn, amountIn, balances)
+    } catch (err: unknown) {
+      expect(err).toBeInstanceOf(AmountMismatchError)
+      expect(err).toEqual(
+        expect.objectContaining({
+          requested: { amount: 100n, decimals: 6 },
+          fulfilled: { amount: 0n, decimals: 6 },
+          shortfall: { amount: 100n, decimals: 6 },
+          nextFulfillable: null,
+          overage: null,
+        })
+      )
+    }
+  })
+
+  it("throws AmountMismatchError when dust is requested", () => {
+    const tokensIn = [
+      { ...token1, decimals: 6 },
+      { ...token2, decimals: 8 },
+      { ...token3, decimals: 24 },
+    ]
+    const amountIn = { amount: 100n, decimals: 24 }
+    const balances = {
+      token1: adjustDecimals(1n, 0, 6),
+      token2: adjustDecimals(1n, 0, 8),
+      token3: 95n,
+    }
+
+    try {
+      calculateSplitAmounts(tokensIn, amountIn, balances)
+    } catch (err: unknown) {
+      expect(err).toBeInstanceOf(AmountMismatchError)
+      expect(err).toEqual(
+        expect.objectContaining({
+          requested: { amount: 100n, decimals: 24 },
+          fulfilled: { amount: 95n, decimals: 24 },
+          shortfall: { amount: 5n, decimals: 24 },
+          nextFulfillable: { amount: 10n ** 24n, decimals: 24 },
+          overage: { amount: 10n ** 24n - 100n, decimals: 24 },
+        })
+      )
+    }
   })
 
   function sumTotal(

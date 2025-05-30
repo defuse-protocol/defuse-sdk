@@ -22,7 +22,11 @@ import { reverseAssetNetworkAdapter } from "src/utils/adapters"
 import { isSupportedChainName } from "src/utils/blockchain"
 import { formatTokenValue, formatUsdAmount } from "src/utils/format"
 import getTokenUsdPrice from "src/utils/getTokenUsdPrice"
-import { getTokenMaxDecimals } from "src/utils/tokenUtils"
+import {
+  addAmounts,
+  getTokenMaxDecimals,
+  subtractAmounts,
+} from "src/utils/tokenUtils"
 import { AuthGate } from "../../../../components/AuthGate"
 import { ButtonCustom } from "../../../../components/Button/ButtonCustom"
 import { EmptyIcon } from "../../../../components/EmptyIcon"
@@ -382,6 +386,38 @@ export const WithdrawForm = ({
   const balances = mergeBridgeBalances(poaBridgeBalances, nonPoaBridgeBalances)
   const showHotBalances = shouldShowHotBalance(balances, tokenInBalance)
 
+  const increaseAmount = (tokenValue: TokenValue) => {
+    if (parsedAmountIn == null) return
+
+    const newValue = addAmounts(parsedAmountIn, tokenValue)
+
+    const newFormattedValue = formatTokenValue(
+      newValue.amount,
+      newValue.decimals
+    )
+
+    actorRef.send({
+      type: "WITHDRAW_FORM.UPDATE_AMOUNT",
+      params: { amount: newFormattedValue, parsedAmount: newValue },
+    })
+  }
+
+  const decreaseAmount = (tokenValue: TokenValue) => {
+    if (parsedAmountIn == null) return
+
+    const newValue = subtractAmounts(parsedAmountIn, tokenValue)
+
+    const newFormattedValue = formatTokenValue(
+      newValue.amount,
+      newValue.decimals
+    )
+
+    actorRef.send({
+      type: "WITHDRAW_FORM.UPDATE_AMOUNT",
+      params: { amount: newFormattedValue, parsedAmount: newValue },
+    })
+  }
+
   return (
     <Island className="widget-container flex flex-col gap-4">
       <IslandHeader heading="Withdraw" condensed />
@@ -675,7 +711,11 @@ export const WithdrawForm = ({
         </Flex>
       </Form>
 
-      <PreparationResult preparationOutput={state.context.preparationOutput} />
+      <PreparationResult
+        preparationOutput={state.context.preparationOutput}
+        increaseAmount={increaseAmount}
+        decreaseAmount={decreaseAmount}
+      />
       {renderIntentCreationResult(intentCreationResult)}
 
       {intentRefs.length !== 0 && <Intents intentRefs={intentRefs} />}
