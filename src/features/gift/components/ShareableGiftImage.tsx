@@ -1,4 +1,10 @@
+import { ChevronRightIcon } from "@radix-ui/react-icons"
 import { cn } from "src/utils/cn"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "../../../components/Popover"
 import type {
   BaseTokenInfo,
   TokenValue,
@@ -47,11 +53,35 @@ export function ShareableGiftImage({
           />
         </div>
 
-        {/* Message Text */}
-        <div className="text-white text-sm md:text-base z-10 font-bold text-center">
-          {message}
+        <div className="flex items-center justify-center">
+          <Popover>
+            <PopoverTrigger asChild>
+              <button
+                type="button"
+                className="flex items-center gap-2 text-white text-sm md:text-base font-bold text-center group focus:outline-none focus:ring-2 focus:ring-primary-500 rounded transition"
+                aria-label="Read full message"
+                title={message}
+                tabIndex={0}
+              >
+                <span>{getTruncatedMessage(message)}</span>
+                {message.length > 20 && (
+                  <span className="text-xs text-gray-200 group-hover:text-white group-focus:text-white underline-offset-2 group-hover:underline group-focus:underline flex items-center gap-1 transition-colors">
+                    Read full
+                    <ChevronRightIcon className="h-3 w-3" />
+                  </span>
+                )}
+              </button>
+            </PopoverTrigger>
+            <PopoverContent className="flex flex-col gap-2 text-xs bg-white text-gray-11 shadow-lg rounded p-3 transition-all duration-150">
+              <div>{message}</div>
+            </PopoverContent>
+          </Popover>
         </div>
       </div>
     </div>
   )
+}
+
+function getTruncatedMessage(message: string) {
+  return message.length > 20 ? `${message.slice(0, 20)}...` : message
 }
