@@ -77,7 +77,7 @@ export type GiftMakerWidgetProps = {
   renderHostAppLink: RenderHostAppLink
 }
 
-const MAX_MESSAGE_LENGTH = 50
+const MAX_MESSAGE_LENGTH = 500
 
 export function GiftMakerForm({
   tokenList,
