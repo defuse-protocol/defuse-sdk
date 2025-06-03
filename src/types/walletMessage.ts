@@ -80,7 +80,20 @@ export type TonConnectSignatureData = {
     address: string
     timestamp: number
     domain: string
-    payload: TonConnectMessage["message"]
+    payload:
+      | {
+          type: "text"
+          text: string
+        }
+      | {
+          type: "cell"
+          schema: string
+          cell: string
+        }
+      | {
+          type: "binary"
+          bytes: string
+        }
   }
   signedData: TonConnectMessage
 }
