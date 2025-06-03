@@ -40,7 +40,7 @@
     "test": "vitest --passWithNoTests",
     "coverage": "vitest run --coverage",
     "build": "rollup -c && tsc && copy:types",
-    "build:watch": "concurrently \"rollup -c -w\" \"tsc -w\" \"yarn copy:types\"",
+    "build:watch": "concurrently 'rollup -c -w' 'tsc -w' 'yarn copy:types'",
     "copy:types": "mkdir -p dist && rsync -avm --include='*/' --include='*.d.ts' --exclude='*' src/ dist/",
     "typecheck": "tsc --noEmit --emitDeclarationOnly false",
     "check": "biome check",
