@@ -35,6 +35,10 @@ export async function verifyWalletSignature(
         parsePublicKey(userAddress),
         signature.signedData.challenge
       )
+    case "TON_CONNECT":
+      // todo: implement https://github.com/tonkeeper/demo-dapp-with-wallet/blob/master/src/components/SignDataForm/verify.ts
+      return true
+
     default:
       signatureType satisfies never
       throw new Error("exhaustive check failed")
