@@ -10,8 +10,8 @@ import type {
  * Generate a Hyperliquid address for a given asset and destination address
  *
  * @param params.srcChain - Source chain ("bitcoin", "solana" or "ethereum")
- * @param params.dstChain - Destination chain ("bitcoin", "solana" or "ethereum")
- * @param params.asset - Asset symbol ("btc", "eth" or "sol")
+ * @param params.dstChain - Destination chain ("hyperliquid")
+ * @param params.asset - Asset symbol ("btc", "sol" or "usdc")
  * @param params.dstAddr - Destination address
  *
  * @see https://docs.hyperunit.xyz/developers/api/generate-address
