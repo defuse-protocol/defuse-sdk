@@ -45,7 +45,7 @@ exports[`prepareSwapSignedData() > should return the correct signed data for a T
     "type": "text",
   },
   "public_key": "ed25519:F8PB56zdMYNDL7Mq43DV4cV17uRqQkpn6ZygNdqavXCr",
-  "signature": "edd25519:5XidPDRhEdQBvHuMx9xAx4q6hfsBzYtv4XDxpsfDgTmSXgZhEboy7kytdQfwJCKnjLYQwPrdqc7ACR3tr6F1HSGR",
+  "signature": "ed25519:5XidPDRhEdQBvHuMx9xAx4q6hfsBzYtv4XDxpsfDgTmSXgZhEboy7kytdQfwJCKnjLYQwPrdqc7ACR3tr6F1HSGR",
   "standard": "ton_connect",
   "timestamp": 1748949269,
 }

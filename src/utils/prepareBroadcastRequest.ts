@@ -61,7 +61,7 @@ export function prepareSwapSignedData(
         timestamp: signature.signatureData.timestamp,
         payload: signature.signatureData.payload,
         public_key: `ed25519:${base58.encode(hex.decode(userInfo.userAddress))}`,
-        signature: `edd25519:${base58.encode(base64.decode(signature.signatureData.signature))}`,
+        signature: `ed25519:${base58.encode(base64.decode(signature.signatureData.signature))}`,
       }
     }
 
