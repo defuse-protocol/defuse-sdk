@@ -881,6 +881,7 @@ export function getAvailableDepositRoutes(
           throw new Error("exhaustive check failed")
       }
     case AuthMethod.WebAuthn:
+    case AuthMethod.Ton:
       switch (network) {
         case BlockchainEnum.NEAR:
           return {

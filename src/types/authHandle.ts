@@ -1,10 +1,11 @@
-export type AuthMethod = "near" | "evm" | "solana" | "webauthn"
+export type AuthMethod = "near" | "evm" | "solana" | "webauthn" | "ton"
 
 export const AuthMethod = {
   Near: "near",
   EVM: "evm",
   Solana: "solana",
   WebAuthn: "webauthn",
+  Ton: "ton",
 } as const
 
 /**
