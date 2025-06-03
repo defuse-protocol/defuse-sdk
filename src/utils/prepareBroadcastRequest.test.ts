@@ -3,6 +3,7 @@ import type {
   ERC191SignatureData,
   NEP413SignatureData,
   SolanaSignatureData,
+  TonConnectSignatureData,
   WalletMessage,
   WebAuthnSignatureData,
 } from "../types/walletMessage"
@@ -11,6 +12,15 @@ import { makeInnerSwapMessage, makeSwapMessage } from "./messageFactory"
 import { prepareSwapSignedData } from "./prepareBroadcastRequest"
 
 describe("prepareSwapSignedData()", () => {
+  const swapMessage = makeSwapMessage({
+    innerMessage: makeInnerSwapMessage({
+      tokenDeltas: [["foo.near", 100n]],
+      signerId: authHandleToIntentsUserId("user.near", "near"),
+      deadlineTimestamp: 1704110400000,
+    }),
+    nonce: new Uint8Array(32),
+  })
+
   const walletMessage: WalletMessage = {
     NEP413: {
       message: `{"foo":"bar"}`,
@@ -28,14 +38,8 @@ describe("prepareSwapSignedData()", () => {
         Buffer.from(JSON.stringify({ foo: "bar" }), "utf8")
       ),
     },
-    WEBAUTHN: makeSwapMessage({
-      innerMessage: makeInnerSwapMessage({
-        tokenDeltas: [["foo.near", 100n]],
-        signerId: authHandleToIntentsUserId("user.near", "near"),
-        deadlineTimestamp: 1704110400000,
-      }),
-      nonce: new Uint8Array(32),
-    }).WEBAUTHN,
+    WEBAUTHN: swapMessage.WEBAUTHN,
+    TON_CONNECT: swapMessage.TON_CONNECT,
   }
 
   it("should return the correct signed data for a NEP141 signature", () => {
@@ -103,6 +107,30 @@ describe("prepareSwapSignedData()", () => {
       prepareSwapSignedData(signature, {
         userAddress: "ed25519:Gxa24TGbJu4mqdhW3GbvLXmf4bSEyxVicrtpChDWbgga",
         userChainType: "webauthn",
+      })
+    ).toMatchSnapshot()
+  })
+
+  it("should return the correct signed data for a TonConnect signature", () => {
+    const signature: TonConnectSignatureData = {
+      type: "TON_CONNECT",
+      signatureData: {
+        signature:
+          "4o7K0k+5pQUHVTX3fD03JIwcixdxmPE7pGgVmQsUHxdZ+G2OJEeXKDv5cnrgPPbZQDgUrMGWfXhYvRFpdJxuAg==",
+        address:
+          "0:fa63f5195b0f8682d3f3413e2b40decfae7778b3691748a2d55dae5b243a3054",
+        timestamp: 1748949269,
+        domain: "ton-connect.github.io",
+        payload: walletMessage.TON_CONNECT.message,
+      },
+      signedData: walletMessage.TON_CONNECT,
+    }
+
+    expect(
+      prepareSwapSignedData(signature, {
+        userAddress:
+          "d1e7c122f8a43c7d7433548c4604edd4dffcfe5bb1d036499684980c115500bf",
+        userChainType: "ton",
       })
     ).toMatchSnapshot()
   })

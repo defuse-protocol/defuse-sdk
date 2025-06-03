@@ -27,6 +27,7 @@ export function prepareSwapSignedData(
         signature: transformNEP141Signature(signature.signatureData.signature),
       }
     }
+
     case "ERC191": {
       return {
         standard: "erc191",
@@ -34,6 +35,7 @@ export function prepareSwapSignedData(
         signature: transformERC191Signature(signature.signatureData),
       }
     }
+
     case "SOLANA":
       assert(
         userInfo.userChainType === "solana",
@@ -46,9 +48,23 @@ export function prepareSwapSignedData(
         public_key: `ed25519:${userInfo.userAddress}`,
         signature: transformSolanaSignature(signature.signatureData),
       }
+
     case "WEBAUTHN": {
       return makeWebAuthnMultiPayload(userInfo, signature)
     }
+
+    case "TON_CONNECT": {
+      return {
+        standard: "ton_connect",
+        address: signature.signatureData.address,
+        domain: signature.signatureData.domain,
+        timestamp: signature.signatureData.timestamp,
+        payload: signature.signatureData.payload,
+        public_key: `ed25519:${base58.encode(hex.decode(userInfo.userAddress))}`,
+        signature: `edd25519:${base58.encode(base64.decode(signature.signatureData.signature))}`,
+      }
+    }
+
     default:
       signatureType satisfies never
       throw new Error("exhaustive check failed")
