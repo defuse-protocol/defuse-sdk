@@ -20,9 +20,4 @@ export type WithdrawWidgetProps = {
    * Prop is not reactive, set it once when the component is created.
    */
   referral?: string
-
-  /**
-   * Solver's max liquidity data per address pairs addr1#addr2 = bigint
-   */
-  liquidityData?: Record<string, bigint> | null
 }

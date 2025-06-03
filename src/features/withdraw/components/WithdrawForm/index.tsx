@@ -60,6 +60,7 @@ import {
   ReceivedAmountAndFee,
 } from "./components"
 import type { allBlockchains } from "./constants"
+import { useLiquidityData } from "./hooks/useLiquidityData"
 import { useTokenBalances } from "./hooks/useTokenBalances"
 import {
   balancesSelector,
@@ -95,7 +96,6 @@ export const WithdrawForm = ({
   presetRecipient,
   sendNearTransaction,
   renderHostAppLink,
-  liquidityData,
 }: WithdrawFormProps) => {
   const [isNetworkModalOpen, setIsNetworkModalOpen] = useState(false)
 
@@ -367,6 +367,8 @@ export const WithdrawForm = ({
   )
   const hasAnyBalance = tokenInBalance != null && tokenInBalance?.amount > 0
   const poaBridgeBalances = useTokenBalances(token, hasAnyBalance)
+  const liquidityData = useLiquidityData()
+
   const maxWithdrawals = hasAnyBalance
     ? getFastWithdrawals(token, balancesData, poaBridgeBalances, liquidityData)
     : {}
