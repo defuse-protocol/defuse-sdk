@@ -1,8 +1,12 @@
+import { secp256k1 } from "@noble/curves/secp256k1"
 import { base58 } from "@scure/base"
 import { sign } from "tweetnacl"
 import { verifyMessage as verifyMessageViem } from "viem"
 import type { WalletSignatureResult } from "../types/walletMessage"
 import { parsePublicKey, verifyAuthenticatorAssertion } from "./webAuthn"
+
+// No-op usage to prevent tree-shaking. sec256k1 is dynamically loaded by viem.
+const _noop = secp256k1.getPublicKey || null
 
 export async function verifyWalletSignature(
   signature: WalletSignatureResult,
