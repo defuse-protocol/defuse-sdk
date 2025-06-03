@@ -57,6 +57,25 @@ describe("makeSwapMessage()", () => {
         ),
       },
       WEBAUTHN: expect.any(Object),
+      TON_CONNECT: {
+        message: {
+          type: "text",
+          text: `{
+  "signer_id": "user.near",
+  "verifying_contract": "intents.near",
+  "deadline": "2024-01-01T12:00:00.000Z",
+  "nonce": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+  "intents": [
+    {
+      "intent": "token_diff",
+      "diff": {
+        "foo.near": "100"
+      }
+    }
+  ]
+}`,
+        },
+      },
     })
   })
 
