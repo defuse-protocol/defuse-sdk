@@ -67,6 +67,7 @@ const config = [
       "@noble/hashes/sha3",
       "@noble/hashes/sha256",
       "near-api-js/lib/providers",
+      "@hot-labs/omni-sdk/build/utils",
     ],
   },
 ]
