@@ -1,6 +1,6 @@
 import type { ReactNode } from "react"
 import { CHAIN_IDS } from "src/constants/evm"
-import type { NetworkReference } from "src/sdk/poaBridge/constants/blockchains"
+import type { BlockchainEnum } from "src/sdk/poaBridge/constants/blockchains"
 import type {
   BaseTokenInfo,
   SupportedChainName,
@@ -62,11 +62,11 @@ export function availableChainsForToken(
 
 export function getDefaultBlockchainOptionValue(
   token: SwappableToken
-): NetworkReference | null {
+): BlockchainEnum | null {
   if (isBaseToken(token)) {
     const key = assetNetworkAdapter[token.chainName]
     return key
-      ? (getBlockchainsOptions()[key]?.value as NetworkReference | null)
+      ? (getBlockchainsOptions()[key]?.value as BlockchainEnum | null)
       : null
   }
   // For unified tokens, default to the native token's network
@@ -77,7 +77,7 @@ export function getDefaultBlockchainOptionValue(
     }
     const key = assetNetworkAdapter[nativeToken.chainName]
     return key
-      ? (getBlockchainsOptions()[key]?.value as NetworkReference | null)
+      ? (getBlockchainsOptions()[key]?.value as BlockchainEnum | null)
       : null
   }
   return null

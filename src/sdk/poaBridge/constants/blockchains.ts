@@ -28,12 +28,12 @@ export const VirtualNetworkReference = {
   AURORA: "eth:1313161554",
 } as const
 
-export const NetworkReference = {
+export const BlockchainEnum = {
   ...PoaBridgeNetworkReference,
   ...VirtualNetworkReference,
   /* Hyperliquid is only available as a withdrawal destination */
   HYPERLIQUID: "hyperliquid:999",
 } as const
 
-export type NetworkReference =
-  (typeof NetworkReference)[keyof typeof NetworkReference]
+export type BlockchainEnum =
+  (typeof BlockchainEnum)[keyof typeof BlockchainEnum]

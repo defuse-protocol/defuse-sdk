@@ -16,7 +16,7 @@ import { SelectTriggerLike } from "src/components/Select/SelectTriggerLike"
 import { useModalController } from "src/hooks/useModalController"
 import { useTokensUsdPrices } from "src/hooks/useTokensUsdPrices"
 import { useTokensStore } from "src/providers/TokensStoreProvider"
-import type { NetworkReference } from "src/sdk/poaBridge/constants/blockchains"
+import type { BlockchainEnum } from "src/sdk/poaBridge/constants/blockchains"
 import { ModalType } from "src/stores/modalStore"
 import { reverseAssetNetworkAdapter } from "src/utils/adapters"
 import { isSupportedChainName } from "src/utils/blockchain"
@@ -536,7 +536,7 @@ export const WithdrawForm = ({
                               hotBalance={
                                 blockchainSelectItems[
                                   reverseAssetNetworkAdapter[
-                                    address as NetworkReference
+                                    address as BlockchainEnum
                                   ]
                                 ]?.hotBalance
                               }

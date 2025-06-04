@@ -1,11 +1,11 @@
 import { Callout } from "@radix-ui/themes"
 import { reverseAssetNetworkAdapter } from "src/utils/adapters"
-import type { NetworkReference } from "../../../../sdk/poaBridge/constants/blockchains"
+import type { BlockchainEnum } from "../../../../sdk/poaBridge/constants/blockchains"
 import type { BaseTokenInfo } from "../../../../types/base"
 import { formatTokenValue } from "../../../../utils/format"
 
 export function renderDepositHint(
-  network: NetworkReference,
+  network: BlockchainEnum,
   token: BaseTokenInfo
 ) {
   return (

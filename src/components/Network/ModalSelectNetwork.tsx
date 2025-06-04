@@ -2,7 +2,7 @@ import { X as CrossIcon } from "@phosphor-icons/react"
 import { InfoCircledIcon } from "@radix-ui/react-icons"
 import { Text } from "@radix-ui/themes"
 import { type ReactNode, useMemo, useState } from "react"
-import type { NetworkReference } from "src/sdk/poaBridge/constants/blockchains"
+import type { BlockchainEnum } from "src/sdk/poaBridge/constants/blockchains"
 import type {
   BaseTokenInfo,
   SupportedChainName,
@@ -56,10 +56,10 @@ export const ModalSelectNetwork = ({
   }
 
   const availableNetworks = Object.keys(filteredChains).map(
-    (key) => key as NetworkReference
+    (key) => key as BlockchainEnum
   )
   const disabledNetworks = Object.keys(disabledChains).map(
-    (key) => key as NetworkReference
+    (key) => key as BlockchainEnum
   )
 
   return (

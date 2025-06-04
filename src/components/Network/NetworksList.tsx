@@ -1,7 +1,7 @@
 import { Text } from "@radix-ui/themes"
 import clsx from "clsx"
 import type { ReactNode } from "react"
-import type { NetworkReference } from "src/sdk/poaBridge/constants/blockchains"
+import type { BlockchainEnum } from "src/sdk/poaBridge/constants/blockchains"
 import type { SupportedChainName } from "src/types/base"
 import { reverseAssetNetworkAdapter } from "src/utils/adapters"
 import { isAuroraVirtualChain } from "src/utils/blockchain"
@@ -9,7 +9,7 @@ import { getBlockchainsOptions } from "src/utils/blockchainOptions"
 import { PoweredByAuroraLabel } from "../PoweredByAuroraLabel"
 
 interface NetworkListProps {
-  networks: NetworkReference[]
+  networks: BlockchainEnum[]
   selectedNetwork: SupportedChainName | null
   onChangeNetwork: (network: SupportedChainName) => void
   disabled?: boolean

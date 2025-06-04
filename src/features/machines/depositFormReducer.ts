@@ -3,7 +3,7 @@ import { assert } from "src/utils/assert"
 import { parseUnits } from "src/utils/parse"
 import { getDerivedToken } from "src/utils/tokenUtils"
 import { type ActorRef, type Snapshot, fromTransition } from "xstate"
-import type { NetworkReference } from "../../sdk/poaBridge/constants/blockchains"
+import type { BlockchainEnum } from "../../sdk/poaBridge/constants/blockchains"
 import type {
   BaseTokenInfo,
   SupportedChainName,
@@ -29,7 +29,7 @@ export type Events =
   | {
       type: "DEPOSIT_FORM.UPDATE_BLOCKCHAIN"
       params: {
-        network: NetworkReference | null
+        network: BlockchainEnum | null
       }
     }
   | {

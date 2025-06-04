@@ -2,7 +2,7 @@ import { CheckIcon, CopyIcon } from "@radix-ui/react-icons"
 import { Button, Spinner } from "@radix-ui/themes"
 import { QRCodeSVG } from "qrcode.react"
 import { Copy } from "../../../../components/IntentCard/CopyButton"
-import type { NetworkReference } from "../../../../sdk/poaBridge/constants/blockchains"
+import type { BlockchainEnum } from "../../../../sdk/poaBridge/constants/blockchains"
 import type { BaseTokenInfo } from "../../../../types/base"
 import {
   renderDepositHint,
@@ -10,7 +10,7 @@ import {
 } from "./renderDepositHint"
 
 export type PassiveDepositProps = {
-  network: NetworkReference
+  network: BlockchainEnum
   depositAddress: string | null
   minDepositAmount: bigint | null
   token: BaseTokenInfo

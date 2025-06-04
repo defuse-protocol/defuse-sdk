@@ -30,7 +30,7 @@ import type { depositTokenBalanceMachine } from "../features/machines/depositTok
 import { getNearTxSuccessValue } from "../features/machines/getTxMachine"
 import type { storageDepositAmountMachine } from "../features/machines/storageDepositAmountMachine"
 import { logger } from "../logger"
-import { NetworkReference } from "../sdk/poaBridge/constants/blockchains"
+import { BlockchainEnum } from "../sdk/poaBridge/constants/blockchains"
 import {
   getDepositAddress,
   getSupportedTokens,
@@ -649,7 +649,7 @@ function createSPLTransferSolanaTransaction(
  */
 export async function generateDepositAddress(
   userAddress: IntentsUserId,
-  chain: NetworkReference
+  chain: BlockchainEnum
 ): Promise<string> {
   try {
     const supportedTokens = await getSupportedTokens({
@@ -694,7 +694,7 @@ export async function getAllowance(
   tokenAddress: string,
   owner: string,
   spender: string,
-  network: NetworkReference
+  network: BlockchainEnum
 ): Promise<bigint | null> {
   try {
     const client = createPublicClient({
@@ -755,45 +755,45 @@ export function waitEVMTransaction({
  */
 export function getAvailableDepositRoutes(
   chainTypeFromWallet: AuthMethod,
-  network: NetworkReference
+  network: BlockchainEnum
 ): { activeDeposit: boolean; passiveDeposit: boolean } | null {
   switch (chainTypeFromWallet) {
     case AuthMethod.Near:
       switch (network) {
         /* allowed all */
-        case NetworkReference.NEAR:
+        case BlockchainEnum.NEAR:
           return {
             activeDeposit: true,
             passiveDeposit: true,
           }
 
         /* allowed passive */
-        case NetworkReference.ETHEREUM:
-        case NetworkReference.BASE:
-        case NetworkReference.ARBITRUM:
-        case NetworkReference.BITCOIN:
-        case NetworkReference.SOLANA:
-        case NetworkReference.DOGECOIN:
-        case NetworkReference.XRPLEDGER:
-        case NetworkReference.ZCASH:
-        case NetworkReference.GNOSIS:
-        case NetworkReference.BERACHAIN:
-        case NetworkReference.TRON:
-        case NetworkReference.POLYGON:
-        case NetworkReference.BSC:
+        case BlockchainEnum.ETHEREUM:
+        case BlockchainEnum.BASE:
+        case BlockchainEnum.ARBITRUM:
+        case BlockchainEnum.BITCOIN:
+        case BlockchainEnum.SOLANA:
+        case BlockchainEnum.DOGECOIN:
+        case BlockchainEnum.XRPLEDGER:
+        case BlockchainEnum.ZCASH:
+        case BlockchainEnum.GNOSIS:
+        case BlockchainEnum.BERACHAIN:
+        case BlockchainEnum.TRON:
+        case BlockchainEnum.POLYGON:
+        case BlockchainEnum.BSC:
           return {
             activeDeposit: false,
             passiveDeposit: true,
           }
 
         /* not-allowed all */
-        case NetworkReference.TURBOCHAIN:
-        case NetworkReference.TUXAPPCHAIN:
-        case NetworkReference.VERTEX:
-        case NetworkReference.OPTIMA:
-        case NetworkReference.COINEASY:
-        case NetworkReference.AURORA:
-        case NetworkReference.HYPERLIQUID:
+        case BlockchainEnum.TURBOCHAIN:
+        case BlockchainEnum.TUXAPPCHAIN:
+        case BlockchainEnum.VERTEX:
+        case BlockchainEnum.OPTIMA:
+        case BlockchainEnum.COINEASY:
+        case BlockchainEnum.AURORA:
+        case BlockchainEnum.HYPERLIQUID:
           return {
             activeDeposit: false,
             passiveDeposit: false,
@@ -805,45 +805,45 @@ export function getAvailableDepositRoutes(
     case AuthMethod.EVM:
       switch (network) {
         /* allowed all */
-        case NetworkReference.ETHEREUM:
-        case NetworkReference.BASE:
-        case NetworkReference.ARBITRUM:
-        case NetworkReference.GNOSIS:
-        case NetworkReference.BERACHAIN:
-        case NetworkReference.POLYGON:
-        case NetworkReference.BSC:
+        case BlockchainEnum.ETHEREUM:
+        case BlockchainEnum.BASE:
+        case BlockchainEnum.ARBITRUM:
+        case BlockchainEnum.GNOSIS:
+        case BlockchainEnum.BERACHAIN:
+        case BlockchainEnum.POLYGON:
+        case BlockchainEnum.BSC:
           return {
             activeDeposit: true,
             passiveDeposit: true,
           }
 
         /* allowed passive */
-        case NetworkReference.NEAR:
-        case NetworkReference.BITCOIN:
-        case NetworkReference.SOLANA:
-        case NetworkReference.DOGECOIN:
-        case NetworkReference.XRPLEDGER:
-        case NetworkReference.ZCASH:
-        case NetworkReference.TRON:
+        case BlockchainEnum.NEAR:
+        case BlockchainEnum.BITCOIN:
+        case BlockchainEnum.SOLANA:
+        case BlockchainEnum.DOGECOIN:
+        case BlockchainEnum.XRPLEDGER:
+        case BlockchainEnum.ZCASH:
+        case BlockchainEnum.TRON:
           return {
             activeDeposit: false,
             passiveDeposit: true,
           }
 
         /* allowed active */
-        case NetworkReference.TURBOCHAIN:
-        case NetworkReference.TUXAPPCHAIN:
-        case NetworkReference.VERTEX:
-        case NetworkReference.OPTIMA:
-        case NetworkReference.COINEASY:
-        case NetworkReference.AURORA:
+        case BlockchainEnum.TURBOCHAIN:
+        case BlockchainEnum.TUXAPPCHAIN:
+        case BlockchainEnum.VERTEX:
+        case BlockchainEnum.OPTIMA:
+        case BlockchainEnum.COINEASY:
+        case BlockchainEnum.AURORA:
           return {
             activeDeposit: true,
             passiveDeposit: false,
           }
 
         /* not-allowed all */
-        case NetworkReference.HYPERLIQUID:
+        case BlockchainEnum.HYPERLIQUID:
           return {
             activeDeposit: false,
             passiveDeposit: false,
@@ -855,39 +855,39 @@ export function getAvailableDepositRoutes(
     case AuthMethod.Solana:
       switch (network) {
         /* allowed all */
-        case NetworkReference.SOLANA:
+        case BlockchainEnum.SOLANA:
           return {
             activeDeposit: true,
             passiveDeposit: true,
           }
 
         /* allowed passive */
-        case NetworkReference.ETHEREUM:
-        case NetworkReference.BASE:
-        case NetworkReference.ARBITRUM:
-        case NetworkReference.BITCOIN:
-        case NetworkReference.DOGECOIN:
-        case NetworkReference.XRPLEDGER:
-        case NetworkReference.ZCASH:
-        case NetworkReference.GNOSIS:
-        case NetworkReference.BERACHAIN:
-        case NetworkReference.TRON:
-        case NetworkReference.POLYGON:
-        case NetworkReference.BSC:
-        case NetworkReference.NEAR:
+        case BlockchainEnum.ETHEREUM:
+        case BlockchainEnum.BASE:
+        case BlockchainEnum.ARBITRUM:
+        case BlockchainEnum.BITCOIN:
+        case BlockchainEnum.DOGECOIN:
+        case BlockchainEnum.XRPLEDGER:
+        case BlockchainEnum.ZCASH:
+        case BlockchainEnum.GNOSIS:
+        case BlockchainEnum.BERACHAIN:
+        case BlockchainEnum.TRON:
+        case BlockchainEnum.POLYGON:
+        case BlockchainEnum.BSC:
+        case BlockchainEnum.NEAR:
           return {
             activeDeposit: false,
             passiveDeposit: true,
           }
 
         /* not-allowed all */
-        case NetworkReference.TURBOCHAIN:
-        case NetworkReference.TUXAPPCHAIN:
-        case NetworkReference.VERTEX:
-        case NetworkReference.OPTIMA:
-        case NetworkReference.COINEASY:
-        case NetworkReference.AURORA:
-        case NetworkReference.HYPERLIQUID:
+        case BlockchainEnum.TURBOCHAIN:
+        case BlockchainEnum.TUXAPPCHAIN:
+        case BlockchainEnum.VERTEX:
+        case BlockchainEnum.OPTIMA:
+        case BlockchainEnum.COINEASY:
+        case BlockchainEnum.AURORA:
+        case BlockchainEnum.HYPERLIQUID:
           return {
             activeDeposit: false,
             passiveDeposit: false,
@@ -900,33 +900,33 @@ export function getAvailableDepositRoutes(
     case AuthMethod.Ton:
       switch (network) {
         /* allowed passive */
-        case NetworkReference.ETHEREUM:
-        case NetworkReference.BASE:
-        case NetworkReference.ARBITRUM:
-        case NetworkReference.BITCOIN:
-        case NetworkReference.DOGECOIN:
-        case NetworkReference.XRPLEDGER:
-        case NetworkReference.ZCASH:
-        case NetworkReference.GNOSIS:
-        case NetworkReference.BERACHAIN:
-        case NetworkReference.SOLANA:
-        case NetworkReference.TRON:
-        case NetworkReference.POLYGON:
-        case NetworkReference.BSC:
-        case NetworkReference.NEAR:
+        case BlockchainEnum.ETHEREUM:
+        case BlockchainEnum.BASE:
+        case BlockchainEnum.ARBITRUM:
+        case BlockchainEnum.BITCOIN:
+        case BlockchainEnum.DOGECOIN:
+        case BlockchainEnum.XRPLEDGER:
+        case BlockchainEnum.ZCASH:
+        case BlockchainEnum.GNOSIS:
+        case BlockchainEnum.BERACHAIN:
+        case BlockchainEnum.SOLANA:
+        case BlockchainEnum.TRON:
+        case BlockchainEnum.POLYGON:
+        case BlockchainEnum.BSC:
+        case BlockchainEnum.NEAR:
           return {
             activeDeposit: false,
             passiveDeposit: true,
           }
 
         /* not-allowed all */
-        case NetworkReference.TURBOCHAIN:
-        case NetworkReference.TUXAPPCHAIN:
-        case NetworkReference.VERTEX:
-        case NetworkReference.OPTIMA:
-        case NetworkReference.COINEASY:
-        case NetworkReference.AURORA:
-        case NetworkReference.HYPERLIQUID:
+        case BlockchainEnum.TURBOCHAIN:
+        case BlockchainEnum.TUXAPPCHAIN:
+        case BlockchainEnum.VERTEX:
+        case BlockchainEnum.OPTIMA:
+        case BlockchainEnum.COINEASY:
+        case BlockchainEnum.AURORA:
+        case BlockchainEnum.HYPERLIQUID:
           return {
             activeDeposit: false,
             passiveDeposit: false,
@@ -942,49 +942,49 @@ export function getAvailableDepositRoutes(
 }
 
 // Use this function to get strong typing for RPC URLs
-export function getWalletRpcUrl(network: NetworkReference): string {
+export function getWalletRpcUrl(network: BlockchainEnum): string {
   switch (network) {
-    case NetworkReference.NEAR:
+    case BlockchainEnum.NEAR:
       return settings.rpcUrls.near
-    case NetworkReference.ETHEREUM:
+    case BlockchainEnum.ETHEREUM:
       return settings.rpcUrls.eth
-    case NetworkReference.BASE:
+    case BlockchainEnum.BASE:
       return settings.rpcUrls.base
-    case NetworkReference.ARBITRUM:
+    case BlockchainEnum.ARBITRUM:
       return settings.rpcUrls.arbitrum
-    case NetworkReference.BITCOIN:
+    case BlockchainEnum.BITCOIN:
       return settings.rpcUrls.bitcoin
-    case NetworkReference.SOLANA:
+    case BlockchainEnum.SOLANA:
       return settings.rpcUrls.solana
-    case NetworkReference.DOGECOIN:
+    case BlockchainEnum.DOGECOIN:
       return settings.rpcUrls.dogecoin
-    case NetworkReference.TURBOCHAIN:
+    case BlockchainEnum.TURBOCHAIN:
       return settings.rpcUrls.turbochain
-    case NetworkReference.AURORA:
+    case BlockchainEnum.AURORA:
       return settings.rpcUrls.aurora
-    case NetworkReference.XRPLEDGER:
+    case BlockchainEnum.XRPLEDGER:
       return settings.rpcUrls.xrpledger
-    case NetworkReference.ZCASH:
+    case BlockchainEnum.ZCASH:
       return settings.rpcUrls.zcash
-    case NetworkReference.GNOSIS:
+    case BlockchainEnum.GNOSIS:
       return settings.rpcUrls.gnosis
-    case NetworkReference.BERACHAIN:
+    case BlockchainEnum.BERACHAIN:
       return settings.rpcUrls.berachain
-    case NetworkReference.TRON:
+    case BlockchainEnum.TRON:
       return settings.rpcUrls.tron
-    case NetworkReference.TUXAPPCHAIN:
+    case BlockchainEnum.TUXAPPCHAIN:
       return settings.rpcUrls.tuxappchain
-    case NetworkReference.VERTEX:
+    case BlockchainEnum.VERTEX:
       return settings.rpcUrls.vertex
-    case NetworkReference.OPTIMA:
+    case BlockchainEnum.OPTIMA:
       return settings.rpcUrls.optima
-    case NetworkReference.COINEASY:
+    case BlockchainEnum.COINEASY:
       return settings.rpcUrls.coineasy
-    case NetworkReference.POLYGON:
+    case BlockchainEnum.POLYGON:
       return settings.rpcUrls.polygon
-    case NetworkReference.BSC:
+    case BlockchainEnum.BSC:
       return settings.rpcUrls.bsc
-    case NetworkReference.HYPERLIQUID:
+    case BlockchainEnum.HYPERLIQUID:
       return settings.rpcUrls.hyperliquid
     default:
       network satisfies never
