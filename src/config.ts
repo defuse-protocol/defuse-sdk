@@ -21,7 +21,8 @@ const configsByEnvironment: Record<NearIntentsEnv, EnvConfig> = {
     poaBridgeBaseURL: "https://bridge.chaindefuser.com",
     solverRelayBaseURL: "https://solver-relay-v2.chaindefuser.com",
     managerConsoleBaseURL: "https://api-mng-console.chaindefuser.com/api/",
-    nearIntentsBaseURL: "https://app.near-intents.org/api/",
+    // nearIntentsBaseURL: "https://app.near-intents.org/api/",
+    nearIntentsBaseURL: "http://localhost:3000/api/",
   },
   stage: {
     contractID: "staging-intents.near",
