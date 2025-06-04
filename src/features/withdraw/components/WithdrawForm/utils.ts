@@ -1,5 +1,4 @@
 import { formatUnits } from "viem"
-import type { TokenUsdPriceData } from "../../../../hooks/useTokensUsdPrices"
 import type { TokenBalances as TokenBalancesRecord } from "../../../../services/defuseBalanceService"
 import { AuthMethod } from "../../../../types/authHandle"
 import type {
@@ -10,9 +9,9 @@ import type {
 import type { SwappableToken } from "../../../../types/swap"
 import { assert } from "../../../../utils/assert"
 import { isBaseToken } from "../../../../utils/token"
-import { compareAmounts } from "../../../../utils/tokenUtils"
+import { compareAmounts, minAmounts } from "../../../../utils/tokenUtils"
+import type { BalanceMapping } from "../../../machines/depositedBalanceMachine"
 import { allBlockchains } from "./constants"
-import type { TokenValueWithPrice } from "./types"
 
 export function chainTypeSatisfiesChainName(
   chainType: AuthMethod | undefined,
@@ -46,18 +45,42 @@ export function truncateUserAddress(hash: string) {
   return `${hash.slice(0, 6)}...${hash.slice(-4)}`
 }
 
-export const adjustTo1kUsd = (tokenValue: TokenValueWithPrice): number => {
+/**
+ * Converts a token amount to a human-readable number and scales it relative to a reference value (default: 1,000).
+ *
+ * This function is useful for formatting token values in a UI where large numbers
+ * should be compacted (e.g., into 'k' units for thousands).
+ *
+ */
+export const adjustToScale = (
+  tokenValue: TokenValue,
+  scaleTo = 1000
+): {
+  value: number
+  postfix: string
+} => {
   if (tokenValue.amount === 0n) {
-    return 0
+    return {
+      value: 0,
+      postfix: "",
+    }
   }
 
-  const rounded = Math.round(
-    (Number(formatUnits(tokenValue.amount, tokenValue.decimals)) *
-      tokenValue.price) /
-      1000 // 1k
+  const normalizedValue = Number(
+    formatUnits(tokenValue.amount, tokenValue.decimals)
   )
 
-  return rounded === 0 ? 1 : rounded
+  if (normalizedValue < scaleTo) {
+    return {
+      value: Math.round(normalizedValue),
+      postfix: "",
+    }
+  }
+
+  return {
+    value: Math.round(normalizedValue / scaleTo),
+    postfix: "k",
+  }
 }
 
 export const getAvailableBlockchains = (token: SwappableToken) => {
@@ -92,35 +115,6 @@ export const getAvailableBlockchains = (token: SwappableToken) => {
       )
 }
 
-export const shouldShowHotBalance = (
-  balances: Record<string, TokenValue>,
-  tokenInBalance?: TokenValue
-): boolean => {
-  const { amount: userBalance, decimals: userBalanceDecimals } =
-    tokenInBalance ?? { amount: 0n, decimals: 1 }
-  const userHasAnyBalance = userBalance > 0
-  if (!userHasAnyBalance) {
-    return false
-  }
-
-  let anyHotBalanceIsLessThanUserBalance = false
-  for (const address in balances) {
-    const balance = balances[address] as TokenValue
-
-    if (
-      compareAmounts(
-        { amount: userBalance, decimals: userBalanceDecimals },
-        { amount: BigInt(balance.amount), decimals: balance.decimals }
-      ) > 0
-    ) {
-      // we should show in case user's balance is MORE than any of the HOT chain balances
-      anyHotBalanceIsLessThanUserBalance = true
-    }
-  }
-
-  return anyHotBalanceIsLessThanUserBalance
-}
-
 export const getMinAmountToken = (
   token1: TokenValue | undefined,
   token2: TokenValue | undefined
@@ -145,9 +139,7 @@ export const getMinAmountToken = (
 
 export const getBlockchainSelectItems = (
   token: SwappableToken,
-  poaBalances: Record<string, TokenValue>,
-  nonPoaBalances: Record<string, TokenValue>,
-  tokensUsdPriceData?: TokenUsdPriceData
+  maxPossibleBalances: Record<string, TokenValue>
 ) => {
   const availableBlockchains = getAvailableBlockchains(token)
 
@@ -158,51 +150,20 @@ export const getBlockchainSelectItems = (
         const addressData = availableBlockchains[a.value]
         assert(addressData != null)
 
-        let hotBalance: TokenValueWithPrice | null = null
+        let hotBalance: TokenValue | null = null
         const defuseAssetId = addressData.defuseAssetId
-        const balance =
-          addressData.bridge === "poa"
-            ? getMinAmountToken(
-                // we choose min between poa hot balance and solver's hot balance
-                poaBalances[defuseAssetId],
-                nonPoaBalances[defuseAssetId]
-              )
-            : nonPoaBalances[defuseAssetId]
+        const balance = maxPossibleBalances[defuseAssetId]
 
-        const price = tokensUsdPriceData?.[defuseAssetId]?.price
-
-        if (balance != null && price != null) {
+        if (balance != null) {
           hotBalance = {
             amount: BigInt(balance.amount),
             decimals: balance.decimals,
-            price,
           }
         }
 
         return [a.value, { ...a, hotBalance }]
       })
   )
-}
-
-export const mergeBridgeBalances = (
-  poaBalances: Record<string, TokenValue>,
-  nonPoaBalances: Record<string, TokenValue>
-): Record<string, TokenValue> => {
-  const balances: Record<string, TokenValue> = { ...nonPoaBalances }
-
-  for (const address in poaBalances) {
-    const balance = balances[address]
-    const balance_ =
-      balance == null
-        ? poaBalances[address]
-        : getMinAmountToken(poaBalances[address], balances[address])
-
-    if (balance_ != null) {
-      balances[address] = balance_
-    }
-  }
-
-  return balances
 }
 
 export const mapDepositBalancesToDecimals = (
@@ -242,15 +203,6 @@ export const mapDepositBalancesToDecimals = (
   return tokenValueWithPrice
 }
 
-export const areAllTokenAddressesSame = (token: SwappableToken) => {
-  return (
-    !isBaseToken(token) &&
-    token.groupedTokens.every(
-      (t) => t.defuseAssetId === token.groupedTokens[0]?.defuseAssetId
-    )
-  )
-}
-
 export const getWithdrawButtonText = (
   noLiquidity: boolean,
   insufficientTokenInAmount: boolean
@@ -258,4 +210,160 @@ export const getWithdrawButtonText = (
   if (noLiquidity) return "No liquidity providers"
   if (insufficientTokenInAmount) return "Insufficient amount"
   return "Withdraw"
+}
+
+/**
+ * Removes duplicate tokens based on both `chainName` and `defuseAssetId`.
+ *
+ * Duplicate detection is done by checking if the combination of
+ * chain name and defuseAssetId has already been encountered.
+ */
+export const cleanUpDuplicateTokens = (
+  token: SwappableToken
+): BaseTokenInfo[] => {
+  const tokens = isBaseToken(token) ? [token] : token.groupedTokens
+
+  const seenChains = new Set<string>()
+  const seenAssetIds = new Set<string>()
+
+  const uniqueTokens: BaseTokenInfo[] = []
+
+  for (const t of tokens) {
+    const alreadySeen =
+      seenChains.has(t.chainName) || seenAssetIds.has(t.defuseAssetId)
+
+    if (alreadySeen) continue
+
+    seenChains.add(t.chainName)
+    seenAssetIds.add(t.defuseAssetId)
+    uniqueTokens.push(t)
+  }
+
+  return uniqueTokens
+}
+
+/**
+ * Maps a list of tokens to their user balances, filtered by available balance data.
+ *
+ * Each token is identified by its `defuseAssetId`. If the balance for a token
+ * is not present in `balancesData`, it will be excluded from the result.
+ */
+export const prepareAddressToUserBalance = (
+  cleanedTokens: BaseTokenInfo[],
+  balancesData: BalanceMapping
+): Record<string, TokenValue> => {
+  return cleanedTokens.reduce((acc: Record<string, TokenValue>, token) => {
+    const { defuseAssetId } = token
+    const balance = balancesData[defuseAssetId]
+    if (balance == null) {
+      return acc
+    }
+
+    acc[defuseAssetId] = {
+      amount: balance,
+      decimals: token.decimals,
+    }
+    return acc
+  }, {})
+}
+
+function getPossibleMinimums(possibleMins: TokenValue[]): bigint {
+  if (possibleMins.length > 1) {
+    let minToken = minAmounts(
+      possibleMins[0] as TokenValue,
+      possibleMins[1] as TokenValue
+    )
+
+    if (possibleMins.length > 2) {
+      minToken = minAmounts(minToken, possibleMins[2] as TokenValue)
+    }
+
+    return minToken.amount
+  }
+
+  return 0n
+}
+
+/**
+ * Computes the maximum amount of tokens that can be fast-withdrawn for each unique token
+ * in the swappable group, based on:
+ * - user's token balances,
+ * - available bridge liquidity,
+ * - POA balances.
+ *
+ * If the available fast withdrawal amount exceeds the user's own balance for at least one token,
+ * the function returns a full map of withdrawable amounts. Otherwise, it returns an empty object.
+ *
+ */
+export const getFastWithdrawals = (
+  token: SwappableToken,
+  balancesData: BalanceMapping,
+  poaBridgeBalances: Record<string, TokenValue>,
+  liquidityData?: Record<string, bigint> | null
+): Record<string, TokenValue> => {
+  const maxWithdrawals: Record<string, TokenValue> = {}
+  let shouldShowHotBalance = false
+  const cleanedTokens = cleanUpDuplicateTokens(token)
+  const addressToUserBalance = prepareAddressToUserBalance(
+    cleanedTokens,
+    balancesData
+  )
+
+  for (const tokenTo of cleanedTokens) {
+    const { defuseAssetId: defuseAssetIdTo, decimals: decimalsTo } = tokenTo
+    let min = 0n
+
+    for (const tokenFrom of cleanedTokens) {
+      const { defuseAssetId: defuseAssetIdFrom, decimals: decimalsFrom } =
+        tokenFrom
+
+      const onUserAmount = {
+        amount: addressToUserBalance[defuseAssetIdFrom]?.amount ?? 0n,
+        decimals: decimalsFrom,
+      }
+
+      const liquidity =
+        liquidityData?.[`${defuseAssetIdFrom}#${defuseAssetIdTo}`]
+      const canSwapAmount =
+        defuseAssetIdFrom === defuseAssetIdTo
+          ? onUserAmount.amount
+          : liquidity == null
+            ? undefined
+            : liquidity
+      const canSwap = {
+        amount: canSwapAmount,
+        decimals: decimalsTo,
+      }
+
+      const poaAmount = poaBridgeBalances[defuseAssetIdFrom]?.amount
+      const onPoa = {
+        amount: poaAmount == null ? undefined : poaAmount,
+        decimals: decimalsFrom,
+      }
+
+      const possibleMins: TokenValue[] = [onUserAmount, canSwap, onPoa].filter(
+        (tokenValue) => typeof tokenValue.amount === "bigint"
+      ) as TokenValue[]
+
+      min += getPossibleMinimums(possibleMins)
+    }
+
+    const maxPossibleOnDefuseAssetIdTo = {
+      amount: min,
+      decimals: decimalsTo,
+    }
+
+    maxWithdrawals[defuseAssetIdTo] = maxPossibleOnDefuseAssetIdTo
+
+    const onUserBalanceTo = addressToUserBalance[defuseAssetIdTo]
+    if (onUserBalanceTo != null) {
+      if (
+        compareAmounts(maxPossibleOnDefuseAssetIdTo, onUserBalanceTo) === -1
+      ) {
+        shouldShowHotBalance = true
+      }
+    }
+  }
+
+  return shouldShowHotBalance ? maxWithdrawals : {}
 }
