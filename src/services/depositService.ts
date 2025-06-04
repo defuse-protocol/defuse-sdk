@@ -760,14 +760,14 @@ export function getAvailableDepositRoutes(
   switch (chainTypeFromWallet) {
     case AuthMethod.Near:
       switch (network) {
-        /* allowed active and passive deposit */
+        /* allowed all */
         case BlockchainEnum.NEAR:
           return {
             activeDeposit: true,
             passiveDeposit: true,
           }
 
-        /* allowed passive deposit only */
+        /* allowed passive */
         case BlockchainEnum.ETHEREUM:
         case BlockchainEnum.BASE:
         case BlockchainEnum.ARBITRUM:
@@ -786,7 +786,7 @@ export function getAvailableDepositRoutes(
             passiveDeposit: true,
           }
 
-        /* not allowed active and passive deposit */
+        /* not-allowed all */
         case BlockchainEnum.TURBOCHAIN:
         case BlockchainEnum.TUXAPPCHAIN:
         case BlockchainEnum.VERTEX:
@@ -804,19 +804,7 @@ export function getAvailableDepositRoutes(
       }
     case AuthMethod.EVM:
       switch (network) {
-        /* allowed active deposit only */
-        case BlockchainEnum.TURBOCHAIN:
-        case BlockchainEnum.TUXAPPCHAIN:
-        case BlockchainEnum.VERTEX:
-        case BlockchainEnum.OPTIMA:
-        case BlockchainEnum.COINEASY:
-        case BlockchainEnum.AURORA:
-          return {
-            activeDeposit: true,
-            passiveDeposit: false,
-          }
-
-        /* allowed active and passive deposit */
+        /* allowed all */
         case BlockchainEnum.ETHEREUM:
         case BlockchainEnum.BASE:
         case BlockchainEnum.ARBITRUM:
@@ -829,7 +817,7 @@ export function getAvailableDepositRoutes(
             passiveDeposit: true,
           }
 
-        /* allowed passive deposit only */
+        /* allowed passive */
         case BlockchainEnum.NEAR:
         case BlockchainEnum.BITCOIN:
         case BlockchainEnum.SOLANA:
@@ -842,7 +830,19 @@ export function getAvailableDepositRoutes(
             passiveDeposit: true,
           }
 
-        /* not allowed active and passive deposit */
+        /* allowed active */
+        case BlockchainEnum.TURBOCHAIN:
+        case BlockchainEnum.TUXAPPCHAIN:
+        case BlockchainEnum.VERTEX:
+        case BlockchainEnum.OPTIMA:
+        case BlockchainEnum.COINEASY:
+        case BlockchainEnum.AURORA:
+          return {
+            activeDeposit: true,
+            passiveDeposit: false,
+          }
+
+        /* not-allowed all */
         case BlockchainEnum.HYPERLIQUID:
           return {
             activeDeposit: false,
@@ -854,7 +854,33 @@ export function getAvailableDepositRoutes(
       }
     case AuthMethod.Solana:
       switch (network) {
-        /* not allowed active and passive deposit */
+        /* allowed all */
+        case BlockchainEnum.SOLANA:
+          return {
+            activeDeposit: true,
+            passiveDeposit: true,
+          }
+
+        /* allowed passive */
+        case BlockchainEnum.ETHEREUM:
+        case BlockchainEnum.BASE:
+        case BlockchainEnum.ARBITRUM:
+        case BlockchainEnum.BITCOIN:
+        case BlockchainEnum.DOGECOIN:
+        case BlockchainEnum.XRPLEDGER:
+        case BlockchainEnum.ZCASH:
+        case BlockchainEnum.GNOSIS:
+        case BlockchainEnum.BERACHAIN:
+        case BlockchainEnum.TRON:
+        case BlockchainEnum.POLYGON:
+        case BlockchainEnum.BSC:
+        case BlockchainEnum.NEAR:
+          return {
+            activeDeposit: false,
+            passiveDeposit: true,
+          }
+
+        /* not-allowed all */
         case BlockchainEnum.TURBOCHAIN:
         case BlockchainEnum.TUXAPPCHAIN:
         case BlockchainEnum.VERTEX:
@@ -866,32 +892,6 @@ export function getAvailableDepositRoutes(
             activeDeposit: false,
             passiveDeposit: false,
           }
-
-        /* allowed passive deposit only */
-        case BlockchainEnum.ETHEREUM:
-        case BlockchainEnum.BASE:
-        case BlockchainEnum.ARBITRUM:
-        case BlockchainEnum.BITCOIN:
-        case BlockchainEnum.DOGECOIN:
-        case BlockchainEnum.XRPLEDGER:
-        case BlockchainEnum.ZCASH:
-        case BlockchainEnum.GNOSIS:
-        case BlockchainEnum.BERACHAIN:
-        case BlockchainEnum.TRON:
-        case BlockchainEnum.POLYGON:
-        case BlockchainEnum.BSC:
-        case BlockchainEnum.NEAR:
-          return {
-            activeDeposit: false,
-            passiveDeposit: true,
-          }
-
-        /* allowed active and passive deposit */
-        case BlockchainEnum.SOLANA:
-          return {
-            activeDeposit: true,
-            passiveDeposit: true,
-          }
         default:
           network satisfies never
           throw new Error("exhaustive check failed")
@@ -899,19 +899,7 @@ export function getAvailableDepositRoutes(
     case AuthMethod.WebAuthn:
     case AuthMethod.Ton:
       switch (network) {
-        /* not allowed active and passive deposit */
-        case BlockchainEnum.TURBOCHAIN:
-        case BlockchainEnum.TUXAPPCHAIN:
-        case BlockchainEnum.VERTEX:
-        case BlockchainEnum.OPTIMA:
-        case BlockchainEnum.COINEASY:
-        case BlockchainEnum.AURORA:
-          return {
-            activeDeposit: false,
-            passiveDeposit: false,
-          }
-
-        /* allowed passive deposit only */
+        /* allowed passive */
         case BlockchainEnum.ETHEREUM:
         case BlockchainEnum.BASE:
         case BlockchainEnum.ARBITRUM:
@@ -931,7 +919,13 @@ export function getAvailableDepositRoutes(
             passiveDeposit: true,
           }
 
-        /* not allowed active and passive deposit */
+        /* not-allowed all */
+        case BlockchainEnum.TURBOCHAIN:
+        case BlockchainEnum.TUXAPPCHAIN:
+        case BlockchainEnum.VERTEX:
+        case BlockchainEnum.OPTIMA:
+        case BlockchainEnum.COINEASY:
+        case BlockchainEnum.AURORA:
         case BlockchainEnum.HYPERLIQUID:
           return {
             activeDeposit: false,
