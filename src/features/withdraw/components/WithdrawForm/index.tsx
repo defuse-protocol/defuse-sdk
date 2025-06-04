@@ -33,6 +33,7 @@ import { IslandHeader } from "../../../../components/IslandHeader"
 import { Select } from "../../../../components/Select/Select"
 import { nearClient } from "../../../../constants/nearClient"
 import { logger } from "../../../../logger"
+import { useSolverLiquidityQuery } from "../../../../queries/solverLiquidityQuerires"
 import type {
   BaseTokenInfo,
   SupportedChainName,
@@ -60,7 +61,6 @@ import {
   ReceivedAmountAndFee,
 } from "./components"
 import type { allBlockchains } from "./constants"
-import { useLiquidityData } from "./hooks/useLiquidityData"
 import { useTokenBalances } from "./hooks/useTokenBalances"
 import {
   balancesSelector,
@@ -367,7 +367,7 @@ export const WithdrawForm = ({
   )
   const hasAnyBalance = tokenInBalance != null && tokenInBalance?.amount > 0
   const poaBridgeBalances = useTokenBalances(token, hasAnyBalance)
-  const liquidityData = useLiquidityData()
+  const { data: liquidityData } = useSolverLiquidityQuery()
 
   const maxWithdrawals = hasAnyBalance
     ? getFastWithdrawals(token, balancesData, poaBridgeBalances, liquidityData)
