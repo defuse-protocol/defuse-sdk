@@ -13,7 +13,10 @@ export function getBlockchainsOptions(): Record<
   BlockchainEnum,
   BlockchainOption
 > {
-  const options: Record<BlockchainEnum, BlockchainOption> = {
+  const options: Record<
+    Exclude<BlockchainEnum, BlockchainEnum.HYPERLIQUID>,
+    BlockchainOption
+  > = {
     [BlockchainEnum.NEAR]: {
       label: "Near",
       icon: (
@@ -240,7 +243,10 @@ export function getBlockchainsOptions(): Record<
 }
 
 function sortBlockchainOptionsByVolume(
-  options: Record<BlockchainEnum, BlockchainOption>
+  options: Record<
+    Exclude<BlockchainEnum, BlockchainEnum.HYPERLIQUID>,
+    BlockchainOption
+  >
 ): Record<BlockchainEnum, BlockchainOption> {
   const sortedEntries = Object.entries(options).sort(([, a], [, b]) => {
     const volTagA = a.tags?.find((tag) => tag.startsWith("vol:"))

@@ -22,6 +22,7 @@ export enum BlockchainEnum {
   OPTIMA = "eth:1313161569",
   COINEASY = "eth:1313161752",
   AURORA = "eth:1313161554",
+  HYPERLIQUID = "hyperliquid:999",
 }
 
 /**

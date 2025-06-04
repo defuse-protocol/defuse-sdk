@@ -28,6 +28,7 @@ export function validateAddress(
     case "berachain":
     case "polygon":
     case "bsc":
+    case "hyperliquid":
       // todo: Do we need to check checksum?
       return /^0x[a-fA-F0-9]{40}$/.test(address)
     case "bitcoin":
