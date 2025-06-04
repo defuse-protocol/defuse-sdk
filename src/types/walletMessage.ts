@@ -68,11 +68,42 @@ export type WebAuthnSignatureData = {
   signedData: WebAuthnMessage
 }
 
+// Message for TON wallets
+export type TonConnectMessage = {
+  message: { type: "text"; text: string }
+}
+
+export type TonConnectSignatureData = {
+  type: "TON_CONNECT"
+  signatureData: {
+    signature: string
+    address: string
+    timestamp: number
+    domain: string
+    payload:
+      | {
+          type: "text"
+          text: string
+        }
+      | {
+          type: "cell"
+          schema: string
+          cell: string
+        }
+      | {
+          type: "binary"
+          bytes: string
+        }
+  }
+  signedData: TonConnectMessage
+}
+
 export type WalletMessage = {
   ERC191: ERC191Message
   NEP413: NEP413Message
   SOLANA: SolanaMessage
   WEBAUTHN: WebAuthnMessage
+  TON_CONNECT: TonConnectMessage
 }
 
 export type WalletSignatureResult =
@@ -80,3 +111,4 @@ export type WalletSignatureResult =
   | NEP413SignatureData
   | SolanaSignatureData
   | WebAuthnSignatureData
+  | TonConnectSignatureData

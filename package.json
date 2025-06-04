@@ -1,6 +1,6 @@
 {
   "name": "@defuse-protocol/defuse-sdk",
-  "version": "1.0.0-beta.144",
+  "version": "1.0.0-beta.145",
   "author": "Defuse Protocol",
   "license": "MIT",
   "type": "module",
@@ -39,7 +39,7 @@
   "scripts": {
     "test": "vitest --passWithNoTests",
     "coverage": "vitest run --coverage",
-    "build": "rollup -c && tsc && copy:types",
+    "build": "rollup -c && tsc && yarn copy:types",
     "build:watch": "concurrently 'rollup -c -w' 'tsc -w' 'yarn copy:types'",
     "copy:types": "mkdir -p dist && rsync -avm --include='*/' --include='*.d.ts' --exclude='*' src/ dist/",
     "typecheck": "tsc --noEmit --emitDeclarationOnly false",

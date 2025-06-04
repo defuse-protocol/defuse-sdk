@@ -6,6 +6,7 @@ import type {
   AuthMethod,
 } from "../types/authHandle"
 import type { IntentsUserId } from "../types/intentsUserId"
+import { assert } from "./assert"
 import { parsePublicKey } from "./webAuthn"
 
 /**
@@ -66,6 +67,12 @@ export function authHandleToIntentsUserId(
       return webAuthnIdentifierToIntentsUserId(
         authHandle.identifier
       ) as IntentsUserId
+    }
+
+    case "ton": {
+      assert(authHandle.identifier.length === 64)
+      hex.decode(authHandle.identifier)
+      return authHandle.identifier.toLowerCase() as IntentsUserId
     }
 
     default:

@@ -278,6 +278,12 @@ export function makeSwapMessage({
       payload: payloadSerialized,
       parsedPayload: payload,
     },
+    TON_CONNECT: {
+      message: {
+        type: "text",
+        text: JSON.stringify(payload, null, 2),
+      },
+    },
   }
 }
 

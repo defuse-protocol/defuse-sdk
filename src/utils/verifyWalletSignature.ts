@@ -1,8 +1,12 @@
+import { secp256k1 } from "@noble/curves/secp256k1"
 import { base58 } from "@scure/base"
 import { sign } from "tweetnacl"
 import { verifyMessage as verifyMessageViem } from "viem"
 import type { WalletSignatureResult } from "../types/walletMessage"
 import { parsePublicKey, verifyAuthenticatorAssertion } from "./webAuthn"
+
+// No-op usage to prevent tree-shaking. sec256k1 is dynamically loaded by viem.
+const _noop = secp256k1.getPublicKey || null
 
 export async function verifyWalletSignature(
   signature: WalletSignatureResult,
@@ -35,6 +39,10 @@ export async function verifyWalletSignature(
         parsePublicKey(userAddress),
         signature.signedData.challenge
       )
+    case "TON_CONNECT":
+      // todo: implement https://github.com/tonkeeper/demo-dapp-with-wallet/blob/master/src/components/SignDataForm/verify.ts
+      return true
+
     default:
       signatureType satisfies never
       throw new Error("exhaustive check failed")
