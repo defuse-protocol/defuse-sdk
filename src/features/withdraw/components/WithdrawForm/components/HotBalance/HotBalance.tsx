@@ -1,19 +1,22 @@
 import type { FC } from "react"
-import type { TokenValueWithPrice } from "../../types"
-import { adjustTo1kUsd } from "../../utils"
+import type { TokenValue } from "../../../../../../types/base"
+import { adjustToScale } from "../../utils"
 
 interface HotBalanceProps {
-  hotBalance?: TokenValueWithPrice | null
+  symbol: string
+  hotBalance?: TokenValue | null
 }
 
-export const HotBalance: FC<HotBalanceProps> = ({ hotBalance }) => {
+export const HotBalance: FC<HotBalanceProps> = ({ symbol, hotBalance }) => {
   if (!hotBalance) {
     return null
   }
 
+  const adjusted = adjustToScale(hotBalance)
+
   return (
     <div className="text-gray-11 text-xs font-medium">
-      Fast withdrawal: ~${adjustTo1kUsd(hotBalance)}k
+      Fast withdrawal: {`${adjusted.value}${adjusted.postfix}`} {symbol}
     </div>
   )
 }

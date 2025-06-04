@@ -37,6 +37,7 @@ import { IslandHeader } from "../../../../components/IslandHeader"
 import { Select } from "../../../../components/Select/Select"
 import { nearClient } from "../../../../constants/nearClient"
 import { logger } from "../../../../logger"
+import { useSolverLiquidityQuery } from "../../../../queries/solverLiquidityQuerires"
 import type {
   BaseTokenInfo,
   SupportedChainName,
@@ -63,10 +64,10 @@ import {
   PreparationResult,
   ReceivedAmountAndFee,
 } from "./components"
-import { SolverId, type allBlockchains } from "./constants"
+import type { allBlockchains } from "./constants"
 import { useTokenBalances } from "./hooks/useTokenBalances"
-import { useDepositBalances } from "./hooks/useTransitBalances"
 import {
+  balancesSelector,
   isLiquidityUnavailableSelector,
   isUnsufficientTokenInAmount,
   totalAmountReceivedSelector,
@@ -75,9 +76,8 @@ import {
 import {
   chainTypeSatisfiesChainName,
   getBlockchainSelectItems,
+  getFastWithdrawals,
   getWithdrawButtonText,
-  mergeBridgeBalances,
-  shouldShowHotBalance,
   truncateUserAddress,
 } from "./utils"
 
@@ -117,6 +117,7 @@ export const WithdrawForm = ({
     insufficientTokenInAmount,
     totalAmountReceived,
     withdtrawalFee,
+    balances: balancesData,
   } = WithdrawUIMachineContext.useSelector((state) => {
     return {
       state,
@@ -130,6 +131,7 @@ export const WithdrawForm = ({
       insufficientTokenInAmount: isUnsufficientTokenInAmount(state),
       totalAmountReceived: totalAmountReceivedSelector(state),
       withdtrawalFee: withdtrawalFeeSelector(state),
+      balances: balancesSelector(state),
     }
   })
   const publicKeyVerifierRef = useSelector(swapRef, (state) => {
@@ -367,24 +369,16 @@ export const WithdrawForm = ({
     token,
     tokensUsdPriceData
   )
-
   const hasAnyBalance = tokenInBalance != null && tokenInBalance?.amount > 0
-
   const poaBridgeBalances = useTokenBalances(token, hasAnyBalance)
-  const nonPoaBridgeBalances = useDepositBalances(
-    { userId: SolverId, token },
-    hasAnyBalance
-  )
+  const { data: liquidityData } = useSolverLiquidityQuery()
 
-  const blockchainSelectItems = getBlockchainSelectItems(
-    token,
-    poaBridgeBalances,
-    nonPoaBridgeBalances,
-    tokensUsdPriceData
-  )
+  const maxWithdrawals = hasAnyBalance
+    ? getFastWithdrawals(token, balancesData, poaBridgeBalances, liquidityData)
+    : {}
 
-  const balances = mergeBridgeBalances(poaBridgeBalances, nonPoaBridgeBalances)
-  const showHotBalances = shouldShowHotBalance(balances, tokenInBalance)
+  const blockchainSelectItems = getBlockchainSelectItems(token, maxWithdrawals)
+  const showHotBalances = Object.keys(maxWithdrawals).length > 0
 
   const increaseAmount = (tokenValue: TokenValue) => {
     if (parsedAmountIn == null) return
@@ -533,6 +527,7 @@ export const WithdrawForm = ({
                       showHotBalances
                         ? (address: string) => (
                             <HotBalance
+                              symbol={tokenOut.symbol}
                               hotBalance={
                                 blockchainSelectItems[
                                   reverseAssetNetworkAdapter[
@@ -552,8 +547,7 @@ export const WithdrawForm = ({
             {tokenOut.bridge === "poa" && showHotBalances && (
               <LongWithdrawWarning
                 amountIn={parsedAmountIn}
-                token={tokenOut}
-                tokensUsdPriceData={tokensUsdPriceData}
+                symbol={tokenOut.symbol}
                 hotBalance={
                   blockchainSelectItems[tokenOut.chainName]?.hotBalance
                 }
