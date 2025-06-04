@@ -21,7 +21,7 @@ import { SelectTriggerLike } from "../../../../components/Select/SelectTriggerLi
 import { Separator } from "../../../../components/Separator"
 import { getPOABridgeInfo } from "../../../../features/machines/poaBridgeInfoActor"
 import { useModalStore } from "../../../../providers/ModalStoreProvider"
-import type { BlockchainEnum } from "../../../../sdk/poaBridge/constants/blockchains"
+import type { NetworkReference } from "../../../../sdk/poaBridge/constants/blockchains"
 import { getAvailableDepositRoutes } from "../../../../services/depositService"
 import { ModalType } from "../../../../stores/modalStore"
 import type { AuthMethod } from "../../../../types/authHandle"
@@ -39,7 +39,7 @@ import { DepositMethodSelector } from "./DepositMethodSelector"
 import { PassiveDeposit } from "./PassiveDeposit"
 
 export type DepositFormValues = {
-  network: BlockchainEnum | null
+  network: NetworkReference | null
   amount: string
   token: BaseTokenInfo | UnifiedTokenInfo | null
   userAddress: string | null

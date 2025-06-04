@@ -7,7 +7,7 @@ import { BlockMultiBalances } from "../../../../components/Block/BlockMultiBalan
 import { ButtonCustom } from "../../../../components/Button/ButtonCustom"
 import { TooltipInfo } from "../../../../components/TooltipInfo"
 import { useTokensUsdPrices } from "../../../../hooks/useTokensUsdPrices"
-import type { BlockchainEnum } from "../../../../sdk/poaBridge/constants/blockchains"
+import type { NetworkReference } from "../../../../sdk/poaBridge/constants/blockchains"
 import { RESERVED_NEAR_BALANCE } from "../../../../services/blockchainBalanceService"
 import type { BaseTokenInfo } from "../../../../types/base"
 import { reverseAssetNetworkAdapter } from "../../../../utils/adapters"
@@ -25,7 +25,7 @@ import {
 } from "./renderDepositHint"
 
 export type ActiveDepositProps = {
-  network: BlockchainEnum
+  network: NetworkReference
   token: BaseTokenInfo
   minDepositAmount: bigint | null
 }
@@ -231,7 +231,7 @@ function Balance({
 function renderDepositButtonText(
   isAmountEmpty: boolean,
   isBalanceInsufficient: boolean,
-  network: BlockchainEnum | null,
+  network: NetworkReference | null,
   token: BaseTokenInfo | null,
   minDepositAmount: bigint | null,
   isDepositAmountHighEnough: boolean,
@@ -259,7 +259,7 @@ function isInsufficientBalance(
   formAmount: string,
   balance: bigint,
   derivedToken: BaseTokenInfo,
-  network: BlockchainEnum | null
+  network: NetworkReference | null
 ): boolean | null {
   if (!network) {
     return null

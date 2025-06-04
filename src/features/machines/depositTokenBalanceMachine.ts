@@ -1,7 +1,7 @@
 import type { Address } from "viem"
 import { assign, fromPromise, setup } from "xstate"
 import { logger } from "../../logger"
-import { BlockchainEnum } from "../../sdk/poaBridge/constants/blockchains"
+import { NetworkReference } from "../../sdk/poaBridge/constants/blockchains"
 import {
   getEvmErc20Balance,
   getEvmNativeBalance,
@@ -44,7 +44,7 @@ export const backgroundBalanceActor = fromPromise(
 
     const networkToSolverFormat = assetNetworkAdapter[blockchain]
     switch (networkToSolverFormat) {
-      case BlockchainEnum.NEAR: {
+      case NetworkReference.NEAR: {
         const address = isFungibleToken(derivedToken)
           ? derivedToken.address
           : null
@@ -79,19 +79,19 @@ export const backgroundBalanceActor = fromPromise(
         result.nearBalance = nativeBalance
         break
       }
-      case BlockchainEnum.ETHEREUM:
-      case BlockchainEnum.BASE:
-      case BlockchainEnum.ARBITRUM:
-      case BlockchainEnum.TURBOCHAIN:
-      case BlockchainEnum.TUXAPPCHAIN:
-      case BlockchainEnum.VERTEX:
-      case BlockchainEnum.OPTIMA:
-      case BlockchainEnum.COINEASY:
-      case BlockchainEnum.AURORA:
-      case BlockchainEnum.GNOSIS:
-      case BlockchainEnum.BERACHAIN:
-      case BlockchainEnum.POLYGON:
-      case BlockchainEnum.BSC: {
+      case NetworkReference.ETHEREUM:
+      case NetworkReference.BASE:
+      case NetworkReference.ARBITRUM:
+      case NetworkReference.TURBOCHAIN:
+      case NetworkReference.TUXAPPCHAIN:
+      case NetworkReference.VERTEX:
+      case NetworkReference.OPTIMA:
+      case NetworkReference.COINEASY:
+      case NetworkReference.AURORA:
+      case NetworkReference.GNOSIS:
+      case NetworkReference.BERACHAIN:
+      case NetworkReference.POLYGON:
+      case NetworkReference.BSC: {
         if (isNativeToken(derivedToken)) {
           const balance = await getEvmNativeBalance({
             userAddress: userAddress as Address,
@@ -114,7 +114,7 @@ export const backgroundBalanceActor = fromPromise(
         result.balance = balance
         break
       }
-      case BlockchainEnum.SOLANA: {
+      case NetworkReference.SOLANA: {
         if (isNativeToken(derivedToken)) {
           const balance = await getSolanaNativeBalance({
             userAddress: userAddress,
@@ -139,12 +139,12 @@ export const backgroundBalanceActor = fromPromise(
         break
       }
       // Active deposits through Bitcoin and other blockchains are not supported, so we don't need to check balances
-      case BlockchainEnum.BITCOIN:
-      case BlockchainEnum.DOGECOIN:
-      case BlockchainEnum.XRPLEDGER:
-      case BlockchainEnum.ZCASH:
-      case BlockchainEnum.TRON:
-      case BlockchainEnum.HYPERLIQUID:
+      case NetworkReference.BITCOIN:
+      case NetworkReference.DOGECOIN:
+      case NetworkReference.XRPLEDGER:
+      case NetworkReference.ZCASH:
+      case NetworkReference.TRON:
+      case NetworkReference.HYPERLIQUID:
         break
       default:
         networkToSolverFormat satisfies never

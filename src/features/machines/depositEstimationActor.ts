@@ -5,7 +5,7 @@ import {
 import { getEVMChainId } from "src/utils/evmChainId"
 import type { Address } from "viem"
 import { assign, fromPromise, setup } from "xstate"
-import { BlockchainEnum } from "../../sdk/poaBridge/constants/blockchains"
+import { NetworkReference } from "../../sdk/poaBridge/constants/blockchains"
 import {
   estimateEVMTransferCost,
   estimateSolanaTransferCost,
@@ -37,26 +37,26 @@ export const depositEstimateMaxValueActor = fromPromise(
   }): Promise<bigint> => {
     const networkToSolverFormat = assetNetworkAdapter[blockchain]
     switch (networkToSolverFormat) {
-      case BlockchainEnum.NEAR:
+      case NetworkReference.NEAR:
         // Max value for NEAR is the sum of the selected token balance (wrap.near) and the NEAR native balance
         if (isFungibleToken(token) && token.address === "wrap.near") {
           // nearBalance is always null for passive deposits from non-NEAR wallets
           return nearBalance ?? 0n + balance
         }
         return balance
-      case BlockchainEnum.ETHEREUM:
-      case BlockchainEnum.BASE:
-      case BlockchainEnum.ARBITRUM:
-      case BlockchainEnum.TURBOCHAIN:
-      case BlockchainEnum.TUXAPPCHAIN:
-      case BlockchainEnum.VERTEX:
-      case BlockchainEnum.OPTIMA:
-      case BlockchainEnum.COINEASY:
-      case BlockchainEnum.AURORA:
-      case BlockchainEnum.GNOSIS:
-      case BlockchainEnum.BERACHAIN:
-      case BlockchainEnum.POLYGON:
-      case BlockchainEnum.BSC: {
+      case NetworkReference.ETHEREUM:
+      case NetworkReference.BASE:
+      case NetworkReference.ARBITRUM:
+      case NetworkReference.TURBOCHAIN:
+      case NetworkReference.TUXAPPCHAIN:
+      case NetworkReference.VERTEX:
+      case NetworkReference.OPTIMA:
+      case NetworkReference.COINEASY:
+      case NetworkReference.AURORA:
+      case NetworkReference.GNOSIS:
+      case NetworkReference.BERACHAIN:
+      case NetworkReference.POLYGON:
+      case NetworkReference.BSC: {
         if (
           !validateAddress(userAddress, blockchain) ||
           generateAddress == null
@@ -92,7 +92,7 @@ export const depositEstimateMaxValueActor = fromPromise(
         }
         return balance
       }
-      case BlockchainEnum.SOLANA: {
+      case NetworkReference.SOLANA: {
         const fee = estimateSolanaTransferCost()
         if (balance < fee) {
           return 0n
@@ -100,12 +100,12 @@ export const depositEstimateMaxValueActor = fromPromise(
         return balance - fee
       }
       // For next blockchains - active deposits are not supported, so no network fees
-      case BlockchainEnum.BITCOIN:
-      case BlockchainEnum.DOGECOIN:
-      case BlockchainEnum.XRPLEDGER:
-      case BlockchainEnum.ZCASH:
-      case BlockchainEnum.TRON:
-      case BlockchainEnum.HYPERLIQUID:
+      case NetworkReference.BITCOIN:
+      case NetworkReference.DOGECOIN:
+      case NetworkReference.XRPLEDGER:
+      case NetworkReference.ZCASH:
+      case NetworkReference.TRON:
+      case NetworkReference.HYPERLIQUID:
         return 0n
       default:
         networkToSolverFormat satisfies never

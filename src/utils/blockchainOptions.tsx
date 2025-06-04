@@ -1,23 +1,23 @@
 import type { ReactNode } from "react"
 import { NetworkIcon } from "src/components/Network/NetworkIcon"
-import { BlockchainEnum } from "src/sdk/poaBridge/constants/blockchains"
+import { NetworkReference } from "src/sdk/poaBridge/constants/blockchains"
 
 type BlockchainOption = {
   label: string
   icon: ReactNode
-  value: BlockchainEnum
+  value: NetworkReference
   tags?: string[]
 }
 
 export function getBlockchainsOptions(): Record<
-  BlockchainEnum,
+  NetworkReference,
   BlockchainOption
 > {
   const options: Record<
-    Exclude<BlockchainEnum, BlockchainEnum.HYPERLIQUID>,
+    Exclude<NetworkReference, typeof NetworkReference.HYPERLIQUID>,
     BlockchainOption
   > = {
-    [BlockchainEnum.NEAR]: {
+    [NetworkReference.NEAR]: {
       label: "Near",
       icon: (
         <NetworkIcon
@@ -25,10 +25,10 @@ export function getBlockchainsOptions(): Record<
           chainName="near"
         />
       ),
-      value: BlockchainEnum.NEAR,
+      value: NetworkReference.NEAR,
       tags: ["vol:4"],
     },
-    [BlockchainEnum.ETHEREUM]: {
+    [NetworkReference.ETHEREUM]: {
       label: "Ethereum",
       icon: (
         <NetworkIcon
@@ -36,10 +36,10 @@ export function getBlockchainsOptions(): Record<
           chainName="eth"
         />
       ),
-      value: BlockchainEnum.ETHEREUM,
+      value: NetworkReference.ETHEREUM,
       tags: ["vol:6"],
     },
-    [BlockchainEnum.BASE]: {
+    [NetworkReference.BASE]: {
       label: "Base",
       icon: (
         <NetworkIcon
@@ -47,10 +47,10 @@ export function getBlockchainsOptions(): Record<
           chainName="base"
         />
       ),
-      value: BlockchainEnum.BASE,
+      value: NetworkReference.BASE,
       tags: ["vol:9"],
     },
-    [BlockchainEnum.ARBITRUM]: {
+    [NetworkReference.ARBITRUM]: {
       label: "Arbitrum",
       icon: (
         <NetworkIcon
@@ -58,10 +58,10 @@ export function getBlockchainsOptions(): Record<
           chainName="arbitrum"
         />
       ),
-      value: BlockchainEnum.ARBITRUM,
+      value: NetworkReference.ARBITRUM,
       tags: ["vol:10"],
     },
-    [BlockchainEnum.BITCOIN]: {
+    [NetworkReference.BITCOIN]: {
       label: "Bitcoin",
       icon: (
         <NetworkIcon
@@ -69,10 +69,10 @@ export function getBlockchainsOptions(): Record<
           chainName="bitcoin"
         />
       ),
-      value: BlockchainEnum.BITCOIN,
+      value: NetworkReference.BITCOIN,
       tags: ["vol:8"],
     },
-    [BlockchainEnum.SOLANA]: {
+    [NetworkReference.SOLANA]: {
       label: "Solana",
       icon: (
         <NetworkIcon
@@ -80,10 +80,10 @@ export function getBlockchainsOptions(): Record<
           chainName="solana"
         />
       ),
-      value: BlockchainEnum.SOLANA,
+      value: NetworkReference.SOLANA,
       tags: ["vol:3"],
     },
-    [BlockchainEnum.DOGECOIN]: {
+    [NetworkReference.DOGECOIN]: {
       label: "Dogecoin",
       icon: (
         <NetworkIcon
@@ -91,10 +91,10 @@ export function getBlockchainsOptions(): Record<
           chainName="dogecoin"
         />
       ),
-      value: BlockchainEnum.DOGECOIN,
+      value: NetworkReference.DOGECOIN,
       tags: ["vol:7"],
     },
-    [BlockchainEnum.TURBOCHAIN]: {
+    [NetworkReference.TURBOCHAIN]: {
       label: "TurboChain",
       icon: (
         <NetworkIcon
@@ -102,10 +102,10 @@ export function getBlockchainsOptions(): Record<
           chainName="turbochain"
         />
       ),
-      value: BlockchainEnum.TURBOCHAIN,
+      value: NetworkReference.TURBOCHAIN,
       tags: ["vol:102"],
     },
-    [BlockchainEnum.AURORA]: {
+    [NetworkReference.AURORA]: {
       label: "Aurora",
       icon: (
         <NetworkIcon
@@ -113,10 +113,10 @@ export function getBlockchainsOptions(): Record<
           chainName="aurora"
         />
       ),
-      value: BlockchainEnum.AURORA,
+      value: NetworkReference.AURORA,
       tags: ["vol:101"],
     },
-    [BlockchainEnum.XRPLEDGER]: {
+    [NetworkReference.XRPLEDGER]: {
       label: "XRP Ledger",
       icon: (
         <NetworkIcon
@@ -124,10 +124,10 @@ export function getBlockchainsOptions(): Record<
           chainName="XRP Ledger"
         />
       ),
-      value: BlockchainEnum.XRPLEDGER,
+      value: NetworkReference.XRPLEDGER,
       tags: ["vol:10"],
     },
-    [BlockchainEnum.ZCASH]: {
+    [NetworkReference.ZCASH]: {
       label: "Zcash",
       icon: (
         <NetworkIcon
@@ -135,10 +135,10 @@ export function getBlockchainsOptions(): Record<
           chainName="zcash"
         />
       ),
-      value: BlockchainEnum.ZCASH,
+      value: NetworkReference.ZCASH,
       tags: ["vol:1"],
     },
-    [BlockchainEnum.GNOSIS]: {
+    [NetworkReference.GNOSIS]: {
       label: "Gnosis",
       icon: (
         <NetworkIcon
@@ -146,10 +146,10 @@ export function getBlockchainsOptions(): Record<
           chainName="Gnosis"
         />
       ),
-      value: BlockchainEnum.GNOSIS,
+      value: NetworkReference.GNOSIS,
       tags: ["vol:5"],
     },
-    [BlockchainEnum.BERACHAIN]: {
+    [NetworkReference.BERACHAIN]: {
       label: "BeraChain",
       icon: (
         <NetworkIcon
@@ -157,10 +157,10 @@ export function getBlockchainsOptions(): Record<
           chainName="BeraChain"
         />
       ),
-      value: BlockchainEnum.BERACHAIN,
+      value: NetworkReference.BERACHAIN,
       tags: ["vol:11"],
     },
-    [BlockchainEnum.TRON]: {
+    [NetworkReference.TRON]: {
       label: "Tron",
       icon: (
         <NetworkIcon
@@ -168,10 +168,10 @@ export function getBlockchainsOptions(): Record<
           chainName="Tron"
         />
       ),
-      value: BlockchainEnum.TRON,
+      value: NetworkReference.TRON,
       tags: ["vol:2"],
     },
-    [BlockchainEnum.TUXAPPCHAIN]: {
+    [NetworkReference.TUXAPPCHAIN]: {
       label: "TuxaChain",
       icon: (
         <NetworkIcon
@@ -179,10 +179,10 @@ export function getBlockchainsOptions(): Record<
           chainName="tuxappchain"
         />
       ),
-      value: BlockchainEnum.TUXAPPCHAIN,
+      value: NetworkReference.TUXAPPCHAIN,
       tags: ["vol:103"],
     },
-    [BlockchainEnum.VERTEX]: {
+    [NetworkReference.VERTEX]: {
       label: "Vertex",
       icon: (
         <NetworkIcon
@@ -190,10 +190,10 @@ export function getBlockchainsOptions(): Record<
           chainName="vertex"
         />
       ),
-      value: BlockchainEnum.VERTEX,
+      value: NetworkReference.VERTEX,
       tags: ["vol:104"],
     },
-    [BlockchainEnum.OPTIMA]: {
+    [NetworkReference.OPTIMA]: {
       label: "Optima",
       icon: (
         <NetworkIcon
@@ -201,10 +201,10 @@ export function getBlockchainsOptions(): Record<
           chainName="optima"
         />
       ),
-      value: BlockchainEnum.OPTIMA,
+      value: NetworkReference.OPTIMA,
       tags: ["vol:105"],
     },
-    [BlockchainEnum.COINEASY]: {
+    [NetworkReference.COINEASY]: {
       label: "CoinEasy",
       icon: (
         <NetworkIcon
@@ -212,10 +212,10 @@ export function getBlockchainsOptions(): Record<
           chainName="coineasy"
         />
       ),
-      value: BlockchainEnum.COINEASY,
+      value: NetworkReference.COINEASY,
       tags: ["vol:106"],
     },
-    [BlockchainEnum.POLYGON]: {
+    [NetworkReference.POLYGON]: {
       label: "Polygon",
       icon: (
         <NetworkIcon
@@ -223,10 +223,10 @@ export function getBlockchainsOptions(): Record<
           chainName="Polygon"
         />
       ),
-      value: BlockchainEnum.POLYGON,
+      value: NetworkReference.POLYGON,
       tags: [],
     },
-    [BlockchainEnum.BSC]: {
+    [NetworkReference.BSC]: {
       label: "Binance Smart Chain",
       icon: (
         <NetworkIcon
@@ -234,7 +234,7 @@ export function getBlockchainsOptions(): Record<
           chainName="Binance Smart Chain"
         />
       ),
-      value: BlockchainEnum.BSC,
+      value: NetworkReference.BSC,
       tags: [],
     },
   }
@@ -244,10 +244,10 @@ export function getBlockchainsOptions(): Record<
 
 function sortBlockchainOptionsByVolume(
   options: Record<
-    Exclude<BlockchainEnum, BlockchainEnum.HYPERLIQUID>,
+    Exclude<NetworkReference, typeof NetworkReference.HYPERLIQUID>,
     BlockchainOption
   >
-): Record<BlockchainEnum, BlockchainOption> {
+): Record<NetworkReference, BlockchainOption> {
   const sortedEntries = Object.entries(options).sort(([, a], [, b]) => {
     const volTagA = a.tags?.find((tag) => tag.startsWith("vol:"))
     const volTagB = b.tags?.find((tag) => tag.startsWith("vol:"))
@@ -259,7 +259,7 @@ function sortBlockchainOptionsByVolume(
   })
 
   return Object.fromEntries(sortedEntries) as Record<
-    BlockchainEnum,
+    NetworkReference,
     BlockchainOption
   >
 }
