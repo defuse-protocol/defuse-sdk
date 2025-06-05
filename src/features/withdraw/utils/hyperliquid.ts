@@ -3,14 +3,7 @@ import type { BaseTokenInfo } from "src/types"
 
 /**
  * Resolves the correct destination network for token withdrawals from Hyperliquid.
- *
- * This function handles the special case where tokens on Hyperliquid need to be
- * withdrawn to their native networks.
- *
- * Example:
- * - Bitcoin (BTC) tokens must be withdrawn to the Bitcoin network
- * - Solana (SOL) tokens must be withdrawn to the Solana network
- * - USDC tokens must be withdrawn to Arbitrum
+ * Tokens on Hyperliquid must be withdrawn to their native blockchain networks.
  */
 export function getHyperliquidSrcChain(
   tokenIn: BaseTokenInfo
