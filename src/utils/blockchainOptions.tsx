@@ -234,6 +234,17 @@ export function getBlockchainsOptions(): Record<
       value: BlockchainEnum.BSC,
       tags: [],
     },
+    [BlockchainEnum.HYPERLIQUID]: {
+      label: "Hyperliquid",
+      icon: (
+        <NetworkIcon
+          chainIcon="/static/icons/network/hyperliquid.svg"
+          chainName="Hyperliquid"
+        />
+      ),
+      value: BlockchainEnum.HYPERLIQUID,
+      tags: [],
+    },
   }
 
   return sortBlockchainOptionsByVolume(options)

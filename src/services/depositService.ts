@@ -760,11 +760,14 @@ export function getAvailableDepositRoutes(
   switch (chainTypeFromWallet) {
     case AuthMethod.Near:
       switch (network) {
+        /* allowed all */
         case BlockchainEnum.NEAR:
           return {
             activeDeposit: true,
             passiveDeposit: true,
           }
+
+        /* allowed passive */
         case BlockchainEnum.ETHEREUM:
         case BlockchainEnum.BASE:
         case BlockchainEnum.ARBITRUM:
@@ -782,12 +785,15 @@ export function getAvailableDepositRoutes(
             activeDeposit: false,
             passiveDeposit: true,
           }
+
+        /* not-allowed all */
         case BlockchainEnum.TURBOCHAIN:
         case BlockchainEnum.TUXAPPCHAIN:
         case BlockchainEnum.VERTEX:
         case BlockchainEnum.OPTIMA:
         case BlockchainEnum.COINEASY:
         case BlockchainEnum.AURORA:
+        case BlockchainEnum.HYPERLIQUID:
           return {
             activeDeposit: false,
             passiveDeposit: false,
@@ -798,21 +804,7 @@ export function getAvailableDepositRoutes(
       }
     case AuthMethod.EVM:
       switch (network) {
-        case BlockchainEnum.NEAR:
-          return {
-            activeDeposit: false,
-            passiveDeposit: true,
-          }
-        case BlockchainEnum.TURBOCHAIN:
-        case BlockchainEnum.TUXAPPCHAIN:
-        case BlockchainEnum.VERTEX:
-        case BlockchainEnum.OPTIMA:
-        case BlockchainEnum.COINEASY:
-        case BlockchainEnum.AURORA:
-          return {
-            activeDeposit: true,
-            passiveDeposit: false,
-          }
+        /* allowed all */
         case BlockchainEnum.ETHEREUM:
         case BlockchainEnum.BASE:
         case BlockchainEnum.ARBITRUM:
@@ -824,6 +816,9 @@ export function getAvailableDepositRoutes(
             activeDeposit: true,
             passiveDeposit: true,
           }
+
+        /* allowed passive */
+        case BlockchainEnum.NEAR:
         case BlockchainEnum.BITCOIN:
         case BlockchainEnum.SOLANA:
         case BlockchainEnum.DOGECOIN:
@@ -833,6 +828,25 @@ export function getAvailableDepositRoutes(
           return {
             activeDeposit: false,
             passiveDeposit: true,
+          }
+
+        /* allowed active */
+        case BlockchainEnum.TURBOCHAIN:
+        case BlockchainEnum.TUXAPPCHAIN:
+        case BlockchainEnum.VERTEX:
+        case BlockchainEnum.OPTIMA:
+        case BlockchainEnum.COINEASY:
+        case BlockchainEnum.AURORA:
+          return {
+            activeDeposit: true,
+            passiveDeposit: false,
+          }
+
+        /* not-allowed all */
+        case BlockchainEnum.HYPERLIQUID:
+          return {
+            activeDeposit: false,
+            passiveDeposit: false,
           }
         default:
           network satisfies never
@@ -840,21 +854,14 @@ export function getAvailableDepositRoutes(
       }
     case AuthMethod.Solana:
       switch (network) {
-        case BlockchainEnum.NEAR:
+        /* allowed all */
+        case BlockchainEnum.SOLANA:
           return {
-            activeDeposit: false,
+            activeDeposit: true,
             passiveDeposit: true,
           }
-        case BlockchainEnum.TURBOCHAIN:
-        case BlockchainEnum.TUXAPPCHAIN:
-        case BlockchainEnum.VERTEX:
-        case BlockchainEnum.OPTIMA:
-        case BlockchainEnum.COINEASY:
-        case BlockchainEnum.AURORA:
-          return {
-            activeDeposit: false,
-            passiveDeposit: false,
-          }
+
+        /* allowed passive */
         case BlockchainEnum.ETHEREUM:
         case BlockchainEnum.BASE:
         case BlockchainEnum.ARBITRUM:
@@ -867,14 +874,23 @@ export function getAvailableDepositRoutes(
         case BlockchainEnum.TRON:
         case BlockchainEnum.POLYGON:
         case BlockchainEnum.BSC:
+        case BlockchainEnum.NEAR:
           return {
             activeDeposit: false,
             passiveDeposit: true,
           }
-        case BlockchainEnum.SOLANA:
+
+        /* not-allowed all */
+        case BlockchainEnum.TURBOCHAIN:
+        case BlockchainEnum.TUXAPPCHAIN:
+        case BlockchainEnum.VERTEX:
+        case BlockchainEnum.OPTIMA:
+        case BlockchainEnum.COINEASY:
+        case BlockchainEnum.AURORA:
+        case BlockchainEnum.HYPERLIQUID:
           return {
-            activeDeposit: true,
-            passiveDeposit: true,
+            activeDeposit: false,
+            passiveDeposit: false,
           }
         default:
           network satisfies never
@@ -883,21 +899,7 @@ export function getAvailableDepositRoutes(
     case AuthMethod.WebAuthn:
     case AuthMethod.Ton:
       switch (network) {
-        case BlockchainEnum.NEAR:
-          return {
-            activeDeposit: false,
-            passiveDeposit: true,
-          }
-        case BlockchainEnum.TURBOCHAIN:
-        case BlockchainEnum.TUXAPPCHAIN:
-        case BlockchainEnum.VERTEX:
-        case BlockchainEnum.OPTIMA:
-        case BlockchainEnum.COINEASY:
-        case BlockchainEnum.AURORA:
-          return {
-            activeDeposit: false,
-            passiveDeposit: false,
-          }
+        /* allowed passive */
         case BlockchainEnum.ETHEREUM:
         case BlockchainEnum.BASE:
         case BlockchainEnum.ARBITRUM:
@@ -911,9 +913,23 @@ export function getAvailableDepositRoutes(
         case BlockchainEnum.TRON:
         case BlockchainEnum.POLYGON:
         case BlockchainEnum.BSC:
+        case BlockchainEnum.NEAR:
           return {
             activeDeposit: false,
             passiveDeposit: true,
+          }
+
+        /* not-allowed all */
+        case BlockchainEnum.TURBOCHAIN:
+        case BlockchainEnum.TUXAPPCHAIN:
+        case BlockchainEnum.VERTEX:
+        case BlockchainEnum.OPTIMA:
+        case BlockchainEnum.COINEASY:
+        case BlockchainEnum.AURORA:
+        case BlockchainEnum.HYPERLIQUID:
+          return {
+            activeDeposit: false,
+            passiveDeposit: false,
           }
         default:
           network satisfies never
@@ -968,6 +984,8 @@ export function getWalletRpcUrl(network: BlockchainEnum): string {
       return settings.rpcUrls.polygon
     case BlockchainEnum.BSC:
       return settings.rpcUrls.bsc
+    case BlockchainEnum.HYPERLIQUID:
+      return settings.rpcUrls.hyperliquid
     default:
       network satisfies never
       throw new Error("exhaustive check failed")

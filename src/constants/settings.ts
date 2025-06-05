@@ -46,5 +46,6 @@ export const settings: Settings = {
     tron: "",
     polygon: "https://polygon-rpc.com",
     bsc: "https://bsc-dataseed.bnbchain.org",
+    hyperliquid: "https://rpc.hyperliquid.xyz/evm",
   },
 }
