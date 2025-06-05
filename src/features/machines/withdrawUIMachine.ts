@@ -509,7 +509,15 @@ export const withdrawUIMachine = setup({
               target: "idle",
               actions: {
                 type: "setPreparationOutput",
-                params: ({ event }) => event.output,
+                params: ({ event }) => {
+                  if (
+                    event.output.tag === "ok" &&
+                    event.output.value.substitutedRecipient !== null
+                  ) {
+                    // TODO: Self event to update formValues.parsedRecipient
+                  }
+                  return event.output
+                },
               },
             },
             onError: {
