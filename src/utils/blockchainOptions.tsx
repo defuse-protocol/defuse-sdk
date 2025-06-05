@@ -13,10 +13,7 @@ export function getBlockchainsOptions(): Record<
   BlockchainEnum,
   BlockchainOption
 > {
-  const options: Record<
-    Exclude<BlockchainEnum, typeof BlockchainEnum.HYPERLIQUID>,
-    BlockchainOption
-  > = {
+  const options: Record<BlockchainEnum, BlockchainOption> = {
     [BlockchainEnum.NEAR]: {
       label: "Near",
       icon: (
@@ -237,16 +234,24 @@ export function getBlockchainsOptions(): Record<
       value: BlockchainEnum.BSC,
       tags: [],
     },
+    [BlockchainEnum.HYPERLIQUID]: {
+      label: "Hyperliquid",
+      icon: (
+        <NetworkIcon
+          chainIcon="/static/icons/network/hyperliquid.svg"
+          chainName="Hyperliquid"
+        />
+      ),
+      value: BlockchainEnum.HYPERLIQUID,
+      tags: [],
+    },
   }
 
   return sortBlockchainOptionsByVolume(options)
 }
 
 function sortBlockchainOptionsByVolume(
-  options: Record<
-    Exclude<BlockchainEnum, typeof BlockchainEnum.HYPERLIQUID>,
-    BlockchainOption
-  >
+  options: Record<BlockchainEnum, BlockchainOption>
 ): Record<BlockchainEnum, BlockchainOption> {
   const sortedEntries = Object.entries(options).sort(([, a], [, b]) => {
     const volTagA = a.tags?.find((tag) => tag.startsWith("vol:"))

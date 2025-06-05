@@ -76,6 +76,12 @@ export const PreparationResult = ({
         </>
       )
       break
+    case "ERR_HYPERLIQUID_ADDRESS_GENERATION":
+      content = "Cannot generate Hyperliquid address"
+      break
+    case "ERR_RECIPIENT_REQUIRED":
+      content = "Recipient is required"
+      break
     default:
       val satisfies never
       content = val
