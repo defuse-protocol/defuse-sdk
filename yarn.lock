@@ -562,10 +562,10 @@
   resolved "https://registry.npmjs.org/@floating-ui/utils/-/utils-0.2.8.tgz"
   integrity sha512-kym7SodPp8/wloecOpcmSnWJsK7M0E5Wg8UcFA+uO4B9s5d0ywXOEro/8HM9x0rW+TljRzul/14UYz3TleT3ig==
 
-"@hot-labs/omni-sdk@2.6.0":
-  version "2.6.0"
-  resolved "https://registry.yarnpkg.com/@hot-labs/omni-sdk/-/omni-sdk-2.6.0.tgz#983564f70894229703f4eae35ec7b84dc942ca6d"
-  integrity sha512-L7K1OTsZh1mJdFmu7HFYzntLM6poY0FquMAet6ImK8LSKzAzvCDLYE510dt7T6V57JLeYShlm0y/Gi/BvmnuWw==
+"@hot-labs/omni-sdk@2.7.0":
+  version "2.7.0"
+  resolved "https://registry.yarnpkg.com/@hot-labs/omni-sdk/-/omni-sdk-2.7.0.tgz#9338d55d0c5a69d134b5229dd88fb484235bcff5"
+  integrity sha512-vCBq6ZKjqV9CZRu17guiMzYq9kixgoJIaYC1FzmLe/j8tmjlrcprMoVvRNxyjoAfOAbD4hbS+i9Z9stwQ24suw==
   dependencies:
     "@coral-xyz/anchor" "0.29.0"
     "@creit.tech/stellar-wallets-kit" "^1.7.3"
