@@ -227,11 +227,11 @@ export function getBlockchainsOptions(): Record<
       tags: [],
     },
     [BlockchainEnum.BSC]: {
-      label: "Binance Smart Chain",
+      label: "BNB Smart Chain",
       icon: (
         <NetworkIcon
           chainIcon="/static/icons/network/bsc.svg"
-          chainName="Binance Smart Chain"
+          chainName="BNB Smart Chain"
         />
       ),
       value: BlockchainEnum.BSC,

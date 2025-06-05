@@ -1,6 +1,6 @@
 {
   "name": "@defuse-protocol/defuse-sdk",
-  "version": "1.0.0-beta.146",
+  "version": "1.0.0-beta.148",
   "author": "Defuse Protocol",
   "license": "MIT",
   "type": "module",
@@ -48,7 +48,7 @@
     "prepare": "husky && ./scripts/gen-defuse-types.sh"
   },
   "dependencies": {
-    "@hot-labs/omni-sdk": "2.6.0",
+    "@hot-labs/omni-sdk": "2.7.0",
     "@lifeomic/attempt": "^3.1.0",
     "@noble/curves": "1.4.0",
     "@noble/hashes": "^1.7.1",
