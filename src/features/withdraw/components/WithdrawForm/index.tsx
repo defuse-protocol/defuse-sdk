@@ -56,6 +56,7 @@ import { parseDestinationMemo } from "../../../machines/withdrawFormReducer"
 import { renderIntentCreationResult } from "../../../swap/components/SwapForm"
 import { usePublicKeyModalOpener } from "../../../swap/hooks/usePublicKeyModalOpener"
 import { WithdrawUIMachineContext } from "../../WithdrawUIMachineContext"
+import { getMinWithdrawalHiperliquidAmount } from "../../utils/hyperliquid"
 import {
   HotBalance,
   Intents,
@@ -170,15 +171,24 @@ export const WithdrawForm = ({
       }
     })
 
-  const minWithdrawalAmount = useSelector(poaBridgeInfoRef, (state) => {
-    const bridgedTokenInfo = getPOABridgeInfo(state, tokenOut)
-    return bridgedTokenInfo == null
-      ? null
-      : {
-          amount: bridgedTokenInfo.minWithdrawal,
-          decimals: tokenOut.decimals,
-        }
-  })
+  const minWithdrawalPOABridgeAmount = useSelector(
+    poaBridgeInfoRef,
+    (state) => {
+      const bridgedTokenInfo = getPOABridgeInfo(state, tokenOut)
+      return bridgedTokenInfo == null
+        ? null
+        : {
+            amount: bridgedTokenInfo.minWithdrawal,
+            decimals: tokenOut.decimals,
+          }
+    }
+  )
+  const minWithdrawalHyperliquidAmount = getMinWithdrawalHiperliquidAmount(
+    blockchain,
+    tokenOut
+  )
+  const minWithdrawalAmount =
+    minWithdrawalHyperliquidAmount ?? minWithdrawalPOABridgeAmount
 
   const tokenInBalance = useSelector(
     depositedBalanceRef,
