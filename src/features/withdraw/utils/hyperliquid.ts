@@ -2,8 +2,8 @@ import type { GeneratHLAddressParams } from "src/sdk/hyperunit/types"
 import type { BaseTokenInfo } from "src/types"
 
 /**
- * Resolves the correct destination network for token withdrawals from Hyperliquid.
- * Tokens on Hyperliquid must be withdrawn to their native blockchain networks.
+ * Resolves the destination network for token withdrawals when Hyperliquid is selected by
+ * substituting the network with the token's native blockchain.
  */
 export function getHyperliquidSrcChain(
   tokenIn: BaseTokenInfo
