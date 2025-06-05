@@ -1,5 +1,4 @@
-import { Network } from "@hot-labs/omni-sdk"
-import { OMNI_HOT_V2, encodeReceiver } from "@hot-labs/omni-sdk/build/utils"
+import { Network, utils } from "@hot-labs/omni-sdk"
 import type { SupportedChainName } from "../types/base"
 import type { Intent } from "../types/defuse-contracts-types"
 import { assert } from "./assert"
@@ -12,7 +11,7 @@ export function buildHotOmniWithdrawIntent(args: {
   receiver: string
 }): Intent {
   const network = toHotOmniNetwork(args.chainName)
-  const receiver = encodeReceiver(network, args.receiver)
+  const receiver = utils.encodeReceiver(network, args.receiver)
   return buildWithdrawIntentAction(args.defuseAssetId, args.amount, receiver)
 }
 
@@ -28,7 +27,7 @@ function buildWithdrawIntentAction(
   return {
     intent: "mt_withdraw",
     amounts: [amount.toString()],
-    receiver_id: OMNI_HOT_V2,
+    receiver_id: utils.OMNI_HOT_V2,
     token_ids: [token.tokenId],
     token: token.contractId,
     memo: receiver,
