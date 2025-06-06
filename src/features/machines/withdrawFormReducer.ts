@@ -114,9 +114,8 @@ export const withdrawFormReducer = fromTransition(
           parsedRecipient: null,
           destinationMemo: "",
           parsedDestinationMemo: null,
-          cexFundsLooseConfirmation: isCexIncompatible(tokenOut)
-            ? "not_confirmed"
-            : "not_required",
+          cexFundsLooseConfirmation:
+            cexFundsLooseConfirmationStatusDefault(tokenOut),
         }
         break
       }
@@ -132,9 +131,8 @@ export const withdrawFormReducer = fromTransition(
           parsedRecipient: null,
           destinationMemo: "",
           parsedDestinationMemo: null,
-          cexFundsLooseConfirmation: isCexIncompatible(tokenOut)
-            ? "not_confirmed"
-            : "not_required",
+          cexFundsLooseConfirmation:
+            cexFundsLooseConfirmationStatusDefault(tokenOut),
         }
         break
       }
@@ -212,9 +210,8 @@ export const withdrawFormReducer = fromTransition(
       parsedRecipient: null,
       destinationMemo: "",
       parsedDestinationMemo: null,
-      cexFundsLooseConfirmation: isCexIncompatible(tokenOut)
-        ? "not_confirmed"
-        : "not_required",
+      cexFundsLooseConfirmation:
+        cexFundsLooseConfirmationStatusDefault(tokenOut),
     }
   }
 )
@@ -263,4 +260,10 @@ export function parseDestinationMemo(
   if (!Number.isInteger(num) || num < 0 || num > 4294967295) return null
 
   return num.toString()
+}
+
+function cexFundsLooseConfirmationStatusDefault(
+  tokenOut: BaseTokenInfo
+): CexFundsLooseConfirmationStatus {
+  return isCexIncompatible(tokenOut) ? "not_confirmed" : "not_required"
 }
