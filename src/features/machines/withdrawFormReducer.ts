@@ -8,6 +8,7 @@ import type {
 import { assert } from "../../utils/assert"
 import { isBaseToken } from "../../utils/token"
 import { validateAddress } from "../../utils/validateAddress"
+import { isCexIncompatible } from "../withdraw/utils/cexCompatibility"
 
 export type Fields = Array<Exclude<keyof State, "parentRef">>
 const fields: Fields = [
@@ -113,6 +114,8 @@ export const withdrawFormReducer = fromTransition(
           parsedRecipient: null,
           destinationMemo: "",
           parsedDestinationMemo: null,
+          cexFundsLooseConfirmation:
+            cexFundsLooseConfirmationStatusDefault(tokenOut),
         }
         break
       }
@@ -128,6 +131,8 @@ export const withdrawFormReducer = fromTransition(
           parsedRecipient: null,
           destinationMemo: "",
           parsedDestinationMemo: null,
+          cexFundsLooseConfirmation:
+            cexFundsLooseConfirmationStatusDefault(tokenOut),
         }
         break
       }
@@ -193,17 +198,20 @@ export const withdrawFormReducer = fromTransition(
   }: {
     input: { parentRef: ParentActor; tokenIn: BaseTokenInfo | UnifiedTokenInfo }
   }): State => {
+    const tokenOut = getWithdrawTokenWithFallback(input.tokenIn, null)
+
     return {
       parentRef: input.parentRef,
       tokenIn: input.tokenIn,
-      tokenOut: getWithdrawTokenWithFallback(input.tokenIn, null),
+      tokenOut,
       amount: "",
       parsedAmount: null,
       recipient: "",
       parsedRecipient: null,
       destinationMemo: "",
       parsedDestinationMemo: null,
-      cexFundsLooseConfirmation: "not_required",
+      cexFundsLooseConfirmation:
+        cexFundsLooseConfirmationStatusDefault(tokenOut),
     }
   }
 )
@@ -252,4 +260,10 @@ export function parseDestinationMemo(
   if (!Number.isInteger(num) || num < 0 || num > 4294967295) return null
 
   return num.toString()
+}
+
+function cexFundsLooseConfirmationStatusDefault(
+  tokenOut: BaseTokenInfo
+): CexFundsLooseConfirmationStatus {
+  return isCexIncompatible(tokenOut) ? "not_confirmed" : "not_required"
 }

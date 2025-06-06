@@ -220,4 +220,12 @@ export const allBlockchains = [
   value: SupportedChainName
 }>
 
+type TypeEqualityGuard<A, B> = Exclude<A, B> | Exclude<B, A> extends never
+  ? true
+  : never
+const _typeCheck: TypeEqualityGuard<
+  SupportedChainName,
+  (typeof allBlockchains)[number]["value"]
+> = true
+
 export const SolverId = "solver-multichain-asset.near" as IntentsUserId // currently we have only this multychain solver
