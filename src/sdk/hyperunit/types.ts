@@ -18,6 +18,6 @@ export type GeneratHLAddressResponse = {
 export type GeneratHLAddressParams = {
   srcChain: "bitcoin" | "solana" | "ethereum"
   dstChain: "hyperliquid"
-  asset: "btc" | "sol" | "usdc"
+  asset: "btc" | "sol" | "eth"
   dstAddr: string
 }

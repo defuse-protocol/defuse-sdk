@@ -204,6 +204,16 @@ export const allBlockchains = [
     ),
     value: "bsc",
   },
+  {
+    label: "Hyperliquid",
+    icon: (
+      <NetworkIcon
+        chainIcon="/static/icons/network/hyperliquid.svg"
+        chainName="Hyperliquid"
+      />
+    ),
+    value: "hyperliquid",
+  },
 ] as const satisfies Array<{
   label: string
   icon: ReactNode

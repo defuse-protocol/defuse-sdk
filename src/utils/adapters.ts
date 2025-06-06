@@ -22,6 +22,7 @@ export const assetNetworkAdapter: Record<SupportedChainName, BlockchainEnum> = {
   coineasy: BlockchainEnum.COINEASY,
   polygon: BlockchainEnum.POLYGON,
   bsc: BlockchainEnum.BSC,
+  hyperliquid: BlockchainEnum.HYPERLIQUID,
 }
 
 export const reverseAssetNetworkAdapter: Record<
@@ -48,4 +49,5 @@ export const reverseAssetNetworkAdapter: Record<
   [BlockchainEnum.COINEASY]: "coineasy",
   [BlockchainEnum.POLYGON]: "polygon",
   [BlockchainEnum.BSC]: "bsc",
+  [BlockchainEnum.HYPERLIQUID]: "hyperliquid",
 }
