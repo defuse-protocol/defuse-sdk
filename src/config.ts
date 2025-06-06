@@ -1,8 +1,11 @@
 import { type ILogger, setLogger } from "./logger"
 
-export interface SDKConfig {
+interface SDKConfig {
   logger?: ILogger
-  env?: NearIntentsEnv | EnvConfig
+  env: NearIntentsEnv | EnvConfig
+  features: {
+    hyperliquid: boolean
+  }
 }
 
 export interface EnvConfig {
@@ -33,11 +36,22 @@ const configsByEnvironment: Record<NearIntentsEnv, EnvConfig> = {
   },
 }
 
-export let config = {
+export let config: SDKConfig = {
   env: configsByEnvironment.production,
+  features: {
+    hyperliquid: false,
+  },
 }
 
-export function configureSDK({ logger, env }: SDKConfig): void {
+export type ConfigureSDKArgs = Partial<SDKConfig> & {
+  feature?: { [K in keyof SDKConfig["features"]]?: boolean }
+}
+
+export function configureSDK({
+  logger,
+  env,
+  features,
+}: ConfigureSDKArgs): void {
   if (logger) {
     setLogger(logger)
   }
@@ -46,5 +60,13 @@ export function configureSDK({ logger, env }: SDKConfig): void {
     config = { ...config, env: configsByEnvironment[env] }
   } else if (env) {
     config = { ...config, env }
+  }
+
+  config = {
+    ...config,
+    features: {
+      ...config.features,
+      ...features,
+    },
   }
 }
