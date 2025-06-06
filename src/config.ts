@@ -2,7 +2,7 @@ import { type ILogger, setLogger } from "./logger"
 
 interface SDKConfig {
   logger?: ILogger
-  env: NearIntentsEnv | EnvConfig
+  env: EnvConfig
   features: {
     hyperliquid: boolean
   }
@@ -43,8 +43,10 @@ export let config: SDKConfig = {
   },
 }
 
-export type ConfigureSDKArgs = Partial<SDKConfig> & {
-  feature?: { [K in keyof SDKConfig["features"]]?: boolean }
+export interface ConfigureSDKArgs {
+  logger?: ILogger
+  env?: EnvConfig | NearIntentsEnv
+  features?: { [K in keyof SDKConfig["features"]]?: boolean }
 }
 
 export function configureSDK({
