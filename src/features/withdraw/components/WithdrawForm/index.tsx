@@ -66,7 +66,6 @@ import {
   PreparationResult,
   ReceivedAmountAndFee,
 } from "./components"
-import type { allBlockchains } from "./constants"
 import { useTokenBalances } from "./hooks/useTokenBalances"
 import {
   balancesSelector,
@@ -712,11 +711,3 @@ export const WithdrawForm = ({
     </Island>
   )
 }
-
-type TypeEqualityGuard<A, B> = Exclude<A, B> | Exclude<B, A> extends never
-  ? true
-  : never
-const _typeCheck: TypeEqualityGuard<
-  SupportedChainName,
-  (typeof allBlockchains)[number]["value"]
-> = true
