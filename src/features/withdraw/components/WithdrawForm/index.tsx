@@ -10,7 +10,7 @@ import {
 } from "@radix-ui/themes"
 import { useSelector } from "@xstate/react"
 import { useEffect, useState } from "react"
-import { Controller, useController, useForm } from "react-hook-form"
+import { Controller, useForm } from "react-hook-form"
 import { ModalSelectNetwork } from "src/components/Network/ModalSelectNetwork"
 import { SelectTriggerLike } from "src/components/Select/SelectTriggerLike"
 import { useModalController } from "src/hooks/useModalController"
@@ -56,6 +56,7 @@ import { parseDestinationMemo } from "../../../machines/withdrawFormReducer"
 import { renderIntentCreationResult } from "../../../swap/components/SwapForm"
 import { usePublicKeyModalOpener } from "../../../swap/hooks/usePublicKeyModalOpener"
 import { WithdrawUIMachineContext } from "../../WithdrawUIMachineContext"
+import { isCexIncompatible } from "../../utils/cexCompatibility"
 import { getMinWithdrawalHiperliquidAmount } from "../../utils/hyperliquid"
 import {
   HotBalance,
@@ -226,19 +227,6 @@ export const WithdrawForm = ({
     },
   })
 
-  const { field: fundsLooseConfirmedField } = useController({
-    control,
-    name: "isFundsLooseConfirmed",
-    rules: {
-      validate: {
-        pattern: (value, formValues) => {
-          if (formValues.blockchain !== "near") return true
-          if (!value) return "Required"
-        },
-      },
-    },
-  })
-
   const { setModalType, data: modalSelectAssetsData } = useModalController<{
     modalType: ModalType
     token: BaseTokenInfo | UnifiedTokenInfo | undefined
@@ -321,14 +309,6 @@ export const WithdrawForm = ({
         actorRef.send({
           type: "WITHDRAW_FORM.UPDATE_BLOCKCHAIN",
           params: { blockchain: value[name] ?? "" },
-        })
-
-        actorRef.send({
-          type: "WITHDRAW_FORM.CEX_FUNDS_LOOSE_CHANGED",
-          params: {
-            cexFundsLooseConfirmation:
-              value[name] === "near" ? "not_confirmed" : "not_required",
-          },
         })
       }
       if (name === "isFundsLooseConfirmed") {
@@ -655,7 +635,7 @@ export const WithdrawForm = ({
             )}
           </Flex>
 
-          {blockchain === "near" && (
+          {isCexIncompatible(tokenOut) && (
             <Text
               as="label"
               size="1"
@@ -663,12 +643,18 @@ export const WithdrawForm = ({
               color={errors.isFundsLooseConfirmed ? "red" : "gray"}
             >
               <Flex as="span" gap="2">
-                <Checkbox
-                  size="3"
-                  {...fundsLooseConfirmedField}
-                  value={undefined}
-                  checked={fundsLooseConfirmedField.value}
-                  onCheckedChange={fundsLooseConfirmedField.onChange}
+                <Controller
+                  control={control}
+                  name="isFundsLooseConfirmed"
+                  rules={{ required: true }}
+                  render={({ field }) => (
+                    <Checkbox
+                      size="3"
+                      value={undefined}
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  )}
                 />
                 I understand CEX addresses may cause fund loss or issues.
                 <Tooltip
