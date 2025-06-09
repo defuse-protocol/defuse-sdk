@@ -1,6 +1,6 @@
 import { Checkbox, Flex, Text, Tooltip } from "@radix-ui/themes"
 import { useSelector } from "@xstate/react"
-import { useEffect, useState } from "react"
+import { useEffect } from "react"
 import { Controller, useForm } from "react-hook-form"
 import { useModalController } from "src/hooks/useModalController"
 import { useTokensUsdPrices } from "src/hooks/useTokensUsdPrices"
@@ -22,7 +22,6 @@ import { Island } from "../../../../components/Island"
 import { IslandHeader } from "../../../../components/IslandHeader"
 import { nearClient } from "../../../../constants/nearClient"
 import { logger } from "../../../../logger"
-import { useSolverLiquidityQuery } from "../../../../queries/solverLiquidityQuerires"
 import type {
   BaseTokenInfo,
   SupportedChainName,
@@ -48,7 +47,6 @@ import {
   ReceivedAmountAndFee,
   RecipientSubForm,
 } from "./components"
-import { useTokenBalances } from "./hooks/useTokenBalances"
 import {
   balancesSelector,
   isLiquidityUnavailableSelector,
@@ -56,12 +54,7 @@ import {
   totalAmountReceivedSelector,
   withdtrawalFeeSelector,
 } from "./selectors"
-import {
-  chainTypeSatisfiesChainName,
-  getBlockchainSelectItems,
-  getFastWithdrawals,
-  getWithdrawButtonText,
-} from "./utils"
+import { getWithdrawButtonText } from "./utils"
 
 export type WithdrawFormNearValues = {
   amountIn: string
@@ -83,8 +76,6 @@ export const WithdrawForm = ({
   sendNearTransaction,
   renderHostAppLink,
 }: WithdrawFormProps) => {
-  const [isNetworkModalOpen, setIsNetworkModalOpen] = useState(false)
-
   const isLoggedIn = userAddress != null
   const actorRef = WithdrawUIMachineContext.useActorRef()
   const {
@@ -99,7 +90,6 @@ export const WithdrawForm = ({
     insufficientTokenInAmount,
     totalAmountReceived,
     withdtrawalFee,
-    balances: balancesData,
   } = WithdrawUIMachineContext.useSelector((state) => {
     return {
       state,
@@ -212,13 +202,6 @@ export const WithdrawForm = ({
     token: BaseTokenInfo | UnifiedTokenInfo | undefined
   }>(ModalType.MODAL_SELECT_ASSETS)
 
-  const onCloseNetworkModal = () => setIsNetworkModalOpen(false)
-
-  const onChangeNetwork = (network: SupportedChainName) => {
-    setValue("blockchain", network)
-    onCloseNetworkModal()
-  }
-
   const updateTokens = useTokensStore((state) => state.updateTokens)
 
   const handleSelect = () => {
@@ -230,30 +213,6 @@ export const WithdrawForm = ({
       balances: depositedBalanceRef?.getSnapshot().context.balances,
     })
   }
-
-  /**
-   * This is ModalSelectAssets "callback"
-   */
-  useEffect(() => {
-    if (modalSelectAssetsData?.token) {
-      const token = modalSelectAssetsData.token
-      modalSelectAssetsData.token = undefined // consume data, so it won't be triggered again
-      const parsedAmount = {
-        amount: 0n,
-        decimals: getTokenMaxDecimals(token),
-      }
-      try {
-        parsedAmount.amount = parseUnits(amountIn, parsedAmount.decimals)
-      } catch {}
-      actorRef.send({
-        type: "WITHDRAW_FORM.UPDATE_TOKEN",
-        params: {
-          token: token,
-          parsedAmount: parsedAmount,
-        },
-      })
-    }
-  }, [modalSelectAssetsData, actorRef, amountIn])
 
   useEffect(() => {
     const sub = watch(async (value, { name }) => {
@@ -329,26 +288,11 @@ export const WithdrawForm = ({
     }
   }, [actorRef, setValue])
 
-  const isChainTypeSatisfiesChainName = chainTypeSatisfiesChainName(
-    chainType,
-    tokenOut.chainName
-  )
-
   const tokenToWithdrawUsdAmount = getTokenUsdPrice(
     getValues().amountIn,
     token,
     tokensUsdPriceData
   )
-  const hasAnyBalance = tokenInBalance != null && tokenInBalance?.amount > 0
-  const poaBridgeBalances = useTokenBalances(token, hasAnyBalance)
-  const { data: liquidityData } = useSolverLiquidityQuery()
-
-  const maxWithdrawals = hasAnyBalance
-    ? getFastWithdrawals(token, balancesData, poaBridgeBalances, liquidityData)
-    : {}
-
-  const blockchainSelectItems = getBlockchainSelectItems(token, maxWithdrawals)
-  const showHotBalances = Object.keys(maxWithdrawals).length > 0
 
   const increaseAmount = (tokenValue: TokenValue) => {
     if (parsedAmountIn == null) return
@@ -453,19 +397,10 @@ export const WithdrawForm = ({
             control={control}
             register={register}
             setValue={setValue}
-            token={token}
-            onChangeNetwork={onChangeNetwork}
-            isNetworkModalOpen={isNetworkModalOpen}
-            setIsNetworkModalOpen={setIsNetworkModalOpen}
-            balancesData={balancesData}
-            poaBridgeBalances={poaBridgeBalances}
-            liquidityData={liquidityData}
-            blockchainSelectItems={blockchainSelectItems}
-            showHotBalances={showHotBalances}
-            tokenOut={tokenOut}
-            parsedAmountIn={parsedAmountIn}
-            isChainTypeSatisfiesChainName={isChainTypeSatisfiesChainName}
+            chainType={chainType}
             userAddress={userAddress}
+            modalSelectAssetsData={modalSelectAssetsData}
+            tokenInBalance={tokenInBalance}
             errors={errors}
           />
 

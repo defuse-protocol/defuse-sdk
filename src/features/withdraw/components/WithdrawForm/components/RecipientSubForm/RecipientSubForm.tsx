@@ -1,78 +1,143 @@
 import { MagicWandIcon, PersonIcon } from "@radix-ui/react-icons"
 import { Box, Flex, IconButton, Text, TextField } from "@radix-ui/themes"
+import { useSelector } from "@xstate/react"
+import { useEffect, useState } from "react"
 import type {
   Control,
   FieldErrors,
   UseFormRegister,
   UseFormSetValue,
 } from "react-hook-form"
-import { Controller, useFormContext } from "react-hook-form"
-import { EmptyIcon } from "src/components/EmptyIcon"
-import { ModalSelectNetwork } from "src/components/Network/ModalSelectNetwork"
-import { Select } from "src/components/Select/Select"
-import { SelectTriggerLike } from "src/components/Select/SelectTriggerLike"
-import type { BalanceMapping } from "src/features/machines/depositedBalanceMachine"
-import { parseDestinationMemo } from "src/features/machines/withdrawFormReducer"
-import type { BlockchainEnum } from "src/sdk/poaBridge/constants/blockchains"
+import { Controller } from "react-hook-form"
+import { EmptyIcon } from "../../../../../../components/EmptyIcon"
+import { ModalSelectNetwork } from "../../../../../../components/Network/ModalSelectNetwork"
+import { Select } from "../../../../../../components/Select/Select"
+import { SelectTriggerLike } from "../../../../../../components/Select/SelectTriggerLike"
+import { parseDestinationMemo } from "../../../../../../features/machines/withdrawFormReducer"
+import { WithdrawUIMachineContext } from "../../../../../../features/withdraw/WithdrawUIMachineContext"
+import { useSolverLiquidityQuery } from "../../../../../../queries/solverLiquidityQuerires"
+import type { BlockchainEnum } from "../../../../../../sdk/poaBridge/constants/blockchains"
+import type { ModalType } from "../../../../../../stores/modalStore"
+import type { AuthMethod } from "../../../../../../types"
 import type {
   BaseTokenInfo,
   SupportedChainName,
   TokenValue,
   UnifiedTokenInfo,
-} from "src/types/base"
-import { reverseAssetNetworkAdapter } from "src/utils/adapters"
-import { validateAddress } from "src/utils/validateAddress"
+} from "../../../../../../types/base"
+import { reverseAssetNetworkAdapter } from "../../../../../../utils/adapters"
+import { parseUnits } from "../../../../../../utils/parse"
+import { getTokenMaxDecimals } from "../../../../../../utils/tokenUtils"
+import { validateAddress } from "../../../../../../utils/validateAddress"
+import { useTokenBalances } from "../../hooks/useTokenBalances"
 import type { WithdrawFormNearValues } from "../../index"
+import { balancesSelector } from "../../selectors"
+import {
+  chainTypeSatisfiesChainName,
+  getBlockchainSelectItems,
+  getFastWithdrawals,
+} from "../../utils"
 import { truncateUserAddress } from "../../utils"
 import { HotBalance } from "../HotBalance/HotBalance"
 import { LongWithdrawWarning } from "../LongWithdrawWarning"
 
 type RecipientSubFormProps = {
   control: Control<WithdrawFormNearValues>
-  token: BaseTokenInfo | UnifiedTokenInfo
-  balancesData: BalanceMapping
-  poaBridgeBalances: Record<string, TokenValue>
-  liquidityData: Record<string, bigint> | undefined
-  blockchainSelectItems: Record<
-    string,
-    {
-      label: string
-      icon: React.ReactNode
-      value: string
-      hotBalance: TokenValue | null
-    }
-  >
-  showHotBalances: boolean
-  isNetworkModalOpen: boolean
-  setIsNetworkModalOpen: (isOpen: boolean) => void
-  onChangeNetwork: (network: SupportedChainName) => void
-  tokenOut: BaseTokenInfo
-  parsedAmountIn: { amount: bigint; decimals: number } | null
-  isChainTypeSatisfiesChainName: boolean
+  modalSelectAssetsData:
+    | {
+        modalType: ModalType
+        token: BaseTokenInfo | UnifiedTokenInfo | undefined
+      }
+    | undefined
+  chainType: AuthMethod | undefined
   userAddress: string | undefined
   errors: FieldErrors<WithdrawFormNearValues>
   register: UseFormRegister<WithdrawFormNearValues>
   setValue: UseFormSetValue<WithdrawFormNearValues>
+  tokenInBalance: TokenValue | undefined
 }
 
 export const RecipientSubForm = ({
   control,
-  token,
-  blockchainSelectItems,
-  showHotBalances,
-  isNetworkModalOpen,
-  setIsNetworkModalOpen,
-  onChangeNetwork,
-  tokenOut,
-  parsedAmountIn,
-  isChainTypeSatisfiesChainName,
+  modalSelectAssetsData,
+  chainType,
   userAddress,
   errors,
   register,
   setValue,
+  tokenInBalance,
 }: RecipientSubFormProps) => {
-  const { watch } = useFormContext<WithdrawFormNearValues>()
-  const recipient = watch("recipient")
+  const [isNetworkModalOpen, setIsNetworkModalOpen] = useState(false)
+  const actorRef = WithdrawUIMachineContext.useActorRef()
+  const { formRef, balances: balancesData } =
+    WithdrawUIMachineContext.useSelector((state) => {
+      return {
+        state,
+        formRef: state.context.withdrawFormRef,
+        balances: balancesSelector(state),
+      }
+    })
+
+  const { token, tokenOut, blockchain, amountIn, parsedAmountIn, recipient } =
+    useSelector(formRef, (state) => {
+      const { tokenOut } = state.context
+
+      return {
+        blockchain: tokenOut.chainName,
+        token: state.context.tokenIn,
+        tokenOut: state.context.tokenOut,
+        amountIn: state.context.amount,
+        parsedAmountIn: state.context.parsedAmount,
+        recipient: state.context.recipient,
+      }
+    })
+
+  const isChainTypeSatisfiesChainName = chainTypeSatisfiesChainName(
+    chainType,
+    tokenOut.chainName
+  )
+
+  const hasAnyBalance = tokenInBalance != null && tokenInBalance?.amount > 0
+  const poaBridgeBalances = useTokenBalances(token, hasAnyBalance)
+  const { data: liquidityData } = useSolverLiquidityQuery()
+
+  const maxWithdrawals = hasAnyBalance
+    ? getFastWithdrawals(token, balancesData, poaBridgeBalances, liquidityData)
+    : {}
+
+  const blockchainSelectItems = getBlockchainSelectItems(token, maxWithdrawals)
+  const showHotBalances = Object.keys(maxWithdrawals).length > 0
+
+  const onCloseNetworkModal = () => setIsNetworkModalOpen(false)
+
+  const onChangeNetwork = (network: SupportedChainName) => {
+    setValue("blockchain", network)
+    onCloseNetworkModal()
+  }
+
+  /**
+   * This is ModalSelectAssets "callback"
+   */
+  useEffect(() => {
+    if (modalSelectAssetsData?.token) {
+      const token = modalSelectAssetsData.token
+      modalSelectAssetsData.token = undefined // consume data, so it won't be triggered again
+      const parsedAmount = {
+        amount: 0n,
+        decimals: getTokenMaxDecimals(token),
+      }
+      try {
+        parsedAmount.amount = parseUnits(amountIn, parsedAmount.decimals)
+      } catch {}
+      actorRef.send({
+        type: "WITHDRAW_FORM.UPDATE_TOKEN",
+        params: {
+          token: token,
+          parsedAmount: parsedAmount,
+        },
+      })
+    }
+  }, [modalSelectAssetsData, actorRef, amountIn])
 
   return (
     <Flex direction="column" gap="2">
@@ -112,7 +177,7 @@ export const RecipientSubForm = ({
             <ModalSelectNetwork
               token={token}
               selectNetwork={onChangeNetwork}
-              selectedNetwork={field.value}
+              selectedNetwork={blockchain}
               isOpen={isNetworkModalOpen}
               onClose={() => setIsNetworkModalOpen(false)}
               renderValueDetails={
