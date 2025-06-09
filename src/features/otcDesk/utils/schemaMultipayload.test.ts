@@ -30,8 +30,8 @@ describe("mulltipayload schemas", async () => {
     await signERC191(genWithdrawIntent),
     await signRawED25519(genWithdrawIntent),
     // native withdraw
-    // await signERC191(genNativeWithdrawIntent),
-    // await signRawED25519(genNativeWithdrawIntent),
+    await signERC191(genNativeWithdrawIntent),
+    await signRawED25519(genNativeWithdrawIntent),
     // no intents
     await signERC191(genEmptyIntent),
     await signRawED25519(genEmptyIntent),
@@ -105,7 +105,6 @@ function genEmptyIntent(signerId: SignerCredentials) {
   return createEmptyIntentMessage({ signerId })
 }
 
-// biome-ignore lint/correctness/noUnusedVariables: <explanation>
 function genNativeWithdrawIntent(signerId: SignerCredentials) {
   return createWithdrawIntentMessage(
     {
