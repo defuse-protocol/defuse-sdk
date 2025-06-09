@@ -1,24 +1,11 @@
-import { MagicWandIcon, PersonIcon } from "@radix-ui/react-icons"
-import {
-  Box,
-  Checkbox,
-  Flex,
-  IconButton,
-  Text,
-  TextField,
-  Tooltip,
-} from "@radix-ui/themes"
+import { Checkbox, Flex, Text, Tooltip } from "@radix-ui/themes"
 import { useSelector } from "@xstate/react"
 import { useEffect, useState } from "react"
 import { Controller, useForm } from "react-hook-form"
-import { ModalSelectNetwork } from "src/components/Network/ModalSelectNetwork"
-import { SelectTriggerLike } from "src/components/Select/SelectTriggerLike"
 import { useModalController } from "src/hooks/useModalController"
 import { useTokensUsdPrices } from "src/hooks/useTokensUsdPrices"
 import { useTokensStore } from "src/providers/TokensStoreProvider"
-import type { BlockchainEnum } from "src/sdk/poaBridge/constants/blockchains"
 import { ModalType } from "src/stores/modalStore"
-import { reverseAssetNetworkAdapter } from "src/utils/adapters"
 import { isSupportedChainName } from "src/utils/blockchain"
 import { formatTokenValue, formatUsdAmount } from "src/utils/format"
 import getTokenUsdPrice from "src/utils/getTokenUsdPrice"
@@ -29,12 +16,10 @@ import {
 } from "src/utils/tokenUtils"
 import { AuthGate } from "../../../../components/AuthGate"
 import { ButtonCustom } from "../../../../components/Button/ButtonCustom"
-import { EmptyIcon } from "../../../../components/EmptyIcon"
 import { Form } from "../../../../components/Form"
 import { FieldComboInput } from "../../../../components/Form/FieldComboInput"
 import { Island } from "../../../../components/Island"
 import { IslandHeader } from "../../../../components/IslandHeader"
-import { Select } from "../../../../components/Select/Select"
 import { nearClient } from "../../../../constants/nearClient"
 import { logger } from "../../../../logger"
 import { useSolverLiquidityQuery } from "../../../../queries/solverLiquidityQuerires"
@@ -46,25 +31,22 @@ import type {
 } from "../../../../types/base"
 import type { WithdrawWidgetProps } from "../../../../types/withdraw"
 import { parseUnits } from "../../../../utils/parse"
-import { validateAddress } from "../../../../utils/validateAddress"
 import {
   balanceSelector,
   transitBalanceSelector,
 } from "../../../machines/depositedBalanceMachine"
 import { getPOABridgeInfo } from "../../../machines/poaBridgeInfoActor"
-import { parseDestinationMemo } from "../../../machines/withdrawFormReducer"
 import { renderIntentCreationResult } from "../../../swap/components/SwapForm"
 import { usePublicKeyModalOpener } from "../../../swap/hooks/usePublicKeyModalOpener"
 import { WithdrawUIMachineContext } from "../../WithdrawUIMachineContext"
 import { isCexIncompatible } from "../../utils/cexCompatibility"
 import { getMinWithdrawalHiperliquidAmount } from "../../utils/hyperliquid"
 import {
-  HotBalance,
   Intents,
-  LongWithdrawWarning,
   MinWithdrawalAmount,
   PreparationResult,
   ReceivedAmountAndFee,
+  RecipientSubForm,
 } from "./components"
 import { useTokenBalances } from "./hooks/useTokenBalances"
 import {
@@ -79,7 +61,6 @@ import {
   getBlockchainSelectItems,
   getFastWithdrawals,
   getWithdrawButtonText,
-  truncateUserAddress,
 } from "./utils"
 
 export type WithdrawFormNearValues = {
@@ -468,171 +449,25 @@ export const WithdrawForm = ({
             tokenOut={tokenOut}
           />
 
-          <Flex direction="column" gap="2">
-            <Box px="2" asChild>
-              <Text size="1" weight="bold">
-                Recipient
-              </Text>
-            </Box>
-            <Controller
-              name="blockchain"
-              control={control}
-              rules={{
-                required: "This field is required",
-                deps: "recipient",
-              }}
-              render={({ field }) => (
-                <>
-                  <SelectTriggerLike
-                    label={
-                      blockchainSelectItems[field.value]?.label ??
-                      "Select network"
-                    }
-                    icon={
-                      blockchainSelectItems[field.value]?.icon ?? <EmptyIcon />
-                    }
-                    onClick={() => setIsNetworkModalOpen(true)}
-                    hint={
-                      <Select.Hint>
-                        {Object.keys(blockchainSelectItems).length === 1
-                          ? "This network only"
-                          : "Network"}
-                      </Select.Hint>
-                    }
-                    disabled={
-                      Object.keys(blockchainSelectItems).length === 1 &&
-                      field.value ===
-                        Object.values(blockchainSelectItems)[0]?.value
-                    }
-                  />
-
-                  <ModalSelectNetwork
-                    token={token}
-                    selectNetwork={onChangeNetwork}
-                    selectedNetwork={blockchain}
-                    isOpen={isNetworkModalOpen}
-                    onClose={onCloseNetworkModal}
-                    renderValueDetails={
-                      showHotBalances
-                        ? (address: string) => (
-                            <HotBalance
-                              symbol={tokenOut.symbol}
-                              hotBalance={
-                                blockchainSelectItems[
-                                  reverseAssetNetworkAdapter[
-                                    address as BlockchainEnum
-                                  ]
-                                ]?.hotBalance
-                              }
-                            />
-                          )
-                        : undefined
-                    }
-                  />
-                </>
-              )}
-            />
-
-            {tokenOut.bridge === "poa" && showHotBalances && (
-              <LongWithdrawWarning
-                amountIn={parsedAmountIn}
-                symbol={tokenOut.symbol}
-                hotBalance={
-                  blockchainSelectItems[tokenOut.chainName]?.hotBalance
-                }
-              />
-            )}
-
-            <Flex direction="column" gap="1">
-              <Flex gap="2" align="center">
-                <Box asChild flexGrow="1">
-                  <TextField.Root
-                    size="3"
-                    {...register("recipient", {
-                      validate: {
-                        pattern: (value, formValues) => {
-                          if (!validateAddress(value, formValues.blockchain)) {
-                            return "Invalid address for the selected blockchain"
-                          }
-                        },
-                      },
-                    })}
-                    placeholder="Enter wallet address"
-                  >
-                    <TextField.Slot>
-                      <PersonIcon height="16" width="16" />
-                    </TextField.Slot>
-                  </TextField.Root>
-                </Box>
-
-                {isChainTypeSatisfiesChainName &&
-                  userAddress != null &&
-                  recipient !== userAddress && (
-                    <IconButton
-                      type="button"
-                      onClick={() => {
-                        setValue("recipient", userAddress, {
-                          shouldValidate: true,
-                        })
-                      }}
-                      variant="outline"
-                      size="3"
-                      title={`Autofill with your address ${truncateUserAddress(
-                        userAddress
-                      )}`}
-                      aria-label={`Autofill with your address ${truncateUserAddress(
-                        userAddress
-                      )}`}
-                    >
-                      <MagicWandIcon />
-                    </IconButton>
-                  )}
-              </Flex>
-
-              {errors.recipient && (
-                <Box px="2" asChild>
-                  <Text size="1" color="red" weight="medium">
-                    {errors.recipient.message}
-                  </Text>
-                </Box>
-              )}
-            </Flex>
-
-            {blockchain === "xrpledger" && (
-              <Flex direction="column" gap="1">
-                <Box px="2" asChild>
-                  <Text size="1" weight="bold">
-                    Destination Tag (optional)
-                  </Text>
-                </Box>
-                <TextField.Root
-                  size="3"
-                  {...register("destinationMemo", {
-                    validate: {
-                      uint32: (value) => {
-                        if (value == null || value === "") return
-
-                        if (
-                          parseDestinationMemo(value, tokenOut.chainName) ==
-                          null
-                        ) {
-                          return "Should be a number"
-                        }
-                      },
-                    },
-                  })}
-                  placeholder="Enter destination tag"
-                />
-                {errors.destinationMemo && (
-                  <Box px="2" asChild>
-                    <Text size="1" color="red" weight="medium">
-                      {errors.destinationMemo.message}
-                    </Text>
-                  </Box>
-                )}
-              </Flex>
-            )}
-          </Flex>
+          <RecipientSubForm
+            control={control}
+            register={register}
+            setValue={setValue}
+            token={token}
+            onChangeNetwork={onChangeNetwork}
+            isNetworkModalOpen={isNetworkModalOpen}
+            setIsNetworkModalOpen={setIsNetworkModalOpen}
+            balancesData={balancesData}
+            poaBridgeBalances={poaBridgeBalances}
+            liquidityData={liquidityData}
+            blockchainSelectItems={blockchainSelectItems}
+            showHotBalances={showHotBalances}
+            tokenOut={tokenOut}
+            parsedAmountIn={parsedAmountIn}
+            isChainTypeSatisfiesChainName={isChainTypeSatisfiesChainName}
+            userAddress={userAddress}
+            errors={errors}
+          />
 
           {isCexIncompatible(tokenOut) && (
             <Text
