@@ -190,6 +190,7 @@ function makeInnerWithdrawMessage(params: WithdrawParams): Intent {
   const paramsType = params.type
   switch (paramsType) {
     case "to_near":
+      /*
       if (params.tokenAccountId === "wrap.near") {
         return {
           intent: "native_withdraw",
@@ -197,6 +198,7 @@ function makeInnerWithdrawMessage(params: WithdrawParams): Intent {
           amount: params.amount.toString(),
         }
       }
+     */
       return {
         intent: "ft_withdraw",
         token: params.tokenAccountId,
