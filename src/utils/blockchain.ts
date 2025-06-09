@@ -12,6 +12,7 @@ import {
   reverseAssetNetworkAdapter,
 } from "src/utils/adapters"
 import { isBaseToken, isNativeToken, isUnifiedToken } from "src/utils/token"
+import { config } from "../config"
 import { getBlockchainsOptions } from "./blockchainOptions"
 export function isAuroraVirtualChain(network: SupportedChainName): boolean {
   const virtualChains = [
@@ -48,7 +49,11 @@ export function availableChainsForToken(
   token: BaseTokenInfo | UnifiedTokenInfo
 ): Record<string, { label: string; icon: ReactNode; value: string }> {
   const tokens = isUnifiedToken(token) ? token.groupedTokens : [token]
-  const chains = tokens.map((token) => token.chainName)
+  let chains = tokens.map((token) => token.chainName)
+
+  if (!config.features.hyperliquid) {
+    chains = chains.filter((chain) => chain !== "hyperliquid")
+  }
 
   const options = getBlockchainsOptions()
 
