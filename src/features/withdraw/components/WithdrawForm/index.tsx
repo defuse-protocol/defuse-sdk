@@ -128,19 +128,34 @@ export const WithdrawForm = ({
     }
   }, [userAddress, actorRef, chainType])
 
-  const { token, tokenOut, blockchain, amountIn, parsedAmountIn, recipient } =
-    useSelector(formRef, (state) => {
-      const { tokenOut } = state.context
+  const { token, tokenOut, parsedAmountIn } = useSelector(formRef, (state) => {
+    return {
+      token: state.context.tokenIn,
+      tokenOut: state.context.tokenOut,
+      parsedAmountIn: state.context.parsedAmount,
+    }
+  })
 
-      return {
-        blockchain: tokenOut.chainName,
-        token: state.context.tokenIn,
-        tokenOut: state.context.tokenOut,
-        amountIn: state.context.amount,
-        parsedAmountIn: state.context.parsedAmount,
-        recipient: state.context.recipient,
-      }
-    })
+  const form = useForm<WithdrawFormNearValues>({
+    mode: "onSubmit",
+    reValidateMode: "onChange",
+    // `resetOptions` is needed exclusively for being able to use `values` option without bugs
+    resetOptions: {
+      // Fixes: prevent all errors from being cleared when `values` change
+      keepErrors: true,
+      // Fixes: `reValidateMode` is not working when `values` change
+      keepIsSubmitted: true,
+    },
+  })
+  const {
+    handleSubmit,
+    register,
+    control,
+    watch,
+    formState: { errors },
+    setValue,
+    getValues,
+  } = form
 
   const minWithdrawalPOABridgeAmount = useSelector(
     poaBridgeInfoRef,
@@ -155,7 +170,7 @@ export const WithdrawForm = ({
     }
   )
   const minWithdrawalHyperliquidAmount = getMinWithdrawalHiperliquidAmount(
-    blockchain,
+    watch("blockchain"),
     tokenOut
   )
   const minWithdrawalAmount =
@@ -172,30 +187,6 @@ export const WithdrawForm = ({
   )
 
   const { data: tokensUsdPriceData } = useTokensUsdPrices()
-  const {
-    handleSubmit,
-    register,
-    control,
-    watch,
-    formState: { errors },
-    setValue,
-    getValues,
-  } = useForm<WithdrawFormNearValues>({
-    mode: "onSubmit",
-    reValidateMode: "onChange",
-    values: {
-      amountIn,
-      recipient,
-      blockchain,
-    },
-    // `resetOptions` is needed exclusively for being able to use `values` option without bugs
-    resetOptions: {
-      // Fixes: prevent all errors from being cleared when `values` change
-      keepErrors: true,
-      // Fixes: `reValidateMode` is not working when `values` change
-      keepIsSubmitted: true,
-    },
-  })
 
   const { setModalType, data: modalSelectAssetsData } = useModalController<{
     modalType: ModalType
@@ -232,22 +223,10 @@ export const WithdrawForm = ({
           params: { amount, parsedAmount },
         })
       }
-      if (name === "recipient") {
-        actorRef.send({
-          type: "WITHDRAW_FORM.RECIPIENT",
-          params: { recipient: value[name] ?? "" },
-        })
-      }
       if (name === "destinationMemo") {
         actorRef.send({
           type: "WITHDRAW_FORM.UPDATE_DESTINATION_MEMO",
           params: { destinationMemo: value[name] ?? "" },
-        })
-      }
-      if (name === "blockchain") {
-        actorRef.send({
-          type: "WITHDRAW_FORM.UPDATE_BLOCKCHAIN",
-          params: { blockchain: value[name] ?? "" },
         })
       }
       if (name === "isFundsLooseConfirmed") {
@@ -394,14 +373,11 @@ export const WithdrawForm = ({
           />
 
           <RecipientSubForm
-            control={control}
-            register={register}
-            setValue={setValue}
+            form={form}
             chainType={chainType}
             userAddress={userAddress}
             modalSelectAssetsData={modalSelectAssetsData}
             tokenInBalance={tokenInBalance}
-            errors={errors}
           />
 
           {isCexIncompatible(tokenOut) && (

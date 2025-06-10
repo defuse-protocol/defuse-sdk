@@ -1,10 +1,3 @@
-import type { QueryClient } from "@tanstack/query-core"
-import {
-  getHyperliquidAsset,
-  getHyperliquidSrcChain,
-} from "src/features/withdraw/utils/hyperliquid"
-import { queryClient } from "src/providers/QueryClientProvider"
-import { generateHLAddress } from "src/sdk/hyperunit/apis"
 import { type ActorRefFrom, waitFor } from "xstate"
 import { settings } from "../constants/settings"
 import { NEP141_STORAGE_TOKEN_ID } from "../constants/tokens"
@@ -25,12 +18,7 @@ import {
 import type { State as WithdrawFormContext } from "../features/machines/withdrawFormReducer"
 import { logger } from "../logger"
 import { getWithdrawalEstimate } from "../sdk/poaBridge/poaBridgeHttpClient"
-import type {
-  BaseTokenInfo,
-  SupportedChainName,
-  TokenValue,
-  UnifiedTokenInfo,
-} from "../types/base"
+import type { BaseTokenInfo, TokenValue, UnifiedTokenInfo } from "../types/base"
 import { assetNetworkAdapter } from "../utils/adapters"
 import { assert } from "../utils/assert"
 import { isBaseToken, isFungibleToken } from "../utils/token"
@@ -72,7 +60,6 @@ export type PreparationOutput =
         nep141Storage: NEP141StorageRequirement | null
         receivedAmount: TokenValue
         withdtrawalFee: WithdtrawalFee
-        substitutedRecipient: string | null
       }
     }
   | {
@@ -87,8 +74,6 @@ export type PreparationOutput =
               | "ERR_NEP141_STORAGE"
               | "ERR_CANNOT_FETCH_POA_BRIDGE_INFO"
               | "ERR_CANNOT_FETCH_QUOTE"
-              | "ERR_RECIPIENT_REQUIRED"
-              | "ERR_HYPERLIQUID_ADDRESS_GENERATION"
           }
         | {
             reason: "ERR_AMOUNT_TOO_LOW"
@@ -115,24 +100,6 @@ export async function prepareWithdraw(
   },
   { signal }: { signal: AbortSignal }
 ): Promise<PreparationOutput> {
-  const hyperliquid = await createHLDepositAddressQueryObserver(
-    queryClient,
-    formValues.tokenOut,
-    formValues.tokenOut.chainName,
-    formValues.parsedRecipient
-  )
-
-  if (hyperliquid.tag === "err") {
-    return {
-      tag: "err",
-      value: { reason: "ERR_HYPERLIQUID_ADDRESS_GENERATION" },
-    }
-  }
-
-  const chainName = hyperliquid.value
-    ? hyperliquid.value.chainName
-    : formValues.tokenOut.chainName
-
   const withdtrawalFeePromise = () => {
     if (userAddress == null || formValues.tokenOut.bridge !== "poa") {
       return null
@@ -140,7 +107,7 @@ export async function prepareWithdraw(
     return getWithdrawalEstimate({
       token: getTokenAccountId(formValues.tokenOut.defuseAssetId),
       address: userAddress,
-      chain: assetNetworkAdapter[chainName],
+      chain: assetNetworkAdapter[formValues.tokenOut.chainName],
     })
   }
 
@@ -293,7 +260,6 @@ export async function prepareWithdraw(
       nep141Storage: nep141Storage.value,
       receivedAmount: receivedAmount,
       withdtrawalFee,
-      substitutedRecipient: hyperliquid.value?.depositAddress || null,
     },
   }
 }
@@ -637,59 +603,5 @@ export function getRequiredSwapAmount(
         : null,
     directWithdrawalAmount: directWithdrawalAmount,
     tokenOut,
-  }
-}
-
-async function createHLDepositAddressQueryObserver(
-  queryClient: QueryClient,
-  token: BaseTokenInfo,
-  blockchain: SupportedChainName,
-  dstAddr: string | null
-): Promise<
-  | {
-      tag: "ok"
-      value: {
-        depositAddress: string
-        chainName: SupportedChainName
-      } | null
-    }
-  | { tag: "err"; value: { reason: "ERR_HYPERLIQUID_ADDRESS_GENERATION" } }
-> {
-  if (blockchain !== "hyperliquid" || dstAddr == null) {
-    return {
-      tag: "ok",
-      value: null,
-    }
-  }
-  const srcChain = getHyperliquidSrcChain(token)
-  try {
-    return await queryClient.fetchQuery({
-      queryKey: ["hyperliquid_deposit_address", { token, blockchain, dstAddr }],
-      queryFn: async () => {
-        const response = await generateHLAddress({
-          srcChain,
-          dstChain: "hyperliquid",
-          asset: getHyperliquidAsset(token),
-          dstAddr,
-        })
-        return {
-          tag: "ok",
-          value: {
-            depositAddress: response.address,
-            chainName: srcChain,
-          },
-        }
-      },
-    })
-  } catch (error) {
-    logger.error(
-      new Error("Failed to generate Hyperliquid deposit address", {
-        cause: error,
-      })
-    )
-    return {
-      tag: "err",
-      value: { reason: "ERR_HYPERLIQUID_ADDRESS_GENERATION" },
-    }
   }
 }
