@@ -21,6 +21,7 @@ export function chainTypeSatisfiesChainName(
 
   switch (true) {
     case chainType === AuthMethod.Near && chainName === "near":
+    case chainType === AuthMethod.EVM && chainName === "near":
     case chainType === AuthMethod.EVM && chainName === "eth":
     case chainType === AuthMethod.EVM && chainName === "arbitrum":
     case chainType === AuthMethod.EVM && chainName === "base":
