@@ -246,6 +246,11 @@ function getParsedRecipient(
     return null
   }
 
+  if (tokenOut.chainName === "near") {
+    // normalize in case EVM-like account
+    return recipient.toLowerCase()
+  }
+
   return recipient
 }
 

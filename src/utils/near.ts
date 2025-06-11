@@ -5,6 +5,7 @@ import type {
   Finality,
 } from "near-api-js/lib/providers/provider"
 import * as v from "valibot"
+import { isAddress } from "viem"
 
 /**
  * Use this function to decode a raw response from `nearClient.query()`
@@ -75,6 +76,12 @@ const ACCOUNT_ID_REGEX = /^(([a-z\d]+[-_])*[a-z\d]+\.)*([a-z\d]+[-_])*[a-z\d]+$/
 const IMPLICIT_ACCOUNT_MAX_LENGTH = 64
 
 export function isLegitAccountId(accountId: string): boolean {
+  // EVM-like account check
+  if (isAddress(accountId) && accountId === accountId.toLowerCase()) {
+    return true
+  }
+
+  // Explicit and implicit account check
   return ACCOUNT_ID_REGEX.test(accountId)
 }
 

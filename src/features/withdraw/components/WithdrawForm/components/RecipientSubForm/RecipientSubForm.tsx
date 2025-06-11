@@ -23,7 +23,6 @@ import type {
 import { reverseAssetNetworkAdapter } from "../../../../../../utils/adapters"
 import { parseUnits } from "../../../../../../utils/parse"
 import { getTokenMaxDecimals } from "../../../../../../utils/tokenUtils"
-import { validateAddress } from "../../../../../../utils/validateAddress"
 import {
   type HLDepositAddressResult,
   useCreateHLDepositAddress,
@@ -39,6 +38,7 @@ import {
 import { truncateUserAddress } from "../../utils"
 import { HotBalance } from "../HotBalance/HotBalance"
 import { LongWithdrawWarning } from "../LongWithdrawWarning"
+import { validateAddressSoft } from "./validation"
 
 type RecipientSubFormProps = {
   form: UseFormReturn<WithdrawFormNearValues>
@@ -255,7 +255,7 @@ export const RecipientSubForm = ({
               {...register("recipient", {
                 validate: {
                   pattern: (value, formValues) => {
-                    if (!validateAddress(value, formValues.blockchain)) {
+                    if (!validateAddressSoft(value, formValues.blockchain)) {
                       return "Invalid address for the selected blockchain"
                     }
                   },
