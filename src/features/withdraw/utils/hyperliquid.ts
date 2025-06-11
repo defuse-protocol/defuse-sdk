@@ -46,23 +46,23 @@ export function getMinWithdrawalHiperliquidAmount(
   tokenOut: BaseTokenInfo
 ) {
   if (blockchain !== "hyperliquid") return null
-  if (tokenOut.symbol === "BTC")
-    return {
-      amount: 2000000n, // 0.02 BTC
-      decimals: 8,
-    }
-  if (tokenOut.symbol === "ETH")
-    return {
-      amount: 50000000000000000n, // 0.05 ETH
-      decimals: 18,
-    }
-  if (tokenOut.symbol === "SOL")
-    return {
-      amount: 200000000n, // 0.2 SOL
-      decimals: 9,
-    }
-  return {
-    amount: 0n,
-    decimals: tokenOut.decimals,
+  switch (tokenOut.symbol) {
+    case "BTC":
+      return {
+        amount: 2000000n, // 0.02 BTC
+        decimals: 8,
+      }
+    case "ETH":
+      return {
+        amount: 50000000000000000n, // 0.05 ETH
+        decimals: 18,
+      }
+    case "SOL":
+      return {
+        amount: 200000000n, // 0.2 SOL
+        decimals: 9,
+      }
+    default:
+      throw new Error("Error getting min withdrawal amount for Hyperliquid")
   }
 }

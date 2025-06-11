@@ -39,7 +39,7 @@ const configsByEnvironment: Record<NearIntentsEnv, EnvConfig> = {
 export let config: SDKConfig = {
   env: configsByEnvironment.production,
   features: {
-    hyperliquid: true,
+    hyperliquid: false,
   },
 }
 

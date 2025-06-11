@@ -81,6 +81,12 @@ export type Events =
         cexFundsLooseConfirmation: CexFundsLooseConfirmationStatus
       }
     }
+  | {
+      type: "WITHDRAW_FORM.UPDATE_MIN_RECEIVED_AMOUNT"
+      params: {
+        minReceivedAmount: TokenValue | null
+      }
+    }
 
 export type State = {
   parentRef: ParentActor
@@ -93,6 +99,7 @@ export type State = {
   destinationMemo: string
   parsedDestinationMemo: string | null
   cexFundsLooseConfirmation: CexFundsLooseConfirmationStatus
+  minReceivedAmount: TokenValue | null
 }
 
 export const withdrawFormReducer = fromTransition(
@@ -172,6 +179,13 @@ export const withdrawFormReducer = fromTransition(
         }
         break
       }
+      case "WITHDRAW_FORM.UPDATE_MIN_RECEIVED_AMOUNT": {
+        newState = {
+          ...state,
+          minReceivedAmount: event.params.minReceivedAmount,
+        }
+        break
+      }
       default: {
         event satisfies never
         return state
@@ -212,6 +226,7 @@ export const withdrawFormReducer = fromTransition(
       parsedDestinationMemo: null,
       cexFundsLooseConfirmation:
         cexFundsLooseConfirmationStatusDefault(tokenOut),
+      minReceivedAmount: null,
     }
   }
 )
