@@ -1,5 +1,6 @@
 import { MagicWandIcon, PersonIcon } from "@radix-ui/react-icons"
 import { Box, Flex, IconButton, Text, TextField } from "@radix-ui/themes"
+import { Callout } from "@radix-ui/themes"
 import { useSelector } from "@xstate/react"
 import { useEffect, useRef, useState } from "react"
 import type { UseFormReturn } from "react-hook-form"
@@ -343,6 +344,8 @@ export const RecipientSubForm = ({
           )
         }
       />
+
+      {renderHyperliquidRecipientInfo(watch("blockchain"))}
     </Flex>
   )
 }
@@ -361,4 +364,18 @@ const getRecipientAddress = (
     return hyperliquidDepositAddress.value.depositAddress
   }
   return recipientValue
+}
+
+function renderHyperliquidRecipientInfo(blockchain: SupportedChainName) {
+  if (blockchain !== "hyperliquid") return null
+  return (
+    <Callout.Root className="bg-warning px-3 py-2 text-warning-foreground">
+      <Callout.Text className="text-xs">
+        <span className="font-bold">Note:</span> For Hyperliquid withdrawals,
+        your funds will be sent to a proxy address on the native asset
+        blockchain. This proxy address is automatically generated based on enter
+        wallet address.
+      </Callout.Text>
+    </Callout.Root>
+  )
 }
