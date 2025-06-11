@@ -59,11 +59,6 @@ export type Context = {
   preparationOutput: PreparationOutput | null
   referral?: string
   userAddress: string | null
-  /**
-   * This is used in cases where the original recipient address needs to be mapped to a different format
-   * or protocol-specific address, such as with Hiperliquid.
-   */
-  substitutedRecipient: string | null
 }
 
 type PassthroughEvent = {
@@ -361,7 +356,6 @@ export const withdrawUIMachine = setup({
     nep141StorageQuote: null,
     preparationOutput: null,
     referral: input.referral,
-    substitutedRecipient: null,
   }),
 
   entry: ["spawnBackgroundQuoterRef", "fetchPOABridgeInfo"],
@@ -515,16 +509,7 @@ export const withdrawUIMachine = setup({
               target: "idle",
               actions: {
                 type: "setPreparationOutput",
-                params: ({ context, event }) => {
-                  if (
-                    event.output.tag === "ok" &&
-                    event.output.value.substitutedRecipient !== null
-                  ) {
-                    context.substitutedRecipient =
-                      event.output.value.substitutedRecipient
-                  }
-                  return event.output
-                },
+                params: ({ event }) => event.output,
               },
             },
             onError: {
@@ -564,8 +549,7 @@ export const withdrawUIMachine = setup({
           )
 
           const formValues = context.withdrawFormRef.getSnapshot().context
-          const recipient =
-            context.substitutedRecipient ?? formValues.parsedRecipient
+          const recipient = formValues.parsedRecipient
           assert(recipient, "recipient is null")
           const quote =
             context.preparationOutput.value.swap?.swapQuote.tag === "ok"

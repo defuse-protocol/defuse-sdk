@@ -1,13 +1,8 @@
 import { MagicWandIcon, PersonIcon } from "@radix-ui/react-icons"
 import { Box, Flex, IconButton, Text, TextField } from "@radix-ui/themes"
 import { useSelector } from "@xstate/react"
-import { useEffect, useState } from "react"
-import type {
-  Control,
-  FieldErrors,
-  UseFormRegister,
-  UseFormSetValue,
-} from "react-hook-form"
+import { useEffect, useRef, useState } from "react"
+import type { UseFormReturn } from "react-hook-form"
 import { Controller } from "react-hook-form"
 import { EmptyIcon } from "../../../../../../components/EmptyIcon"
 import { ModalSelectNetwork } from "../../../../../../components/Network/ModalSelectNetwork"
@@ -29,6 +24,10 @@ import { reverseAssetNetworkAdapter } from "../../../../../../utils/adapters"
 import { parseUnits } from "../../../../../../utils/parse"
 import { getTokenMaxDecimals } from "../../../../../../utils/tokenUtils"
 import { validateAddress } from "../../../../../../utils/validateAddress"
+import {
+  type HLDepositAddressResult,
+  useCreateHLDepositAddress,
+} from "../../hooks/useCreateHLDepositAddress"
 import { useTokenBalances } from "../../hooks/useTokenBalances"
 import type { WithdrawFormNearValues } from "../../index"
 import { balancesSelector } from "../../selectors"
@@ -42,7 +41,7 @@ import { HotBalance } from "../HotBalance/HotBalance"
 import { LongWithdrawWarning } from "../LongWithdrawWarning"
 
 type RecipientSubFormProps = {
-  control: Control<WithdrawFormNearValues>
+  form: UseFormReturn<WithdrawFormNearValues>
   modalSelectAssetsData:
     | {
         modalType: ModalType
@@ -51,20 +50,20 @@ type RecipientSubFormProps = {
     | undefined
   chainType: AuthMethod | undefined
   userAddress: string | undefined
-  errors: FieldErrors<WithdrawFormNearValues>
-  register: UseFormRegister<WithdrawFormNearValues>
-  setValue: UseFormSetValue<WithdrawFormNearValues>
   tokenInBalance: TokenValue | undefined
 }
 
 export const RecipientSubForm = ({
-  control,
+  form: {
+    control,
+    register,
+    setValue,
+    watch,
+    formState: { errors },
+  },
   modalSelectAssetsData,
   chainType,
   userAddress,
-  errors,
-  register,
-  setValue,
   tokenInBalance,
 }: RecipientSubFormProps) => {
   const [isNetworkModalOpen, setIsNetworkModalOpen] = useState(false)
@@ -108,12 +107,49 @@ export const RecipientSubForm = ({
   const blockchainSelectItems = getBlockchainSelectItems(token, maxWithdrawals)
   const showHotBalances = Object.keys(maxWithdrawals).length > 0
 
+  const resetDisplayBlockchainRef = useRef<boolean>(true)
+
   const onCloseNetworkModal = () => setIsNetworkModalOpen(false)
 
   const onChangeNetwork = (network: SupportedChainName) => {
     setValue("blockchain", network)
     onCloseNetworkModal()
   }
+
+  const { data: hyperliquidDepositAddress } = useCreateHLDepositAddress(
+    tokenOut,
+    watch("blockchain"),
+    watch("recipient")
+  )
+
+  useEffect(() => {
+    if (resetDisplayBlockchainRef.current) {
+      resetDisplayBlockchainRef.current = false
+      setValue("blockchain", blockchain)
+    }
+  }, [blockchain, setValue])
+
+  useEffect(() => {
+    if (hyperliquidDepositAddress?.tag === "ok") {
+      const blockchain =
+        hyperliquidDepositAddress.value === null
+          ? watch("blockchain")
+          : hyperliquidDepositAddress.value.chainName
+      actorRef.send({
+        type: "WITHDRAW_FORM.UPDATE_BLOCKCHAIN",
+        params: { blockchain },
+      })
+
+      const recipient = getRecipientAddress(
+        hyperliquidDepositAddress,
+        watch("recipient")
+      )
+      actorRef.send({
+        type: "WITHDRAW_FORM.RECIPIENT",
+        params: { recipient },
+      })
+    }
+  }, [hyperliquidDepositAddress, watch, actorRef])
 
   /**
    * This is ModalSelectAssets "callback"
@@ -136,6 +172,8 @@ export const RecipientSubForm = ({
           parsedAmount: parsedAmount,
         },
       })
+      // Reset displayed blockchain so it gets updated with the new token's default blockchain
+      resetDisplayBlockchainRef.current = true
     }
   }, [modalSelectAssetsData, actorRef, amountIn])
 
@@ -177,7 +215,7 @@ export const RecipientSubForm = ({
             <ModalSelectNetwork
               token={token}
               selectNetwork={onChangeNetwork}
-              selectedNetwork={blockchain}
+              selectedNetwork={watch("blockchain")}
               isOpen={isNetworkModalOpen}
               onClose={() => setIsNetworkModalOpen(false)}
               renderValueDetails={
@@ -307,4 +345,20 @@ export const RecipientSubForm = ({
       />
     </Flex>
   )
+}
+
+const getRecipientAddress = (
+  hyperliquidDepositAddress: HLDepositAddressResult,
+  recipientValue: string
+): string => {
+  if (hyperliquidDepositAddress?.tag === "err") {
+    return ""
+  }
+  if (
+    hyperliquidDepositAddress?.tag === "ok" &&
+    hyperliquidDepositAddress.value
+  ) {
+    return hyperliquidDepositAddress.value.depositAddress
+  }
+  return recipientValue
 }
