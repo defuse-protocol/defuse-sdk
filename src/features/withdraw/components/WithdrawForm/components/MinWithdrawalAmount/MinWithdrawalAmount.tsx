@@ -18,8 +18,7 @@ export const MinWithdrawalAmount = ({
           <InfoCircledIcon />
         </Callout.Icon>
         <Callout.Text>
-          {/* biome-ignore lint/nursery/useConsistentCurlyBraces: space is needed here */}
-          Minimal amount to withdraw is{" "}
+          Minimal amount to withdraw is ~
           <Text size="1" weight="bold">
             {formatTokenValue(
               minWithdrawalAmount.amount,
