@@ -242,13 +242,14 @@ function getParsedRecipient(
   recipient: string,
   tokenOut: BaseTokenInfo
 ): string | null {
-  if (!validateAddress(recipient, tokenOut.chainName)) {
-    return null
-  }
-
   if (tokenOut.chainName === "near") {
     // normalize in case EVM-like account
-    return recipient.toLowerCase()
+    // biome-ignore lint/style/noParameterAssign: <reason>
+    recipient = recipient.toLowerCase()
+  }
+
+  if (!validateAddress(recipient, tokenOut.chainName)) {
+    return null
   }
 
   return recipient
