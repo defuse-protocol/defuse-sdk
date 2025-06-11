@@ -372,6 +372,16 @@ async function getMinWithdrawalAmount(
   )
   assert(poaBridgeInfo != null, "poaBridgeInfo is null")
 
+  if (formValues.minReceivedAmount != null) {
+    return {
+      amount:
+        formValues.minReceivedAmount.amount > poaBridgeInfo.minWithdrawal
+          ? formValues.minReceivedAmount.amount
+          : poaBridgeInfo.minWithdrawal,
+      decimals: formValues.tokenOut.decimals,
+    }
+  }
+
   return {
     amount: poaBridgeInfo.minWithdrawal,
     decimals: formValues.tokenOut.decimals,

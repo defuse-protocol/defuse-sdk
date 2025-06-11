@@ -4,6 +4,7 @@ import { useSelector } from "@xstate/react"
 import { useEffect, useRef, useState } from "react"
 import type { UseFormReturn } from "react-hook-form"
 import { Controller } from "react-hook-form"
+import { getMinWithdrawalHiperliquidAmount } from "src/features/withdraw/utils/hyperliquid"
 import { EmptyIcon } from "../../../../../../components/EmptyIcon"
 import { ModalSelectNetwork } from "../../../../../../components/Network/ModalSelectNetwork"
 import { Select } from "../../../../../../components/Select/Select"
@@ -113,6 +114,12 @@ export const RecipientSubForm = ({
 
   const onChangeNetwork = (network: SupportedChainName) => {
     setValue("blockchain", network)
+    actorRef.send({
+      type: "WITHDRAW_FORM.UPDATE_MIN_RECEIVED_AMOUNT",
+      params: {
+        minReceivedAmount: getMinWithdrawalHiperliquidAmount(network, tokenOut),
+      },
+    })
     onCloseNetworkModal()
   }
 
