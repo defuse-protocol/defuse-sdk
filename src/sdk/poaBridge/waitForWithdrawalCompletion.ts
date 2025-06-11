@@ -14,9 +14,11 @@ export type WaitForWithdrawalCompletionErrorType =
 
 export async function waitForWithdrawalCompletion({
   txHash,
+  index = 0,
   signal,
 }: {
   txHash: string
+  index?: number
   signal: AbortSignal
 }): Promise<WaitForWithdrawalCompletionOkType> {
   const DEFAULT_WITHDRAWAL_STATUS_INTERVAL_MS = 500
@@ -33,8 +35,8 @@ export async function waitForWithdrawalCompletion({
     })
 
     if (result != null) {
-      const withdrawal = result.withdrawals[0]
-      assert(withdrawal, "POA Bridge didn't return withdrawal")
+      const withdrawal = result.withdrawals[index]
+      assert(withdrawal, "POA Bridge didn't return withdrawal for given index")
 
       if (withdrawal.status === "COMPLETED") {
         // COMPLETED should have `transfer_tx_hash` always
