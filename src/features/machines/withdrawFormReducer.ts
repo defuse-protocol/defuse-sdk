@@ -141,6 +141,7 @@ export const withdrawFormReducer = fromTransition(
           parsedDestinationMemo: null,
           cexFundsLooseConfirmation:
             cexFundsLooseConfirmationStatusDefault(tokenOut),
+          minReceivedAmount: null,
         }
         break
       }

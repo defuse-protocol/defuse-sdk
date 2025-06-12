@@ -1,10 +1,13 @@
 import { MagicWandIcon, PersonIcon } from "@radix-ui/react-icons"
 import { Box, Flex, IconButton, Text, TextField } from "@radix-ui/themes"
 import { useSelector } from "@xstate/react"
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useState } from "react"
 import type { UseFormReturn } from "react-hook-form"
 import { Controller } from "react-hook-form"
-import { getMinWithdrawalHiperliquidAmount } from "src/features/withdraw/utils/hyperliquid"
+import {
+  getHyperliquidSrcChain,
+  getMinWithdrawalHiperliquidAmount,
+} from "src/features/withdraw/utils/hyperliquid"
 import { EmptyIcon } from "../../../../../../components/EmptyIcon"
 import { ModalSelectNetwork } from "../../../../../../components/Network/ModalSelectNetwork"
 import { Select } from "../../../../../../components/Select/Select"
@@ -81,8 +84,9 @@ export const RecipientSubForm = ({
       }
     })
 
-  const { token, tokenOut, blockchain, amountIn, parsedAmountIn, recipient } =
-    useSelector(formRef, (state) => {
+  const { token, tokenOut, amountIn, parsedAmountIn, recipient } = useSelector(
+    formRef,
+    (state) => {
       const { tokenOut } = state.context
 
       return {
@@ -93,7 +97,8 @@ export const RecipientSubForm = ({
         parsedAmountIn: state.context.parsedAmount,
         recipient: state.context.recipient,
       }
-    })
+    }
+  )
 
   const isChainTypeSatisfiesChainName = chainTypeSatisfiesChainName(
     chainType,
@@ -111,8 +116,6 @@ export const RecipientSubForm = ({
   const blockchainSelectItems = getBlockchainSelectItems(token, maxWithdrawals)
   const showHotBalances = Object.keys(maxWithdrawals).length > 0
 
-  const resetDisplayBlockchainRef = useRef<boolean>(true)
-
   const onCloseNetworkModal = () => setIsNetworkModalOpen(false)
 
   const onChangeNetwork = (network: SupportedChainName) => {
@@ -123,6 +126,9 @@ export const RecipientSubForm = ({
         minReceivedAmount: getMinWithdrawalHiperliquidAmount(network, tokenOut),
       },
     })
+    setValue("recipient", "", {
+      shouldValidate: false,
+    })
     onCloseNetworkModal()
   }
 
@@ -132,24 +138,19 @@ export const RecipientSubForm = ({
     watch("recipient")
   )
 
+  // Set default blockchain
+  // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
   useEffect(() => {
-    if (resetDisplayBlockchainRef.current) {
-      resetDisplayBlockchainRef.current = false
-      setValue("blockchain", blockchain)
+    if (watch("blockchain") == null) {
+      setValue(
+        "blockchain",
+        getWithdrawTokenWithFallback(token, tokenOut.chainName).chainName
+      )
     }
-  }, [blockchain, setValue])
+  }, [])
 
   useEffect(() => {
     if (hyperliquidDepositAddress?.tag === "ok") {
-      const blockchain =
-        hyperliquidDepositAddress.value === null
-          ? watch("blockchain")
-          : hyperliquidDepositAddress.value.chainName
-      actorRef.send({
-        type: "WITHDRAW_FORM.UPDATE_BLOCKCHAIN",
-        params: { blockchain },
-      })
-
       const recipient = getRecipientAddress(
         hyperliquidDepositAddress,
         watch("recipient")
@@ -160,6 +161,24 @@ export const RecipientSubForm = ({
       })
     }
   }, [hyperliquidDepositAddress, watch, actorRef])
+
+  useEffect(() => {
+    const sub = watch(async (value, { name }) => {
+      if (name === "blockchain") {
+        const blockchain =
+          value[name] === "hyperliquid"
+            ? getHyperliquidSrcChain(tokenOut)
+            : value[name]
+        actorRef.send({
+          type: "WITHDRAW_FORM.UPDATE_BLOCKCHAIN",
+          params: { blockchain: blockchain ?? "" },
+        })
+      }
+    })
+    return () => {
+      sub.unsubscribe()
+    }
+  }, [watch, actorRef, tokenOut])
 
   /**
    * This is ModalSelectAssets "callback"
@@ -182,12 +201,14 @@ export const RecipientSubForm = ({
           parsedAmount: parsedAmount,
         },
       })
+      // Reset form values to default values
       setValue(
         "blockchain",
         getWithdrawTokenWithFallback(token, tokenOut.chainName).chainName
       )
-      // Reset displayed blockchain so it gets updated with the new token's default blockchain
-      resetDisplayBlockchainRef.current = true
+      setValue("recipient", "", {
+        shouldValidate: false,
+      })
     }
   }, [modalSelectAssetsData, actorRef, amountIn, tokenOut.chainName, setValue])
 
