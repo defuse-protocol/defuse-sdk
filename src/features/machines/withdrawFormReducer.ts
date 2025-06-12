@@ -123,6 +123,7 @@ export const withdrawFormReducer = fromTransition(
           parsedDestinationMemo: null,
           cexFundsLooseConfirmation:
             cexFundsLooseConfirmationStatusDefault(tokenOut),
+          minReceivedAmount: null,
         }
         break
       }
@@ -231,7 +232,7 @@ export const withdrawFormReducer = fromTransition(
   }
 )
 
-function getWithdrawTokenWithFallback(
+export function getWithdrawTokenWithFallback(
   tokenIn: BaseTokenInfo | UnifiedTokenInfo,
   chainName: string | null
 ): BaseTokenInfo {
