@@ -155,10 +155,12 @@ export const RecipientSubForm = ({
         hyperliquidDepositAddress,
         watch("recipient")
       )
-      actorRef.send({
-        type: "WITHDRAW_FORM.RECIPIENT",
-        params: { recipient },
-      })
+      if (recipient) {
+        actorRef.send({
+          type: "WITHDRAW_FORM.RECIPIENT",
+          params: { recipient },
+        })
+      }
     }
   }, [hyperliquidDepositAddress, watch, actorRef])
 
