@@ -9,7 +9,10 @@ import { EmptyIcon } from "../../../../../../components/EmptyIcon"
 import { ModalSelectNetwork } from "../../../../../../components/Network/ModalSelectNetwork"
 import { Select } from "../../../../../../components/Select/Select"
 import { SelectTriggerLike } from "../../../../../../components/Select/SelectTriggerLike"
-import { parseDestinationMemo } from "../../../../../../features/machines/withdrawFormReducer"
+import {
+  getWithdrawTokenWithFallback,
+  parseDestinationMemo,
+} from "../../../../../../features/machines/withdrawFormReducer"
 import { WithdrawUIMachineContext } from "../../../../../../features/withdraw/WithdrawUIMachineContext"
 import { useSolverLiquidityQuery } from "../../../../../../queries/solverLiquidityQuerires"
 import type { BlockchainEnum } from "../../../../../../sdk/poaBridge/constants/blockchains"
@@ -179,10 +182,14 @@ export const RecipientSubForm = ({
           parsedAmount: parsedAmount,
         },
       })
+      setValue(
+        "blockchain",
+        getWithdrawTokenWithFallback(token, tokenOut.chainName).chainName
+      )
       // Reset displayed blockchain so it gets updated with the new token's default blockchain
       resetDisplayBlockchainRef.current = true
     }
-  }, [modalSelectAssetsData, actorRef, amountIn])
+  }, [modalSelectAssetsData, actorRef, amountIn, tokenOut.chainName, setValue])
 
   return (
     <Flex direction="column" gap="2">
