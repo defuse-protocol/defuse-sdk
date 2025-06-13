@@ -12,10 +12,7 @@ import { EmptyIcon } from "../../../../../../components/EmptyIcon"
 import { ModalSelectNetwork } from "../../../../../../components/Network/ModalSelectNetwork"
 import { Select } from "../../../../../../components/Select/Select"
 import { SelectTriggerLike } from "../../../../../../components/Select/SelectTriggerLike"
-import {
-  getWithdrawTokenWithFallback,
-  parseDestinationMemo,
-} from "../../../../../../features/machines/withdrawFormReducer"
+import { parseDestinationMemo } from "../../../../../../features/machines/withdrawFormReducer"
 import { WithdrawUIMachineContext } from "../../../../../../features/withdraw/WithdrawUIMachineContext"
 import { useSolverLiquidityQuery } from "../../../../../../queries/solverLiquidityQuerires"
 import type { BlockchainEnum } from "../../../../../../sdk/poaBridge/constants/blockchains"
@@ -65,6 +62,7 @@ export const RecipientSubForm = ({
     control,
     register,
     setValue,
+    getValues,
     watch,
     formState: { errors },
   },
@@ -119,61 +117,51 @@ export const RecipientSubForm = ({
   const onCloseNetworkModal = () => setIsNetworkModalOpen(false)
 
   const onChangeNetwork = (network: SupportedChainName) => {
-    setValue("blockchain", network)
+    setValue("displayBlockchain", network)
     actorRef.send({
       type: "WITHDRAW_FORM.UPDATE_MIN_RECEIVED_AMOUNT",
       params: {
         minReceivedAmount: getMinWithdrawalHiperliquidAmount(network, tokenOut),
       },
     })
-    setValue("recipient", "", {
-      shouldValidate: false,
-    })
     onCloseNetworkModal()
   }
 
   const { data: hyperliquidDepositAddress } = useCreateHLDepositAddress(
     tokenOut,
-    watch("blockchain"),
-    watch("recipient")
+    watch("displayBlockchain"),
+    watch("displayRecipient")
   )
-
-  // Set default blockchain
-  // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
-  useEffect(() => {
-    if (watch("blockchain") == null) {
-      setValue(
-        "blockchain",
-        getWithdrawTokenWithFallback(token, tokenOut.chainName).chainName
-      )
-    }
-  }, [])
 
   useEffect(() => {
     if (hyperliquidDepositAddress?.tag === "ok") {
+      const displayRecipient = getValues().displayRecipient
       const recipient = getRecipientAddress(
         hyperliquidDepositAddress,
-        watch("recipient")
+        displayRecipient
       )
       if (recipient) {
         actorRef.send({
           type: "WITHDRAW_FORM.RECIPIENT",
-          params: { recipient },
+          params: { recipient, displayRecipient },
         })
       }
     }
-  }, [hyperliquidDepositAddress, watch, actorRef])
+  }, [hyperliquidDepositAddress, getValues, actorRef])
 
   useEffect(() => {
     const sub = watch(async (value, { name }) => {
-      if (name === "blockchain") {
+      if (name === "displayBlockchain" && value[name]) {
         const blockchain =
           value[name] === "hyperliquid"
             ? getHyperliquidSrcChain(tokenOut)
             : value[name]
         actorRef.send({
           type: "WITHDRAW_FORM.UPDATE_BLOCKCHAIN",
-          params: { blockchain: blockchain ?? "" },
+          params: {
+            blockchain: blockchain ?? "",
+            displayBlockchain: value[name],
+          },
         })
       }
     })
@@ -203,16 +191,8 @@ export const RecipientSubForm = ({
           parsedAmount: parsedAmount,
         },
       })
-      // Reset form values to default values
-      setValue(
-        "blockchain",
-        getWithdrawTokenWithFallback(token, tokenOut.chainName).chainName
-      )
-      setValue("recipient", "", {
-        shouldValidate: false,
-      })
     }
-  }, [modalSelectAssetsData, actorRef, amountIn, tokenOut.chainName, setValue])
+  }, [modalSelectAssetsData, actorRef, amountIn])
 
   return (
     <Flex direction="column" gap="2">
@@ -222,7 +202,7 @@ export const RecipientSubForm = ({
         </Text>
       </Box>
       <Controller
-        name="blockchain"
+        name="displayBlockchain"
         control={control}
         rules={{
           required: "This field is required",
@@ -252,7 +232,7 @@ export const RecipientSubForm = ({
             <ModalSelectNetwork
               token={token}
               selectNetwork={onChangeNetwork}
-              selectedNetwork={watch("blockchain")}
+              selectedNetwork={getValues("displayBlockchain")}
               isOpen={isNetworkModalOpen}
               onClose={() => setIsNetworkModalOpen(false)}
               renderValueDetails={
@@ -289,10 +269,12 @@ export const RecipientSubForm = ({
           <Box asChild flexGrow="1">
             <TextField.Root
               size="3"
-              {...register("recipient", {
+              {...register("displayRecipient", {
                 validate: {
                   pattern: (value, formValues) => {
-                    if (!validateAddressSoft(value, formValues.blockchain)) {
+                    if (
+                      !validateAddressSoft(value, formValues.displayBlockchain)
+                    ) {
                       return "Invalid address for the selected blockchain"
                     }
                   },
@@ -308,7 +290,8 @@ export const RecipientSubForm = ({
 
           {isChainTypeSatisfiesChainName &&
             userAddress != null &&
-            recipient !== userAddress && (
+            recipient !== userAddress &&
+            getValues("displayBlockchain") !== "hyperliquid" && (
               <IconButton
                 type="button"
                 onClick={() => {

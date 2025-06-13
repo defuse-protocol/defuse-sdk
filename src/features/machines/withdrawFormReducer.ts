@@ -54,6 +54,7 @@ export type Events =
          * expected to change when blockchain changes, because decimals for
          * a token are the same across all blockchains.
          */
+        displayBlockchain: SupportedChainName
       }
     }
   | {
@@ -67,6 +68,7 @@ export type Events =
       type: "WITHDRAW_FORM.RECIPIENT"
       params: {
         recipient: string
+        displayRecipient: string
       }
     }
   | {
@@ -100,6 +102,8 @@ export type State = {
   parsedDestinationMemo: string | null
   cexFundsLooseConfirmation: CexFundsLooseConfirmationStatus
   minReceivedAmount: TokenValue | null
+  displayBlockchain: SupportedChainName
+  displayRecipient: string
 }
 
 export const withdrawFormReducer = fromTransition(
@@ -124,6 +128,8 @@ export const withdrawFormReducer = fromTransition(
           cexFundsLooseConfirmation:
             cexFundsLooseConfirmationStatusDefault(tokenOut),
           minReceivedAmount: null,
+          displayBlockchain: tokenOut.chainName,
+          displayRecipient: "",
         }
         break
       }
@@ -142,6 +148,8 @@ export const withdrawFormReducer = fromTransition(
           cexFundsLooseConfirmation:
             cexFundsLooseConfirmationStatusDefault(tokenOut),
           minReceivedAmount: null,
+          displayBlockchain: event.params.displayBlockchain,
+          displayRecipient: "",
         }
         break
       }
@@ -160,6 +168,7 @@ export const withdrawFormReducer = fromTransition(
           ...state,
           recipient,
           parsedRecipient,
+          displayRecipient: event.params.displayRecipient,
         }
         break
       }
@@ -229,6 +238,8 @@ export const withdrawFormReducer = fromTransition(
       cexFundsLooseConfirmation:
         cexFundsLooseConfirmationStatusDefault(tokenOut),
       minReceivedAmount: null,
+      displayBlockchain: tokenOut.chainName,
+      displayRecipient: "",
     }
   }
 )
