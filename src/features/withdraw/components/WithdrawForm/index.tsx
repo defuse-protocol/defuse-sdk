@@ -62,7 +62,6 @@ export type WithdrawFormNearValues = {
   blockchain: SupportedChainName
   destinationMemo?: string
   isFundsLooseConfirmed?: boolean
-  displayBlockchain: SupportedChainName
 }
 
 type WithdrawFormProps = WithdrawWidgetProps
@@ -129,26 +128,17 @@ export const WithdrawForm = ({
     }
   }, [userAddress, actorRef, chainType])
 
-  const {
-    token,
-    tokenOut,
-    parsedAmountIn,
-    amountIn,
-    recipient,
-    blockchain,
-    displayBlockchain,
-  } = useSelector(formRef, (state) => {
-    const { tokenOut } = state.context
-    return {
-      token: state.context.tokenIn,
-      tokenOut,
-      parsedAmountIn: state.context.parsedAmount,
-      amountIn: state.context.amount,
-      recipient: state.context.recipient,
-      blockchain: tokenOut.chainName,
-      displayBlockchain: state.context.displayBlockchain,
-    }
-  })
+  const { token, tokenOut, parsedAmountIn, amountIn, recipient, blockchain } =
+    useSelector(formRef, (state) => {
+      return {
+        token: state.context.tokenIn,
+        tokenOut: state.context.tokenOut,
+        parsedAmountIn: state.context.parsedAmount,
+        amountIn: state.context.amount,
+        recipient: state.context.recipient,
+        blockchain: state.context.blockchain,
+      }
+    })
 
   const form = useForm<WithdrawFormNearValues>({
     mode: "onSubmit",
@@ -157,7 +147,6 @@ export const WithdrawForm = ({
       amountIn,
       recipient,
       blockchain,
-      displayBlockchain,
     },
     // `resetOptions` is needed exclusively for being able to use `values` option without bugs
     resetOptions: {
@@ -190,7 +179,7 @@ export const WithdrawForm = ({
     }
   )
   const minWithdrawalHyperliquidAmount = getMinWithdrawalHiperliquidAmount(
-    watch("displayBlockchain"),
+    blockchain,
     tokenOut
   )
   const minWithdrawalAmount =

@@ -98,7 +98,7 @@ export const RecipientSubForm = ({
   const onCloseNetworkModal = () => setIsNetworkModalOpen(false)
 
   const onChangeNetwork = (network: SupportedChainName) => {
-    setValue("displayBlockchain", network)
+    setValue("blockchain", network)
     actorRef.send({
       type: "WITHDRAW_FORM.UPDATE_MIN_RECEIVED_AMOUNT",
       params: {
@@ -110,7 +110,7 @@ export const RecipientSubForm = ({
 
   const { data: hyperliquidDepositAddress } = useCreateHLDepositAddress(
     tokenOut,
-    watch("displayBlockchain"),
+    watch("blockchain"),
     watch("recipient")
   )
 
@@ -131,12 +131,12 @@ export const RecipientSubForm = ({
 
   useEffect(() => {
     const sub = watch(async (value, { name }) => {
-      const displayBlockchain = name === "displayBlockchain" && value[name]
-      if (displayBlockchain) {
+      const blockchain = name === "blockchain" && value[name]
+      if (blockchain) {
         actorRef.send({
           type: "WITHDRAW_FORM.UPDATE_BLOCKCHAIN",
           params: {
-            displayBlockchain,
+            blockchain,
           },
         })
       }
@@ -154,7 +154,7 @@ export const RecipientSubForm = ({
         </Text>
       </Box>
       <Controller
-        name="displayBlockchain"
+        name="blockchain"
         control={control}
         rules={{
           required: "This field is required",
@@ -184,7 +184,7 @@ export const RecipientSubForm = ({
             <ModalSelectNetwork
               token={token}
               selectNetwork={onChangeNetwork}
-              selectedNetwork={getValues("displayBlockchain")}
+              selectedNetwork={getValues("blockchain")}
               isOpen={isNetworkModalOpen}
               onClose={() => setIsNetworkModalOpen(false)}
               renderValueDetails={
@@ -224,9 +224,7 @@ export const RecipientSubForm = ({
               {...register("recipient", {
                 validate: {
                   pattern: (value, formValues) => {
-                    if (
-                      !validateAddressSoft(value, formValues.displayBlockchain)
-                    ) {
+                    if (!validateAddressSoft(value, formValues.blockchain)) {
                       return "Invalid address for the selected blockchain"
                     }
                   },
@@ -243,7 +241,7 @@ export const RecipientSubForm = ({
           {isChainTypeSatisfiesChainName &&
             userAddress != null &&
             recipient !== userAddress &&
-            getValues("displayBlockchain") !== "hyperliquid" && (
+            getValues("blockchain") !== "hyperliquid" && (
               <IconButton
                 type="button"
                 onClick={() => {
