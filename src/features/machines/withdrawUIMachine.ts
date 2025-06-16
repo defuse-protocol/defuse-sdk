@@ -9,6 +9,7 @@ import {
   spawnChild,
 } from "xstate"
 import { logger } from "../../logger"
+import { emitEvent } from "../../services/emitter"
 import type { QuoteResult } from "../../services/quoteService"
 import type { AuthMethod } from "../../types/authHandle"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../types/base"
@@ -196,6 +197,23 @@ export const withdrawUIMachine = setup({
     clearPreparationOutput: assign({
       preparationOutput: null,
     }),
+    onPreparationEntry: ({ context }) => {
+      const withdrawContext = context.withdrawFormRef.getSnapshot().context
+      const { preparationOutput } = context
+
+      const fee_estimate =
+        preparationOutput != null && preparationOutput.tag === "ok"
+          ? preparationOutput.value.withdtrawalFee.value
+          : null
+
+      emitEvent("withdrawal_initiated", {
+        token: withdrawContext.tokenIn.symbol,
+        amount: withdrawContext.parsedAmount,
+        to_chain: withdrawContext.tokenOut.defuseAssetId,
+        address_entered: withdrawContext.recipient,
+        fee_estimate,
+      })
+    },
 
     spawnBackgroundQuoterRef: spawnChild("backgroundQuoterActor", {
       id: "backgroundQuoterRef",
@@ -262,6 +280,20 @@ export const withdrawUIMachine = setup({
             intentDescription: output.value.intentDescription,
           },
         })
+
+        const { preparationOutput, submitDeps } = context
+
+        assert(preparationOutput != null)
+        assert(submitDeps != null)
+
+        if (preparationOutput.tag === "ok") {
+          emitEvent("withdrawal_confirmed", {
+            tx_hash: output.value.intentHash,
+            received_amount: preparationOutput.value.receivedAmount,
+            actual_fee: preparationOutput.value.withdtrawalFee,
+            destination_chain: submitDeps.userChainType,
+          })
+        }
 
         return [intentRef, ...context.intentRefs]
       },
@@ -531,6 +563,7 @@ export const withdrawUIMachine = setup({
 
       onDone: {
         target: "submitting",
+        actions: ["onPreparationEntry"],
       },
     },
 
