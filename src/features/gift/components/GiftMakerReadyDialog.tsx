@@ -98,6 +98,7 @@ function SuccessDialog({
 
       {/* Image Section */}
       <ShareableGiftImage
+        link={copyGiftLink()}
         token={context.parsed.token}
         amount={context.parsed.amount}
         message={
