@@ -46,12 +46,6 @@ import { validateAddressSoft } from "./validation"
 
 type RecipientSubFormProps = {
   form: UseFormReturn<WithdrawFormNearValues>
-  modalSelectAssetsData:
-    | {
-        modalType: ModalType
-        token: BaseTokenInfo | UnifiedTokenInfo | undefined
-      }
-    | undefined
   chainType: AuthMethod | undefined
   userAddress: string | undefined
   tokenInBalance: TokenValue | undefined
@@ -66,7 +60,6 @@ export const RecipientSubForm = ({
     watch,
     formState: { errors },
   },
-  modalSelectAssetsData,
   chainType,
   userAddress,
   tokenInBalance,
@@ -82,7 +75,7 @@ export const RecipientSubForm = ({
       }
     })
 
-  const { token, tokenOut, amountIn, parsedAmountIn, recipient } = useSelector(
+  const { token, tokenOut, parsedAmountIn, recipient } = useSelector(
     formRef,
     (state) => {
       const { tokenOut } = state.context
@@ -91,7 +84,6 @@ export const RecipientSubForm = ({
         blockchain: tokenOut.chainName,
         token: state.context.tokenIn,
         tokenOut: state.context.tokenOut,
-        amountIn: state.context.amount,
         parsedAmountIn: state.context.parsedAmount,
         recipient: state.context.recipient,
       }
@@ -168,31 +160,7 @@ export const RecipientSubForm = ({
     return () => {
       sub.unsubscribe()
     }
-  }, [watch, actorRef, tokenOut])
-
-  /**
-   * This is ModalSelectAssets "callback"
-   */
-  useEffect(() => {
-    if (modalSelectAssetsData?.token) {
-      const token = modalSelectAssetsData.token
-      modalSelectAssetsData.token = undefined // consume data, so it won't be triggered again
-      const parsedAmount = {
-        amount: 0n,
-        decimals: getTokenMaxDecimals(token),
-      }
-      try {
-        parsedAmount.amount = parseUnits(amountIn, parsedAmount.decimals)
-      } catch {}
-      actorRef.send({
-        type: "WITHDRAW_FORM.UPDATE_TOKEN",
-        params: {
-          token: token,
-          parsedAmount: parsedAmount,
-        },
-      })
-    }
-  }, [modalSelectAssetsData, actorRef, amountIn])
+  }, [watch, actorRef])
 
   return (
     <Flex direction="column" gap="2">

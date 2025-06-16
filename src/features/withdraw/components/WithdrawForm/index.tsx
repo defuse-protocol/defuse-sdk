@@ -329,6 +329,30 @@ export const WithdrawForm = ({
     })
   }
 
+  /**
+   * This is ModalSelectAssets "callback"
+   */
+  useEffect(() => {
+    if (modalSelectAssetsData?.token) {
+      const token = modalSelectAssetsData.token
+      modalSelectAssetsData.token = undefined // consume data, so it won't be triggered again
+      const parsedAmount = {
+        amount: 0n,
+        decimals: getTokenMaxDecimals(token),
+      }
+      try {
+        parsedAmount.amount = parseUnits(amountIn, parsedAmount.decimals)
+      } catch {}
+      actorRef.send({
+        type: "WITHDRAW_FORM.UPDATE_TOKEN",
+        params: {
+          token: token,
+          parsedAmount: parsedAmount,
+        },
+      })
+    }
+  }, [modalSelectAssetsData, actorRef, amountIn])
+
   return (
     <Island className="widget-container flex flex-col gap-4">
       <IslandHeader heading="Withdraw" condensed />
@@ -400,7 +424,6 @@ export const WithdrawForm = ({
             form={form}
             chainType={chainType}
             userAddress={userAddress}
-            modalSelectAssetsData={modalSelectAssetsData}
             tokenInBalance={tokenInBalance}
           />
 
