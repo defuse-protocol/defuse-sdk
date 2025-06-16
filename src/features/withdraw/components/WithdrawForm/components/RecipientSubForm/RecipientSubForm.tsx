@@ -4,10 +4,7 @@ import { useSelector } from "@xstate/react"
 import { useEffect, useState } from "react"
 import type { UseFormReturn } from "react-hook-form"
 import { Controller } from "react-hook-form"
-import {
-  getHyperliquidSrcChain,
-  getMinWithdrawalHiperliquidAmount,
-} from "src/features/withdraw/utils/hyperliquid"
+import { getMinWithdrawalHiperliquidAmount } from "src/features/withdraw/utils/hyperliquid"
 import { EmptyIcon } from "../../../../../../components/EmptyIcon"
 import { ModalSelectNetwork } from "../../../../../../components/Network/ModalSelectNetwork"
 import { Select } from "../../../../../../components/Select/Select"
@@ -16,21 +13,13 @@ import { parseDestinationMemo } from "../../../../../../features/machines/withdr
 import { WithdrawUIMachineContext } from "../../../../../../features/withdraw/WithdrawUIMachineContext"
 import { useSolverLiquidityQuery } from "../../../../../../queries/solverLiquidityQuerires"
 import type { BlockchainEnum } from "../../../../../../sdk/poaBridge/constants/blockchains"
-import type { ModalType } from "../../../../../../stores/modalStore"
 import type { AuthMethod } from "../../../../../../types"
 import type {
-  BaseTokenInfo,
   SupportedChainName,
   TokenValue,
-  UnifiedTokenInfo,
 } from "../../../../../../types/base"
 import { reverseAssetNetworkAdapter } from "../../../../../../utils/adapters"
-import { parseUnits } from "../../../../../../utils/parse"
-import { getTokenMaxDecimals } from "../../../../../../utils/tokenUtils"
-import {
-  type HLDepositAddressResult,
-  useCreateHLDepositAddress,
-} from "../../hooks/useCreateHLDepositAddress"
+import { useCreateHLDepositAddress } from "../../hooks/useCreateHLDepositAddress"
 import { useTokenBalances } from "../../hooks/useTokenBalances"
 import type { WithdrawFormNearValues } from "../../index"
 import { balancesSelector } from "../../selectors"
@@ -122,20 +111,19 @@ export const RecipientSubForm = ({
   const { data: hyperliquidDepositAddress } = useCreateHLDepositAddress(
     tokenOut,
     watch("displayBlockchain"),
-    watch("displayRecipient")
+    watch("recipient")
   )
 
   useEffect(() => {
     if (hyperliquidDepositAddress?.tag === "ok") {
-      const displayRecipient = getValues().displayRecipient
-      const recipient = getRecipientAddress(
-        hyperliquidDepositAddress,
-        displayRecipient
-      )
+      const recipient = getValues().recipient
       if (recipient) {
         actorRef.send({
           type: "WITHDRAW_FORM.RECIPIENT",
-          params: { recipient, displayRecipient },
+          params: {
+            recipient: recipient,
+            proxyRecipient: hyperliquidDepositAddress.value,
+          },
         })
       }
     }
@@ -143,16 +131,12 @@ export const RecipientSubForm = ({
 
   useEffect(() => {
     const sub = watch(async (value, { name }) => {
-      if (name === "displayBlockchain" && value[name]) {
-        const blockchain =
-          value[name] === "hyperliquid"
-            ? getHyperliquidSrcChain(tokenOut)
-            : value[name]
+      const displayBlockchain = name === "displayBlockchain" && value[name]
+      if (displayBlockchain) {
         actorRef.send({
           type: "WITHDRAW_FORM.UPDATE_BLOCKCHAIN",
           params: {
-            blockchain: blockchain ?? "",
-            displayBlockchain: value[name],
+            displayBlockchain,
           },
         })
       }
@@ -237,7 +221,7 @@ export const RecipientSubForm = ({
           <Box asChild flexGrow="1">
             <TextField.Root
               size="3"
-              {...register("displayRecipient", {
+              {...register("recipient", {
                 validate: {
                   pattern: (value, formValues) => {
                     if (
@@ -333,20 +317,4 @@ export const RecipientSubForm = ({
       />
     </Flex>
   )
-}
-
-const getRecipientAddress = (
-  hyperliquidDepositAddress: HLDepositAddressResult,
-  recipientValue: string
-): string => {
-  if (hyperliquidDepositAddress?.tag === "err") {
-    return ""
-  }
-  if (
-    hyperliquidDepositAddress?.tag === "ok" &&
-    hyperliquidDepositAddress.value
-  ) {
-    return hyperliquidDepositAddress.value.depositAddress
-  }
-  return recipientValue
 }

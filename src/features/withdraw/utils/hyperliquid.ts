@@ -59,10 +59,14 @@ export function getMinWithdrawalHiperliquidAmount(
       }
     case "SOL":
       return {
-        amount: 200000000n, // 0.2 SOL
+        amount: 2000000n, // 0.002 SOL
         decimals: 9,
       }
     default:
       throw new Error("Error getting min withdrawal amount for Hyperliquid")
   }
+}
+
+export function isHyperliquid(blockchain: SupportedChainName): boolean {
+  return blockchain === "hyperliquid"
 }

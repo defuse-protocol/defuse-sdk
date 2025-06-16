@@ -63,7 +63,6 @@ export type WithdrawFormNearValues = {
   destinationMemo?: string
   isFundsLooseConfirmed?: boolean
   displayBlockchain: SupportedChainName
-  displayRecipient: string
 }
 
 type WithdrawFormProps = WithdrawWidgetProps
@@ -138,7 +137,6 @@ export const WithdrawForm = ({
     recipient,
     blockchain,
     displayBlockchain,
-    displayRecipient,
   } = useSelector(formRef, (state) => {
     const { tokenOut } = state.context
     return {
@@ -149,7 +147,6 @@ export const WithdrawForm = ({
       recipient: state.context.recipient,
       blockchain: tokenOut.chainName,
       displayBlockchain: state.context.displayBlockchain,
-      displayRecipient: state.context.displayRecipient,
     }
   })
 
@@ -161,7 +158,6 @@ export const WithdrawForm = ({
       recipient,
       blockchain,
       displayBlockchain,
-      displayRecipient,
     },
     // `resetOptions` is needed exclusively for being able to use `values` option without bugs
     resetOptions: {

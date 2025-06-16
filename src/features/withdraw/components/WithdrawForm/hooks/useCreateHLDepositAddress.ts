@@ -1,7 +1,6 @@
 import { useQuery } from "@tanstack/react-query"
 import { logger } from "../../../../../logger"
 import { generateHLAddress } from "../../../../../sdk/hyperunit/apis"
-import type { GeneratHLAddressParams } from "../../../../../sdk/hyperunit/types"
 import type {
   BaseTokenInfo,
   SupportedChainName,
@@ -9,15 +8,13 @@ import type {
 import {
   getHyperliquidAsset,
   getHyperliquidSrcChain,
+  isHyperliquid,
 } from "../../../utils/hyperliquid"
 
 export type HLDepositAddressResult =
   | {
       tag: "ok"
-      value: {
-        depositAddress: string
-        chainName: GeneratHLAddressParams["srcChain"]
-      } | null
+      value: string | null
     }
   | { tag: "err"; value: { reason: "ERR_HYPERLIQUID_ADDRESS_GENERATION" } }
 
@@ -30,7 +27,7 @@ export const useCreateHLDepositAddress = (
     queryKey: ["hyperliquid_deposit_address", { token, blockchain, dstAddr }],
     queryFn: async () => {
       try {
-        if (blockchain !== "hyperliquid") {
+        if (!isHyperliquid(blockchain)) {
           return {
             tag: "ok",
             value: null,
@@ -46,10 +43,7 @@ export const useCreateHLDepositAddress = (
         })
         return {
           tag: "ok",
-          value: {
-            depositAddress: response.address,
-            chainName: srcChain,
-          },
+          value: response.address,
         }
       } catch (error) {
         logger.error(
