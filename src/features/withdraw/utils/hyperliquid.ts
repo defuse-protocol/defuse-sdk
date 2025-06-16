@@ -59,7 +59,7 @@ export function getMinWithdrawalHiperliquidAmount(
       }
     case "SOL":
       return {
-        amount: 2000000n, // 0.002 SOL
+        amount: 200000000n, // 0.2 SOL
         decimals: 9,
       }
     default:
