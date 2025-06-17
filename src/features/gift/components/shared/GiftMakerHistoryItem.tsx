@@ -56,6 +56,10 @@ export function GiftMakerHistoryItem({
     },
   }).start()
 
+  const handleCloseDialog = useCallback(() => {
+    setShowDialog(false)
+  }, [])
+
   const cancellationOrRemoval = useCallback(async () => {
     if (giftInfo.status === "claimed") {
       await removeClaimedGiftFromStore({ giftInfo, signerCredentials })
@@ -144,6 +148,7 @@ export function GiftMakerHistoryItem({
           readyGiftRef={readyGiftRef}
           generateLink={generateLink}
           signerCredentials={signerCredentials}
+          onClose={handleCloseDialog}
         />
       )}
     </>
