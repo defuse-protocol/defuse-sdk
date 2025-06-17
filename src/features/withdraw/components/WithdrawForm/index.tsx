@@ -128,17 +128,26 @@ export const WithdrawForm = ({
     }
   }, [userAddress, actorRef, chainType])
 
-  const { token, tokenOut, parsedAmountIn } = useSelector(formRef, (state) => {
-    return {
-      token: state.context.tokenIn,
-      tokenOut: state.context.tokenOut,
-      parsedAmountIn: state.context.parsedAmount,
-    }
-  })
+  const { token, tokenOut, parsedAmountIn, amountIn, recipient, blockchain } =
+    useSelector(formRef, (state) => {
+      return {
+        token: state.context.tokenIn,
+        tokenOut: state.context.tokenOut,
+        parsedAmountIn: state.context.parsedAmount,
+        amountIn: state.context.amount,
+        recipient: state.context.recipient,
+        blockchain: state.context.blockchain,
+      }
+    })
 
   const form = useForm<WithdrawFormNearValues>({
     mode: "onSubmit",
     reValidateMode: "onChange",
+    values: {
+      amountIn,
+      recipient,
+      blockchain,
+    },
     // `resetOptions` is needed exclusively for being able to use `values` option without bugs
     resetOptions: {
       // Fixes: prevent all errors from being cleared when `values` change
@@ -170,7 +179,7 @@ export const WithdrawForm = ({
     }
   )
   const minWithdrawalHyperliquidAmount = getMinWithdrawalHiperliquidAmount(
-    watch("blockchain"),
+    blockchain,
     tokenOut
   )
   const minWithdrawalAmount =
@@ -305,6 +314,30 @@ export const WithdrawForm = ({
     })
   }
 
+  /**
+   * This is ModalSelectAssets "callback"
+   */
+  useEffect(() => {
+    if (modalSelectAssetsData?.token) {
+      const token = modalSelectAssetsData.token
+      modalSelectAssetsData.token = undefined // consume data, so it won't be triggered again
+      const parsedAmount = {
+        amount: 0n,
+        decimals: getTokenMaxDecimals(token),
+      }
+      try {
+        parsedAmount.amount = parseUnits(amountIn, parsedAmount.decimals)
+      } catch {}
+      actorRef.send({
+        type: "WITHDRAW_FORM.UPDATE_TOKEN",
+        params: {
+          token: token,
+          parsedAmount: parsedAmount,
+        },
+      })
+    }
+  }, [modalSelectAssetsData, actorRef, amountIn])
+
   return (
     <Island className="widget-container flex flex-col gap-4">
       <IslandHeader heading="Withdraw" condensed />
@@ -376,7 +409,6 @@ export const WithdrawForm = ({
             form={form}
             chainType={chainType}
             userAddress={userAddress}
-            modalSelectAssetsData={modalSelectAssetsData}
             tokenInBalance={tokenInBalance}
           />
 

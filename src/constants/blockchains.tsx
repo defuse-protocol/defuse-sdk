@@ -1,6 +1,6 @@
 import type { ReactNode } from "react"
-import { NetworkIcon } from "src/components/Network/NetworkIcon"
-import { BlockchainEnum } from "src/sdk/poaBridge/constants/blockchains"
+import { NetworkIcon } from "../components/Network/NetworkIcon"
+import { BlockchainEnum } from "../sdk/poaBridge/constants/blockchains"
 
 type BlockchainOption = {
   label: string

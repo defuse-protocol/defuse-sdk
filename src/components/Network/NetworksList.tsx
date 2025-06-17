@@ -1,11 +1,11 @@
 import { Text } from "@radix-ui/themes"
 import clsx from "clsx"
 import type { ReactNode } from "react"
-import type { BlockchainEnum } from "src/sdk/poaBridge/constants/blockchains"
-import type { SupportedChainName } from "src/types/base"
-import { reverseAssetNetworkAdapter } from "src/utils/adapters"
-import { isAuroraVirtualChain } from "src/utils/blockchain"
-import { getBlockchainsOptions } from "src/utils/blockchainOptions"
+import { getBlockchainsOptions } from "../../constants/blockchains"
+import type { BlockchainEnum } from "../../sdk/poaBridge/constants/blockchains"
+import type { SupportedChainName } from "../../types/base"
+import { reverseAssetNetworkAdapter } from "../../utils/adapters"
+import { isAuroraVirtualChain } from "../../utils/blockchain"
 import { PoweredByAuroraLabel } from "../PoweredByAuroraLabel"
 
 interface NetworkListProps {

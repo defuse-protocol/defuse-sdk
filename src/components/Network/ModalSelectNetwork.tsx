@@ -2,14 +2,14 @@ import { X as CrossIcon } from "@phosphor-icons/react"
 import { InfoCircledIcon } from "@radix-ui/react-icons"
 import { Text } from "@radix-ui/themes"
 import { type ReactNode, useMemo, useState } from "react"
-import type { BlockchainEnum } from "src/sdk/poaBridge/constants/blockchains"
 import type {
   BaseTokenInfo,
   SupportedChainName,
   UnifiedTokenInfo,
 } from "src/types/base"
-import { availableChainsForToken, filterChains } from "src/utils/blockchain"
-import { getBlockchainsOptions } from "src/utils/blockchainOptions"
+import { getBlockchainsOptions } from "../../constants/blockchains"
+import type { BlockchainEnum } from "../../sdk/poaBridge/constants/blockchains"
+import { availableChainsForToken, filterChains } from "../../utils/blockchain"
 import { BaseModalDialog } from "../Modal/ModalDialog"
 import { ModalNoResults } from "../Modal/ModalNoResults"
 import { SearchBar } from "../SearchBar"
