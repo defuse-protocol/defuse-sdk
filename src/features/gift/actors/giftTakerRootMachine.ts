@@ -3,6 +3,7 @@ import { type PromiseActorLogic, assign, setup } from "xstate"
 import type { SignerCredentials } from "../../../core/formatters"
 import { logger } from "../../../logger"
 import type { PublishIntentsErr } from "../../../sdk/solverRelay/publishIntents"
+import { emitEvent } from "../../../services/emitter"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../../types/base"
 import type { MultiPayload } from "../../../types/defuse-contracts-types"
 import {
@@ -85,6 +86,17 @@ export const giftTakerRootMachine = setup({
     setError: assign({
       error: (_, error: GiftTakerClaimingActorErrors) => error,
     }),
+    emitGiftClaimed: ({ context }) => {
+      const { giftInfo, signerCredentials } = context
+      assert(giftInfo != null)
+
+      emitEvent("gift_claimed", {
+        gift_token: giftInfo.token.symbol,
+        gift_amount: giftInfo.tokenDiff,
+        claimer_wallet_address: signerCredentials,
+        creator_wallet_address: giftInfo.accountId,
+      })
+    },
   },
   guards: {
     isOk: (_, params: { tag: "ok" | "err" }) => params.tag === "ok",
@@ -187,6 +199,7 @@ export const giftTakerRootMachine = setup({
 
     finished: {
       type: "final",
+      entry: "emitGiftClaimed",
     },
     aborted: {
       type: "final",

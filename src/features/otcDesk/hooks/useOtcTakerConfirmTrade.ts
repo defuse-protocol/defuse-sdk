@@ -10,7 +10,9 @@ import {
   type PublishIntentsErr,
   publishIntents,
 } from "../../../sdk/solverRelay/publishIntents"
+import { emitEvent } from "../../../services/emitter"
 import type { MultiPayload } from "../../../types/defuse-contracts-types"
+import { assert } from "../../../utils/assert"
 import { authHandleToIntentsUserId } from "../../../utils/authIdentity"
 import {
   SignIntentContext,
@@ -116,6 +118,18 @@ export function useOtcTakerConfirmTrade({
         })
         return null
       })
+
+      if (data.isOk()) {
+        const trade = otcTakerTradesStore.getState().trades[tradeId]
+        assert(trade != null)
+        assert(trade.status === "completed")
+
+        emitEvent("otc_confirmed", {
+          tx_hash: trade.intentHashes,
+          received_amount: _variables.preparation.tokenDelta,
+          otc_receiver: _variables.signerCredentials,
+        })
+      }
     },
   })
 }

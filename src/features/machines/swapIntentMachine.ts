@@ -4,6 +4,7 @@ import { assign, fromPromise, setup } from "xstate"
 import { settings } from "../../constants/settings"
 import { logger } from "../../logger"
 import { publishIntent } from "../../sdk/solverRelay/publishIntent"
+import { emitEvent } from "../../services/emitter"
 import type { AggregatedQuote } from "../../services/quoteService"
 import type { AuthMethod } from "../../types/authHandle"
 import type {
@@ -179,6 +180,31 @@ export const swapIntentMachine = setup({
           context.intentOperationParams.tokenOut,
           context.slippageBasisPoints
         )
+      }
+    },
+    emitSwapInitiated: ({ context }) => {
+      const { intentOperationParams } = context
+      if (intentOperationParams.type === "swap") {
+        const { tokensIn } = intentOperationParams
+        assert(tokensIn[0] != null)
+
+        emitEvent("swap_initiated", {
+          tokenDeltas: intentOperationParams.quote.tokenDeltas,
+          token_from: intentOperationParams.tokenOut.symbol,
+          token_to: tokensIn[0].symbol,
+        })
+      }
+    },
+    emitSwapConfirmed: ({ context }) => {
+      const { intentOperationParams } = context
+      if (intentOperationParams.type === "swap") {
+        const { tokensIn } = intentOperationParams
+        assert(tokensIn[0] != null)
+
+        emitEvent("swap_confirmed", {
+          tx_hash: context.intentHash,
+          received_amount: intentOperationParams.quote.tokenDeltas,
+        })
       }
     },
     assembleSignMessages: assign({
@@ -364,7 +390,7 @@ export const swapIntentMachine = setup({
     },
 
     Signing: {
-      entry: "assembleSignMessages",
+      entry: ["assembleSignMessages", "emitSwapInitiated"],
 
       invoke: {
         id: "signMessage",
@@ -631,6 +657,7 @@ export const swapIntentMachine = setup({
 
     Completed: {
       type: "final",
+      entry: ["emitSwapConfirmed"],
     },
 
     "Generic Error": {
