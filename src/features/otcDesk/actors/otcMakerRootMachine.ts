@@ -8,6 +8,7 @@ import {
 } from "xstate"
 import type { SignerCredentials } from "../../../core/formatters"
 import { logger } from "../../../logger"
+import { emitEvent } from "../../../services/emitter"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../../types/base"
 import type { MultiPayload } from "../../../types/defuse-contracts-types"
 import type {
@@ -181,6 +182,27 @@ export const otcMakerRootMachine = setup({
         iv: event.iv,
       })
     },
+    emitOtcDealInitiated: ({ context, event }) => {
+      assertEvent(event, "COMPLETE_STORING")
+
+      const form = context.formRef.getSnapshot()
+      const parsedValuesSnapshot = form.context.parsedValues.getSnapshot()
+
+      const { tokenOut, tokenIn, amountIn, amountOut, expiry } =
+        parsedValuesSnapshot.context
+
+      assert(tokenOut != null)
+      assert(tokenIn != null)
+
+      emitEvent("otc_deal_initiated", {
+        token_from: tokenOut.symbol,
+        token_to: tokenIn.symbol,
+        amount_from: amountOut,
+        amount_to: amountIn,
+        order_expiry_time: expiry,
+        otc_creator: event.signerCredentials,
+      })
+    },
   },
   guards: {
     isOk: (_, params: { tag: "ok" | "err" }) => params.tag === "ok",
@@ -335,23 +357,25 @@ export const otcMakerRootMachine = setup({
         onDone: [
           {
             guard: { type: "isOk", params: ({ event }) => event.output },
-            actions: {
-              type: "completeStoring",
-              params: ({ event }) => {
-                assert(event.output.tag === "ok")
-                const storeEvent = event.output.value
-                otcMakerTradesStore.getState().addTrade(
-                  {
-                    tradeId: storeEvent.tradeId,
-                    makerMultiPayload: storeEvent.multiPayload,
-                    pKey: storeEvent.pKey,
-                    iv: storeEvent.iv,
-                  },
-                  storeEvent.signerCredentials
-                )
-                return event.output.value
+            actions: [
+              {
+                type: "completeStoring",
+                params: ({ event }) => {
+                  assert(event.output.tag === "ok")
+                  const storeEvent = event.output.value
+                  otcMakerTradesStore.getState().addTrade(
+                    {
+                      tradeId: storeEvent.tradeId,
+                      makerMultiPayload: storeEvent.multiPayload,
+                      pKey: storeEvent.pKey,
+                      iv: storeEvent.iv,
+                    },
+                    storeEvent.signerCredentials
+                  )
+                  return event.output.value
+                },
               },
-            },
+            ],
           },
           {
             target: "editing",
@@ -413,6 +437,7 @@ export const otcMakerRootMachine = setup({
           },
         },
       },
+      entry: ["emitOtcDealInitiated"],
     },
   },
 })

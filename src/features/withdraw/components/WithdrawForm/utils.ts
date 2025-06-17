@@ -1,4 +1,6 @@
+import { reverseAssetNetworkAdapter } from "src/utils/adapters"
 import { formatUnits } from "viem"
+import { getBlockchainsOptions } from "../../../../constants/blockchains"
 import type { TokenBalances as TokenBalancesRecord } from "../../../../services/defuseBalanceService"
 import { AuthMethod } from "../../../../types/authHandle"
 import type {
@@ -11,7 +13,6 @@ import { assert } from "../../../../utils/assert"
 import { isBaseToken } from "../../../../utils/token"
 import { compareAmounts, minAmounts } from "../../../../utils/tokenUtils"
 import type { BalanceMapping } from "../../../machines/depositedBalanceMachine"
-import { allBlockchains } from "./constants"
 
 export function chainTypeSatisfiesChainName(
   chainType: AuthMethod | undefined,
@@ -143,12 +144,17 @@ export const getBlockchainSelectItems = (
   maxPossibleBalances: Record<string, TokenValue>
 ) => {
   const availableBlockchains = getAvailableBlockchains(token)
+  const allBlockchains = Object.values(getBlockchainsOptions())
 
   return Object.fromEntries(
     allBlockchains
-      .filter((blockchain) => availableBlockchains[blockchain.value])
-      .map((a) => {
-        const addressData = availableBlockchains[a.value]
+      .filter((blockchain) => {
+        const parsedBlockchain = reverseAssetNetworkAdapter[blockchain.value]
+        return availableBlockchains[parsedBlockchain]
+      })
+      .map((blockchain) => {
+        const parsedBlockchain = reverseAssetNetworkAdapter[blockchain.value]
+        const addressData = availableBlockchains[parsedBlockchain]
         assert(addressData != null)
 
         let hotBalance: TokenValue | null = null
@@ -162,7 +168,7 @@ export const getBlockchainSelectItems = (
           }
         }
 
-        return [a.value, { ...a, hotBalance }]
+        return [parsedBlockchain, { ...blockchain, hotBalance }]
       })
   )
 }

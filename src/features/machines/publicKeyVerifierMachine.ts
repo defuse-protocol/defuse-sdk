@@ -219,7 +219,7 @@ async function addPublicKeyToContract({
         params: {
           methodName: "add_public_key",
           args: { public_key: pubKey },
-          gas: "300000000000000",
+          gas: "5000000000000",
           deposit: "1",
         },
       },

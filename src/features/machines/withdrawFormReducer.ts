@@ -9,6 +9,10 @@ import { assert } from "../../utils/assert"
 import { isBaseToken } from "../../utils/token"
 import { validateAddress } from "../../utils/validateAddress"
 import { isCexIncompatible } from "../withdraw/utils/cexCompatibility"
+import {
+  getHyperliquidSrcChain,
+  isHyperliquid,
+} from "../withdraw/utils/hyperliquid"
 
 export type Fields = Array<Exclude<keyof State, "parentRef">>
 const fields: Fields = [
@@ -48,7 +52,7 @@ export type Events =
   | {
       type: "WITHDRAW_FORM.UPDATE_BLOCKCHAIN"
       params: {
-        blockchain: string
+        blockchain: SupportedChainName
         /**
          * Don't need to provide `parsedAmount` here, because amount is not
          * expected to change when blockchain changes, because decimals for
@@ -67,6 +71,8 @@ export type Events =
       type: "WITHDRAW_FORM.RECIPIENT"
       params: {
         recipient: string
+        /** Hyperliquid withdrawals happen on base token network to the provided proxy recipient address. */
+        proxyRecipient: string | null
       }
     }
   | {
@@ -100,6 +106,7 @@ export type State = {
   parsedDestinationMemo: string | null
   cexFundsLooseConfirmation: CexFundsLooseConfirmationStatus
   minReceivedAmount: TokenValue | null
+  blockchain: SupportedChainName
 }
 
 export const withdrawFormReducer = fromTransition(
@@ -124,14 +131,21 @@ export const withdrawFormReducer = fromTransition(
           cexFundsLooseConfirmation:
             cexFundsLooseConfirmationStatusDefault(tokenOut),
           minReceivedAmount: null,
+          blockchain: tokenOut.chainName,
         }
         break
       }
       case "WITHDRAW_FORM.UPDATE_BLOCKCHAIN": {
+        const blockchain = event.params.blockchain
+        const determinedBlockchain = isHyperliquid(blockchain)
+          ? getHyperliquidSrcChain(state.tokenOut)
+          : blockchain
+
         const tokenOut = getWithdrawTokenWithFallback(
           state.tokenIn,
-          event.params.blockchain
+          determinedBlockchain
         )
+
         newState = {
           ...state,
           tokenOut,
@@ -142,6 +156,7 @@ export const withdrawFormReducer = fromTransition(
           cexFundsLooseConfirmation:
             cexFundsLooseConfirmationStatusDefault(tokenOut),
           minReceivedAmount: null,
+          blockchain,
         }
         break
       }
@@ -155,7 +170,16 @@ export const withdrawFormReducer = fromTransition(
       }
       case "WITHDRAW_FORM.RECIPIENT": {
         const recipient = event.params.recipient
-        const parsedRecipient = getParsedRecipient(recipient, state.tokenOut)
+        const determinedRecipient = isHyperliquid(state.blockchain)
+          ? event.params.proxyRecipient
+          : event.params.recipient
+
+        assert(determinedRecipient, "Recipient is required")
+        const parsedRecipient = getParsedRecipient(
+          determinedRecipient,
+          state.tokenOut
+        )
+
         newState = {
           ...state,
           recipient,
@@ -229,6 +253,7 @@ export const withdrawFormReducer = fromTransition(
       cexFundsLooseConfirmation:
         cexFundsLooseConfirmationStatusDefault(tokenOut),
       minReceivedAmount: null,
+      blockchain: tokenOut.chainName,
     }
   }
 )
