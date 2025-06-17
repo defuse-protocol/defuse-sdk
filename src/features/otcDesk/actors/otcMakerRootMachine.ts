@@ -96,7 +96,6 @@ type ContextType = {
   otcMakerConfigLoadRef: ActorRefFrom<typeof otcMakerConfigLoadActor>
   referral: string | undefined
   createOtcTrade: CreateOtcTrade
-  signerCredentials: null | SignerCredentials
 }
 
 type ChildrenType = {
@@ -183,7 +182,9 @@ export const otcMakerRootMachine = setup({
         iv: event.iv,
       })
     },
-    onSignedEntry: ({ context }) => {
+    emitOtcDealInitiated: ({ context, event }) => {
+      assertEvent(event, "COMPLETE_STORING")
+
       const form = context.formRef.getSnapshot()
       const parsedValuesSnapshot = form.context.parsedValues.getSnapshot()
 
@@ -199,7 +200,7 @@ export const otcMakerRootMachine = setup({
         amount_from: amountOut,
         amount_to: amountIn,
         order_expiry_time: expiry,
-        otc_creator: context.signerCredentials,
+        otc_creator: event.signerCredentials,
       })
     },
   },
@@ -230,7 +231,6 @@ export const otcMakerRootMachine = setup({
     }),
     referral: input.referral,
     createOtcTrade: input.createOtcTrade,
-    signerCredentials: null,
   }),
 
   initial: "editing",
@@ -375,13 +375,6 @@ export const otcMakerRootMachine = setup({
                   return event.output.value
                 },
               },
-              assign({
-                signerCredentials: ({ event }) => {
-                  assert(event.output.tag === "ok")
-
-                  return event.output.value.signerCredentials
-                },
-              }),
             ],
           },
           {
@@ -444,7 +437,7 @@ export const otcMakerRootMachine = setup({
           },
         },
       },
-      entry: ["onSignedEntry"],
+      entry: ["emitOtcDealInitiated"],
     },
   },
 })

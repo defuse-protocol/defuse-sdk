@@ -197,7 +197,7 @@ export const withdrawUIMachine = setup({
     clearPreparationOutput: assign({
       preparationOutput: null,
     }),
-    onPreparationEntry: ({ context }) => {
+    emitWithdrawalInitiated: ({ context }) => {
       const withdrawContext = context.withdrawFormRef.getSnapshot().context
       const { preparationOutput } = context
 
@@ -563,7 +563,7 @@ export const withdrawUIMachine = setup({
 
       onDone: {
         target: "submitting",
-        actions: ["onPreparationEntry"],
+        actions: ["emitWithdrawalInitiated"],
       },
     },
 

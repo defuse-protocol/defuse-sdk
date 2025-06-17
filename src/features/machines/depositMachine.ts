@@ -87,7 +87,7 @@ export const depositMachine = setup({
         return params
       },
     }),
-    onSigningEntry: ({ context }) => {
+    emitDepositInitiated: ({ context }) => {
       emitEvent("deposit_initiated", {
         token: context.derivedToken.symbol,
         amount: {
@@ -97,7 +97,7 @@ export const depositMachine = setup({
         wallet_type: context.derivedToken.chainName,
       })
     },
-    onCompletedEntry: ({ context }) => {
+    emitDepositSuccess: ({ context }) => {
       emitEvent("deposit_success", {
         tx_hash: context.txHash,
         token: context.derivedToken.symbol,
@@ -214,7 +214,7 @@ export const depositMachine = setup({
         },
         src: "signAndSendTransactions",
       },
-      entry: ["onSigningEntry"],
+      entry: ["emitDepositInitiated"],
     },
 
     verifying: {
@@ -257,7 +257,7 @@ export const depositMachine = setup({
 
     completed: {
       type: "final",
-      entry: ["onCompletedEntry"],
+      entry: ["emitDepositSuccess"],
     },
   },
 })

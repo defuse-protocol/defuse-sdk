@@ -182,7 +182,7 @@ export const swapIntentMachine = setup({
         )
       }
     },
-    onSigningEntry: ({ context }) => {
+    emitSwapInitiated: ({ context }) => {
       const { intentOperationParams } = context
       if (intentOperationParams.type === "swap") {
         const { tokensIn } = intentOperationParams
@@ -195,7 +195,7 @@ export const swapIntentMachine = setup({
         })
       }
     },
-    onCompletedEntry: ({ context }) => {
+    emitSwapConfirmed: ({ context }) => {
       const { intentOperationParams } = context
       if (intentOperationParams.type === "swap") {
         const { tokensIn } = intentOperationParams
@@ -390,7 +390,7 @@ export const swapIntentMachine = setup({
     },
 
     Signing: {
-      entry: ["assembleSignMessages", "onSigningEntry"],
+      entry: ["assembleSignMessages", "emitSwapInitiated"],
 
       invoke: {
         id: "signMessage",
@@ -657,7 +657,7 @@ export const swapIntentMachine = setup({
 
     Completed: {
       type: "final",
-      entry: ["onCompletedEntry"],
+      entry: ["emitSwapConfirmed"],
     },
 
     "Generic Error": {

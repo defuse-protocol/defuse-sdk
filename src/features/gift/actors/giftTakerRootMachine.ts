@@ -86,7 +86,7 @@ export const giftTakerRootMachine = setup({
     setError: assign({
       error: (_, error: GiftTakerClaimingActorErrors) => error,
     }),
-    onClaimingDoneEntry: ({ context }) => {
+    emitGiftClaimed: ({ context }) => {
       const { giftInfo, signerCredentials } = context
       assert(giftInfo != null)
 
@@ -199,7 +199,7 @@ export const giftTakerRootMachine = setup({
 
     finished: {
       type: "final",
-      entry: "onClaimingDoneEntry",
+      entry: "emitGiftClaimed",
     },
     aborted: {
       type: "final",
