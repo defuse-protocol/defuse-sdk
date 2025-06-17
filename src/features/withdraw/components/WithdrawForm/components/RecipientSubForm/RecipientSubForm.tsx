@@ -177,7 +177,7 @@ export const RecipientSubForm = ({
               }
               disabled={
                 Object.keys(blockchainSelectItems).length === 1 &&
-                field.value === Object.values(blockchainSelectItems)[0]?.value
+                isFirstBlockchainSelected(field.value, blockchainSelectItems)
               }
             />
 
@@ -314,5 +314,16 @@ export const RecipientSubForm = ({
         }
       />
     </Flex>
+  )
+}
+
+export const isFirstBlockchainSelected = (
+  fieldValue: SupportedChainName,
+  blockchainSelectItems: Record<string, { value: BlockchainEnum }>
+): boolean => {
+  const firstBlockchain = Object.values(blockchainSelectItems)[0]
+  return (
+    firstBlockchain != null &&
+    fieldValue === reverseAssetNetworkAdapter[firstBlockchain.value]
   )
 }
