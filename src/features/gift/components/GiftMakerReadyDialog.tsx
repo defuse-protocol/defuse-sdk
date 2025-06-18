@@ -26,12 +26,14 @@ type GiftMakerReadyDialogProps = {
   readyGiftRef: ActorRefFrom<typeof giftMakerReadyActor>
   generateLink: GenerateLink
   signerCredentials: SignerCredentials
+  onClose?: () => void
 }
 
 export function GiftMakerReadyDialog({
   readyGiftRef,
   generateLink,
   signerCredentials,
+  onClose,
 }: GiftMakerReadyDialogProps) {
   const { giftCancellationRef, giftInfo } = useSelector(
     readyGiftRef,
@@ -44,7 +46,11 @@ export function GiftMakerReadyDialog({
   )
   return (
     <>
-      <SuccessDialog readyGiftRef={readyGiftRef} generateLink={generateLink} />
+      <SuccessDialog
+        readyGiftRef={readyGiftRef}
+        generateLink={generateLink}
+        onClose={onClose}
+      />
       <CancellationDialog
         giftInfo={giftInfo}
         actorRef={giftCancellationRef}
@@ -57,9 +63,11 @@ export function GiftMakerReadyDialog({
 function SuccessDialog({
   readyGiftRef,
   generateLink,
+  onClose,
 }: {
   readyGiftRef: ActorRefFrom<typeof giftMakerReadyActor>
   generateLink: GenerateLink
+  onClose?: () => void
 }) {
   const { context } = useSelector(readyGiftRef, (state) => ({
     context: state.context,
@@ -67,7 +75,8 @@ function SuccessDialog({
 
   const finish = useCallback(() => {
     readyGiftRef.send({ type: "FINISH" })
-  }, [readyGiftRef])
+    onClose?.()
+  }, [readyGiftRef, onClose])
 
   const cancelGift = useCallback(() => {
     readyGiftRef.send({ type: "CANCEL_GIFT" })
@@ -98,6 +107,7 @@ function SuccessDialog({
 
       {/* Image Section */}
       <ShareableGiftImage
+        link={copyGiftLink()}
         token={context.parsed.token}
         amount={context.parsed.amount}
         message={
