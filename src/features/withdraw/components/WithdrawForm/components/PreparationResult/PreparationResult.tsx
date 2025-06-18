@@ -21,9 +21,6 @@ export const PreparationResult = ({
   const val = err.reason
 
   switch (val) {
-    case "ERR_NEP141_STORAGE":
-      content = val
-      break
     case "ERR_CANNOT_FETCH_POA_BRIDGE_INFO":
       content = "Cannot fetch POA Bridge info"
       break
@@ -75,6 +72,9 @@ export const PreparationResult = ({
           {" for slight amount."}
         </>
       )
+      break
+    case "ERR_WITHDRAWAL_FEE_FETCH":
+      content = "Cannot fetch withdrawal fee"
       break
     default:
       val satisfies never
