@@ -9,6 +9,8 @@ import {
   getNearNep141Balance,
   getSolanaNativeBalance,
   getSolanaSplBalance,
+  getTonJettonBalance,
+  getTonNativeBalance,
 } from "../../services/blockchainBalanceService"
 import { getWalletRpcUrl } from "../../services/depositService"
 import type { BaseTokenInfo, SupportedChainName } from "../../types/base"
@@ -19,7 +21,7 @@ import { validateAddress } from "../../utils/validateAddress"
 
 export const backgroundBalanceActor = fromPromise(
   async ({
-    input: { derivedToken, userAddress, blockchain },
+    input: { derivedToken, userAddress, userWalletAddress, blockchain },
   }: {
     input: {
       derivedToken: BaseTokenInfo
@@ -39,7 +41,7 @@ export const backgroundBalanceActor = fromPromise(
       nearBalance: null,
     }
 
-    if (!validateAddress(userAddress, blockchain)) {
+    if (!validateAddress(userAddress, blockchain, userWalletAddress)) {
       return result
     }
 
@@ -140,7 +142,27 @@ export const backgroundBalanceActor = fromPromise(
         break
       }
       case BlockchainEnum.TON: {
-        // TODO: Add balance fetching for TON
+        if (isNativeToken(derivedToken)) {
+          const balance = await getTonNativeBalance({
+            userAddress: userWalletAddress,
+            rpcUrl: getWalletRpcUrl(networkToSolverFormat),
+          })
+          if (balance === null) {
+            throw new Error("Failed to fetch TON balances")
+          }
+          result.balance = balance
+          break
+        }
+
+        const balance = await getTonJettonBalance({
+          tokenAddress: derivedToken.address,
+          userAddress: userWalletAddress,
+          rpcUrl: getWalletRpcUrl(networkToSolverFormat),
+        })
+        if (balance === null) {
+          throw new Error("Failed to fetch TON balances")
+        }
+        result.balance = balance
         break
       }
       // Active deposits through Bitcoin and other blockchains are not supported, so we don't need to check balances
