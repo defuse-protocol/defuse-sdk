@@ -367,10 +367,10 @@
     tweetnacl "^1.0.3"
     tweetnacl-util "^0.15.1"
 
-"@defuse-protocol/bridge-sdk@^0.1.8":
-  version "0.1.8"
-  resolved "https://registry.yarnpkg.com/@defuse-protocol/bridge-sdk/-/bridge-sdk-0.1.8.tgz#b3389a4590c722385051c444a8496bd65193eba3"
-  integrity sha512-qkd8VmlZ0ibCrdzsVfPcGdF55UMOpk/Sqr15rUzvuIsD/79RFfIBRVH3LOZFgK9WAi33sHUYuNp9FFB3k2ArPQ==
+"@defuse-protocol/bridge-sdk@^0.1.9":
+  version "0.1.9"
+  resolved "https://registry.yarnpkg.com/@defuse-protocol/bridge-sdk/-/bridge-sdk-0.1.9.tgz#dfc07236db1b556f1627ce7d5fd1a6c61cd17978"
+  integrity sha512-NIHHWTSYkYyXscKoz3evxlAQM6ASGyIseeaS1IbsFmGcdTIIpaII5a38EsL9aH6lrjm0p5cA3Pcirfw/GgjgVQ==
   dependencies:
     "@defuse-protocol/contract-types" "0.0.2"
     "@defuse-protocol/internal-utils" "0.0.6"
