@@ -14,14 +14,10 @@ import { getPOABridgeInfo } from "../features/machines/poaBridgeInfoActor"
 import { calcWithdrawAmount } from "../features/machines/swapIntentMachine"
 import type { State as WithdrawFormContext } from "../features/machines/withdrawFormReducer"
 import { logger } from "../logger"
-import type {
-  BaseTokenInfo,
-  SupportedChainName,
-  TokenValue,
-  UnifiedTokenInfo,
-} from "../types/base"
+import type { BaseTokenInfo, TokenValue, UnifiedTokenInfo } from "../types/base"
 import type { Intent } from "../types/defuse-contracts-types"
 import { assert } from "../utils/assert"
+import { isAuroraVirtualChain } from "../utils/blockchain"
 import { isBaseToken } from "../utils/token"
 import {
   adjustDecimalsTokenValue,
@@ -87,21 +83,10 @@ export async function prepareWithdraw(
   assert(formValues.parsedAmount != null, "parsedAmount is null")
   assert(formValues.parsedRecipient != null, "parsedRecipient is null")
 
-  const isVirtualChain = (
-    [
-      "tuxappchain",
-      "vertex",
-      "optima",
-      "coineasy",
-      "turbochain",
-      "aurora",
-    ] as SupportedChainName[]
-  ).includes(formValues.tokenOut.chainName)
-
   let feeEstimation: FeeEstimation
   try {
     // BridgeSDK doesn't support virtual chains yet, so it can't estimate
-    if (isVirtualChain) {
+    if (isAuroraVirtualChain(formValues.tokenOut.chainName)) {
       feeEstimation = {
         quote: null,
         amount: 0n,
@@ -225,7 +210,7 @@ export async function prepareWithdraw(
 
   // BridgeSDK doesn't support virtual chains yet, and currently prebuilt
   // withdrawal intents will be used only for `hot_omni`, so we can skip generating
-  const withdrawalIntents = isVirtualChain
+  const withdrawalIntents = isAuroraVirtualChain(formValues.tokenOut.chainName)
     ? []
     : await bridgeSDK.createWithdrawalIntents({
         withdrawalParams: {
