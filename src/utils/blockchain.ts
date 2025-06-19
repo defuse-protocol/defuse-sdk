@@ -54,6 +54,9 @@ export function availableChainsForToken(
   if (!config.features.hyperliquid) {
     chains = chains.filter((chain) => chain !== "hyperliquid")
   }
+  if (!config.features.ton) {
+    chains = chains.filter((chain) => chain !== "ton")
+  }
 
   const options = getBlockchainsOptions()
 

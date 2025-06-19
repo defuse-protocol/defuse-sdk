@@ -138,6 +138,10 @@ export const backgroundBalanceActor = fromPromise(
         result.balance = balance
         break
       }
+      case BlockchainEnum.TON: {
+        // TODO: Add balance fetching for TON
+        break
+      }
       // Active deposits through Bitcoin and other blockchains are not supported, so we don't need to check balances
       case BlockchainEnum.BITCOIN:
       case BlockchainEnum.DOGECOIN:

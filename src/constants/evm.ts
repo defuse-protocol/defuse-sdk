@@ -25,5 +25,6 @@ export const CHAIN_IDS: Record<SupportedChainName, number | undefined> = {
   tron: undefined,
   polygon: 137,
   bsc: 56,
-  hyperliquid: 999,
+  hyperliquid: undefined,
+  ton: undefined,
 }

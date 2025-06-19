@@ -57,6 +57,9 @@ export function validateAddress(
     case "tron":
       return validateTronAddress(address)
 
+    case "ton":
+      return /^[EU]Q[0-9A-Za-z_-]{46}$/.test(address)
+
     default:
       blockchain satisfies never
       return false
