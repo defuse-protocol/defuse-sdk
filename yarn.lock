@@ -367,10 +367,10 @@
     tweetnacl "^1.0.3"
     tweetnacl-util "^0.15.1"
 
-"@defuse-protocol/bridge-sdk@^0.1.8":
-  version "0.1.8"
-  resolved "https://registry.yarnpkg.com/@defuse-protocol/bridge-sdk/-/bridge-sdk-0.1.8.tgz#b3389a4590c722385051c444a8496bd65193eba3"
-  integrity sha512-qkd8VmlZ0ibCrdzsVfPcGdF55UMOpk/Sqr15rUzvuIsD/79RFfIBRVH3LOZFgK9WAi33sHUYuNp9FFB3k2ArPQ==
+"@defuse-protocol/bridge-sdk@^0.1.9":
+  version "0.1.9"
+  resolved "https://registry.yarnpkg.com/@defuse-protocol/bridge-sdk/-/bridge-sdk-0.1.9.tgz#dfc07236db1b556f1627ce7d5fd1a6c61cd17978"
+  integrity sha512-NIHHWTSYkYyXscKoz3evxlAQM6ASGyIseeaS1IbsFmGcdTIIpaII5a38EsL9aH6lrjm0p5cA3Pcirfw/GgjgVQ==
   dependencies:
     "@defuse-protocol/contract-types" "0.0.2"
     "@defuse-protocol/internal-utils" "0.0.6"
@@ -3310,6 +3310,17 @@
   version "15.1.0"
   resolved "https://registry.yarnpkg.com/@ton/ton/-/ton-15.1.0.tgz#a760b1492dd3e5896238b7154f7377f4e51fa086"
   integrity sha512-almetcfTu7jLjcNcEEPB7wAc8yl90ES1M//sOr1QE+kv7RbmEvMkaPSc7kFxzs10qrjIPKxlodBJlMSWP5LuVQ==
+  dependencies:
+    axios "^1.6.7"
+    dataloader "^2.0.0"
+    symbol.inspect "1.0.1"
+    teslabot "^1.3.0"
+    zod "^3.21.4"
+
+"@ton/ton@^15.3.0":
+  version "15.3.0"
+  resolved "https://registry.yarnpkg.com/@ton/ton/-/ton-15.3.0.tgz#868c8e605cab6a5be6878afe2a13792f04613561"
+  integrity sha512-kDuTbQH+OEc1JGChCEU6BoWhvTBXo6FoLUyNguUtH/u3rEypbnhuE+QAhid60jKeREzk4R54/KvyPopoo29/1w==
   dependencies:
     axios "^1.6.7"
     dataloader "^2.0.0"

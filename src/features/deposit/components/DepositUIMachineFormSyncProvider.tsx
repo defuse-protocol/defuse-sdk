@@ -7,12 +7,14 @@ import { DepositUIMachineContext } from "./DepositUIMachineProvider"
 
 type DepositUIMachineFormSyncProviderProps = PropsWithChildren<{
   userAddress?: string
+  userWalletAddress: string | null
   userChainType?: AuthMethod
 }>
 
 export function DepositUIMachineFormSyncProvider({
   children,
   userAddress,
+  userWalletAddress,
   userChainType,
 }: DepositUIMachineFormSyncProviderProps) {
   const { watch } = useFormContext<DepositFormValues>()
@@ -64,10 +66,10 @@ export function DepositUIMachineFormSyncProvider({
     } else {
       actorRef.send({
         type: "LOGIN",
-        params: { userAddress, userChainType },
+        params: { userAddress, userWalletAddress, userChainType },
       })
     }
-  }, [actorRef, userAddress, userChainType])
+  }, [actorRef, userAddress, userWalletAddress, userChainType])
 
   return <>{children}</>
 }
