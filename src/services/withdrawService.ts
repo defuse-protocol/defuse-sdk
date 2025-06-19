@@ -1,4 +1,9 @@
-import type { FeeEstimation } from "@defuse-protocol/bridge-sdk"
+import {
+  type FeeEstimation,
+  FeeExceedsAmountError,
+} from "@defuse-protocol/bridge-sdk"
+import { Err, Ok, type Result } from "@thames/monads"
+import { findError } from "src/utils/errors"
 import { type ActorRefFrom, waitFor } from "xstate"
 import { bridgeSDK } from "../constants/bridgeSdk"
 import type {
@@ -14,7 +19,12 @@ import { getPOABridgeInfo } from "../features/machines/poaBridgeInfoActor"
 import { calcWithdrawAmount } from "../features/machines/swapIntentMachine"
 import type { State as WithdrawFormContext } from "../features/machines/withdrawFormReducer"
 import { logger } from "../logger"
-import type { BaseTokenInfo, TokenValue, UnifiedTokenInfo } from "../types/base"
+import type {
+  BaseTokenInfo,
+  SupportedChainName,
+  TokenValue,
+  UnifiedTokenInfo,
+} from "../types/base"
 import type { Intent } from "../types/defuse-contracts-types"
 import { assert } from "../utils/assert"
 import { isAuroraVirtualChain } from "../utils/blockchain"
@@ -34,37 +44,36 @@ interface SwapRequirement {
   swapQuote: QuoteResult
 }
 
+export type PrepareWithdrawErrorType =
+  | Extract<QuoteResult, { tag: "err" }>["value"]
+  | {
+      reason:
+        | "ERR_BALANCE_FETCH"
+        | "ERR_BALANCE_MISSING"
+        | "ERR_BALANCE_INSUFFICIENT"
+        | "ERR_CANNOT_FETCH_POA_BRIDGE_INFO"
+        | "ERR_CANNOT_FETCH_QUOTE"
+        | "ERR_WITHDRAWAL_FEE_FETCH"
+    }
+  | {
+      reason: "ERR_AMOUNT_TOO_LOW"
+      shortfall: TokenValue
+      receivedAmount: bigint
+      minWithdrawalAmount: bigint
+      token: BaseTokenInfo
+    }
+
+export type PreparedWithdrawReturnType = {
+  directWithdrawAvailable: TokenValue
+  swap: SwapRequirement | null
+  feeEstimation: FeeEstimation
+  receivedAmount: TokenValue
+  prebuiltWithdrawalIntents: Intent[]
+}
+
 export type PreparationOutput =
-  | {
-      tag: "ok"
-      value: {
-        directWithdrawAvailable: TokenValue
-        swap: SwapRequirement | null
-        feeEstimation: FeeEstimation
-        receivedAmount: TokenValue
-        prebuiltWithdrawalIntents: Intent[]
-      }
-    }
-  | {
-      tag: "err"
-      value:
-        | Extract<QuoteResult, { tag: "err" }>["value"]
-        | {
-            reason:
-              | "ERR_BALANCE_FETCH"
-              | "ERR_BALANCE_MISSING"
-              | "ERR_BALANCE_INSUFFICIENT"
-              | "ERR_CANNOT_FETCH_POA_BRIDGE_INFO"
-              | "ERR_CANNOT_FETCH_QUOTE"
-              | "ERR_WITHDRAWAL_FEE_FETCH"
-          }
-        | {
-            reason: "ERR_AMOUNT_TOO_LOW"
-            receivedAmount: bigint
-            minWithdrawalAmount: bigint
-            token: BaseTokenInfo
-          }
-    }
+  | { tag: "ok"; value: PreparedWithdrawReturnType }
+  | { tag: "err"; value: PrepareWithdrawErrorType }
 
 export async function prepareWithdraw(
   {
@@ -82,33 +91,6 @@ export async function prepareWithdraw(
 ): Promise<PreparationOutput> {
   assert(formValues.parsedAmount != null, "parsedAmount is null")
   assert(formValues.parsedRecipient != null, "parsedRecipient is null")
-
-  let feeEstimation: FeeEstimation
-  try {
-    // BridgeSDK doesn't support virtual chains yet, so it can't estimate
-    if (isAuroraVirtualChain(formValues.tokenOut.chainName)) {
-      feeEstimation = {
-        quote: null,
-        amount: 0n,
-      }
-    } else {
-      feeEstimation = await bridgeSDK.estimateWithdrawalFee({
-        withdrawalParams: {
-          assetId: formValues.tokenOut.defuseAssetId,
-          amount: 0n, //
-          destinationAddress: formValues.parsedRecipient,
-          destinationMemo: undefined,
-          feeInclusive: false,
-        },
-      })
-    }
-  } catch (err) {
-    logger.error(err)
-    return {
-      tag: "err",
-      value: { reason: "ERR_WITHDRAWAL_FEE_FETCH" },
-    }
-  }
 
   let balances: Exclude<
     Awaited<ReturnType<typeof getBalances>>,
@@ -185,20 +167,39 @@ export async function prepareWithdraw(
     { signal }
   )
 
-  const { withdrawAmount: receivedAmount } = calcWithdrawAmount(
+  const { withdrawAmount: totalWithdrawn } = calcWithdrawAmount(
     formValues.tokenOut,
     swapRequirement?.swapQuote?.tag === "ok"
       ? swapRequirement.swapQuote.value
       : null,
-    feeEstimation,
+    { amount: 0n }, // pass 0 fee, because we just need to compute the total withdrawn amount
     directWithdrawAvailable
   )
+
+  const feeEstimation = await estimateFee({
+    chainName: formValues.tokenOut.chainName,
+    defuseAssetId: formValues.tokenOut.defuseAssetId,
+    amount: totalWithdrawn.amount,
+    recipient: formValues.parsedRecipient,
+  })
+  if (feeEstimation.isErr()) {
+    return { tag: "err", value: feeEstimation.unwrapErr() }
+  }
+
+  const receivedAmount = {
+    amount: totalWithdrawn.amount - feeEstimation.unwrap().amount,
+    decimals: formValues.tokenOut.decimals,
+  }
 
   if (compareAmounts(receivedAmount, minWithdrawal) === -1) {
     return {
       tag: "err",
       value: {
         reason: "ERR_AMOUNT_TOO_LOW",
+        shortfall: {
+          amount: minWithdrawal.amount - receivedAmount.amount,
+          decimals: receivedAmount.decimals,
+        },
         // todo: provide decimals too
         receivedAmount: receivedAmount.amount,
         // todo: provide decimals too
@@ -220,7 +221,7 @@ export async function prepareWithdraw(
           destinationMemo: formValues.parsedDestinationMemo ?? undefined,
           feeInclusive: false,
         },
-        feeEstimation,
+        feeEstimation: feeEstimation.unwrap(),
       })
 
   return {
@@ -228,7 +229,7 @@ export async function prepareWithdraw(
     value: {
       directWithdrawAvailable: directWithdrawAvailable,
       swap: swapRequirement,
-      feeEstimation,
+      feeEstimation: feeEstimation.unwrap(),
       receivedAmount: receivedAmount,
       prebuiltWithdrawalIntents: withdrawalIntents,
     },
@@ -337,6 +338,49 @@ async function getBalances(
     tag: "ok",
     value: balances,
   }
+}
+
+async function estimateFee({
+  chainName,
+  defuseAssetId,
+  amount,
+  recipient,
+}: {
+  chainName: SupportedChainName
+  defuseAssetId: string
+  amount: bigint
+  recipient: string
+}): Promise<Result<FeeEstimation, { reason: "ERR_WITHDRAWAL_FEE_FETCH" }>> {
+  // BridgeSDK doesn't support virtual chains yet, so it can't estimate
+  if (isAuroraVirtualChain(chainName)) {
+    return Ok({
+      amount: 0n,
+      quote: null,
+    })
+  }
+
+  return bridgeSDK
+    .estimateWithdrawalFee({
+      withdrawalParams: {
+        assetId: defuseAssetId,
+        amount: amount,
+        destinationAddress: recipient,
+        destinationMemo: undefined,
+        feeInclusive: true,
+      },
+    })
+    .then(Ok, (err) => {
+      const feeExceedsAmountError = findError(err, FeeExceedsAmountError)
+
+      if (feeExceedsAmountError) {
+        return Ok(feeExceedsAmountError.feeEstimation)
+      }
+
+      logger.error(err)
+      return Err({
+        reason: "ERR_WITHDRAWAL_FEE_FETCH",
+      })
+    })
 }
 
 function getWithdrawBreakdown({
