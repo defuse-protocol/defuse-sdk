@@ -21,12 +21,11 @@ import { validateAddress } from "../../utils/validateAddress"
 
 export const backgroundBalanceActor = fromPromise(
   async ({
-    input: { derivedToken, userAddress, userWalletAddress, blockchain },
+    input: { derivedToken, userWalletAddress, blockchain },
   }: {
     input: {
       derivedToken: BaseTokenInfo
-      userAddress: string
-      userWalletAddress: string
+      userWalletAddress: string | null
       blockchain: SupportedChainName
     }
   }): Promise<{
@@ -41,7 +40,10 @@ export const backgroundBalanceActor = fromPromise(
       nearBalance: null,
     }
 
-    if (!validateAddress(userWalletAddress ?? userAddress, blockchain)) {
+    if (
+      userWalletAddress === null ||
+      !validateAddress(userWalletAddress, blockchain)
+    ) {
       return result
     }
 
@@ -56,10 +58,10 @@ export const backgroundBalanceActor = fromPromise(
         const [nep141Balance, nativeBalance] = await Promise.all([
           getNearNep141Balance({
             tokenAddress: address,
-            accountId: normalizeToNearAddress(userAddress),
+            accountId: normalizeToNearAddress(userWalletAddress),
           }),
           getNearNativeBalance({
-            accountId: normalizeToNearAddress(userAddress),
+            accountId: normalizeToNearAddress(userWalletAddress),
           }),
         ])
         // This is unique case for NEAR, where we need to sum up the native balance and the NEP-141 balance
@@ -73,7 +75,7 @@ export const backgroundBalanceActor = fromPromise(
         }
         const balance = await getNearNep141Balance({
           tokenAddress: address,
-          accountId: normalizeToNearAddress(userAddress),
+          accountId: normalizeToNearAddress(userWalletAddress),
         })
         if (balance === null) {
           throw new Error("Failed to fetch NEAR balances")
@@ -97,7 +99,7 @@ export const backgroundBalanceActor = fromPromise(
       case BlockchainEnum.BSC: {
         if (isNativeToken(derivedToken)) {
           const balance = await getEvmNativeBalance({
-            userAddress: userAddress as Address,
+            userAddress: userWalletAddress as Address,
             rpcUrl: getWalletRpcUrl(networkToSolverFormat),
           })
           if (balance === null) {
@@ -108,7 +110,7 @@ export const backgroundBalanceActor = fromPromise(
         }
         const balance = await getEvmErc20Balance({
           tokenAddress: derivedToken.address as Address,
-          userAddress: userAddress as Address,
+          userAddress: userWalletAddress as Address,
           rpcUrl: getWalletRpcUrl(networkToSolverFormat),
         })
         if (balance === null) {
@@ -120,7 +122,7 @@ export const backgroundBalanceActor = fromPromise(
       case BlockchainEnum.SOLANA: {
         if (isNativeToken(derivedToken)) {
           const balance = await getSolanaNativeBalance({
-            userAddress: userAddress,
+            userAddress: userWalletAddress,
             rpcUrl: getWalletRpcUrl(networkToSolverFormat),
           })
           if (balance === null) {
@@ -131,7 +133,7 @@ export const backgroundBalanceActor = fromPromise(
         }
 
         const balance = await getSolanaSplBalance({
-          userAddress: userAddress,
+          userAddress: userWalletAddress,
           tokenAddress: derivedToken.address,
           rpcUrl: getWalletRpcUrl(networkToSolverFormat),
         })
@@ -209,7 +211,7 @@ export const depositTokenBalanceMachine = setup({
       params: {
         derivedToken: BaseTokenInfo
         userAddress: string
-        userWalletAddress: string
+        userWalletAddress: string | null
         blockchain: SupportedChainName
       }
     },
@@ -242,7 +244,6 @@ export const depositTokenBalanceMachine = setup({
 
         input: ({ event }) => ({
           derivedToken: event.params.derivedToken,
-          userAddress: event.params.userAddress,
           userWalletAddress: event.params.userWalletAddress,
           blockchain: event.params.blockchain,
         }),

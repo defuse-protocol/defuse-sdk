@@ -7,7 +7,7 @@ import { DepositUIMachineContext } from "./DepositUIMachineProvider"
 
 type DepositUIMachineFormSyncProviderProps = PropsWithChildren<{
   userAddress?: string
-  userWalletAddress?: string
+  userWalletAddress: string | null
   userChainType?: AuthMethod
 }>
 
@@ -59,7 +59,7 @@ export function DepositUIMachineFormSyncProvider({
   }, [watch, actorRef])
 
   useEffect(() => {
-    if (!userAddress || !userWalletAddress || userChainType == null) {
+    if (!userAddress || userChainType == null) {
       actorRef.send({
         type: "LOGOUT",
       })

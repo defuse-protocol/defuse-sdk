@@ -7,7 +7,7 @@ import type { SwappableToken } from "./swap"
 export type DepositWidgetProps = {
   userAddress: AuthHandle["identifier"] | undefined
   chainType: AuthHandle["method"] | undefined
-  userWalletAddress: string | undefined
+  userWalletAddress: string | null
   renderHostAppLink: RenderHostAppLink
   tokenList: SwappableToken[]
   sendTransactionNear: (tx: Transaction["NEAR"][]) => Promise<string | null>

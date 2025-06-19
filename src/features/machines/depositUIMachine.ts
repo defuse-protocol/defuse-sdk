@@ -56,7 +56,7 @@ export const depositUIMachine = setup({
           type: "LOGIN"
           params: {
             userAddress: string
-            userWalletAddress: string
+            userWalletAddress: string | null
             userChainType: AuthMethod
           }
         }
@@ -544,7 +544,7 @@ type DepositParams = {
   amount: bigint
   nearBalance: bigint | null
   userAddress: string
-  userWalletAddress: string
+  userWalletAddress: string | null
   depositAddress: string | null
   storageDepositRequired: bigint | null
   solanaATACreationRequired: boolean
