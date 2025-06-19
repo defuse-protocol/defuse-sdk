@@ -10,6 +10,7 @@ import { DepositUIMachineProvider } from "./DepositUIMachineProvider"
 export const DepositWidget = ({
   tokenList,
   userAddress,
+  userWalletAddress,
   chainType,
   sendTransactionNear,
   sendTransactionEVM,
@@ -29,6 +30,7 @@ export const DepositWidget = ({
           >
             <DepositUIMachineFormSyncProvider
               userAddress={userAddress}
+              userWalletAddress={userWalletAddress}
               userChainType={chainType}
             >
               <DepositForm

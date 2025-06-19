@@ -24,6 +24,7 @@ export const backgroundBalanceActor = fromPromise(
     input: {
       derivedToken: BaseTokenInfo
       userAddress: string
+      userWalletAddress: string
       blockchain: SupportedChainName
     }
   }): Promise<{
@@ -186,6 +187,7 @@ export const depositTokenBalanceMachine = setup({
       params: {
         derivedToken: BaseTokenInfo
         userAddress: string
+        userWalletAddress: string
         blockchain: SupportedChainName
       }
     },
@@ -219,6 +221,7 @@ export const depositTokenBalanceMachine = setup({
         input: ({ event }) => ({
           derivedToken: event.params.derivedToken,
           userAddress: event.params.userAddress,
+          userWalletAddress: event.params.userWalletAddress,
           blockchain: event.params.blockchain,
         }),
 
