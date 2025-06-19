@@ -41,7 +41,7 @@ export const backgroundBalanceActor = fromPromise(
       nearBalance: null,
     }
 
-    if (!validateAddress(userAddress, blockchain, userWalletAddress)) {
+    if (!validateAddress(userWalletAddress ?? userAddress, blockchain)) {
       return result
     }
 

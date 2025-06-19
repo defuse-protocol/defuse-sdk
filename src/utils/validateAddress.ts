@@ -10,8 +10,7 @@ import { isLegitAccountId } from "./near"
 
 export function validateAddress(
   address: string,
-  blockchain: SupportedChainName,
-  userWalletAddress?: string
+  blockchain: SupportedChainName
 ): boolean {
   switch (blockchain) {
     case "near":
@@ -59,7 +58,7 @@ export function validateAddress(
       return validateTronAddress(address)
 
     case "ton":
-      return /^[EU]Q[0-9A-Za-z_-]{46}$/.test(userWalletAddress ?? "")
+      return /^[EU]Q[0-9A-Za-z_-]{46}$/.test(address)
 
     default:
       blockchain satisfies never
