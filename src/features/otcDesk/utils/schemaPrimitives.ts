@@ -1,5 +1,5 @@
 import { base58, base64, base64urlnopad, hex } from "@scure/base"
-import * as v from "valibot"
+import { z } from "zod"
 import { AssertionError } from "../../../errors/assert"
 import { findError } from "../../../utils/errors"
 import { isLegitAccountId } from "../../../utils/near"
@@ -7,115 +7,141 @@ import { normalizeERC191Signature } from "../../../utils/prepareBroadcastRequest
 import { parseDefuseAssetId } from "../../../utils/tokenUtils"
 import { normalizeSignatureS } from "../../../utils/webAuthn"
 
-export const ToBigIntSchema = v.pipe(
-  v.string(),
-  v.transform((a) => BigInt(a))
-)
+export const ToBigIntSchema = z.string().transform((a) => BigInt(a))
 
-export const NearAccountIdSchema = v.pipe(v.string(), v.check(isLegitAccountId))
+export const NearAccountIdSchema = z.string().refine(isLegitAccountId)
 
-export const DeadlineSchema = v.pipe(v.string(), v.isoTimestamp())
+export const DeadlineSchema = z.string().datetime()
 
 export const NonceSchema = createBytesSchema("", "base64", base64, 32)
 
-export const TokenIdSchema = v.pipe(
-  v.string(),
-  v.rawCheck(({ dataset, addIssue }) => {
-    if (dataset.typed) {
-      try {
-        parseDefuseAssetId(dataset.value)
-      } catch (err: unknown) {
-        const e = findError(err, AssertionError)
-        addIssue({ message: e ? e.message : "unknown error" })
+export const TokenIdSchema = z.string().refine(
+  (value) => {
+    try {
+      parseDefuseAssetId(value)
+      return true
+    } catch (err: unknown) {
+      const e = findError(err, AssertionError)
+      throw new Error(e ? e.message : "unknown error")
+    }
+  },
+  { message: "Invalid token ID" }
+)
+
+export const PublicKeyED25519Schema = z
+  .string()
+  .startsWith("ed25519:")
+  .transform((value) => {
+    const key = value.slice("ed25519:".length)
+    try {
+      const bytes = base58.decode(key)
+      if (bytes.length === 32) {
+        return bytes
       }
+      throw new Error(`Invalid length (32 bytes expected, got ${bytes.length})`)
+    } catch {
+      throw new Error("Invalid base58 encoding")
     }
   })
-)
 
-export const PublicKeyED25519Schema = createBytesSchema(
-  "ed25519:",
-  "base58",
-  base58,
-  32
-)
+export const SignatureED25519Schema = z
+  .string()
+  .startsWith("ed25519:")
+  .transform((value) => {
+    const key = value.slice("ed25519:".length)
+    try {
+      const bytes = base58.decode(key)
+      if (bytes.length === 64) {
+        return bytes
+      }
+      throw new Error(`Invalid length (64 bytes expected, got ${bytes.length})`)
+    } catch {
+      throw new Error("Invalid base58 encoding")
+    }
+  })
 
-export const SignatureED25519Schema = createBytesSchema(
-  "ed25519:",
-  "base58",
-  base58,
-  64
-)
+export const SignatureSecp256k1Schema = z
+  .string()
+  .startsWith("secp256k1:")
+  .transform((value) => {
+    const key = value.slice("secp256k1:".length)
+    try {
+      const bytes = base58.decode(key)
+      if (bytes.length !== 65) {
+        throw new Error(
+          `Invalid length (65 bytes expected, got ${bytes.length})`
+        )
+      }
+      const signatureHex = hex.encode(bytes)
+      const normalizedSignature = normalizeERC191Signature(signatureHex)
+      if (signatureHex !== normalizedSignature) {
+        throw new Error(
+          "Signature is not normalized (recovery bit is expected to be 1 or 0)"
+        )
+      }
+      return bytes
+    } catch {
+      throw new Error("Invalid base58 encoding")
+    }
+  })
 
-export const SignatureSecp256k1Schema = v.pipe(
-  createBytesSchema("secp256k1:", "base58", base58, 65),
-  v.rawCheck(({ dataset, addIssue }) => {
-    if (dataset.typed) {
-      const signatureHex = hex.encode(dataset.value)
-      try {
-        const normalizedSignature = normalizeERC191Signature(signatureHex)
-        if (signatureHex !== normalizedSignature) {
-          addIssue({
-            message:
-              "Signature is not normalized (recovery bit is expected to be 1 or 0)",
-            expected: normalizedSignature,
-          })
+export const SignatureP256Schema = z
+  .string()
+  .startsWith("p256:")
+  .transform((value) => {
+    const key = value.slice("p256:".length)
+    try {
+      const bytes = base58.decode(key)
+      if (bytes.length === 64) {
+        const sBytes = bytes.slice(32, 64)
+        const sBytesNormalized = normalizeSignatureS(sBytes)
+        if (hex.encode(sBytes) !== hex.encode(sBytesNormalized)) {
+          throw new Error("Signature malleability issue (S byte must be low)")
         }
-      } catch {
-        addIssue({ message: "Invalid signature format" })
+        return bytes
       }
+      throw new Error(`Invalid length (64 bytes expected, got ${bytes.length})`)
+    } catch {
+      throw new Error("Invalid base58 encoding")
     }
   })
-)
 
-export const SignatureP256Schema = v.pipe(
-  createBytesSchema("p256:", "base58", base58, 64),
-  v.rawCheck(({ dataset, addIssue }) => {
-    if (dataset.typed) {
-      const sBytes = dataset.value.slice(32, 64)
-      const sBytesNormalized = normalizeSignatureS(sBytes)
-      if (hex.encode(sBytes) !== hex.encode(sBytesNormalized)) {
-        addIssue({
-          message: "Signature malleability issue (S byte must be low)",
-          expected: hex.encode(sBytesNormalized),
-        })
+export const PublicKeyP256Schema = z
+  .string()
+  .startsWith("p256:")
+  .transform((value) => {
+    const key = value.slice("p256:".length)
+    try {
+      const bytes = base58.decode(key)
+      if (bytes.length === 64) {
+        return bytes
       }
+      throw new Error(`Invalid length (64 bytes expected, got ${bytes.length})`)
+    } catch {
+      throw new Error("Invalid base58 encoding")
     }
   })
-)
 
-export const PublicKeyP256Schema = createBytesSchema(
-  "p256:",
-  "base58",
-  base58,
-  64
-)
-
-export const WebAuthnAuthenticatorData = v.pipe(
-  v.string(),
-  v.rawTransform(({ dataset, addIssue, NEVER }) => {
-    if (dataset.typed) {
-      try {
-        return base64urlnopad.decode(dataset.value)
-      } catch {
-        addIssue({ message: "Invalid base64 urlsafe nopad encoding" })
-      }
+export const WebAuthnAuthenticatorData = z.string().refine(
+  (value) => {
+    try {
+      return base64urlnopad.decode(value)
+    } catch {
+      throw new Error("Invalid base64 urlsafe nopad encoding")
     }
-    return NEVER
-  })
+  },
+  { message: "Invalid base64 urlsafe nopad encoding" }
 )
 
-export const WebAuthnClientDataJson = v.pipe(
-  v.string(),
-  v.rawTransform(({ dataset, addIssue, NEVER }) => {
-    if (dataset.typed) {
-      try {
-        return new TextEncoder().encode(dataset.value)
-      } catch {
-        addIssue({ message: "Invalid JSON encoding" })
-      }
+export const WebAuthnClientDataJson = z.string().refine(
+  (value) => {
+    try {
+      return new TextEncoder().encode(value)
+    } catch {
+      throw new Error("Invalid JSON encoding")
     }
-    return NEVER
-  })
+  },
+  { message: "Invalid JSON encoding" }
 )
 
 export function createBytesSchema(
@@ -124,25 +150,21 @@ export function createBytesSchema(
   bytesCoder: { decode: (val: string) => Uint8Array },
   length: number
 ) {
-  return v.pipe(
-    v.string(),
-    v.startsWith(prefix),
-    v.rawTransform(({ dataset, addIssue, NEVER }) => {
-      if (dataset.typed) {
-        const key = dataset.value.slice(prefix.length)
-        try {
-          const bytes = bytesCoder.decode(key)
-          if (bytes.length === length) {
-            return bytes
-          }
-          addIssue({
-            message: `Invalid length (${length} bytes expected, got ${bytes.length})`,
-          })
-        } catch {
-          addIssue({ message: `Invalid ${encodingName} encoding` })
+  return z
+    .string()
+    .startsWith(prefix)
+    .transform((value) => {
+      const key = value.slice(prefix.length)
+      try {
+        const bytes = bytesCoder.decode(key)
+        if (bytes.length === length) {
+          return bytes
         }
+        throw new Error(
+          `Invalid length (${length} bytes expected, got ${bytes.length})`
+        )
+      } catch {
+        throw new Error(`Invalid ${encodingName} encoding`)
       }
-      return NEVER
     })
-  )
 }

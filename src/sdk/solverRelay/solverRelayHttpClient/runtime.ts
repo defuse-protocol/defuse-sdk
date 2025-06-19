@@ -1,35 +1,32 @@
 import { retry } from "@lifeomic/attempt"
-import * as v from "valibot"
+import { z } from "zod"
 import { config as globalConfig } from "../../../config"
 import { handleRPCResponse } from "../../../utils/handleRPCResponse"
 import { request } from "../../../utils/request"
 import { requestShouldRetry } from "../../../utils/requestShouldRetry"
 import type * as types from "./types"
 
-const rpcResponseSchema = v.union([
+const rpcResponseSchema = z.union([
   // success
-  v.object({
-    jsonrpc: v.literal("2.0"),
-    id: v.string(),
-    result: v.unknown(),
+  z.object({
+    jsonrpc: z.literal("2.0"),
+    id: z.string(),
+    result: z.unknown(),
   }),
   // error
-  v.object({
-    jsonrpc: v.literal("2.0"),
-    id: v.string(),
-    error: v.pipe(
-      v.object({
-        code: v.number(),
-        message: v.string(),
-      }),
-      v.transform((v) => {
-        return {
-          code: v.code,
-          data: null,
-          message: v.message,
-        }
+  z.object({
+    jsonrpc: z.literal("2.0"),
+    id: z.string(),
+    error: z
+      .object({
+        code: z.number(),
+        message: z.string(),
       })
-    ),
+      .transform((v) => ({
+        code: v.code,
+        data: null,
+        message: v.message,
+      })),
   }),
 ])
 

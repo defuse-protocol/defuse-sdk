@@ -1,6 +1,5 @@
 import { base64 } from "@scure/base"
 import { Err, Ok, type Result } from "@thames/monads"
-import * as v from "valibot"
 import { logger } from "../../../logger"
 import type { BaseTokenInfo } from "../../../types/base"
 import type { MultiPayload } from "../../../types/defuse-contracts-types"
@@ -29,15 +28,15 @@ export type ParseTradeTermsErr =
 export function parseTradeTerms(
   multiPayloadPlain: MultiPayload | object | string
 ): Result<TradeTerms, ParseTradeTermsErr> {
-  const parseResult = v.safeParse(MultiPayloadPlainSchema, multiPayloadPlain)
+  const parseResult = MultiPayloadPlainSchema.safeParse(multiPayloadPlain)
   if (!parseResult.success) {
     logger.verbose("Couldn't parse multipayload", {
       multiPayloadPlain,
-      issues: parseResult.issues,
+      error: parseResult.error,
     })
     return Err("CANNOT_PARSE_MULTIPAYLOAD")
   }
-  const multiPayload = parseResult.output
+  const multiPayload = parseResult.data
 
   // We can be sure that `multiPayloadPlain` is MultiPayload, because we've just parsed it
   const multiPayloadObj: MultiPayload =
@@ -48,15 +47,15 @@ export function parseTradeTerms(
   return getPlainPayload(multiPayload)
     .mapErr<ParseTradeTermsErr>((a) => a)
     .andThen<TradeTerms>((payloadPlain) => {
-      const payloadParseResult = v.safeParse(PayloadStringSchema, payloadPlain)
+      const payloadParseResult = PayloadStringSchema.safeParse(payloadPlain)
       if (!payloadParseResult.success) {
         logger.verbose("Couldn't parse payload", {
           payloadPlain,
-          issues: payloadParseResult,
+          error: payloadParseResult.error,
         })
         return Err("CANNOT_PARSE_PAYLOAD")
       }
-      const payload = payloadParseResult.output
+      const payload = payloadParseResult.data
 
       const intent = payload.intents.find(
         (intent): intent is IntentTokenDiffSchemaOutput =>
@@ -82,7 +81,7 @@ export function parseTradeTerms(
         userId: payload.signer_id,
         tokenDiff: intent.diff,
         deadline: payload.deadline,
-        nonceBase64: base64.encode(nonce),
+        nonceBase64: base64.encode(new TextEncoder().encode(nonce)),
         multiPayload: multiPayloadObj,
       })
     })

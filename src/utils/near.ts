@@ -4,23 +4,21 @@ import type {
   BlockReference,
   Finality,
 } from "near-api-js/lib/providers/provider"
-import * as v from "valibot"
 import { isAddress } from "viem"
+import { z } from "zod"
 
 /**
  * Use this function to decode a raw response from `nearClient.query()`
  */
-export function decodeQueryResult<
-  T extends v.BaseSchema<TInput, TOutput, TIssue>,
-  TInput,
-  TOutput,
-  TIssue extends v.BaseIssue<unknown>,
->(response: unknown, schema: T): v.InferOutput<T> {
-  const parsed = v.parse(v.object({ result: v.array(v.number()) }), response)
+export function decodeQueryResult<T extends z.ZodType>(
+  response: unknown,
+  schema: T
+): z.infer<T> {
+  const parsed = z.object({ result: z.array(z.number()) }).parse(response)
   const uint8Array = new Uint8Array(parsed.result)
   const decoder = new TextDecoder()
   const result = decoder.decode(uint8Array)
-  return v.parse(schema, JSON.parse(result))
+  return schema.parse(JSON.parse(result))
 }
 
 export type OptionalBlockReference = {
@@ -66,7 +64,7 @@ export async function queryContract({
     ...getBlockReference({ blockId, finality }),
   })
 
-  return decodeQueryResult(response, v.unknown())
+  return decodeQueryResult(response, z.unknown())
 }
 
 // Copied from https://github.com/mynearwallet/my-near-wallet/blob/3b1a6c6e5c62a0235f5e32d370f803fa2180c6f8/packages/frontend/src/utils/wallet.ts#L75

@@ -1,58 +1,32 @@
-import * as v from "valibot"
+import { z } from "zod"
 import {
   NearAccountIdSchema,
   ToBigIntSchema,
   TokenIdSchema,
 } from "./schemaPrimitives"
 
-const IntentTokenDiffSchema = v.object({
-  intent: v.literal("token_diff"),
-  diff: v.pipe(v.record(TokenIdSchema, ToBigIntSchema)),
-  memo: v.optional(v.string()),
-  referral: v.optional(NearAccountIdSchema),
+const IntentTokenDiffSchema = z.object({
+  intent: z.literal("token_diff"),
+  diff: z.record(TokenIdSchema, ToBigIntSchema),
+  memo: z.string().optional(),
+  referral: NearAccountIdSchema.optional(),
 })
 
-export type IntentTokenDiffSchemaOutput = v.InferOutput<
-  typeof IntentTokenDiffSchema
+export type IntentTokenDiffSchemaOutput = z.infer<typeof IntentTokenDiffSchema>
+
+const IntentNativeWithdrawSchema = z.object({
+  intent: z.literal("native_withdraw"),
+  receiver_id: NearAccountIdSchema,
+  amount: ToBigIntSchema,
+})
+
+export type IntentNativeWithdrawSchemaOutput = z.infer<
+  typeof IntentNativeWithdrawSchema
 >
 
-// It doesn't implement all possible intents
-export const IntentSchema = v.variant("intent", [
+export const IntentSchema = z.discriminatedUnion("intent", [
   IntentTokenDiffSchema,
-  v.object({
-    intent: v.literal("native_withdraw"),
-    receiver_id: NearAccountIdSchema,
-    amount: ToBigIntSchema,
-  }),
-  v.object({
-    intent: v.literal("ft_withdraw"),
-    token: v.pipe(
-      v.string(),
-      v.custom(
-        (a) => (typeof a === "string" ? !a.startsWith("nep141:") : false),
-        "Token ID must not start with 'nep141:'"
-      ),
-      NearAccountIdSchema
-    ),
-    receiver_id: NearAccountIdSchema,
-    amount: ToBigIntSchema,
-    storage_deposit: v.optional(ToBigIntSchema),
-    memo: v.optional(v.string()),
-    msg: v.optional(v.string()),
-  }),
-  v.object({
-    intent: v.literal("transfer"),
-    tokens: v.record(
-      v.string(),
-      v.pipe(
-        v.string(),
-        v.custom(
-          (a) => (typeof a === "string" ? !a.startsWith("nep141:") : false),
-          "Token ID must not start with 'nep141:'"
-        )
-      )
-    ),
-    receiver_id: NearAccountIdSchema,
-    memo: v.optional(v.string()),
-  }),
+  IntentNativeWithdrawSchema,
 ])
+
+export type IntentSchemaOutput = z.infer<typeof IntentSchema>

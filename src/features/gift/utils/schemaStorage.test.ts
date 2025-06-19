@@ -1,4 +1,3 @@
-import * as v from "valibot"
 import { describe, expect, it } from "vitest"
 import { GiftStorageSchemaV0, GiftStorageSchemaV2 } from "./schemaStorage"
 
@@ -15,6 +14,7 @@ describe("GiftStorageSchema", () => {
                 "nep141:usdc": "1000",
               },
               token: {
+                type: "fungible",
                 defuseAssetId: "nep141:usdc",
                 address: "usdc",
                 symbol: "USDC",
@@ -32,7 +32,7 @@ describe("GiftStorageSchema", () => {
         },
       },
     }
-    const result = v.parse(GiftStorageSchemaV0, giftStorageData)
+    const result = GiftStorageSchemaV0.parse(giftStorageData)
     expect(result).toEqual(giftStorageData)
   })
 
@@ -55,7 +55,7 @@ describe("GiftStorageSchema", () => {
         },
       },
     }
-    const result = v.parse(GiftStorageSchemaV2, giftStorageData)
+    const result = GiftStorageSchemaV2.parse(giftStorageData)
     expect(result).toEqual(giftStorageData)
   })
 })

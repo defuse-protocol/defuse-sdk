@@ -1,4 +1,4 @@
-import * as v from "valibot"
+import type { z } from "zod"
 import { logger } from "../../../logger"
 import {
   GiftStorageSchemaV0,
@@ -7,7 +7,7 @@ import {
 import type { State } from "./giftMakerHistory"
 
 export const migrateV0ToV1 = (
-  validatedV0: v.InferOutput<typeof GiftStorageSchemaV0>
+  validatedV0: z.infer<typeof GiftStorageSchemaV0>
 ) => {
   return {
     state: {
@@ -30,7 +30,7 @@ export const migrateV0ToV1 = (
 }
 
 export const migrateV1ToV2 = (
-  validatedV1: v.InferOutput<typeof GiftStorageSchemaV1>
+  validatedV1: z.infer<typeof GiftStorageSchemaV1>
 ) => {
   return {
     state: {
@@ -61,7 +61,7 @@ export const migrateGiftStorage = (
 
     // Migrate from v0 to v1 if needed
     if (currentVersion === 0) {
-      const validatedV0 = v.parse(GiftStorageSchemaV0, currentState)
+      const validatedV0 = GiftStorageSchemaV0.parse(currentState)
       const migratedStateToV1 = migrateV0ToV1(validatedV0)
       currentState = migratedStateToV1
       currentVersion = 1
@@ -69,7 +69,7 @@ export const migrateGiftStorage = (
 
     // Migrate from v1 to v2 if needed
     if (currentVersion === 1) {
-      const validatedV1 = v.parse(GiftStorageSchemaV1, currentState)
+      const validatedV1 = GiftStorageSchemaV1.parse(currentState)
       const migratedStateToV2 = migrateV1ToV2(validatedV1)
       currentState = migratedStateToV2
       currentVersion = 2

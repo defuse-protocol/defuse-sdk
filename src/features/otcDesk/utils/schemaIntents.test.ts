@@ -1,4 +1,3 @@
-import * as v from "valibot"
 import { describe, expect, it } from "vitest"
 import { IntentSchema } from "./schemaIntents"
 
@@ -15,7 +14,7 @@ describe("IntentSchema", () => {
       referral: "foo-referral.near",
     },
   ])("valid token_diff", (intent) => {
-    expect(() => v.parse(IntentSchema, intent)).not.toThrow()
+    expect(() => IntentSchema.parse(intent)).not.toThrow()
   })
 
   it.each([
@@ -38,7 +37,7 @@ describe("IntentSchema", () => {
       referral: null,
     },
   ])("invalid token_diff", (intent) => {
-    expect(() => v.parse(IntentSchema, intent)).toThrow()
+    expect(() => IntentSchema.parse(intent)).toThrow()
   })
 
   it.each([
@@ -48,7 +47,7 @@ describe("IntentSchema", () => {
       amount: "100",
     },
   ])("valid native_withdraw", (intent) => {
-    expect(() => v.parse(IntentSchema, intent)).not.toThrow()
+    expect(() => IntentSchema.parse(intent)).not.toThrow()
   })
 
   it.each([
@@ -63,7 +62,7 @@ describe("IntentSchema", () => {
       amount: 100,
     },
   ])("invalid native_withdraw", (intent) => {
-    expect(() => v.parse(IntentSchema, intent)).toThrow()
+    expect(() => IntentSchema.parse(intent)).toThrow()
   })
 
   it.each([
@@ -108,7 +107,7 @@ describe("IntentSchema", () => {
       msg: "",
     },
   ])("valid ft_withdraw", (intent) => {
-    expect(() => v.parse(IntentSchema, intent)).not.toThrow()
+    expect(() => IntentSchema.parse(intent)).not.toThrow()
   })
 
   it.each([
@@ -139,7 +138,7 @@ describe("IntentSchema", () => {
       msg: null,
     },
   ])("invalid ft_withdraw", (intent) => {
-    expect(() => v.parse(IntentSchema, intent)).toThrow()
+    expect(() => IntentSchema.parse(intent)).toThrow()
   })
 
   it.each([
@@ -149,6 +148,6 @@ describe("IntentSchema", () => {
       receiver_id: "user.near",
     },
   ])("valid transfer", (intent) => {
-    expect(() => v.parse(IntentSchema, intent)).not.toThrow()
+    expect(() => IntentSchema.parse(intent)).not.toThrow()
   })
 })

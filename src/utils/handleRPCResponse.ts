@@ -1,4 +1,4 @@
-import * as v from "valibot"
+import type { z } from "zod"
 import { RpcRequestError } from "../errors/request"
 
 type SuccessResult<result> = {
@@ -15,27 +15,26 @@ export type RpcResponse<TResult = unknown, TError = unknown> = {
 } & (SuccessResult<TResult> | ErrorResult<TError>)
 
 export async function handleRPCResponse<
-  TSchema extends v.BaseSchema<TInput, TOutput, TIssue>,
+  TSchema extends z.ZodType<TOutput, z.ZodTypeDef, TInput>,
   TInput,
   TOutput extends RpcResponse<
     unknown,
     { code: number; data: unknown; message: string }
   >,
-  TIssue extends v.BaseIssue<unknown>,
 >(response: Response, body: unknown, schema: TSchema) {
   const json = await response.json()
 
-  const parsed = v.safeParse(schema, json)
+  const parsed = schema.safeParse(json)
   if (parsed.success) {
-    if (parsed.output.error !== undefined) {
+    if (parsed.data.error !== undefined) {
       throw new RpcRequestError({
         body,
-        error: parsed.output.error,
+        error: parsed.data.error,
         url: response.url,
       })
     }
 
-    return parsed.output.result
+    return parsed.data.result
   }
 
   throw new RpcRequestError({

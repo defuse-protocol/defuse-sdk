@@ -1,4 +1,4 @@
-import * as v from "valibot"
+import { z } from "zod"
 import { IntentSchema } from "./schemaIntents"
 import {
   DeadlineSchema,
@@ -13,167 +13,182 @@ import {
   WebAuthnClientDataJson,
 } from "./schemaPrimitives"
 
-export const GeneralPayloadObjectSchema = v.object({
+export const GeneralPayloadObjectSchema = z.object({
   deadline: DeadlineSchema,
   nonce: NonceSchema,
   signer_id: NearAccountIdSchema,
   verifying_contract: NearAccountIdSchema,
-  intents: v.array(IntentSchema),
+  intents: z.array(IntentSchema),
 })
 
-export const GeneralPayloadStringSchema = v.pipe(
-  v.string(),
-  v.transform((a) => {
+export const GeneralPayloadStringSchema = z
+  .string()
+  .transform((a) => {
     try {
       return JSON.parse(a)
     } catch {
       return null
     }
-  }),
-  GeneralPayloadObjectSchema
-)
+  })
+  .pipe(GeneralPayloadObjectSchema)
 
-const NEP413PayloadObjectSchema = v.object({
+const NEP413PayloadObjectSchema = z.object({
   deadline: DeadlineSchema,
   signer_id: NearAccountIdSchema,
-  intents: v.array(IntentSchema),
+  intents: z.array(IntentSchema),
 })
 
-const NEP413PayloadStringSchema = v.pipe(
-  v.string(),
-  v.transform((a) => {
+const NEP413PayloadStringSchema = z
+  .string()
+  .transform((a) => {
     try {
       return JSON.parse(a)
     } catch {
       return null
     }
-  }),
-  NEP413PayloadObjectSchema
-)
+  })
+  .pipe(NEP413PayloadObjectSchema)
 
-export const PayloadStringSchema = v.union([
+export const PayloadStringSchema = z.union([
   GeneralPayloadStringSchema,
   NEP413PayloadStringSchema,
 ])
 
-export const MultiPayloadSchema = v.variant("standard", [
-  v.object({
-    standard: v.literal("nep413"),
-    payload: v.object({
-      message: v.string(),
+const WebAuthnP256Schema = z.object({
+  standard: z.literal("webauthn"),
+  curveType: z.literal("p256"),
+  payload: z.string(),
+  signature: SignatureP256Schema,
+  public_key: PublicKeyP256Schema,
+  authenticator_data: WebAuthnAuthenticatorData,
+  client_data_json: WebAuthnClientDataJson,
+})
+
+const WebAuthnED25519Schema = z.object({
+  standard: z.literal("webauthn"),
+  curveType: z.literal("ed25519"),
+  payload: z.string(),
+  signature: SignatureED25519Schema,
+  public_key: PublicKeyED25519Schema,
+  authenticator_data: WebAuthnAuthenticatorData,
+  client_data_json: WebAuthnClientDataJson,
+})
+
+const WebAuthnSchema = z
+  .object({
+    standard: z.literal("webauthn"),
+    public_key: z.string(),
+  })
+  .transform((a) => {
+    const curveType = a.public_key.split(":")[0]
+    if (curveType === "p256") {
+      return { ...a, curveType: "p256" } as const
+    }
+    if (curveType === "ed25519") {
+      return { ...a, curveType: "ed25519" } as const
+    }
+    throw new Error("Invalid curve type")
+  })
+  .pipe(z.union([WebAuthnP256Schema, WebAuthnED25519Schema]))
+
+export const MultiPayloadSchema = z.union([
+  z.object({
+    standard: z.literal("nep413"),
+    payload: z.object({
+      message: z.string(),
       nonce: NonceSchema,
       recipient: NearAccountIdSchema,
-      callbackUrl: v.optional(v.string()),
+      callbackUrl: z.string().optional(),
     }),
     signature: SignatureED25519Schema,
     public_key: PublicKeyED25519Schema,
   }),
-  v.object({
-    standard: v.literal("erc191"),
-    payload: v.string(),
+  z.object({
+    standard: z.literal("erc191"),
+    payload: z.string(),
     signature: SignatureSecp256k1Schema,
   }),
-  v.object({
-    standard: v.literal("raw_ed25519"),
-    payload: v.string(),
+  z.object({
+    standard: z.literal("raw_ed25519"),
+    payload: z.string(),
     signature: SignatureED25519Schema,
     public_key: PublicKeyED25519Schema,
   }),
-  v.pipe(
-    v.looseObject({
-      standard: v.literal("webauthn"),
-      public_key: v.string(),
-    }),
-    v.transform((a) => {
-      return { ...a, curveType: a.public_key.split(":")[0] }
-    }),
-    v.variant("curveType", [
-      v.object({
-        standard: v.literal("webauthn"),
-        curveType: v.literal("p256"),
-        payload: v.string(),
-        signature: SignatureP256Schema,
-        public_key: PublicKeyP256Schema,
-        authenticator_data: WebAuthnAuthenticatorData,
-        client_data_json: WebAuthnClientDataJson,
-      }),
-      v.object({
-        standard: v.literal("webauthn"),
-        curveType: v.literal("ed25519"),
-        payload: v.string(),
-        signature: SignatureED25519Schema,
-        public_key: PublicKeyED25519Schema,
-        authenticator_data: WebAuthnAuthenticatorData,
-        client_data_json: WebAuthnClientDataJson,
-      }),
-    ])
-  ),
+  WebAuthnSchema,
 ])
 
-export type MultiPayloadSchemaOutput = v.InferOutput<typeof MultiPayloadSchema>
+export type MultiPayloadSchemaOutput = z.infer<typeof MultiPayloadSchema>
 
-export const MultiPayloadDeepSchema = v.variant("standard", [
-  v.object({
-    standard: v.literal("nep413"),
-    payload: v.object({
+const WebAuthnDeepP256Schema = z.object({
+  standard: z.literal("webauthn"),
+  curveType: z.literal("p256"),
+  payload: GeneralPayloadStringSchema,
+  signature: SignatureP256Schema,
+  public_key: PublicKeyP256Schema,
+  authenticator_data: WebAuthnAuthenticatorData,
+  client_data_json: WebAuthnClientDataJson,
+})
+
+const WebAuthnDeepED25519Schema = z.object({
+  standard: z.literal("webauthn"),
+  curveType: z.literal("ed25519"),
+  payload: GeneralPayloadStringSchema,
+  signature: SignatureED25519Schema,
+  public_key: PublicKeyED25519Schema,
+  authenticator_data: WebAuthnAuthenticatorData,
+  client_data_json: WebAuthnClientDataJson,
+})
+
+const WebAuthnDeepSchema = z
+  .object({
+    standard: z.literal("webauthn"),
+    public_key: z.string(),
+  })
+  .transform((a) => {
+    const curveType = a.public_key.split(":")[0]
+    if (curveType === "p256") {
+      return { ...a, curveType: "p256" } as const
+    }
+    if (curveType === "ed25519") {
+      return { ...a, curveType: "ed25519" } as const
+    }
+    throw new Error("Invalid curve type")
+  })
+  .pipe(z.union([WebAuthnDeepP256Schema, WebAuthnDeepED25519Schema]))
+
+export const MultiPayloadDeepSchema = z.union([
+  z.object({
+    standard: z.literal("nep413"),
+    payload: z.object({
       message: NEP413PayloadStringSchema,
       nonce: NonceSchema,
       recipient: NearAccountIdSchema,
-      callbackUrl: v.optional(v.string()),
+      callbackUrl: z.string().optional(),
     }),
     signature: SignatureED25519Schema,
     public_key: PublicKeyED25519Schema,
   }),
-  v.object({
-    standard: v.literal("erc191"),
+  z.object({
+    standard: z.literal("erc191"),
     payload: GeneralPayloadStringSchema,
     signature: SignatureSecp256k1Schema,
   }),
-  v.object({
-    standard: v.literal("raw_ed25519"),
+  z.object({
+    standard: z.literal("raw_ed25519"),
     payload: GeneralPayloadStringSchema,
     signature: SignatureED25519Schema,
     public_key: PublicKeyED25519Schema,
   }),
-  v.pipe(
-    v.looseObject({
-      standard: v.literal("webauthn"),
-      public_key: v.string(),
-    }),
-    v.transform((a) => {
-      return { ...a, curveType: a.public_key.split(":")[0] }
-    }),
-    v.variant("curveType", [
-      v.object({
-        standard: v.literal("webauthn"),
-        curveType: v.literal("p256"),
-        payload: GeneralPayloadStringSchema,
-        signature: SignatureP256Schema,
-        public_key: PublicKeyP256Schema,
-        authenticator_data: WebAuthnAuthenticatorData,
-        client_data_json: WebAuthnClientDataJson,
-      }),
-      v.object({
-        standard: v.literal("webauthn"),
-        curveType: v.literal("ed25519"),
-        payload: GeneralPayloadStringSchema,
-        signature: SignatureED25519Schema,
-        public_key: PublicKeyED25519Schema,
-        authenticator_data: WebAuthnAuthenticatorData,
-        client_data_json: WebAuthnClientDataJson,
-      }),
-    ])
-  ),
+  WebAuthnDeepSchema,
 ])
 
-export const MultiPayloadPlainSchema = v.pipe(
-  v.union([v.string(), v.record(v.string(), v.unknown())]),
-  v.transform((a) => {
+export const MultiPayloadPlainSchema = z
+  .union([z.string(), z.record(z.string(), z.unknown())])
+  .transform((a) => {
     try {
       return typeof a === "string" ? JSON.parse(a) : a
     } catch {
       return null
     }
-  }),
-  MultiPayloadSchema
-)
+  })
+  .pipe(MultiPayloadSchema)

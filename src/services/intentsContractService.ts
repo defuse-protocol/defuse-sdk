@@ -1,5 +1,5 @@
 import type { providers } from "near-api-js"
-import * as v from "valibot"
+import { z } from "zod"
 import { config } from "../config"
 import { type OptionalBlockReference, queryContract } from "../utils/near"
 
@@ -14,7 +14,7 @@ export async function getProtocolFee(
   })
 
   // in bip: 1 bip = 0.0001% = 0.000001
-  return v.parse(v.number(), data)
+  return z.number().parse(data)
 }
 
 export async function hasPublicKey({
@@ -36,7 +36,7 @@ export async function hasPublicKey({
     },
   })
 
-  return v.parse(v.boolean(), data)
+  return z.boolean().parse(data)
 }
 
 export async function isNonceUsed({
@@ -58,7 +58,7 @@ export async function isNonceUsed({
     },
   })
 
-  return v.parse(v.boolean(), data)
+  return z.boolean().parse(data)
 }
 
 export async function batchBalanceOf({
@@ -80,11 +80,8 @@ export async function batchBalanceOf({
     },
   })
 
-  return v.parse(
-    v.pipe(
-      v.array(v.string()),
-      v.transform((v) => v.map(BigInt))
-    ),
-    data
-  )
+  return z
+    .array(z.string())
+    .transform((v) => v.map(BigInt))
+    .parse(data)
 }

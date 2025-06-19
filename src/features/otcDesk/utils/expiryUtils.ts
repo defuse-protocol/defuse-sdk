@@ -1,21 +1,22 @@
-import * as v from "valibot"
+import { z } from "zod"
 
 export type ExpiryFormatted = `${number}{"m" | "h" | "d"}`
 
-export type Expiry = v.InferOutput<typeof ExpiryScheme>
+export type Expiry = z.infer<typeof ExpiryScheme>
 
-const ExpiryScheme = v.pipe(
-  v.string(),
-  v.transform((a) => parseExpiryString(a)),
-  v.object({
-    unit: v.picklist(["m", "h", "d"]),
-    value: v.number(),
-  })
-)
+const ExpiryScheme = z
+  .string()
+  .transform((a) => parseExpiryString(a))
+  .pipe(
+    z.object({
+      unit: z.enum(["m", "h", "d"]),
+      value: z.number(),
+    })
+  )
 
 export function parseExpiry(str: string): Expiry | null {
-  const a = v.safeParse(ExpiryScheme, str)
-  return a.success ? a.output : null
+  const a = ExpiryScheme.safeParse(str)
+  return a.success ? a.data : null
 }
 
 function parseExpiryString(expiry: string) {

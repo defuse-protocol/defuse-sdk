@@ -1,5 +1,5 @@
 import { Err, Ok, type Result } from "@thames/monads"
-import * as v from "valibot"
+import { z } from "zod"
 import {
   type EscrowCredentials,
   parseEscrowCredentials,
@@ -12,24 +12,22 @@ export type ParsedGiftSecret = {
   message: string
 }
 
-const GiftSecretSchema = v.object({
-  secretKey: v.string(),
-  message: v.string(),
+const GiftSecretSchema = z.object({
+  secretKey: z.string(),
+  message: z.string(),
 })
 
 export function parseGiftSecret(
   secretKey: string
 ): Result<ParsedGiftSecret, GiftSecretError> {
   try {
-    const parseResult = v.safeParse(GiftSecretSchema, secretKey)
+    const parseResult = GiftSecretSchema.safeParse(secretKey)
     if (!parseResult.success) {
       return Err({ reason: "INVALID_SECRET_KEY" })
     }
 
-    const escrowCredentials = parseEscrowCredentials(
-      parseResult.output.secretKey
-    )
-    const message = parseResult.output.message
+    const escrowCredentials = parseEscrowCredentials(parseResult.data.secretKey)
+    const message = parseResult.data.message
 
     return Ok({
       escrowCredentials,

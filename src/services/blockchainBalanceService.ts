@@ -1,8 +1,8 @@
 import { base64 } from "@scure/base"
 import { AccountLayout } from "@solana/spl-token"
 import { Connection, PublicKey } from "@solana/web3.js"
-import * as v from "valibot"
 import { http, type Address, createPublicClient, erc20Abi } from "viem"
+import { z } from "zod"
 import { nearClient } from "../constants/nearClient"
 import { logger } from "../logger"
 import { decodeQueryResult } from "../utils/near"
@@ -21,7 +21,7 @@ export const getNearNativeBalance = async ({
       account_id: accountId,
     })
 
-    const parsed = v.parse(v.object({ amount: v.string() }), response)
+    const parsed = z.object({ amount: z.string() }).parse(response)
 
     const balance = BigInt(parsed.amount)
     return balance < RESERVED_NEAR_BALANCE
@@ -54,7 +54,7 @@ export const getNearNep141Balance = async ({
       finality: "optimistic",
     })
 
-    const result = decodeQueryResult(response, v.string())
+    const result = decodeQueryResult(response, z.string())
     const balance = BigInt(result)
     return balance
   } catch (err: unknown) {
@@ -86,7 +86,7 @@ export const getNearNep141StorageBalance = async ({
 
     const parsed = decodeQueryResult(
       response,
-      v.union([v.null(), v.object({ total: v.string() })])
+      z.union([z.null(), z.object({ total: z.string() })])
     )
 
     return BigInt(parsed?.total || "0")
@@ -110,7 +110,7 @@ export const getNearNep141MinStorageBalance = async ({
 
   const parsed = decodeQueryResult(
     response,
-    v.object({ min: v.string(), max: v.string() })
+    z.object({ min: z.string(), max: z.string() })
   )
 
   return BigInt(parsed.min)

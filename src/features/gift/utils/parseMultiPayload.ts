@@ -1,5 +1,4 @@
 import type { Intent, MultiPayload } from "src/types/defuse-contracts-types"
-import { safeParse } from "valibot"
 import { logger } from "../../../logger"
 import { MultiPayloadDeepSchema } from "../../otcDesk/utils/schemaMultipayload"
 
@@ -14,15 +13,15 @@ type TransferIntentSubset = {
 export function parseMultiPayloadTransferMessage(
   multiPayload: MultiPayload
 ): null | TransferIntentSubset {
-  const result = safeParse(MultiPayloadDeepSchema, multiPayload)
+  const result = MultiPayloadDeepSchema.safeParse(multiPayload)
   if (!result.success) {
-    logger.error(result.issues)
+    logger.error(result.error)
     return null
   }
-  const standard = result.output.standard
+  const standard = result.data.standard
   switch (standard) {
     case "nep413": {
-      const intents = result.output.payload.message.intents as Intent[]
+      const intents = result.data.payload.message.intents as unknown as Intent[]
       if (intents.length === 0) {
         return null
       }
@@ -35,7 +34,7 @@ export function parseMultiPayloadTransferMessage(
     case "erc191":
     case "raw_ed25519":
     case "webauthn": {
-      const intents = result.output.payload.intents as Intent[]
+      const intents = result.data.payload.intents as unknown as Intent[]
       if (intents.length === 0) {
         return null
       }

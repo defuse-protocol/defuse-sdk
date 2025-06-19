@@ -85,9 +85,9 @@
     "tailwind-merge": "^3.0.1",
     "tailwindcss-animate": "^1.0.7",
     "tweetnacl": "^1.0.3",
-    "valibot": "^1.0.0-rc.1",
     "viem": "^2.18.1",
     "xstate": "^5.18.2",
+    "zod": "^3.22.4",
     "zustand": "^5.0.0-rc.2"
   },
   "devDependencies": {
