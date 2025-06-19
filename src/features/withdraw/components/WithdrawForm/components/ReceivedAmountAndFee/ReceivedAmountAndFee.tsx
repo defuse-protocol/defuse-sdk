@@ -1,8 +1,6 @@
 import { Flex, Skeleton, Text } from "@radix-ui/themes"
 import { clsx } from "clsx"
 import { useMemo } from "react"
-import { TooltipInfo } from "../../../../../../components/TooltipInfo"
-import type { WithdtrawalFee } from "../../../../../../services/withdrawService"
 import type { TokenValue } from "../../../../../../types/base"
 import { formatTokenValue } from "../../../../../../utils/format"
 
@@ -12,25 +10,15 @@ export const ReceivedAmountAndFee = ({
   symbol,
   isLoading,
 }: {
-  fee: WithdtrawalFee
+  fee: TokenValue
   totalAmountReceived: TokenValue | null
   symbol: string
   isLoading: boolean
 }) => {
-  const { tag: feeTag, value: feeValue } = fee
-  const feeError = feeTag === "err"
-
-  const fee_ = useMemo<string>(() => {
-    if (totalAmountReceived == null) {
-      return "-"
-    }
-
-    if (feeError) {
-      return "Fee is Unknown"
-    }
-
-    return formatTokenValue(feeValue.amount, feeValue.decimals)
-  }, [totalAmountReceived, feeValue, feeError])
+  const fee_ =
+    totalAmountReceived == null
+      ? "-"
+      : formatTokenValue(fee.amount, fee.decimals)
 
   const receivedAmount = useMemo<string>(() => {
     if (totalAmountReceived == null) {
@@ -60,13 +48,13 @@ export const ReceivedAmountAndFee = ({
       <Flex
         justify="between"
         px="2"
-        className={clsx({ "text-green-a11": zeroFee && !feeError })}
+        className={clsx({ "text-green-a11": zeroFee })}
       >
         <Text
           size="1"
           weight="medium"
-          color={!zeroFee || feeError ? "gray" : undefined}
-          className={clsx({ "text-green-a11": zeroFee && !feeError })}
+          color={!zeroFee ? "gray" : undefined}
+          className={clsx({ "text-green-a11": zeroFee })}
         >
           Fee
         </Text>
@@ -74,21 +62,11 @@ export const ReceivedAmountAndFee = ({
         <Text size="1" weight="bold">
           {isLoading ? (
             <Skeleton>100.000</Skeleton>
-          ) : feeError ? (
-            <TooltipInfo
-              icon={
-                <div className="flex items-center gap-1">
-                  <span className="text-xs font-bold text-gray-11">{fee_}</span>
-                  <div className="w-3 h-3 bg-[url('/static/images/process.gif')] bg-no-repeat bg-contain" />
-                </div>
-              }
-            >
-              Error happened while getting fee.
-            </TooltipInfo>
           ) : (
-            `${fee_}`
+            <>
+              {fee_} {symbol}
+            </>
           )}
-          {feeError ? null : ` ${symbol}`}
         </Text>
       </Flex>
     </>

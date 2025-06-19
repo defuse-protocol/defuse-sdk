@@ -1,50 +1,15 @@
-import { Network, utils } from "@hot-labs/omni-sdk"
 import type { SupportedChainName } from "../types/base"
 import type { Intent } from "../types/defuse-contracts-types"
-import { assert } from "./assert"
-import { parseDefuseAssetId } from "./tokenUtils"
 
-export function buildHotOmniWithdrawIntent(args: {
+export function buildHotOmniWithdrawIntent(_args: {
   chainName: SupportedChainName
   defuseAssetId: string
   amount: bigint
   receiver: string
 }): Intent {
-  const network = toHotOmniNetwork(args.chainName)
-  const receiver = utils.encodeReceiver(network, args.receiver)
-  return buildWithdrawIntentAction(args.defuseAssetId, args.amount, receiver)
-}
-
-// patched version of node_modules/@hot-labs/omni-sdk/src/intents.ts
-function buildWithdrawIntentAction(
-  defuseAssetId: string,
-  amount: bigint,
-  receiver: string
-): Intent {
-  const token = parseDefuseAssetId(defuseAssetId)
-  assert(token.standard === "nep245", "Expected NEP-245 standard token")
-
+  // we don't care about this intent, it is not used in the current iteration and will be removed
   return {
-    intent: "mt_withdraw",
-    amounts: [amount.toString()],
-    receiver_id: utils.OMNI_HOT_V2,
-    token_ids: [token.tokenId],
-    token: token.contractId,
-    memo: receiver,
+    intent: "invalidate_nonces",
+    nonces: [],
   }
-}
-
-export function toHotOmniNetwork(chainName: SupportedChainName): Network {
-  const mapping: { [K in SupportedChainName]?: Network } = {
-    bsc: Network.Bnb,
-    polygon: Network.Polygon,
-  }
-
-  assert(
-    mapping[chainName] != null,
-    `Unsupported HOT Omni Bridge chain = ${chainName}`
-  )
-
-  // biome-ignore lint/style/noNonNullAssertion: checked above
-  return mapping[chainName]!
 }

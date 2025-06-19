@@ -1,3 +1,4 @@
+import type { FeeEstimation } from "@defuse-protocol/bridge-sdk"
 import { secp256k1 } from "@noble/curves/secp256k1"
 import type { providers } from "near-api-js"
 import { assign, fromPromise, setup } from "xstate"
@@ -12,7 +13,10 @@ import type {
   SupportedChainName,
   TokenValue,
 } from "../../types/base"
-import type { Nep413DefuseMessageFor_DefuseIntents } from "../../types/defuse-contracts-types"
+import type {
+  Intent,
+  Nep413DefuseMessageFor_DefuseIntents,
+} from "../../types/defuse-contracts-types"
 import type { IntentsUserId } from "../../types/intentsUserId"
 import type {
   WalletMessage,
@@ -46,18 +50,6 @@ import {
 // No-op usage to prevent tree-shaking. sec256k1 is dynamically loaded by viem.
 const _noop = secp256k1.getPublicKey || null
 
-export type NEP141StorageRequirement =
-  | {
-      type: "swap_needed"
-      requiredStorageNEAR: bigint
-      quote: AggregatedQuote
-    }
-  | {
-      type: "no_swap_needed"
-      requiredStorageNEAR: bigint
-      quote: null
-    }
-
 type IntentOperationParams =
   | {
       type: "swap"
@@ -69,10 +61,11 @@ type IntentOperationParams =
       type: "withdraw"
       tokenOut: BaseTokenInfo
       quote: AggregatedQuote | null
-      nep141Storage: NEP141StorageRequirement | null
+      feeEstimation: FeeEstimation
       directWithdrawalAmount: TokenValue
       recipient: string
       destinationMemo: string | null
+      prebuiltWithdrawalIntents: Intent[]
     }
 
 export type IntentDescription =
@@ -562,11 +555,10 @@ export const swapIntentMachine = setup({
 
           if (
             context.intentOperationParams.type === "withdraw" &&
-            context.intentOperationParams.nep141Storage &&
-            context.intentOperationParams.nep141Storage.quote
+            context.intentOperationParams.feeEstimation?.quote
           ) {
             quoteHashes = quoteHashes.concat(
-              context.intentOperationParams.nep141Storage.quote.quoteHashes
+              context.intentOperationParams.feeEstimation.quote.quote_hash
             )
           }
 
@@ -729,7 +721,7 @@ export function calcOperationAmountOut(
       return calcWithdrawAmount(
         operation.tokenOut,
         quoteToPublish,
-        operation.nep141Storage,
+        operation.feeEstimation,
         operation.directWithdrawalAmount
       ).withdrawAmount
 
@@ -742,9 +734,8 @@ export function calcOperationAmountOut(
 export function calcWithdrawAmount(
   tokenOut: BaseTokenInfo,
   swapInfo: AggregatedQuote | null,
-  nep141Storage: NEP141StorageRequirement | null,
-  directWithdrawalAmount: TokenValue,
-  estimatedWithdrawalFee?: TokenValue
+  feeEstimation: Pick<FeeEstimation, "amount">,
+  directWithdrawalAmount: TokenValue
 ): {
   withdrawAmount: TokenValue
   withdrawFee: TokenValue
@@ -754,39 +745,17 @@ export function calcWithdrawAmount(
       ? { amount: 0n, decimals: 0 }
       : computeTotalDeltaDifferentDecimals([tokenOut], swapInfo.tokenDeltas)
 
-  let spentOnStorage: TokenValue = { amount: 0n, decimals: 0 }
-  if (nep141Storage != null) {
-    if (nep141Storage.type === "no_swap_needed") {
-      // Assume that token out is NEAR/wNEAR, so we can just use the required storage
-      spentOnStorage = {
-        amount: nep141Storage.requiredStorageNEAR,
-        decimals: tokenOut.decimals,
-      }
-    } else {
-      spentOnStorage = computeTotalDeltaDifferentDecimals(
-        [tokenOut],
-        nep141Storage.quote.tokenDeltas
-      )
-      // NEP-141 Storage quote will sell `tokenOut` for storage token (wNEAR), so it will be a negative number.
-      // We need to negate it to get the amount of `tokenOut` spent on storage.
-      spentOnStorage.amount = -spentOnStorage.amount
-    }
-  }
-
-  let spentOnStorageWithEstiamtedFee = spentOnStorage
-  if (estimatedWithdrawalFee != null) {
-    spentOnStorageWithEstiamtedFee = addAmounts(
-      estimatedWithdrawalFee,
-      spentOnStorage
-    )
+  const feeAmount: TokenValue = {
+    amount: feeEstimation.amount,
+    decimals: tokenOut.decimals,
   }
 
   return {
     withdrawAmount: subtractAmounts(
       addAmounts(directWithdrawalAmount, gotFromSwap),
-      spentOnStorageWithEstiamtedFee
+      feeAmount
     ),
-    withdrawFee: spentOnStorageWithEstiamtedFee,
+    withdrawFee: feeAmount,
   }
 }
 

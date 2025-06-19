@@ -460,7 +460,10 @@ export const WithdrawForm = ({
             fee={withdtrawalFee}
             totalAmountReceived={totalAmountReceived}
             symbol={token.symbol}
-            isLoading={state.matches({ editing: "preparation" })}
+            isLoading={
+              state.matches({ editing: "preparation" }) &&
+              state.context.preparationOutput == null
+            }
           />
 
           <AuthGate
