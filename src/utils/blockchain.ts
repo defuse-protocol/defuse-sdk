@@ -1,19 +1,19 @@
 import type { ReactNode } from "react"
-import { CHAIN_IDS } from "src/constants/evm"
-import type { BlockchainEnum } from "src/sdk/poaBridge/constants/blockchains"
+import { config } from "../config"
+import { getBlockchainsOptions } from "../constants/blockchains"
+import { CHAIN_IDS } from "../constants/evm"
+import type { BlockchainEnum } from "../sdk/poaBridge/constants/blockchains"
 import type {
   BaseTokenInfo,
   SupportedChainName,
   UnifiedTokenInfo,
-} from "src/types/base"
-import type { SwappableToken } from "src/types/swap"
+} from "../types/base"
+import type { SwappableToken } from "../types/swap"
 import {
   assetNetworkAdapter,
   reverseAssetNetworkAdapter,
-} from "src/utils/adapters"
-import { isBaseToken, isNativeToken, isUnifiedToken } from "src/utils/token"
-import { config } from "../config"
-import { getBlockchainsOptions } from "./blockchainOptions"
+} from "../utils/adapters"
+import { isBaseToken, isNativeToken, isUnifiedToken } from "../utils/token"
 export function isAuroraVirtualChain(network: SupportedChainName): boolean {
   const virtualChains = [
     "turbochain",
@@ -53,6 +53,9 @@ export function availableChainsForToken(
 
   if (!config.features.hyperliquid) {
     chains = chains.filter((chain) => chain !== "hyperliquid")
+  }
+  if (!config.features.ton) {
+    chains = chains.filter((chain) => chain !== "ton")
   }
 
   const options = getBlockchainsOptions()

@@ -1,6 +1,11 @@
+import {
+  type FeeEstimation,
+  FeeExceedsAmountError,
+} from "@defuse-protocol/bridge-sdk"
+import { Err, Ok, type Result } from "@thames/monads"
+import { findError } from "src/utils/errors"
 import { type ActorRefFrom, waitFor } from "xstate"
-import { settings } from "../constants/settings"
-import { NEP141_STORAGE_TOKEN_ID } from "../constants/tokens"
+import { bridgeSDK } from "../constants/bridgeSdk"
 import type {
   QuoteInput,
   backgroundQuoterMachine,
@@ -11,78 +16,64 @@ import type {
 } from "../features/machines/depositedBalanceMachine"
 import type { poaBridgeInfoActor } from "../features/machines/poaBridgeInfoActor"
 import { getPOABridgeInfo } from "../features/machines/poaBridgeInfoActor"
-import {
-  type NEP141StorageRequirement,
-  calcWithdrawAmount,
-} from "../features/machines/swapIntentMachine"
+import { calcWithdrawAmount } from "../features/machines/swapIntentMachine"
 import type { State as WithdrawFormContext } from "../features/machines/withdrawFormReducer"
 import { logger } from "../logger"
-import { getWithdrawalEstimate } from "../sdk/poaBridge/poaBridgeHttpClient"
-import type { BaseTokenInfo, TokenValue, UnifiedTokenInfo } from "../types/base"
-import { assetNetworkAdapter } from "../utils/adapters"
+import type {
+  BaseTokenInfo,
+  SupportedChainName,
+  TokenValue,
+  UnifiedTokenInfo,
+} from "../types/base"
+import type { Intent } from "../types/defuse-contracts-types"
 import { assert } from "../utils/assert"
-import { isBaseToken, isFungibleToken } from "../utils/token"
+import { isAuroraVirtualChain } from "../utils/blockchain"
+import { isBaseToken } from "../utils/token"
 import {
   adjustDecimalsTokenValue,
   compareAmounts,
   computeTotalBalanceDifferentDecimals,
-  getTokenAccountId,
   minAmounts,
   subtractAmounts,
   truncateTokenValue,
 } from "../utils/tokenUtils"
-import { getNEP141StorageRequired } from "./nep141StorageService"
-import { type QuoteResult, queryQuoteExactOut } from "./quoteService"
+import type { QuoteResult } from "./quoteService"
 
 interface SwapRequirement {
   swapParams: QuoteInput
   swapQuote: QuoteResult
 }
 
-export type WithdtrawalFee =
+export type PrepareWithdrawErrorType =
+  | Extract<QuoteResult, { tag: "err" }>["value"]
   | {
-      tag: "ok"
-      value: TokenValue
+      reason:
+        | "ERR_BALANCE_FETCH"
+        | "ERR_BALANCE_MISSING"
+        | "ERR_BALANCE_INSUFFICIENT"
+        | "ERR_CANNOT_FETCH_POA_BRIDGE_INFO"
+        | "ERR_CANNOT_FETCH_QUOTE"
+        | "ERR_WITHDRAWAL_FEE_FETCH"
     }
   | {
-      tag: "err"
-      value: {
-        reason: "ERR_WITHDRAWAL_FEE_FETCH"
-      }
+      reason: "ERR_AMOUNT_TOO_LOW"
+      shortfall: TokenValue
+      receivedAmount: bigint
+      minWithdrawalAmount: bigint
+      token: BaseTokenInfo
     }
 
+export type PreparedWithdrawReturnType = {
+  directWithdrawAvailable: TokenValue
+  swap: SwapRequirement | null
+  feeEstimation: FeeEstimation
+  receivedAmount: TokenValue
+  prebuiltWithdrawalIntents: Intent[]
+}
+
 export type PreparationOutput =
-  | {
-      tag: "ok"
-      value: {
-        directWithdrawAvailable: TokenValue
-        swap: SwapRequirement | null
-        nep141Storage: NEP141StorageRequirement | null
-        receivedAmount: TokenValue
-        withdtrawalFee: WithdtrawalFee
-      }
-    }
-  | {
-      tag: "err"
-      value:
-        | Extract<QuoteResult, { tag: "err" }>["value"]
-        | {
-            reason:
-              | "ERR_BALANCE_FETCH"
-              | "ERR_BALANCE_MISSING"
-              | "ERR_BALANCE_INSUFFICIENT"
-              | "ERR_NEP141_STORAGE"
-              | "ERR_CANNOT_FETCH_POA_BRIDGE_INFO"
-              | "ERR_CANNOT_FETCH_QUOTE"
-          }
-        | {
-            reason: "ERR_AMOUNT_TOO_LOW"
-            receivedAmount: bigint
-            minWithdrawalAmount: bigint
-            token: BaseTokenInfo
-            withdtrawalFee: WithdtrawalFee
-          }
-    }
+  | { tag: "ok"; value: PreparedWithdrawReturnType }
+  | { tag: "err"; value: PrepareWithdrawErrorType }
 
 export async function prepareWithdraw(
   {
@@ -90,59 +81,38 @@ export async function prepareWithdraw(
     depositedBalanceRef,
     poaBridgeInfoRef,
     backgroundQuoteRef,
-    userAddress,
   }: {
     formValues: WithdrawFormContext
     depositedBalanceRef: ActorRefFrom<typeof depositedBalanceMachine>
     poaBridgeInfoRef: ActorRefFrom<typeof poaBridgeInfoActor>
     backgroundQuoteRef: ActorRefFrom<typeof backgroundQuoterMachine>
-    userAddress: string | null
   },
   { signal }: { signal: AbortSignal }
 ): Promise<PreparationOutput> {
-  const withdtrawalFeePromise = () => {
-    if (userAddress == null || formValues.tokenOut.bridge !== "poa") {
-      return null
+  assert(formValues.parsedAmount != null, "parsedAmount is null")
+  assert(formValues.parsedRecipient != null, "parsedRecipient is null")
+
+  let balances: Exclude<
+    Awaited<ReturnType<typeof getBalances>>,
+    { tag: "err" }
+  >["value"]
+  try {
+    const result = await getBalances({ depositedBalanceRef }, { signal })
+    if (result.tag === "err") {
+      return result
     }
-    return getWithdrawalEstimate({
-      token: getTokenAccountId(formValues.tokenOut.defuseAssetId),
-      address: userAddress,
-      chain: assetNetworkAdapter[formValues.tokenOut.chainName],
-    })
-  }
-
-  const [balances_, withdtrawalFee_] = await Promise.allSettled([
-    getBalances({ depositedBalanceRef }, { signal }),
-    withdtrawalFeePromise(),
-  ])
-
-  if (balances_.status === "rejected") {
-    logger.error(balances_.reason)
+    balances = result.value
+  } catch (err) {
+    logger.error(err)
     return {
       tag: "err",
       value: { reason: "ERR_BALANCE_FETCH" },
     }
   }
 
-  const balances = balances_.value
-
-  const withdtrawalFee_Rejected = withdtrawalFee_.status === "rejected"
-
-  if (withdtrawalFee_Rejected) {
-    logger.error(
-      new Error("Cannot fetch estimate fee for POA token", {
-        cause: withdtrawalFee_.reason,
-      })
-    )
-  }
-
-  if (balances.tag === "err") {
-    return balances
-  }
-
   const balanceSufficiency = checkBalanceSufficiency({
     formValues,
-    balances: balances.value,
+    balances,
   })
   if (balanceSufficiency.tag === "err") {
     return balanceSufficiency
@@ -150,7 +120,7 @@ export async function prepareWithdraw(
 
   const breakdown = getWithdrawBreakdown({
     formValues,
-    balances: balances.value,
+    balances,
   })
   if (breakdown.tag === "err") {
     return breakdown
@@ -164,7 +134,7 @@ export async function prepareWithdraw(
       amountIn: swapNeeded.amount,
       tokensIn: swapNeeded.tokens,
       tokenOut: formValues.tokenOut,
-      balances: balances.value,
+      balances: balances,
     }
 
     const swapQuote = await new Promise<QuoteResult>((resolve) => {
@@ -189,14 +159,6 @@ export async function prepareWithdraw(
     return { tag: "err", value: swapRequirement.swapQuote.value }
   }
 
-  const nep141Storage = await determineNEP141StorageRequirement(
-    { formValues },
-    { signal }
-  )
-  if (nep141Storage.tag === "err") {
-    return nep141Storage
-  }
-
   const minWithdrawal = await getMinWithdrawalAmount(
     {
       formValues,
@@ -205,36 +167,28 @@ export async function prepareWithdraw(
     { signal }
   )
 
-  const withdtrawalFee: WithdtrawalFee = withdtrawalFee_Rejected
-    ? { tag: "err", value: { reason: "ERR_WITHDRAWAL_FEE_FETCH" } }
-    : {
-        tag: "ok",
-        value:
-          withdtrawalFee_.value == null
-            ? {
-                amount: BigInt(0), // no fee
-                decimals: 0, // not important as no fee
-              }
-            : {
-                amount: BigInt(withdtrawalFee_.value.withdrawalFee),
-                decimals: withdtrawalFee_.value.withdrawalFeeDecimals,
-              },
-      }
-
-  const { withdrawAmount: receivedAmount, withdrawFee } = calcWithdrawAmount(
+  const { withdrawAmount: totalWithdrawn } = calcWithdrawAmount(
     formValues.tokenOut,
     swapRequirement?.swapQuote?.tag === "ok"
       ? swapRequirement.swapQuote.value
       : null,
-    nep141Storage.value,
-    directWithdrawAvailable,
-    withdtrawalFee.tag === "ok"
-      ? withdtrawalFee.value
-      : { amount: 0n, decimals: 0 }
+    { amount: 0n }, // pass 0 fee, because we just need to compute the total withdrawn amount
+    directWithdrawAvailable
   )
 
-  if (withdtrawalFee.tag === "ok") {
-    withdtrawalFee.value = withdrawFee // withdrawFee is considering all fees including estimated and swaping
+  const feeEstimation = await estimateFee({
+    chainName: formValues.tokenOut.chainName,
+    defuseAssetId: formValues.tokenOut.defuseAssetId,
+    amount: totalWithdrawn.amount,
+    recipient: formValues.parsedRecipient,
+  })
+  if (feeEstimation.isErr()) {
+    return { tag: "err", value: feeEstimation.unwrapErr() }
+  }
+
+  const receivedAmount = {
+    amount: totalWithdrawn.amount - feeEstimation.unwrap().amount,
+    decimals: formValues.tokenOut.decimals,
   }
 
   if (compareAmounts(receivedAmount, minWithdrawal) === -1) {
@@ -242,106 +196,43 @@ export async function prepareWithdraw(
       tag: "err",
       value: {
         reason: "ERR_AMOUNT_TOO_LOW",
+        shortfall: {
+          amount: minWithdrawal.amount - receivedAmount.amount,
+          decimals: receivedAmount.decimals,
+        },
         // todo: provide decimals too
         receivedAmount: receivedAmount.amount,
         // todo: provide decimals too
         minWithdrawalAmount: minWithdrawal.amount,
         token: formValues.tokenOut,
-        withdtrawalFee,
       },
     }
   }
+
+  // BridgeSDK doesn't support virtual chains yet, and currently prebuilt
+  // withdrawal intents will be used only for `hot_omni`, so we can skip generating
+  const withdrawalIntents = isAuroraVirtualChain(formValues.tokenOut.chainName)
+    ? []
+    : await bridgeSDK.createWithdrawalIntents({
+        withdrawalParams: {
+          assetId: formValues.tokenOut.defuseAssetId,
+          amount: receivedAmount.amount,
+          destinationAddress: formValues.parsedRecipient,
+          destinationMemo: formValues.parsedDestinationMemo ?? undefined,
+          feeInclusive: false,
+        },
+        feeEstimation: feeEstimation.unwrap(),
+      })
 
   return {
     tag: "ok",
     value: {
       directWithdrawAvailable: directWithdrawAvailable,
       swap: swapRequirement,
-      nep141Storage: nep141Storage.value,
+      feeEstimation: feeEstimation.unwrap(),
       receivedAmount: receivedAmount,
-      withdtrawalFee,
+      prebuiltWithdrawalIntents: withdrawalIntents,
     },
-  }
-}
-
-async function determineNEP141StorageRequirement(
-  {
-    formValues,
-  }: {
-    formValues: WithdrawFormContext
-  },
-  {
-    signal,
-  }: {
-    signal: AbortSignal
-  }
-): Promise<
-  | { tag: "ok"; value: NEP141StorageRequirement | null }
-  | {
-      tag: "err"
-      value:
-        | Extract<QuoteResult, { tag: "err" }>["value"]
-        | { reason: "ERR_NEP141_STORAGE" | "ERR_CANNOT_FETCH_QUOTE" }
-    }
-> {
-  // We withdraw unwrapped near so no storage deposit is required for withdrawal of NEAR
-  if (
-    isFungibleToken(formValues.tokenOut) &&
-    formValues.tokenOut.address === "wrap.near"
-  ) {
-    return { tag: "ok", value: null }
-  }
-
-  const nep141StorageRequired = await checkNEP141StorageRequirements({
-    formValues,
-  })
-  if (nep141StorageRequired.tag === "err") {
-    return nep141StorageRequired
-  }
-
-  if (nep141StorageRequired.value === 0n) {
-    return { tag: "ok", value: null }
-  }
-
-  if (formValues.tokenOut.defuseAssetId === NEP141_STORAGE_TOKEN_ID) {
-    return {
-      tag: "ok",
-      value: {
-        type: "no_swap_needed",
-        requiredStorageNEAR: nep141StorageRequired.value,
-        quote: null,
-      },
-    }
-  }
-
-  try {
-    const nep141StorageQuote = await queryQuoteExactOut(
-      {
-        tokenIn: formValues.tokenOut.defuseAssetId,
-        tokenOut: NEP141_STORAGE_TOKEN_ID,
-        exactAmountOut: nep141StorageRequired.value,
-        /**
-         * We expect user to finish the transaction in specific timeframe and
-         * don't want to update the storage quote, as adds more complexity to code.
-         */
-        minDeadlineMs: settings.maxQuoteMinDeadlineMs,
-      },
-      { logBalanceSufficient: true, signal }
-    )
-    if (nep141StorageQuote.tag === "err") {
-      return { tag: "err", value: nep141StorageQuote.value }
-    }
-    return {
-      tag: "ok",
-      value: {
-        type: "swap_needed",
-        requiredStorageNEAR: nep141StorageRequired.value,
-        quote: nep141StorageQuote.value,
-      },
-    }
-  } catch (err) {
-    logger.error(new Error("Cannot fetch NEP141 storage quote", { cause: err }))
-    return { tag: "err", value: { reason: "ERR_CANNOT_FETCH_QUOTE" } }
   }
 }
 
@@ -355,7 +246,10 @@ async function getMinWithdrawalAmount(
   },
   { signal }: { signal: AbortSignal }
 ): Promise<TokenValue> {
-  if (formValues.tokenOut.chainName === "near") {
+  if (
+    // all other bridges have no minimal amount
+    formValues.tokenOut.bridge !== "poa"
+  ) {
     return { amount: 1n, decimals: formValues.tokenOut.decimals }
   }
 
@@ -446,26 +340,47 @@ async function getBalances(
   }
 }
 
-async function checkNEP141StorageRequirements({
-  formValues,
+async function estimateFee({
+  chainName,
+  defuseAssetId,
+  amount,
+  recipient,
 }: {
-  formValues: WithdrawFormContext
-}): Promise<
-  | { tag: "ok"; value: bigint }
-  | { tag: "err"; value: { reason: "ERR_NEP141_STORAGE" } }
-> {
-  assert(formValues.parsedRecipient != null, "parsedRecipient is null")
-
-  const nep141StorageRequired = await getNEP141StorageRequired({
-    token: formValues.tokenOut,
-    userAccountId: formValues.parsedRecipient,
-  })
-
-  if (nep141StorageRequired.tag === "err") {
-    return { tag: "err", value: { reason: "ERR_NEP141_STORAGE" } }
+  chainName: SupportedChainName
+  defuseAssetId: string
+  amount: bigint
+  recipient: string
+}): Promise<Result<FeeEstimation, { reason: "ERR_WITHDRAWAL_FEE_FETCH" }>> {
+  // BridgeSDK doesn't support virtual chains yet, so it can't estimate
+  if (isAuroraVirtualChain(chainName)) {
+    return Ok({
+      amount: 0n,
+      quote: null,
+    })
   }
 
-  return nep141StorageRequired
+  return bridgeSDK
+    .estimateWithdrawalFee({
+      withdrawalParams: {
+        assetId: defuseAssetId,
+        amount: amount,
+        destinationAddress: recipient,
+        destinationMemo: undefined,
+        feeInclusive: true,
+      },
+    })
+    .then(Ok, (err) => {
+      const feeExceedsAmountError = findError(err, FeeExceedsAmountError)
+
+      if (feeExceedsAmountError) {
+        return Ok(feeExceedsAmountError.feeEstimation)
+      }
+
+      logger.error(err)
+      return Err({
+        reason: "ERR_WITHDRAWAL_FEE_FETCH",
+      })
+    })
 }
 
 function getWithdrawBreakdown({

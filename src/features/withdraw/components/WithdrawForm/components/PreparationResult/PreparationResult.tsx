@@ -21,9 +21,6 @@ export const PreparationResult = ({
   const val = err.reason
 
   switch (val) {
-    case "ERR_NEP141_STORAGE":
-      content = val
-      break
     case "ERR_CANNOT_FETCH_POA_BRIDGE_INFO":
       content = "Cannot fetch POA Bridge info"
       break
@@ -31,7 +28,25 @@ export const PreparationResult = ({
       // Don't duplicate error messages, this should be handled by input validation
       break
     case "ERR_AMOUNT_TOO_LOW":
-      content = `Need ${formatTokenValue(err.minWithdrawalAmount - err.receivedAmount, err.token.decimals)} ${err.token.symbol} more to withdraw (considering fee)`
+      content = (
+        <>
+          {/* biome-ignore lint/nursery/useConsistentCurlyBraces: <explanation> */}
+          Need add{" "}
+          <Button
+            onClick={() => {
+              increaseAmount(err.shortfall)
+            }}
+            variant="ghost"
+            className="underline"
+          >
+            {/* biome-ignore lint/nursery/useConsistentCurlyBraces: <explanation> */}
+            {formatTokenValue(err.shortfall.amount, err.shortfall.decimals)}{" "}
+            {err.token.symbol}
+            {/* biome-ignore lint/nursery/useConsistentCurlyBraces: <explanation> */}
+          </Button>{" "}
+          more to withdraw
+        </>
+      )
       break
     case "ERR_NO_QUOTES":
     case "ERR_INSUFFICIENT_AMOUNT":
@@ -75,6 +90,9 @@ export const PreparationResult = ({
           {" for slight amount."}
         </>
       )
+      break
+    case "ERR_WITHDRAWAL_FEE_FETCH":
+      content = "Cannot fetch withdrawal fee"
       break
     default:
       val satisfies never

@@ -1,4 +1,5 @@
 import { ChevronRightIcon } from "@radix-ui/react-icons"
+import { QRCodeSVG } from "qrcode.react"
 import { cn } from "src/utils/cn"
 import {
   Popover,
@@ -16,6 +17,7 @@ type ShareableGiftImageProps = {
   token: BaseTokenInfo | UnifiedTokenInfo
   amount: TokenValue
   message: string
+  link?: string
   className?: string
 }
 
@@ -25,12 +27,13 @@ export function ShareableGiftImage({
   token,
   amount,
   message,
+  link,
   className,
 }: ShareableGiftImageProps) {
   return (
     <div
       className={cn(
-        "relative w-full min-w-[334.22px] min-h-[188px] max-w-[600px] h-auto aspect-[1.9/1] rounded-xl flex flex-col justify-center p-10 items-center",
+        "relative w-full min-w-[334px] min-h-[284px] max-w-[600px] h-auto aspect-[1.5/1] rounded-xl flex flex-col justify-center p-10 items-center",
         className
       )}
       style={{
@@ -41,6 +44,11 @@ export function ShareableGiftImage({
       }}
     >
       <div className="flex flex-col items-center gap-4 z-10">
+        {link && (
+          <div className="flex items-center justify-center bg-white w-32 h-32 p-2 rounded-md">
+            <QRCodeSVG value={link} />
+          </div>
+        )}
         {/* Asset Component */}
         <div className="flex items-center gap-4 z-10 bg-white rounded-full p-1.5">
           <GiftStrip

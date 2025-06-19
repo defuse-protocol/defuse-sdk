@@ -1,5 +1,6 @@
 import { assign, fromPromise, setup } from "xstate"
 import { logger } from "../../logger"
+import { emitEvent } from "../../services/emitter"
 import type { BaseTokenInfo, SupportedChainName } from "../../types/base"
 import { assert } from "../../utils/assert"
 
@@ -86,6 +87,27 @@ export const depositMachine = setup({
         return params
       },
     }),
+    emitDepositInitiated: ({ context }) => {
+      emitEvent("deposit_initiated", {
+        token: context.derivedToken.symbol,
+        amount: {
+          amount: context.amount,
+          decimals: context.derivedToken.decimals,
+        },
+        wallet_type: context.derivedToken.chainName,
+      })
+    },
+    emitDepositSuccess: ({ context }) => {
+      emitEvent("deposit_success", {
+        tx_hash: context.txHash,
+        token: context.derivedToken.symbol,
+        amount: {
+          amount: context.amount,
+          decimals: context.derivedToken.decimals,
+        },
+        network: context.derivedToken.chainName,
+      })
+    },
   },
   guards: {
     isDepositParamsValid: () => {
@@ -192,6 +214,7 @@ export const depositMachine = setup({
         },
         src: "signAndSendTransactions",
       },
+      entry: ["emitDepositInitiated"],
     },
 
     verifying: {
@@ -234,6 +257,7 @@ export const depositMachine = setup({
 
     completed: {
       type: "final",
+      entry: ["emitDepositSuccess"],
     },
   },
 })

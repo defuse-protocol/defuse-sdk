@@ -1,6 +1,7 @@
 import { base64 } from "@scure/base"
 import { AccountLayout } from "@solana/spl-token"
 import { Connection, PublicKey } from "@solana/web3.js"
+import { Address as TonAddress, TonClient, beginCell } from "@ton/ton"
 import { http, type Address, createPublicClient, erc20Abi } from "viem"
 import { z } from "zod"
 import { nearClient } from "../constants/nearClient"
@@ -209,6 +210,61 @@ export const getSolanaSplBalance = async ({
     logger.error(
       new Error("error fetching Solana SPL token balance", { cause: err })
     )
+    return null
+  }
+}
+
+export const getTonNativeBalance = async ({
+  userAddress,
+  rpcUrl,
+}: {
+  userAddress: string
+  rpcUrl: string
+}): Promise<bigint | null> => {
+  try {
+    const client = new TonClient({
+      endpoint: rpcUrl,
+    })
+    const balance = await client.getBalance(TonAddress.parse(userAddress))
+
+    return BigInt(balance)
+  } catch (err: unknown) {
+    logger.error(new Error("error fetching TON native balance", { cause: err }))
+    return null
+  }
+}
+
+export const getTonJettonBalance = async ({
+  tokenAddress,
+  userAddress,
+  rpcUrl,
+}: {
+  tokenAddress: string
+  userAddress: string
+  rpcUrl: string
+}): Promise<bigint | null> => {
+  try {
+    const client = new TonClient({
+      endpoint: rpcUrl,
+    })
+    const userTonAddress = TonAddress.parse(userAddress)
+    const userAddressCell = beginCell().storeAddress(userTonAddress).endCell()
+
+    const getWalletAddressResult = await client.runMethod(
+      TonAddress.parse(tokenAddress),
+      "get_wallet_address",
+      [{ type: "slice", cell: userAddressCell }]
+    )
+    const jettonWalletAddress = getWalletAddressResult.stack.readAddress()
+
+    const walletDataResult = await client.runMethod(
+      jettonWalletAddress,
+      "get_wallet_data"
+    )
+    const balance = walletDataResult.stack.readBigNumber()
+    return balance
+  } catch (err: unknown) {
+    logger.error(new Error("error fetching TON Tep74 balance", { cause: err }))
     return null
   }
 }

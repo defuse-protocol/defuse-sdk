@@ -99,6 +99,10 @@ export const depositEstimateMaxValueActor = fromPromise(
         }
         return balance - fee
       }
+      case BlockchainEnum.TON: {
+        // TODO: Add estimation for TON
+        return balance
+      }
       // For next blockchains - active deposits are not supported, so no network fees
       case BlockchainEnum.BITCOIN:
       case BlockchainEnum.DOGECOIN:

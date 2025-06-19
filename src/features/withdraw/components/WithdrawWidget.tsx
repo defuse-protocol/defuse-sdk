@@ -1,3 +1,4 @@
+import type { Quote } from "src/sdk/solverRelay/solverRelayHttpClient/types"
 import { assign, fromPromise } from "xstate"
 import { WidgetRoot } from "../../../components/WidgetRoot"
 import { auroraEngineContractId } from "../../../constants/aurora"
@@ -7,6 +8,7 @@ import type { WithdrawWidgetProps } from "../../../types/withdraw"
 import { assert } from "../../../utils/assert"
 import {
   makeInnerSwapAndWithdrawMessage,
+  makeInnerSwapMessage,
   makeSwapMessage,
 } from "../../../utils/messageFactory"
 import { isBaseToken } from "../../../utils/token"
@@ -70,7 +72,7 @@ export const WithdrawWidget = (props: WithdrawWidgetProps) => {
 
                       const {
                         tokenOut,
-                        nep141Storage,
+                        feeEstimation,
                         recipient,
                         destinationMemo,
                         quote,
@@ -98,7 +100,9 @@ export const WithdrawWidget = (props: WithdrawWidgetProps) => {
                       const innerMessage = makeInnerSwapAndWithdrawMessage({
                         tokenDeltas: quote?.tokenDeltas ?? [],
                         storageTokenDeltas:
-                          nep141Storage?.quote?.tokenDeltas ?? [],
+                          feeEstimation.quote == null
+                            ? []
+                            : quoteToDelta(feeEstimation.quote),
                         withdrawParams: (() => {
                           const bridge = tokenOut.bridge
                           switch (bridge) {
@@ -113,7 +117,9 @@ export const WithdrawWidget = (props: WithdrawWidgetProps) => {
                                 receiverId: recipient,
                                 tokenAccountId: tokenOutAccountId,
                                 storageDeposit:
-                                  nep141Storage?.requiredStorageNEAR ?? 0n,
+                                  feeEstimation.quote == null
+                                    ? feeEstimation.amount
+                                    : BigInt(feeEstimation.quote.amount_out),
                               }
 
                             case "aurora_engine": {
@@ -176,6 +182,21 @@ export const WithdrawWidget = (props: WithdrawWidgetProps) => {
                         referral: context.referral,
                       })
 
+                      // override the old hot_omni withdrawal approach
+                      if (tokenOut.bridge === "hot_omni") {
+                        innerMessage.intents = [
+                          ...(makeInnerSwapMessage({
+                            deadlineTimestamp:
+                              Date.now() + settings.swapExpirySec * 1000,
+                            referral: context.referral,
+                            signerId: context.defuseUserId,
+                            tokenDeltas: quote?.tokenDeltas ?? [],
+                          }).intents ?? []),
+                          ...context.intentOperationParams
+                            .prebuiltWithdrawalIntents,
+                        ]
+                      }
+
                       return {
                         innerMessage,
                         walletMessage: makeSwapMessage({ innerMessage }),
@@ -192,4 +213,11 @@ export const WithdrawWidget = (props: WithdrawWidgetProps) => {
       </WithdrawWidgetProvider>
     </WidgetRoot>
   )
+}
+
+function quoteToDelta(quote: Quote): [string, bigint][] {
+  return [
+    [quote.defuse_asset_identifier_in, -BigInt(quote.amount_in)],
+    [quote.defuse_asset_identifier_out, BigInt(quote.amount_out)],
+  ]
 }

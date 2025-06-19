@@ -66,3 +66,7 @@ export function getMinWithdrawalHiperliquidAmount(
       throw new Error("Error getting min withdrawal amount for Hyperliquid")
   }
 }
+
+export function isHyperliquid(blockchain: SupportedChainName): boolean {
+  return blockchain === "hyperliquid"
+}

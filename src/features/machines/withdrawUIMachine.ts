@@ -9,6 +9,7 @@ import {
   spawnChild,
 } from "xstate"
 import { logger } from "../../logger"
+import { emitEvent } from "../../services/emitter"
 import type { QuoteResult } from "../../services/quoteService"
 import type { AuthMethod } from "../../types/authHandle"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../types/base"
@@ -196,6 +197,23 @@ export const withdrawUIMachine = setup({
     clearPreparationOutput: assign({
       preparationOutput: null,
     }),
+    emitWithdrawalInitiated: ({ context }) => {
+      const withdrawContext = context.withdrawFormRef.getSnapshot().context
+      const { preparationOutput } = context
+
+      const fee_estimate =
+        preparationOutput != null && preparationOutput.tag === "ok"
+          ? preparationOutput.value.feeEstimation.amount
+          : null
+
+      emitEvent("withdrawal_initiated", {
+        token: withdrawContext.tokenIn.symbol,
+        amount: withdrawContext.parsedAmount,
+        to_chain: withdrawContext.tokenOut.defuseAssetId,
+        address_entered: withdrawContext.recipient,
+        fee_estimate,
+      })
+    },
 
     spawnBackgroundQuoterRef: spawnChild("backgroundQuoterActor", {
       id: "backgroundQuoterRef",
@@ -262,6 +280,20 @@ export const withdrawUIMachine = setup({
             intentDescription: output.value.intentDescription,
           },
         })
+
+        const { preparationOutput, submitDeps } = context
+
+        assert(preparationOutput != null)
+        assert(submitDeps != null)
+
+        if (preparationOutput.tag === "ok") {
+          emitEvent("withdrawal_confirmed", {
+            tx_hash: output.value.intentHash,
+            received_amount: preparationOutput.value.receivedAmount,
+            actual_fee: preparationOutput.value.feeEstimation.amount,
+            destination_chain: submitDeps.userChainType,
+          })
+        }
 
         return [intentRef, ...context.intentRefs]
       },
@@ -458,18 +490,23 @@ export const withdrawUIMachine = setup({
         },
 
         WITHDRAW_FORM_FIELDS_CHANGED: ".reset_previous_preparation",
+
+        submit: {
+          target: ".done",
+          guard: "isPreparationOk",
+          actions: [
+            "clearIntentCreationResult",
+            { type: "setSubmitDeps", params: ({ event }) => event.params },
+          ],
+        },
       },
 
       states: {
         idle: {
-          on: {
-            submit: {
-              target: "done",
+          after: {
+            10000: {
               guard: "isPreparationOk",
-              actions: [
-                "clearIntentCreationResult",
-                { type: "setSubmitDeps", params: ({ event }) => event.params },
-              ],
+              target: "preparation",
             },
           },
         },
@@ -479,6 +516,10 @@ export const withdrawUIMachine = setup({
             {
               target: "preparation",
               guard: "isWithdrawParamsComplete",
+              actions: [
+                "sendToBackgroundQuoterRefPause",
+                "clearPreparationOutput",
+              ],
             },
             {
               target: "idle",
@@ -501,7 +542,6 @@ export const withdrawUIMachine = setup({
                 formValues: context.withdrawFormRef.getSnapshot().context,
                 depositedBalanceRef: context.depositedBalanceRef,
                 poaBridgeInfoRef: context.poaBridgeInfoRef,
-                userAddress: context.userAddress,
                 backgroundQuoteRef: backgroundQuoteRef,
               }
             },
@@ -520,8 +560,6 @@ export const withdrawUIMachine = setup({
               },
             },
           },
-
-          entry: ["sendToBackgroundQuoterRefPause", "clearPreparationOutput"],
         },
 
         done: {
@@ -531,6 +569,7 @@ export const withdrawUIMachine = setup({
 
       onDone: {
         target: "submitting",
+        actions: ["emitWithdrawalInitiated"],
       },
     },
 
@@ -569,11 +608,13 @@ export const withdrawUIMachine = setup({
               type: "withdraw",
               tokenOut: formValues.tokenOut,
               quote,
-              nep141Storage: context.preparationOutput.value.nep141Storage,
+              feeEstimation: context.preparationOutput.value.feeEstimation,
               directWithdrawalAmount:
                 context.preparationOutput.value.directWithdrawAvailable,
               recipient: recipient,
               destinationMemo: formValues.parsedDestinationMemo,
+              prebuiltWithdrawalIntents:
+                context.preparationOutput.value.prebuiltWithdrawalIntents,
             },
           }
         },

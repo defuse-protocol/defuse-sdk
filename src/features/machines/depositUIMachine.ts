@@ -32,6 +32,7 @@ export type Context = {
   poaBridgeInfoRef: ActorRefFrom<typeof poaBridgeInfoActor>
   tokenList: SwappableToken[]
   userAddress: string | null
+  userWalletAddress: string | null
   userChainType: AuthMethod | null
   depositFormRef: ActorRefFrom<typeof depositFormReducer>
   preparationOutput: PreparationOutput | null
@@ -55,6 +56,7 @@ export const depositUIMachine = setup({
           type: "LOGIN"
           params: {
             userAddress: string
+            userWalletAddress: string | null
             userChainType: AuthMethod
           }
         }
@@ -159,6 +161,7 @@ export const depositUIMachine = setup({
           derivedToken:
             context.depositFormRef.getSnapshot().context.derivedToken,
           userAddress: context.userAddress,
+          userWalletAddress: context.userWalletAddress,
           blockchain: context.depositFormRef.getSnapshot().context.blockchain,
         },
       }
@@ -218,6 +221,7 @@ export const depositUIMachine = setup({
   context: ({ input, spawn, self }) => ({
     tokenList: input.tokenList,
     userAddress: null,
+    userWalletAddress: null,
     userChainType: null,
     preparationOutput: null,
     depositOutput: null,
@@ -253,6 +257,7 @@ export const depositUIMachine = setup({
       actions: [
         assign({
           userAddress: ({ event }) => event.params.userAddress,
+          userWalletAddress: ({ event }) => event.params.userWalletAddress,
           userChainType: ({ event }) => event.params.userChainType,
         }),
       ],
@@ -265,6 +270,7 @@ export const depositUIMachine = setup({
         "clearPreparationOutput",
         assign({
           userAddress: () => "",
+          userWalletAddress: () => "",
         }),
         "requestClearAddress",
       ],
@@ -350,8 +356,10 @@ export const depositUIMachine = setup({
 
             input: ({ context }) => {
               assert(context.userAddress, "userAddress is null")
+              assert(context.userWalletAddress, "userWalletAddress is null")
               return {
                 userAddress: context.userAddress,
+                userWalletAddress: context.userWalletAddress,
                 formValues: context.depositFormRef.getSnapshot().context,
                 depositGenerateAddressRef: context.depositGenerateAddressRef,
                 storageDepositAmountRef: context.storageDepositAmountRef,
@@ -536,6 +544,7 @@ type DepositParams = {
   amount: bigint
   nearBalance: bigint | null
   userAddress: string
+  userWalletAddress: string | null
   depositAddress: string | null
   storageDepositRequired: bigint | null
   solanaATACreationRequired: boolean
@@ -555,6 +564,7 @@ function extractDepositParams(context: Context): DepositParams {
   assert(derivedToken, "derivedToken is null")
   assert(blockchain !== null, "blockchain is null")
   assert(context.userAddress, "userAddress is null")
+  assert(context.userWalletAddress, "userWalletAddress is null")
   assert(parsedAmount, "parsed amount is null")
   assert(prepOutput?.balance, "balance is null")
 
@@ -565,6 +575,7 @@ function extractDepositParams(context: Context): DepositParams {
     nearBalance: prepOutput.nearBalance,
     amount: parsedAmount,
     userAddress: context.userAddress,
+    userWalletAddress: context.userWalletAddress,
     depositAddress: prepOutput.generateDepositAddress,
     storageDepositRequired: prepOutput.storageDepositRequired,
     solanaATACreationRequired: prepOutput.solanaATACreationRequired,

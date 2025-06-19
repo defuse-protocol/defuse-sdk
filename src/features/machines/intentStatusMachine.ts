@@ -7,8 +7,8 @@ import {
   sendTo,
   setup,
 } from "xstate"
+import { bridgeSDK } from "../../constants/bridgeSdk"
 import { logger } from "../../logger"
-import { waitForHotOmniWithdrawalCompletion } from "../../sdk/poaBridge/waitForHotWithdrawalCompletion"
 import { waitForWithdrawalCompletion } from "../../sdk/poaBridge/waitForWithdrawalCompletion"
 import {
   type IntentSettlementResult,
@@ -111,13 +111,20 @@ export const intentStatusMachine = setup({
             })
 
           case "hot_omni":
-            return waitForHotOmniWithdrawalCompletion({
-              accountId: input.accountId,
-              chainName: input.chainName,
-              recipient: input.recipient,
-              txHash: input.sourceTxHash,
-              signal,
-            })
+            return bridgeSDK
+              .waitForWithdrawalCompletion({
+                bridge: "hot",
+                index: 0,
+                tx: {
+                  hash: input.sourceTxHash,
+                  accountId: "intent.near",
+                },
+              })
+              .then((result) => {
+                return {
+                  destinationTxHash: result.hash,
+                }
+              })
 
           default:
             bridge satisfies never
