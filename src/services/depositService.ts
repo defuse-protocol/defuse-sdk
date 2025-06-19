@@ -900,6 +900,44 @@ export function getAvailableDepositRoutes(
           throw new Error("exhaustive check failed")
       }
     case AuthMethod.WebAuthn:
+      switch (network) {
+        /* allowed passive */
+        case BlockchainEnum.ETHEREUM:
+        case BlockchainEnum.BASE:
+        case BlockchainEnum.ARBITRUM:
+        case BlockchainEnum.BITCOIN:
+        case BlockchainEnum.DOGECOIN:
+        case BlockchainEnum.XRPLEDGER:
+        case BlockchainEnum.ZCASH:
+        case BlockchainEnum.GNOSIS:
+        case BlockchainEnum.BERACHAIN:
+        case BlockchainEnum.SOLANA:
+        case BlockchainEnum.TRON:
+        case BlockchainEnum.POLYGON:
+        case BlockchainEnum.BSC:
+        case BlockchainEnum.NEAR:
+        case BlockchainEnum.TON:
+          return {
+            activeDeposit: false,
+            passiveDeposit: true,
+          }
+
+        /* not-allowed all */
+        case BlockchainEnum.TURBOCHAIN:
+        case BlockchainEnum.TUXAPPCHAIN:
+        case BlockchainEnum.VERTEX:
+        case BlockchainEnum.OPTIMA:
+        case BlockchainEnum.COINEASY:
+        case BlockchainEnum.AURORA:
+        case BlockchainEnum.HYPERLIQUID:
+          return {
+            activeDeposit: false,
+            passiveDeposit: false,
+          }
+        default:
+          network satisfies never
+          throw new Error("exhaustive check failed")
+      }
     case AuthMethod.Ton:
       switch (network) {
         /* allowed all */
