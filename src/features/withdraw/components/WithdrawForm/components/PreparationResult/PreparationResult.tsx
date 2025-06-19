@@ -28,7 +28,25 @@ export const PreparationResult = ({
       // Don't duplicate error messages, this should be handled by input validation
       break
     case "ERR_AMOUNT_TOO_LOW":
-      content = `Need ${formatTokenValue(err.minWithdrawalAmount - err.receivedAmount, err.token.decimals)} ${err.token.symbol} more to withdraw (considering fee)`
+      content = (
+        <>
+          {/* biome-ignore lint/nursery/useConsistentCurlyBraces: <explanation> */}
+          Need add{" "}
+          <Button
+            onClick={() => {
+              increaseAmount(err.shortfall)
+            }}
+            variant="ghost"
+            className="underline"
+          >
+            {/* biome-ignore lint/nursery/useConsistentCurlyBraces: <explanation> */}
+            {formatTokenValue(err.shortfall.amount, err.shortfall.decimals)}{" "}
+            {err.token.symbol}
+            {/* biome-ignore lint/nursery/useConsistentCurlyBraces: <explanation> */}
+          </Button>{" "}
+          more to withdraw
+        </>
+      )
       break
     case "ERR_NO_QUOTES":
     case "ERR_INSUFFICIENT_AMOUNT":
