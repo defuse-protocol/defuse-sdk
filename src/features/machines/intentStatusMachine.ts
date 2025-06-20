@@ -22,6 +22,7 @@ import type {
 } from "../../types/base"
 import type { IntentsUserId } from "../../types/intentsUserId"
 import { assert } from "../../utils/assert"
+import { CAIP2_NETWORK } from "../../utils/caip2"
 import type { IntentDescription } from "./swapIntentMachine"
 
 type ChildEvent = {
@@ -113,7 +114,11 @@ export const intentStatusMachine = setup({
           case "hot_omni":
             return bridgeSDK
               .waitForWithdrawalCompletion({
-                bridge: "hot",
+                bridge: {
+                  bridge: "hot",
+                  // biome-ignore lint/suspicious/noExplicitAny: it expects just a caip2 string, but mistakenly strongly typed
+                  chain: CAIP2_NETWORK[input.chainName] as any,
+                },
                 index: 0,
                 tx: {
                   hash: input.sourceTxHash,

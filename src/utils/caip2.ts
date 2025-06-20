@@ -1,0 +1,26 @@
+import type { SupportedChainName } from "../types/base"
+
+export const CAIP2_NETWORK: Record<SupportedChainName, string> = {
+  bitcoin: "bip122:000000000019d6689c085ae165831e93",
+  eth: "eip155:1",
+  base: "eip155:8453",
+  arbitrum: "eip155:42161",
+  bsc: "eip155:56",
+  polygon: "eip155:137",
+  near: "near:mainnet",
+  solana: "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
+  tron: "tron:27Lqcw",
+  gnosis: "eip155:100",
+  xrpledger: "xrpl:0",
+  dogecoin: "bip122:1a91e3dace36e2be3bf030a65679fe82",
+  zcash: "zcash:0",
+  berachain: "eip155:80085",
+  ton: "tvm:-239",
+  aurora: "eip155:1313161554",
+  turbochain: "eip155:1313161567",
+  tuxappchain: "eip155:1313161573",
+  vertex: "eip155:1313161587",
+  optima: "eip155:1313161569",
+  coineasy: "eip155:1313161752",
+  hyperliquid: "hyperliquid:mainnet", // This is not reviewed and most likely correct
+}
