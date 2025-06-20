@@ -100,7 +100,7 @@ export const intentStatusMachine = setup({
             index: 0,
             tx: {
               hash: input.sourceTxHash,
-              accountId: "intent.near",
+              accountId: "intents.near", // our relayer sends txs on behalf of "intents.near"
             },
           })
           .then((result) => {
