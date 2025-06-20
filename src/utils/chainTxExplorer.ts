@@ -45,7 +45,7 @@ export function chainTxExplorer(blockchain: SupportedChainName): string | null {
     case "hyperliquid":
       return "https://app.hyperliquid.xyz/explorer/tx/"
     case "ton":
-      return "https://tonscan.org/tx/"
+      return "https://tonviewer.com/transaction/"
     default:
       blockchain satisfies never
       return null

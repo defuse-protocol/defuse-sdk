@@ -47,6 +47,6 @@ export const settings: Settings = {
     polygon: "https://polygon-rpc.com",
     bsc: "https://bsc-dataseed.bnbchain.org",
     hyperliquid: "https://rpc.hyperliquid.xyz/evm",
-    ton: "https://ton.api.onfinality.io/public",
+    ton: "https://ton.api.onfinality.io/public", // Backup RPC: https://toncenter.com/api/v2/jsonRPC
   },
 }
