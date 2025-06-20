@@ -15,9 +15,11 @@ export type Input = {
   balance: bigint
   amount: bigint
   userAddress: string
+  userWalletAddress: string | null
   depositAddress: string | null
   storageDepositRequired: bigint | null
   solanaATACreationRequired: boolean
+  tonJettonWalletCreationRequired: boolean
   nearBalance: bigint | null
   type: string
 }
@@ -26,6 +28,7 @@ export type DepositDescription = {
   type: string
   amount: bigint
   userAddress: string
+  userWalletAddress: string | null
   derivedToken: BaseTokenInfo
 }
 
@@ -135,6 +138,7 @@ export const depositMachine = setup({
           depositDescription: {
             type: context.type,
             userAddress: context.userAddress,
+            userWalletAddress: context.userWalletAddress,
             amount: context.amount,
             derivedToken: context.derivedToken,
           },

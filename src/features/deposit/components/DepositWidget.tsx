@@ -15,6 +15,7 @@ export const DepositWidget = ({
   sendTransactionNear,
   sendTransactionEVM,
   sendTransactionSolana,
+  sendTransactionTon,
   renderHostAppLink,
 }: DepositWidgetProps) => {
   return (
@@ -27,6 +28,7 @@ export const DepositWidget = ({
             sendTransactionNear={sendTransactionNear}
             sendTransactionEVM={sendTransactionEVM}
             sendTransactionSolana={sendTransactionSolana}
+            sendTransactionTon={sendTransactionTon}
           >
             <DepositUIMachineFormSyncProvider
               userAddress={userAddress}

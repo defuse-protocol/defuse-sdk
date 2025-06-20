@@ -13,12 +13,14 @@ export type DepositWidgetProps = {
   sendTransactionNear: (tx: Transaction["NEAR"][]) => Promise<string | null>
   sendTransactionEVM: (tx: Transaction["EVM"]) => Promise<Hash | null>
   sendTransactionSolana: (tx: Transaction["Solana"]) => Promise<string | null>
+  sendTransactionTon: (tx: Transaction["TON"]) => Promise<string | null>
 }
 
 export type Transaction = {
   NEAR: SendTransactionNearParams
   EVM: SendTransactionEVMParams
   Solana: SendTransactionSolanaParams
+  TON: SendTransactionTonParams
 }
 
 export type DepositEvent = {
@@ -55,3 +57,12 @@ export interface SendTransactionEVMParams {
 }
 
 export interface SendTransactionSolanaParams extends TransactionSolana {}
+
+export interface SendTransactionTonParams {
+  validUntil: number
+  messages: Array<{
+    address: string
+    amount: string
+    payload?: string
+  }>
+}
