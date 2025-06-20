@@ -1,4 +1,6 @@
 import { Address, type TonClient, beginCell } from "@ton/ton"
+import type { BaseTokenInfo } from "../types/base"
+import { isNativeToken } from "../utils/token"
 
 export interface JettonInfo {
   address: string
@@ -9,6 +11,25 @@ export interface JettonWalletData {
   balance: bigint
   ownerAddress: Address
   adminAddress: Address | null
+}
+
+export function createTransferMessage(
+  amount: bigint,
+  destinationAddress: string,
+  responseDestinationAddress: string
+): string {
+  const transferMessage = beginCell()
+    .storeUint(0xf8a7ea5, 32) // opcode for jetton transfer
+    .storeUint(0, 64) // query_id
+    .storeCoins(amount)
+    .storeAddress(Address.parse(destinationAddress)) // destination - where to send the tokens
+    .storeAddress(Address.parse(responseDestinationAddress)) // response_destination - where to send response
+    .storeUint(0, 1) // custom_payload: null (0 = no custom payload)
+    .storeCoins(1) // forward_ton_amount - 0.000000001 TON for gas (as per TON docs)
+    .storeUint(0, 1) // forward_payload: null (0 = no forward payload)
+    .endCell()
+
+  return transferMessage.toBoc().toString("base64")
 }
 
 export async function getUserJettonWalletAddress(
@@ -62,5 +83,35 @@ export async function checkJettonWalletExists(
     return true
   } catch {
     return false
+  }
+}
+
+export async function checkTonJettonWalletRequired(
+  client: TonClient,
+  token: BaseTokenInfo,
+  depositAddress: string | null
+): Promise<boolean> {
+  if (
+    token.chainName !== "ton" ||
+    isNativeToken(token) ||
+    depositAddress === null
+  ) {
+    return false
+  }
+
+  try {
+    const jettonWalletAddress = await getUserJettonWalletAddress(
+      client,
+      depositAddress,
+      token.address
+    )
+
+    const walletExists = await checkJettonWalletExists(
+      client,
+      Address.parse(jettonWalletAddress)
+    )
+    return !walletExists
+  } catch {
+    return true
   }
 }
