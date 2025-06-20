@@ -10,6 +10,8 @@ import {
   SystemProgram,
   Transaction as TransactionSolana,
 } from "@solana/web3.js"
+import { beginCell } from "@ton/core"
+import { Address as TonAddress, TonClient } from "@ton/ton"
 import { auroraErc20ABI } from "src/utils/blockchain"
 import {
   http,
@@ -38,6 +40,7 @@ import {
 import { AuthMethod } from "../types/authHandle"
 import type { BaseTokenInfo, SupportedChainName } from "../types/base"
 import type { SendTransactionEVMParams, Transaction } from "../types/deposit"
+import type { SendTransactionTonParams } from "../types/deposit"
 import type { IntentsUserId } from "../types/intentsUserId"
 import { assert } from "../utils/assert"
 import { authHandleToIntentsUserId } from "../utils/authIdentity"
@@ -60,6 +63,7 @@ export type PreparationOutput =
         nearBalance: bigint | null
         maxDepositValue: bigint | null
         solanaATACreationRequired: boolean
+        tonJettonWalletCreationRequired: boolean
       }
     }
   | {
@@ -173,6 +177,11 @@ export async function prepareDeposit(
     generateDepositAddress.value.generateDepositAddress
   )
 
+  const tonJettonWalletCreationRequired = await checkTonJettonWalletRequired(
+    formValues.derivedToken,
+    generateDepositAddress.value.generateDepositAddress
+  )
+
   return {
     tag: "ok",
     value: {
@@ -183,6 +192,7 @@ export async function prepareDeposit(
       nearBalance: balances.value.nearBalance,
       maxDepositValue: estimation.value.maxDepositValue,
       solanaATACreationRequired,
+      tonJettonWalletCreationRequired,
     },
   }
 }
@@ -1104,4 +1114,154 @@ async function checkSolanaATARequired(
 
   const ataExists = await checkATAExists(connection, toATA)
   return !ataExists
+}
+
+async function checkTonJettonWalletExists(
+  client: TonClient,
+  jettonWalletAddress: TonAddress
+): Promise<boolean> {
+  try {
+    await client.runMethod(jettonWalletAddress, "get_wallet_data")
+    return true
+  } catch {
+    return false
+  }
+}
+
+async function checkTonJettonWalletRequired(
+  token: BaseTokenInfo,
+  depositAddress: string | null
+): Promise<boolean> {
+  if (
+    token.chainName !== "ton" ||
+    isNativeToken(token) ||
+    depositAddress === null
+  ) {
+    return false
+  }
+
+  const client = new TonClient({
+    endpoint: settings.rpcUrls.ton,
+  })
+
+  const userTonAddress = TonAddress.parse(depositAddress)
+  const userAddressCell = beginCell().storeAddress(userTonAddress).endCell()
+
+  try {
+    const getWalletAddressResult = await client.runMethod(
+      TonAddress.parse(token.address),
+      "get_wallet_address",
+      [{ type: "slice", cell: userAddressCell }]
+    )
+    const jettonWalletAddress = getWalletAddressResult.stack.readAddress()
+
+    if (!jettonWalletAddress) {
+      return true
+    }
+
+    const walletExists = await checkTonJettonWalletExists(
+      client,
+      jettonWalletAddress
+    )
+    return !walletExists
+  } catch {
+    return true
+  }
+}
+
+async function getUserJettonWalletAddress(
+  userWalletAddress: string,
+  jettonMasterAddress: string
+): Promise<string> {
+  const client = new TonClient({
+    endpoint: settings.rpcUrls.ton,
+  })
+
+  const userTonAddress = TonAddress.parse(userWalletAddress)
+  const userAddressCell = beginCell().storeAddress(userTonAddress).endCell()
+
+  const getWalletAddressResult = await client.runMethod(
+    TonAddress.parse(jettonMasterAddress),
+    "get_wallet_address",
+    [{ type: "slice", cell: userAddressCell }]
+  )
+  const jettonWalletAddress = getWalletAddressResult.stack.readAddress()
+
+  if (!jettonWalletAddress) {
+    throw new Error("Jetton wallet address not found")
+  }
+
+  return jettonWalletAddress.toString()
+}
+
+export async function createDepositTonTransaction(
+  userWalletAddress: string,
+  depositAddress: string,
+  amount: bigint,
+  token: BaseTokenInfo
+): Promise<SendTransactionTonParams> {
+  assert(token.chainName === "ton", "Token chain name is not TON")
+
+  if (isNativeToken(token)) {
+    return createDepositTonNativeTransaction(depositAddress, amount)
+  }
+
+  return await createDepositTonJettonTransaction(
+    userWalletAddress,
+    depositAddress,
+    amount,
+    token.address
+  )
+}
+
+export function createDepositTonNativeTransaction(
+  depositAddress: string,
+  amount: bigint
+): SendTransactionTonParams {
+  return {
+    validUntil: Math.floor(Date.now() / 1000) + 360, // 6 minutes from now
+    messages: [
+      {
+        address: depositAddress,
+        amount: amount.toString(), // Ensure we have at least 0.1 TON for fees
+      },
+    ],
+  }
+}
+
+export async function createDepositTonJettonTransaction(
+  userWalletAddress: string,
+  depositAddress: string,
+  amount: bigint,
+  jettonMasterAddress: string
+): Promise<SendTransactionTonParams> {
+  // Get the user's jetton wallet address
+  const userJettonWalletAddress = await getUserJettonWalletAddress(
+    userWalletAddress,
+    jettonMasterAddress
+  )
+  const destinationAddress = TonAddress.parse(depositAddress)
+  const responseDestinationAddress = TonAddress.parse(userWalletAddress)
+
+  const transferMessage = beginCell()
+    .storeUint(0xf8a7ea5, 32) // opcode for jetton transfer
+    .storeUint(0, 64) // query_id
+    .storeCoins(amount) // amount
+    .storeAddress(destinationAddress) // destination - where to send the tokens
+    .storeAddress(responseDestinationAddress) // response_destination - where to send response
+    .storeUint(0, 1) // custom_payload: null (0 = no custom payload)
+    .storeCoins(1) // forward_ton_amount - 0.000000001 TON for gas (as per TON docs)
+    .storeUint(0, 1) // forward_payload: null (0 = no forward payload)
+    .endCell()
+
+  return {
+    validUntil: Math.floor(Date.now() / 1000) + 360, // 6 minutes from now
+    messages: [
+      {
+        address: userJettonWalletAddress, // Send to user's jetton wallet (as per successful transaction)
+        amount: "80000000", // 0.08 TON to cover gas fees
+        payload: transferMessage.toBoc().toString("base64"),
+      },
+    ],
+  }
 }
