@@ -5,6 +5,7 @@ import {
 import { Err, Ok, type Result } from "@thames/monads"
 import { findError } from "src/utils/errors"
 import { type ActorRefFrom, waitFor } from "xstate"
+import { auroraEngineContractId } from "../constants/aurora"
 import { bridgeSDK } from "../constants/bridgeSdk"
 import type {
   QuoteInput,
@@ -209,20 +210,23 @@ export async function prepareWithdraw(
     }
   }
 
-  // BridgeSDK doesn't support virtual chains yet, and currently prebuilt
-  // withdrawal intents will be used only for `hot_omni`, so we can skip generating
-  const withdrawalIntents = isAuroraVirtualChain(formValues.tokenOut.chainName)
-    ? []
-    : await bridgeSDK.createWithdrawalIntents({
-        withdrawalParams: {
-          assetId: formValues.tokenOut.defuseAssetId,
-          amount: receivedAmount.amount,
-          destinationAddress: formValues.parsedRecipient,
-          destinationMemo: formValues.parsedDestinationMemo ?? undefined,
-          feeInclusive: false,
-        },
-        feeEstimation: feeEstimation.unwrap(),
-      })
+  const withdrawalIntents = await bridgeSDK.createWithdrawalIntents({
+    withdrawalParams: {
+      assetId: formValues.tokenOut.defuseAssetId,
+      amount: receivedAmount.amount,
+      destinationAddress: formValues.parsedRecipient,
+      destinationMemo: formValues.parsedDestinationMemo ?? undefined,
+      feeInclusive: false,
+      bridgeConfig: !isAuroraVirtualChain(formValues.tokenOut.chainName)
+        ? undefined
+        : {
+            bridge: "aurora_engine",
+            auroraEngineContractId:
+              auroraEngineContractId[formValues.tokenOut.chainName],
+          },
+    },
+    feeEstimation: feeEstimation.unwrap(),
+  })
 
   return {
     tag: "ok",
@@ -351,14 +355,6 @@ async function estimateFee({
   amount: bigint
   recipient: string
 }): Promise<Result<FeeEstimation, { reason: "ERR_WITHDRAWAL_FEE_FETCH" }>> {
-  // BridgeSDK doesn't support virtual chains yet, so it can't estimate
-  if (isAuroraVirtualChain(chainName)) {
-    return Ok({
-      amount: 0n,
-      quote: null,
-    })
-  }
-
   return bridgeSDK
     .estimateWithdrawalFee({
       withdrawalParams: {
@@ -367,6 +363,12 @@ async function estimateFee({
         destinationAddress: recipient,
         destinationMemo: undefined,
         feeInclusive: true,
+        bridgeConfig: !isAuroraVirtualChain(chainName)
+          ? undefined
+          : {
+              bridge: "aurora_engine",
+              auroraEngineContractId: auroraEngineContractId[chainName],
+            },
       },
     })
     .then(Ok, (err) => {
