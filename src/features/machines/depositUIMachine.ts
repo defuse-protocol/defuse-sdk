@@ -553,7 +553,7 @@ export const depositUIMachine = setup({
           assert(params.depositAddress, "depositAddress is null")
           return {
             ...params,
-            type: "depositSolana",
+            type: "depositTon",
             depositAddress: params.depositAddress,
           }
         },
