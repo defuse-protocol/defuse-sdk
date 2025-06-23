@@ -47,6 +47,6 @@ export const settings: Settings = {
     polygon: "https://polygon-rpc.com",
     bsc: "https://bsc-dataseed.bnbchain.org",
     hyperliquid: "https://rpc.hyperliquid.xyz/evm",
-    ton: "https://ton.api.onfinality.io/public", // Backup RPC: https://toncenter.com/api/v2/jsonRPC
+    ton: "https://nameless-stylish-surf.ton-mainnet.quiknode.pro/8541c7f9b1ffdac8652ffdd74a762607b922627d", // Use locally one of these RPCs https://ton.api.onfinality.io/public or https://toncenter.com/api/v2/jsonRPC
   },
 }
