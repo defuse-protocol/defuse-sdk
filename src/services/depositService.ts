@@ -10,6 +10,7 @@ import {
   SystemProgram,
   Transaction as TransactionSolana,
 } from "@solana/web3.js"
+import { TonClient } from "@ton/ton"
 import { auroraErc20ABI } from "src/utils/blockchain"
 import {
   http,
@@ -38,11 +39,17 @@ import {
 import { AuthMethod } from "../types/authHandle"
 import type { BaseTokenInfo, SupportedChainName } from "../types/base"
 import type { SendTransactionEVMParams, Transaction } from "../types/deposit"
+import type { SendTransactionTonParams } from "../types/deposit"
 import type { IntentsUserId } from "../types/intentsUserId"
 import { assert } from "../utils/assert"
 import { authHandleToIntentsUserId } from "../utils/authIdentity"
 import { getEVMChainId } from "../utils/evmChainId"
 import { isNativeToken } from "../utils/token"
+import {
+  checkTonJettonWalletRequired,
+  createTransferMessage,
+  getUserJettonWalletAddress,
+} from "./tonJettonService"
 
 export type PreparationOutput =
   | {
@@ -60,6 +67,7 @@ export type PreparationOutput =
         nearBalance: bigint | null
         maxDepositValue: bigint | null
         solanaATACreationRequired: boolean
+        tonJettonWalletCreationRequired: boolean
       }
     }
   | {
@@ -173,6 +181,14 @@ export async function prepareDeposit(
     generateDepositAddress.value.generateDepositAddress
   )
 
+  const tonJettonWalletCreationRequired = await checkTonJettonWalletRequired(
+    new TonClient({
+      endpoint: settings.rpcUrls.ton,
+    }),
+    formValues.derivedToken,
+    generateDepositAddress.value.generateDepositAddress
+  )
+
   return {
     tag: "ok",
     value: {
@@ -183,6 +199,7 @@ export async function prepareDeposit(
       nearBalance: balances.value.nearBalance,
       maxDepositValue: estimation.value.maxDepositValue,
       solanaATACreationRequired,
+      tonJettonWalletCreationRequired,
     },
   }
 }
@@ -900,6 +917,44 @@ export function getAvailableDepositRoutes(
           throw new Error("exhaustive check failed")
       }
     case AuthMethod.WebAuthn:
+      switch (network) {
+        /* allowed passive */
+        case BlockchainEnum.ETHEREUM:
+        case BlockchainEnum.BASE:
+        case BlockchainEnum.ARBITRUM:
+        case BlockchainEnum.BITCOIN:
+        case BlockchainEnum.DOGECOIN:
+        case BlockchainEnum.XRPLEDGER:
+        case BlockchainEnum.ZCASH:
+        case BlockchainEnum.GNOSIS:
+        case BlockchainEnum.BERACHAIN:
+        case BlockchainEnum.SOLANA:
+        case BlockchainEnum.TRON:
+        case BlockchainEnum.POLYGON:
+        case BlockchainEnum.BSC:
+        case BlockchainEnum.NEAR:
+        case BlockchainEnum.TON:
+          return {
+            activeDeposit: false,
+            passiveDeposit: true,
+          }
+
+        /* not-allowed all */
+        case BlockchainEnum.TURBOCHAIN:
+        case BlockchainEnum.TUXAPPCHAIN:
+        case BlockchainEnum.VERTEX:
+        case BlockchainEnum.OPTIMA:
+        case BlockchainEnum.COINEASY:
+        case BlockchainEnum.AURORA:
+        case BlockchainEnum.HYPERLIQUID:
+          return {
+            activeDeposit: false,
+            passiveDeposit: false,
+          }
+        default:
+          network satisfies never
+          throw new Error("exhaustive check failed")
+      }
     case AuthMethod.Ton:
       switch (network) {
         /* allowed all */
@@ -1066,4 +1121,70 @@ async function checkSolanaATARequired(
 
   const ataExists = await checkATAExists(connection, toATA)
   return !ataExists
+}
+
+export async function createDepositTonTransaction(
+  userWalletAddress: string,
+  depositAddress: string,
+  amount: bigint,
+  token: BaseTokenInfo
+): Promise<SendTransactionTonParams> {
+  assert(token.chainName === "ton", "Token chain name is not TON")
+
+  if (isNativeToken(token)) {
+    return createDepositTonNativeTransaction(depositAddress, amount)
+  }
+
+  return await createDepositTonJettonTransaction(
+    userWalletAddress,
+    depositAddress,
+    amount,
+    token.address
+  )
+}
+
+export function createDepositTonNativeTransaction(
+  depositAddress: string,
+  amount: bigint
+): SendTransactionTonParams {
+  return {
+    validUntil: Math.floor(Date.now() / 1000) + 360, // 6 minutes from now
+    messages: [
+      {
+        address: depositAddress,
+        amount: amount.toString(),
+      },
+    ],
+  }
+}
+
+export async function createDepositTonJettonTransaction(
+  userWalletAddress: string,
+  depositAddress: string,
+  amount: bigint,
+  jettonMasterAddress: string
+): Promise<SendTransactionTonParams> {
+  const userJettonWalletAddress = await getUserJettonWalletAddress(
+    new TonClient({
+      endpoint: settings.rpcUrls.ton,
+    }),
+    userWalletAddress,
+    jettonMasterAddress
+  )
+  const transferMessagePayload = createTransferMessage(
+    amount,
+    depositAddress,
+    userWalletAddress
+  )
+
+  return {
+    validUntil: Math.floor(Date.now() / 1000) + 360, // 6 minutes from now
+    messages: [
+      {
+        address: userJettonWalletAddress,
+        amount: "80000000", // 0.08 TON to cover gas fees
+        payload: transferMessagePayload,
+      },
+    ],
+  }
 }

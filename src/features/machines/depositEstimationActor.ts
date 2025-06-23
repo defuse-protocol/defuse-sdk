@@ -9,6 +9,7 @@ import { BlockchainEnum } from "../../sdk/poaBridge/constants/blockchains"
 import {
   estimateEVMTransferCost,
   estimateSolanaTransferCost,
+  estimateTonTransferCost,
 } from "../../services/estimateService"
 import type { BaseTokenInfo, SupportedChainName } from "../../types/base"
 import { assetNetworkAdapter } from "../../utils/adapters"
@@ -100,8 +101,12 @@ export const depositEstimateMaxValueActor = fromPromise(
         return balance - fee
       }
       case BlockchainEnum.TON: {
-        // TODO: Add estimation for TON
-        return balance
+        const isJetton = !isNativeToken(token)
+        const fee = estimateTonTransferCost(isJetton)
+        if (balance < fee) {
+          return 0n
+        }
+        return balance - fee
       }
       // For next blockchains - active deposits are not supported, so no network fees
       case BlockchainEnum.BITCOIN:
