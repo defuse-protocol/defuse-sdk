@@ -106,12 +106,12 @@ export async function checkJettonWalletExists(
 export async function checkTonJettonWalletRequired(
   client: TonClient,
   token: BaseTokenInfo,
-  depositAddress: string | null
+  userWalletAddress: string | null
 ): Promise<boolean> {
   if (
     token.chainName !== "ton" ||
     isNativeToken(token) ||
-    depositAddress === null
+    userWalletAddress === null
   ) {
     return false
   }
@@ -119,7 +119,7 @@ export async function checkTonJettonWalletRequired(
   try {
     const jettonWalletAddress = await getUserJettonWalletAddress(
       client,
-      depositAddress,
+      userWalletAddress,
       token.address
     )
 

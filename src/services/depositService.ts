@@ -184,7 +184,7 @@ export async function prepareDeposit(
   const tonJettonWalletCreationRequired = await checkTonJettonWalletRequired(
     createTonClient(settings.rpcUrls.ton),
     formValues.derivedToken,
-    generateDepositAddress.value.generateDepositAddress
+    userAddress
   )
 
   return {
