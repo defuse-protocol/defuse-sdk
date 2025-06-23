@@ -363,6 +363,8 @@ export function DepositUIMachineProvider({
 
                 assert(depositAddress != null, "Deposit address is required")
                 const chainId = getEVMChainId(chainName)
+                const finalDepositAddress =
+                  `${depositAddress}:${userAddress}`.toLowerCase()
 
                 let tx: Transaction["EVM"]
                 if (isNativeToken(derivedToken)) {
@@ -372,7 +374,7 @@ export function DepositUIMachineProvider({
                   tx = createExitToNearPrecompileTransaction(
                     userAddress,
                     amount,
-                    depositAddress,
+                    finalDepositAddress,
                     chainId
                   )
                 } else {
@@ -380,7 +382,7 @@ export function DepositUIMachineProvider({
                   tx = createDepositVirtualChainERC20Transaction(
                     userAddress,
                     derivedToken.address,
-                    depositAddress,
+                    finalDepositAddress,
                     amount,
                     chainId
                   )
