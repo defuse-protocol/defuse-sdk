@@ -20,6 +20,7 @@ export type SupportedChainName =
   | "polygon"
   | "bsc"
   | "hyperliquid"
+  | "ton"
 
 export type SupportedBridge = "direct" | "poa" | "aurora_engine" | "hot_omni"
 

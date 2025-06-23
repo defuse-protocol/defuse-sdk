@@ -203,7 +203,7 @@ export const withdrawUIMachine = setup({
 
       const fee_estimate =
         preparationOutput != null && preparationOutput.tag === "ok"
-          ? preparationOutput.value.withdtrawalFee.value
+          ? preparationOutput.value.feeEstimation.amount
           : null
 
       emitEvent("withdrawal_initiated", {
@@ -290,7 +290,7 @@ export const withdrawUIMachine = setup({
           emitEvent("withdrawal_confirmed", {
             tx_hash: output.value.intentHash,
             received_amount: preparationOutput.value.receivedAmount,
-            actual_fee: preparationOutput.value.withdtrawalFee,
+            actual_fee: preparationOutput.value.feeEstimation.amount,
             destination_chain: submitDeps.userChainType,
           })
         }
@@ -490,18 +490,23 @@ export const withdrawUIMachine = setup({
         },
 
         WITHDRAW_FORM_FIELDS_CHANGED: ".reset_previous_preparation",
+
+        submit: {
+          target: ".done",
+          guard: "isPreparationOk",
+          actions: [
+            "clearIntentCreationResult",
+            { type: "setSubmitDeps", params: ({ event }) => event.params },
+          ],
+        },
       },
 
       states: {
         idle: {
-          on: {
-            submit: {
-              target: "done",
+          after: {
+            10000: {
               guard: "isPreparationOk",
-              actions: [
-                "clearIntentCreationResult",
-                { type: "setSubmitDeps", params: ({ event }) => event.params },
-              ],
+              target: "preparation",
             },
           },
         },
@@ -511,6 +516,10 @@ export const withdrawUIMachine = setup({
             {
               target: "preparation",
               guard: "isWithdrawParamsComplete",
+              actions: [
+                "sendToBackgroundQuoterRefPause",
+                "clearPreparationOutput",
+              ],
             },
             {
               target: "idle",
@@ -533,7 +542,6 @@ export const withdrawUIMachine = setup({
                 formValues: context.withdrawFormRef.getSnapshot().context,
                 depositedBalanceRef: context.depositedBalanceRef,
                 poaBridgeInfoRef: context.poaBridgeInfoRef,
-                userAddress: context.userAddress,
                 backgroundQuoteRef: backgroundQuoteRef,
               }
             },
@@ -552,8 +560,6 @@ export const withdrawUIMachine = setup({
               },
             },
           },
-
-          entry: ["sendToBackgroundQuoterRefPause", "clearPreparationOutput"],
         },
 
         done: {
@@ -602,11 +608,13 @@ export const withdrawUIMachine = setup({
               type: "withdraw",
               tokenOut: formValues.tokenOut,
               quote,
-              nep141Storage: context.preparationOutput.value.nep141Storage,
+              feeEstimation: context.preparationOutput.value.feeEstimation,
               directWithdrawalAmount:
                 context.preparationOutput.value.directWithdrawAvailable,
               recipient: recipient,
               destinationMemo: formValues.parsedDestinationMemo,
+              prebuiltWithdrawalIntents:
+                context.preparationOutput.value.prebuiltWithdrawalIntents,
             },
           }
         },
