@@ -1,3 +1,4 @@
+import type { BridgeSDK } from "@defuse-protocol/bridge-sdk"
 import {
   type ActorRef,
   type Snapshot,
@@ -7,9 +8,9 @@ import {
   sendTo,
   setup,
 } from "xstate"
+import { auroraEngineContractId } from "../../constants/aurora"
 import { bridgeSDK } from "../../constants/bridgeSdk"
 import { logger } from "../../logger"
-import { waitForWithdrawalCompletion } from "../../sdk/poaBridge/waitForWithdrawalCompletion"
 import {
   type IntentSettlementResult,
   waitForIntentSettlement,
@@ -22,6 +23,7 @@ import type {
 } from "../../types/base"
 import type { IntentsUserId } from "../../types/intentsUserId"
 import { assert } from "../../utils/assert"
+import { CAIP2_NETWORK } from "../../utils/caip2"
 import type { IntentDescription } from "./swapIntentMachine"
 
 type ChildEvent = {
@@ -83,7 +85,6 @@ export const intentStatusMachine = setup({
     waitForBridgeActor: fromPromise(
       async ({
         input,
-        signal,
       }: {
         input: {
           sourceTxHash: string
@@ -92,44 +93,21 @@ export const intentStatusMachine = setup({
           chainName: SupportedChainName
           recipient: string
         }
-        signal: AbortSignal
       }) => {
-        const bridge = input.bridge
-        switch (bridge) {
-          case "aurora_engine":
-            // todo: fetch intent settlement transaction and parse TxHash
-            return null
-
-          case "direct":
-            // Near blockchain doesn't have a bridge
-            return null
-
-          case "poa":
-            return waitForWithdrawalCompletion({
-              txHash: input.sourceTxHash,
-              signal,
-            })
-
-          case "hot_omni":
-            return bridgeSDK
-              .waitForWithdrawalCompletion({
-                bridge: "hot",
-                index: 0,
-                tx: {
-                  hash: input.sourceTxHash,
-                  accountId: "intent.near",
-                },
-              })
-              .then((result) => {
-                return {
-                  destinationTxHash: result.hash,
-                }
-              })
-
-          default:
-            bridge satisfies never
-            throw new Error(`Unsupported bridge: ${bridge}`)
-        }
+        return bridgeSDK
+          .waitForWithdrawalCompletion({
+            bridge: toBridgeConfig(input.bridge, input.chainName),
+            index: 0,
+            tx: {
+              hash: input.sourceTxHash,
+              accountId: "intents.near", // our relayer sends txs on behalf of "intents.near"
+            },
+          })
+          .then((result) => {
+            return {
+              destinationTxHash: result.hash,
+            }
+          })
       }
     ),
   },
@@ -261,3 +239,34 @@ export const intentStatusMachine = setup({
     },
   },
 })
+
+function toBridgeConfig(
+  bridge: SupportedBridge,
+  chainName: SupportedChainName
+): Parameters<
+  (typeof BridgeSDK.prototype)["waitForWithdrawalCompletion"]
+>["0"]["bridge"] {
+  switch (bridge) {
+    case "aurora_engine":
+      return {
+        bridge,
+        auroraEngineContractId: auroraEngineContractId[chainName],
+      }
+    case "hot_omni":
+      return {
+        bridge: "hot",
+        // biome-ignore lint/suspicious/noExplicitAny: it expects just a caip2 string, but mistakenly strongly typed
+        chain: CAIP2_NETWORK[chainName] as any,
+      }
+    case "poa":
+    case "direct":
+      return {
+        bridge,
+        // biome-ignore lint/suspicious/noExplicitAny: it expects just a caip2 string, but mistakenly strongly typed
+        chain: CAIP2_NETWORK[chainName] as any,
+      }
+    default:
+      bridge satisfies never
+      throw new Error(`Unsupported bridge: ${bridge}`)
+  }
+}
