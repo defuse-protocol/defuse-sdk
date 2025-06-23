@@ -20,6 +20,7 @@ import {
   createDepositEVMNativeTransaction,
   createDepositFromSiloTransaction,
   createDepositSolanaTransaction,
+  createDepositTonTransaction,
   createDepositVirtualChainERC20Transaction,
   createExitToNearPrecompileTransaction,
   generateDepositAddress,
@@ -66,6 +67,7 @@ interface DepositUIMachineProviderProps extends PropsWithChildren {
   sendTransactionNear: (tx: Transaction["NEAR"][]) => Promise<string | null>
   sendTransactionEVM: (tx: Transaction["EVM"]) => Promise<Hash | null>
   sendTransactionSolana: (tx: Transaction["Solana"]) => Promise<string | null>
+  sendTransactionTon: (tx: Transaction["TON"]) => Promise<string | null>
 }
 
 export function DepositUIMachineProvider({
@@ -74,6 +76,7 @@ export function DepositUIMachineProvider({
   sendTransactionNear,
   sendTransactionEVM,
   sendTransactionSolana,
+  sendTransactionTon,
 }: DepositUIMachineProviderProps) {
   const { setValue } = useFormContext<DepositFormValues>()
   return (
@@ -396,6 +399,43 @@ export function DepositUIMachineProvider({
                 if (receipt.status === "reverted") {
                   throw new Error("Deposit transaction reverted")
                 }
+
+                return txHash
+              }),
+            },
+            guards: {
+              isDepositParamsValid: ({ context }) => {
+                return context.depositAddress !== null
+              },
+            },
+          }),
+          depositTonActor: depositMachine.provide({
+            actors: {
+              signAndSendTransactions: fromPromise(async ({ input }) => {
+                const {
+                  amount,
+                  derivedToken,
+                  depositAddress,
+                  userWalletAddress,
+                } = input
+                assert(depositAddress != null, "Deposit address is not defined")
+                assert(
+                  userWalletAddress != null,
+                  "User wallet address is not defined"
+                )
+
+                const tx = await createDepositTonTransaction(
+                  userWalletAddress,
+                  depositAddress,
+                  amount,
+                  derivedToken
+                )
+
+                const txHash = await sendTransactionTon(tx)
+                assert(txHash != null, "Transaction failed")
+                logger.verbose("Waiting for deposit TON transaction", {
+                  txHash,
+                })
 
                 return txHash
               }),

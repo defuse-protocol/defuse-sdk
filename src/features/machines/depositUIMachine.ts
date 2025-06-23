@@ -32,6 +32,7 @@ export type Context = {
   poaBridgeInfoRef: ActorRefFrom<typeof poaBridgeInfoActor>
   tokenList: SwappableToken[]
   userAddress: string | null
+  userWalletAddress: string | null
   userChainType: AuthMethod | null
   depositFormRef: ActorRefFrom<typeof depositFormReducer>
   preparationOutput: PreparationOutput | null
@@ -55,6 +56,7 @@ export const depositUIMachine = setup({
           type: "LOGIN"
           params: {
             userAddress: string
+            userWalletAddress: string | null
             userChainType: AuthMethod
           }
         }
@@ -69,6 +71,7 @@ export const depositUIMachine = setup({
       depositSolanaRef: "depositSolanaActor"
       depositTurboRef: "depositTurboActor"
       depositVirtualChainRef: "depositVirtualChainActor"
+      depositTonRef: "depositTonActor"
     },
   },
   actors: {
@@ -78,6 +81,7 @@ export const depositUIMachine = setup({
     depositSolanaActor: depositMachine,
     depositTurboActor: depositMachine,
     depositVirtualChainActor: depositMachine,
+    depositTonActor: depositMachine,
     prepareDepositActor: prepareDepositActor,
     depositFormActor: depositFormReducer,
     depositGenerateAddressActor: depositGenerateAddressMachine,
@@ -159,6 +163,7 @@ export const depositUIMachine = setup({
           derivedToken:
             context.depositFormRef.getSnapshot().context.derivedToken,
           userAddress: context.userAddress,
+          userWalletAddress: context.userWalletAddress,
           blockchain: context.depositFormRef.getSnapshot().context.blockchain,
         },
       }
@@ -204,6 +209,9 @@ export const depositUIMachine = setup({
         blockchain ?? ""
       )
     },
+    isChainTonSelected: ({ context }) => {
+      return context.depositFormRef.getSnapshot().context.blockchain === "ton"
+    },
     isOk: (_, a: { tag: "err" | "ok" }) => a.tag === "ok",
     isDepositParamsComplete: and([
       "isTokenValid",
@@ -212,12 +220,13 @@ export const depositUIMachine = setup({
     ]),
   },
 }).createMachine({
-  /** @xstate-layout N4IgpgJg5mDOIC5QTABwPawJYBcC0ArlgMQAyA8gOICSAcgNoAMAuoqBtjlugHZsgAPRAEZGADgB0YgKyiALHLFzpAZnEA2aQBoQAT0R51jYRPUAmMwHZGcyyuHqjlgL7OdKDrkIkKlcgFUAFSZWJBBPLl5+IQQVCwlpaTFLaUtbSzNxOR19BEMzSVSkuWElYQBOcvVy13c0TC8iCUhcLB4oYgARAFEABXIAZWpAgH0AMXIAJQBZCQAqEP4I7j4wmOEHCTizdRU5culqhWFLHIM4lSlys1KHOTNVFNqQDwb8Jpaudq6+weHxqbTcbUbqkToDEYAYQAEgBBWiUbqdRZhZZRNYiSwSKqMcq49SWSzXFQHM55DZY3YKC64yxKMTCZ6vTjeZoQVrfAb+ABC02GKPYbxW0UQ1kuGzEmWk5UsVI2ZNS2OS6gZcnMYhUYnUjLcL3qLI+7K+HS5vP5wlCgs4woxCBVWIU5ms10JmrJmXKCU0ckYdjpSksJyZ+saWDZHJNPL5wTMlvCQvRoBiKpMNwqGxO8l9ZJUJNMFWMD0zjmkcmDEVZnzakbNwRUcbRqyTiEcJhJDjEBwOYh7wjJtnUEkUaROWXxD3Lb0rRurEgATnAwDgRqgFwA3bgEWArheoACGc73kR4xAF8eticEiEUWwHOysZiq9myehENiHao1wiKGcqk4NYZVu086Lsuq5gBu6BbjuaAHkeKynhaSwJk2V6xD6Eg3JUwgqES1z7C+uTfnIWyyqWSSMLiOF2P+obhsaEjgfuh7HsQEC8GAEhtGu6AANaccydFAVAjG7nBx4INx6AAMbwbwIRno2IqxDImElI4PZYTIKg5qIEiBjsyQOCSuLSLR7yATOwFMeJCFgHOc7oHOjEADZHgAZk5AC2EiCRZ9GzjZLErJJPA8bJx4KSwyEXqhMSatI2L4rIZi4XYJQ5uUJE+ikcTVOUwjqWZup+aysAEAARl5uDGrQYAHoEAhsRxXFhXxAkhjgdUHpMYDuYpKHKYVaQJNY2r3OoaqFTpr4ILIpglKlBblGINidmWJWdWVlXVTgxrdAAatMjXNTwnFSfxvmdYd0y9f10WooNtrDSRqSMONOxTXIM1EdKEimeYDiJAoaRmOZ21VTV1YDOgbk8HuJ3sWdrU8Zdfkw3De53QNsVDbYjDYrKMhpCq0oPO6koSJmZj3EkgO7ODTTlZDe3VoEBBzhV6CIy1F0dRE7Oc+g2MPVarSXustiXFqKiJDKOFxH2s3fVixgEg4QNpYwKiuLqPDoCg8BhKVRAxeLcUGESCRWLhuzCDsGRamSeDKJIJIWJkKsKMo6iM5ZEZm8eyl4PY1t+nbDsFKkztSlTewkioKqdniLibRWhoRlxEAuWAgc2s2CDKJ6kqJ7Kk1VDcpyzSqUg2BsJTfmkDLFXU6f+wxC6wEuMGQdBQVyahSm2rY2KVDKk3SL69jO9IZhbKl2rfiqmpaoVfsBdZYnBZeQ8F5stj3onyRxIG305u9pElAoDLauIvrr8zu21fVc6NXnEtvhq+nvZRiSZOIpQFTS2SD6e4gYUyp1blOJmO0obtBum-R6uNnpZCkJPUsPptaFTJJmIc61JTlE1HiNQLc9RtwkI-OBUAMZ7nhogsWQcUGBn0jcKkPYZT7HUO6LKXpZDay1FUDID9YGs3aILLm9DzzmyGr6SQpRJoZAKJRAkZh+y4X+uIWQE1SzGDELrZwQA */
+  /** @xstate-layout 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 */
   id: "deposit-ui",
 
   context: ({ input, spawn, self }) => ({
     tokenList: input.tokenList,
     userAddress: null,
+    userWalletAddress: null,
     userChainType: null,
     preparationOutput: null,
     depositOutput: null,
@@ -253,6 +262,7 @@ export const depositUIMachine = setup({
       actions: [
         assign({
           userAddress: ({ event }) => event.params.userAddress,
+          userWalletAddress: ({ event }) => event.params.userWalletAddress,
           userChainType: ({ event }) => event.params.userChainType,
         }),
       ],
@@ -265,6 +275,7 @@ export const depositUIMachine = setup({
         "clearPreparationOutput",
         assign({
           userAddress: () => "",
+          userWalletAddress: () => "",
         }),
         "requestClearAddress",
       ],
@@ -322,6 +333,12 @@ export const depositUIMachine = setup({
                 actions: "clearResults",
                 reenter: true,
               },
+              {
+                target: "#deposit-ui.submittingTonTx",
+                guard: "isChainTonSelected",
+                actions: "clearResults",
+                reenter: true,
+              },
             ],
           },
         },
@@ -350,8 +367,10 @@ export const depositUIMachine = setup({
 
             input: ({ context }) => {
               assert(context.userAddress, "userAddress is null")
+              assert(context.userWalletAddress, "userWalletAddress is null")
               return {
                 userAddress: context.userAddress,
+                userWalletAddress: context.userWalletAddress,
                 formValues: context.depositFormRef.getSnapshot().context,
                 depositGenerateAddressRef: context.depositGenerateAddressRef,
                 storageDepositAmountRef: context.storageDepositAmountRef,
@@ -524,6 +543,33 @@ export const depositUIMachine = setup({
         },
       },
     },
+    submittingTonTx: {
+      invoke: {
+        id: "depositTonRef",
+        src: "depositTonActor",
+        input: ({ context, event }) => {
+          assertEvent(event, "SUBMIT")
+          const params = extractDepositParams(context)
+          assert(params.depositAddress, "depositAddress is null")
+          return {
+            ...params,
+            type: "depositTon",
+            depositAddress: params.depositAddress,
+          }
+        },
+        onDone: {
+          target: "editing.reset_previous_preparation",
+          actions: [
+            {
+              type: "setDepositOutput",
+              params: ({ event }) => event.output,
+            },
+            { type: "clearUIDepositAmount" },
+          ],
+          reenter: true,
+        },
+      },
+    },
   },
 
   initial: "editing",
@@ -536,9 +582,11 @@ type DepositParams = {
   amount: bigint
   nearBalance: bigint | null
   userAddress: string
+  userWalletAddress: string | null
   depositAddress: string | null
   storageDepositRequired: bigint | null
   solanaATACreationRequired: boolean
+  tonJettonWalletCreationRequired: boolean
 }
 
 function extractDepositParams(context: Context): DepositParams {
@@ -555,6 +603,7 @@ function extractDepositParams(context: Context): DepositParams {
   assert(derivedToken, "derivedToken is null")
   assert(blockchain !== null, "blockchain is null")
   assert(context.userAddress, "userAddress is null")
+  assert(context.userWalletAddress, "userWalletAddress is null")
   assert(parsedAmount, "parsed amount is null")
   assert(prepOutput?.balance, "balance is null")
 
@@ -565,8 +614,10 @@ function extractDepositParams(context: Context): DepositParams {
     nearBalance: prepOutput.nearBalance,
     amount: parsedAmount,
     userAddress: context.userAddress,
+    userWalletAddress: context.userWalletAddress,
     depositAddress: prepOutput.generateDepositAddress,
     storageDepositRequired: prepOutput.storageDepositRequired,
     solanaATACreationRequired: prepOutput.solanaATACreationRequired,
+    tonJettonWalletCreationRequired: prepOutput.tonJettonWalletCreationRequired,
   }
 }

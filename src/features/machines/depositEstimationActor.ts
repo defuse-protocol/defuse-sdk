@@ -9,6 +9,7 @@ import { BlockchainEnum } from "../../sdk/poaBridge/constants/blockchains"
 import {
   estimateEVMTransferCost,
   estimateSolanaTransferCost,
+  estimateTonTransferCost,
 } from "../../services/estimateService"
 import type { BaseTokenInfo, SupportedChainName } from "../../types/base"
 import { assetNetworkAdapter } from "../../utils/adapters"
@@ -94,6 +95,14 @@ export const depositEstimateMaxValueActor = fromPromise(
       }
       case BlockchainEnum.SOLANA: {
         const fee = estimateSolanaTransferCost()
+        if (balance < fee) {
+          return 0n
+        }
+        return balance - fee
+      }
+      case BlockchainEnum.TON: {
+        const isJetton = !isNativeToken(token)
+        const fee = estimateTonTransferCost(isJetton)
         if (balance < fee) {
           return 0n
         }

@@ -5,6 +5,7 @@ interface SDKConfig {
   env: EnvConfig
   features: {
     hyperliquid: boolean
+    ton: boolean
   }
 }
 
@@ -40,6 +41,7 @@ export let config: SDKConfig = {
   env: configsByEnvironment.production,
   features: {
     hyperliquid: false,
+    ton: false,
   },
 }
 

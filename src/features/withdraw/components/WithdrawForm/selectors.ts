@@ -1,5 +1,4 @@
 import type { SnapshotFrom } from "xstate"
-import type { WithdtrawalFee } from "../../../../services/withdrawService"
 import type { TokenValue } from "../../../../types/base"
 import type { BalanceMapping } from "../../../machines/depositedBalanceMachine"
 import type { withdrawUIMachine } from "../../../machines/withdrawUIMachine"
@@ -42,21 +41,21 @@ export function totalAmountReceivedSelector(
  */
 export function withdtrawalFeeSelector(
   state: SnapshotFrom<typeof withdrawUIMachine>
-): WithdtrawalFee {
+): TokenValue {
   if (
     state.context.preparationOutput == null ||
     state.context.preparationOutput.tag !== "ok"
   ) {
     return {
-      tag: "ok",
-      value: {
-        amount: BigInt(0),
-        decimals: 0,
-      },
+      amount: 0n,
+      decimals: 0,
     }
   }
 
-  return state.context.preparationOutput.value.withdtrawalFee
+  return {
+    amount: state.context.preparationOutput.value.feeEstimation.amount,
+    decimals: state.context.preparationOutput.value.receivedAmount.decimals,
+  }
 }
 
 export function balancesSelector(
