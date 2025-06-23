@@ -1,4 +1,5 @@
-import { Address, type TonClient, beginCell } from "@ton/ton"
+import { Address, TonClient, beginCell } from "@ton/ton"
+import axios from "axios"
 import type { BaseTokenInfo } from "../types/base"
 import { isNativeToken } from "../utils/token"
 
@@ -11,6 +12,22 @@ export interface JettonWalletData {
   balance: bigint
   ownerAddress: Address
   adminAddress: Address | null
+}
+
+/**
+ * Creates a TonClient instance with a custom httpAdapter configuration
+ * to address CORS issues in the client environment.
+ */
+export function createTonClient(endpoint: string): TonClient {
+  return new TonClient({
+    endpoint,
+    httpAdapter: (request) => {
+      request.headers.delete("X-Ton-Client-Version")
+      return axios.post(endpoint, request.data, {
+        headers: request.headers,
+      })
+    },
+  })
 }
 
 export function createTransferMessage(

@@ -10,7 +10,6 @@ import {
   SystemProgram,
   Transaction as TransactionSolana,
 } from "@solana/web3.js"
-import { TonClient } from "@ton/ton"
 import { auroraErc20ABI } from "src/utils/blockchain"
 import {
   http,
@@ -45,6 +44,7 @@ import { assert } from "../utils/assert"
 import { authHandleToIntentsUserId } from "../utils/authIdentity"
 import { getEVMChainId } from "../utils/evmChainId"
 import { isNativeToken } from "../utils/token"
+import { createTonClient } from "./tonJettonService"
 import {
   checkTonJettonWalletRequired,
   createTransferMessage,
@@ -182,9 +182,7 @@ export async function prepareDeposit(
   )
 
   const tonJettonWalletCreationRequired = await checkTonJettonWalletRequired(
-    new TonClient({
-      endpoint: settings.rpcUrls.ton,
-    }),
+    createTonClient(settings.rpcUrls.ton),
     formValues.derivedToken,
     generateDepositAddress.value.generateDepositAddress
   )
@@ -1165,9 +1163,7 @@ export async function createDepositTonJettonTransaction(
   jettonMasterAddress: string
 ): Promise<SendTransactionTonParams> {
   const userJettonWalletAddress = await getUserJettonWalletAddress(
-    new TonClient({
-      endpoint: settings.rpcUrls.ton,
-    }),
+    createTonClient(settings.rpcUrls.ton),
     userWalletAddress,
     jettonMasterAddress
   )

@@ -1,11 +1,12 @@
 import { base64 } from "@scure/base"
 import { AccountLayout } from "@solana/spl-token"
 import { Connection, PublicKey } from "@solana/web3.js"
-import { Address as TonAddress, TonClient, beginCell } from "@ton/ton"
+import { Address as TonAddress, beginCell } from "@ton/ton"
 import * as v from "valibot"
 import { http, type Address, createPublicClient, erc20Abi } from "viem"
 import { nearClient } from "../constants/nearClient"
 import { logger } from "../logger"
+import { createTonClient } from "../services/tonJettonService"
 import { decodeQueryResult } from "../utils/near"
 
 export const RESERVED_NEAR_BALANCE = 100000000000000000000000n // 0.1 NEAR reserved for transaction fees and storage
@@ -222,9 +223,7 @@ export const getTonNativeBalance = async ({
   rpcUrl: string
 }): Promise<bigint | null> => {
   try {
-    const client = new TonClient({
-      endpoint: rpcUrl,
-    })
+    const client = createTonClient(rpcUrl)
     const balance = await client.getBalance(TonAddress.parse(userAddress))
 
     return BigInt(balance)
@@ -244,9 +243,7 @@ export const getTonJettonBalance = async ({
   rpcUrl: string
 }): Promise<bigint | null> => {
   try {
-    const client = new TonClient({
-      endpoint: rpcUrl,
-    })
+    const client = createTonClient(rpcUrl)
     const userTonAddress = TonAddress.parse(userAddress)
     const userAddressCell = beginCell().storeAddress(userTonAddress).endCell()
 
