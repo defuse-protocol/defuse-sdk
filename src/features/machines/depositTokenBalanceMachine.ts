@@ -1,3 +1,8 @@
+import { settings } from "src/constants/settings"
+import {
+  checkTonJettonWalletRequired,
+  createTonClient,
+} from "src/services/tonJettonService"
 import type { Address } from "viem"
 import { assign, fromPromise, setup } from "xstate"
 import { logger } from "../../logger"
@@ -153,6 +158,17 @@ export const backgroundBalanceActor = fromPromise(
             throw new Error("Failed to fetch TON balances")
           }
           result.balance = balance
+          break
+        }
+
+        const isJettonWalletCreationRequired =
+          await checkTonJettonWalletRequired(
+            createTonClient(settings.rpcUrls.ton),
+            derivedToken,
+            userWalletAddress
+          )
+        if (isJettonWalletCreationRequired) {
+          result.balance = 0n
           break
         }
 
