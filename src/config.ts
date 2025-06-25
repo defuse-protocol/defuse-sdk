@@ -29,8 +29,8 @@ const configsByEnvironment: Record<NearIntentsEnv, EnvConfig> = {
   },
   stage: {
     contractID: "staging-intents.near",
-    poaBridgeBaseURL: "http://34.105.197.59/rpc",
-    solverRelayBaseURL: "http://35.242.147.168/rpc",
+    poaBridgeBaseURL: "http://34.105.197.59",
+    solverRelayBaseURL: "http://35.242.147.168",
     managerConsoleBaseURL: "https://api-mng-console.chaindefuser.com/api/",
     nearIntentsBaseURL: "https://app.near-intents.org/api/",
   },
