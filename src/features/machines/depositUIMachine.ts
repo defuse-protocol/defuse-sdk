@@ -367,7 +367,7 @@ export const depositUIMachine = setup({
 
             input: ({ context }) => {
               assert(context.userAddress, "userAddress is null")
-              assert(context.userWalletAddress, "userWalletAddress is null")
+
               return {
                 userAddress: context.userAddress,
                 userWalletAddress: context.userWalletAddress,
