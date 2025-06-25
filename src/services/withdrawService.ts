@@ -217,13 +217,15 @@ export async function prepareWithdraw(
       destinationAddress: formValues.parsedRecipient,
       destinationMemo: formValues.parsedDestinationMemo ?? undefined,
       feeInclusive: false,
-      bridgeConfig: !isAuroraVirtualChain(formValues.tokenOut.chainName)
-        ? undefined
-        : {
+      bridgeConfig: isAuroraVirtualChain(formValues.tokenOut.chainName)
+        ? {
             bridge: "aurora_engine",
             auroraEngineContractId:
               auroraEngineContractId[formValues.tokenOut.chainName],
-          },
+          }
+        : formValues.tokenOut.chainName === "near"
+          ? { bridge: "direct", chain: "near:mainnet" }
+          : undefined,
     },
     feeEstimation: feeEstimation.unwrap(),
   })
