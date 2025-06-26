@@ -128,17 +128,25 @@ export const WithdrawForm = ({
     }
   }, [userAddress, actorRef, chainType])
 
-  const { token, tokenOut, parsedAmountIn, amountIn, recipient, blockchain } =
-    useSelector(formRef, (state) => {
-      return {
-        token: state.context.tokenIn,
-        tokenOut: state.context.tokenOut,
-        parsedAmountIn: state.context.parsedAmount,
-        amountIn: state.context.amount,
-        recipient: state.context.recipient,
-        blockchain: state.context.blockchain,
-      }
-    })
+  const {
+    token,
+    tokenOut,
+    parsedAmountIn,
+    amountIn,
+    recipient,
+    blockchain,
+    cexFundsLooseConfirmation,
+  } = useSelector(formRef, (state) => {
+    return {
+      token: state.context.tokenIn,
+      tokenOut: state.context.tokenOut,
+      parsedAmountIn: state.context.parsedAmount,
+      amountIn: state.context.amount,
+      recipient: state.context.recipient,
+      blockchain: state.context.blockchain,
+      cexFundsLooseConfirmation: state.context.cexFundsLooseConfirmation,
+    }
+  })
 
   const form = useForm<WithdrawFormNearValues>({
     mode: "onSubmit",
@@ -147,6 +155,7 @@ export const WithdrawForm = ({
       amountIn,
       recipient,
       blockchain,
+      isFundsLooseConfirmed: cexFundsLooseConfirmation === "confirmed",
     },
     // `resetOptions` is needed exclusively for being able to use `values` option without bugs
     resetOptions: {
@@ -427,7 +436,6 @@ export const WithdrawForm = ({
                   render={({ field }) => (
                     <Checkbox
                       size="3"
-                      value={undefined}
                       checked={field.value}
                       onCheckedChange={field.onChange}
                     />
