@@ -27,4 +27,5 @@ export const CHAIN_IDS: Record<SupportedChainName, number | undefined> = {
   bsc: 56,
   hyperliquid: undefined,
   ton: undefined,
+  optimism: 10,
 }

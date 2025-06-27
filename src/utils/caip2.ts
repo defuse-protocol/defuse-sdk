@@ -23,4 +23,5 @@ export const CAIP2_NETWORK: Record<SupportedChainName, string> = {
   optima: "eip155:1313161569",
   coineasy: "eip155:1313161752",
   hyperliquid: "hyperliquid:mainnet", // todo: This is not reviewed and most likely incorrect
+  optimism: "eip155:10",
 }
