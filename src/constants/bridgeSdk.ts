@@ -5,5 +5,6 @@ export const bridgeSDK = new BridgeSDK({
     // hardcoded for now
     137: ["https://polygon-rpc.com"],
     56: ["https://bsc-dataseed.bnbchain.org"],
+    10: ["https://mainnet.optimism.io"],
   },
 })
