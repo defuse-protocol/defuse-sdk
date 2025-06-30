@@ -30,6 +30,7 @@ export function validateAddress(
     case "bsc":
     case "hyperliquid":
     case "optimism":
+    case "avalanche":
       // todo: Do we need to check checksum?
       return /^0x[a-fA-F0-9]{40}$/.test(address)
     case "bitcoin":

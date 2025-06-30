@@ -60,6 +60,9 @@ export function availableChainsForToken(
   if (!config.features.optimism) {
     chains = chains.filter((chain) => chain !== "optimism")
   }
+  if (!config.features.avalanche) {
+    chains = chains.filter((chain) => chain !== "avalanche")
+  }
 
   const options = getBlockchainsOptions()
 

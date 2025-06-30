@@ -25,6 +25,7 @@ export const assetNetworkAdapter: Record<SupportedChainName, BlockchainEnum> = {
   hyperliquid: BlockchainEnum.HYPERLIQUID,
   ton: BlockchainEnum.TON,
   optimism: BlockchainEnum.OPTIMISM,
+  avalanche: BlockchainEnum.AVALANCHE,
 }
 
 export const reverseAssetNetworkAdapter: Record<
@@ -54,4 +55,5 @@ export const reverseAssetNetworkAdapter: Record<
   [BlockchainEnum.HYPERLIQUID]: "hyperliquid",
   [BlockchainEnum.TON]: "ton",
   [BlockchainEnum.OPTIMISM]: "optimism",
+  [BlockchainEnum.AVALANCHE]: "avalanche",
 }
