@@ -7,6 +7,7 @@ interface SDKConfig {
     hyperliquid: boolean
     ton: boolean
     optimism: boolean
+    avalanche: boolean
   }
 }
 
@@ -43,6 +44,7 @@ export let config: SDKConfig = {
     hyperliquid: false,
     ton: false,
     optimism: false,
+    avalanche: false,
   },
 }
 

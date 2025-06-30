@@ -6,5 +6,6 @@ export const bridgeSDK = new BridgeSDK({
     137: ["https://polygon-rpc.com"],
     56: ["https://bsc-dataseed.bnbchain.org"],
     10: ["https://mainnet.optimism.io"],
+    43114: ["https://api.avax.network/ext/bc/C/rpc"],
   },
 })

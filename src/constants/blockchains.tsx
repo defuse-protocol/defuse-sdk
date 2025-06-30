@@ -267,6 +267,17 @@ export function getBlockchainsOptions(): Record<
       value: BlockchainEnum.OPTIMISM,
       tags: [],
     },
+    [BlockchainEnum.AVALANCHE]: {
+      label: "Avalanche",
+      icon: (
+        <NetworkIcon
+          chainIcon="/static/icons/network/avalanche.svg"
+          chainName="Avalanche"
+        />
+      ),
+      value: BlockchainEnum.AVALANCHE,
+      tags: [],
+    },
   }
 
   return sortBlockchainOptionsByVolume(options)

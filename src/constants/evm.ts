@@ -28,4 +28,5 @@ export const CHAIN_IDS: Record<SupportedChainName, number | undefined> = {
   hyperliquid: undefined,
   ton: undefined,
   optimism: 10,
+  avalanche: 43114,
 }
