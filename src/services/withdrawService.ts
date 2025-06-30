@@ -363,7 +363,6 @@ async function estimateFee({
         assetId: defuseAssetId,
         amount: amount,
         destinationAddress: recipient,
-        destinationMemo: undefined,
         feeInclusive: true,
         bridgeConfig: !isAuroraVirtualChain(chainName)
           ? undefined
