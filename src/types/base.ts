@@ -21,6 +21,7 @@ export type SupportedChainName =
   | "bsc"
   | "hyperliquid"
   | "ton"
+  | "optimism"
 
 export type SupportedBridge = "direct" | "poa" | "aurora_engine" | "hot_omni"
 

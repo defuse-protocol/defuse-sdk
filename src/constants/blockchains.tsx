@@ -256,6 +256,17 @@ export function getBlockchainsOptions(): Record<
       value: BlockchainEnum.TON,
       tags: [],
     },
+    [BlockchainEnum.OPTIMISM]: {
+      label: "Optimism",
+      icon: (
+        <NetworkIcon
+          chainIcon="/static/icons/network/optimism.svg"
+          chainName="Optimism"
+        />
+      ),
+      value: BlockchainEnum.OPTIMISM,
+      tags: [],
+    },
   }
 
   return sortBlockchainOptionsByVolume(options)

@@ -18,6 +18,7 @@ export const PoaBridgeNetworkReference = {
   POLYGON: "eth:137",
   BSC: "eth:56",
   TON: "ton:mainnet",
+  OPTIMISM: "eth:10",
 } as const
 
 export const VirtualNetworkReference = {

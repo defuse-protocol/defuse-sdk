@@ -57,7 +57,8 @@ export const depositEstimateMaxValueActor = fromPromise(
       case BlockchainEnum.GNOSIS:
       case BlockchainEnum.BERACHAIN:
       case BlockchainEnum.POLYGON:
-      case BlockchainEnum.BSC: {
+      case BlockchainEnum.BSC:
+      case BlockchainEnum.OPTIMISM: {
         if (
           !validateAddress(userAddress, blockchain) ||
           generateAddress == null
