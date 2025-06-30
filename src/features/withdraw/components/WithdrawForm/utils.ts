@@ -37,6 +37,7 @@ export function chainTypeSatisfiesChainName(
     case chainType === AuthMethod.EVM && chainName === "polygon":
     case chainType === AuthMethod.EVM && chainName === "bsc":
     case chainType === AuthMethod.EVM && chainName === "optimism":
+    case chainType === AuthMethod.EVM && chainName === "avalanche":
     case chainType === AuthMethod.Solana && chainName === "solana":
       return true
   }
