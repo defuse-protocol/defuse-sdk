@@ -49,8 +49,7 @@ function GiftTakerScreens({
   renderHostAppLink,
 }: GiftTakerWidgetProps) {
   const loading = <div>Loading...</div>
-  // biome-ignore lint/suspicious/noConsole: <explanation>
-  console.log(">>>", payload)
+
   const giftTakerRootRef = useActorRef(giftTakerRootMachine, {
     input: {
       payload,
