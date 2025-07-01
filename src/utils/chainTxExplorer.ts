@@ -49,7 +49,7 @@ export function chainTxExplorer(blockchain: SupportedChainName): string | null {
     case "optimism":
       return "https://optimistic.etherscan.io/tx/"
     case "avalanche":
-      return "https://avascan.info/blockchain/growth/tx/"
+      return "https://avascan.info/blockchain/c/tx/"
     case "sui":
       return "https://suiscan.xyz/mainnet/tx/"
     default:
