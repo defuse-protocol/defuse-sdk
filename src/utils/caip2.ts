@@ -25,4 +25,5 @@ export const CAIP2_NETWORK: Record<SupportedChainName, string> = {
   hyperliquid: "hyperliquid:mainnet", // todo: This is not reviewed and most likely incorrect
   optimism: "eip155:10",
   avalanche: "eip155:43114",
+  sui: "sui:mainnet",
 }

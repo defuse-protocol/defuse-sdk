@@ -278,6 +278,17 @@ export function getBlockchainsOptions(): Record<
       value: BlockchainEnum.AVALANCHE,
       tags: [],
     },
+    [BlockchainEnum.SUI]: {
+      label: "Sui",
+      icon: (
+        <NetworkIcon
+          chainIcon="/static/icons/network/sui.svg"
+          chainName="Sui"
+        />
+      ),
+      value: BlockchainEnum.SUI,
+      tags: [],
+    },
   }
 
   return sortBlockchainOptionsByVolume(options)

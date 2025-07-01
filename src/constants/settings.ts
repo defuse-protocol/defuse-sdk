@@ -50,5 +50,6 @@ export const settings: Settings = {
     ton: "https://nameless-stylish-surf.ton-mainnet.quiknode.pro/8541c7f9b1ffdac8652ffdd74a762607b922627d/jsonRPC", // Use locally one of these RPCs https://ton.api.onfinality.io/public or https://toncenter.com/api/v2/jsonRPC
     optimism: "https://mainnet.optimism.io",
     avalanche: "https://api.avax.network/ext/bc/C/rpc",
+    sui: "https://fullnode.mainnet.sui.io:443",
   },
 }

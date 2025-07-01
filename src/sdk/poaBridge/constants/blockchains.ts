@@ -20,6 +20,7 @@ export const PoaBridgeNetworkReference = {
   TON: "ton:mainnet",
   OPTIMISM: "eth:10",
   AVALANCHE: "eth:43114",
+  SUI: "sui:mainnet",
 } as const
 
 export const VirtualNetworkReference = {

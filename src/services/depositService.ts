@@ -799,6 +799,7 @@ export function getAvailableDepositRoutes(
         case BlockchainEnum.TON:
         case BlockchainEnum.OPTIMISM:
         case BlockchainEnum.AVALANCHE:
+        case BlockchainEnum.SUI:
           return {
             activeDeposit: false,
             passiveDeposit: true,
@@ -846,6 +847,7 @@ export function getAvailableDepositRoutes(
         case BlockchainEnum.ZCASH:
         case BlockchainEnum.TRON:
         case BlockchainEnum.TON:
+        case BlockchainEnum.SUI:
           return {
             activeDeposit: false,
             passiveDeposit: true,
@@ -899,6 +901,7 @@ export function getAvailableDepositRoutes(
         case BlockchainEnum.TON:
         case BlockchainEnum.OPTIMISM:
         case BlockchainEnum.AVALANCHE:
+        case BlockchainEnum.SUI:
           return {
             activeDeposit: false,
             passiveDeposit: true,
@@ -940,6 +943,7 @@ export function getAvailableDepositRoutes(
         case BlockchainEnum.TON:
         case BlockchainEnum.OPTIMISM:
         case BlockchainEnum.AVALANCHE:
+        case BlockchainEnum.SUI:
           return {
             activeDeposit: false,
             passiveDeposit: true,
@@ -987,6 +991,7 @@ export function getAvailableDepositRoutes(
         case BlockchainEnum.NEAR:
         case BlockchainEnum.OPTIMISM:
         case BlockchainEnum.AVALANCHE:
+        case BlockchainEnum.SUI:
           return {
             activeDeposit: false,
             passiveDeposit: true,
@@ -1065,6 +1070,8 @@ export function getWalletRpcUrl(network: BlockchainEnum): string {
       return settings.rpcUrls.optimism
     case BlockchainEnum.AVALANCHE:
       return settings.rpcUrls.avalanche
+    case BlockchainEnum.SUI:
+      return settings.rpcUrls.sui
     default:
       network satisfies never
       throw new Error("exhaustive check failed")
