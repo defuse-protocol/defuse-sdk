@@ -115,7 +115,7 @@ describe("validateAddress", () => {
     ).toBe(true)
     expect(
       validateAddress(
-        "0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF",
+        "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF",
         "sui"
       )
     ).toBe(true)

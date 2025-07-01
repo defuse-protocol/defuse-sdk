@@ -63,7 +63,7 @@ export function validateAddress(
       return /^[EU]Q[0-9A-Za-z_-]{46}$/.test(address)
 
     case "sui":
-      return /^(0x)?[a-fA-F0-9]{64}$/.test(address)
+      return /^(?:0x)?[a-fA-F0-9]{64}$/.test(address)
 
     default:
       blockchain satisfies never
