@@ -117,6 +117,7 @@ export const depositEstimateMaxValueActor = fromPromise(
       case BlockchainEnum.ZCASH:
       case BlockchainEnum.TRON:
       case BlockchainEnum.HYPERLIQUID:
+      case BlockchainEnum.SUI:
         return 0n
       default:
         networkToSolverFormat satisfies never

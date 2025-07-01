@@ -29,4 +29,5 @@ export const CHAIN_IDS: Record<SupportedChainName, number | undefined> = {
   ton: undefined,
   optimism: 10,
   avalanche: 43114,
+  sui: undefined,
 }

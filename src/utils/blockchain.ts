@@ -63,6 +63,9 @@ export function availableChainsForToken(
   if (!config.features.avalanche) {
     chains = chains.filter((chain) => chain !== "avalanche")
   }
+  if (!config.features.sui) {
+    chains = chains.filter((chain) => chain !== "sui")
+  }
 
   const options = getBlockchainsOptions()
 

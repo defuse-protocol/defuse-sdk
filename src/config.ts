@@ -8,6 +8,7 @@ interface SDKConfig {
     ton: boolean
     optimism: boolean
     avalanche: boolean
+    sui: boolean
   }
 }
 
@@ -45,6 +46,7 @@ export let config: SDKConfig = {
     ton: false,
     optimism: false,
     avalanche: false,
+    sui: false,
   },
 }
 

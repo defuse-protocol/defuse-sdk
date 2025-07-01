@@ -104,4 +104,25 @@ describe("validateAddress", () => {
     expect(validateAddress(base58Address, "tron")).toBe(true)
     expect(validateAddress(hexAddress, "tron")).toBe(true)
   })
+
+  it("should validate Sui addresses", () => {
+    // Valid addresses
+    expect(
+      validateAddress(
+        "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
+        "sui"
+      )
+    ).toBe(true)
+    expect(
+      validateAddress(
+        "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF",
+        "sui"
+      )
+    ).toBe(true)
+
+    // Invalid addresses
+    expect(validateAddress("DPvG6Dk8cQRX7VauYbYHTxStD3kHZGBSda", "sui")).toBe(
+      false
+    )
+  })
 })

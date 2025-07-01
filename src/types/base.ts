@@ -23,6 +23,7 @@ export type SupportedChainName =
   | "ton"
   | "optimism"
   | "avalanche"
+  | "sui"
 
 export type SupportedBridge = "direct" | "poa" | "aurora_engine" | "hot_omni"
 
