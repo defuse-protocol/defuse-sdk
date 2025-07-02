@@ -63,7 +63,7 @@ export const ModalSelectNetwork = ({
   )
 
   return (
-    <BaseModalDialog open={!!isOpen}>
+    <BaseModalDialog open={!!isOpen} onClose={onClose} isDismissable>
       <div className="flex flex-col min-h-[680px] md:max-h-[680px] h-full">
         <div className="z-20 h-auto flex-none -mt-[var(--inset-padding-top)] -mr-[var(--inset-padding-right)] -ml-[var(--inset-padding-left)] px-5 pt-7 pb-4 sticky -top-[var(--inset-padding-top)] bg-gray-1">
           <div className="flex flex-col gap-4">
