@@ -9,7 +9,11 @@ import type {
 } from "src/types/base"
 import { getBlockchainsOptions } from "../../constants/blockchains"
 import type { BlockchainEnum } from "../../sdk/poaBridge/constants/blockchains"
-import { availableChainsForToken, filterChains } from "../../utils/blockchain"
+import {
+  availableChainsForToken,
+  availableDisabledChainsForToken,
+  filterChains,
+} from "../../utils/blockchain"
 import { BaseModalDialog } from "../Modal/ModalDialog"
 import { ModalNoResults } from "../Modal/ModalNoResults"
 import { SearchBar } from "../SearchBar"
@@ -39,16 +43,10 @@ export const ModalSelectNetwork = ({
   const availableChains = useMemo(() => availableChainsForToken(token), [token])
   const filteredChains = filterChains(availableChains, searchValue)
 
-  const disabledChains = useMemo(() => {
-    return Object.values(chains).reduce<
-      Record<string, { label: string; icon: ReactNode; value: string }>
-    >((acc, chain) => {
-      if (!filteredChains[chain.value]) {
-        acc[chain.value] = chain
-      }
-      return acc
-    }, {})
-  }, [chains, filteredChains])
+  const disabledChains = useMemo(
+    () => availableDisabledChainsForToken(chains, filteredChains),
+    [chains, filteredChains]
+  )
 
   const onChangeNetwork = (network: SupportedChainName) => {
     selectNetwork(network)
