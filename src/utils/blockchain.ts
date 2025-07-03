@@ -14,6 +14,7 @@ import {
   reverseAssetNetworkAdapter,
 } from "../utils/adapters"
 import { isBaseToken, isNativeToken, isUnifiedToken } from "../utils/token"
+
 export function isAuroraVirtualChain(network: SupportedChainName): boolean {
   const virtualChains = [
     "turbochain",
@@ -45,28 +46,33 @@ export const filterChains = (
   )
 }
 
+function filterChainsByFeatureFlags<T extends string>(chains: T[]): T[] {
+  let filtered = chains
+  if (!config.features.hyperliquid) {
+    filtered = filtered.filter((chain) => chain !== "hyperliquid")
+  }
+  if (!config.features.ton) {
+    filtered = filtered.filter((chain) => chain !== "ton")
+  }
+  if (!config.features.optimism) {
+    filtered = filtered.filter((chain) => chain !== "optimism")
+  }
+  if (!config.features.avalanche) {
+    filtered = filtered.filter((chain) => chain !== "avalanche")
+  }
+  if (!config.features.sui) {
+    filtered = filtered.filter((chain) => chain !== "sui")
+  }
+  return filtered
+}
+
 export function availableChainsForToken(
   token: BaseTokenInfo | UnifiedTokenInfo
 ): Record<string, { label: string; icon: ReactNode; value: string }> {
   const tokens = isUnifiedToken(token) ? token.groupedTokens : [token]
   let chains = tokens.map((token) => token.chainName)
 
-  if (!config.features.hyperliquid) {
-    chains = chains.filter((chain) => chain !== "hyperliquid")
-  }
-  if (!config.features.ton) {
-    chains = chains.filter((chain) => chain !== "ton")
-  }
-  if (!config.features.optimism) {
-    chains = chains.filter((chain) => chain !== "optimism")
-  }
-  if (!config.features.avalanche) {
-    chains = chains.filter((chain) => chain !== "avalanche")
-  }
-  if (!config.features.sui) {
-    chains = chains.filter((chain) => chain !== "sui")
-  }
-
+  chains = filterChainsByFeatureFlags(chains)
   const options = getBlockchainsOptions()
 
   const res = Object.values(options)
@@ -75,6 +81,27 @@ export function availableChainsForToken(
     )
     .map((option) => [option.value, option])
   return Object.fromEntries(res)
+}
+
+export function availableDisabledChainsForToken(
+  chains: Record<string, { label: string; icon: ReactNode; value: string }>,
+  filteredChains: Record<
+    string,
+    { label: string; icon: ReactNode; value: string }
+  >
+): Record<string, { label: string; icon: ReactNode; value: string }> {
+  return Object.values(chains).reduce(
+    (acc, chain) => {
+      const notDisabledChain = filterChainsByFeatureFlags([
+        reverseAssetNetworkAdapter[chain.value as BlockchainEnum],
+      ])
+      if (!filteredChains[chain.value] && notDisabledChain.length > 0) {
+        acc[chain.value] = chain
+      }
+      return acc
+    },
+    {} as Record<string, { label: string; icon: ReactNode; value: string }>
+  )
 }
 
 export function getDefaultBlockchainOptionValue(
