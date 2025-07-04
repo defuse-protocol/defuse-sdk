@@ -59,3 +59,9 @@ export const reverseAssetNetworkAdapter: Record<
   [BlockchainEnum.AVALANCHE]: "avalanche",
   [BlockchainEnum.SUI]: "sui",
 }
+
+export function isValidBlockchainEnumKey(
+  key: string
+): key is keyof typeof reverseAssetNetworkAdapter {
+  return key in reverseAssetNetworkAdapter
+}

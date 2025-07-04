@@ -1,34 +1,36 @@
-import { type ReactNode, useMemo } from "react"
+import { useMemo } from "react"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "src/types/base"
 import {
   availableChainsForToken,
   availableDisabledChainsForToken,
 } from "src/utils/blockchain"
+import { type NetworkOption, getIntentsOption } from "../constants/blockchains"
 
-export type NetworkOptions = Record<
-  string,
-  {
-    label: string
-    icon: ReactNode
-    value: string
-  }
->
+export type NetworkOptions = Record<string, NetworkOption>
 
-type UsePreparedNetworkLists = (
-  networks: NetworkOptions,
+type UsePreparedNetworkLists = (params: {
+  networks: NetworkOptions
   token: BaseTokenInfo | UnifiedTokenInfo | null
-) => {
+  intents?: boolean
+}) => {
   availableNetworks: NetworkOptions
   disabledNetworks: NetworkOptions
 }
 
-export const usePreparedNetworkLists: UsePreparedNetworkLists = (
+export const usePreparedNetworkLists: UsePreparedNetworkLists = ({
   networks,
-  token
-) => {
+  token,
+  intents = false,
+}) => {
   const availableNetworks = useMemo(
-    () => (token == null ? {} : availableChainsForToken(token)),
-    [token]
+    () =>
+      token == null
+        ? {}
+        : {
+            ...(intents ? getIntentsOption() : {}),
+            ...availableChainsForToken(token),
+          },
+    [token, intents]
   )
   const disabledNetworks = useMemo(
     () =>

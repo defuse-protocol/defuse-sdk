@@ -4,13 +4,14 @@ import { useSelector } from "@xstate/react"
 import { useEffect, useState } from "react"
 import type { UseFormReturn } from "react-hook-form"
 import { Controller } from "react-hook-form"
-import { getBlockchainsOptions } from "src/constants/blockchains"
 import { getMinWithdrawalHiperliquidAmount } from "src/features/withdraw/utils/hyperliquid"
 import { usePreparedNetworkLists } from "src/hooks/useNetworkLists"
 import { EmptyIcon } from "../../../../../../components/EmptyIcon"
 import { ModalSelectNetwork } from "../../../../../../components/Network/ModalSelectNetwork"
 import { Select } from "../../../../../../components/Select/Select"
 import { SelectTriggerLike } from "../../../../../../components/Select/SelectTriggerLike"
+import { config } from "../../../../../../config"
+import { getBlockchainsOptions } from "../../../../../../constants/blockchains"
 import { parseDestinationMemo } from "../../../../../../features/machines/withdrawFormReducer"
 import { WithdrawUIMachineContext } from "../../../../../../features/withdraw/WithdrawUIMachineContext"
 import { useSolverLiquidityQuery } from "../../../../../../queries/solverLiquidityQuerires"
@@ -95,10 +96,12 @@ export const RecipientSubForm = ({
     : {}
 
   const blockchainSelectItems = getBlockchainSelectItems(token, maxWithdrawals)
-  const { availableNetworks, disabledNetworks } = usePreparedNetworkLists(
-    getBlockchainsOptions(),
-    token
-  )
+  const { availableNetworks, disabledNetworks } = usePreparedNetworkLists({
+    networks: getBlockchainsOptions(),
+    token,
+    intents: config.features.intents,
+  })
+
   const showHotBalances = Object.keys(maxWithdrawals).length > 0
 
   const onCloseNetworkModal = () => setIsNetworkModalOpen(false)
@@ -109,6 +112,19 @@ export const RecipientSubForm = ({
       type: "WITHDRAW_FORM.UPDATE_MIN_RECEIVED_AMOUNT",
       params: {
         minReceivedAmount: getMinWithdrawalHiperliquidAmount(network, tokenOut),
+      },
+    })
+    onCloseNetworkModal()
+  }
+
+  const onIntentsSelect = () => {
+    // TODO: this will be checked and refactored later
+    // Intents are internal transfers on NEAR, so we set the blockchain to "near"
+    setValue("blockchain", "near")
+    actorRef.send({
+      type: "WITHDRAW_FORM.UPDATE_BLOCKCHAIN",
+      params: {
+        blockchain: "near",
       },
     })
     onCloseNetworkModal()
@@ -194,6 +210,7 @@ export const RecipientSubForm = ({
               onClose={() => setIsNetworkModalOpen(false)}
               availableNetworks={availableNetworks}
               disabledNetworks={disabledNetworks}
+              onIntentsSelect={onIntentsSelect}
               renderValueDetails={
                 showHotBalances
                   ? (address: string) => (

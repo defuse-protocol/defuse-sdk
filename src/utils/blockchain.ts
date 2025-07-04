@@ -1,6 +1,6 @@
-import type { ReactNode } from "react"
 import { config } from "../config"
 import { getBlockchainsOptions } from "../constants/blockchains"
+import type { NetworkOption } from "../constants/blockchains"
 import { CHAIN_IDS } from "../constants/evm"
 import type { BlockchainEnum } from "../sdk/poaBridge/constants/blockchains"
 import type {
@@ -26,8 +26,9 @@ export function isAuroraVirtualChain(network: SupportedChainName): boolean {
   ]
   return virtualChains.includes(network)
 }
+
 export const filterChains = (
-  candidates: Record<string, { label: string; icon: ReactNode; value: string }>,
+  candidates: Record<string, NetworkOption>,
   searchValue: string
 ) => {
   if (searchValue === "") {
@@ -38,9 +39,9 @@ export const filterChains = (
 
   return Object.fromEntries(
     Object.entries(candidates).filter(
-      ([key, chain]) =>
-        chain.label.toLowerCase().includes(lowerCaseSearchValue) ||
-        chain.value.toLowerCase().includes(lowerCaseSearchValue) ||
+      ([key, option]) =>
+        option.label.toLowerCase().includes(lowerCaseSearchValue) ||
+        option.value.toLowerCase().includes(lowerCaseSearchValue) ||
         key.toLowerCase().includes(lowerCaseSearchValue)
     )
   )
@@ -68,7 +69,7 @@ function filterChainsByFeatureFlags<T extends string>(chains: T[]): T[] {
 
 export function availableChainsForToken(
   token: BaseTokenInfo | UnifiedTokenInfo
-): Record<string, { label: string; icon: ReactNode; value: string }> {
+): Record<string, NetworkOption> {
   const tokens = isUnifiedToken(token) ? token.groupedTokens : [token]
   let chains = tokens.map((token) => token.chainName)
 
@@ -84,12 +85,9 @@ export function availableChainsForToken(
 }
 
 export function availableDisabledChainsForToken(
-  chains: Record<string, { label: string; icon: ReactNode; value: string }>,
-  filteredChains: Record<
-    string,
-    { label: string; icon: ReactNode; value: string }
-  >
-): Record<string, { label: string; icon: ReactNode; value: string }> {
+  chains: Record<string, NetworkOption>,
+  filteredChains: Record<string, NetworkOption>
+): Record<string, NetworkOption> {
   return Object.values(chains).reduce(
     (acc, chain) => {
       const notDisabledChain = filterChainsByFeatureFlags([
@@ -100,7 +98,7 @@ export function availableDisabledChainsForToken(
       }
       return acc
     },
-    {} as Record<string, { label: string; icon: ReactNode; value: string }>
+    {} as Record<string, NetworkOption>
   )
 }
 

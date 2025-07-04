@@ -176,10 +176,10 @@ export const DepositForm = ({
           : null
 
   const chainOptions = token != null ? availableChainsForToken(token) : {}
-  const { availableNetworks, disabledNetworks } = usePreparedNetworkLists(
-    getBlockchainsOptions(),
-    token
-  )
+  const { availableNetworks, disabledNetworks } = usePreparedNetworkLists({
+    networks: getBlockchainsOptions(),
+    token,
+  })
 
   const networkEnum = assetNetworkAdapter[network as SupportedChainName]
   const singleNetwork = Object.keys(chainOptions).length === 1

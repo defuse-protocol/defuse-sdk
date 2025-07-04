@@ -9,6 +9,27 @@ type BlockchainOption = {
   tags?: string[]
 }
 
+type IntentsOption = {
+  label: string
+  icon: ReactNode
+  value: "intents"
+  tags?: string[]
+}
+
+export type NetworkOption = BlockchainOption | IntentsOption
+
+export function isIntentsOption(
+  option: NetworkOption
+): option is IntentsOption {
+  return option.value === "intents"
+}
+
+export function isBlockchainOption(
+  option: NetworkOption
+): option is BlockchainOption {
+  return option.value !== "intents"
+}
+
 export function getBlockchainsOptions(): Record<
   BlockchainEnum,
   BlockchainOption
@@ -311,4 +332,20 @@ function sortBlockchainOptionsByVolume(
     BlockchainEnum,
     BlockchainOption
   >
+}
+
+export function getIntentsOption(): Record<"intents", IntentsOption> {
+  return {
+    intents: {
+      label: "Intents",
+      icon: (
+        <NetworkIcon
+          chainIcon="/static/icons/network/intents.svg"
+          chainName="Intents"
+        />
+      ),
+      value: "intents",
+      tags: [],
+    },
+  }
 }

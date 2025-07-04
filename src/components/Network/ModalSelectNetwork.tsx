@@ -19,6 +19,7 @@ interface ModalSelectNetworkProps {
   renderValueDetails?: (address: string) => ReactNode
   availableNetworks: NetworkOptions
   disabledNetworks: NetworkOptions
+  onIntentsSelect?: () => void
 }
 
 export const ModalSelectNetwork = ({
@@ -29,6 +30,7 @@ export const ModalSelectNetwork = ({
   renderValueDetails,
   availableNetworks,
   disabledNetworks,
+  onIntentsSelect,
 }: ModalSelectNetworkProps) => {
   const [searchValue, setSearchValue] = useState("")
 
@@ -85,6 +87,7 @@ export const ModalSelectNetwork = ({
                     selectedNetwork={selectedNetwork}
                     onChangeNetwork={onChangeNetwork}
                     renderValueDetails={renderValueDetails}
+                    onIntentsSelect={onIntentsSelect}
                   />
                 </div>
               )}
@@ -112,6 +115,7 @@ export const ModalSelectNetwork = ({
                     networkOptions={filteredDisabledNetworks}
                     selectedNetwork={selectedNetwork}
                     onChangeNetwork={onChangeNetwork}
+                    onIntentsSelect={onIntentsSelect}
                   />
                 </div>
               )}
