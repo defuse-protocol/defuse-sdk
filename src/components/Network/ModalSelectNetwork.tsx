@@ -3,7 +3,6 @@ import { InfoCircledIcon } from "@radix-ui/react-icons"
 import { Text } from "@radix-ui/themes"
 import { type ReactNode, useMemo, useState } from "react"
 import type { NetworkOptions } from "../../hooks/useNetworkLists"
-import type { BlockchainEnum } from "../../sdk/poaBridge/constants/blockchains"
 import type { SupportedChainName } from "../../types/base"
 import { filterChains } from "../../utils/blockchain"
 import { BaseModalDialog } from "../Modal/ModalDialog"
@@ -34,19 +33,20 @@ export const ModalSelectNetwork = ({
   const [searchValue, setSearchValue] = useState("")
 
   const filteredAvailableNetworks = useMemo(() => {
-    const filtered = filterChains(availableNetworks, searchValue)
-    return Object.keys(filtered).map((key) => key as BlockchainEnum)
+    return filterChains(availableNetworks, searchValue)
   }, [availableNetworks, searchValue])
 
   const filteredDisabledNetworks = useMemo(() => {
-    const filtered = filterChains(disabledNetworks, searchValue)
-    return Object.keys(filtered).map((key) => key as BlockchainEnum)
+    return filterChains(disabledNetworks, searchValue)
   }, [disabledNetworks, searchValue])
 
   const onChangeNetwork = (network: SupportedChainName) => {
     selectNetwork(network)
     onClose()
   }
+
+  const availableNetworksValues = Object.keys(filteredAvailableNetworks)
+  const disabledNetworksValues = Object.keys(filteredDisabledNetworks)
 
   return (
     <BaseModalDialog open={!!isOpen} onClose={onClose} isDismissable>
@@ -70,25 +70,25 @@ export const ModalSelectNetwork = ({
         </div>
 
         <div className="z-10 flex-1 overflow-y-auto  -mr-[var(--inset-padding-right)] pr-[var(--inset-padding-right)]">
-          {[...filteredAvailableNetworks, ...filteredDisabledNetworks]
-            .length === 0 ? (
+          {[...availableNetworksValues, ...disabledNetworksValues].length ===
+          0 ? (
             <ModalNoResults
               text="No networks found"
               handleSearchClear={() => setSearchValue("")}
             />
           ) : (
             <div className="flex flex-col gap-2 divide-y divide-gray-300">
-              {filteredAvailableNetworks.length > 0 && (
+              {availableNetworksValues.length > 0 && (
                 <div className="flex flex-col gap-2">
                   <NetworkList
-                    networks={filteredAvailableNetworks}
+                    networkOptions={filteredAvailableNetworks}
                     selectedNetwork={selectedNetwork}
                     onChangeNetwork={onChangeNetwork}
                     renderValueDetails={renderValueDetails}
                   />
                 </div>
               )}
-              {filteredDisabledNetworks.length > 0 && (
+              {disabledNetworksValues.length > 0 && (
                 <div className="flex flex-col gap-2 pt-4">
                   <div className="flex flex-row justify-start items-center gap-2">
                     <Text size="1" weight="bold" className="text-gray-500">
@@ -109,7 +109,7 @@ export const ModalSelectNetwork = ({
                   </div>
                   <NetworkList
                     disabled
-                    networks={filteredDisabledNetworks}
+                    networkOptions={filteredDisabledNetworks}
                     selectedNetwork={selectedNetwork}
                     onChangeNetwork={onChangeNetwork}
                   />
