@@ -12,7 +12,7 @@ type BlockchainOption = {
 type IntentsOption = {
   label: string
   icon: ReactNode
-  value: "intents"
+  value: "near_intents"
   tags?: string[]
 }
 
@@ -21,13 +21,13 @@ export type NetworkOption = BlockchainOption | IntentsOption
 export function isIntentsOption(
   option: NetworkOption
 ): option is IntentsOption {
-  return option.value === "intents"
+  return option.value === "near_intents"
 }
 
 export function isBlockchainOption(
   option: NetworkOption
 ): option is BlockchainOption {
-  return option.value !== "intents"
+  return option.value !== "near_intents"
 }
 
 export function getBlockchainsOptions(): Record<
@@ -334,17 +334,17 @@ function sortBlockchainOptionsByVolume(
   >
 }
 
-export function getIntentsOption(): Record<"intents", IntentsOption> {
+export function getNearIntentsOption(): Record<"intents", IntentsOption> {
   return {
     intents: {
-      label: "Intents",
+      label: "Near Intents",
       icon: (
         <NetworkIcon
           chainIcon="/static/icons/network/intents.svg"
           chainName="Intents"
         />
       ),
-      value: "intents",
+      value: "near_intents",
       tags: [],
     },
   }

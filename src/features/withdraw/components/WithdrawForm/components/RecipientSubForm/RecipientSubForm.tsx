@@ -99,7 +99,7 @@ export const RecipientSubForm = ({
   const { availableNetworks, disabledNetworks } = usePreparedNetworkLists({
     networks: getBlockchainsOptions(),
     token,
-    intents: config.features.intents,
+    near_intents: config.features.near_intents,
   })
 
   const showHotBalances = Object.keys(maxWithdrawals).length > 0
