@@ -4,7 +4,9 @@ import { useSelector } from "@xstate/react"
 import { useEffect, useState } from "react"
 import type { UseFormReturn } from "react-hook-form"
 import { Controller } from "react-hook-form"
+import { getBlockchainsOptions } from "src/constants/blockchains"
 import { getMinWithdrawalHiperliquidAmount } from "src/features/withdraw/utils/hyperliquid"
+import { usePreparedNetworkLists } from "src/hooks/useNetworkLists"
 import { EmptyIcon } from "../../../../../../components/EmptyIcon"
 import { ModalSelectNetwork } from "../../../../../../components/Network/ModalSelectNetwork"
 import { Select } from "../../../../../../components/Select/Select"
@@ -93,6 +95,10 @@ export const RecipientSubForm = ({
     : {}
 
   const blockchainSelectItems = getBlockchainSelectItems(token, maxWithdrawals)
+  const { availableNetworks, disabledNetworks } = usePreparedNetworkLists(
+    getBlockchainsOptions(),
+    token
+  )
   const showHotBalances = Object.keys(maxWithdrawals).length > 0
 
   const onCloseNetworkModal = () => setIsNetworkModalOpen(false)
@@ -182,11 +188,12 @@ export const RecipientSubForm = ({
             />
 
             <ModalSelectNetwork
-              token={token}
               selectNetwork={onChangeNetwork}
               selectedNetwork={getValues("blockchain")}
               isOpen={isNetworkModalOpen}
               onClose={() => setIsNetworkModalOpen(false)}
+              availableNetworks={availableNetworks}
+              disabledNetworks={disabledNetworks}
               renderValueDetails={
                 showHotBalances
                   ? (address: string) => (

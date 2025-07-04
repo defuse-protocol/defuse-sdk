@@ -4,6 +4,7 @@ import { useSelector } from "@xstate/react"
 import { useEffect, useState } from "react"
 import { Controller, useFormContext } from "react-hook-form"
 import { ModalSelectNetwork } from "src/components/Network/ModalSelectNetwork"
+import { usePreparedNetworkLists } from "src/hooks/useNetworkLists"
 import { assetNetworkAdapter } from "src/utils/adapters"
 import {
   availableChainsForToken,
@@ -174,6 +175,10 @@ export const DepositForm = ({
           : null
 
   const chainOptions = token != null ? availableChainsForToken(token) : {}
+  const { availableNetworks, disabledNetworks } = usePreparedNetworkLists(
+    chainOptions,
+    token
+  )
   const networkEnum = assetNetworkAdapter[network as SupportedChainName]
   const singleNetwork = Object.keys(chainOptions).length === 1
   return (
@@ -227,11 +232,12 @@ export const DepositForm = ({
                   />
 
                   <ModalSelectNetwork
-                    token={token}
                     selectNetwork={onChangeNetwork}
                     selectedNetwork={network}
                     isOpen={isNetworkModalOpen}
                     onClose={onCloseNetworkModal}
+                    availableNetworks={availableNetworks}
+                    disabledNetworks={disabledNetworks}
                   />
                 </>
               )}
