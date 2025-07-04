@@ -2,18 +2,9 @@ import { X as CrossIcon } from "@phosphor-icons/react"
 import { InfoCircledIcon } from "@radix-ui/react-icons"
 import { Text } from "@radix-ui/themes"
 import { type ReactNode, useMemo, useState } from "react"
-import type {
-  BaseTokenInfo,
-  SupportedChainName,
-  UnifiedTokenInfo,
-} from "src/types/base"
-import { getBlockchainsOptions } from "../../constants/blockchains"
-import type { BlockchainEnum } from "../../sdk/poaBridge/constants/blockchains"
-import {
-  availableChainsForToken,
-  availableDisabledChainsForToken,
-  filterChains,
-} from "../../utils/blockchain"
+import type { NetworkOptions } from "../../hooks/useNetworkLists"
+import type { SupportedChainName } from "../../types/base"
+import { filterChains } from "../../utils/blockchain"
 import { BaseModalDialog } from "../Modal/ModalDialog"
 import { ModalNoResults } from "../Modal/ModalNoResults"
 import { SearchBar } from "../SearchBar"
@@ -21,44 +12,43 @@ import { TooltipInfo } from "../TooltipInfo"
 import { NetworkList } from "./NetworksList"
 
 interface ModalSelectNetworkProps {
-  token: BaseTokenInfo | UnifiedTokenInfo
   selectNetwork: (network: SupportedChainName) => void
   selectedNetwork: SupportedChainName | null
   isOpen?: boolean
   onClose: () => void
   renderValueDetails?: (address: string) => ReactNode
+  availableNetworks: NetworkOptions
+  disabledNetworks: NetworkOptions
+  onIntentsSelect?: () => void
 }
 
 export const ModalSelectNetwork = ({
-  token,
   selectNetwork,
   selectedNetwork,
   isOpen,
   onClose,
   renderValueDetails,
+  availableNetworks,
+  disabledNetworks,
+  onIntentsSelect,
 }: ModalSelectNetworkProps) => {
   const [searchValue, setSearchValue] = useState("")
-  const chains = getBlockchainsOptions()
 
-  const availableChains = useMemo(() => availableChainsForToken(token), [token])
-  const filteredChains = filterChains(availableChains, searchValue)
+  const filteredAvailableNetworks = useMemo(() => {
+    return filterChains(availableNetworks, searchValue)
+  }, [availableNetworks, searchValue])
 
-  const disabledChains = useMemo(
-    () => availableDisabledChainsForToken(chains, filteredChains),
-    [chains, filteredChains]
-  )
+  const filteredDisabledNetworks = useMemo(() => {
+    return filterChains(disabledNetworks, searchValue)
+  }, [disabledNetworks, searchValue])
 
   const onChangeNetwork = (network: SupportedChainName) => {
     selectNetwork(network)
     onClose()
   }
 
-  const availableNetworks = Object.keys(filteredChains).map(
-    (key) => key as BlockchainEnum
-  )
-  const disabledNetworks = Object.keys(disabledChains).map(
-    (key) => key as BlockchainEnum
-  )
+  const availableNetworksValues = Object.keys(filteredAvailableNetworks)
+  const disabledNetworksValues = Object.keys(filteredDisabledNetworks)
 
   return (
     <BaseModalDialog open={!!isOpen} onClose={onClose} isDismissable>
@@ -82,24 +72,26 @@ export const ModalSelectNetwork = ({
         </div>
 
         <div className="z-10 flex-1 overflow-y-auto  -mr-[var(--inset-padding-right)] pr-[var(--inset-padding-right)]">
-          {[...availableNetworks, ...disabledNetworks].length === 0 ? (
+          {[...availableNetworksValues, ...disabledNetworksValues].length ===
+          0 ? (
             <ModalNoResults
               text="No networks found"
               handleSearchClear={() => setSearchValue("")}
             />
           ) : (
             <div className="flex flex-col gap-2 divide-y divide-gray-300">
-              {availableNetworks.length > 0 && (
+              {availableNetworksValues.length > 0 && (
                 <div className="flex flex-col gap-2">
                   <NetworkList
-                    networks={availableNetworks}
+                    networkOptions={filteredAvailableNetworks}
                     selectedNetwork={selectedNetwork}
                     onChangeNetwork={onChangeNetwork}
                     renderValueDetails={renderValueDetails}
+                    onIntentsSelect={onIntentsSelect}
                   />
                 </div>
               )}
-              {disabledNetworks.length > 0 && (
+              {disabledNetworksValues.length > 0 && (
                 <div className="flex flex-col gap-2 pt-4">
                   <div className="flex flex-row justify-start items-center gap-2">
                     <Text size="1" weight="bold" className="text-gray-500">
@@ -120,9 +112,10 @@ export const ModalSelectNetwork = ({
                   </div>
                   <NetworkList
                     disabled
-                    networks={disabledNetworks}
+                    networkOptions={filteredDisabledNetworks}
                     selectedNetwork={selectedNetwork}
                     onChangeNetwork={onChangeNetwork}
+                    onIntentsSelect={onIntentsSelect}
                   />
                 </div>
               )}

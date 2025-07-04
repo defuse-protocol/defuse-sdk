@@ -4,6 +4,7 @@ import { useSelector } from "@xstate/react"
 import { useEffect, useState } from "react"
 import { Controller, useFormContext } from "react-hook-form"
 import { ModalSelectNetwork } from "src/components/Network/ModalSelectNetwork"
+import { usePreparedNetworkLists } from "src/hooks/useNetworkLists"
 import { assetNetworkAdapter } from "src/utils/adapters"
 import {
   availableChainsForToken,
@@ -19,6 +20,7 @@ import type { ModalSelectAssetsPayload } from "../../../../components/Modal/Moda
 import { Select } from "../../../../components/Select/Select"
 import { SelectTriggerLike } from "../../../../components/Select/SelectTriggerLike"
 import { Separator } from "../../../../components/Separator"
+import { getBlockchainsOptions } from "../../../../constants/blockchains"
 import { getPOABridgeInfo } from "../../../../features/machines/poaBridgeInfoActor"
 import { useModalStore } from "../../../../providers/ModalStoreProvider"
 import type { BlockchainEnum } from "../../../../sdk/poaBridge/constants/blockchains"
@@ -174,6 +176,11 @@ export const DepositForm = ({
           : null
 
   const chainOptions = token != null ? availableChainsForToken(token) : {}
+  const { availableNetworks, disabledNetworks } = usePreparedNetworkLists({
+    networks: getBlockchainsOptions(),
+    token,
+  })
+
   const networkEnum = assetNetworkAdapter[network as SupportedChainName]
   const singleNetwork = Object.keys(chainOptions).length === 1
   return (
@@ -227,11 +234,12 @@ export const DepositForm = ({
                   />
 
                   <ModalSelectNetwork
-                    token={token}
                     selectNetwork={onChangeNetwork}
                     selectedNetwork={network}
                     isOpen={isNetworkModalOpen}
                     onClose={onCloseNetworkModal}
+                    availableNetworks={availableNetworks}
+                    disabledNetworks={disabledNetworks}
                   />
                 </>
               )}

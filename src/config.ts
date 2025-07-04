@@ -9,6 +9,7 @@ interface SDKConfig {
     optimism: boolean
     avalanche: boolean
     sui: boolean
+    intents: boolean
   }
 }
 
@@ -47,6 +48,7 @@ export let config: SDKConfig = {
     optimism: false,
     avalanche: false,
     sui: false,
+    intents: false,
   },
 }
 
