@@ -66,6 +66,7 @@ type IntentOperationParams =
       recipient: string
       destinationMemo: string | null
       prebuiltWithdrawalIntents: Intent[]
+      nearIntentsNetwork: boolean
     }
 
 export type IntentDescription =
@@ -81,6 +82,7 @@ export type IntentDescription =
       accountId: IntentsUserId
       chainName: SupportedChainName
       recipient: string
+      nearIntentsNetwork: boolean
     }
 
 type Context = {
@@ -349,6 +351,8 @@ export const swapIntentMachine = setup({
                 accountId: context.defuseUserId,
                 chainName: context.intentOperationParams.tokenOut.chainName,
                 recipient: context.intentOperationParams.recipient,
+                nearIntentsNetwork:
+                  context.intentOperationParams.nearIntentsNetwork,
               },
             },
           }

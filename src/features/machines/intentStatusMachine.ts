@@ -92,11 +92,15 @@ export const intentStatusMachine = setup({
           accountId: IntentsUserId
           chainName: SupportedChainName
           recipient: string
+          nearIntentsNetwork: boolean
         }
       }) => {
         return bridgeSDK
           .waitForWithdrawalCompletion({
-            bridge: toBridgeConfig(input.bridge, input.chainName),
+            bridge: toBridgeConfig(
+              input.nearIntentsNetwork ? "direct" : input.bridge,
+              input.chainName
+            ),
             index: 0,
             tx: {
               hash: input.sourceTxHash,
@@ -190,6 +194,7 @@ export const intentStatusMachine = setup({
             accountId: context.intentDescription.accountId,
             chainName: context.intentDescription.chainName,
             recipient: context.intentDescription.recipient,
+            nearIntentsNetwork: context.intentDescription.nearIntentsNetwork,
           }
         },
 
