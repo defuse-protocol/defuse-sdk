@@ -422,8 +422,7 @@ export const WithdrawForm = ({
             tokenInBalance={tokenInBalance}
           />
 
-          {(isNearIntentsNetwork(blockchain) ||
-            isCexIncompatible(tokenOut)) && (
+          {!isNearIntentsNetwork(blockchain) && isCexIncompatible(tokenOut) && (
             <Text
               as="label"
               size="1"

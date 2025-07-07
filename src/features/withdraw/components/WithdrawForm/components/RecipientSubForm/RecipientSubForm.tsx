@@ -192,14 +192,10 @@ export const RecipientSubForm = ({
               onClick={() => setIsNetworkModalOpen(true)}
               hint={
                 <Select.Hint>
-                  {Object.keys(blockchainSelectItems).length === 1
-                    ? "This network only"
+                  {isNearIntentsNetwork(field.value)
+                    ? "Internal network"
                     : "Network"}
                 </Select.Hint>
-              }
-              disabled={
-                Object.keys(blockchainSelectItems).length === 1 &&
-                isFirstBlockchainSelected(field.value, blockchainSelectItems)
               }
             />
 
@@ -270,6 +266,7 @@ export const RecipientSubForm = ({
           </Box>
 
           {isChainTypeSatisfiesChainName &&
+            !isNearIntentsNetwork(getValues("blockchain")) &&
             userAddress != null &&
             recipient !== userAddress &&
             getValues("blockchain") !== "hyperliquid" && (
