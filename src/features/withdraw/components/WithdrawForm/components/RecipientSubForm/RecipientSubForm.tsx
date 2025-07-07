@@ -123,12 +123,6 @@ export const RecipientSubForm = ({
 
   const onIntentsNetworkSelect = () => {
     setValue("blockchain", "near_intents")
-    actorRef.send({
-      type: "WITHDRAW_FORM.UPDATE_NEAR_INTENTS_TRANSFER",
-      params: {
-        nearIntentsTransfer: true,
-      },
-    })
     onCloseNetworkModal()
   }
 

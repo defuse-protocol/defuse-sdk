@@ -94,12 +94,6 @@ export type Events =
         minReceivedAmount: TokenValue | null
       }
     }
-  | {
-      type: "WITHDRAW_FORM.UPDATE_NEAR_INTENTS_TRANSFER"
-      params: {
-        nearIntentsTransfer: boolean
-      }
-    }
 
 export type State = {
   parentRef: ParentActor
@@ -114,7 +108,6 @@ export type State = {
   cexFundsLooseConfirmation: CexFundsLooseConfirmationStatus
   minReceivedAmount: TokenValue | null
   blockchain: SupportedChainName | "near_intents"
-  nearIntentsTransfer: boolean
 }
 
 export const withdrawFormReducer = fromTransition(
@@ -140,7 +133,6 @@ export const withdrawFormReducer = fromTransition(
             cexFundsLooseConfirmationStatusDefault(tokenOut),
           minReceivedAmount: null,
           blockchain: tokenOut.chainName,
-          nearIntentsTransfer: false,
         }
         break
       }
@@ -168,7 +160,6 @@ export const withdrawFormReducer = fromTransition(
             cexFundsLooseConfirmationStatusDefault(tokenOut),
           minReceivedAmount: null,
           blockchain,
-          nearIntentsTransfer: false,
         }
         break
       }
@@ -224,13 +215,6 @@ export const withdrawFormReducer = fromTransition(
         }
         break
       }
-      case "WITHDRAW_FORM.UPDATE_NEAR_INTENTS_TRANSFER": {
-        newState = {
-          ...state,
-          nearIntentsTransfer: event.params.nearIntentsTransfer,
-        }
-        break
-      }
       default: {
         event satisfies never
         return state
@@ -273,7 +257,6 @@ export const withdrawFormReducer = fromTransition(
         cexFundsLooseConfirmationStatusDefault(tokenOut),
       minReceivedAmount: null,
       blockchain: tokenOut.chainName,
-      nearIntentsTransfer: false,
     }
   }
 )
