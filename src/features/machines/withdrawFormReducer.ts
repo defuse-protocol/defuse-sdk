@@ -149,6 +149,10 @@ export const withdrawFormReducer = fromTransition(
           ? getAnyBaseTokenInfo(state.tokenIn)
           : getWithdrawTokenWithFallback(state.tokenIn, determinedBlockchain)
 
+        const cexFundsLooseConfirmation = isNearIntentsNetwork(blockchain)
+          ? "not_required"
+          : cexFundsLooseConfirmationStatusDefault(tokenOut)
+
         newState = {
           ...state,
           tokenOut,
@@ -156,8 +160,7 @@ export const withdrawFormReducer = fromTransition(
           parsedRecipient: null,
           destinationMemo: "",
           parsedDestinationMemo: null,
-          cexFundsLooseConfirmation:
-            cexFundsLooseConfirmationStatusDefault(tokenOut),
+          cexFundsLooseConfirmation,
           minReceivedAmount: null,
           blockchain,
         }
