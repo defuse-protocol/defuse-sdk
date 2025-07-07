@@ -42,7 +42,7 @@ export function getHyperliquidAsset(
  * @see https://docs.hyperunit.xyz/developers/api/generate-address#request-parameters
  */
 export function getMinWithdrawalHiperliquidAmount(
-  blockchain: SupportedChainName,
+  blockchain: SupportedChainName | "near_intents",
   tokenOut: BaseTokenInfo
 ) {
   if (blockchain !== "hyperliquid") return null
@@ -67,6 +67,8 @@ export function getMinWithdrawalHiperliquidAmount(
   }
 }
 
-export function isHyperliquid(blockchain: SupportedChainName): boolean {
+export function isHyperliquid(
+  blockchain: SupportedChainName | "near_intents"
+): boolean {
   return blockchain === "hyperliquid"
 }

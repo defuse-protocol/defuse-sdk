@@ -1,7 +1,7 @@
 import { MagicWandIcon, PersonIcon } from "@radix-ui/react-icons"
 import { Box, Flex, IconButton, Text, TextField } from "@radix-ui/themes"
 import { useSelector } from "@xstate/react"
-import { useEffect, useState } from "react"
+import { type ReactNode, useEffect, useState } from "react"
 import type { UseFormReturn } from "react-hook-form"
 import { Controller } from "react-hook-form"
 import { getMinWithdrawalHiperliquidAmount } from "src/features/withdraw/utils/hyperliquid"
@@ -11,7 +11,10 @@ import { ModalSelectNetwork } from "../../../../../../components/Network/ModalSe
 import { Select } from "../../../../../../components/Select/Select"
 import { SelectTriggerLike } from "../../../../../../components/Select/SelectTriggerLike"
 import { config } from "../../../../../../config"
-import { getBlockchainsOptions } from "../../../../../../constants/blockchains"
+import {
+  getBlockchainsOptions,
+  getNearIntentsOption,
+} from "../../../../../../constants/blockchains"
 import { parseDestinationMemo } from "../../../../../../features/machines/withdrawFormReducer"
 import { WithdrawUIMachineContext } from "../../../../../../features/withdraw/WithdrawUIMachineContext"
 import { useSolverLiquidityQuery } from "../../../../../../queries/solverLiquidityQuerires"
@@ -30,6 +33,7 @@ import {
   chainTypeSatisfiesChainName,
   getBlockchainSelectItems,
   getFastWithdrawals,
+  isNearIntentsNetwork,
 } from "../../utils"
 import { truncateUserAddress } from "../../utils"
 import { HotBalance } from "../HotBalance/HotBalance"
@@ -117,14 +121,12 @@ export const RecipientSubForm = ({
     onCloseNetworkModal()
   }
 
-  const onIntentsSelect = () => {
-    // TODO: this will be checked and refactored later
-    // Intents are internal transfers on NEAR, so we set the blockchain to "near"
-    setValue("blockchain", "near")
+  const onIntentsNetworkSelect = () => {
+    setValue("blockchain", "near_intents")
     actorRef.send({
-      type: "WITHDRAW_FORM.UPDATE_BLOCKCHAIN",
+      type: "WITHDRAW_FORM.UPDATE_NEAR_INTENTS_TRANSFER",
       params: {
-        blockchain: "near",
+        nearIntentsTransfer: true,
       },
     })
     onCloseNetworkModal()
@@ -158,7 +160,7 @@ export const RecipientSubForm = ({
         actorRef.send({
           type: "WITHDRAW_FORM.UPDATE_BLOCKCHAIN",
           params: {
-            blockchain,
+            blockchain: blockchain,
           },
         })
       }
@@ -185,10 +187,14 @@ export const RecipientSubForm = ({
         render={({ field }) => (
           <>
             <SelectTriggerLike
-              label={
-                blockchainSelectItems[field.value]?.label ?? "Select network"
-              }
-              icon={blockchainSelectItems[field.value]?.icon ?? <EmptyIcon />}
+              label={determineBlockchainControllerLabel(
+                field.value,
+                blockchainSelectItems[field.value]?.label
+              )}
+              icon={determineBlockchainControllerIcon(
+                field.value,
+                blockchainSelectItems[field.value]?.icon
+              )}
               onClick={() => setIsNetworkModalOpen(true)}
               hint={
                 <Select.Hint>
@@ -210,7 +216,7 @@ export const RecipientSubForm = ({
               onClose={() => setIsNetworkModalOpen(false)}
               availableNetworks={availableNetworks}
               disabledNetworks={disabledNetworks}
-              onIntentsSelect={onIntentsSelect}
+              onIntentsSelect={onIntentsNetworkSelect}
               renderValueDetails={
                 showHotBalances
                   ? (address: string) => (
@@ -248,7 +254,14 @@ export const RecipientSubForm = ({
               {...register("recipient", {
                 validate: {
                   pattern: (value, formValues) => {
-                    if (!validateAddressSoft(value, formValues.blockchain)) {
+                    if (
+                      !validateAddressSoft(
+                        value,
+                        formValues.blockchain === "near_intents"
+                          ? "near"
+                          : formValues.blockchain
+                      )
+                    ) {
                       return "Invalid address for the selected blockchain"
                     }
                   },
@@ -342,7 +355,7 @@ export const RecipientSubForm = ({
 }
 
 export const isFirstBlockchainSelected = (
-  fieldValue: SupportedChainName,
+  fieldValue: SupportedChainName | "near_intents",
   blockchainSelectItems: Record<string, { value: BlockchainEnum }>
 ): boolean => {
   const firstBlockchain = Object.values(blockchainSelectItems)[0]
@@ -350,4 +363,24 @@ export const isFirstBlockchainSelected = (
     firstBlockchain != null &&
     fieldValue === reverseAssetNetworkAdapter[firstBlockchain.value]
   )
+}
+
+function determineBlockchainControllerLabel(
+  blockchain: SupportedChainName | "near_intents",
+  blockchainSelectedLabel?: string
+) {
+  if (isNearIntentsNetwork(blockchain)) {
+    return blockchainSelectedLabel ?? "NEAR Intents"
+  }
+  return blockchainSelectedLabel ?? "Select network"
+}
+
+function determineBlockchainControllerIcon(
+  blockchain: SupportedChainName | "near_intents",
+  blockchainSelectedIcon?: ReactNode
+) {
+  if (isNearIntentsNetwork(blockchain)) {
+    return getNearIntentsOption().intents.icon
+  }
+  return blockchainSelectedIcon ?? <EmptyIcon />
 }

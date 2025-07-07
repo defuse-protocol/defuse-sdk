@@ -59,7 +59,7 @@ import { getWithdrawButtonText } from "./utils"
 export type WithdrawFormNearValues = {
   amountIn: string
   recipient: string
-  blockchain: SupportedChainName
+  blockchain: SupportedChainName | "near_intents"
   destinationMemo?: string
   isFundsLooseConfirmed?: boolean
 }

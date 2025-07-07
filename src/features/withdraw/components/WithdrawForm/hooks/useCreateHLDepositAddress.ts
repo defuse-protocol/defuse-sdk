@@ -20,7 +20,7 @@ export type HLDepositAddressResult =
 
 export const useCreateHLDepositAddress = (
   token: BaseTokenInfo,
-  blockchain: SupportedChainName,
+  blockchain: SupportedChainName | "near_intents",
   dstAddr: string
 ) => {
   return useQuery<HLDepositAddressResult>({

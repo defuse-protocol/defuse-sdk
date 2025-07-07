@@ -8,6 +8,7 @@ import type {
 import { assert } from "../../utils/assert"
 import { isBaseToken } from "../../utils/token"
 import { validateAddress } from "../../utils/validateAddress"
+import { isNearIntentsNetwork } from "../withdraw/components/WithdrawForm/utils"
 import { isCexIncompatible } from "../withdraw/utils/cexCompatibility"
 import {
   getHyperliquidSrcChain,
@@ -52,7 +53,7 @@ export type Events =
   | {
       type: "WITHDRAW_FORM.UPDATE_BLOCKCHAIN"
       params: {
-        blockchain: SupportedChainName
+        blockchain: SupportedChainName | "near_intents"
         /**
          * Don't need to provide `parsedAmount` here, because amount is not
          * expected to change when blockchain changes, because decimals for
@@ -93,6 +94,12 @@ export type Events =
         minReceivedAmount: TokenValue | null
       }
     }
+  | {
+      type: "WITHDRAW_FORM.UPDATE_NEAR_INTENTS_TRANSFER"
+      params: {
+        nearIntentsTransfer: boolean
+      }
+    }
 
 export type State = {
   parentRef: ParentActor
@@ -106,7 +113,8 @@ export type State = {
   parsedDestinationMemo: string | null
   cexFundsLooseConfirmation: CexFundsLooseConfirmationStatus
   minReceivedAmount: TokenValue | null
-  blockchain: SupportedChainName
+  blockchain: SupportedChainName | "near_intents"
+  nearIntentsTransfer: boolean
 }
 
 export const withdrawFormReducer = fromTransition(
@@ -132,6 +140,7 @@ export const withdrawFormReducer = fromTransition(
             cexFundsLooseConfirmationStatusDefault(tokenOut),
           minReceivedAmount: null,
           blockchain: tokenOut.chainName,
+          nearIntentsTransfer: false,
         }
         break
       }
@@ -139,7 +148,9 @@ export const withdrawFormReducer = fromTransition(
         const blockchain = event.params.blockchain
         const determinedBlockchain = isHyperliquid(blockchain)
           ? getHyperliquidSrcChain(state.tokenOut)
-          : blockchain
+          : isNearIntentsNetwork(blockchain)
+            ? "near"
+            : blockchain
 
         const tokenOut = getWithdrawTokenWithFallback(
           state.tokenIn,
@@ -157,6 +168,7 @@ export const withdrawFormReducer = fromTransition(
             cexFundsLooseConfirmationStatusDefault(tokenOut),
           minReceivedAmount: null,
           blockchain,
+          nearIntentsTransfer: false,
         }
         break
       }
@@ -212,6 +224,13 @@ export const withdrawFormReducer = fromTransition(
         }
         break
       }
+      case "WITHDRAW_FORM.UPDATE_NEAR_INTENTS_TRANSFER": {
+        newState = {
+          ...state,
+          nearIntentsTransfer: event.params.nearIntentsTransfer,
+        }
+        break
+      }
       default: {
         event satisfies never
         return state
@@ -254,6 +273,7 @@ export const withdrawFormReducer = fromTransition(
         cexFundsLooseConfirmationStatusDefault(tokenOut),
       minReceivedAmount: null,
       blockchain: tokenOut.chainName,
+      nearIntentsTransfer: false,
     }
   }
 )
