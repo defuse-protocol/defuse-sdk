@@ -7,6 +7,7 @@ import type {
 } from "../../types/base"
 import { assert } from "../../utils/assert"
 import { isBaseToken } from "../../utils/token"
+import { getAnyBaseTokenInfo } from "../../utils/tokenUtils"
 import { validateAddress } from "../../utils/validateAddress"
 import { isNearIntentsNetwork } from "../withdraw/components/WithdrawForm/utils"
 import { isCexIncompatible } from "../withdraw/utils/cexCompatibility"
@@ -141,13 +142,12 @@ export const withdrawFormReducer = fromTransition(
         const determinedBlockchain = isHyperliquid(blockchain)
           ? getHyperliquidSrcChain(state.tokenOut)
           : isNearIntentsNetwork(blockchain)
-            ? "near"
+            ? getAnyBaseTokenInfo(state.tokenIn).chainName
             : blockchain
 
-        const tokenOut = getWithdrawTokenWithFallback(
-          state.tokenIn,
-          determinedBlockchain
-        )
+        const tokenOut = isNearIntentsNetwork(blockchain)
+          ? getAnyBaseTokenInfo(state.tokenIn)
+          : getWithdrawTokenWithFallback(state.tokenIn, determinedBlockchain)
 
         newState = {
           ...state,
@@ -180,7 +180,8 @@ export const withdrawFormReducer = fromTransition(
         assert(determinedRecipient, "Recipient is required")
         const parsedRecipient = getParsedRecipient(
           determinedRecipient,
-          state.tokenOut
+          state.tokenOut,
+          isNearIntentsNetwork(state.blockchain)
         )
 
         newState = {
@@ -283,21 +284,29 @@ export function getWithdrawTokenWithFallback(
   return tokenOut
 }
 
+/**
+ * @note normalizedRecipient - normalize in case EVM-like account
+ */
 function getParsedRecipient(
   recipient: string,
-  tokenOut: BaseTokenInfo
+  tokenOut: BaseTokenInfo,
+  isNearIntentsNetwork: boolean
 ): string | null {
+  if (isNearIntentsNetwork) {
+    const normalizedRecipient = recipient.toLowerCase()
+    return validateAddress(normalizedRecipient, "near")
+      ? normalizedRecipient
+      : null
+  }
+
   if (tokenOut.chainName === "near") {
-    // normalize in case EVM-like account
-    // biome-ignore lint/style/noParameterAssign: <reason>
-    recipient = recipient.toLowerCase()
+    const normalizedRecipient = recipient.toLowerCase()
+    return validateAddress(normalizedRecipient, "near")
+      ? normalizedRecipient
+      : null
   }
 
-  if (!validateAddress(recipient, tokenOut.chainName)) {
-    return null
-  }
-
-  return recipient
+  return validateAddress(recipient, tokenOut.chainName) ? recipient : null
 }
 
 export function parseDestinationMemo(
