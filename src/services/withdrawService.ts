@@ -3,7 +3,6 @@ import {
   FeeExceedsAmountError,
 } from "@defuse-protocol/bridge-sdk"
 import { Err, Ok, type Result } from "@thames/monads"
-import { findError } from "src/utils/errors"
 import { type ActorRefFrom, waitFor } from "xstate"
 import { auroraEngineContractId } from "../constants/aurora"
 import { bridgeSDK } from "../constants/bridgeSdk"
@@ -19,7 +18,9 @@ import type { poaBridgeInfoActor } from "../features/machines/poaBridgeInfoActor
 import { getPOABridgeInfo } from "../features/machines/poaBridgeInfoActor"
 import { calcWithdrawAmount } from "../features/machines/swapIntentMachine"
 import type { State as WithdrawFormContext } from "../features/machines/withdrawFormReducer"
+import { isNearIntentsNetwork } from "../features/withdraw/components/WithdrawForm/utils"
 import { logger } from "../logger"
+import { calculateSplitAmounts } from "../sdk/aggregatedQuote/calculateSplitAmounts"
 import type {
   BaseTokenInfo,
   SupportedChainName,
@@ -29,11 +30,13 @@ import type {
 import type { Intent } from "../types/defuse-contracts-types"
 import { assert } from "../utils/assert"
 import { isAuroraVirtualChain } from "../utils/blockchain"
+import { findError } from "../utils/errors"
 import { isBaseToken } from "../utils/token"
 import {
   adjustDecimalsTokenValue,
   compareAmounts,
   computeTotalBalanceDifferentDecimals,
+  getUnderlyingBaseTokenInfos,
   minAmounts,
   subtractAmounts,
   truncateTokenValue,
@@ -117,6 +120,13 @@ export async function prepareWithdraw(
   })
   if (balanceSufficiency.tag === "err") {
     return balanceSufficiency
+  }
+
+  if (isNearIntentsNetwork(formValues.blockchain)) {
+    return prepareNearIntentsWithdraw({
+      formValues,
+      balances,
+    })
   }
 
   const breakdown = getWithdrawBreakdown({
@@ -531,5 +541,57 @@ export function getRequiredSwapAmount(
         : null,
     directWithdrawalAmount: directWithdrawalAmount,
     tokenOut,
+  }
+}
+
+async function prepareNearIntentsWithdraw({
+  formValues,
+  balances,
+}: {
+  formValues: WithdrawFormContext
+  balances: BalanceMapping
+}): Promise<PreparationOutput> {
+  assert(formValues.parsedAmount != null, "parsedAmount is null")
+
+  const amounts = calculateSplitAmounts(
+    getUnderlyingBaseTokenInfos(formValues.tokenIn),
+    formValues.parsedAmount,
+    balances
+  )
+
+  const intents = (
+    await Promise.all(
+      Object.entries(amounts).map(([defuseAssetId, amount]) => {
+        assert(formValues.parsedRecipient != null, "parsedRecipient is null")
+
+        return bridgeSDK.createWithdrawalIntents({
+          withdrawalParams: {
+            assetId: defuseAssetId,
+            amount: amount,
+            destinationAddress: formValues.parsedRecipient,
+            destinationMemo: undefined, // Destination memo is only used for XRP Ledger withdrawals
+            feeInclusive: false,
+            bridgeConfig: {
+              bridge: "intents",
+            },
+          },
+          feeEstimation: {
+            amount: 0n,
+            quote: null,
+          },
+        })
+      })
+    )
+  ).flat()
+
+  return {
+    tag: "ok",
+    value: {
+      directWithdrawAvailable: formValues.parsedAmount,
+      swap: null,
+      feeEstimation: { amount: 0n, quote: null },
+      receivedAmount: formValues.parsedAmount,
+      prebuiltWithdrawalIntents: intents,
+    },
   }
 }
