@@ -54,7 +54,7 @@ import {
   totalAmountReceivedSelector,
   withdtrawalFeeSelector,
 } from "./selectors"
-import { getWithdrawButtonText } from "./utils"
+import { getWithdrawButtonText, isNearIntentsNetwork } from "./utils"
 
 export type WithdrawFormNearValues = {
   amountIn: string
@@ -191,8 +191,9 @@ export const WithdrawForm = ({
     blockchain,
     tokenOut
   )
-  const minWithdrawalAmount =
-    minWithdrawalHyperliquidAmount ?? minWithdrawalPOABridgeAmount
+  const minWithdrawalAmount = isNearIntentsNetwork(blockchain)
+    ? null
+    : (minWithdrawalHyperliquidAmount ?? minWithdrawalPOABridgeAmount)
 
   const tokenInBalance = useSelector(
     depositedBalanceRef,
