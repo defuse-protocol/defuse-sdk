@@ -13,7 +13,7 @@ import { NetworkList } from "./NetworksList"
 
 interface ModalSelectNetworkProps {
   selectNetwork: (network: SupportedChainName) => void
-  selectedNetwork: SupportedChainName | null
+  selectedNetwork: SupportedChainName | "near_intents" | null
   isOpen?: boolean
   onClose: () => void
   renderValueDetails?: (address: string) => ReactNode

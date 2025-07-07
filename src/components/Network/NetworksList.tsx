@@ -13,7 +13,7 @@ import { PoweredByAuroraLabel } from "../PoweredByAuroraLabel"
 
 interface NetworkListProps {
   networkOptions: NetworkOptions
-  selectedNetwork: SupportedChainName | "intents" | null
+  selectedNetwork: SupportedChainName | "near_intents" | null
   onChangeNetwork: (network: SupportedChainName) => void
   disabled?: boolean
   renderValueDetails?: (address: string) => ReactNode
@@ -47,7 +47,7 @@ export const NetworkList = ({
               className={clsx(
                 "flex justify-between items-center gap-3 p-2.5 rounded-md hover:bg-gray-3",
                 {
-                  "bg-gray-3": selectedNetwork === "intents",
+                  "bg-gray-3": selectedNetwork === "near_intents",
                 }
               )}
               onClick={onIntentsSelect}

@@ -54,12 +54,12 @@ import {
   totalAmountReceivedSelector,
   withdtrawalFeeSelector,
 } from "./selectors"
-import { getWithdrawButtonText } from "./utils"
+import { getWithdrawButtonText, isNearIntentsNetwork } from "./utils"
 
 export type WithdrawFormNearValues = {
   amountIn: string
   recipient: string
-  blockchain: SupportedChainName
+  blockchain: SupportedChainName | "near_intents"
   destinationMemo?: string
   isFundsLooseConfirmed?: boolean
 }
@@ -191,8 +191,9 @@ export const WithdrawForm = ({
     blockchain,
     tokenOut
   )
-  const minWithdrawalAmount =
-    minWithdrawalHyperliquidAmount ?? minWithdrawalPOABridgeAmount
+  const minWithdrawalAmount = isNearIntentsNetwork(blockchain)
+    ? null
+    : (minWithdrawalHyperliquidAmount ?? minWithdrawalPOABridgeAmount)
 
   const tokenInBalance = useSelector(
     depositedBalanceRef,
@@ -421,7 +422,7 @@ export const WithdrawForm = ({
             tokenInBalance={tokenInBalance}
           />
 
-          {isCexIncompatible(tokenOut) && (
+          {!isNearIntentsNetwork(blockchain) && isCexIncompatible(tokenOut) && (
             <Text
               as="label"
               size="1"

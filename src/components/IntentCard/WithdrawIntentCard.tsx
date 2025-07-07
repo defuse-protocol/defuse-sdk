@@ -32,7 +32,10 @@ export function WithdrawIntentCard({
   const destTxHash = bridgeTransactionResult?.destinationTxHash
   const destTxUrl =
     destTxHash != null
-      ? blockExplorerTxLinkFactory(tokenOut.chainName, destTxHash)
+      ? blockExplorerTxLinkFactory(
+          intentDescription.nearIntentsNetwork ? "near" : tokenOut.chainName,
+          destTxHash
+        )
       : undefined
 
   return (

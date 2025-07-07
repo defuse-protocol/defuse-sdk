@@ -4,14 +4,17 @@ import {
   availableChainsForToken,
   availableDisabledChainsForToken,
 } from "src/utils/blockchain"
-import { type NetworkOption, getIntentsOption } from "../constants/blockchains"
+import {
+  type NetworkOption,
+  getNearIntentsOption,
+} from "../constants/blockchains"
 
 export type NetworkOptions = Record<string, NetworkOption>
 
 type UsePreparedNetworkLists = (params: {
   networks: NetworkOptions
   token: BaseTokenInfo | UnifiedTokenInfo | null
-  intents?: boolean
+  near_intents?: boolean
 }) => {
   availableNetworks: NetworkOptions
   disabledNetworks: NetworkOptions
@@ -20,17 +23,17 @@ type UsePreparedNetworkLists = (params: {
 export const usePreparedNetworkLists: UsePreparedNetworkLists = ({
   networks,
   token,
-  intents = false,
+  near_intents = false,
 }) => {
   const availableNetworks = useMemo(
     () =>
       token == null
         ? {}
         : {
-            ...(intents ? getIntentsOption() : {}),
+            ...(near_intents ? getNearIntentsOption() : {}),
             ...availableChainsForToken(token),
           },
-    [token, intents]
+    [token, near_intents]
   )
   const disabledNetworks = useMemo(
     () =>

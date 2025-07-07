@@ -376,3 +376,9 @@ export const getFastWithdrawals = (
 
   return shouldShowHotBalance ? maxWithdrawals : {}
 }
+
+export function isNearIntentsNetwork(
+  blockchain: SupportedChainName | "near_intents"
+): boolean {
+  return blockchain === "near_intents"
+}

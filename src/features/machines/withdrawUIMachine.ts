@@ -15,6 +15,7 @@ import type { AuthMethod } from "../../types/authHandle"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../types/base"
 import { assert } from "../../utils/assert"
 import { authHandleToIntentsUserId } from "../../utils/authIdentity"
+import { isNearIntentsNetwork } from "../withdraw/components/WithdrawForm/utils"
 import {
   type Events as BackgroundQuoterEvents,
   type ParentEvents as BackgroundQuoterParentEvents,
@@ -615,6 +616,7 @@ export const withdrawUIMachine = setup({
               destinationMemo: formValues.parsedDestinationMemo,
               prebuiltWithdrawalIntents:
                 context.preparationOutput.value.prebuiltWithdrawalIntents,
+              nearIntentsNetwork: isNearIntentsNetwork(formValues.blockchain),
             },
           }
         },

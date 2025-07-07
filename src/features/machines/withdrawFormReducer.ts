@@ -7,7 +7,9 @@ import type {
 } from "../../types/base"
 import { assert } from "../../utils/assert"
 import { isBaseToken } from "../../utils/token"
+import { getAnyBaseTokenInfo } from "../../utils/tokenUtils"
 import { validateAddress } from "../../utils/validateAddress"
+import { isNearIntentsNetwork } from "../withdraw/components/WithdrawForm/utils"
 import { isCexIncompatible } from "../withdraw/utils/cexCompatibility"
 import {
   getHyperliquidSrcChain,
@@ -52,7 +54,7 @@ export type Events =
   | {
       type: "WITHDRAW_FORM.UPDATE_BLOCKCHAIN"
       params: {
-        blockchain: SupportedChainName
+        blockchain: SupportedChainName | "near_intents"
         /**
          * Don't need to provide `parsedAmount` here, because amount is not
          * expected to change when blockchain changes, because decimals for
@@ -106,7 +108,7 @@ export type State = {
   parsedDestinationMemo: string | null
   cexFundsLooseConfirmation: CexFundsLooseConfirmationStatus
   minReceivedAmount: TokenValue | null
-  blockchain: SupportedChainName
+  blockchain: SupportedChainName | "near_intents"
 }
 
 export const withdrawFormReducer = fromTransition(
@@ -139,12 +141,13 @@ export const withdrawFormReducer = fromTransition(
         const blockchain = event.params.blockchain
         const determinedBlockchain = isHyperliquid(blockchain)
           ? getHyperliquidSrcChain(state.tokenOut)
-          : blockchain
+          : isNearIntentsNetwork(blockchain)
+            ? getAnyBaseTokenInfo(state.tokenIn).chainName
+            : blockchain
 
-        const tokenOut = getWithdrawTokenWithFallback(
-          state.tokenIn,
-          determinedBlockchain
-        )
+        const tokenOut = isNearIntentsNetwork(blockchain)
+          ? getAnyBaseTokenInfo(state.tokenIn)
+          : getWithdrawTokenWithFallback(state.tokenIn, determinedBlockchain)
 
         newState = {
           ...state,
@@ -177,7 +180,8 @@ export const withdrawFormReducer = fromTransition(
         assert(determinedRecipient, "Recipient is required")
         const parsedRecipient = getParsedRecipient(
           determinedRecipient,
-          state.tokenOut
+          state.tokenOut,
+          isNearIntentsNetwork(state.blockchain)
         )
 
         newState = {
@@ -280,21 +284,29 @@ export function getWithdrawTokenWithFallback(
   return tokenOut
 }
 
+/**
+ * @note normalizedRecipient - normalize in case EVM-like account
+ */
 function getParsedRecipient(
   recipient: string,
-  tokenOut: BaseTokenInfo
+  tokenOut: BaseTokenInfo,
+  isNearIntentsNetwork: boolean
 ): string | null {
+  if (isNearIntentsNetwork) {
+    const normalizedRecipient = recipient.toLowerCase()
+    return validateAddress(normalizedRecipient, "near")
+      ? normalizedRecipient
+      : null
+  }
+
   if (tokenOut.chainName === "near") {
-    // normalize in case EVM-like account
-    // biome-ignore lint/style/noParameterAssign: <reason>
-    recipient = recipient.toLowerCase()
+    const normalizedRecipient = recipient.toLowerCase()
+    return validateAddress(normalizedRecipient, "near")
+      ? normalizedRecipient
+      : null
   }
 
-  if (!validateAddress(recipient, tokenOut.chainName)) {
-    return null
-  }
-
-  return recipient
+  return validateAddress(recipient, tokenOut.chainName) ? recipient : null
 }
 
 export function parseDestinationMemo(
