@@ -192,10 +192,20 @@ export const RecipientSubForm = ({
               onClick={() => setIsNetworkModalOpen(true)}
               hint={
                 <Select.Hint>
-                  {isNearIntentsNetwork(field.value)
-                    ? "Internal network"
-                    : "Network"}
+                  {determineBlockchainControllerHint(
+                    field.value,
+                    blockchainSelectItems
+                  )}
                 </Select.Hint>
+              }
+              disabled={
+                !config.features.near_intents
+                  ? Object.keys(blockchainSelectItems).length === 1 &&
+                    isFirstBlockchainSelected(
+                      field.value,
+                      blockchainSelectItems
+                    )
+                  : false
               }
             />
 
@@ -374,4 +384,19 @@ function determineBlockchainControllerIcon(
     return getNearIntentsOption().intents.icon
   }
   return blockchainSelectedIcon ?? <EmptyIcon />
+}
+
+function determineBlockchainControllerHint(
+  blockchain: SupportedChainName | "near_intents",
+  blockchainSelectItems: Record<string, { value: BlockchainEnum }>
+) {
+  if (isNearIntentsNetwork(blockchain)) {
+    return "Internal network"
+  }
+  if (config.features.near_intents) {
+    return "Network"
+  }
+  return Object.keys(blockchainSelectItems).length === 1
+    ? "This network only"
+    : "Network"
 }
