@@ -52,5 +52,6 @@ export const settings: Settings = {
     avalanche: "https://api.avax.network/ext/bc/C/rpc",
     sui: "https://fullnode.mainnet.sui.io:443",
     stellar: "https://horizon.stellar.org",
+    aptos: "https://fullnode.mainnet.aptoslabs.com",
   },
 }

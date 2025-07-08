@@ -321,6 +321,17 @@ export function getBlockchainsOptions(): Record<
       value: BlockchainEnum.STELLAR,
       tags: [],
     },
+    [BlockchainEnum.APTOS]: {
+      label: "Aptos",
+      icon: (
+        <NetworkIcon
+          chainIcon="/static/icons/network/aptos.svg"
+          chainName="Aptos"
+        />
+      ),
+      value: BlockchainEnum.APTOS,
+      tags: [],
+    },
   }
 
   return sortBlockchainOptionsByVolume(options)

@@ -54,6 +54,8 @@ export function chainTxExplorer(blockchain: SupportedChainName): string | null {
       return "https://suiscan.xyz/mainnet/tx/"
     case "stellar":
       return "https://stellar.expert/explorer/public/tx/"
+    case "aptos":
+      return "https://explorer.aptoslabs.com/tx/"
     default:
       blockchain satisfies never
       return null

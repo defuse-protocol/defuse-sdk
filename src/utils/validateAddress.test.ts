@@ -143,4 +143,22 @@ describe("validateAddress", () => {
       )
     ).toBe(false)
   })
+
+  it("should validate Aptos addresses", () => {
+    // Valid address
+    expect(
+      validateAddress(
+        "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
+        "aptos"
+      )
+    ).toBe(true)
+
+    // Invalid address
+    expect(
+      validateAddress(
+        "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
+        "aptos"
+      )
+    ).toBe(false)
+  })
 })

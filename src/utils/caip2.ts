@@ -27,4 +27,5 @@ export const CAIP2_NETWORK: Record<SupportedChainName, string> = {
   avalanche: "eip155:43114",
   sui: "sui:mainnet",
   stellar: "stellar:mainnet",
+  aptos: "aptos:mainnet",
 }

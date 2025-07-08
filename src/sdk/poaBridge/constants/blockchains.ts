@@ -22,6 +22,7 @@ export const PoaBridgeNetworkReference = {
   AVALANCHE: "eth:43114",
   SUI: "sui:mainnet",
   STELLAR: "stellar:mainnet",
+  APTOS: "aptos:mainnet",
 } as const
 
 export const VirtualNetworkReference = {
