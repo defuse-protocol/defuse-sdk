@@ -51,5 +51,6 @@ export const settings: Settings = {
     optimism: "https://mainnet.optimism.io",
     avalanche: "https://api.avax.network/ext/bc/C/rpc",
     sui: "https://fullnode.mainnet.sui.io:443",
+    stellar: "https://horizon.stellar.org",
   },
 }

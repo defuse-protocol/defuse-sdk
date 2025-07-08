@@ -10,6 +10,7 @@ interface SDKConfig {
     avalanche: boolean
     sui: boolean
     near_intents: boolean
+    stellar: boolean
   }
 }
 
@@ -49,6 +50,7 @@ export let config: SDKConfig = {
     avalanche: false,
     sui: false,
     near_intents: false,
+    stellar: false,
   },
 }
 
