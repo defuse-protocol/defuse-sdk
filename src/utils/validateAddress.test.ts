@@ -125,4 +125,22 @@ describe("validateAddress", () => {
       false
     )
   })
+
+  it("should validate Stellar addresses", () => {
+    // Valid address
+    expect(
+      validateAddress(
+        "GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+        "stellar"
+      )
+    ).toBe(true)
+
+    // Invalid address
+    expect(
+      validateAddress(
+        "GAB2B4L27677777777777777777777777777777777777777",
+        "stellar"
+      )
+    ).toBe(false)
+  })
 })

@@ -310,6 +310,17 @@ export function getBlockchainsOptions(): Record<
       value: BlockchainEnum.SUI,
       tags: [],
     },
+    [BlockchainEnum.STELLAR]: {
+      label: "Stellar",
+      icon: (
+        <NetworkIcon
+          chainIcon="/static/icons/network/stellar.svg"
+          chainName="Stellar"
+        />
+      ),
+      value: BlockchainEnum.STELLAR,
+      tags: [],
+    },
   }
 
   return sortBlockchainOptionsByVolume(options)

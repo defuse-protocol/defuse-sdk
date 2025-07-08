@@ -193,6 +193,7 @@ export const backgroundBalanceActor = fromPromise(
       case BlockchainEnum.TRON:
       case BlockchainEnum.HYPERLIQUID:
       case BlockchainEnum.SUI:
+      case BlockchainEnum.STELLAR:
         break
       default:
         networkToSolverFormat satisfies never
