@@ -21,12 +21,7 @@ import type { State as WithdrawFormContext } from "../features/machines/withdraw
 import { isNearIntentsNetwork } from "../features/withdraw/components/WithdrawForm/utils"
 import { logger } from "../logger"
 import { calculateSplitAmounts } from "../sdk/aggregatedQuote/calculateSplitAmounts"
-import type {
-  BaseTokenInfo,
-  SupportedChainName,
-  TokenValue,
-  UnifiedTokenInfo,
-} from "../types/base"
+import type { BaseTokenInfo, TokenValue, UnifiedTokenInfo } from "../types/base"
 import type { Intent } from "../types/defuse-contracts-types"
 import { assert } from "../utils/assert"
 import { isAuroraVirtualChain } from "../utils/blockchain"
@@ -78,6 +73,20 @@ export type PreparedWithdrawReturnType = {
 export type PreparationOutput =
   | { tag: "ok"; value: PreparedWithdrawReturnType }
   | { tag: "err"; value: PrepareWithdrawErrorType }
+
+// todo: import it from bridge-sdk
+type BridgeConfig =
+  | {
+      bridge: "direct"
+      chain: "near:mainnet"
+    }
+  | {
+      bridge: "aurora_engine"
+      auroraEngineContractId: string
+    }
+  | {
+      bridge: "intents"
+    }
 
 export async function prepareWithdraw(
   {
@@ -187,11 +196,23 @@ export async function prepareWithdraw(
     directWithdrawAvailable
   )
 
+  const bridgeConfig: BridgeConfig | undefined = isAuroraVirtualChain(
+    formValues.tokenOut.chainName
+  )
+    ? {
+        bridge: "aurora_engine",
+        auroraEngineContractId:
+          auroraEngineContractId[formValues.tokenOut.chainName],
+      }
+    : formValues.tokenOut.chainName === "near"
+      ? { bridge: "direct", chain: "near:mainnet" }
+      : undefined
+
   const feeEstimation = await estimateFee({
-    chainName: formValues.tokenOut.chainName,
     defuseAssetId: formValues.tokenOut.defuseAssetId,
     amount: totalWithdrawn.amount,
     recipient: formValues.parsedRecipient,
+    bridgeConfig,
   })
   if (feeEstimation.isErr()) {
     return { tag: "err", value: feeEstimation.unwrapErr() }
@@ -227,15 +248,7 @@ export async function prepareWithdraw(
       destinationAddress: formValues.parsedRecipient,
       destinationMemo: formValues.parsedDestinationMemo ?? undefined,
       feeInclusive: false,
-      bridgeConfig: isAuroraVirtualChain(formValues.tokenOut.chainName)
-        ? {
-            bridge: "aurora_engine",
-            auroraEngineContractId:
-              auroraEngineContractId[formValues.tokenOut.chainName],
-          }
-        : formValues.tokenOut.chainName === "near"
-          ? { bridge: "direct", chain: "near:mainnet" }
-          : undefined,
+      bridgeConfig,
     },
     feeEstimation: feeEstimation.unwrap(),
   })
@@ -357,15 +370,15 @@ async function getBalances(
 }
 
 async function estimateFee({
-  chainName,
   defuseAssetId,
   amount,
   recipient,
+  bridgeConfig,
 }: {
-  chainName: SupportedChainName
   defuseAssetId: string
   amount: bigint
   recipient: string
+  bridgeConfig: BridgeConfig | undefined
 }): Promise<Result<FeeEstimation, { reason: "ERR_WITHDRAWAL_FEE_FETCH" }>> {
   return bridgeSDK
     .estimateWithdrawalFee({
@@ -374,12 +387,7 @@ async function estimateFee({
         amount: amount,
         destinationAddress: recipient,
         feeInclusive: true,
-        bridgeConfig: !isAuroraVirtualChain(chainName)
-          ? undefined
-          : {
-              bridge: "aurora_engine",
-              auroraEngineContractId: auroraEngineContractId[chainName],
-            },
+        bridgeConfig,
       },
     })
     .then(Ok, (err) => {
