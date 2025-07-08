@@ -68,6 +68,9 @@ export function validateAddress(
     case "stellar":
       return /^G[A-Z0-9]{55}$/.test(address)
 
+    case "aptos":
+      return /^0x[a-fA-F0-9]{64}$/.test(address)
+
     default:
       blockchain satisfies never
       return false

@@ -67,6 +67,9 @@ function filterChainsByFeatureFlags<T extends string>(chains: T[]): T[] {
   if (!config.features.stellar) {
     filtered = filtered.filter((chain) => chain !== "stellar")
   }
+  if (!config.features.aptos) {
+    filtered = filtered.filter((chain) => chain !== "aptos")
+  }
   return filtered
 }
 
