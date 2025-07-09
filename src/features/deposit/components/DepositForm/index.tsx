@@ -87,6 +87,11 @@ export const DepositForm = ({
   const depositAddress = isOutputOk
     ? preparationOutput.value.generateDepositAddress
     : null
+  const memo = isOutputOk
+    ? "memo" in preparationOutput.value
+      ? preparationOutput.value.memo
+      : null
+    : null
 
   const { setModalType, payload, onCloseModal } = useModalStore(
     (state) => state
@@ -284,6 +289,7 @@ export const DepositForm = ({
                   depositAddress={depositAddress}
                   minDepositAmount={minDepositAmount}
                   token={derivedToken}
+                  memo={memo}
                 />
               )}
           </>
