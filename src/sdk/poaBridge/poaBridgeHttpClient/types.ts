@@ -54,10 +54,17 @@ export type GetDepositAddressRequest = JSONRPCRequest<
   } & Partial<DepositNetworkMemo>
 >
 
-export type GetDepositAddressResponse = JSONRPCResponse<{
-  address: string
-  chain: string
-}>
+export type GetDepositAddressResponse = JSONRPCResponse<
+  | {
+      address: string
+      chain: string
+    }
+  | {
+      address: string
+      chain: string
+      memo: string
+    }
+>
 
 export type DepositStatus = {
   tx_hash: string

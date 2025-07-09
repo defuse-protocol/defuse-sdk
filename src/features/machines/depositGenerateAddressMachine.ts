@@ -12,6 +12,7 @@ export type Context = {
         tag: "ok"
         value: {
           generateDepositAddress: string | null
+          memo: string | null
         }
       }
     | {
@@ -45,7 +46,10 @@ export const depositGenerateAddressMachine = setup({
           userChainType: AuthMethod
           blockchain: SupportedChainName
         }
-      }): Promise<string> => {
+      }): Promise<{
+        generateDepositAddress: string | null
+        memo: string | null
+      }> => {
         throw new Error("not implemented")
       }
     ),
@@ -131,9 +135,7 @@ export const depositGenerateAddressMachine = setup({
           actions: assign({
             preparationOutput: ({ event }) => ({
               tag: "ok",
-              value: {
-                generateDepositAddress: event.output,
-              },
+              value: event.output,
             }),
           }),
 

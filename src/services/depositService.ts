@@ -68,6 +68,7 @@ export type PreparationOutput =
         maxDepositValue: bigint | null
         solanaATACreationRequired: boolean
         tonJettonWalletCreationRequired: boolean
+        memo: string | null
       }
     }
   | {
@@ -198,6 +199,7 @@ export async function prepareDeposit(
       maxDepositValue: estimation.value.maxDepositValue,
       solanaATACreationRequired,
       tonJettonWalletCreationRequired,
+      memo: generateDepositAddress.value.memo,
     },
   }
 }
@@ -280,7 +282,10 @@ async function getGeneratedDepositAddress(
   },
   { signal }: { signal: AbortSignal }
 ): Promise<
-  | { tag: "ok"; value: { generateDepositAddress: string | null } }
+  | {
+      tag: "ok"
+      value: { generateDepositAddress: string | null; memo: string | null }
+    }
   | { tag: "err"; value: { reason: "ERR_GENERATING_ADDRESS" } }
 > {
   const depositGenerateAddressState = await waitFor(
@@ -297,7 +302,10 @@ async function getGeneratedDepositAddress(
     generateDepositAddressOutput?.value.generateDepositAddress ?? null
   return {
     tag: "ok",
-    value: { generateDepositAddress },
+    value: {
+      generateDepositAddress,
+      memo: generateDepositAddressOutput?.value.memo ?? null,
+    },
   }
 }
 
@@ -665,7 +673,10 @@ function createSPLTransferSolanaTransaction(
 export async function generateDepositAddress(
   userAddress: IntentsUserId,
   chain: BlockchainEnum
-): Promise<string> {
+): Promise<{
+  generatedDepositAddress: string
+  memo: string | null
+}> {
   try {
     const supportedTokens = await getSupportedTokens({
       chains: [chain],
@@ -675,14 +686,18 @@ export async function generateDepositAddress(
       throw new Error("No supported tokens found")
     }
 
-    const memo = getDepositNetworkMemo(chain)
+    const depositNetworkMemo = getDepositNetworkMemo(chain)
     const generatedDepositAddress = await getDepositAddress({
       account_id: userAddress,
       chain,
-      ...(memo && memo),
+      ...(depositNetworkMemo && depositNetworkMemo),
     })
 
-    return generatedDepositAddress.address
+    return {
+      generatedDepositAddress: generatedDepositAddress.address,
+      memo:
+        "memo" in generatedDepositAddress ? generatedDepositAddress.memo : null,
+    }
   } catch (error) {
     logger.error(
       new Error("Error generating deposit address", { cause: error })
