@@ -675,9 +675,11 @@ export async function generateDepositAddress(
       throw new Error("No supported tokens found")
     }
 
+    const memo = getDepositNetworkMemo(chain)
     const generatedDepositAddress = await getDepositAddress({
       account_id: userAddress,
       chain,
+      ...(memo && memo),
     })
 
     return generatedDepositAddress.address
@@ -1089,6 +1091,26 @@ export function getWalletRpcUrl(network: BlockchainEnum): string {
     default:
       network satisfies never
       throw new Error("exhaustive check failed")
+  }
+}
+
+export type DepositNetworkMemo = {
+  deposit_mode: "MEMO"
+} | null
+
+/**
+ * @notes - Stellar is the only blockchain that requires a memo at that moment.
+ */
+export function getDepositNetworkMemo(
+  network: BlockchainEnum
+): DepositNetworkMemo {
+  switch (network) {
+    case BlockchainEnum.STELLAR:
+      return {
+        deposit_mode: "MEMO",
+      }
+    default:
+      return null
   }
 }
 
