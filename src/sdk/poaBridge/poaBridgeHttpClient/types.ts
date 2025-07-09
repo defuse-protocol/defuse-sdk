@@ -1,3 +1,4 @@
+import type { DepositNetworkMemo } from "src/services/depositService"
 import type { RpcRequestError } from "../../../errors/request"
 import type { BaseTokenInfo } from "../../../types/base"
 import type { RequestErrorType } from "../../../utils/request"
@@ -49,13 +50,21 @@ export type GetDepositAddressRequest = JSONRPCRequest<
     account_id: string
     /** Chain is joined blockchain and network (e.g. eth:8453) */
     chain: string
-  }
+    /** Special parameter for dedicated networks like Stellar */
+  } & Partial<DepositNetworkMemo>
 >
 
-export type GetDepositAddressResponse = JSONRPCResponse<{
-  address: string
-  chain: string
-}>
+export type GetDepositAddressResponse = JSONRPCResponse<
+  | {
+      address: string
+      chain: string
+    }
+  | {
+      address: string
+      chain: string
+      memo: string
+    }
+>
 
 export type DepositStatus = {
   tx_hash: string

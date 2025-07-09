@@ -2,6 +2,7 @@ import { CheckIcon, CopyIcon } from "@radix-ui/react-icons"
 import { Button, Spinner } from "@radix-ui/themes"
 import { QRCodeSVG } from "qrcode.react"
 import { Copy } from "../../../../components/IntentCard/CopyButton"
+import { Separator } from "../../../../components/Separator"
 import type { BlockchainEnum } from "../../../../sdk/poaBridge/constants/blockchains"
 import type { BaseTokenInfo } from "../../../../types/base"
 import {
@@ -14,6 +15,7 @@ export type PassiveDepositProps = {
   depositAddress: string | null
   minDepositAmount: bigint | null
   token: BaseTokenInfo
+  memo: string | null
 }
 
 export function PassiveDeposit({
@@ -21,11 +23,44 @@ export function PassiveDeposit({
   depositAddress,
   minDepositAmount,
   token,
+  memo,
 }: PassiveDepositProps) {
   const truncatedAddress = truncateAddress(depositAddress ?? "")
 
   return (
     <div className="flex flex-col items-stretch">
+      {memo != null && (
+        <>
+          <div className="mb-6 flex flex-col items-center justify-center">
+            <div className="w-full max-w-xs rounded-lg border border-red-500 bg-red-50 p-4 flex flex-col items-center">
+              <div className="flex items-center w-full justify-between bg-red-100 rounded px-3 py-2 mb-2">
+                <span className="font-bold text-2xl text-black tracking-wider">
+                  {memo}
+                </span>
+                <Copy text={memo}>
+                  {(copied) => (
+                    <Button
+                      type="button"
+                      size="3"
+                      variant="solid"
+                      className="ml-2 box-border size-8 p-0 bg-red-200 hover:bg-red-300 text-red-600"
+                    >
+                      {copied ? <CheckIcon /> : <CopyIcon />}
+                    </Button>
+                  )}
+                </Copy>
+              </div>
+              <div className="text-red-500 text-sm text-center font-medium">
+                Include this MEMO to receive your funds!
+              </div>
+            </div>
+          </div>
+          <div className="-mx-5 mb-6">
+            <Separator />
+          </div>
+        </>
+      )}
+
       <div className="font-bold text-label text-sm">
         Use this deposit address
       </div>

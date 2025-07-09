@@ -93,12 +93,16 @@ export function DepositUIMachineProvider({
               generateDepositAddress: fromPromise(async ({ input }) => {
                 const { userAddress, blockchain, userChainType } = input
 
-                const address = await generateDepositAddress(
+                const generatedResult = await generateDepositAddress(
                   authHandleToIntentsUserId(userAddress, userChainType),
                   assetNetworkAdapter[blockchain]
                 )
 
-                return address
+                return {
+                  generateDepositAddress:
+                    generatedResult.generatedDepositAddress,
+                  memo: generatedResult.memo,
+                }
               }),
             },
           }),
