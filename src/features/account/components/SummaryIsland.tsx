@@ -1,41 +1,53 @@
-import { Gift, PaperPlaneRight, Plus } from "@phosphor-icons/react"
-import { Skeleton } from "@radix-ui/themes"
+import { Eye, Gift, PaperPlaneRight, Plus } from "@phosphor-icons/react"
+import { Button, Skeleton } from "@radix-ui/themes"
+import { useState } from "react"
 import { AuthGate } from "../../../components/AuthGate"
 import { Island } from "../../../components/Island"
 import { IslandHeader } from "../../../components/IslandHeader"
 import type { RenderHostAppLink } from "../../../types/hostAppLink"
+import { RevealAddressDialog } from "./RevealAddressDialog"
 import { FormattedCurrency } from "./shared/FormattedCurrency"
+import { IntentsIcon } from "./shared/IntentsIcon"
 import { NavButton } from "./shared/NavButton"
 
 export function SummaryIsland({
   isLoggedIn,
   valueUsd,
   renderHostAppLink,
+  internalUserAddress,
 }: {
   isLoggedIn: boolean
   valueUsd: number | undefined
   renderHostAppLink: RenderHostAppLink
+  internalUserAddress: string | null
 }) {
   valueUsd = isLoggedIn ? valueUsd : 0
+  const [isRevealed, setIsRevealed] = useState(false)
 
   return (
     <Island className="flex flex-col gap-8">
       <IslandHeader
         heading="Account"
         rightSlot={
-          null
-          // It will be added in the future
-          // <Button
-          //   variant="soft"
-          //   color="gray"
-          //   radius="full"
-          //   className="font-bold text-gray-12"
-          // >
-          //   <IntentsIcon className="rounded-full" />
-          //   Reveal address <Eye weight="bold" />
-          // </Button>
+          <Button
+            variant="soft"
+            color="gray"
+            radius="full"
+            className="font-bold text-gray-12"
+            onClick={() => setIsRevealed(true)}
+          >
+            <IntentsIcon className="rounded-full" />
+            Reveal address <Eye weight="bold" />
+          </Button>
         }
       />
+
+      {isRevealed && internalUserAddress != null && (
+        <RevealAddressDialog
+          internalUserAddress={internalUserAddress}
+          onClose={() => setIsRevealed(false)}
+        />
+      )}
 
       <div className="flex flex-col gap-2">
         {valueUsd != null ? (
