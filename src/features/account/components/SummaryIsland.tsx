@@ -29,16 +29,18 @@ export function SummaryIsland({
       <IslandHeader
         heading="Account"
         rightSlot={
-          <Button
-            variant="soft"
-            color="gray"
-            radius="full"
-            className="font-bold text-gray-12"
-            onClick={() => setIsRevealed(true)}
-          >
-            <IntentsIcon className="rounded-full" />
-            Reveal address <Eye weight="bold" />
-          </Button>
+          isLoggedIn ? (
+            <Button
+              variant="soft"
+              color="gray"
+              radius="full"
+              className="font-bold text-gray-12"
+              onClick={() => setIsRevealed(true)}
+            >
+              <IntentsIcon className="rounded-full" />
+              Reveal address <Eye weight="bold" />
+            </Button>
+          ) : null
         }
       />
 
