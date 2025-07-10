@@ -31,6 +31,11 @@ export function AccountWidget({
   const holdings = useWatchHoldings({ userId, tokenList })
   const totalValueUsd = holdings ? computeTotalUsdValue(holdings) : undefined
 
+  const internalUserAddress =
+    userAddress != null && userChainType != null
+      ? authHandleToIntentsUserId(userAddress, userChainType)
+      : null
+
   return (
     <WidgetRoot>
       <div className="widget-container flex flex-col gap-5">
@@ -38,6 +43,7 @@ export function AccountWidget({
           isLoggedIn={userAddress != null}
           valueUsd={totalValueUsd}
           renderHostAppLink={renderHostAppLink}
+          internalUserAddress={internalUserAddress}
         />
 
         <HoldingsIsland isLoggedIn={userId != null} holdings={holdings} />
