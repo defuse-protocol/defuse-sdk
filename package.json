@@ -48,7 +48,7 @@
     "prepare": "husky && ./scripts/gen-defuse-types.sh"
   },
   "dependencies": {
-    "@defuse-protocol/bridge-sdk": "^0.6.0",
+    "@defuse-protocol/bridge-sdk": "^0.7.2",
     "@lifeomic/attempt": "^3.1.0",
     "@noble/curves": "1.4.0",
     "@noble/hashes": "^1.7.1",
