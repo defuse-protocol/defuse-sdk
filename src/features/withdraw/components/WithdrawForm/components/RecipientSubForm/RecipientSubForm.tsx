@@ -254,16 +254,13 @@ export const RecipientSubForm = ({
               {...register("recipient", {
                 validate: {
                   pattern: (value, formValues) => {
-                    if (
-                      !validateAddressSoft(
-                        value,
-                        formValues.blockchain === "near_intents"
-                          ? "near"
-                          : formValues.blockchain
-                      )
-                    ) {
-                      return "Invalid address for the selected blockchain"
-                    }
+                    const error = validateAddressSoft(
+                      value,
+                      formValues.blockchain,
+                      userAddress ?? "",
+                      chainType
+                    )
+                    return error ? error : true
                   },
                 },
               })}
