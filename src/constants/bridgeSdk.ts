@@ -8,4 +8,5 @@ export const bridgeSDK = new BridgeSDK({
     10: ["https://mainnet.optimism.io"],
     43114: ["https://api.avax.network/ext/bc/C/rpc"],
   },
+  referral: "near-intents.intents-referral.near", // TODO: should depend on env
 })

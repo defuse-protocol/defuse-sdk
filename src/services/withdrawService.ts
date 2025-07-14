@@ -83,6 +83,7 @@ type BridgeConfig =
   | {
       bridge: "aurora_engine"
       auroraEngineContractId: string
+      proxyTokenContractId: string | null
     }
   | {
       bridge: "intents"
@@ -203,6 +204,7 @@ export async function prepareWithdraw(
         bridge: "aurora_engine",
         auroraEngineContractId:
           auroraEngineContractId[formValues.tokenOut.chainName],
+        proxyTokenContractId: null, // TODO: provide the correct value once you know it
       }
     : formValues.tokenOut.chainName === "near"
       ? { bridge: "direct", chain: "near:mainnet" }
