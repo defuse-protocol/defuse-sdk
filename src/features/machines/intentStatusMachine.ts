@@ -256,6 +256,7 @@ function toBridgeConfig(
       return {
         bridge,
         auroraEngineContractId: auroraEngineContractId[chainName],
+        proxyTokenContractId: null, // TODO: provide the correct value once you know it
       }
     case "hot_omni":
       return {
