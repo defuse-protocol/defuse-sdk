@@ -51,11 +51,11 @@ export function chainTxExplorer(blockchain: SupportedChainName): string | null {
     case "avalanche":
       return "https://avascan.info/blockchain/c/tx/"
     case "sui":
-      return "https://suiscan.xyz/mainnet/tx/"
+      return "https://suivision.xyz/txblock/"
     case "stellar":
       return "https://stellar.expert/explorer/public/tx/"
     case "aptos":
-      return "https://explorer.aptoslabs.com/tx/"
+      return "https://explorer.aptoslabs.com/txn/"
     default:
       blockchain satisfies never
       return null
