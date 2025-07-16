@@ -11,8 +11,8 @@ export function useTokenChangeNotifier({
     tokenOut: SwappableToken | null
   }) => void
   prevTokensRef: React.MutableRefObject<{
-    tokenIn: SwappableToken
-    tokenOut: SwappableToken
+    tokenIn: SwappableToken | null
+    tokenOut: SwappableToken | null
   }>
 }) {
   const { tokenIn, tokenOut } = SwapUIMachineContext.useSelector(
@@ -23,15 +23,11 @@ export function useTokenChangeNotifier({
   )
 
   useEffect(() => {
-    if (
-      onTokenChange &&
-      (tokenIn !== prevTokensRef.current.tokenIn ||
-        tokenOut !== prevTokensRef.current.tokenOut)
-    ) {
-      onTokenChange({
-        tokenIn,
-        tokenOut,
-      })
+    if (!onTokenChange) return
+
+    const prev = prevTokensRef.current
+    if (tokenIn !== prev.tokenIn || tokenOut !== prev.tokenOut) {
+      onTokenChange({ tokenIn, tokenOut })
       prevTokensRef.current = { tokenIn, tokenOut }
     }
   }, [tokenIn, tokenOut, onTokenChange, prevTokensRef])
