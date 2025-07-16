@@ -14,6 +14,7 @@ import { GiftTakerInvalidClaim } from "./GiftTakerInvalidClaim"
 import { GiftTakerSuccessScreen } from "./GiftTakerSuccessScreen"
 
 export type GiftTakerWidgetProps = {
+  giftId: string | null
   payload: string | null
 
   /** List of available tokens for trading */
@@ -42,6 +43,7 @@ export function GiftTakerWidget(props: GiftTakerWidgetProps) {
 }
 
 function GiftTakerScreens({
+  giftId,
   payload,
   tokenList,
   userAddress,
@@ -52,6 +54,7 @@ function GiftTakerScreens({
 
   const giftTakerRootRef = useActorRef(giftTakerRootMachine, {
     input: {
+      giftId,
       payload,
       tokenList,
     },
@@ -72,15 +75,15 @@ function GiftTakerScreens({
   const claimSnapshot = useSelector(giftTakerClaimRef, (state) => state)
   const error = claimSnapshot?.context.error ?? snapshot.context.error
 
-  const setPayload = useCallback(() => {
+  const setData = useCallback(() => {
     if (payload) {
-      giftTakerRootRef.send({ type: "SET_PAYLOAD", params: { payload } })
+      giftTakerRootRef.send({ type: "SET_DATA", params: { payload, giftId } })
     }
-  }, [giftTakerRootRef, payload])
+  }, [giftTakerRootRef, payload, giftId])
 
   useEffect(() => {
-    setPayload()
-  }, [setPayload])
+    setData()
+  }, [setData])
 
   const signerCredentials: SignerCredentials | null =
     userAddress != null && userChainType != null
