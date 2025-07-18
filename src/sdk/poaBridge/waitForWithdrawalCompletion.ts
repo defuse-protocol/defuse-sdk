@@ -1,15 +1,14 @@
+import { poaBridge } from "@defuse-protocol/internal-utils"
 import { RpcRequestError } from "../../errors/request"
 import { assert, type AssertErrorType } from "../../utils/assert"
 import { wait } from "../../utils/wait"
-import { getWithdrawalStatus } from "./poaBridgeHttpClient"
-import type { types } from "./poaBridgeHttpClient"
 
 export type WaitForWithdrawalCompletionOkType = {
   destinationTxHash: string
   chain: string
 }
 export type WaitForWithdrawalCompletionErrorType =
-  | types.JSONRPCErrorType
+  | poaBridge.httpClient.JSONRPCErrorType
   | AssertErrorType
 
 export async function waitForWithdrawalCompletion({
@@ -24,15 +23,17 @@ export async function waitForWithdrawalCompletion({
   const DEFAULT_WITHDRAWAL_STATUS_INTERVAL_MS = 500
 
   while (!signal.aborted) {
-    const result = await getWithdrawalStatus({
-      withdrawal_hash: txHash,
-    }).catch((err) => {
-      // WITHDRAWALS_NOT_FOUND error is transient, we should keep retrying
-      if (isWithdrawalNotFound(err)) {
-        return null
-      }
-      throw err
-    })
+    const result = await poaBridge.httpClient
+      .getWithdrawalStatus({
+        withdrawal_hash: txHash,
+      })
+      .catch((err) => {
+        // WITHDRAWALS_NOT_FOUND error is transient, we should keep retrying
+        if (isWithdrawalNotFound(err)) {
+          return null
+        }
+        throw err
+      })
 
     if (result != null) {
       const withdrawal = result.withdrawals[index]

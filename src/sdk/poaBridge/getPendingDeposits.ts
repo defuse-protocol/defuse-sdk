@@ -1,19 +1,19 @@
+import { poaBridge } from "@defuse-protocol/internal-utils"
 import type { IntentsUserId } from "../../types/intentsUserId"
-import { getDepositStatus, type types } from "./poaBridgeHttpClient"
 
 type PendingDeposit =
-  types.GetDepositStatusResponse["result"]["deposits"][number] & {
+  poaBridge.httpClient.GetDepositStatusResponse["result"]["deposits"][number] & {
     status: "PENDING"
   }
 
 export type GetPendingDepositsOkType = PendingDeposit[]
 
-export type GetPendingDepositsErrorType = types.JSONRPCErrorType
+export type GetPendingDepositsErrorType = poaBridge.httpClient.JSONRPCErrorType
 
 export async function getPendingDeposits(
   accountId: IntentsUserId
 ): Promise<GetPendingDepositsOkType> {
-  const depositStatus = await getDepositStatus({
+  const depositStatus = await poaBridge.httpClient.getDepositStatus({
     account_id: accountId,
   })
 
