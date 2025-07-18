@@ -1,5 +1,5 @@
+import { logger } from "@defuse-protocol/internal-utils"
 import { assign, fromPromise, setup } from "xstate"
-import { logger } from "../../logger"
 import { emitEvent } from "../../services/emitter"
 import type { BaseTokenInfo, SupportedChainName } from "../../types/base"
 import { assert } from "../../utils/assert"

@@ -1,5 +1,5 @@
+import { logger } from "@defuse-protocol/internal-utils"
 import { assign, fromPromise, setup } from "xstate"
-import { logger } from "../../../logger"
 import {
   type PublishIntentsErr,
   publishIntents,

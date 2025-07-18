@@ -1,4 +1,4 @@
-import { logger } from "../../../logger"
+import { logger } from "@defuse-protocol/internal-utils"
 import { quote } from "../solverRelayHttpClient"
 
 export async function quoteWithLog(

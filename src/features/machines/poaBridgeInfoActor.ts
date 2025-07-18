@@ -1,3 +1,4 @@
+import { logger } from "@defuse-protocol/internal-utils"
 import {
   type ActorRefFrom,
   type SnapshotFrom,
@@ -7,7 +8,6 @@ import {
   setup,
   waitFor,
 } from "xstate"
-import { logger } from "../../logger"
 import {
   getSupportedTokens,
   type types,

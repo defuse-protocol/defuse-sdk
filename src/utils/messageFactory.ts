@@ -1,8 +1,8 @@
+import { logger } from "@defuse-protocol/internal-utils"
 import { sha256 } from "@noble/hashes/sha256"
 import { base64 } from "@scure/base"
 import { getAddress } from "viem"
 import { config } from "../config"
-import { logger } from "../logger"
 import { createWithdrawMemo } from "../sdk/poaBridge/createWithdrawMemo"
 import type { SupportedChainName } from "../types/base"
 import type {

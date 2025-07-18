@@ -1,10 +1,10 @@
+import { logger } from "@defuse-protocol/internal-utils"
 import { useQuery } from "@tanstack/react-query"
 import { Err, Ok, type Result } from "@thames/monads"
 import { type ReactNode, useMemo, useState } from "react"
 import { WidgetRoot } from "../../../components/WidgetRoot"
 import { nearClient } from "../../../constants/nearClient"
 import type { IntentsUserId, SignerCredentials } from "../../../core/formatters"
-import { logger } from "../../../logger"
 import { SwapWidgetProvider } from "../../../providers/SwapWidgetProvider"
 import { getDepositedBalances } from "../../../services/defuseBalanceService"
 import {

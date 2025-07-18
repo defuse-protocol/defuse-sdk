@@ -1,3 +1,4 @@
+import { logger } from "@defuse-protocol/internal-utils"
 import {
   type ActorRefFrom,
   type DoneActorEvent,
@@ -10,7 +11,6 @@ import {
   setup,
 } from "xstate"
 import type { SignerCredentials } from "../../../core/formatters"
-import { logger } from "../../../logger"
 import { waitForIntentSettlement } from "../../../sdk/solverRelay/waitForIntentSettlement"
 import { emitEvent } from "../../../services/emitter"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../../types/base"

@@ -1,4 +1,5 @@
 import type { BridgeSDK } from "@defuse-protocol/bridge-sdk"
+import { logger } from "@defuse-protocol/internal-utils"
 import {
   type ActorRef,
   type Snapshot,
@@ -10,7 +11,6 @@ import {
 } from "xstate"
 import { auroraEngineContractId } from "../../constants/aurora"
 import { bridgeSDK } from "../../constants/bridgeSdk"
-import { logger } from "../../logger"
 import {
   type IntentSettlementResult,
   waitForIntentSettlement,

@@ -1,3 +1,4 @@
+import { logger } from "@defuse-protocol/internal-utils"
 import type { providers } from "near-api-js"
 import {
   type ActorRefFrom,
@@ -8,7 +9,6 @@ import {
   setup,
   spawnChild,
 } from "xstate"
-import { logger } from "../../logger"
 import { emitEvent } from "../../services/emitter"
 import type { QuoteResult } from "../../services/quoteService"
 import type { AuthMethod } from "../../types/authHandle"

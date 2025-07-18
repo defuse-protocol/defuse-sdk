@@ -1,6 +1,6 @@
+import { logger } from "@defuse-protocol/internal-utils"
 import { type PromiseActorLogic, assign, setup } from "xstate"
 import type { SignerCredentials } from "../../../core/formatters"
-import { logger } from "../../../logger"
 import type {
   BaseTokenInfo,
   TokenValue,

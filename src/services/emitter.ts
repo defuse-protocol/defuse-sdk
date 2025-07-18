@@ -1,5 +1,5 @@
 import type { EventEmitter } from "node:events"
-import { logger } from "../logger"
+import { logger } from "@defuse-protocol/internal-utils"
 
 // internal reference; starts out undefined
 let bus: EventEmitter

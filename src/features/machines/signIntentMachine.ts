@@ -1,10 +1,10 @@
+import { logger } from "@defuse-protocol/internal-utils"
 import { assertEvent, assign, fromPromise, setup } from "xstate"
 import { nearClient } from "../../constants/nearClient"
 import {
   type SignerCredentials,
   formatSignedIntent,
 } from "../../core/formatters"
-import { logger } from "../../logger"
 import type { MultiPayload } from "../../types/defuse-contracts-types"
 import type {
   WalletMessage,

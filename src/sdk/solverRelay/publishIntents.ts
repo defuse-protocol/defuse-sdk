@@ -1,6 +1,6 @@
+import { logger } from "@defuse-protocol/internal-utils"
 import { retry } from "@lifeomic/attempt"
 import { Err, Ok, type Result } from "@thames/monads"
-import { logger } from "../../logger"
 import * as solverRelayClient from "./solverRelayHttpClient"
 import {
   type ParsedPublishErrors,

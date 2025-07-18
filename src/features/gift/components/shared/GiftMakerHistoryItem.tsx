@@ -1,3 +1,4 @@
+import { logger } from "@defuse-protocol/internal-utils"
 import {
   CheckCircle,
   Check as CheckIcon,
@@ -10,7 +11,6 @@ import { useCallback, useContext, useState } from "react"
 import type { SignerCredentials } from "src/core/formatters"
 import { createActor } from "xstate"
 import { Copy } from "../../../../components/IntentCard/CopyButton"
-import { logger } from "../../../../logger"
 import type { TokenValue } from "../../../../types/base"
 import { assert } from "../../../../utils/assert"
 import {

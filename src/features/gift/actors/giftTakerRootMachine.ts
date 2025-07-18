@@ -1,7 +1,7 @@
+import { logger } from "@defuse-protocol/internal-utils"
 import { assert } from "src/utils/assert"
 import { type PromiseActorLogic, assign, setup } from "xstate"
 import type { SignerCredentials } from "../../../core/formatters"
-import { logger } from "../../../logger"
 import type { PublishIntentsErr } from "../../../sdk/solverRelay/publishIntents"
 import { emitEvent } from "../../../services/emitter"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../../types/base"

@@ -1,3 +1,4 @@
+import { logger } from "@defuse-protocol/internal-utils"
 import { base64 } from "@scure/base"
 import { assertEvent, setup } from "xstate"
 import {
@@ -5,7 +6,6 @@ import {
   formatSignedIntent,
 } from "../../../core/formatters"
 import { createSwapIntentMessage } from "../../../core/messages"
-import { logger } from "../../../logger"
 import { calculateSplitAmounts } from "../../../sdk/aggregatedQuote/calculateSplitAmounts"
 import { AmountMismatchError } from "../../../sdk/aggregatedQuote/errors/amountMismatchError"
 import type {

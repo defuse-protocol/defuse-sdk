@@ -1,3 +1,4 @@
+import { logger } from "@defuse-protocol/internal-utils"
 import { Checkbox, Flex, Text, Tooltip } from "@radix-ui/themes"
 import { useSelector } from "@xstate/react"
 import { useEffect } from "react"
@@ -21,7 +22,6 @@ import { FieldComboInput } from "../../../../components/Form/FieldComboInput"
 import { Island } from "../../../../components/Island"
 import { IslandHeader } from "../../../../components/IslandHeader"
 import { nearClient } from "../../../../constants/nearClient"
-import { logger } from "../../../../logger"
 import type {
   BaseTokenInfo,
   SupportedChainName,

@@ -1,6 +1,6 @@
+import { logger } from "@defuse-protocol/internal-utils"
 import { type ReactNode, createContext } from "react"
 import { nearClient } from "../../../constants/nearClient"
-import { logger } from "../../../logger"
 import type { AuthMethod } from "../../../types/authHandle"
 import { SwapUIMachineContext } from "./SwapUIMachineProvider"
 

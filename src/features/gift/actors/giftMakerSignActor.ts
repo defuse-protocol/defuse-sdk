@@ -1,13 +1,13 @@
 import { base64 } from "@scure/base"
 import type { MultiPayload } from "src/types/defuse-contracts-types"
 
+import { logger } from "@defuse-protocol/internal-utils"
 import { type PromiseActorLogic, assertEvent, setup } from "xstate"
 import {
   type SignerCredentials,
   formatSignedIntent,
 } from "../../../core/formatters"
 import { createTransferMessage } from "../../../core/messages"
-import { logger } from "../../../logger"
 import { calculateSplitAmounts } from "../../../sdk/aggregatedQuote/calculateSplitAmounts"
 import { AmountMismatchError } from "../../../sdk/aggregatedQuote/errors/amountMismatchError"
 import type {

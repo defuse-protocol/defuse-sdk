@@ -1,5 +1,5 @@
+import { logger } from "@defuse-protocol/internal-utils"
 import { useQuery } from "@tanstack/react-query"
-import { logger } from "../../../../../logger"
 import { generateHLAddress } from "../../../../../sdk/hyperunit/apis"
 import type {
   BaseTokenInfo,

@@ -1,5 +1,5 @@
+import { logger } from "@defuse-protocol/internal-utils"
 import * as v from "valibot"
-import { logger } from "../../../logger"
 import {
   GiftStorageSchemaV0,
   GiftStorageSchemaV1,

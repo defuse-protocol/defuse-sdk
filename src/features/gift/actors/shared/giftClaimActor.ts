@@ -1,7 +1,7 @@
+import { logger } from "@defuse-protocol/internal-utils"
 import { type SignerCredentials, formatSignedIntent } from "src/core/formatters"
 import type { MultiPayload } from "src/types/defuse-contracts-types"
 import { assertEvent, assign, fromPromise, setup } from "xstate"
-import { logger } from "../../../../logger"
 import {
   type PublishIntentsErr,
   publishIntents,

@@ -1,8 +1,8 @@
+import { logger } from "@defuse-protocol/internal-utils"
 import { base64 } from "@scure/base"
 import { createEmptyIntentMessage } from "src/core/messages"
 import { assertEvent, assign, fromPromise, setup } from "xstate"
 import type { SignerCredentials } from "../../../core/formatters"
-import { logger } from "../../../logger"
 import {
   type PublishIntentsErr,
   publishIntents,

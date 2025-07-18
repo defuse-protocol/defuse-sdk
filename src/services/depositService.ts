@@ -1,3 +1,4 @@
+import { logger } from "@defuse-protocol/internal-utils"
 import {
   createAssociatedTokenAccountInstruction,
   createTransferInstruction,
@@ -29,7 +30,6 @@ import type { depositGenerateAddressMachine } from "../features/machines/deposit
 import type { depositTokenBalanceMachine } from "../features/machines/depositTokenBalanceMachine"
 import { getNearTxSuccessValue } from "../features/machines/getTxMachine"
 import type { storageDepositAmountMachine } from "../features/machines/storageDepositAmountMachine"
-import { logger } from "../logger"
 import { BlockchainEnum } from "../sdk/poaBridge/constants/blockchains"
 import {
   getDepositAddress,

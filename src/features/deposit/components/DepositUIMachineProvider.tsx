@@ -1,3 +1,4 @@
+import { logger } from "@defuse-protocol/internal-utils"
 import { createActorContext } from "@xstate/react"
 import type { PropsWithChildren, ReactElement, ReactNode } from "react"
 import { useFormContext } from "react-hook-form"
@@ -10,7 +11,6 @@ import {
   fromPromise,
 } from "xstate"
 import { siloToSiloAddress } from "../../../constants/aurora"
-import { logger } from "../../../logger"
 import {
   checkNearTransactionValidity,
   createApproveTransaction,

@@ -1,4 +1,4 @@
-import { type ILogger, setLogger } from "./logger"
+import { type ILogger, setLogger } from "@defuse-protocol/internal-utils"
 
 interface SDKConfig {
   logger?: ILogger

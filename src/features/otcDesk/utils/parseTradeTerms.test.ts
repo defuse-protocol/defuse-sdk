@@ -1,3 +1,4 @@
+import { logger } from "@defuse-protocol/internal-utils"
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 import {
@@ -8,7 +9,6 @@ import {
   createEmptyIntentMessage,
   createSwapIntentMessage,
 } from "../../../core/messages"
-import { logger } from "../../../logger"
 import { authHandleToIntentsUserId } from "../../../utils/authIdentity"
 import { parseTradeTerms } from "./parseTradeTerms"
 

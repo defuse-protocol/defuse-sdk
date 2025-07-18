@@ -1,7 +1,7 @@
+import { logger } from "@defuse-protocol/internal-utils"
 import { useQuery } from "@tanstack/react-query"
 import { Err, type Result } from "@thames/monads"
 import { nearClient } from "src/constants/nearClient"
-import { logger } from "../../../logger"
 import { getDepositedBalances } from "../../../services/defuseBalanceService"
 import type { AggregatedQuote } from "../../../services/quoteService"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../../types/base"

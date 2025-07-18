@@ -1,4 +1,4 @@
-import { logger } from "../../../logger"
+import { logger } from "@defuse-protocol/internal-utils"
 
 export function formatGiftDate(dateString: number): string {
   try {

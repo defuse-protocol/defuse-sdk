@@ -1,9 +1,9 @@
+import { logger } from "@defuse-protocol/internal-utils"
 import { ECDSASigValue } from "@peculiar/asn1-ecc"
 import { AsnParser } from "@peculiar/asn1-schema"
 import { base58, hex } from "@scure/base"
 import { base64urlnopad } from "@scure/base"
 import { sign } from "tweetnacl"
-import { logger } from "../logger"
 import type { CredentialKey, CurveType } from "../types/webAuthn"
 import { concatUint8Arrays } from "./uint8Array"
 

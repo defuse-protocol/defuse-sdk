@@ -2,6 +2,7 @@ import {
   type FeeEstimation,
   FeeExceedsAmountError,
 } from "@defuse-protocol/bridge-sdk"
+import { logger } from "@defuse-protocol/internal-utils"
 import { Err, Ok, type Result } from "@thames/monads"
 import { type ActorRefFrom, waitFor } from "xstate"
 import { auroraEngineContractId } from "../constants/aurora"
@@ -19,7 +20,6 @@ import { getPOABridgeInfo } from "../features/machines/poaBridgeInfoActor"
 import { calcWithdrawAmount } from "../features/machines/swapIntentMachine"
 import type { State as WithdrawFormContext } from "../features/machines/withdrawFormReducer"
 import { isNearIntentsNetwork } from "../features/withdraw/components/WithdrawForm/utils"
-import { logger } from "../logger"
 import { calculateSplitAmounts } from "../sdk/aggregatedQuote/calculateSplitAmounts"
 import type { BaseTokenInfo, TokenValue, UnifiedTokenInfo } from "../types/base"
 import type { Intent } from "../types/defuse-contracts-types"

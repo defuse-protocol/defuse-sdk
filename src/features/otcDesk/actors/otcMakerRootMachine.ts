@@ -1,3 +1,4 @@
+import { logger } from "@defuse-protocol/internal-utils"
 import {
   type ActorRefFrom,
   type PromiseActorLogic,
@@ -7,7 +8,6 @@ import {
   setup,
 } from "xstate"
 import type { SignerCredentials } from "../../../core/formatters"
-import { logger } from "../../../logger"
 import { emitEvent } from "../../../services/emitter"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../../types/base"
 import type { MultiPayload } from "../../../types/defuse-contracts-types"

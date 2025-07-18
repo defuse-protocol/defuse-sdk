@@ -1,4 +1,4 @@
-import { logger } from "../logger"
+import { logger } from "@defuse-protocol/internal-utils"
 import type { BaseTokenInfo } from "../types/base"
 import { isFungibleToken } from "../utils/token"
 import {

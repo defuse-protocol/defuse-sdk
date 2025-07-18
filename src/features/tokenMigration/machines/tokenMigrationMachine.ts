@@ -1,8 +1,8 @@
+import { logger } from "@defuse-protocol/internal-utils"
 import { assign, fromPromise, setup } from "xstate"
 import { config } from "../../../config"
 import { nearClient } from "../../../constants/nearClient"
 import type { SignerCredentials } from "../../../core/formatters"
-import { logger } from "../../../logger"
 import { publishIntent } from "../../../sdk/solverRelay/publishIntent"
 import {
   type IntentSettlementResult,

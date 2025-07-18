@@ -1,6 +1,6 @@
+import { logger } from "@defuse-protocol/internal-utils"
 import { Ok, type Result } from "@thames/monads"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "src/types/base"
-import { logger } from "../../../logger"
 import { assert } from "../../../utils/assert"
 import type { GiftMakerHistory } from "../stores/giftMakerHistory"
 import { findTokenFromDiff } from "./deriveToken"

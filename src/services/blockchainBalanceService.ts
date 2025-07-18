@@ -1,3 +1,4 @@
+import { logger } from "@defuse-protocol/internal-utils"
 import { base64 } from "@scure/base"
 import { AccountLayout } from "@solana/spl-token"
 import { Connection, PublicKey } from "@solana/web3.js"
@@ -5,7 +6,6 @@ import { Address as TonAddress, beginCell } from "@ton/ton"
 import * as v from "valibot"
 import { http, type Address, createPublicClient, erc20Abi } from "viem"
 import { nearClient } from "../constants/nearClient"
-import { logger } from "../logger"
 import { createTonClient } from "../services/tonJettonService"
 import { decodeQueryResult } from "../utils/near"
 
