@@ -1,4 +1,4 @@
-import { poaBridge } from "@defuse-protocol/internal-utils"
+import { BlockchainEnum, poaBridge } from "@defuse-protocol/internal-utils"
 import {
   createAssociatedTokenAccountInstruction,
   createTransferInstruction,
@@ -31,7 +31,6 @@ import type { depositTokenBalanceMachine } from "../features/machines/depositTok
 import { getNearTxSuccessValue } from "../features/machines/getTxMachine"
 import type { storageDepositAmountMachine } from "../features/machines/storageDepositAmountMachine"
 import { logger } from "../logger"
-import { BlockchainEnum } from "../sdk/poaBridge/constants/blockchains"
 import { AuthMethod } from "../types/authHandle"
 import type { BaseTokenInfo, SupportedChainName } from "../types/base"
 import type { SendTransactionEVMParams, Transaction } from "../types/deposit"

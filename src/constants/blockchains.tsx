@@ -1,11 +1,11 @@
-import { poaBridge } from "@defuse-protocol/internal-utils"
+import { BlockchainEnum } from "@defuse-protocol/internal-utils"
 import type { ReactNode } from "react"
 import { NetworkIcon } from "../components/Network/NetworkIcon"
 
 type BlockchainOption = {
   label: string
   icon: ReactNode
-  value: poaBridge.BlockchainEnumType
+  value: BlockchainEnum
   tags?: string[]
 }
 
@@ -31,11 +31,11 @@ export function isBlockchainOption(
 }
 
 export function getBlockchainsOptions(): Record<
-  poaBridge.BlockchainEnumType,
+  BlockchainEnum,
   BlockchainOption
 > {
-  const options: Record<poaBridge.BlockchainEnumType, BlockchainOption> = {
-    [poaBridge.BlockchainEnum.NEAR]: {
+  const options: Record<BlockchainEnum, BlockchainOption> = {
+    [BlockchainEnum.NEAR]: {
       label: "Near",
       icon: (
         <NetworkIcon
@@ -43,10 +43,10 @@ export function getBlockchainsOptions(): Record<
           chainName="near"
         />
       ),
-      value: poaBridge.BlockchainEnum.NEAR,
+      value: BlockchainEnum.NEAR,
       tags: ["vol:4"],
     },
-    [poaBridge.BlockchainEnum.ETHEREUM]: {
+    [BlockchainEnum.ETHEREUM]: {
       label: "Ethereum",
       icon: (
         <NetworkIcon
@@ -54,10 +54,10 @@ export function getBlockchainsOptions(): Record<
           chainName="eth"
         />
       ),
-      value: poaBridge.BlockchainEnum.ETHEREUM,
+      value: BlockchainEnum.ETHEREUM,
       tags: ["vol:6"],
     },
-    [poaBridge.BlockchainEnum.BASE]: {
+    [BlockchainEnum.BASE]: {
       label: "Base",
       icon: (
         <NetworkIcon
@@ -65,10 +65,10 @@ export function getBlockchainsOptions(): Record<
           chainName="base"
         />
       ),
-      value: poaBridge.BlockchainEnum.BASE,
+      value: BlockchainEnum.BASE,
       tags: ["vol:9"],
     },
-    [poaBridge.BlockchainEnum.ARBITRUM]: {
+    [BlockchainEnum.ARBITRUM]: {
       label: "Arbitrum",
       icon: (
         <NetworkIcon
@@ -76,10 +76,10 @@ export function getBlockchainsOptions(): Record<
           chainName="arbitrum"
         />
       ),
-      value: poaBridge.BlockchainEnum.ARBITRUM,
+      value: BlockchainEnum.ARBITRUM,
       tags: ["vol:10"],
     },
-    [poaBridge.BlockchainEnum.BITCOIN]: {
+    [BlockchainEnum.BITCOIN]: {
       label: "Bitcoin",
       icon: (
         <NetworkIcon
@@ -87,10 +87,10 @@ export function getBlockchainsOptions(): Record<
           chainName="bitcoin"
         />
       ),
-      value: poaBridge.BlockchainEnum.BITCOIN,
+      value: BlockchainEnum.BITCOIN,
       tags: ["vol:8"],
     },
-    [poaBridge.BlockchainEnum.SOLANA]: {
+    [BlockchainEnum.SOLANA]: {
       label: "Solana",
       icon: (
         <NetworkIcon
@@ -98,10 +98,10 @@ export function getBlockchainsOptions(): Record<
           chainName="solana"
         />
       ),
-      value: poaBridge.BlockchainEnum.SOLANA,
+      value: BlockchainEnum.SOLANA,
       tags: ["vol:3"],
     },
-    [poaBridge.BlockchainEnum.DOGECOIN]: {
+    [BlockchainEnum.DOGECOIN]: {
       label: "Dogecoin",
       icon: (
         <NetworkIcon
@@ -109,10 +109,10 @@ export function getBlockchainsOptions(): Record<
           chainName="dogecoin"
         />
       ),
-      value: poaBridge.BlockchainEnum.DOGECOIN,
+      value: BlockchainEnum.DOGECOIN,
       tags: ["vol:7"],
     },
-    [poaBridge.BlockchainEnum.TURBOCHAIN]: {
+    [BlockchainEnum.TURBOCHAIN]: {
       label: "TurboChain",
       icon: (
         <NetworkIcon
@@ -120,10 +120,10 @@ export function getBlockchainsOptions(): Record<
           chainName="turbochain"
         />
       ),
-      value: poaBridge.BlockchainEnum.TURBOCHAIN,
+      value: BlockchainEnum.TURBOCHAIN,
       tags: ["vol:102"],
     },
-    [poaBridge.BlockchainEnum.AURORA]: {
+    [BlockchainEnum.AURORA]: {
       label: "Aurora",
       icon: (
         <NetworkIcon
@@ -131,10 +131,10 @@ export function getBlockchainsOptions(): Record<
           chainName="aurora"
         />
       ),
-      value: poaBridge.BlockchainEnum.AURORA,
+      value: BlockchainEnum.AURORA,
       tags: ["vol:101"],
     },
-    [poaBridge.BlockchainEnum.XRPLEDGER]: {
+    [BlockchainEnum.XRPLEDGER]: {
       label: "XRP Ledger",
       icon: (
         <NetworkIcon
@@ -142,10 +142,10 @@ export function getBlockchainsOptions(): Record<
           chainName="XRP Ledger"
         />
       ),
-      value: poaBridge.BlockchainEnum.XRPLEDGER,
+      value: BlockchainEnum.XRPLEDGER,
       tags: ["vol:10"],
     },
-    [poaBridge.BlockchainEnum.ZCASH]: {
+    [BlockchainEnum.ZCASH]: {
       label: "Zcash",
       icon: (
         <NetworkIcon
@@ -153,10 +153,10 @@ export function getBlockchainsOptions(): Record<
           chainName="zcash"
         />
       ),
-      value: poaBridge.BlockchainEnum.ZCASH,
+      value: BlockchainEnum.ZCASH,
       tags: ["vol:1"],
     },
-    [poaBridge.BlockchainEnum.GNOSIS]: {
+    [BlockchainEnum.GNOSIS]: {
       label: "Gnosis",
       icon: (
         <NetworkIcon
@@ -164,10 +164,10 @@ export function getBlockchainsOptions(): Record<
           chainName="Gnosis"
         />
       ),
-      value: poaBridge.BlockchainEnum.GNOSIS,
+      value: BlockchainEnum.GNOSIS,
       tags: ["vol:5"],
     },
-    [poaBridge.BlockchainEnum.BERACHAIN]: {
+    [BlockchainEnum.BERACHAIN]: {
       label: "BeraChain",
       icon: (
         <NetworkIcon
@@ -175,10 +175,10 @@ export function getBlockchainsOptions(): Record<
           chainName="BeraChain"
         />
       ),
-      value: poaBridge.BlockchainEnum.BERACHAIN,
+      value: BlockchainEnum.BERACHAIN,
       tags: ["vol:11"],
     },
-    [poaBridge.BlockchainEnum.TRON]: {
+    [BlockchainEnum.TRON]: {
       label: "Tron",
       icon: (
         <NetworkIcon
@@ -186,10 +186,10 @@ export function getBlockchainsOptions(): Record<
           chainName="Tron"
         />
       ),
-      value: poaBridge.BlockchainEnum.TRON,
+      value: BlockchainEnum.TRON,
       tags: ["vol:2"],
     },
-    [poaBridge.BlockchainEnum.TUXAPPCHAIN]: {
+    [BlockchainEnum.TUXAPPCHAIN]: {
       label: "TuxaChain",
       icon: (
         <NetworkIcon
@@ -197,10 +197,10 @@ export function getBlockchainsOptions(): Record<
           chainName="tuxappchain"
         />
       ),
-      value: poaBridge.BlockchainEnum.TUXAPPCHAIN,
+      value: BlockchainEnum.TUXAPPCHAIN,
       tags: ["vol:103"],
     },
-    [poaBridge.BlockchainEnum.VERTEX]: {
+    [BlockchainEnum.VERTEX]: {
       label: "Vertex",
       icon: (
         <NetworkIcon
@@ -208,10 +208,10 @@ export function getBlockchainsOptions(): Record<
           chainName="vertex"
         />
       ),
-      value: poaBridge.BlockchainEnum.VERTEX,
+      value: BlockchainEnum.VERTEX,
       tags: ["vol:104"],
     },
-    [poaBridge.BlockchainEnum.OPTIMA]: {
+    [BlockchainEnum.OPTIMA]: {
       label: "Optima",
       icon: (
         <NetworkIcon
@@ -219,10 +219,10 @@ export function getBlockchainsOptions(): Record<
           chainName="optima"
         />
       ),
-      value: poaBridge.BlockchainEnum.OPTIMA,
+      value: BlockchainEnum.OPTIMA,
       tags: ["vol:105"],
     },
-    [poaBridge.BlockchainEnum.COINEASY]: {
+    [BlockchainEnum.COINEASY]: {
       label: "CoinEasy",
       icon: (
         <NetworkIcon
@@ -230,10 +230,10 @@ export function getBlockchainsOptions(): Record<
           chainName="coineasy"
         />
       ),
-      value: poaBridge.BlockchainEnum.COINEASY,
+      value: BlockchainEnum.COINEASY,
       tags: ["vol:106"],
     },
-    [poaBridge.BlockchainEnum.POLYGON]: {
+    [BlockchainEnum.POLYGON]: {
       label: "Polygon",
       icon: (
         <NetworkIcon
@@ -241,10 +241,10 @@ export function getBlockchainsOptions(): Record<
           chainName="Polygon"
         />
       ),
-      value: poaBridge.BlockchainEnum.POLYGON,
+      value: BlockchainEnum.POLYGON,
       tags: [],
     },
-    [poaBridge.BlockchainEnum.BSC]: {
+    [BlockchainEnum.BSC]: {
       label: "BNB Smart Chain",
       icon: (
         <NetworkIcon
@@ -252,10 +252,10 @@ export function getBlockchainsOptions(): Record<
           chainName="BNB Smart Chain"
         />
       ),
-      value: poaBridge.BlockchainEnum.BSC,
+      value: BlockchainEnum.BSC,
       tags: [],
     },
-    [poaBridge.BlockchainEnum.HYPERLIQUID]: {
+    [BlockchainEnum.HYPERLIQUID]: {
       label: "Hyperliquid",
       icon: (
         <NetworkIcon
@@ -263,10 +263,10 @@ export function getBlockchainsOptions(): Record<
           chainName="Hyperliquid"
         />
       ),
-      value: poaBridge.BlockchainEnum.HYPERLIQUID,
+      value: BlockchainEnum.HYPERLIQUID,
       tags: [],
     },
-    [poaBridge.BlockchainEnum.TON]: {
+    [BlockchainEnum.TON]: {
       label: "TON",
       icon: (
         <NetworkIcon
@@ -274,10 +274,10 @@ export function getBlockchainsOptions(): Record<
           chainName="TON"
         />
       ),
-      value: poaBridge.BlockchainEnum.TON,
+      value: BlockchainEnum.TON,
       tags: [],
     },
-    [poaBridge.BlockchainEnum.OPTIMISM]: {
+    [BlockchainEnum.OPTIMISM]: {
       label: "Optimism",
       icon: (
         <NetworkIcon
@@ -285,10 +285,10 @@ export function getBlockchainsOptions(): Record<
           chainName="Optimism"
         />
       ),
-      value: poaBridge.BlockchainEnum.OPTIMISM,
+      value: BlockchainEnum.OPTIMISM,
       tags: [],
     },
-    [poaBridge.BlockchainEnum.AVALANCHE]: {
+    [BlockchainEnum.AVALANCHE]: {
       label: "Avalanche",
       icon: (
         <NetworkIcon
@@ -296,10 +296,10 @@ export function getBlockchainsOptions(): Record<
           chainName="Avalanche"
         />
       ),
-      value: poaBridge.BlockchainEnum.AVALANCHE,
+      value: BlockchainEnum.AVALANCHE,
       tags: [],
     },
-    [poaBridge.BlockchainEnum.SUI]: {
+    [BlockchainEnum.SUI]: {
       label: "Sui",
       icon: (
         <NetworkIcon
@@ -307,10 +307,10 @@ export function getBlockchainsOptions(): Record<
           chainName="Sui"
         />
       ),
-      value: poaBridge.BlockchainEnum.SUI,
+      value: BlockchainEnum.SUI,
       tags: [],
     },
-    [poaBridge.BlockchainEnum.STELLAR]: {
+    [BlockchainEnum.STELLAR]: {
       label: "Stellar",
       icon: (
         <NetworkIcon
@@ -318,10 +318,10 @@ export function getBlockchainsOptions(): Record<
           chainName="Stellar"
         />
       ),
-      value: poaBridge.BlockchainEnum.STELLAR,
+      value: BlockchainEnum.STELLAR,
       tags: [],
     },
-    [poaBridge.BlockchainEnum.APTOS]: {
+    [BlockchainEnum.APTOS]: {
       label: "Aptos",
       icon: (
         <NetworkIcon
@@ -329,7 +329,7 @@ export function getBlockchainsOptions(): Record<
           chainName="Aptos"
         />
       ),
-      value: poaBridge.BlockchainEnum.APTOS,
+      value: BlockchainEnum.APTOS,
       tags: [],
     },
   }
@@ -338,8 +338,8 @@ export function getBlockchainsOptions(): Record<
 }
 
 function sortBlockchainOptionsByVolume(
-  options: Record<poaBridge.BlockchainEnumType, BlockchainOption>
-): Record<poaBridge.BlockchainEnumType, BlockchainOption> {
+  options: Record<BlockchainEnum, BlockchainOption>
+): Record<BlockchainEnum, BlockchainOption> {
   const sortedEntries = Object.entries(options).sort(([, a], [, b]) => {
     const volTagA = a.tags?.find((tag) => tag.startsWith("vol:"))
     const volTagB = b.tags?.find((tag) => tag.startsWith("vol:"))
@@ -351,7 +351,7 @@ function sortBlockchainOptionsByVolume(
   })
 
   return Object.fromEntries(sortedEntries) as Record<
-    poaBridge.BlockchainEnumType,
+    BlockchainEnum,
     BlockchainOption
   >
 }
