@@ -4,10 +4,6 @@ import { nearClient } from "../../../constants/nearClient"
 import type { SignerCredentials } from "../../../core/formatters"
 import { logger } from "../../../logger"
 import { publishIntent } from "../../../sdk/solverRelay/publishIntent"
-import {
-  type IntentSettlementResult,
-  waitForIntentSettlement,
-} from "../../../sdk/solverRelay/waitForIntentSettlement"
 import { getDepositedBalances } from "../../../services/defuseBalanceService"
 import type { IntentsUserId } from "../../../types/intentsUserId"
 import type { WalletSignatureResult } from "../../../types/walletMessage"
@@ -34,7 +30,7 @@ export const tokenMigrationMachine = setup({
       signature: null | WalletSignatureResult
       intentHash: null | string
       error: null | string
-      intentStatus: null | IntentSettlementResult
+      intentStatus: null | solverRelay.WaitForIntentSettlementReturnType
     },
   },
 
@@ -65,7 +61,13 @@ export const tokenMigrationMachine = setup({
         input,
         signal,
       }: { input: { intentHash: string }; signal: AbortSignal }) =>
-        waitForIntentSettlement(signal, input.intentHash)
+        solverRelay
+          .waitForIntentSettlement({ signal, intentHash: input.intentHash })
+          .then((result) => ({
+            ...result,
+            status:
+              result.txHash != null ? "SETTLED" : "NOT_FOUND_OR_NOT_VALID",
+          }))
     ),
   },
 

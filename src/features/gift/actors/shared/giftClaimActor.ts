@@ -6,7 +6,6 @@ import {
   type PublishIntentsErr,
   publishIntents,
 } from "../../../../sdk/solverRelay/publishIntents"
-import { waitForIntentSettlement } from "../../../../sdk/solverRelay/waitForIntentSettlement"
 import { assert } from "../../../../utils/assert"
 import { signGiftTakerMessage } from "../../utils/signGiftTakerMessage"
 import type { GiftInfo } from "./getGiftInfo"
@@ -146,14 +145,22 @@ export const giftClaimActor = setup({
       > => {
         const intentHash = input.intentHashes[0]
         assert(intentHash, "intentHash is not defined")
-        const result = await waitForIntentSettlement(signal, intentHash)
-        if (result.status === "NOT_FOUND_OR_NOT_VALID") {
-          return {
-            tag: "err" as const,
-            value: { reason: result.status },
+        try {
+          await solverRelay.waitForIntentSettlement({
+            signal,
+            intentHash,
+          })
+          return { tag: "ok" as const }
+        } catch (err) {
+          if (err instanceof solverRelay.IntentSettlementError) {
+            return {
+              tag: "err" as const,
+              value: { reason: "NOT_FOUND_OR_NOT_VALID" },
+            }
           }
+          // Optionally handle/log other error types here
+          throw err
         }
-        return { tag: "ok" as const }
       }
     ),
   },

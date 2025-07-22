@@ -1,8 +1,5 @@
+import type { solverRelay } from "@defuse-protocol/internal-utils"
 import { base58, base64, hex } from "@scure/base"
-import type {
-  Params,
-  PublishIntentRequest,
-} from "../sdk/solverRelay/solverRelayHttpClient/types"
 import type { AuthMethod } from "../types/authHandle"
 import type { WalletSignatureResult } from "../types/walletMessage"
 import { assert } from "./assert"
@@ -11,7 +8,7 @@ import { makeWebAuthnMultiPayload } from "./multiPayload/webauthn"
 export function prepareSwapSignedData(
   signature: WalletSignatureResult,
   userInfo: { userAddress: string; userChainType: AuthMethod }
-): Params<PublishIntentRequest>["signed_data"] {
+): solverRelay.Params<solverRelay.PublishIntentRequest>["signed_data"] {
   const signatureType = signature.type
   switch (signatureType) {
     case "NEP413": {

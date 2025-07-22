@@ -1,4 +1,5 @@
 import type { BridgeSDK } from "@defuse-protocol/bridge-sdk"
+import { solverRelay } from "@defuse-protocol/internal-utils"
 import {
   type ActorRef,
   type Snapshot,
@@ -11,10 +12,6 @@ import {
 import { auroraEngineContractId } from "../../constants/aurora"
 import { bridgeSDK } from "../../constants/bridgeSdk"
 import { logger } from "../../logger"
-import {
-  type IntentSettlementResult,
-  waitForIntentSettlement,
-} from "../../sdk/solverRelay/waitForIntentSettlement"
 import type {
   BaseTokenInfo,
   SupportedBridge,
@@ -61,8 +58,10 @@ export const intentStatusMachine = setup({
       logger.error(params.error)
     },
     setSettlementResult: assign({
-      txHash: (_, settlementResult: IntentSettlementResult) =>
-        settlementResult.txHash,
+      txHash: (
+        _,
+        settlementResult: solverRelay.WaitForIntentSettlementReturnType
+      ) => settlementResult.txHash,
     }),
     setBridgeTransactionResult: assign({
       bridgeTransactionResult: (
@@ -79,8 +78,11 @@ export const intentStatusMachine = setup({
       }: {
         input: { intentHash: string }
         signal: AbortSignal
-      }): Promise<IntentSettlementResult> =>
-        waitForIntentSettlement(signal, input.intentHash)
+      }): Promise<solverRelay.WaitForIntentSettlementReturnType> =>
+        solverRelay.waitForIntentSettlement({
+          signal,
+          intentHash: input.intentHash,
+        })
     ),
     waitForBridgeActor: fromPromise(
       async ({
@@ -116,8 +118,10 @@ export const intentStatusMachine = setup({
     ),
   },
   guards: {
-    isSettled: (_, settlementResult: IntentSettlementResult) =>
-      settlementResult.status === "SETTLED",
+    isSettled: (
+      _,
+      settlementResult: solverRelay.WaitForIntentSettlementReturnType
+    ) => !!settlementResult.txHash,
     isWithdraw: ({ context }) => {
       return context.intentDescription.type === "withdraw"
     },
