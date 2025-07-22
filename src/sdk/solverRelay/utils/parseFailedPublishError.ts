@@ -68,7 +68,7 @@ export function convertPublishIntentToLegacyFormat(
   | { tag: "ok"; value: string }
   | {
       tag: "err"
-      value: { reason: "ERR_CANNOT_PUBLISH_INTENT"; server_reason: string }
+      value: ParsedPublishErrors
     } {
   if (result.isOk()) {
     return { tag: "ok", value: result.unwrap() }
@@ -78,41 +78,41 @@ export function convertPublishIntentToLegacyFormat(
   const errorCode = error.code
 
   // Map new PublishErrorCode to old ParsedPublishErrors format
-  let serverReason: string
+  let reason: ParsedPublishErrors["reason"]
   switch (errorCode) {
     case "SIGNATURE_EXPIRED":
-      serverReason = "RELAY_PUBLISH_SIGNATURE_EXPIRED"
+      reason = "RELAY_PUBLISH_SIGNATURE_EXPIRED"
       break
     case "INTERNAL_ERROR":
-      serverReason = "RELAY_PUBLISH_INTERNAL_ERROR"
+      reason = "RELAY_PUBLISH_INTERNAL_ERROR"
       break
     case "SIGNATURE_INVALID":
-      serverReason = "RELAY_PUBLISH_SIGNATURE_INVALID"
+      reason = "RELAY_PUBLISH_SIGNATURE_INVALID"
       break
     case "NONCE_USED":
-      serverReason = "RELAY_PUBLISH_NONCE_USED"
+      reason = "RELAY_PUBLISH_NONCE_USED"
       break
     case "INSUFFICIENT_BALANCE":
-      serverReason = "RELAY_PUBLISH_INSUFFICIENT_BALANCE"
+      reason = "RELAY_PUBLISH_INSUFFICIENT_BALANCE"
       break
     case "PUBLIC_KEY_NOT_EXIST":
-      serverReason = "RELAY_PUBLISH_PUBLIC_NOT_EXIST"
+      reason = "RELAY_PUBLISH_PUBLIC_NOT_EXIST"
       break
     case "UNKNOWN_ERROR":
-      serverReason = "RELAY_PUBLISH_UNKNOWN_ERROR"
+      reason = "RELAY_PUBLISH_UNKNOWN_ERROR"
       break
     case "NETWORK_ERROR":
-      serverReason = "RELAY_PUBLISH_NETWORK_ERROR"
+      reason = "RELAY_PUBLISH_UNKNOWN_ERROR"
       break
     default:
-      serverReason = errorCode
+      reason = "RELAY_PUBLISH_UNKNOWN_ERROR"
   }
 
   return {
     tag: "err",
-    value: {
-      reason: "ERR_CANNOT_PUBLISH_INTENT",
-      server_reason: serverReason,
-    },
+    value:
+      reason === "RELAY_PUBLISH_UNKNOWN_ERROR"
+        ? { reason, serverReason: errorCode }
+        : { reason },
   }
 }
