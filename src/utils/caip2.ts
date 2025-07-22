@@ -21,7 +21,7 @@ export const CAIP2_NETWORK: Record<SupportedChainName, string> = {
   tuxappchain: "eip155:1313161573",
   vertex: "eip155:1313161587",
   optima: "eip155:1313161569",
-  coineasy: "eip155:1313161752",
+  easychain: "eip155:1313161752",
   hyperliquid: "hyperliquid:mainnet", // todo: This is not reviewed and most likely incorrect
   optimism: "eip155:10",
   avalanche: "eip155:43114",

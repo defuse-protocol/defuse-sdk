@@ -22,7 +22,7 @@ export function validateAddress(
     case "tuxappchain":
     case "vertex":
     case "optima":
-    case "coineasy":
+    case "easychain":
     case "aurora":
     case "gnosis":
     case "berachain":

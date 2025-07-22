@@ -77,7 +77,7 @@ export const depositGenerateAddressMachine = setup({
         event.params.blockchain === "tuxappchain" ||
         event.params.blockchain === "vertex" ||
         event.params.blockchain === "optima" ||
-        event.params.blockchain === "coineasy" ||
+        event.params.blockchain === "easychain" ||
         event.params.blockchain === "aurora"
       ) {
         return false
