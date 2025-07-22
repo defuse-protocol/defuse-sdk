@@ -1,3 +1,5 @@
+import type { solverRelay } from "@defuse-protocol/internal-utils"
+import type { Result } from "@thames/monads"
 import { assert } from "../../../utils/assert"
 import type * as solverRelayClient from "../solverRelayHttpClient"
 
@@ -53,5 +55,64 @@ export function parseFailedPublishError(
   return {
     reason: "RELAY_PUBLISH_UNKNOWN_ERROR",
     serverReason: response.reason,
+  }
+}
+
+/**
+ * Adapter function that converts the new Result<string, PublishIntentsErrorType>
+ * from internal-utils into the legacy format used by the SDK.
+ */
+export function convertPublishIntentToLegacyFormat(
+  result: Result<string, solverRelay.PublishIntentsErrorType>
+):
+  | { tag: "ok"; value: string }
+  | {
+      tag: "err"
+      value: { reason: "ERR_CANNOT_PUBLISH_INTENT"; server_reason: string }
+    } {
+  if (result.isOk()) {
+    return { tag: "ok", value: result.unwrap() }
+  }
+
+  const error = result.unwrapErr()
+  const errorCode = error.code
+
+  // Map new PublishErrorCode to old ParsedPublishErrors format
+  let serverReason: string
+  switch (errorCode) {
+    case "SIGNATURE_EXPIRED":
+      serverReason = "RELAY_PUBLISH_SIGNATURE_EXPIRED"
+      break
+    case "INTERNAL_ERROR":
+      serverReason = "RELAY_PUBLISH_INTERNAL_ERROR"
+      break
+    case "SIGNATURE_INVALID":
+      serverReason = "RELAY_PUBLISH_SIGNATURE_INVALID"
+      break
+    case "NONCE_USED":
+      serverReason = "RELAY_PUBLISH_NONCE_USED"
+      break
+    case "INSUFFICIENT_BALANCE":
+      serverReason = "RELAY_PUBLISH_INSUFFICIENT_BALANCE"
+      break
+    case "PUBLIC_KEY_NOT_EXIST":
+      serverReason = "RELAY_PUBLISH_PUBLIC_NOT_EXIST"
+      break
+    case "UNKNOWN_ERROR":
+      serverReason = "RELAY_PUBLISH_UNKNOWN_ERROR"
+      break
+    case "NETWORK_ERROR":
+      serverReason = "RELAY_PUBLISH_NETWORK_ERROR"
+      break
+    default:
+      serverReason = errorCode
+  }
+
+  return {
+    tag: "err",
+    value: {
+      reason: "ERR_CANNOT_PUBLISH_INTENT",
+      server_reason: serverReason,
+    },
   }
 }
