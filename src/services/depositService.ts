@@ -1084,7 +1084,7 @@ export function getWalletRpcUrl(network: BlockchainEnum): string {
     case BlockchainEnum.OPTIMA:
       return settings.rpcUrls.optima
     case BlockchainEnum.EASYCHAIN:
-      return settings.rpcUrls.EASYCHAIN
+      return settings.rpcUrls.easychain
     case BlockchainEnum.POLYGON:
       return settings.rpcUrls.polygon
     case BlockchainEnum.BSC:
