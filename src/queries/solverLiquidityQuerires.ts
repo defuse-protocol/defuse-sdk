@@ -1,6 +1,6 @@
+import { request } from "@defuse-protocol/internal-utils"
 import { useQuery } from "@tanstack/react-query"
 import { config as globalConfig } from "../config"
-import { request } from "../utils/request"
 
 export interface GetSolverLiquidityResponse {
   address_from: string
