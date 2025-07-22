@@ -27,19 +27,6 @@ export async function publishIntent(
   return result as any
 }
 
-export async function publishIntents(
-  params: types.PublishIntentsRequest["params"][0],
-  config: types.RequestConfig = {}
-): Promise<types.PublishIntentsResponse["result"]> {
-  const result = await jsonRPCRequest<types.PublishIntentsRequest>(
-    "publish_intents",
-    params,
-    config
-  )
-  // biome-ignore lint/suspicious/noExplicitAny: <explanation>
-  return result as any
-}
-
 export async function getStatus(
   params: types.GetStatusRequest["params"][0],
   config: types.RequestConfig = {}
