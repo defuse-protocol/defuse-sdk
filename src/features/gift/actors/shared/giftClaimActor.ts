@@ -1,10 +1,11 @@
+import { solverRelay } from "@defuse-protocol/internal-utils"
 import { type SignerCredentials, formatSignedIntent } from "src/core/formatters"
 import type { MultiPayload } from "src/types/defuse-contracts-types"
 import { assertEvent, assign, fromPromise, setup } from "xstate"
 import { logger } from "../../../../logger"
 import {
   type PublishIntentsErr,
-  publishIntents,
+  convertPublishIntentsToLegacyFormat,
 } from "../../../../sdk/solverRelay/publishIntents"
 import { assert } from "../../../../utils/assert"
 import { signGiftTakerMessage } from "../../utils/signGiftTakerMessage"
@@ -113,10 +114,12 @@ export const giftClaimActor = setup({
       }: {
         input: { multiPayload: MultiPayload }
       }): Promise<GiftPublishActorOutput> => {
-        const result = await publishIntents({
-          quote_hashes: [],
-          signed_datas: [input.multiPayload],
-        })
+        const result = await solverRelay
+          .publishIntents({
+            quote_hashes: [],
+            signed_datas: [input.multiPayload],
+          })
+          .then(convertPublishIntentsToLegacyFormat)
         if (result.isErr()) {
           return { tag: "err" as const, value: result.unwrapErr() }
         }

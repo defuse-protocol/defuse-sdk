@@ -1,3 +1,4 @@
+import { errors } from "@defuse-protocol/internal-utils"
 import {
   type ActorRefFrom,
   type PromiseActorLogic,
@@ -16,7 +17,6 @@ import type {
   WalletSignatureResult,
 } from "../../../types/walletMessage"
 import { assert } from "../../../utils/assert"
-import { toError } from "../../../utils/errors"
 import {
   type Events as DepositedBalanceEvents,
   depositedBalanceMachine,
@@ -129,7 +129,7 @@ export const otcMakerRootMachine = setup({
   },
   actions: {
     logError: (_, event: { error: unknown }) => {
-      const err = toError(event.error)
+      const err = errors.toError(event.error)
       logger.error(err)
     },
     setError: assign({

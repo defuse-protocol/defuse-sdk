@@ -1,9 +1,9 @@
+import type { BlockchainEnum } from "@defuse-protocol/internal-utils"
 import { CheckIcon, CopyIcon } from "@radix-ui/react-icons"
 import { Button, Spinner } from "@radix-ui/themes"
 import { QRCodeSVG } from "qrcode.react"
 import { Copy } from "../../../../components/IntentCard/CopyButton"
 import { Separator } from "../../../../components/Separator"
-import type { BlockchainEnum } from "../../../../sdk/poaBridge/constants/blockchains"
 import type { BaseTokenInfo } from "../../../../types/base"
 import {
   renderDepositHint,

@@ -1,10 +1,11 @@
 import type { FeeEstimation } from "@defuse-protocol/bridge-sdk"
+import { errors, solverRelay } from "@defuse-protocol/internal-utils"
 import { secp256k1 } from "@noble/curves/secp256k1"
 import type { providers } from "near-api-js"
 import { assign, fromPromise, setup } from "xstate"
 import { settings } from "../../constants/settings"
 import { logger } from "../../logger"
-import { publishIntent } from "../../sdk/solverRelay/publishIntent"
+import { convertPublishIntentToLegacyFormat } from "../../sdk/solverRelay/utils/parseFailedPublishError"
 import { emitEvent } from "../../services/emitter"
 import type { AggregatedQuote } from "../../services/quoteService"
 import type { AuthMethod } from "../../types/authHandle"
@@ -263,7 +264,9 @@ export const swapIntentMachine = setup({
           quoteHashes: string[]
         }
       }) =>
-        publishIntent(input.signatureData, input.userInfo, input.quoteHashes)
+        solverRelay
+          .publishIntent(input.signatureData, input.userInfo, input.quoteHashes)
+          .then(convertPublishIntentToLegacyFormat)
     ),
   },
   guards: {
@@ -424,7 +427,7 @@ export const swapIntentMachine = setup({
                   event.error,
                   "ERR_USER_DIDNT_SIGN"
                 ),
-                error: toError(event.error),
+                error: errors.toError(event.error),
               }),
             },
           ],
@@ -475,7 +478,7 @@ export const swapIntentMachine = setup({
               type: "setError",
               params: ({ event }) => ({
                 reason: "ERR_CANNOT_VERIFY_SIGNATURE",
-                error: toError(event.error),
+                error: errors.toError(event.error),
               }),
             },
           ],
@@ -536,7 +539,7 @@ export const swapIntentMachine = setup({
               type: "setError",
               params: ({ event }) => ({
                 reason: "ERR_PUBKEY_EXCEPTION",
-                error: toError(event.error),
+                error: errors.toError(event.error),
               }),
             },
           ],
@@ -589,7 +592,7 @@ export const swapIntentMachine = setup({
               type: "setError",
               params: ({ event }) => ({
                 reason: "ERR_CANNOT_PUBLISH_INTENT",
-                error: toError(event.error),
+                error: errors.toError(event.error),
               }),
             },
           ],
@@ -661,10 +664,6 @@ export const swapIntentMachine = setup({
     },
   },
 })
-
-function toError(error: unknown): Error {
-  return error instanceof Error ? error : new Error("unknown error")
-}
 
 function enqueueBetterQuote(
   quotes: PriorityQueue<AggregatedQuote>,

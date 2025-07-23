@@ -1,9 +1,10 @@
+import { solverRelay } from "@defuse-protocol/internal-utils"
 import { assign, fromPromise, setup } from "xstate"
 import { config } from "../../../config"
 import { nearClient } from "../../../constants/nearClient"
 import type { SignerCredentials } from "../../../core/formatters"
 import { logger } from "../../../logger"
-import { publishIntent } from "../../../sdk/solverRelay/publishIntent"
+import { convertPublishIntentToLegacyFormat } from "../../../sdk/solverRelay/utils/parseFailedPublishError"
 import { getDepositedBalances } from "../../../services/defuseBalanceService"
 import type { IntentsUserId } from "../../../types/intentsUserId"
 import type { WalletSignatureResult } from "../../../types/walletMessage"
@@ -52,8 +53,10 @@ export const tokenMigrationMachine = setup({
     signIntent: signIntentMachine,
 
     publishIntent: fromPromise(
-      ({ input }: { input: Parameters<typeof publishIntent> }) =>
-        publishIntent(...input)
+      ({ input }: { input: Parameters<typeof solverRelay.publishIntent> }) =>
+        solverRelay
+          .publishIntent(...input)
+          .then(convertPublishIntentToLegacyFormat)
     ),
 
     waitForIntentSettlement: fromPromise(

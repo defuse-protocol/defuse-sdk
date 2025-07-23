@@ -1,3 +1,4 @@
+import { solverRelay } from "@defuse-protocol/internal-utils"
 import { base64 } from "@scure/base"
 import { createEmptyIntentMessage } from "src/core/messages"
 import { assertEvent, assign, fromPromise, setup } from "xstate"
@@ -5,7 +6,7 @@ import type { SignerCredentials } from "../../../core/formatters"
 import { logger } from "../../../logger"
 import {
   type PublishIntentsErr,
-  publishIntents,
+  convertPublishIntentsToLegacyFormat,
 } from "../../../sdk/solverRelay/publishIntents"
 import type { MultiPayload } from "../../../types/defuse-contracts-types"
 import type { WalletSignatureResult } from "../../../types/walletMessage"
@@ -65,18 +66,21 @@ export const otcMakerOrderCancellationActor = setup({
     signActor: signIntentMachine,
     publishActor: fromPromise(
       ({ input }: { input: { multiPayload: MultiPayload } }) => {
-        return publishIntents({
-          quote_hashes: [],
-          signed_datas: [input.multiPayload],
-        }).then((result) => {
-          if (result.isErr()) {
-            return { tag: "err" as const, value: result.unwrapErr() }
-          }
-          const intentHashes = result.unwrap()
-          const intentHash = intentHashes[0]
-          assert(intentHash != null)
-          return { tag: "ok" as const, value: intentHash }
-        })
+        return solverRelay
+          .publishIntents({
+            quote_hashes: [],
+            signed_datas: [input.multiPayload],
+          })
+          .then(convertPublishIntentsToLegacyFormat)
+          .then((result) => {
+            if (result.isErr()) {
+              return { tag: "err" as const, value: result.unwrapErr() }
+            }
+            const intentHashes = result.unwrap()
+            const intentHash = intentHashes[0]
+            assert(intentHash != null)
+            return { tag: "ok" as const, value: intentHash }
+          })
       }
     ),
   },

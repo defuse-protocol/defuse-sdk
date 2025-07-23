@@ -1,3 +1,4 @@
+import { errors } from "@defuse-protocol/internal-utils"
 import { assign, fromPromise, setup } from "xstate"
 import { logger } from "../../logger"
 import { emitEvent } from "../../services/emitter"
@@ -210,7 +211,7 @@ export const depositMachine = setup({
               params: ({ event }) => {
                 return {
                   reason: "ERR_SUBMITTING_TRANSACTION",
-                  error: toError(event.error),
+                  error: errors.toError(event.error),
                 }
               },
             },
@@ -265,7 +266,3 @@ export const depositMachine = setup({
     },
   },
 })
-
-function toError(error: unknown): Error {
-  return error instanceof Error ? error : new Error("unknown error")
-}

@@ -1,3 +1,4 @@
+import { BlockchainEnum } from "@defuse-protocol/internal-utils"
 import { settings } from "src/constants/settings"
 import {
   checkTonJettonWalletRequired,
@@ -6,7 +7,6 @@ import {
 import type { Address } from "viem"
 import { assign, fromPromise, setup } from "xstate"
 import { logger } from "../../logger"
-import { BlockchainEnum } from "../../sdk/poaBridge/constants/blockchains"
 import {
   getEvmErc20Balance,
   getEvmNativeBalance,

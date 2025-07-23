@@ -1,4 +1,4 @@
-import { solverRelay } from "@defuse-protocol/internal-utils"
+import { errors, solverRelay } from "@defuse-protocol/internal-utils"
 import {
   type ActorRefFrom,
   type DoneActorEvent,
@@ -19,7 +19,6 @@ import type {
   WalletSignatureResult,
 } from "../../../types/walletMessage"
 import { assert } from "../../../utils/assert"
-import { toError } from "../../../utils/errors"
 import {
   type Events as DepositedBalanceEvents,
   depositedBalanceMachine,
@@ -221,7 +220,7 @@ export const giftMakerRootMachine = setup({
   },
   actions: {
     logError: (_, event: { error: unknown }) => {
-      const err = toError(event.error)
+      const err = errors.toError(event.error)
       logger.error(err)
     },
     setError: assign({
