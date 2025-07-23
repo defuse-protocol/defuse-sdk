@@ -222,15 +222,15 @@ export function getBlockchainsOptions(): Record<
       value: BlockchainEnum.OPTIMA,
       tags: ["vol:105"],
     },
-    [BlockchainEnum.COINEASY]: {
-      label: "CoinEasy",
+    [BlockchainEnum.EASYCHAIN]: {
+      label: "EasyChain",
       icon: (
         <NetworkIcon
-          chainIcon="/static/icons/network/coineasy.svg"
-          chainName="coineasy"
+          chainIcon="/static/icons/network/easychain.svg"
+          chainName="easychain"
         />
       ),
-      value: BlockchainEnum.COINEASY,
+      value: BlockchainEnum.EASYCHAIN,
       tags: ["vol:106"],
     },
     [BlockchainEnum.POLYGON]: {

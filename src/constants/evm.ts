@@ -16,7 +16,7 @@ export const CHAIN_IDS: Record<SupportedChainName, number | undefined> = {
   tuxappchain: 1313161573,
   vertex: 1313161587,
   optima: 1313161569,
-  coineasy: 1313161752,
+  easychain: 1313161752,
   aurora: 1313161554,
   xrpledger: undefined,
   zcash: undefined,

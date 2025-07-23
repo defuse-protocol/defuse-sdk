@@ -9,7 +9,7 @@ export const siloToSiloAddress = {
   tuxappchain: "0xA50fFd8a0953B3965E70C4F7F880B00BcdB9A313",
   vertex: "0xA50fFd8a0953B3965E70C4F7F880B00BcdB9A313",
   optima: "0xA50fFd8a0953B3965E70C4F7F880B00BcdB9A313",
-  coineasy: "0xA50fFd8a0953B3965E70C4F7F880B00BcdB9A313",
+  easychain: "0xA50fFd8a0953B3965E70C4F7F880B00BcdB9A313",
 } as const
 
 /**
@@ -22,5 +22,5 @@ export const auroraEngineContractId = {
   tuxappchain: "0x4e454165.c.aurora",
   vertex: "0x4e454173.c.aurora",
   optima: "0x4e454161.c.aurora",
-  coineasy: "0x4e454218.c.aurora",
+  easychain: "0x4e454218.c.aurora",
 } as Record<SupportedChainName, string>

@@ -534,7 +534,7 @@ export function createDepositFromSiloTransaction(
     getEVMChainId("tuxappchain"),
     getEVMChainId("vertex"),
     getEVMChainId("optima"),
-    getEVMChainId("coineasy"),
+    getEVMChainId("easychain"),
   ]
 
   if (virtualChainIds.includes(chainId)) {
@@ -825,7 +825,7 @@ export function getAvailableDepositRoutes(
         case BlockchainEnum.TUXAPPCHAIN:
         case BlockchainEnum.VERTEX:
         case BlockchainEnum.OPTIMA:
-        case BlockchainEnum.COINEASY:
+        case BlockchainEnum.EASYCHAIN:
         case BlockchainEnum.AURORA:
         case BlockchainEnum.HYPERLIQUID:
           return {
@@ -875,7 +875,7 @@ export function getAvailableDepositRoutes(
         case BlockchainEnum.TUXAPPCHAIN:
         case BlockchainEnum.VERTEX:
         case BlockchainEnum.OPTIMA:
-        case BlockchainEnum.COINEASY:
+        case BlockchainEnum.EASYCHAIN:
         case BlockchainEnum.AURORA:
           return {
             activeDeposit: true,
@@ -931,7 +931,7 @@ export function getAvailableDepositRoutes(
         case BlockchainEnum.TUXAPPCHAIN:
         case BlockchainEnum.VERTEX:
         case BlockchainEnum.OPTIMA:
-        case BlockchainEnum.COINEASY:
+        case BlockchainEnum.EASYCHAIN:
         case BlockchainEnum.AURORA:
         case BlockchainEnum.HYPERLIQUID:
           return {
@@ -975,7 +975,7 @@ export function getAvailableDepositRoutes(
         case BlockchainEnum.TUXAPPCHAIN:
         case BlockchainEnum.VERTEX:
         case BlockchainEnum.OPTIMA:
-        case BlockchainEnum.COINEASY:
+        case BlockchainEnum.EASYCHAIN:
         case BlockchainEnum.AURORA:
         case BlockchainEnum.HYPERLIQUID:
           return {
@@ -1025,7 +1025,7 @@ export function getAvailableDepositRoutes(
         case BlockchainEnum.TUXAPPCHAIN:
         case BlockchainEnum.VERTEX:
         case BlockchainEnum.OPTIMA:
-        case BlockchainEnum.COINEASY:
+        case BlockchainEnum.EASYCHAIN:
         case BlockchainEnum.AURORA:
         case BlockchainEnum.HYPERLIQUID:
           return {
@@ -1079,8 +1079,8 @@ export function getWalletRpcUrl(network: BlockchainEnum): string {
       return settings.rpcUrls.vertex
     case BlockchainEnum.OPTIMA:
       return settings.rpcUrls.optima
-    case BlockchainEnum.COINEASY:
-      return settings.rpcUrls.coineasy
+    case BlockchainEnum.EASYCHAIN:
+      return settings.rpcUrls.easychain
     case BlockchainEnum.POLYGON:
       return settings.rpcUrls.polygon
     case BlockchainEnum.BSC:

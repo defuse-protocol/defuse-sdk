@@ -37,7 +37,7 @@ export const settings: Settings = {
     tuxappchain: "https://rpc-0x4e454165.aurora-cloud.dev",
     vertex: "https://rpc-0x4e454173.aurora-cloud.dev",
     optima: "https://rpc-0x4e454161.aurora-cloud.dev",
-    coineasy: "https://0x4e454218.rpc.aurora-cloud.dev",
+    easychain: "https://0x4e454218.rpc.aurora-cloud.dev",
     aurora: "https://mainnet.aurora.dev",
     xrpledger: "https://xrplcluster.com",
     zcash: "https://mainnet.lightwalletd.com",
