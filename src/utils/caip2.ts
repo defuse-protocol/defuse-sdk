@@ -1,31 +1,38 @@
-import type { SupportedChainName } from "../types/base"
+import { CAIP2_NETWORK } from "@defuse-protocol/bridge-sdk"
+import type {
+  MockedChains,
+  SupportedChainName,
+  VirtualChains,
+} from "../types/base"
 
-export const CAIP2_NETWORK: Record<SupportedChainName, string> = {
-  bitcoin: "bip122:000000000019d6689c085ae165831e93",
-  eth: "eip155:1",
-  base: "eip155:8453",
-  arbitrum: "eip155:42161",
-  bsc: "eip155:56",
-  polygon: "eip155:137",
-  near: "near:mainnet",
-  solana: "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
-  tron: "tron:27Lqcw",
-  gnosis: "eip155:100",
-  xrpledger: "xrpl:0",
-  dogecoin: "bip122:1a91e3dace36e2be3bf030a65679fe82",
-  zcash: "zcash:0",
-  berachain: "eip155:80085",
-  ton: "tvm:-239",
-  aurora: "eip155:1313161554",
-  turbochain: "eip155:1313161567",
-  tuxappchain: "eip155:1313161573",
-  vertex: "eip155:1313161587",
-  optima: "eip155:1313161569",
-  easychain: "eip155:1313161752",
-  hyperliquid: "hyperliquid:mainnet", // todo: This is not reviewed and most likely incorrect
-  optimism: "eip155:10",
-  avalanche: "eip155:43114",
-  sui: "sui:mainnet",
-  stellar: "stellar:mainnet",
-  aptos: "aptos:mainnet",
+type RealChains = Exclude<SupportedChainName, VirtualChains | MockedChains>
+
+const mapping: Record<RealChains, CAIP2_NETWORK> = {
+  bitcoin: CAIP2_NETWORK.Bitcoin,
+  eth: CAIP2_NETWORK.Ethereum,
+  base: CAIP2_NETWORK.Base,
+  arbitrum: CAIP2_NETWORK.Arbitrum,
+  bsc: CAIP2_NETWORK.BNB,
+  polygon: CAIP2_NETWORK.Polygon,
+  near: CAIP2_NETWORK.Near,
+  solana: CAIP2_NETWORK.Solana,
+  tron: CAIP2_NETWORK.Tron,
+  gnosis: CAIP2_NETWORK.Gnosis,
+  xrpledger: CAIP2_NETWORK.XRPL,
+  dogecoin: CAIP2_NETWORK.Dogecoin,
+  zcash: CAIP2_NETWORK.Zcash,
+  berachain: CAIP2_NETWORK.Berachain,
+  ton: CAIP2_NETWORK.TON,
+  optimism: CAIP2_NETWORK.Optimism,
+  avalanche: CAIP2_NETWORK.Avalanche,
+  sui: CAIP2_NETWORK.Sui,
+  stellar: CAIP2_NETWORK.Stellar,
+  aptos: CAIP2_NETWORK.Aptos,
+}
+
+export function getCAIP2(chainName: SupportedChainName): CAIP2_NETWORK {
+  if (chainName in mapping) {
+    return mapping[chainName as keyof typeof mapping]
+  }
+  throw new Error(`Unsupported chain name: ${chainName}`)
 }

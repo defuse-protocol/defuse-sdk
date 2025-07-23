@@ -6,12 +6,6 @@ export type SupportedChainName =
   | "bitcoin"
   | "solana"
   | "dogecoin"
-  | "turbochain"
-  | "tuxappchain"
-  | "vertex"
-  | "optima"
-  | "easychain"
-  | "aurora"
   | "xrpledger"
   | "zcash"
   | "gnosis"
@@ -19,13 +13,24 @@ export type SupportedChainName =
   | "tron"
   | "polygon"
   | "bsc"
-  | "hyperliquid"
   | "ton"
   | "optimism"
   | "avalanche"
   | "sui"
   | "stellar"
   | "aptos"
+  | VirtualChains
+  | MockedChains
+
+export type VirtualChains =
+  | "turbochain"
+  | "tuxappchain"
+  | "vertex"
+  | "optima"
+  | "easychain"
+  | "aurora"
+
+export type MockedChains = "hyperliquid"
 
 export type SupportedBridge = "direct" | "poa" | "aurora_engine" | "hot_omni"
 

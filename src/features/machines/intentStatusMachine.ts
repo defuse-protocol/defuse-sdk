@@ -1,4 +1,8 @@
-import type { BridgeSDK } from "@defuse-protocol/bridge-sdk"
+import {
+  type RouteConfig,
+  createNearWithdrawalRoute,
+  createVirtualChainRoute,
+} from "@defuse-protocol/bridge-sdk"
 import { solverRelay } from "@defuse-protocol/internal-utils"
 import {
   type ActorRef,
@@ -9,7 +13,7 @@ import {
   sendTo,
   setup,
 } from "xstate"
-import { auroraEngineContractId } from "../../constants/aurora"
+import { getAuroraEngineContractId } from "../../constants/aurora"
 import { bridgeSDK } from "../../constants/bridgeSdk"
 import { logger } from "../../logger"
 import type {
@@ -20,7 +24,7 @@ import type {
 } from "../../types/base"
 import type { IntentsUserId } from "../../types/intentsUserId"
 import { assert } from "../../utils/assert"
-import { CAIP2_NETWORK } from "../../utils/caip2"
+import { getCAIP2 } from "../../utils/caip2"
 import type { IntentDescription } from "./swapIntentMachine"
 
 type ChildEvent = {
@@ -99,7 +103,7 @@ export const intentStatusMachine = setup({
       }) => {
         return bridgeSDK
           .waitForWithdrawalCompletion({
-            bridge: toBridgeConfig(
+            routeConfig: toRouteConfig(
               input.nearIntentsNetwork ? "direct" : input.bridge,
               input.chainName
             ),
@@ -249,32 +253,29 @@ export const intentStatusMachine = setup({
   },
 })
 
-function toBridgeConfig(
+function toRouteConfig(
   bridge: SupportedBridge,
   chainName: SupportedChainName
-): Parameters<
-  (typeof BridgeSDK.prototype)["waitForWithdrawalCompletion"]
->["0"]["bridge"] {
+): RouteConfig {
   switch (bridge) {
-    case "aurora_engine":
-      return {
-        bridge,
-        auroraEngineContractId: auroraEngineContractId[chainName],
-        proxyTokenContractId: null, // TODO: provide the correct value once you know it
-      }
+    case "aurora_engine": {
+      return createVirtualChainRoute(
+        getAuroraEngineContractId(chainName),
+        null // TODO: provide the correct value once you know it
+      )
+    }
     case "hot_omni":
       return {
-        bridge: "hot",
-        // biome-ignore lint/suspicious/noExplicitAny: it expects just a caip2 string, but mistakenly strongly typed
-        chain: CAIP2_NETWORK[chainName] as any,
+        route: "hot_bridge",
+        chain: getCAIP2(chainName),
       }
     case "poa":
-    case "direct":
       return {
-        bridge,
-        // biome-ignore lint/suspicious/noExplicitAny: it expects just a caip2 string, but mistakenly strongly typed
-        chain: CAIP2_NETWORK[chainName] as any,
+        route: "poa_bridge",
+        chain: getCAIP2(chainName),
       }
+    case "direct":
+      return createNearWithdrawalRoute()
     default:
       bridge satisfies never
       throw new Error(`Unsupported bridge: ${bridge}`)
