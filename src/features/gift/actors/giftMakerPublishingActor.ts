@@ -1,8 +1,9 @@
+import { solverRelay } from "@defuse-protocol/internal-utils"
 import { assign, fromPromise, setup } from "xstate"
 import { logger } from "../../../logger"
 import {
   type PublishIntentsErr,
-  publishIntents,
+  convertPublishIntentsToLegacyFormat,
 } from "../../../sdk/solverRelay/publishIntents"
 import type { MultiPayload } from "../../../types/defuse-contracts-types"
 import { assert } from "../../../utils/assert"
@@ -41,17 +42,20 @@ export const giftMakerPublishingActor = setup({
   },
   actors: {
     publishActor: fromPromise(({ input }: { input: MultiPayload }) => {
-      return publishIntents({
-        quote_hashes: [],
-        signed_datas: [input],
-      }).then((result) => {
-        if (result.isErr()) {
-          return { tag: "err" as const, value: result.unwrapErr() }
-        }
-        const intentHashes = result.unwrap()
-        assert(intentHashes != null)
-        return { tag: "ok" as const, value: intentHashes }
-      })
+      return solverRelay
+        .publishIntents({
+          quote_hashes: [],
+          signed_datas: [input],
+        })
+        .then(convertPublishIntentsToLegacyFormat)
+        .then((result) => {
+          if (result.isErr()) {
+            return { tag: "err" as const, value: result.unwrapErr() }
+          }
+          const intentHashes = result.unwrap()
+          assert(intentHashes != null)
+          return { tag: "ok" as const, value: intentHashes }
+        })
     }),
   },
   actions: {
