@@ -1,3 +1,4 @@
+import { solverRelay } from "@defuse-protocol/internal-utils"
 import { Button } from "@radix-ui/themes"
 import { useQuery } from "@tanstack/react-query"
 import {
@@ -5,7 +6,6 @@ import {
   getUnderlyingBaseTokenInfos,
 } from "src/utils/tokenUtils"
 import { CopyButton } from "../../../components/IntentCard/CopyButton"
-import { waitForIntentSettlement } from "../../../sdk/solverRelay/waitForIntentSettlement"
 import type { RenderHostAppLink } from "../../../types/hostAppLink"
 import { assert } from "../../../utils/assert"
 import type { GiftInfo } from "../actors/shared/getGiftInfo"
@@ -38,7 +38,7 @@ export function GiftTakerSuccessScreen({
     queryFn: async ({ signal }) => {
       const intentHash = intentHashes[0]
       assert(intentHash != null)
-      return waitForIntentSettlement(signal, intentHash)
+      return solverRelay.waitForIntentSettlement({ signal, intentHash })
     },
   })
 

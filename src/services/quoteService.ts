@@ -1,17 +1,14 @@
+import type { solverRelay } from "@defuse-protocol/internal-utils"
 import { settings } from "../constants/settings"
 import { AggregatedQuoteError } from "../sdk/aggregatedQuote/errors/aggregatedQuoteError"
 import { AmountMismatchError } from "../sdk/aggregatedQuote/errors/amountMismatchError"
 import { getAggregatedQuoteExactIn } from "../sdk/aggregatedQuote/getAggregatedQuoteExactIn"
-import type {
-  FailedQuote,
-  Quote,
-} from "../sdk/solverRelay/solverRelayHttpClient/types"
 import { quoteWithLog } from "../sdk/solverRelay/utils/quoteWithLog"
 import type { BaseTokenInfo, TokenValue } from "../types/base"
 
 export function isFailedQuote(
-  quote: Quote | FailedQuote
-): quote is FailedQuote {
+  quote: solverRelay.Quote | solverRelay.FailedQuote
+): quote is solverRelay.FailedQuote {
   return "type" in quote
 }
 
@@ -154,7 +151,7 @@ export async function queryQuoteExactOut(
     }
   }
 
-  const failedQuotes: FailedQuote[] = []
+  const failedQuotes: solverRelay.FailedQuote[] = []
   const validQuotes = []
   for (const q of quotes) {
     if (isFailedQuote(q)) {

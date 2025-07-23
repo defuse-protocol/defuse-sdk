@@ -1,10 +1,10 @@
+import { solverRelay } from "@defuse-protocol/internal-utils"
 import { afterEach, describe, expect, it, vi } from "vitest"
-import * as relayClient from "../sdk/solverRelay/solverRelayHttpClient"
 import type { BaseTokenInfo } from "../types/base"
 import { adjustDecimals } from "../utils/tokenUtils"
 import { queryQuote } from "./quoteService"
 
-vi.spyOn(relayClient, "quote")
+vi.spyOn(solverRelay, "quote")
 
 const tokenInfo: BaseTokenInfo = {
   defuseAssetId: "",
@@ -51,7 +51,7 @@ describe("queryQuote()", () => {
       waitMs: 0,
     }
 
-    vi.mocked(relayClient.quote).mockImplementationOnce(async () => [
+    vi.mocked(solverRelay.quote).mockImplementationOnce(async () => [
       {
         quote_hash: "q1",
         defuse_asset_identifier_in: "token1",
@@ -64,8 +64,8 @@ describe("queryQuote()", () => {
 
     const result = await queryQuote(input)
 
-    expect(relayClient.quote).toHaveBeenCalledTimes(1)
-    expect(relayClient.quote).toHaveBeenCalledWith(
+    expect(solverRelay.quote).toHaveBeenCalledTimes(1)
+    expect(solverRelay.quote).toHaveBeenCalledWith(
       {
         defuse_asset_identifier_in: "token1",
         defuse_asset_identifier_out: "tokenOut",
@@ -101,7 +101,7 @@ describe("queryQuote()", () => {
       waitMs: 0,
     }
 
-    vi.mocked(relayClient.quote)
+    vi.mocked(solverRelay.quote)
       .mockImplementationOnce(async () => [
         {
           quote_hash: "q1",
@@ -125,8 +125,8 @@ describe("queryQuote()", () => {
 
     const result = await queryQuote(input)
 
-    expect(relayClient.quote).toHaveBeenCalledTimes(2)
-    expect(relayClient.quote).toHaveBeenCalledWith(
+    expect(solverRelay.quote).toHaveBeenCalledTimes(2)
+    expect(solverRelay.quote).toHaveBeenCalledWith(
       {
         defuse_asset_identifier_in: "token1",
         defuse_asset_identifier_out: "tokenOut",
@@ -136,7 +136,7 @@ describe("queryQuote()", () => {
       },
       expect.any(Object)
     )
-    expect(relayClient.quote).toHaveBeenCalledWith(
+    expect(solverRelay.quote).toHaveBeenCalledWith(
       {
         defuse_asset_identifier_in: "token2",
         defuse_asset_identifier_out: "tokenOut",
@@ -170,7 +170,7 @@ describe("queryQuote()", () => {
       waitMs: 0,
     }
 
-    vi.mocked(relayClient.quote).mockImplementationOnce(async () => [
+    vi.mocked(solverRelay.quote).mockImplementationOnce(async () => [
       {
         quote_hash: "q1",
         defuse_asset_identifier_in: "token1",
@@ -221,7 +221,7 @@ describe("queryQuote()", () => {
       waitMs: 0,
     }
 
-    vi.mocked(relayClient.quote)
+    vi.mocked(solverRelay.quote)
       .mockImplementationOnce(async () => null)
       .mockImplementationOnce(async () => [])
 
@@ -252,7 +252,7 @@ describe("queryQuote()", () => {
       waitMs: 0,
     }
 
-    vi.mocked(relayClient.quote)
+    vi.mocked(solverRelay.quote)
       .mockImplementationOnce(async () => [
         {
           quote_hash: "q1",
@@ -287,7 +287,7 @@ describe("queryQuote()", () => {
       waitMs: 0,
     }
 
-    vi.mocked(relayClient.quote).mockImplementationOnce(async () => [
+    vi.mocked(solverRelay.quote).mockImplementationOnce(async () => [
       {
         quote_hash: "q1",
         defuse_asset_identifier_in: "token1",
@@ -300,7 +300,7 @@ describe("queryQuote()", () => {
 
     const result = await queryQuote(input)
 
-    expect(relayClient.quote).toHaveBeenCalledTimes(1)
+    expect(solverRelay.quote).toHaveBeenCalledTimes(1)
     expect(result).toEqual({
       tag: "ok",
       value: {

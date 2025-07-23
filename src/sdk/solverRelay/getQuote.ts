@@ -1,10 +1,5 @@
+import type { poaBridge, solverRelay } from "@defuse-protocol/internal-utils"
 import { QuoteError } from "./errors/quote"
-import type { quote } from "./solverRelayHttpClient"
-import type {
-  FailedQuote,
-  JSONRPCErrorType,
-  Quote,
-} from "./solverRelayHttpClient/types"
 import { quoteWithLog } from "./utils/quoteWithLog"
 
 export type GetQuoteParams = {
@@ -12,9 +7,11 @@ export type GetQuoteParams = {
   config: Parameters<typeof quoteWithLog>[1]
 }
 
-export type GetQuoteReturnType = Quote
+export type GetQuoteReturnType = solverRelay.Quote
 
-export type GetQuoteErrorType = QuoteError | JSONRPCErrorType
+export type GetQuoteErrorType =
+  | QuoteError
+  | poaBridge.httpClient.JSONRPCErrorType
 
 export async function getQuote(
   params: GetQuoteParams
@@ -24,7 +21,7 @@ export async function getQuote(
 }
 
 function handleQuoteResult(
-  result: Awaited<ReturnType<typeof quote>>,
+  result: Awaited<ReturnType<typeof solverRelay.quote>>,
   quoteParams: GetQuoteParams["quoteParams"]
 ) {
   if (result == null) {
@@ -34,7 +31,7 @@ function handleQuoteResult(
     })
   }
 
-  const failedQuotes: FailedQuote[] = []
+  const failedQuotes: solverRelay.FailedQuote[] = []
   const validQuotes = []
   for (const q of result) {
     if (isValidQuote(q)) {
@@ -66,9 +63,9 @@ function handleQuoteResult(
 }
 
 function sortQuotes(
-  quotes: Quote[],
+  quotes: solverRelay.Quote[],
   quoteKind: "exact_in" | "exact_out"
-): Quote[] {
+): solverRelay.Quote[] {
   return quotes.slice().sort((a, b) => {
     if (quoteKind === "exact_in") {
       // For exact_in, sort by `amount_out` in descending order
@@ -84,6 +81,8 @@ function sortQuotes(
   })
 }
 
-function isValidQuote(quote: Quote | FailedQuote): quote is Quote {
+function isValidQuote(
+  quote: solverRelay.Quote | solverRelay.FailedQuote
+): quote is solverRelay.Quote {
   return !("type" in quote)
 }

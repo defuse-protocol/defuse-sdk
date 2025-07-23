@@ -1,8 +1,8 @@
+import { solverRelay } from "@defuse-protocol/internal-utils"
 import { Check as CheckIcon } from "@phosphor-icons/react"
 import { Button } from "@radix-ui/themes"
 import { useQuery } from "@tanstack/react-query"
 import { CopyButton } from "src/components/IntentCard/CopyButton"
-import { waitForIntentSettlement } from "../../../sdk/solverRelay/waitForIntentSettlement"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../../types/base"
 import type { RenderHostAppLink } from "../../../types/hostAppLink"
 import { assert } from "../../../utils/assert"
@@ -53,7 +53,7 @@ export function OtcTakerSuccessScreen({
     queryFn: async ({ signal }) => {
       const intentHash = intentHashes[0]
       assert(intentHash != null)
-      return waitForIntentSettlement(signal, intentHash)
+      return solverRelay.waitForIntentSettlement({ signal, intentHash })
     },
   })
 

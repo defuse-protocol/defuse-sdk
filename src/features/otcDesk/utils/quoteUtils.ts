@@ -1,6 +1,6 @@
+import type { solverRelay } from "@defuse-protocol/internal-utils"
 import { Err, Ok, type Result } from "@thames/monads"
 import { settings } from "../../../constants/settings"
-import type { FailedQuote } from "../../../sdk/solverRelay/solverRelayHttpClient/types"
 import { quoteWithLog } from "../../../sdk/solverRelay/utils/quoteWithLog"
 import {
   type AggregatedQuote,
@@ -52,8 +52,8 @@ function handleQuote(
     return Err({ reason: "NO_QUOTES" })
   }
 
-  const failedQuotes: FailedQuote[] = []
-  const validQuotes = []
+  const failedQuotes: solverRelay.FailedQuote[] = []
+  const validQuotes: solverRelay.Quote[] = []
   for (const q of quotes) {
     if (isFailedQuote(q)) {
       failedQuotes.push(q)
