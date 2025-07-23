@@ -1,4 +1,4 @@
-import { poaBridge } from "@defuse-protocol/internal-utils"
+import { errors, poaBridge } from "@defuse-protocol/internal-utils"
 import {
   type ActorRefFrom,
   type SnapshotFrom,
@@ -87,7 +87,7 @@ export const poaBridgeInfoActor = setup({
           target: "error",
           actions: {
             type: "logError",
-            params: ({ event }) => toError(event.error),
+            params: ({ event }) => errors.toError(event.error),
           },
         },
       },
@@ -133,8 +133,4 @@ export const getPOABridgeInfo = (
       withdrawalFee: 0,
     }
   )
-}
-
-function toError(error: unknown): Error {
-  return error instanceof Error ? error : new Error("unknown error")
 }

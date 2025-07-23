@@ -1,9 +1,4 @@
-export function toError(error: unknown): Error {
-  if (error instanceof Error) return error
-  return new Error(
-    typeof error === "string" ? error : "An unexpected error occurred"
-  )
-}
+import { errors } from "@defuse-protocol/internal-utils"
 
 export function hasMessage(
   err: unknown,
@@ -14,7 +9,7 @@ export function hasMessage(
 ): boolean {
   if (!searchText) return false
 
-  const error = toError(err)
+  const error = errors.toError(err)
   const search = options.ignoreCase ? searchText.toLowerCase() : searchText
 
   const matches = (text: string) =>
@@ -37,7 +32,7 @@ export function findError<T extends Error>(
   // biome-ignore lint/suspicious/noExplicitAny: any is required for the constructor type
   errorType: new (...args: any[]) => T
 ): T | null {
-  const error = toError(err)
+  const error = errors.toError(err)
 
   if (error instanceof errorType) return error
 
