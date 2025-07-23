@@ -1,4 +1,4 @@
-import { request } from "../../utils/request"
+import { request } from "@defuse-protocol/internal-utils"
 import type {
   GeneratHLAddressParams,
   GeneratHLAddressResponse,
