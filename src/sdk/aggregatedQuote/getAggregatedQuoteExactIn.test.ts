@@ -6,7 +6,11 @@ import { QuoteError } from "../solverRelay/errors/quote"
 import { AggregatedQuoteError } from "./errors/aggregatedQuoteError"
 import { getAggregatedQuoteExactIn } from "./getAggregatedQuoteExactIn"
 
-vi.spyOn(solverRelay, "quote")
+vi.mock("@defuse-protocol/internal-utils", () => ({
+  solverRelay: {
+    quote: vi.fn(),
+  },
+}))
 
 const tokenInfo: BaseTokenInfo = {
   defuseAssetId: "",

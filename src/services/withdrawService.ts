@@ -1,10 +1,15 @@
 import {
   type FeeEstimation,
   FeeExceedsAmountError,
+  type RouteConfig,
+  createDefaultRoute,
+  createInternalTransferRoute,
+  createNearWithdrawalRoute,
+  createVirtualChainRoute,
 } from "@defuse-protocol/bridge-sdk"
 import { Err, Ok, type Result } from "@thames/monads"
 import { type ActorRefFrom, waitFor } from "xstate"
-import { auroraEngineContractId } from "../constants/aurora"
+import { getAuroraEngineContractId } from "../constants/aurora"
 import { bridgeSDK } from "../constants/bridgeSdk"
 import type {
   QuoteInput,
@@ -73,21 +78,6 @@ export type PreparedWithdrawReturnType = {
 export type PreparationOutput =
   | { tag: "ok"; value: PreparedWithdrawReturnType }
   | { tag: "err"; value: PrepareWithdrawErrorType }
-
-// todo: import it from bridge-sdk
-type BridgeConfig =
-  | {
-      bridge: "direct"
-      chain: "near:mainnet"
-    }
-  | {
-      bridge: "aurora_engine"
-      auroraEngineContractId: string
-      proxyTokenContractId: string | null
-    }
-  | {
-      bridge: "intents"
-    }
 
 export async function prepareWithdraw(
   {
@@ -197,24 +187,22 @@ export async function prepareWithdraw(
     directWithdrawAvailable
   )
 
-  const bridgeConfig: BridgeConfig | undefined = isAuroraVirtualChain(
+  const routeConfig: RouteConfig | undefined = isAuroraVirtualChain(
     formValues.tokenOut.chainName
   )
-    ? {
-        bridge: "aurora_engine",
-        auroraEngineContractId:
-          auroraEngineContractId[formValues.tokenOut.chainName],
-        proxyTokenContractId: null, // TODO: provide the correct value once you know it
-      }
+    ? createVirtualChainRoute(
+        getAuroraEngineContractId(formValues.tokenOut.chainName),
+        null // TODO: provide the correct value once you know it
+      )
     : formValues.tokenOut.chainName === "near"
-      ? { bridge: "direct", chain: "near:mainnet" }
-      : undefined
+      ? createNearWithdrawalRoute()
+      : createDefaultRoute()
 
   const feeEstimation = await estimateFee({
     defuseAssetId: formValues.tokenOut.defuseAssetId,
     amount: totalWithdrawn.amount,
     recipient: formValues.parsedRecipient,
-    bridgeConfig,
+    routeConfig,
   })
   if (feeEstimation.isErr()) {
     return { tag: "err", value: feeEstimation.unwrapErr() }
@@ -250,7 +238,7 @@ export async function prepareWithdraw(
       destinationAddress: formValues.parsedRecipient,
       destinationMemo: formValues.parsedDestinationMemo ?? undefined,
       feeInclusive: false,
-      bridgeConfig,
+      routeConfig,
     },
     feeEstimation: feeEstimation.unwrap(),
   })
@@ -375,12 +363,12 @@ async function estimateFee({
   defuseAssetId,
   amount,
   recipient,
-  bridgeConfig,
+  routeConfig,
 }: {
   defuseAssetId: string
   amount: bigint
   recipient: string
-  bridgeConfig: BridgeConfig | undefined
+  routeConfig: RouteConfig | undefined
 }): Promise<Result<FeeEstimation, { reason: "ERR_WITHDRAWAL_FEE_FETCH" }>> {
   return bridgeSDK
     .estimateWithdrawalFee({
@@ -389,7 +377,7 @@ async function estimateFee({
         amount: amount,
         destinationAddress: recipient,
         feeInclusive: true,
-        bridgeConfig,
+        routeConfig,
       },
     })
     .then(Ok, (err) => {
@@ -581,9 +569,7 @@ async function prepareNearIntentsWithdraw({
             destinationAddress: formValues.parsedRecipient,
             destinationMemo: undefined, // Destination memo is only used for XRP Ledger withdrawals
             feeInclusive: false,
-            bridgeConfig: {
-              bridge: "intents",
-            },
+            routeConfig: createInternalTransferRoute(),
           },
           feeEstimation: {
             amount: 0n,
