@@ -1,5 +1,5 @@
+import { poaBridge } from "@defuse-protocol/internal-utils"
 import { useQuery } from "@tanstack/react-query"
-import { getTokenBalancesRequest } from "../sdk/poaBridge/poaBridgeHttpClient"
 import type { SwappableToken } from "../types/swap"
 import {
   filterOutPoaBridgeTokens,
@@ -12,7 +12,7 @@ export function useTokenBalancesQuery(token: SwappableToken, enabled = true) {
 
   return useQuery({
     queryKey: ["intents_sdk.token_balances", addresses.slice().sort()],
-    queryFn: () => getTokenBalancesRequest(addresses),
+    queryFn: () => poaBridge.httpClient.getTokenBalancesRequest(addresses),
     staleTime: 60 * 1000, // 1 min
     gcTime: 60 * 1000, // 1 min
     enabled: addresses.length > 0 && enabled,

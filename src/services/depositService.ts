@@ -1,3 +1,4 @@
+import { BlockchainEnum, poaBridge } from "@defuse-protocol/internal-utils"
 import {
   createAssociatedTokenAccountInstruction,
   createTransferInstruction,
@@ -30,11 +31,6 @@ import type { depositTokenBalanceMachine } from "../features/machines/depositTok
 import { getNearTxSuccessValue } from "../features/machines/getTxMachine"
 import type { storageDepositAmountMachine } from "../features/machines/storageDepositAmountMachine"
 import { logger } from "../logger"
-import { BlockchainEnum } from "../sdk/poaBridge/constants/blockchains"
-import {
-  getDepositAddress,
-  getSupportedTokens,
-} from "../sdk/poaBridge/poaBridgeHttpClient"
 import { AuthMethod } from "../types/authHandle"
 import type { BaseTokenInfo, SupportedChainName } from "../types/base"
 import type { SendTransactionEVMParams, Transaction } from "../types/deposit"
@@ -678,7 +674,7 @@ export async function generateDepositAddress(
   memo: string | null
 }> {
   try {
-    const supportedTokens = await getSupportedTokens({
+    const supportedTokens = await poaBridge.httpClient.getSupportedTokens({
       chains: [chain],
     })
 
@@ -687,16 +683,16 @@ export async function generateDepositAddress(
     }
 
     const depositNetworkMemo = getDepositNetworkMemo(chain)
-    const generatedDepositAddress = await getDepositAddress({
-      account_id: userAddress,
-      chain,
-      ...(depositNetworkMemo && depositNetworkMemo),
-    })
+    const generatedDepositAddress =
+      await poaBridge.httpClient.getDepositAddress({
+        account_id: userAddress,
+        chain,
+        ...(depositNetworkMemo && depositNetworkMemo),
+      })
 
     return {
       generatedDepositAddress: generatedDepositAddress.address,
-      memo:
-        "memo" in generatedDepositAddress ? generatedDepositAddress.memo : null,
+      memo: generatedDepositAddress.memo ?? null,
     }
   } catch (error) {
     logger.error(

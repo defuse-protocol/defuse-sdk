@@ -1,3 +1,4 @@
+import { errors } from "@defuse-protocol/internal-utils"
 import { assertEvent, assign, fromPromise, setup } from "xstate"
 import { nearClient } from "../../constants/nearClient"
 import {
@@ -11,7 +12,6 @@ import type {
   WalletSignatureResult,
 } from "../../types/walletMessage"
 import { assert } from "../../utils/assert"
-import { toError } from "../../utils/errors"
 import { verifyWalletSignature } from "../../utils/verifyWalletSignature"
 import {
   type WalletErrorCode,
@@ -172,7 +172,7 @@ export const signIntentMachine = setup({
                     event.error,
                     "ERR_USER_DIDNT_SIGN"
                   ),
-                  error: toError(event.error),
+                  error: errors.toError(event.error),
                 }
               },
             },
@@ -225,7 +225,7 @@ export const signIntentMachine = setup({
               type: "setError",
               params: ({ event }) => ({
                 reason: "ERR_CANNOT_VERIFY_SIGNATURE",
-                error: toError(event.error),
+                error: errors.toError(event.error),
               }),
             },
           ],

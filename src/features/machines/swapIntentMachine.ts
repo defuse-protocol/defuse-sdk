@@ -1,5 +1,5 @@
 import type { FeeEstimation } from "@defuse-protocol/bridge-sdk"
-import { solverRelay } from "@defuse-protocol/internal-utils"
+import { errors, solverRelay } from "@defuse-protocol/internal-utils"
 import { secp256k1 } from "@noble/curves/secp256k1"
 import type { providers } from "near-api-js"
 import { assign, fromPromise, setup } from "xstate"
@@ -427,7 +427,7 @@ export const swapIntentMachine = setup({
                   event.error,
                   "ERR_USER_DIDNT_SIGN"
                 ),
-                error: toError(event.error),
+                error: errors.toError(event.error),
               }),
             },
           ],
@@ -478,7 +478,7 @@ export const swapIntentMachine = setup({
               type: "setError",
               params: ({ event }) => ({
                 reason: "ERR_CANNOT_VERIFY_SIGNATURE",
-                error: toError(event.error),
+                error: errors.toError(event.error),
               }),
             },
           ],
@@ -539,7 +539,7 @@ export const swapIntentMachine = setup({
               type: "setError",
               params: ({ event }) => ({
                 reason: "ERR_PUBKEY_EXCEPTION",
-                error: toError(event.error),
+                error: errors.toError(event.error),
               }),
             },
           ],
@@ -592,7 +592,7 @@ export const swapIntentMachine = setup({
               type: "setError",
               params: ({ event }) => ({
                 reason: "ERR_CANNOT_PUBLISH_INTENT",
-                error: toError(event.error),
+                error: errors.toError(event.error),
               }),
             },
           ],
@@ -664,10 +664,6 @@ export const swapIntentMachine = setup({
     },
   },
 })
-
-function toError(error: unknown): Error {
-  return error instanceof Error ? error : new Error("unknown error")
-}
 
 function enqueueBetterQuote(
   quotes: PriorityQueue<AggregatedQuote>,
