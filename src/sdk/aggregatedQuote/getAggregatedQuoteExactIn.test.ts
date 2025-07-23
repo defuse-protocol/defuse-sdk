@@ -1,12 +1,12 @@
+import { solverRelay } from "@defuse-protocol/internal-utils"
 import { afterEach, describe, expect, it, vi } from "vitest"
 import type { BaseTokenInfo } from "../../types/base"
 import { adjustDecimals } from "../../utils/tokenUtils"
 import { QuoteError } from "../solverRelay/errors/quote"
-import * as relayClient from "../solverRelay/solverRelayHttpClient"
 import { AggregatedQuoteError } from "./errors/aggregatedQuoteError"
 import { getAggregatedQuoteExactIn } from "./getAggregatedQuoteExactIn"
 
-vi.spyOn(relayClient, "quote")
+vi.spyOn(solverRelay, "quote")
 
 const tokenInfo: BaseTokenInfo = {
   defuseAssetId: "",
@@ -53,7 +53,7 @@ describe("getAggregatedQuoteExactIn()", () => {
       waitMs: 0,
     }
 
-    vi.mocked(relayClient.quote).mockImplementationOnce(async () => [
+    vi.mocked(solverRelay.quote).mockImplementationOnce(async () => [
       {
         quote_hash: "q1",
         defuse_asset_identifier_in: "token1",
@@ -76,8 +76,8 @@ describe("getAggregatedQuoteExactIn()", () => {
       wait_ms: 0,
     }
 
-    expect(relayClient.quote).toHaveBeenCalledTimes(1)
-    expect(relayClient.quote).toHaveBeenCalledWith(
+    expect(solverRelay.quote).toHaveBeenCalledTimes(1)
+    expect(solverRelay.quote).toHaveBeenCalledWith(
       quoteParams,
       expect.any(Object)
     )
@@ -107,7 +107,7 @@ describe("getAggregatedQuoteExactIn()", () => {
       waitMs: 0,
     }
 
-    vi.mocked(relayClient.quote)
+    vi.mocked(solverRelay.quote)
       .mockImplementationOnce(async () => [
         {
           quote_hash: "q1",
@@ -150,12 +150,12 @@ describe("getAggregatedQuoteExactIn()", () => {
       },
     ]
 
-    expect(relayClient.quote).toHaveBeenCalledTimes(2)
-    expect(relayClient.quote).toHaveBeenCalledWith(
+    expect(solverRelay.quote).toHaveBeenCalledTimes(2)
+    expect(solverRelay.quote).toHaveBeenCalledWith(
       quoteParams[0],
       expect.any(Object)
     )
-    expect(relayClient.quote).toHaveBeenCalledWith(
+    expect(solverRelay.quote).toHaveBeenCalledWith(
       quoteParams[1],
       expect.any(Object)
     )
@@ -183,7 +183,7 @@ describe("getAggregatedQuoteExactIn()", () => {
       waitMs: 0,
     }
 
-    vi.mocked(relayClient.quote).mockImplementationOnce(async () => [
+    vi.mocked(solverRelay.quote).mockImplementationOnce(async () => [
       {
         quote_hash: "q1",
         defuse_asset_identifier_in: "token1",
@@ -244,7 +244,7 @@ describe("getAggregatedQuoteExactIn()", () => {
       waitMs: 0,
     }
 
-    vi.mocked(relayClient.quote)
+    vi.mocked(solverRelay.quote)
       .mockImplementationOnce(async () => null)
       .mockImplementationOnce(async () => [])
 
@@ -285,7 +285,7 @@ describe("getAggregatedQuoteExactIn()", () => {
       },
     ]
 
-    vi.mocked(relayClient.quote)
+    vi.mocked(solverRelay.quote)
       .mockImplementationOnce(async () => [
         {
           quote_hash: "q1",
@@ -331,7 +331,7 @@ describe("getAggregatedQuoteExactIn()", () => {
       waitMs: 0,
     }
 
-    vi.mocked(relayClient.quote).mockImplementationOnce(async () => [
+    vi.mocked(solverRelay.quote).mockImplementationOnce(async () => [
       {
         quote_hash: "q1",
         defuse_asset_identifier_in: "token1",
@@ -346,7 +346,7 @@ describe("getAggregatedQuoteExactIn()", () => {
       aggregatedQuoteParams: input,
     })
 
-    expect(relayClient.quote).toHaveBeenCalledTimes(1)
+    expect(solverRelay.quote).toHaveBeenCalledTimes(1)
     expect(result).toEqual({
       expirationTime: expect.any(String),
       quoteHashes: ["q1"],

@@ -1,6 +1,6 @@
+import type { solverRelay } from "@defuse-protocol/internal-utils"
 import { describe, expect, it } from "vitest"
 import { QuoteError } from "../solverRelay/errors/quote"
-import type { Quote } from "../solverRelay/solverRelayHttpClient/types"
 import { aggregateQuotes } from "./aggregateQuotes"
 import { AggregatedQuoteError } from "./errors/aggregatedQuoteError"
 
@@ -12,7 +12,7 @@ describe("aggregateQuotes()", () => {
 
   it("aggregates quotes correctly", async () => {
     const quotes = await Promise.allSettled([
-      Promise.resolve<Quote>({
+      Promise.resolve<solverRelay.Quote>({
         quote_hash: "q1",
         defuse_asset_identifier_in: "token1",
         defuse_asset_identifier_out: "tokenOut",
@@ -20,7 +20,7 @@ describe("aggregateQuotes()", () => {
         amount_out: "2000000", // 2.0 with 6 decimals
         expiration_time: "2024-01-15T12:05:00.000Z",
       }),
-      Promise.resolve<Quote>({
+      Promise.resolve<solverRelay.Quote>({
         quote_hash: "q2",
         defuse_asset_identifier_in: "token2",
         defuse_asset_identifier_out: "tokenOut",
@@ -52,7 +52,7 @@ describe("aggregateQuotes()", () => {
 
   it("continues with valid quotes even when some quotes have failed", async () => {
     const quotes = await Promise.allSettled([
-      Promise.reject<Quote>(
+      Promise.reject<solverRelay.Quote>(
         new QuoteError({
           quote: {
             type: "INSUFFICIENT_AMOUNT",
@@ -61,7 +61,7 @@ describe("aggregateQuotes()", () => {
           quoteParams: defaultQuoteParams,
         })
       ),
-      Promise.resolve<Quote>({
+      Promise.resolve<solverRelay.Quote>({
         quote_hash: "q1",
         defuse_asset_identifier_in: "token1",
         defuse_asset_identifier_out: "token2",
@@ -100,7 +100,7 @@ describe("aggregateQuotes()", () => {
 
   it("throws error when all quotes have failed", async () => {
     const quotes = await Promise.allSettled([
-      Promise.reject<Quote>(
+      Promise.reject<solverRelay.Quote>(
         new QuoteError({
           quote: {
             type: "INSUFFICIENT_AMOUNT" as const,
@@ -109,7 +109,7 @@ describe("aggregateQuotes()", () => {
           quoteParams: defaultQuoteParams,
         })
       ),
-      Promise.reject<Quote>(
+      Promise.reject<solverRelay.Quote>(
         new QuoteError({
           quote: null,
           quoteParams: defaultQuoteParams,

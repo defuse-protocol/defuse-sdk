@@ -1,3 +1,4 @@
+import { solverRelay } from "@defuse-protocol/internal-utils"
 import { useMutation } from "@tanstack/react-query"
 import { Err, type Result } from "@thames/monads"
 import { useContext } from "react"
@@ -8,7 +9,7 @@ import {
 import { createSwapIntentMessage } from "../../../core/messages"
 import {
   type PublishIntentsErr,
-  publishIntents,
+  convertPublishIntentsToLegacyFormat,
 } from "../../../sdk/solverRelay/publishIntents"
 import { emitEvent } from "../../../services/emitter"
 import type { MultiPayload } from "../../../types/defuse-contracts-types"
@@ -95,10 +96,12 @@ export function useOtcTakerConfirmTrade({
         signerCredentials
       )
 
-      const result = await publishIntents({
-        quote_hashes: quoteHashesResult.unwrap(),
-        signed_datas: [multiPayload, makerMultiPayload],
-      })
+      const result = await solverRelay
+        .publishIntents({
+          quote_hashes: quoteHashesResult.unwrap(),
+          signed_datas: [multiPayload, makerMultiPayload],
+        })
+        .then(convertPublishIntentsToLegacyFormat)
 
       return result.map((intentHashes) => {
         return {

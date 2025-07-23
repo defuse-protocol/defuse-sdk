@@ -1,3 +1,4 @@
+import type { BlockchainEnum } from "@defuse-protocol/internal-utils"
 import { MagicWandIcon, PersonIcon } from "@radix-ui/react-icons"
 import { Box, Flex, IconButton, Text, TextField } from "@radix-ui/themes"
 import { useSelector } from "@xstate/react"
@@ -18,7 +19,6 @@ import {
 import { parseDestinationMemo } from "../../../../../../features/machines/withdrawFormReducer"
 import { WithdrawUIMachineContext } from "../../../../../../features/withdraw/WithdrawUIMachineContext"
 import { useSolverLiquidityQuery } from "../../../../../../queries/solverLiquidityQuerires"
-import type { BlockchainEnum } from "../../../../../../sdk/poaBridge/constants/blockchains"
 import type { AuthMethod } from "../../../../../../types"
 import type {
   SupportedChainName,

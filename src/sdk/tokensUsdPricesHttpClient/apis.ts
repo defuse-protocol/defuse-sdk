@@ -1,5 +1,5 @@
+import { request } from "@defuse-protocol/internal-utils"
 import { config as globalConfig } from "../../config"
-import { request } from "../../utils/request"
 import type { RequestConfig, TokensUsdPricesPayload } from "./types"
 
 export async function tokens(

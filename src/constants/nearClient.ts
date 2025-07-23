@@ -1,4 +1,4 @@
-import { nearFailoverRpcProvider } from "../utils/failover"
+import { nearFailoverRpcProvider } from "@defuse-protocol/internal-utils"
 import { settings } from "./settings"
 
 /**

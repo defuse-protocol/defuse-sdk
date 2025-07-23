@@ -1,8 +1,8 @@
+import type { BlockchainEnum } from "@defuse-protocol/internal-utils"
 import { config } from "../config"
 import { getBlockchainsOptions } from "../constants/blockchains"
 import type { NetworkOption } from "../constants/blockchains"
 import { CHAIN_IDS } from "../constants/evm"
-import type { BlockchainEnum } from "../sdk/poaBridge/constants/blockchains"
 import type {
   BaseTokenInfo,
   SupportedChainName,

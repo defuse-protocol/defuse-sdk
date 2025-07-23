@@ -1,15 +1,15 @@
+import { solverRelay } from "@defuse-protocol/internal-utils"
 import { logger } from "../../../logger"
-import { quote } from "../solverRelayHttpClient"
 
 export async function quoteWithLog(
-  params: Parameters<typeof quote>[0],
+  params: Parameters<typeof solverRelay.quote>[0],
   {
     logBalanceSufficient,
     ...config
-  }: { logBalanceSufficient: boolean } & Parameters<typeof quote>[1]
+  }: { logBalanceSufficient: boolean } & Parameters<typeof solverRelay.quote>[1]
 ) {
   const requestId = crypto.randomUUID()
-  const result = await quote(params, { ...config, requestId })
+  const result = await solverRelay.quote(params, { ...config, requestId })
   if (result == null) {
     logger.warn("quote: No liquidity available", { quoteParams: params })
 

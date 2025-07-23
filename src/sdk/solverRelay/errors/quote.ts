@@ -1,18 +1,17 @@
+import type { solverRelay } from "@defuse-protocol/internal-utils"
 import { BaseError } from "../../../errors/base"
 import { serialize } from "../../../utils/serialize"
-import type { quote as quote_ } from "../solverRelayHttpClient"
-import type { FailedQuote } from "../solverRelayHttpClient/types"
 
 export class QuoteError extends BaseError {
-  quote: FailedQuote | null
-  quoteParams: Parameters<typeof quote_>[0]
+  quote: solverRelay.FailedQuote | null
+  quoteParams: Parameters<typeof solverRelay.quote>[0]
 
   constructor({
     quote,
     quoteParams,
   }: {
-    quote: FailedQuote | null
-    quoteParams: Parameters<typeof quote_>[0]
+    quote: solverRelay.FailedQuote | null
+    quoteParams: Parameters<typeof solverRelay.quote>[0]
   }) {
     super("Quote error", {
       details: quote == null ? "NO_QUOTE" : quote.type,

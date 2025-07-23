@@ -1,3 +1,4 @@
+import { errors, solverRelay } from "@defuse-protocol/internal-utils"
 import {
   type ActorRefFrom,
   type DoneActorEvent,
@@ -11,7 +12,6 @@ import {
 } from "xstate"
 import type { SignerCredentials } from "../../../core/formatters"
 import { logger } from "../../../logger"
-import { waitForIntentSettlement } from "../../../sdk/solverRelay/waitForIntentSettlement"
 import { emitEvent } from "../../../services/emitter"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../../types/base"
 import type {
@@ -19,7 +19,6 @@ import type {
   WalletSignatureResult,
 } from "../../../types/walletMessage"
 import { assert } from "../../../utils/assert"
-import { toError } from "../../../utils/errors"
 import {
   type Events as DepositedBalanceEvents,
   depositedBalanceMachine,
@@ -130,7 +129,10 @@ export const giftMakerRootMachine = setup({
       }: { input: { intentHashes: string[] }; signal: AbortSignal }) => {
         const intentHash = input.intentHashes[0]
         assert(intentHash, "intentHash is not defined")
-        return waitForIntentSettlement(signal, intentHash)
+        return solverRelay.waitForIntentSettlement({
+          signal,
+          intentHash,
+        })
       }
     ),
     savingGift: fromPromise(
@@ -218,7 +220,7 @@ export const giftMakerRootMachine = setup({
   },
   actions: {
     logError: (_, event: { error: unknown }) => {
-      const err = toError(event.error)
+      const err = errors.toError(event.error)
       logger.error(err)
     },
     setError: assign({

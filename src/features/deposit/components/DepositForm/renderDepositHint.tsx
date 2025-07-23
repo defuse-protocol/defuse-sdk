@@ -1,6 +1,6 @@
+import type { BlockchainEnum } from "@defuse-protocol/internal-utils"
 import { Callout } from "@radix-ui/themes"
 import { reverseAssetNetworkAdapter } from "src/utils/adapters"
-import type { BlockchainEnum } from "../../../../sdk/poaBridge/constants/blockchains"
 import type { BaseTokenInfo } from "../../../../types/base"
 import { formatTokenValue } from "../../../../utils/format"
 

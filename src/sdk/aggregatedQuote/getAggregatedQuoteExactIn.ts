@@ -1,3 +1,4 @@
+import type { poaBridge } from "@defuse-protocol/internal-utils"
 import { settings } from "../../constants/settings"
 import type { AssertionError } from "../../errors/assert"
 import type { BaseTokenInfo, TokenValue } from "../../types/base"
@@ -12,7 +13,6 @@ import {
   type GetQuoteReturnType,
   getQuote,
 } from "../solverRelay/getQuote"
-import type { JSONRPCErrorType } from "../solverRelay/solverRelayHttpClient/types"
 import type { AggregatedQuote } from "../solverRelay/types/quote"
 import { aggregateQuotes } from "./aggregateQuotes"
 import { calculateSplitAmounts } from "./calculateSplitAmounts"
@@ -31,7 +31,7 @@ export interface GetAggregatedExactInQuoteParams {
 
 export type GetAggregatedQuoteExactInReturnType = AggregatedQuote
 export type GetAggregatedQuoteExactInErrorType =
-  | JSONRPCErrorType
+  | poaBridge.httpClient.JSONRPCErrorType
   | AggregatedQuoteError
   | AmountMismatchError
   | AssertionError

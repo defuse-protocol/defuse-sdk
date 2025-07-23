@@ -1,4 +1,4 @@
-import { BlockchainEnum } from "../sdk/poaBridge/constants/blockchains"
+import { BlockchainEnum } from "@defuse-protocol/internal-utils"
 import type { SupportedChainName } from "../types/base"
 
 export const assetNetworkAdapter: Record<SupportedChainName, BlockchainEnum> = {
