@@ -1,3 +1,4 @@
+import { BlockchainEnum } from "@defuse-protocol/internal-utils"
 import {
   createDepositEVMERC20Transaction,
   getWalletRpcUrl,
@@ -5,7 +6,6 @@ import {
 import { getEVMChainId } from "src/utils/evmChainId"
 import type { Address } from "viem"
 import { assign, fromPromise, setup } from "xstate"
-import { BlockchainEnum } from "../../sdk/poaBridge/constants/blockchains"
 import {
   estimateEVMTransferCost,
   estimateSolanaTransferCost,

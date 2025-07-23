@@ -1,3 +1,4 @@
+import type { BlockchainEnum } from "@defuse-protocol/internal-utils"
 import { InfoCircledIcon } from "@radix-ui/react-icons"
 import { Text, useThemeContext } from "@radix-ui/themes"
 import clsx from "clsx"
@@ -7,7 +8,6 @@ import { BlockMultiBalances } from "../../../../components/Block/BlockMultiBalan
 import { ButtonCustom } from "../../../../components/Button/ButtonCustom"
 import { TooltipInfo } from "../../../../components/TooltipInfo"
 import { useTokensUsdPrices } from "../../../../hooks/useTokensUsdPrices"
-import type { BlockchainEnum } from "../../../../sdk/poaBridge/constants/blockchains"
 import { RESERVED_NEAR_BALANCE } from "../../../../services/blockchainBalanceService"
 import type { BaseTokenInfo } from "../../../../types/base"
 import { reverseAssetNetworkAdapter } from "../../../../utils/adapters"

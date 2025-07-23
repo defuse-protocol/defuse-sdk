@@ -1,6 +1,6 @@
+import { BlockchainEnum } from "@defuse-protocol/internal-utils"
 import type { ReactNode } from "react"
 import { NetworkIcon } from "../components/Network/NetworkIcon"
-import { BlockchainEnum } from "../sdk/poaBridge/constants/blockchains"
 
 type BlockchainOption = {
   label: string

@@ -1,4 +1,4 @@
-import { errors } from "@defuse-protocol/internal-utils"
+import { errors, poaBridge } from "@defuse-protocol/internal-utils"
 import {
   type ActorRefFrom,
   type SnapshotFrom,
@@ -9,10 +9,6 @@ import {
   waitFor,
 } from "xstate"
 import { logger } from "../../logger"
-import {
-  getSupportedTokens,
-  type types,
-} from "../../sdk/poaBridge/poaBridgeHttpClient"
 import type { BaseTokenInfo } from "../../types/base"
 
 export interface Context {
@@ -32,7 +28,7 @@ export const poaBridgeInfoActor = setup({
   },
   actors: {
     fooActor: fromPromise(async () => {
-      return getSupportedTokens({})
+      return poaBridge.httpClient.getSupportedTokens({})
     }),
   },
   actions: {
@@ -42,7 +38,7 @@ export const poaBridgeInfoActor = setup({
     setBridgeInfo: assign({
       bridgeInfo: (
         _,
-        bridgeInfo: types.GetSupportedTokensResponse["result"]
+        bridgeInfo: poaBridge.httpClient.GetSupportedTokensResponse["result"]
       ) => {
         const arr = bridgeInfo.tokens.map(
           (
