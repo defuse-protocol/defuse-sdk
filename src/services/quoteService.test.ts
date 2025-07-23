@@ -4,7 +4,11 @@ import type { BaseTokenInfo } from "../types/base"
 import { adjustDecimals } from "../utils/tokenUtils"
 import { queryQuote } from "./quoteService"
 
-vi.spyOn(solverRelay, "quote")
+vi.mock("@defuse-protocol/internal-utils", () => ({
+  solverRelay: {
+    quote: vi.fn(),
+  },
+}))
 
 const tokenInfo: BaseTokenInfo = {
   defuseAssetId: "",
