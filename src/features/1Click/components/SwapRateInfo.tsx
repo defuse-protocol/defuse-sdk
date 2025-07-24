@@ -16,7 +16,7 @@ import type { SwappableToken } from "../../../types/swap"
 import { formatTokenValue, formatUsdAmount } from "../../../utils/format"
 import getTokenUsdPrice from "../../../utils/getTokenUsdPrice"
 import { BASIS_POINTS_DENOMINATOR } from "../../../utils/tokenUtils"
-import { useSwapRateData } from "../hooks-1Click/useSwapRateData"
+import { useSwapRateData } from "../hooks/useSwapRateData"
 
 interface SwapRateInfoProps {
   tokenIn: SwappableToken

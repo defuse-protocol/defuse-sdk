@@ -3,7 +3,7 @@ import { type PropsWithChildren, useEffect, useRef } from "react"
 import { useFormContext } from "react-hook-form"
 import type { AuthMethod } from "../../../types/authHandle"
 import type { SwapWidgetProps } from "../../../types/swap"
-import { usePublicKeyModalOpener } from "../hooks/usePublicKeyModalOpener"
+import { usePublicKeyModalOpener } from "../../swap/hooks/usePublicKeyModalOpener"
 import type { SwapFormValues } from "./SwapForm"
 import { SwapUIMachineContext } from "./SwapUIMachineProvider"
 

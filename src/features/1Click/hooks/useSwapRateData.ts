@@ -4,7 +4,7 @@ import {
   computeTotalDeltaDifferentDecimals,
 } from "../../../utils/tokenUtils"
 import type { swapUIMachine } from "../../machines/swapUIMachine1Click"
-import { SwapUIMachineContext } from "../components-1Click/SwapUIMachineProvider"
+import { SwapUIMachineContext } from "../components/SwapUIMachineProvider"
 
 export function useSwapRateData() {
   return SwapUIMachineContext.useSelector(swapRateDataSelector)
