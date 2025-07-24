@@ -45,4 +45,12 @@ export type SwapWidgetProps = {
    * Prop is not reactive, set it once when the component is created.
    */
   referral?: string
+
+  /**
+   * Callback function called when tokens change (tokenIn or tokenOut)
+   */
+  onTokenChange?: (params: {
+    tokenIn: SwappableToken | null
+    tokenOut: SwappableToken | null
+  }) => void
 }
