@@ -33,7 +33,7 @@ export const AssetComboIcon = ({
         )}
       </div>
       {showChainIcon && (
-        <div className="absolute -right-[7px] bottom-0 flex justify-center items-center p-1 bg-gray-1 rounded-full border-2 border-gray-1">
+        <div className="absolute -right-[7px] -bottom-[7px] flex justify-center items-center p-1 bg-gray-1 rounded-full border-2 border-gray-1">
           {chainIcon ? (
             <img
               src={chainIcon}

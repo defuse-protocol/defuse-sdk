@@ -32,3 +32,6 @@ coverage/
 
 # Generated types
 src/types/defuse-contracts-types.d.ts
+
+# nix
+.direnv

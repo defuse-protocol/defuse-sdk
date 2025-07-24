@@ -46,3 +46,5 @@ export type SwapWidgetProps = {
    */
   referral?: string
 }
+
+export type SwapWidget1ClickProps = SwapWidgetProps
