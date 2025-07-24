@@ -19,6 +19,7 @@ export const SwapWidget = ({
   renderHostAppLink,
   initialTokenIn,
   initialTokenOut,
+  onTokenChange,
   referral,
 }: SwapWidgetProps) => {
   return (
@@ -38,6 +39,7 @@ export const SwapWidget = ({
             tokenList={tokenList}
             signMessage={signMessage}
             referral={referral}
+            onTokenChange={onTokenChange}
           >
             <SwapUIMachineFormSyncProvider
               userAddress={userAddress}

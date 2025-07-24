@@ -23,7 +23,7 @@ export type GiftSignedResult = {
 
 export type CreateGiftIntent = (
   payload: GiftLinkData
-) => Promise<{ iv: string }>
+) => Promise<{ iv: string; giftId: string }>
 
 export type GenerateLink = (params: {
   secretKey: string

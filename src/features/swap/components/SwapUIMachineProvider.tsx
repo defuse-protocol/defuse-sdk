@@ -1,5 +1,6 @@
 import { createActorContext } from "@xstate/react"
 import type { PropsWithChildren, ReactElement, ReactNode } from "react"
+import { useRef } from "react"
 import { useFormContext } from "react-hook-form"
 import { assert } from "src/utils/assert"
 import { formatUnits } from "viem"
@@ -17,6 +18,7 @@ import type {
 import { computeTotalDeltaDifferentDecimals } from "../../../utils/tokenUtils"
 import { swapIntentMachine } from "../../machines/swapIntentMachine"
 import { swapUIMachine } from "../../machines/swapUIMachine"
+import { useTokenChangeNotifier } from "../hooks/useTokenChangeNotifier"
 import type { SwapFormValues } from "./SwapForm"
 
 /**
@@ -55,6 +57,10 @@ interface SwapUIMachineProviderProps extends PropsWithChildren {
   tokenList: SwappableToken[]
   signMessage: (params: WalletMessage) => Promise<WalletSignatureResult | null>
   referral?: string
+  onTokenChange?: (params: {
+    tokenIn: SwappableToken | null
+    tokenOut: SwappableToken | null
+  }) => void
 }
 
 export function SwapUIMachineProvider({
@@ -64,6 +70,7 @@ export function SwapUIMachineProvider({
   tokenList,
   signMessage,
   referral,
+  onTokenChange,
 }: SwapUIMachineProviderProps) {
   const { setValue, resetField } = useFormContext<SwapFormValues>()
   const tokenIn = initialTokenIn || tokenList[0]
@@ -114,7 +121,31 @@ export function SwapUIMachineProvider({
         },
       })}
     >
+      <TokenChangeNotifier
+        onTokenChange={onTokenChange}
+        tokenIn={tokenIn}
+        tokenOut={tokenOut}
+      />
       {children}
     </SwapUIMachineContext.Provider>
   )
+}
+
+function TokenChangeNotifier({
+  onTokenChange,
+  tokenIn,
+  tokenOut,
+}: {
+  onTokenChange?: (params: {
+    tokenIn: SwappableToken | null
+    tokenOut: SwappableToken | null
+  }) => void
+  tokenIn: SwappableToken
+  tokenOut: SwappableToken
+}) {
+  useTokenChangeNotifier({
+    onTokenChange,
+    prevTokensRef: useRef({ tokenIn, tokenOut }),
+  })
+  return null
 }

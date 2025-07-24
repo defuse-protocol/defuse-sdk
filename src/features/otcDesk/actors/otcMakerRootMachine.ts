@@ -195,6 +195,7 @@ export const otcMakerRootMachine = setup({
       assert(tokenIn != null)
 
       emitEvent("otc_deal_initiated", {
+        intent_id: event.tradeId,
         token_from: tokenOut.symbol,
         token_to: tokenIn.symbol,
         amount_from: amountOut,
