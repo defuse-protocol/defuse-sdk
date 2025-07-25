@@ -54,3 +54,5 @@ export type SwapWidgetProps = {
     tokenOut: SwappableToken | null
   }) => void
 }
+
+export type SwapWidget1ClickProps = SwapWidgetProps

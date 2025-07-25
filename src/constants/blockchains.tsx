@@ -1,5 +1,6 @@
 import { BlockchainEnum } from "@defuse-protocol/internal-utils"
 import type { ReactNode } from "react"
+import type { SupportedChainName } from "src/types/base"
 import { NetworkIcon } from "../components/Network/NetworkIcon"
 
 type BlockchainOption = {
@@ -30,6 +31,36 @@ export function isBlockchainOption(
   return option.value !== "near_intents"
 }
 
+export const chainIcons: Record<SupportedChainName, string> = {
+  eth: "/static/icons/network/ethereum.svg",
+  near: "/static/icons/network/near.svg",
+  base: "/static/icons/network/base.svg",
+  arbitrum: "/static/icons/network/arbitrum.svg",
+  bitcoin: "/static/icons/network/btc.svg",
+  solana: "/static/icons/network/solana.svg",
+  dogecoin: "/static/icons/network/dogecoin.svg",
+  turbochain: "/static/icons/network/turbochain.png",
+  tuxappchain: "/static/icons/network/tuxappchain.svg",
+  vertex: "/static/icons/network/vertex.svg",
+  optima: "/static/icons/network/optima.svg",
+  easychain: "/static/icons/network/easychain.svg",
+  aurora: "/static/icons/network/aurora.svg",
+  xrpledger: "/static/icons/network/xrpledger.svg",
+  zcash: "/static/icons/network/zcash-icon-black.svg",
+  gnosis: "/static/icons/network/gnosis.svg",
+  berachain: "/static/icons/network/berachain.svg",
+  tron: "/static/icons/network/tron.svg",
+  polygon: "/static/icons/network/polygon.svg",
+  bsc: "/static/icons/network/bsc.svg",
+  hyperliquid: "/static/icons/network/hyperliquid.svg",
+  ton: "/static/icons/network/ton.svg",
+  optimism: "/static/icons/network/optimism.svg",
+  avalanche: "/static/icons/network/avalanche.svg",
+  sui: "/static/icons/network/sui.svg",
+  stellar: "/static/icons/network/stellar.svg",
+  aptos: "/static/icons/network/aptos.svg",
+}
+
 export function getBlockchainsOptions(): Record<
   BlockchainEnum,
   BlockchainOption
@@ -37,77 +68,46 @@ export function getBlockchainsOptions(): Record<
   const options: Record<BlockchainEnum, BlockchainOption> = {
     [BlockchainEnum.NEAR]: {
       label: "Near",
-      icon: (
-        <NetworkIcon
-          chainIcon="/static/icons/network/near.svg"
-          chainName="near"
-        />
-      ),
+      icon: <NetworkIcon chainIcon={chainIcons.near} chainName="near" />,
       value: BlockchainEnum.NEAR,
       tags: ["vol:4"],
     },
     [BlockchainEnum.ETHEREUM]: {
       label: "Ethereum",
-      icon: (
-        <NetworkIcon
-          chainIcon="/static/icons/network/ethereum.svg"
-          chainName="eth"
-        />
-      ),
+      icon: <NetworkIcon chainIcon={chainIcons.eth} chainName="eth" />,
       value: BlockchainEnum.ETHEREUM,
       tags: ["vol:6"],
     },
     [BlockchainEnum.BASE]: {
       label: "Base",
-      icon: (
-        <NetworkIcon
-          chainIcon="/static/icons/network/base.svg"
-          chainName="base"
-        />
-      ),
+      icon: <NetworkIcon chainIcon={chainIcons.base} chainName="base" />,
       value: BlockchainEnum.BASE,
       tags: ["vol:9"],
     },
     [BlockchainEnum.ARBITRUM]: {
       label: "Arbitrum",
       icon: (
-        <NetworkIcon
-          chainIcon="/static/icons/network/arbitrum.svg"
-          chainName="arbitrum"
-        />
+        <NetworkIcon chainIcon={chainIcons.arbitrum} chainName="arbitrum" />
       ),
       value: BlockchainEnum.ARBITRUM,
       tags: ["vol:10"],
     },
     [BlockchainEnum.BITCOIN]: {
       label: "Bitcoin",
-      icon: (
-        <NetworkIcon
-          chainIcon="/static/icons/network/btc.svg"
-          chainName="bitcoin"
-        />
-      ),
+      icon: <NetworkIcon chainIcon={chainIcons.bitcoin} chainName="bitcoin" />,
       value: BlockchainEnum.BITCOIN,
       tags: ["vol:8"],
     },
     [BlockchainEnum.SOLANA]: {
       label: "Solana",
-      icon: (
-        <NetworkIcon
-          chainIcon="/static/icons/network/solana.svg"
-          chainName="solana"
-        />
-      ),
+      icon: <NetworkIcon chainIcon={chainIcons.solana} chainName="solana" />,
       value: BlockchainEnum.SOLANA,
       tags: ["vol:3"],
     },
     [BlockchainEnum.DOGECOIN]: {
       label: "Dogecoin",
       icon: (
-        <NetworkIcon
-          chainIcon="/static/icons/network/dogecoin.svg"
-          chainName="dogecoin"
-        />
+        <NetworkIcon chainIcon={chainIcons.dogecoin} chainName="dogecoin" />
       ),
       value: BlockchainEnum.DOGECOIN,
       tags: ["vol:7"],
@@ -115,77 +115,48 @@ export function getBlockchainsOptions(): Record<
     [BlockchainEnum.TURBOCHAIN]: {
       label: "TurboChain",
       icon: (
-        <NetworkIcon
-          chainIcon="/static/icons/network/turbochain.png"
-          chainName="turbochain"
-        />
+        <NetworkIcon chainIcon={chainIcons.turbochain} chainName="turbochain" />
       ),
       value: BlockchainEnum.TURBOCHAIN,
       tags: ["vol:102"],
     },
     [BlockchainEnum.AURORA]: {
       label: "Aurora",
-      icon: (
-        <NetworkIcon
-          chainIcon="/static/icons/network/aurora.svg"
-          chainName="aurora"
-        />
-      ),
+      icon: <NetworkIcon chainIcon={chainIcons.aurora} chainName="aurora" />,
       value: BlockchainEnum.AURORA,
       tags: ["vol:101"],
     },
     [BlockchainEnum.XRPLEDGER]: {
       label: "XRP Ledger",
       icon: (
-        <NetworkIcon
-          chainIcon="/static/icons/network/xrpledger.svg"
-          chainName="XRP Ledger"
-        />
+        <NetworkIcon chainIcon={chainIcons.xrpledger} chainName="XRP Ledger" />
       ),
       value: BlockchainEnum.XRPLEDGER,
       tags: ["vol:10"],
     },
     [BlockchainEnum.ZCASH]: {
       label: "Zcash",
-      icon: (
-        <NetworkIcon
-          chainIcon="/static/icons/network/zcash-icon-black.svg"
-          chainName="zcash"
-        />
-      ),
+      icon: <NetworkIcon chainIcon={chainIcons.zcash} chainName="zcash" />,
       value: BlockchainEnum.ZCASH,
       tags: ["vol:1"],
     },
     [BlockchainEnum.GNOSIS]: {
       label: "Gnosis",
-      icon: (
-        <NetworkIcon
-          chainIcon="/static/icons/network/gnosis.svg"
-          chainName="Gnosis"
-        />
-      ),
+      icon: <NetworkIcon chainIcon={chainIcons.gnosis} chainName="Gnosis" />,
       value: BlockchainEnum.GNOSIS,
       tags: ["vol:5"],
     },
     [BlockchainEnum.BERACHAIN]: {
       label: "BeraChain",
       icon: (
-        <NetworkIcon
-          chainIcon="/static/icons/network/berachain.svg"
-          chainName="BeraChain"
-        />
+        <NetworkIcon chainIcon={chainIcons.berachain} chainName="BeraChain" />
       ),
       value: BlockchainEnum.BERACHAIN,
       tags: ["vol:11"],
     },
     [BlockchainEnum.TRON]: {
       label: "Tron",
-      icon: (
-        <NetworkIcon
-          chainIcon="/static/icons/network/tron.svg"
-          chainName="Tron"
-        />
-      ),
+      icon: <NetworkIcon chainIcon={chainIcons.tron} chainName="Tron" />,
       value: BlockchainEnum.TRON,
       tags: ["vol:2"],
     },
@@ -193,7 +164,7 @@ export function getBlockchainsOptions(): Record<
       label: "TuxaChain",
       icon: (
         <NetworkIcon
-          chainIcon="/static/icons/network/tuxappchain.svg"
+          chainIcon={chainIcons.tuxappchain}
           chainName="tuxappchain"
         />
       ),
@@ -202,55 +173,34 @@ export function getBlockchainsOptions(): Record<
     },
     [BlockchainEnum.VERTEX]: {
       label: "Vertex",
-      icon: (
-        <NetworkIcon
-          chainIcon="/static/icons/network/vertex.svg"
-          chainName="vertex"
-        />
-      ),
+      icon: <NetworkIcon chainIcon={chainIcons.vertex} chainName="vertex" />,
       value: BlockchainEnum.VERTEX,
       tags: ["vol:104"],
     },
     [BlockchainEnum.OPTIMA]: {
       label: "Optima",
-      icon: (
-        <NetworkIcon
-          chainIcon="/static/icons/network/optima.svg"
-          chainName="optima"
-        />
-      ),
+      icon: <NetworkIcon chainIcon={chainIcons.optima} chainName="optima" />,
       value: BlockchainEnum.OPTIMA,
       tags: ["vol:105"],
     },
     [BlockchainEnum.EASYCHAIN]: {
       label: "EasyChain",
       icon: (
-        <NetworkIcon
-          chainIcon="/static/icons/network/easychain.svg"
-          chainName="easychain"
-        />
+        <NetworkIcon chainIcon={chainIcons.easychain} chainName="easychain" />
       ),
       value: BlockchainEnum.EASYCHAIN,
       tags: ["vol:106"],
     },
     [BlockchainEnum.POLYGON]: {
       label: "Polygon",
-      icon: (
-        <NetworkIcon
-          chainIcon="/static/icons/network/polygon.svg"
-          chainName="Polygon"
-        />
-      ),
+      icon: <NetworkIcon chainIcon={chainIcons.polygon} chainName="Polygon" />,
       value: BlockchainEnum.POLYGON,
       tags: [],
     },
     [BlockchainEnum.BSC]: {
       label: "BNB Smart Chain",
       icon: (
-        <NetworkIcon
-          chainIcon="/static/icons/network/bsc.svg"
-          chainName="BNB Smart Chain"
-        />
+        <NetworkIcon chainIcon={chainIcons.bsc} chainName="BNB Smart Chain" />
       ),
       value: BlockchainEnum.BSC,
       tags: [],
@@ -259,7 +209,7 @@ export function getBlockchainsOptions(): Record<
       label: "Hyperliquid",
       icon: (
         <NetworkIcon
-          chainIcon="/static/icons/network/hyperliquid.svg"
+          chainIcon={chainIcons.hyperliquid}
           chainName="Hyperliquid"
         />
       ),
@@ -268,22 +218,14 @@ export function getBlockchainsOptions(): Record<
     },
     [BlockchainEnum.TON]: {
       label: "TON",
-      icon: (
-        <NetworkIcon
-          chainIcon="/static/icons/network/ton.svg"
-          chainName="TON"
-        />
-      ),
+      icon: <NetworkIcon chainIcon={chainIcons.ton} chainName="TON" />,
       value: BlockchainEnum.TON,
       tags: [],
     },
     [BlockchainEnum.OPTIMISM]: {
       label: "Optimism",
       icon: (
-        <NetworkIcon
-          chainIcon="/static/icons/network/optimism.svg"
-          chainName="Optimism"
-        />
+        <NetworkIcon chainIcon={chainIcons.optimism} chainName="Optimism" />
       ),
       value: BlockchainEnum.OPTIMISM,
       tags: [],
@@ -291,44 +233,26 @@ export function getBlockchainsOptions(): Record<
     [BlockchainEnum.AVALANCHE]: {
       label: "Avalanche",
       icon: (
-        <NetworkIcon
-          chainIcon="/static/icons/network/avalanche.svg"
-          chainName="Avalanche"
-        />
+        <NetworkIcon chainIcon={chainIcons.avalanche} chainName="Avalanche" />
       ),
       value: BlockchainEnum.AVALANCHE,
       tags: [],
     },
     [BlockchainEnum.SUI]: {
       label: "Sui",
-      icon: (
-        <NetworkIcon
-          chainIcon="/static/icons/network/sui.svg"
-          chainName="Sui"
-        />
-      ),
+      icon: <NetworkIcon chainIcon={chainIcons.sui} chainName="Sui" />,
       value: BlockchainEnum.SUI,
       tags: [],
     },
     [BlockchainEnum.STELLAR]: {
       label: "Stellar",
-      icon: (
-        <NetworkIcon
-          chainIcon="/static/icons/network/stellar.svg"
-          chainName="Stellar"
-        />
-      ),
+      icon: <NetworkIcon chainIcon={chainIcons.stellar} chainName="Stellar" />,
       value: BlockchainEnum.STELLAR,
       tags: [],
     },
     [BlockchainEnum.APTOS]: {
       label: "Aptos",
-      icon: (
-        <NetworkIcon
-          chainIcon="/static/icons/network/aptos.svg"
-          chainName="Aptos"
-        />
-      ),
+      icon: <NetworkIcon chainIcon={chainIcons.aptos} chainName="Aptos" />,
       value: BlockchainEnum.APTOS,
       tags: [],
     },
