@@ -56,6 +56,20 @@ describe("makeSwapMessage()", () => {
           )
         ),
       },
+      STELLAR: {
+        message: Uint8Array.from(
+          Buffer.from(
+            JSON.stringify({
+              signer_id: "user.near",
+              verifying_contract: "intents.near",
+              deadline: "2024-01-01T12:00:00.000Z",
+              nonce: "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+              intents: [{ intent: "token_diff", diff: { "foo.near": "100" } }],
+            }),
+            "utf-8"
+          )
+        ),
+      },
       WEBAUTHN: expect.any(Object),
       TON_CONNECT: {
         message: {
@@ -201,6 +215,35 @@ describe("makeSwapMessage()", () => {
         "signer_id": "user.near",
       }
     `)
+  })
+
+  it("should generate Stellar message with same format as Solana", () => {
+    const innerMessage = makeInnerSwapMessage({
+      tokenDeltas: [["foo.near", 100n]],
+      signerId: authHandleToIntentsUserId("user.near", "near"),
+      deadlineTimestamp: 1704110400000,
+    })
+
+    const message = makeSwapMessage({
+      innerMessage,
+      nonce: new Uint8Array(32),
+    })
+
+    // Stellar should use the same message format as Solana since both use Ed25519
+    expect(message.STELLAR).toEqual(message.SOLANA)
+
+    // Verify the message content
+    const expectedPayload = {
+      signer_id: "user.near",
+      verifying_contract: "intents.near",
+      deadline: "2024-01-01T12:00:00.000Z",
+      nonce: "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      intents: [{ intent: "token_diff", diff: { "foo.near": "100" } }],
+    }
+
+    expect(
+      JSON.parse(new TextDecoder().decode(message.STELLAR.message))
+    ).toEqual(expectedPayload)
   })
 })
 
