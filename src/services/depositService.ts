@@ -892,6 +892,7 @@ export function getAvailableDepositRoutes(
           network satisfies never
           throw new Error("exhaustive check failed")
       }
+    case AuthMethod.Stellar:
     case AuthMethod.Solana:
       switch (network) {
         /* allowed all */
