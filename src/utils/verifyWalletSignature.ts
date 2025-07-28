@@ -26,7 +26,8 @@ export async function verifyWalletSignature(
         signature: signature.signatureData as "0x${string}",
       })
     }
-    case "SOLANA": {
+    case "SOLANA":
+    case "STELLAR": {
       return sign.detached.verify(
         signature.signedData.message,
         signature.signatureData,
