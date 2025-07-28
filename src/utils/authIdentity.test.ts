@@ -25,6 +25,16 @@ describe("authHandleToIntentsUserId", () => {
     )
   })
 
+  it("returns hex encoded Stellar address for 'stellar' chain type", () => {
+    const result = authHandleToIntentsUserId(
+      "GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+      "stellar"
+    )
+    expect(result).toBe(
+      "451dbffd0dd32c3c090eb8b3fc9359248d0cfeaa7c9fac7618aa70b230c14a70075bca1af286bca1af"
+    )
+  })
+
   it("returns derived address for 'webauthn' chain type with P-256 curve", () => {
     const result = authHandleToIntentsUserId(
       "p256:3NSY8SFTWoPFMrTGdLVqPogirCyt3kMnUajXoDQuVeCsA6wzkMMp5whBqymAPM7xFiBthDKueiUv1zVAj7GDT8rQ",
