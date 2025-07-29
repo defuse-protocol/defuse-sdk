@@ -1,4 +1,5 @@
 import { authIdentity } from "@defuse-protocol/internal-utils"
+import type { AuthMethod } from "@defuse-protocol/internal-utils"
 import type { providers } from "near-api-js"
 import {
   type ActorRefFrom,
@@ -11,7 +12,6 @@ import {
 } from "xstate"
 import { logger } from "../../logger"
 import type { QuoteResult } from "../../services/quoteService"
-import type { AuthMethod } from "../../types/authHandle"
 import type {
   BaseTokenInfo,
   TokenValue,

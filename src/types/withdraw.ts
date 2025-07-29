@@ -1,12 +1,11 @@
-import type { walletMessage } from "@defuse-protocol/internal-utils"
+import type { authHandle, walletMessage } from "@defuse-protocol/internal-utils"
 import type { SendNearTransaction } from "../features/machines/publicKeyVerifierMachine"
-import type { AuthHandle } from "./authHandle"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "./base"
 import type { RenderHostAppLink } from "./hostAppLink"
 
 export type WithdrawWidgetProps = {
-  userAddress: AuthHandle["identifier"] | undefined
-  chainType: AuthHandle["method"] | undefined
+  userAddress: authHandle.AuthHandle["identifier"] | undefined
+  chainType: authHandle.AuthHandle["method"] | undefined
   presetTokenSymbol: string | undefined
   presetAmount: string | undefined
   presetRecipient: string | undefined

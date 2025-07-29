@@ -1,4 +1,5 @@
 import { authIdentity } from "@defuse-protocol/internal-utils"
+import type { AuthMethod } from "@defuse-protocol/internal-utils"
 import type { providers } from "near-api-js"
 import {
   type ActorRefFrom,
@@ -12,7 +13,6 @@ import {
 import { logger } from "../../logger"
 import { emitEvent } from "../../services/emitter"
 import type { QuoteResult } from "../../services/quoteService"
-import type { AuthMethod } from "../../types/authHandle"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../types/base"
 import { assert } from "../../utils/assert"
 import { isNearIntentsNetwork } from "../withdraw/components/WithdrawForm/utils"

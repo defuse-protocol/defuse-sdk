@@ -1,4 +1,5 @@
 import { authIdentity } from "@defuse-protocol/internal-utils"
+import type { AuthMethod } from "@defuse-protocol/internal-utils"
 import { type QueryClient, QueryObserver } from "@tanstack/query-core"
 import { nearClient } from "src/constants/nearClient"
 import {
@@ -13,7 +14,6 @@ import {
 import { queryClient } from "../../providers/QueryClientProvider"
 import { getDepositedBalances } from "../../services/defuseBalanceService"
 import { getTransitBalance } from "../../services/getTransitBalance"
-import type { AuthMethod } from "../../types/authHandle"
 import type {
   BaseTokenInfo,
   TokenValue,

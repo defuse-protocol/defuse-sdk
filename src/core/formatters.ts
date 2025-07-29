@@ -2,8 +2,7 @@ import {
   authIdentity,
   prepareBroadcastRequest,
 } from "@defuse-protocol/internal-utils"
-import type { walletMessage } from "@defuse-protocol/internal-utils"
-import type { AuthMethod } from "../types/authHandle"
+import type { AuthMethod, walletMessage } from "@defuse-protocol/internal-utils"
 import type { IntentsUserId } from "../types/intentsUserId"
 
 export type { IntentsUserId }

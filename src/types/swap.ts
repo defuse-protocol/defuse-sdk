@@ -1,6 +1,5 @@
-import type { walletMessage } from "@defuse-protocol/internal-utils"
+import type { AuthMethod, walletMessage } from "@defuse-protocol/internal-utils"
 import type { SendNearTransaction } from "../features/machines/publicKeyVerifierMachine"
-import type { AuthMethod } from "./authHandle"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "./base"
 import type { RenderHostAppLink } from "./hostAppLink"
 

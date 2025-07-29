@@ -1,6 +1,6 @@
 import { authIdentity } from "@defuse-protocol/internal-utils"
+import type { AuthMethod } from "@defuse-protocol/internal-utils"
 import { WidgetRoot } from "../../../components/WidgetRoot"
-import type { AuthMethod } from "../../../types/authHandle"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../../types/base"
 import type { RenderHostAppLink } from "../../../types/hostAppLink"
 import { useWatchHoldings } from "../hooks/useWatchHoldings"

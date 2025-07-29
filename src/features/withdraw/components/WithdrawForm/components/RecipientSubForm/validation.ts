@@ -1,6 +1,5 @@
-import { authIdentity } from "@defuse-protocol/internal-utils"
+import { type AuthMethod, authIdentity } from "@defuse-protocol/internal-utils"
 import { isAddress } from "viem"
-import type { AuthMethod } from "../../../../../../types"
 import type { SupportedChainName } from "../../../../../../types/base"
 import { validateAddress } from "../../../../../../utils/validateAddress"
 import { isNearIntentsNetwork } from "../../utils"

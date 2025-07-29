@@ -1,4 +1,5 @@
 import type { BlockchainEnum } from "@defuse-protocol/internal-utils"
+import type { AuthMethod } from "@defuse-protocol/internal-utils"
 import { ExclamationTriangleIcon } from "@radix-ui/react-icons"
 import { Callout } from "@radix-ui/themes"
 import { useSelector } from "@xstate/react"
@@ -26,7 +27,6 @@ import { getPOABridgeInfo } from "../../../../features/machines/poaBridgeInfoAct
 import { useModalStore } from "../../../../providers/ModalStoreProvider"
 import { getAvailableDepositRoutes } from "../../../../services/depositService"
 import { ModalType } from "../../../../stores/modalStore"
-import type { AuthMethod } from "../../../../types/authHandle"
 import type {
   BaseTokenInfo,
   SupportedChainName,
