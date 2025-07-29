@@ -1,4 +1,5 @@
 import { randomDefuseNonce } from "@defuse-protocol/internal-utils"
+import type { walletMessage } from "@defuse-protocol/internal-utils"
 import { base64 } from "@scure/base"
 import { assertEvent, setup } from "xstate"
 import {
@@ -15,10 +16,6 @@ import type {
   UnifiedTokenInfo,
 } from "../../../types/base"
 import type { MultiPayload } from "../../../types/defuse-contracts-types"
-import type {
-  WalletMessage,
-  WalletSignatureResult,
-} from "../../../types/walletMessage"
 import { findError } from "../../../utils/errors"
 import {
   adjustDecimals,
@@ -53,7 +50,7 @@ export type OTCMakerSignActorOutput =
 
 export type OTCMakerSignActorSuccess = {
   multiPayload: MultiPayload
-  signatureResult: WalletSignatureResult
+  signatureResult: walletMessage.WalletSignatureResult
   signerCredentials: SignerCredentials
   usedNonceBase64: string
 }
@@ -62,7 +59,7 @@ export type OTCMakerSignActorContext = {
   nonce: Uint8Array
   parsed: OTCMakerSignActorInput["parsed"]
   signerCredentials: OTCMakerSignActorInput["signerCredentials"]
-  walletMessage: WalletMessage
+  walletMessage: walletMessage.WalletMessage
 }
 
 export type OTCMakerSignActorErrors = SignIntentErrors | { reason: "EXCEPTION" }

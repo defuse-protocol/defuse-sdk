@@ -1,4 +1,5 @@
 import { normalizeERC191Signature } from "@defuse-protocol/internal-utils"
+import type { walletMessage } from "@defuse-protocol/internal-utils"
 import { base64 } from "@scure/base"
 import { Keypair } from "@solana/web3.js"
 import nacl from "tweetnacl"
@@ -15,7 +16,6 @@ import {
   createWithdrawIntentMessage,
 } from "../../../core/messages"
 import type { MultiPayload } from "../../../types/defuse-contracts-types"
-import type { WalletMessage } from "../../../types/walletMessage"
 import {
   GeneralPayloadObjectSchema,
   MultiPayloadDeepSchema,
@@ -132,7 +132,9 @@ function genWithdrawIntent(signerId: SignerCredentials) {
 }
 
 type FakeSign = (
-  walletMessageFactory: (signerCreds: SignerCredentials) => WalletMessage
+  walletMessageFactory: (
+    signerCreds: SignerCredentials
+  ) => walletMessage.WalletMessage
 ) => Promise<MultiPayload>
 
 const signERC191: FakeSign = async (walletMessageFactory) => {

@@ -6,8 +6,8 @@ import {
   makeInnerTransferMessage,
   makeSwapMessage,
 } from "@defuse-protocol/internal-utils"
+import type { walletMessage } from "@defuse-protocol/internal-utils"
 import type { IntentsUserId } from "../types/intentsUserId"
-import type { WalletMessage } from "../types/walletMessage"
 import type { SignerCredentials } from "./formatters"
 import { formatUserIdentity } from "./formatters"
 
@@ -54,7 +54,7 @@ function resolveSignerId(
 export function createSwapIntentMessage(
   swapConfig: [string, bigint][],
   options: IntentMessageConfig
-): WalletMessage {
+): walletMessage.WalletMessage {
   const innerMessage = makeInnerSwapMessage({
     tokenDeltas: swapConfig,
     signerId: resolveSignerId(options.signerId),
@@ -78,7 +78,7 @@ export function createSwapIntentMessage(
 export function createWithdrawIntentMessage(
   withdrawConfig: WithdrawIntentMessageConfig,
   options: IntentMessageConfig
-): WalletMessage {
+): walletMessage.WalletMessage {
   const innerMessage = makeInnerSwapAndWithdrawMessage({
     tokenDeltas: [],
     storageTokenDeltas: [],
@@ -100,7 +100,7 @@ export function createWithdrawIntentMessage(
  */
 export function createEmptyIntentMessage(
   options: IntentMessageConfig
-): WalletMessage {
+): walletMessage.WalletMessage {
   return makeEmptyMessage({
     signerId: resolveSignerId(options.signerId),
     deadlineTimestamp: options.deadlineTimestamp ?? minutesFromNow(5),
@@ -121,7 +121,7 @@ function minutesFromNow(minutes: number): number {
 export function createTransferMessage(
   tokenDeltas: [string, bigint][],
   options: IntentMessageConfig & { receiverId: string }
-): WalletMessage {
+): walletMessage.WalletMessage {
   const innerMessage = makeInnerTransferMessage({
     tokenDeltas,
     signerId: resolveSignerId(options.signerId),

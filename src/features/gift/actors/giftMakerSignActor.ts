@@ -2,6 +2,7 @@ import { base64 } from "@scure/base"
 import type { MultiPayload } from "src/types/defuse-contracts-types"
 
 import { randomDefuseNonce } from "@defuse-protocol/internal-utils"
+import type { walletMessage } from "@defuse-protocol/internal-utils"
 import { type PromiseActorLogic, assertEvent, setup } from "xstate"
 import {
   type SignerCredentials,
@@ -16,10 +17,6 @@ import type {
   TokenValue,
   UnifiedTokenInfo,
 } from "../../../types/base"
-import type {
-  WalletMessage,
-  WalletSignatureResult,
-} from "../../../types/walletMessage"
 import { findError } from "../../../utils/errors"
 import {
   adjustDecimals,
@@ -60,7 +57,7 @@ export type GiftMakerSignActorOutput =
       value: {
         multiPayload: MultiPayload
         signerCredentials: SignerCredentials
-        signatureResult: WalletSignatureResult
+        signatureResult: walletMessage.WalletSignatureResult
         escrowCredentials: EscrowCredentials
         giftId: string
       }
@@ -69,7 +66,7 @@ export type GiftMakerSignActorOutput =
 export type GiftMakerSignActorContext = {
   parsed: GiftMakerSignActorInput["parsed"]
   signerCredentials: GiftMakerSignActorInput["signerCredentials"]
-  walletMessage: WalletMessage
+  walletMessage: walletMessage.WalletMessage
   escrowCredentials: EscrowCredentials
 }
 

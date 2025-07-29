@@ -4,11 +4,11 @@ import {
   randomDefuseNonce,
 } from "@defuse-protocol/internal-utils"
 import { authHandleToIntentsUserId } from "@defuse-protocol/internal-utils"
+import type { walletMessage } from "@defuse-protocol/internal-utils"
 import { base64 } from "@scure/base"
 import { KeyPair } from "near-api-js"
 import type { IntentsUserId, SignerCredentials } from "../../../core/formatters"
 import { formatUserIdentity } from "../../../core/formatters"
-import type { NEP413SignatureData } from "../../../types/walletMessage"
 import type { GiftInfo } from "../actors/shared/getGiftInfo"
 import { hashing } from "./hashing"
 
@@ -20,7 +20,7 @@ type GiftTakerMessage = {
 export async function signGiftTakerMessage({
   giftInfo,
   signerCredentials,
-}: GiftTakerMessage): Promise<NEP413SignatureData> {
+}: GiftTakerMessage): Promise<walletMessage.NEP413SignatureData> {
   const walletMessage = assembleWalletMessage({ giftInfo, signerCredentials })
   const keyPair = KeyPair.fromString(giftInfo.secretKey)
 

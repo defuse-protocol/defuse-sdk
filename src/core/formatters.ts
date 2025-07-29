@@ -2,9 +2,9 @@ import {
   authHandleToIntentsUserId,
   prepareSwapSignedData,
 } from "@defuse-protocol/internal-utils"
+import type { walletMessage } from "@defuse-protocol/internal-utils"
 import type { AuthMethod } from "../types/authHandle"
 import type { IntentsUserId } from "../types/intentsUserId"
-import type { WalletSignatureResult } from "../types/walletMessage"
 
 export type { IntentsUserId }
 
@@ -25,7 +25,7 @@ export interface SignerCredentials {
  * @returns Intent data serialized in protocol wire format
  */
 export function formatSignedIntent(
-  signature: WalletSignatureResult,
+  signature: walletMessage.WalletSignatureResult,
   credentials: SignerCredentials
 ) {
   return prepareSwapSignedData(signature, {

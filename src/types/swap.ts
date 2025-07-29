@@ -1,8 +1,8 @@
+import type { walletMessage } from "@defuse-protocol/internal-utils"
 import type { SendNearTransaction } from "../features/machines/publicKeyVerifierMachine"
 import type { AuthMethod } from "./authHandle"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "./base"
 import type { RenderHostAppLink } from "./hostAppLink"
-import type { WalletMessage, WalletSignatureResult } from "./walletMessage"
 
 export type SwapEvent = {
   type: string
@@ -26,7 +26,9 @@ export type SwapWidgetProps = {
 
   sendNearTransaction: SendNearTransaction
 
-  signMessage: (params: WalletMessage) => Promise<WalletSignatureResult | null>
+  signMessage: (
+    params: walletMessage.WalletMessage
+  ) => Promise<walletMessage.WalletSignatureResult | null>
   onSuccessSwap: (params: {
     amountIn: bigint
     amountOut: bigint
