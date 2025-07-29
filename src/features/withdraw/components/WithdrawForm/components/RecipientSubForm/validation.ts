@@ -1,4 +1,4 @@
-import { authHandleToIntentsUserId } from "src/utils/authIdentity"
+import { authHandleToIntentsUserId } from "@defuse-protocol/internal-utils"
 import { isAddress } from "viem"
 import type { AuthMethod } from "../../../../../../types"
 import type { SupportedChainName } from "../../../../../../types/base"

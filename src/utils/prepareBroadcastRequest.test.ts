@@ -2,6 +2,7 @@ import {
   makeInnerSwapMessage,
   makeSwapMessage,
 } from "@defuse-protocol/internal-utils"
+import { authHandleToIntentsUserId } from "@defuse-protocol/internal-utils"
 import { describe, expect, it } from "vitest"
 import type {
   ERC191SignatureData,
@@ -12,7 +13,6 @@ import type {
   WalletMessage,
   WebAuthnSignatureData,
 } from "../types/walletMessage"
-import { authHandleToIntentsUserId } from "./authIdentity"
 import { prepareSwapSignedData } from "./prepareBroadcastRequest"
 
 describe("prepareSwapSignedData()", () => {

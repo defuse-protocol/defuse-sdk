@@ -1,4 +1,4 @@
-import { authHandleToIntentsUserId } from "src/utils/authIdentity"
+import { authHandleToIntentsUserId } from "@defuse-protocol/internal-utils"
 import { describe, expect, it } from "vitest"
 import { AuthMethod } from "../../../../../../types"
 import { validateAddressSoft } from "./validation"

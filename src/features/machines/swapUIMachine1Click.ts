@@ -1,3 +1,4 @@
+import { authHandleToIntentsUserId } from "@defuse-protocol/internal-utils"
 import type { providers } from "near-api-js"
 import {
   type ActorRefFrom,
@@ -18,7 +19,6 @@ import type {
 } from "../../types/base"
 import type { SwappableToken } from "../../types/swap"
 import { assert } from "../../utils/assert"
-import { authHandleToIntentsUserId } from "../../utils/authIdentity"
 import { parseUnits } from "../../utils/parse"
 import {
   getAnyBaseTokenInfo,

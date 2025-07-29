@@ -1,4 +1,5 @@
 import { solverRelay } from "@defuse-protocol/internal-utils"
+import { authHandleToIntentsUserId } from "@defuse-protocol/internal-utils"
 import { useMutation } from "@tanstack/react-query"
 import { Err, type Result } from "@thames/monads"
 import { useContext } from "react"
@@ -14,7 +15,6 @@ import {
 import { emitEvent } from "../../../services/emitter"
 import type { MultiPayload } from "../../../types/defuse-contracts-types"
 import { assert } from "../../../utils/assert"
-import { authHandleToIntentsUserId } from "../../../utils/authIdentity"
 import {
   SignIntentContext,
   type SignIntentErr,

@@ -1,9 +1,9 @@
+import { authHandleToIntentsUserId } from "@defuse-protocol/internal-utils"
 import { create } from "zustand"
 import { createJSONStorage, persist } from "zustand/middleware"
 import type { SignerCredentials } from "../../../core/formatters"
 import type { MultiPayload } from "../../../types/defuse-contracts-types"
 import type { IntentsUserId } from "../../../types/intentsUserId"
-import { authHandleToIntentsUserId } from "../../../utils/authIdentity"
 
 type OtcMakerTrade = {
   tradeId: string

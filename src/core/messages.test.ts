@@ -1,5 +1,5 @@
+import { authHandleToIntentsUserId } from "@defuse-protocol/internal-utils"
 import { describe, expect, it } from "vitest"
-import { authHandleToIntentsUserId } from "../utils/authIdentity"
 import {
   createEmptyIntentMessage,
   createSwapIntentMessage,

@@ -1,3 +1,4 @@
+import { authHandleToIntentsUserId } from "@defuse-protocol/internal-utils"
 import type { providers } from "near-api-js"
 import {
   type ActorRefFrom,
@@ -14,7 +15,6 @@ import type { QuoteResult } from "../../services/quoteService"
 import type { AuthMethod } from "../../types/authHandle"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../types/base"
 import { assert } from "../../utils/assert"
-import { authHandleToIntentsUserId } from "../../utils/authIdentity"
 import { isNearIntentsNetwork } from "../withdraw/components/WithdrawForm/utils"
 import {
   type Events as BackgroundQuoterEvents,

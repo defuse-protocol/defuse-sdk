@@ -1,3 +1,4 @@
+import { authHandleToIntentsUserId } from "@defuse-protocol/internal-utils"
 import { type QueryClient, QueryObserver } from "@tanstack/query-core"
 import { nearClient } from "src/constants/nearClient"
 import {
@@ -19,7 +20,6 @@ import type {
   UnifiedTokenInfo,
 } from "../../types/base"
 import type { IntentsUserId } from "../../types/intentsUserId"
-import { authHandleToIntentsUserId } from "../../utils/authIdentity"
 import {
   computeTotalBalanceDifferentDecimals,
   getUnderlyingBaseTokenInfos,

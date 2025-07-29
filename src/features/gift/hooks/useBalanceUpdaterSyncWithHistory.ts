@@ -1,7 +1,7 @@
+import { authHandleToIntentsUserId } from "@defuse-protocol/internal-utils"
 import { useEffect, useRef } from "react"
 import type { ActorRefFrom } from "xstate"
 import type { SignerCredentials } from "../../../core/formatters"
-import { authHandleToIntentsUserId } from "../../../utils/authIdentity"
 import type { giftMakerRootMachine } from "../actors/giftMakerRootMachine"
 import {
   type GiftMakerHistory,

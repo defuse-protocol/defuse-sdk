@@ -1,5 +1,5 @@
+import { authHandleToIntentsUserId } from "@defuse-protocol/internal-utils"
 import { useMemo } from "react"
-import { authHandleToIntentsUserId } from "src/utils/authIdentity"
 import { WidgetRoot } from "../../../components/WidgetRoot"
 import type { SignerCredentials } from "../../../core/formatters"
 import { SwapWidgetProvider } from "../../../providers/SwapWidgetProvider"

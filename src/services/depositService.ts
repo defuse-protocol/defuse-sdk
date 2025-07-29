@@ -1,4 +1,5 @@
 import { BlockchainEnum, poaBridge } from "@defuse-protocol/internal-utils"
+import { authHandleToIntentsUserId } from "@defuse-protocol/internal-utils"
 import {
   createAssociatedTokenAccountInstruction,
   createTransferInstruction,
@@ -37,7 +38,6 @@ import type { SendTransactionEVMParams, Transaction } from "../types/deposit"
 import type { SendTransactionTonParams } from "../types/deposit"
 import type { IntentsUserId } from "../types/intentsUserId"
 import { assert } from "../utils/assert"
-import { authHandleToIntentsUserId } from "../utils/authIdentity"
 import { getEVMChainId } from "../utils/evmChainId"
 import { isNativeToken } from "../utils/token"
 import { createTonClient } from "./tonJettonService"
