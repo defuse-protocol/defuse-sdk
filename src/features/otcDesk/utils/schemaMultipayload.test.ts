@@ -1,3 +1,4 @@
+import { normalizeERC191Signature } from "@defuse-protocol/internal-utils"
 import { base64 } from "@scure/base"
 import { Keypair } from "@solana/web3.js"
 import nacl from "tweetnacl"
@@ -15,7 +16,6 @@ import {
 } from "../../../core/messages"
 import type { MultiPayload } from "../../../types/defuse-contracts-types"
 import type { WalletMessage } from "../../../types/walletMessage"
-import { normalizeERC191Signature } from "../../../utils/prepareBroadcastRequest"
 import {
   GeneralPayloadObjectSchema,
   MultiPayloadDeepSchema,

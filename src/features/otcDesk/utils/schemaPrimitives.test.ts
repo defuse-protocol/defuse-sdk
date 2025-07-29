@@ -1,10 +1,10 @@
+import { transformERC191Signature } from "@defuse-protocol/internal-utils"
 import { base58, hex } from "@scure/base"
 import { Keypair } from "@solana/web3.js"
 import nacl from "tweetnacl"
 import * as v from "valibot"
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts"
 import { describe, expect, it } from "vitest"
-import { transformERC191Signature } from "../../../utils/prepareBroadcastRequest"
 import { normalizeSignatureS } from "../../../utils/webAuthn"
 import {
   PublicKeyED25519Schema,

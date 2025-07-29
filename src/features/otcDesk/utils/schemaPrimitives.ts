@@ -1,9 +1,9 @@
+import { normalizeERC191Signature } from "@defuse-protocol/internal-utils"
 import { base58, base64, base64urlnopad, hex } from "@scure/base"
 import * as v from "valibot"
 import { AssertionError } from "../../../errors/assert"
 import { findError } from "../../../utils/errors"
 import { isLegitAccountId } from "../../../utils/near"
-import { normalizeERC191Signature } from "../../../utils/prepareBroadcastRequest"
 import { parseDefuseAssetId } from "../../../utils/tokenUtils"
 import { normalizeSignatureS } from "../../../utils/webAuthn"
 
