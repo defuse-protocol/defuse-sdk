@@ -1,4 +1,4 @@
-import { normalizeERC191Signature } from "@defuse-protocol/internal-utils"
+import { prepareBroadcastRequest } from "@defuse-protocol/internal-utils"
 import type { walletMessage } from "@defuse-protocol/internal-utils"
 import { base64 } from "@scure/base"
 import { Keypair } from "@solana/web3.js"
@@ -149,7 +149,7 @@ const signERC191: FakeSign = async (walletMessageFactory) => {
   return formatSignedIntent(
     {
       type: "ERC191",
-      signatureData: normalizeERC191Signature(
+      signatureData: prepareBroadcastRequest.normalizeERC191Signature(
         await signer.signMessage(walletMessage.ERC191)
       ),
       signedData: walletMessage.ERC191,

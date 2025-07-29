@@ -1,4 +1,4 @@
-import { authHandleToIntentsUserId } from "@defuse-protocol/internal-utils"
+import { authIdentity } from "@defuse-protocol/internal-utils"
 import type { providers } from "near-api-js"
 import {
   type ActorRefFrom,
@@ -598,7 +598,7 @@ export const withdrawUIMachine = setup({
           return {
             userAddress: context.submitDeps.userAddress,
             userChainType: context.submitDeps.userChainType,
-            defuseUserId: authHandleToIntentsUserId(
+            defuseUserId: authIdentity.authHandleToIntentsUserId(
               context.submitDeps.userAddress,
               context.submitDeps.userChainType
             ),

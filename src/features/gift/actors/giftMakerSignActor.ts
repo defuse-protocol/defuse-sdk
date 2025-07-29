@@ -1,8 +1,9 @@
+import {
+  messageFactory,
+  type walletMessage,
+} from "@defuse-protocol/internal-utils"
 import { base64 } from "@scure/base"
 import type { MultiPayload } from "src/types/defuse-contracts-types"
-
-import { randomDefuseNonce } from "@defuse-protocol/internal-utils"
-import type { walletMessage } from "@defuse-protocol/internal-utils"
 import { type PromiseActorLogic, assertEvent, setup } from "xstate"
 import {
   type SignerCredentials,
@@ -182,7 +183,7 @@ export const giftMakerSignActor = setup({
                     value: {
                       ...event.output.value,
                       escrowCredentials: context.escrowCredentials,
-                      giftId: base64.encode(randomDefuseNonce()),
+                      giftId: base64.encode(messageFactory.randomDefuseNonce()),
                     },
                   }
                 }

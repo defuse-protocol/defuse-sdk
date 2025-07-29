@@ -1,4 +1,4 @@
-import { transformERC191Signature } from "@defuse-protocol/internal-utils"
+import { prepareBroadcastRequest } from "@defuse-protocol/internal-utils"
 import { base58, hex } from "@scure/base"
 import { Keypair } from "@solana/web3.js"
 import nacl from "tweetnacl"
@@ -57,7 +57,7 @@ describe("SignatureED25519Schema", () => {
 describe("SignatureSecp256k1Schema", () => {
   it("valid signature", async () => {
     const signer = privateKeyToAccount(generatePrivateKey())
-    const formatted = transformERC191Signature(
+    const formatted = prepareBroadcastRequest.transformERC191Signature(
       await signer.signMessage({ message: "0x" })
     )
     expect(() => v.parse(SignatureSecp256k1Schema, formatted)).not.toThrow()

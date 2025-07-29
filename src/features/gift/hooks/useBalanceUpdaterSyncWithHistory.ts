@@ -1,4 +1,4 @@
-import { authHandleToIntentsUserId } from "@defuse-protocol/internal-utils"
+import { authIdentity } from "@defuse-protocol/internal-utils"
 import { useEffect, useRef } from "react"
 import type { ActorRefFrom } from "xstate"
 import type { SignerCredentials } from "../../../core/formatters"
@@ -18,7 +18,7 @@ export function useBalanceUpdaterSyncWithHistory(
     if (signerCredentials == null) {
       return EMPTY_GIFTS
     }
-    const userId = authHandleToIntentsUserId(
+    const userId = authIdentity.authHandleToIntentsUserId(
       signerCredentials.credential,
       signerCredentials.credentialType
     )

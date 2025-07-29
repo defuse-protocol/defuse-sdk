@@ -1,4 +1,4 @@
-import { authHandleToIntentsUserId } from "@defuse-protocol/internal-utils"
+import { authIdentity } from "@defuse-protocol/internal-utils"
 import { Err, Ok, type Result } from "@thames/monads"
 import { nearClient } from "../../../constants/nearClient"
 import { getDepositedBalances } from "../../../services/defuseBalanceService"
@@ -27,7 +27,7 @@ export async function determineGiftToken(
       .map((t) => t.defuseAssetId)
 
     const balances = await getDepositedBalances(
-      authHandleToIntentsUserId(
+      authIdentity.authHandleToIntentsUserId(
         escrowCredentials.credential,
         escrowCredentials.credentialType
       ),

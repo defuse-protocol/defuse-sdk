@@ -1,9 +1,6 @@
 import type { FeeEstimation } from "@defuse-protocol/bridge-sdk"
 import { errors, solverRelay } from "@defuse-protocol/internal-utils"
-import {
-  makeInnerSwapMessage,
-  makeSwapMessage,
-} from "@defuse-protocol/internal-utils"
+import { messageFactory } from "@defuse-protocol/internal-utils"
 import type { walletMessage } from "@defuse-protocol/internal-utils"
 import { secp256k1 } from "@noble/curves/secp256k1"
 import type { providers } from "near-api-js"
@@ -207,7 +204,7 @@ export const swapIntentMachine = setup({
           "Operation must be swap"
         )
 
-        const innerMessage = makeInnerSwapMessage({
+        const innerMessage = messageFactory.makeInnerSwapMessage({
           tokenDeltas: accountSlippageExactIn(
             context.intentOperationParams.quote.tokenDeltas,
             context.slippageBasisPoints
@@ -219,7 +216,7 @@ export const swapIntentMachine = setup({
 
         return {
           innerMessage,
-          walletMessage: makeSwapMessage({ innerMessage }),
+          walletMessage: messageFactory.makeSwapMessage({ innerMessage }),
         }
       },
     }),

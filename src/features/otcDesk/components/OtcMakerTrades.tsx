@@ -1,4 +1,4 @@
-import { authHandleToIntentsUserId } from "@defuse-protocol/internal-utils"
+import { authIdentity } from "@defuse-protocol/internal-utils"
 import {
   Check as CheckIcon,
   Copy as CopyIcon,
@@ -69,7 +69,7 @@ export function OtcMakerTrades({
   sendNearTransaction,
 }: OtcMakerTradesProps) {
   const trades = useOtcMakerTrades((s) => {
-    const userId = authHandleToIntentsUserId(
+    const userId = authIdentity.authHandleToIntentsUserId(
       signerCredentials.credential,
       signerCredentials.credentialType
     )

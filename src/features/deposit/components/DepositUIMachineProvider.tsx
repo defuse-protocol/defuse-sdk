@@ -1,4 +1,4 @@
-import { authHandleToIntentsUserId } from "@defuse-protocol/internal-utils"
+import { authIdentity } from "@defuse-protocol/internal-utils"
 import { createActorContext } from "@xstate/react"
 import type { PropsWithChildren, ReactElement, ReactNode } from "react"
 import { useFormContext } from "react-hook-form"
@@ -94,7 +94,10 @@ export function DepositUIMachineProvider({
                 const { userAddress, blockchain, userChainType } = input
 
                 const generatedResult = await generateDepositAddress(
-                  authHandleToIntentsUserId(userAddress, userChainType),
+                  authIdentity.authHandleToIntentsUserId(
+                    userAddress,
+                    userChainType
+                  ),
                   assetNetworkAdapter[blockchain]
                 )
 

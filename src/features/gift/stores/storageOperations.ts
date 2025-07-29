@@ -1,4 +1,4 @@
-import { authHandleToIntentsUserId } from "@defuse-protocol/internal-utils"
+import { authIdentity } from "@defuse-protocol/internal-utils"
 import type { IntentsUserId, SignerCredentials } from "../../../core/formatters"
 import { logger } from "../../../logger"
 import { deserialize } from "../../../utils/deserialize"
@@ -88,5 +88,8 @@ export function getUserId(
 ): IntentsUserId {
   return typeof user === "string"
     ? user
-    : authHandleToIntentsUserId(user.credential, user.credentialType)
+    : authIdentity.authHandleToIntentsUserId(
+        user.credential,
+        user.credentialType
+      )
 }

@@ -1,4 +1,4 @@
-import { authHandleToIntentsUserId } from "@defuse-protocol/internal-utils"
+import { authIdentity } from "@defuse-protocol/internal-utils"
 import { isAddress } from "viem"
 import type { AuthMethod } from "../../../../../../types"
 import type { SupportedChainName } from "../../../../../../types/base"
@@ -53,7 +53,10 @@ function isSelfWithdrawal(
     return true
   }
   // Internal user ID match (for Near Intents)
-  const internalUserAddress = authHandleToIntentsUserId(userAddress, chainType)
+  const internalUserAddress = authIdentity.authHandleToIntentsUserId(
+    userAddress,
+    chainType
+  )
   if (internalUserAddress === recipientAddress.toLowerCase()) {
     return true
   }

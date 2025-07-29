@@ -1,4 +1,4 @@
-import { authHandleToIntentsUserId } from "@defuse-protocol/internal-utils"
+import { authIdentity } from "@defuse-protocol/internal-utils"
 import type { providers } from "near-api-js"
 import {
   type ActorRefFrom,
@@ -417,7 +417,7 @@ export const swapUIMachine = setup({
           return {
             userAddress: event.params.userAddress,
             userChainType: event.params.userChainType,
-            defuseUserId: authHandleToIntentsUserId(
+            defuseUserId: authIdentity.authHandleToIntentsUserId(
               event.params.userAddress,
               event.params.userChainType
             ),

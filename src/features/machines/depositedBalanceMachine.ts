@@ -1,4 +1,4 @@
-import { authHandleToIntentsUserId } from "@defuse-protocol/internal-utils"
+import { authIdentity } from "@defuse-protocol/internal-utils"
 import { type QueryClient, QueryObserver } from "@tanstack/query-core"
 import { nearClient } from "src/constants/nearClient"
 import {
@@ -264,7 +264,7 @@ export const depositedBalanceMachine = setup({
         {
           type: "updateUser",
           params: ({ event }) =>
-            authHandleToIntentsUserId(
+            authIdentity.authHandleToIntentsUserId(
               event.params.userAddress,
               event.params.userChainType
             ),

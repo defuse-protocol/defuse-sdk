@@ -1,9 +1,4 @@
-import {
-  makeInnerTransferMessage,
-  makeSwapMessage,
-  randomDefuseNonce,
-} from "@defuse-protocol/internal-utils"
-import { authHandleToIntentsUserId } from "@defuse-protocol/internal-utils"
+import { authIdentity, messageFactory } from "@defuse-protocol/internal-utils"
 import type { walletMessage } from "@defuse-protocol/internal-utils"
 import { base64 } from "@scure/base"
 import { KeyPair } from "near-api-js"
@@ -46,23 +41,23 @@ function assembleWalletMessage({
   giftInfo,
   signerCredentials,
 }: GiftTakerMessage) {
-  const nonce = randomDefuseNonce()
+  const nonce = messageFactory.randomDefuseNonce()
 
   // Signer should be with `near` credential type as we use ED25519 signing
   const signerId = resolveSignerId(
-    authHandleToIntentsUserId(giftInfo.accountId, "near")
+    authIdentity.authHandleToIntentsUserId(giftInfo.accountId, "near")
   )
 
-  const innerMessage = makeInnerTransferMessage({
+  const innerMessage = messageFactory.makeInnerTransferMessage({
     tokenDeltas: [...Object.entries(giftInfo.tokenDiff)],
     signerId,
     deadlineTimestamp: minutesFromNow(5),
-    receiverId: authHandleToIntentsUserId(
+    receiverId: authIdentity.authHandleToIntentsUserId(
       signerCredentials.credential,
       signerCredentials.credentialType
     ),
   })
-  return makeSwapMessage({
+  return messageFactory.makeSwapMessage({
     innerMessage,
     nonce: nonce,
   })

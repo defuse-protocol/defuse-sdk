@@ -1,4 +1,4 @@
-import { authHandleToIntentsUserId } from "@defuse-protocol/internal-utils"
+import { authIdentity } from "@defuse-protocol/internal-utils"
 import { create } from "zustand"
 import { createJSONStorage, persist } from "zustand/middleware"
 import type { SignerCredentials } from "../../../core/formatters"
@@ -39,7 +39,10 @@ export const otcMakerTradesStore = create<Store>()(
         const userId =
           typeof user === "string"
             ? user
-            : authHandleToIntentsUserId(user.credential, user.credentialType)
+            : authIdentity.authHandleToIntentsUserId(
+                user.credential,
+                user.credentialType
+              )
 
         set((state) => ({
           trades: {
@@ -56,7 +59,10 @@ export const otcMakerTradesStore = create<Store>()(
         const userId =
           typeof user === "string"
             ? user
-            : authHandleToIntentsUserId(user.credential, user.credentialType)
+            : authIdentity.authHandleToIntentsUserId(
+                user.credential,
+                user.credentialType
+              )
 
         set((state) => ({
           trades: {

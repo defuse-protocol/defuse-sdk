@@ -1,4 +1,4 @@
-import { authHandleToIntentsUserId } from "@defuse-protocol/internal-utils"
+import { authIdentity } from "@defuse-protocol/internal-utils"
 import { describe, expect, it } from "vitest"
 import {
   createEmptyIntentMessage,
@@ -8,7 +8,7 @@ import {
 } from "./messages"
 
 const TEST_TIMESTAMP = 1704110400000 // 2024-01-01T12:00:00.000Z
-const TEST_USER = authHandleToIntentsUserId("user.near", "near")
+const TEST_USER = authIdentity.authHandleToIntentsUserId("user.near", "near")
 
 describe("createSwapIntentMessage()", () => {
   it("creates a valid swap intent message", () => {

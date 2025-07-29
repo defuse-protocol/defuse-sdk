@@ -1,6 +1,6 @@
 import {
-  authHandleToIntentsUserId,
-  prepareSwapSignedData,
+  authIdentity,
+  prepareBroadcastRequest,
 } from "@defuse-protocol/internal-utils"
 import type { walletMessage } from "@defuse-protocol/internal-utils"
 import type { AuthMethod } from "../types/authHandle"
@@ -28,7 +28,7 @@ export function formatSignedIntent(
   signature: walletMessage.WalletSignatureResult,
   credentials: SignerCredentials
 ) {
-  return prepareSwapSignedData(signature, {
+  return prepareBroadcastRequest.prepareSwapSignedData(signature, {
     userAddress: credentials.credential,
     userChainType: credentials.credentialType,
   })
@@ -42,7 +42,7 @@ export function formatSignedIntent(
 export function formatUserIdentity(
   credentials: SignerCredentials
 ): IntentsUserId {
-  return authHandleToIntentsUserId(
+  return authIdentity.authHandleToIntentsUserId(
     credentials.credential,
     credentials.credentialType
   )

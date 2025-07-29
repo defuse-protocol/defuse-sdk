@@ -1,4 +1,4 @@
-import { authHandleToIntentsUserId } from "@defuse-protocol/internal-utils"
+import { authIdentity } from "@defuse-protocol/internal-utils"
 import { WidgetRoot } from "../../../components/WidgetRoot"
 import type { AuthMethod } from "../../../types/authHandle"
 import type { BaseTokenInfo, UnifiedTokenInfo } from "../../../types/base"
@@ -25,7 +25,7 @@ export function AccountWidget({
 }: AccountWidgetProps) {
   const userId =
     userAddress != null && userChainType != null
-      ? authHandleToIntentsUserId(userAddress, userChainType)
+      ? authIdentity.authHandleToIntentsUserId(userAddress, userChainType)
       : null
 
   const holdings = useWatchHoldings({ userId, tokenList })
@@ -33,7 +33,7 @@ export function AccountWidget({
 
   const internalUserAddress =
     userAddress != null && userChainType != null
-      ? authHandleToIntentsUserId(userAddress, userChainType)
+      ? authIdentity.authHandleToIntentsUserId(userAddress, userChainType)
       : null
 
   return (

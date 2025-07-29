@@ -1,4 +1,4 @@
-import { authHandleToIntentsUserId } from "@defuse-protocol/internal-utils"
+import { authIdentity } from "@defuse-protocol/internal-utils"
 import { useMemo } from "react"
 import { WidgetRoot } from "../../../components/WidgetRoot"
 import type { SignerCredentials } from "../../../core/formatters"
@@ -35,7 +35,7 @@ export function GiftHistoryWidget({
     if (!signerCredentials) {
       return undefined
     }
-    const userId = authHandleToIntentsUserId(
+    const userId = authIdentity.authHandleToIntentsUserId(
       signerCredentials.credential,
       signerCredentials.credentialType
     )

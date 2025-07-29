@@ -1,4 +1,4 @@
-import { authHandleToIntentsUserId } from "@defuse-protocol/internal-utils"
+import { authIdentity } from "@defuse-protocol/internal-utils"
 import { ExclamationTriangleIcon } from "@radix-ui/react-icons"
 import { Button, Callout, Dialog, Spinner } from "@radix-ui/themes"
 import { useActor } from "@xstate/react"
@@ -22,7 +22,10 @@ export function TokenMigrationDialog({
   signMessage: SignMessage
   onExit: () => void
 }) {
-  const userId = authHandleToIntentsUserId(userAddress, userChainType)
+  const userId = authIdentity.authHandleToIntentsUserId(
+    userAddress,
+    userChainType
+  )
 
   const [state, send] = useActor(tokenMigrationMachine, {
     input: {

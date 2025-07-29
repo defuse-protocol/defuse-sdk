@@ -1,4 +1,4 @@
-import { authHandleToIntentsUserId } from "@defuse-protocol/internal-utils"
+import { authIdentity } from "@defuse-protocol/internal-utils"
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 import {
@@ -21,7 +21,7 @@ describe("parseTradeTerms", () => {
     credential: "joe.near",
     credentialType: "near",
   }
-  const trade1Id = authHandleToIntentsUserId(
+  const trade1Id = authIdentity.authHandleToIntentsUserId(
     trader1.credential,
     trader1.credentialType
   )

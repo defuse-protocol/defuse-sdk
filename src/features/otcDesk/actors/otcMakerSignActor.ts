@@ -1,4 +1,4 @@
-import { randomDefuseNonce } from "@defuse-protocol/internal-utils"
+import { messageFactory } from "@defuse-protocol/internal-utils"
 import type { walletMessage } from "@defuse-protocol/internal-utils"
 import { base64 } from "@scure/base"
 import { assertEvent, setup } from "xstate"
@@ -88,7 +88,7 @@ export const otcMakerSignMachine = setup({
   initial: "signing",
 
   context: ({ input }) => {
-    const nonce = randomDefuseNonce()
+    const nonce = messageFactory.randomDefuseNonce()
 
     let tokenInDiff: Record<BaseTokenInfo["defuseAssetId"], bigint>
 

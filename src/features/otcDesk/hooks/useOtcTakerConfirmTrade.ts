@@ -1,5 +1,5 @@
 import { solverRelay } from "@defuse-protocol/internal-utils"
-import { authHandleToIntentsUserId } from "@defuse-protocol/internal-utils"
+import { authIdentity } from "@defuse-protocol/internal-utils"
 import { useMutation } from "@tanstack/react-query"
 import { Err, type Result } from "@thames/monads"
 import { useContext } from "react"
@@ -60,7 +60,7 @@ export function useOtcTakerConfirmTrade({
         PublishIntentsErr | SignIntentErr | AggregatedQuoteErr
       >
     > => {
-      const signerId = authHandleToIntentsUserId(
+      const signerId = authIdentity.authHandleToIntentsUserId(
         signerCredentials.credential,
         signerCredentials.credentialType
       )

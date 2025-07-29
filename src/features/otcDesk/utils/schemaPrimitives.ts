@@ -1,4 +1,4 @@
-import { normalizeERC191Signature } from "@defuse-protocol/internal-utils"
+import { prepareBroadcastRequest } from "@defuse-protocol/internal-utils"
 import { base58, base64, base64urlnopad, hex } from "@scure/base"
 import * as v from "valibot"
 import { AssertionError } from "../../../errors/assert"
@@ -52,7 +52,8 @@ export const SignatureSecp256k1Schema = v.pipe(
     if (dataset.typed) {
       const signatureHex = hex.encode(dataset.value)
       try {
-        const normalizedSignature = normalizeERC191Signature(signatureHex)
+        const normalizedSignature =
+          prepareBroadcastRequest.normalizeERC191Signature(signatureHex)
         if (signatureHex !== normalizedSignature) {
           addIssue({
             message:

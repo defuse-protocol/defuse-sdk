@@ -1,12 +1,7 @@
 import {
-  type WithdrawParams,
-  makeEmptyMessage,
-  makeInnerSwapAndWithdrawMessage,
-  makeInnerSwapMessage,
-  makeInnerTransferMessage,
-  makeSwapMessage,
+  messageFactory,
+  type walletMessage,
 } from "@defuse-protocol/internal-utils"
-import type { walletMessage } from "@defuse-protocol/internal-utils"
 import type { IntentsUserId } from "../types/intentsUserId"
 import type { SignerCredentials } from "./formatters"
 import { formatUserIdentity } from "./formatters"
@@ -37,7 +32,7 @@ export interface IntentMessageConfig {
   memo?: string
 }
 
-export type WithdrawIntentMessageConfig = WithdrawParams
+export type WithdrawIntentMessageConfig = messageFactory.WithdrawParams
 
 function resolveSignerId(
   signerId: IntentsUserId | SignerCredentials
@@ -55,7 +50,7 @@ export function createSwapIntentMessage(
   swapConfig: [string, bigint][],
   options: IntentMessageConfig
 ): walletMessage.WalletMessage {
-  const innerMessage = makeInnerSwapMessage({
+  const innerMessage = messageFactory.makeInnerSwapMessage({
     tokenDeltas: swapConfig,
     signerId: resolveSignerId(options.signerId),
     deadlineTimestamp: options.deadlineTimestamp ?? minutesFromNow(5),
@@ -63,7 +58,7 @@ export function createSwapIntentMessage(
     memo: options.memo,
   })
 
-  return makeSwapMessage({
+  return messageFactory.makeSwapMessage({
     innerMessage,
     nonce: options.nonce,
   })
@@ -79,7 +74,7 @@ export function createWithdrawIntentMessage(
   withdrawConfig: WithdrawIntentMessageConfig,
   options: IntentMessageConfig
 ): walletMessage.WalletMessage {
-  const innerMessage = makeInnerSwapAndWithdrawMessage({
+  const innerMessage = messageFactory.makeInnerSwapAndWithdrawMessage({
     tokenDeltas: [],
     storageTokenDeltas: [],
     withdrawParams: withdrawConfig,
@@ -87,7 +82,7 @@ export function createWithdrawIntentMessage(
     deadlineTimestamp: options.deadlineTimestamp ?? minutesFromNow(5),
   })
 
-  return makeSwapMessage({
+  return messageFactory.makeSwapMessage({
     innerMessage,
     nonce: options.nonce,
   })
@@ -101,7 +96,7 @@ export function createWithdrawIntentMessage(
 export function createEmptyIntentMessage(
   options: IntentMessageConfig
 ): walletMessage.WalletMessage {
-  return makeEmptyMessage({
+  return messageFactory.makeEmptyMessage({
     signerId: resolveSignerId(options.signerId),
     deadlineTimestamp: options.deadlineTimestamp ?? minutesFromNow(5),
     nonce: options.nonce,
@@ -122,7 +117,7 @@ export function createTransferMessage(
   tokenDeltas: [string, bigint][],
   options: IntentMessageConfig & { receiverId: string }
 ): walletMessage.WalletMessage {
-  const innerMessage = makeInnerTransferMessage({
+  const innerMessage = messageFactory.makeInnerTransferMessage({
     tokenDeltas,
     signerId: resolveSignerId(options.signerId),
     deadlineTimestamp: options.deadlineTimestamp ?? minutesFromNow(5),
@@ -130,7 +125,7 @@ export function createTransferMessage(
     memo: options.memo,
   })
 
-  return makeSwapMessage({
+  return messageFactory.makeSwapMessage({
     innerMessage,
     nonce: options.nonce,
   })

@@ -1,5 +1,5 @@
 import { BlockchainEnum, poaBridge } from "@defuse-protocol/internal-utils"
-import { authHandleToIntentsUserId } from "@defuse-protocol/internal-utils"
+import { authIdentity } from "@defuse-protocol/internal-utils"
 import {
   createAssociatedTokenAccountInstruction,
   createTransferInstruction,
@@ -518,7 +518,7 @@ export function createDepositFromSiloTransaction(
       getAddress(tokenAddress),
       amount,
       depositAddress,
-      authHandleToIntentsUserId(userAddress, AuthMethod.EVM),
+      authIdentity.authHandleToIntentsUserId(userAddress, AuthMethod.EVM),
     ],
   })
   const tx: SendTransactionEVMParams = {

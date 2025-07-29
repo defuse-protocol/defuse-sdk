@@ -1,7 +1,4 @@
-import {
-  makeInnerSwapMessage,
-  makeSwapMessage,
-} from "@defuse-protocol/internal-utils"
+import { messageFactory } from "@defuse-protocol/internal-utils"
 import { assign, fromPromise } from "xstate"
 import { WidgetRoot } from "../../../components/WidgetRoot"
 import { settings } from "../../../constants/settings"
@@ -65,7 +62,7 @@ export const WithdrawWidget = (props: WithdrawWidgetProps) => {
 
                       const { quote } = context.intentOperationParams
 
-                      const innerMessage = makeInnerSwapMessage({
+                      const innerMessage = messageFactory.makeInnerSwapMessage({
                         deadlineTimestamp:
                           Date.now() + settings.swapExpirySec * 1000,
                         referral: context.referral,
@@ -81,7 +78,9 @@ export const WithdrawWidget = (props: WithdrawWidgetProps) => {
 
                       return {
                         innerMessage,
-                        walletMessage: makeSwapMessage({ innerMessage }),
+                        walletMessage: messageFactory.makeSwapMessage({
+                          innerMessage,
+                        }),
                       }
                     },
                   }),

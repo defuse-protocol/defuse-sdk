@@ -1,4 +1,4 @@
-import { makeSwapMessage, solverRelay } from "@defuse-protocol/internal-utils"
+import { messageFactory, solverRelay } from "@defuse-protocol/internal-utils"
 import type { walletMessage } from "@defuse-protocol/internal-utils"
 import { assign, fromPromise, setup } from "xstate"
 import { config } from "../../../config"
@@ -140,7 +140,7 @@ export const tokenMigrationMachine = setup({
             src: "signIntent",
 
             input: ({ context }) => {
-              const walletMessage = makeSwapMessage({
+              const walletMessage = messageFactory.makeSwapMessage({
                 innerMessage: {
                   signer_id: context.userId,
                   deadline: new Date(Date.now() + 5 * 60 * 1000).toISOString(),

@@ -1,4 +1,4 @@
-import { authHandleToIntentsUserId } from "@defuse-protocol/internal-utils"
+import { authIdentity } from "@defuse-protocol/internal-utils"
 import { ArrowDown } from "@phosphor-icons/react"
 import { useQuery } from "@tanstack/react-query"
 import { None } from "@thames/monads"
@@ -57,7 +57,7 @@ export function OtcTakerForm({
 }: OtcTakerFormProps) {
   const signerId =
     signerCredentials != null
-      ? authHandleToIntentsUserId(
+      ? authIdentity.authHandleToIntentsUserId(
           signerCredentials.credential,
           signerCredentials.credentialType
         )
