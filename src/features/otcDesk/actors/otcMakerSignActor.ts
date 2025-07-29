@@ -1,3 +1,4 @@
+import { randomDefuseNonce } from "@defuse-protocol/internal-utils"
 import { base64 } from "@scure/base"
 import { assertEvent, setup } from "xstate"
 import {
@@ -19,7 +20,6 @@ import type {
   WalletSignatureResult,
 } from "../../../types/walletMessage"
 import { findError } from "../../../utils/errors"
-import { randomDefuseNonce } from "../../../utils/messageFactory"
 import {
   adjustDecimals,
   getAnyBaseTokenInfo,

@@ -1,5 +1,3 @@
-import type { IntentsUserId } from "../types/intentsUserId"
-import type { WalletMessage } from "../types/walletMessage"
 import {
   type WithdrawParams,
   makeEmptyMessage,
@@ -7,7 +5,9 @@ import {
   makeInnerSwapMessage,
   makeInnerTransferMessage,
   makeSwapMessage,
-} from "../utils/messageFactory"
+} from "@defuse-protocol/internal-utils"
+import type { IntentsUserId } from "../types/intentsUserId"
+import type { WalletMessage } from "../types/walletMessage"
 import type { SignerCredentials } from "./formatters"
 import { formatUserIdentity } from "./formatters"
 

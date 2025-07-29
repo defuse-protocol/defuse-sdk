@@ -1,5 +1,9 @@
 import type { FeeEstimation } from "@defuse-protocol/bridge-sdk"
 import { errors, solverRelay } from "@defuse-protocol/internal-utils"
+import {
+  makeInnerSwapMessage,
+  makeSwapMessage,
+} from "@defuse-protocol/internal-utils"
 import { secp256k1 } from "@noble/curves/secp256k1"
 import type { providers } from "near-api-js"
 import { assign, fromPromise, setup } from "xstate"
@@ -24,10 +28,6 @@ import type {
   WalletSignatureResult,
 } from "../../types/walletMessage"
 import { assert } from "../../utils/assert"
-import {
-  makeInnerSwapMessage,
-  makeSwapMessage,
-} from "../../utils/messageFactory"
 import { PriorityQueue } from "../../utils/priorityQueue"
 import {
   accountSlippageExactIn,

@@ -1,6 +1,7 @@
 import { base64 } from "@scure/base"
 import type { MultiPayload } from "src/types/defuse-contracts-types"
 
+import { randomDefuseNonce } from "@defuse-protocol/internal-utils"
 import { type PromiseActorLogic, assertEvent, setup } from "xstate"
 import {
   type SignerCredentials,
@@ -20,7 +21,6 @@ import type {
   WalletSignatureResult,
 } from "../../../types/walletMessage"
 import { findError } from "../../../utils/errors"
-import { randomDefuseNonce } from "../../../utils/messageFactory"
 import {
   adjustDecimals,
   getAnyBaseTokenInfo,
