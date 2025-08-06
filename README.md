@@ -1,4 +1,4 @@
-# Defuse Protocol SDK
+# Defuse Protocol SDK [DEPRECATED]
 
 The Defuse Protocol SDK is a powerful and flexible package designed to facilitate asset swap trading logic in React or Next.js applications. This SDK provides developers with the necessary tools and components to integrate advanced swap functionality into their decentralized applications (dApps).
 
